@@ -4017,6 +4017,201 @@ country_event = {
 		}
 	}
 }
+
+# Operation Ironclad - Diego Suarez, 5 May 1942.
+# Vichy Madagascar sits on the Cape convoy route; the operation exists to take the island's ONE
+# naval base (province 5222, the northern tip) before an enemy fleet can use it, so both waves
+# land there and nowhere else. Staged out of Durban, hence the Natal launch-state check.
+country_event = {
+	id = WA_AI_invasions.87
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		543 = { # Madagascar
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 543 # Madagascar
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.87_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 103 } # Mozambique Channel
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				719 = { is_controlled_by_ROOT_or_ally = yes } # Natal - Durban, the staging port
+			}
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			# No. 5 Commando / 5 RM Commando - the assault wave
+			set_temp_variable = { _start_experience = 0.6 }
+			set_temp_variable = { _division_template = 8 } # Marines
+
+			set_temp_variable = { _invasion_state = 543 } # Madagascar
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 5222 } # Diego Suarez
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			# 29th Independent Brigade Group / 5th Infantry Division - the follow-up wave
+			set_temp_variable = { _start_experience = 0.45 }
+			set_temp_variable = { _division_template = 1 } # Infantry
+
+			set_temp_variable = { _invasion_state = 543 } # Madagascar
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 5222 } # Diego Suarez
+			WA_AI_DIVISION_spawn_invasion = yes
+
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 543 # Madagascar
+				}
+			}
+			country_event = { id = WA_AI_invasions.87 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 103 # Mozambique Channel
+				NOT = { has_country_flag = WA_AI_invasions.87_flag }
+			}
+			set_country_flag = WA_AI_invasions.87_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.87_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.87_flag
+		}
+	}
+}
+
+# Operations Stream / Line / Jane - the conquest of the rest of Madagascar, 10 September 1942.
+# Second phase of Ironclad: a two-coast pincer on the capital. 5185 is the western landing
+# (Majunga), 5128 carries the Antananarivo victory point and the eastern approaches (Tamatave).
+# The launch check accepts EITHER Durban or a Diego Suarez already in hand, so this phase is not
+# dead in a game where the northern landing never happened.
+country_event = {
+	id = WA_AI_invasions.88
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+	}
+
+	immediate = {
+		# Get target country tag
+		543 = { # Madagascar
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 543 # Madagascar
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.88_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 103 } # Mozambique Channel
+				}
+
+				# Triggers for invasion launch country
+				surrender_progress < 0.1
+
+				# Triggers for 'invasion launch states'
+				OR = {
+					719 = { is_controlled_by_ROOT_or_ally = yes } # Natal - Durban
+					controls_province = 5222 # Diego Suarez, taken by Ironclad
+				}
+			}
+			set_temp_variable = { _divisions_per_province = 1 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			# 29th Independent Brigade Group re-embarked - the Majunga assault
+			set_temp_variable = { _division_template = 8 } # Marines
+
+			set_temp_variable = { _invasion_state = 543 } # Madagascar
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 5185 } # Majunga, west coast
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			# 22nd East African / 27th Northern Rhodesian Brigades - the drive on the capital
+			set_temp_variable = { _division_template = 1 } # Infantry
+
+			set_temp_variable = { _invasion_state = 543 } # Madagascar
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 5185 } # Majunga, west coast
+			add_to_temp_array = { _invasion_state_provinces = 5128 } # Antananarivo / Tamatave
+			WA_AI_DIVISION_spawn_invasion = yes
+
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 543 # Madagascar
+				}
+			}
+			country_event = { id = WA_AI_invasions.88 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 103 # Mozambique Channel
+				NOT = { has_country_flag = WA_AI_invasions.88_flag }
+			}
+			set_country_flag = WA_AI_invasions.88_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.88_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.88_flag
+		}
+	}
+}
 #########################################################################################
 #########################################################################################
 #########################################################################################

@@ -257,15 +257,75 @@ WA_AI_MILITARY_AXIS_italy_theatre_guard_invaded_THEATRE = {
 # execute_order = no by design, WA_AI_MILITARY_GER_ignore_invading_these_countries_FRONT).
 ############################################################################################################
 
-# purpose: our side holds a Tunisian port and an enemy stands in the Maghreb - garrison the bridge
-# range:   0.05 (E4)
-# policy:  Additive per state
+############################################################################################################
+# Fix 133 (2026-08-21, campaign 8c0fea4c) - the bridge garrison is split into two tiers, and the
+# Italian tier is tripled.
+#
+# MEASURED at 1942.11.21, four weeks after Torch: Tunis 458, Bizerte 1061 and Gabes 665 were all
+# GER-OWNED and GER-CONTROLLED. Italy fielded 107 divisions and had **1** in Tunisia, on a buffer
+# order. Its only front orders of any kind were Army 14 and Army 15, both on Marsa Matruh / the Libyan
+# plateau; nothing touched Tunisia. Germany had 0 divisions anywhere in Africa (the cause of that is
+# Fix 131, in the GER files). By 1943.3.22 all three states read controller FRA - the bridge was gone.
+#
+# The 0.05 tier was sized on the 260-division Heer (13 divisions, the 5th Panzer Army scale). Applied
+# to Italy the same number is 5 asked for and 1 delivered, on the one army that can reach Tunisia in
+# days rather than weeks: Sicily to Bizerte is a short hop, and the Italian homeland power is the only
+# Axis member for which that is true. One ratio cannot serve both cases, so it stops trying.
+#
+# The two blocks are GATE-EXCLUSIVE on WA_AI_MILITARY_is_italian_homeland_power and carry DIFFERENT
+# order_ids: put_unit_buffers pools by order_id, and two tiers sharing one id would be one diluted
+# pool - the Fix 110 / atlantik_wall lesson. No country can ever satisfy both gates, so nothing adds.
+############################################################################################################
+
+# purpose: our side holds a Tunisian port and an enemy stands in the Maghreb - garrison the bridge.
+#          Italian-homeland tier: the only Axis army with a short sea lane to Tunisia.
+# range:   0.15 (E4)
+# policy:  Gate-exclusive with WA_AI_MILITARY_AXIS_tunis_bridge_other_THEATRE; own order_id
 # domain:  THEATRE
-WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE = {
+WA_AI_MILITARY_AXIS_tunis_bridge_italy_THEATRE = {
 	enable = {
 		# cheap scalar gates first, the state walks last
 		WA_AI_MILITARY_is_axis_member = yes
 		has_war = yes
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+		WA_AI_MILITARY_tunis_bridge_contested = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9619
+		# Tunis, Bizerte, Gabes/Medenine - the three Tunisian states (region 329)
+		states = {
+			458
+			1061
+			665
+		}
+		# Fix 133: 0.05 -> 0.15 for the Italian homeland power only. 0.15 x 107 divisions is ~16, the
+		# order of the force that actually held Tunisia in the winter of 1942-43. Still well under the
+		# 0.25 Italy reserves for Libya itself (WA_AI_MILITARY_ITA_protect_libya_THEATRE), so the
+		# bridge does not outrank the bridgehead it exists to protect.
+		ratio = 0.15
+		area = WA_AI_MILITARY_tunisia_regions
+		subtract_invasions_from_need = no
+		# pool: the bridge IS the reserve the theatre lacks - a Libyan or eastern front eating it is exactly the
+		# 0edbc955 shape (0 divisions ever assigned to the Tunisian states)
+		subtract_fronts_from_need = no
+	}
+}
+
+# purpose: the same garrison for every other Axis member - unchanged 0.05, sized on the Heer.
+# range:   0.05 (E4)
+# policy:  Gate-exclusive with WA_AI_MILITARY_AXIS_tunis_bridge_italy_THEATRE; own order_id
+# domain:  THEATRE
+WA_AI_MILITARY_AXIS_tunis_bridge_other_THEATRE = {
+	enable = {
+		WA_AI_MILITARY_is_axis_member = yes
+		has_war = yes
+		NOT = { WA_AI_MILITARY_is_italian_homeland_power = yes }
 		WA_AI_MILITARY_can_open_secondary_fronts = yes
 		NOT = { WA_AI_MILITARY_home_threatened = yes }
 		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
@@ -276,7 +336,6 @@ WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE = {
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9608
-		# Tunis, Bizerte, Gabes/Medenine - the three Tunisian states (region 329)
 		states = {
 			458
 			1061
@@ -285,8 +344,6 @@ WA_AI_MILITARY_AXIS_tunis_bridge_THEATRE = {
 		ratio = 0.05
 		area = WA_AI_MILITARY_tunisia_regions
 		subtract_invasions_from_need = no
-		# pool: the bridge IS the reserve the theatre lacks - a Libyan or eastern front eating it is exactly the
-		# 0edbc955 shape (0 divisions ever assigned to the Tunisian states)
 		subtract_fronts_from_need = no
 	}
 }

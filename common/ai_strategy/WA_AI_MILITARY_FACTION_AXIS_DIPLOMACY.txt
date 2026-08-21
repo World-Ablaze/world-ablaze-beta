@@ -356,3 +356,71 @@ WA_AI_MILITARY_AXIS_abandon_east_africa_DIPLOMACY = {
 		value = 1000
 	}
 }
+
+
+############################################################################################################
+# Fix 133 (2026-08-21, campaign 8c0fea4c) - the Tunis bridge on an ALLY's soil has no front to size.
+#
+# MEASURED at 1942.11.21: Tunis 458, Bizerte 1061 and Gabes 665 were GER-owned and GER-controlled,
+# while Italy - 107 divisions - had ONE division in Tunisia and not a single front order there
+# (plans.py ITA --fronts: Army 14 and Army 15, both on Marsa Matruh / the Libyan plateau, and nothing
+# else). Four months later the three states read controller FRA.
+#
+# THE DEFECT. WA_AI_MILITARY_AXIS_tunis_bridge_FRONT writes `front_unit_request strategic_region = 329
+# value = 200`. `front_unit_request` sizes an EXISTING front - "how divisions are deployed along
+# existing land borders" (WA_AI_MILITARY_TYPES_REFERENCE.md, domain definitions). The Tunisian ground
+# is the ALLY's, so Italy has no border with the enemy there, so there is no front for the +200 to
+# weight and the block is inert. Exactly the shape of the inert `front_armor_score id = "ITL"` that
+# Fix 119 deleted from the German file: a correctly-written value addressed to something that does
+# not exist.
+#
+# `force_defend_ally_borders` is the type whose stated job is the opposite side of that coin - a
+# per-ally umbrella commitment rather than a front sizing (same reference). It is how ENG already
+# commits to north_france / france / benelux / north_africa in WA_AI_MILITARY_COUNTRY_ENG_DIPLOMACY.
+#
+# Protects: the Tunisian bridgehead in the window where it is held by one Axis member and defended
+#           by another - the whole Nov 42 - May 43 shape.
+# Assumes, and this is the ONE unverified term of the fix: that `force_defend_ally_borders` on an
+#           area causes the front allocator to adopt an ally's border inside it. Deduced from the
+#           vanilla usage pattern and the types reference; the 1.19.2 install documents no
+#           `force_defend_ally_borders` section at all. ASSUMED, not measured.
+# Gone when: the type stops accepting `target = <area>`, or WA re-cuts region 329.
+# Fail-tell: checklist R84 - Axis divisions standing in 458 / 1061 / 665 within 60 days of the bridge
+#           arming. If it stays at 1, this lever is the wrong one and the answer is a heavier
+#           put_unit_buffers, the only type whose effect is measured in this repo.
+#
+# `WA_AI_MILITARY_tunisia_regions` is an EXISTING alias (common/ai_areas/WA_AI_MILITARY_areas.txt).
+# It must stay that way: the engine takes at most 72 ai_area definitions across the replaced folder
+# and WA sits at exactly 72 - the 73rd crashed with C0000005 in ai_area.cpp, boot-tested. No alias is
+# minted here.
+############################################################################################################
+
+# purpose: when the Tunis bridge stands on a faction ALLY's ground, commit to defending its border as
+#          if it were ours - the front_unit_request twin cannot, there is no front of ours there.
+# range:   force_defend_ally_borders 200
+# policy:  Exclusive per target; sole Axis-scope writer on WA_AI_MILITARY_tunisia_regions
+# domain:  DIPLOMACY
+WA_AI_MILITARY_AXIS_tunis_bridge_defend_ally_DIPLOMACY = {
+	enable = {
+		# cheap scalar gates first, the state walks last - same order as the THEATRE twin
+		WA_AI_MILITARY_is_axis_member = yes
+		has_war = yes
+		WA_AI_MILITARY_can_open_secondary_fronts = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
+		WA_AI_MILITARY_tunis_bridge_contested = yes
+		# The ground is an ALLY's, not ours. If we held Tunis ourselves the front would already exist
+		# and this block would be weighting a border we are standing on - that is the FRONT twin's
+		# job, not this one's. Written as two NOTs rather than one so a Tunis/Bizerte split between
+		# us and an ally still reads "partly ours" and stands the block down.
+		NOT = { 458  = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } }
+		NOT = { 1061 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = force_defend_ally_borders
+		value = 200
+		target = WA_AI_MILITARY_tunisia_regions
+	}
+}

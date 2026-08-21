@@ -25,7 +25,12 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 	# Default route parameters (will be overridden for overseas targets)
 	set_temp_variable = { default_route_start = capital_province }
-	set_temp_variable = { default_route_level = 5 }
+	# Fix 135 (2026-08-21, campaign 8c0fea4c): was a flat 5. It is now only the PROVISIONAL floor a
+	# route carries between its selection and its sizing - WA_AI_PC_railway_land_consider_frontline
+	# calls WA_AI_PC_rail_size_route once the path is known and overwrites it. A 5 here was a target
+	# nothing had asked for: on 8c0fea4c it built Tripoli->Derna to level 5 (44 supply per hop) behind
+	# an entry port carrying 25.
+	set_temp_variable = { default_route_level = constant:wa_ai_railway.land_war.rail_level_floor }
 	set_temp_variable = { route_priority = _project_priority }
 	set_temp_variable = { high_route_priority = route_priority }
 	multiply_temp_variable = { high_route_priority = 1.1 }
@@ -54,7 +59,9 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 			### Per-enemy route counter, and the railway level at which a frontline is "done"
 			set_temp_variable = { _routes_for_this_enemy = 0 }
-			set_temp_variable = { _check_railway_level = 5 }
+			# Fix 135: reads the family cap. Left at 5 while the sizer targets at most 4, every
+			# frontline would stay for ever "not done" and keep drawing routes that queue nothing.
+			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }
 
 			### Fix 74: three candidate populations, ONE shared body
 			### (WA_AI_PC_railway_land_consider_frontline). Order is load-bearing - the per-enemy
@@ -158,6 +165,43 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 #	generalised OR below, which is why one copy can serve all three populations.
 ############################################################################################################
 
+############################################################################################################
+#	Fix 135 (2026-08-21): the land-war family's binding of WA_AI_PC_rail_size_route (railway_helpers).
+#
+#	THIS = the frontline state (so supply_hub_province_ and route_start are in scope), ROOT = the
+#	builder. Sets `route_level` and nothing else.
+#
+#	Inputs the CALLER must set before calling, because they are the one thing that differs between the
+#	three call sites in WA_AI_PC_railway_land_consider_frontline:
+#	  _rsize_entry_mode_ = 2  overland from our own capital  -> demand decides, no entry cap
+#	  _rsize_entry_mode_ = 1  overseas   -> _rsize_entry_supply_ = overseas_entry_supply_ (the sea leg's
+#	                          bottleneck, published by WA_AI_PC_analyze_overseas_supply_chain)
+#
+#	Why the demand set is the ONE frontline hub province and not the whole path: the chain exists to
+#	feed the army at its head, and the presence walk inside the sizer is `every_country` x states while
+#	this runs once PER ROUTE, up to routes.max_total times per execution. The corridor can afford its
+#	whole node list because it sizes once per pass; this cannot.
+#
+#	Floor/cap come from constant:wa_ai_railway.land_war.*, NOT from the corridor's pair - the two
+#	families share a model, not a tuning.
+############################################################################################################
+
+WA_AI_PC_railway_land_size_this_route = {
+	set_temp_variable = { _rsize_hub_ = supply_hub_province_ }
+	ROOT = {
+		clear_temp_array = _rsize_prov_
+		clear_temp_array = _rsize_ours_
+		add_to_temp_array = { _rsize_prov_ = _rsize_hub_ }
+		add_to_temp_array = { _rsize_ours_ = 1 }
+		set_temp_variable = { _rsize_floor_ = constant:wa_ai_railway.land_war.rail_level_floor }
+		set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap }
+		WA_AI_PC_rail_size_route = yes
+		clear_temp_array = _rsize_prov_
+		clear_temp_array = _rsize_ours_
+	}
+	set_temp_variable = { route_level = rsize_rail_tgt_ }
+}
+
 WA_AI_PC_railway_land_consider_frontline = {
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
@@ -203,12 +247,12 @@ WA_AI_PC_railway_land_consider_frontline = {
 			# Determine route start and level based on landmass
 			if = {
 				limit = { check_variable = { target_landmass = capital_landmass } }
-				# Same landmass: use capital as route start
-				set_temp_variable = { route_start = default_route_start }
-				# Fix 29: the max-level-on-route calculation moved to after the pathfind
-				# below (it used to read the PREVIOUS target's path, or nothing, so every
-				# land route targeted level 1 and queued no segments). Until then, floor
-				# at the default level; _route_level_from_path marks it for recompute.
+				# Same landmass: use capital as route start.
+				# Fix 29 put the levelling AFTER the pathfind (it used to read the PREVIOUS
+				# target's path, or nothing, so every land route targeted level 1 and queued
+				# no segments). Fix 135 keeps that ordering and replaces what runs there: the
+				# route is SIZED, not ratcheted. Until then this carries the family floor, and
+				# _route_level_from_path marks it for that recompute.
 				set_temp_variable = { route_level = default_route_level }
 				set_temp_variable = { _route_level_from_path = 1 }
 			}
@@ -220,15 +264,20 @@ WA_AI_PC_railway_land_consider_frontline = {
 				set_temp_variable = { _target_state_for_port_search = _target_state_id }
 				ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 				set_temp_variable = { route_start = overseas_route_start_ }
-				# Note: For overseas routes, overseas_max_railway_level_ comes from port analysis
-				# and already considers the bottleneck, so we use it directly
+				# Fix 135: the port analysis gives the ENTRY capacity; it says nothing about whether
+				# anything on the far end needs it. Size against min(demand, entry) through the shared
+				# helper, in GIVEN mode - an overseas chain is in SERIES, so its entry is the
+				# BOTTLENECK of home and receiving port, never a sum of the ports along it.
 				set_temp_variable = { route_level = overseas_max_railway_level_ }
+				set_temp_variable = { _rsize_entry_mode_ = 1 }
+				set_temp_variable = { _rsize_entry_supply_ = overseas_entry_supply_ }
+				WA_AI_PC_railway_land_size_this_route = yes
 				set_temp_variable = { _route_level_from_path = 0 }
 
 				# Queue port upgrade if it's the bottleneck
 				if = {
 					limit = {
-						check_variable = { overseas_max_railway_level_ < 5 }
+						check_variable = { overseas_max_railway_level_ < constant:wa_ai_railway.land_war.rail_level_cap }
 						check_variable = { overseas_receiving_port_state_ > 0 }
 						NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
 					}
@@ -298,11 +347,14 @@ WA_AI_PC_railway_land_consider_frontline = {
 									}
 									set_temp_variable = { route_start = overseas_route_start_ }
 									set_temp_variable = { route_level = overseas_max_railway_level_ }
+									set_temp_variable = { _rsize_entry_mode_ = 1 }	# Fix 135
+									set_temp_variable = { _rsize_entry_supply_ = overseas_entry_supply_ }
+									WA_AI_PC_railway_land_size_this_route = yes
 									set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
 									set_temp_variable = { _direct_success = pathfind_prov_success_ }
 									if = {
 										limit = {
-											check_variable = { overseas_max_railway_level_ < 5 }
+											check_variable = { overseas_max_railway_level_ < constant:wa_ai_railway.land_war.rail_level_cap }
 											check_variable = { overseas_receiving_port_state_ > 0 }
 											NOT = { is_in_array = { railway_port_upgrades_ = overseas_receiving_port_state_ } }
 										}
@@ -310,10 +362,13 @@ WA_AI_PC_railway_land_consider_frontline = {
 									}
 								}
 								else = {
-									# Fix 29: the fallback pathfind overwrote pathfind_prov_path_, so the
-									# direct route's path is gone - keep the default_route_level floor
-									# instead of levelling from the wrong corridor.
-									set_temp_variable = { _route_level_from_path = 0 }
+									# Fix 29 kept the flat default here because the fallback pathfind had
+									# overwritten pathfind_prov_path_ and the direct route's path was gone.
+									# Fix 135: the sizer does not read the path at all - it reads the
+									# frontline hub province, which this branch has not touched - so the
+									# route can be sized after all. This was the last hole through which a
+									# flat 5 reached the queue.
+									set_temp_variable = { _route_level_from_path = 1 }
 									if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 										ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
 									}
@@ -324,20 +379,23 @@ WA_AI_PC_railway_land_consider_frontline = {
 						if = {
 							limit = { check_variable = { _direct_success > 0 } }
 
-							# Fix 29: level the route from the path we ACTUALLY found (fresh
-							# pathfind_prov_path_), target max segment + 1. Empty/1-node paths
-							# keep the default_route_level floor set above.
+							# Fix 135: THE RATCHET IS GONE. What stood here was
+							#   route_level = _max_route_level_ + 1, clamped at 5
+							# - "one level above whatever this route already has" - which has no
+							# reference to demand or to entry capacity and climbs to the clamp on its
+							# own, one pass at a time. MEASURED on 8c0fea4c: Libya went from 6 BREAK
+							# hops at level 0-1 (1940.6) to level 5 from Tripoli to Derna (1941.5),
+							# 44 supply per hop behind a 25-supply entry port, and it overwrote the
+							# corridor's own cap of 4 on the same segments because
+							# WA_AI_PC_start_railway_project only compares current < target.
+							# The route is now sized by the same helper the corridor uses.
+							# `pathfind_prov_path_^num > 1` is no longer a condition: the sizer reads
+							# the frontline hub, not the path, so a 1-node path is sized like any other.
 							if = {
-								limit = {
-									check_variable = { _route_level_from_path = 1 }
-									check_variable = { pathfind_prov_path_^num > 1 }
-								}
-								WA_AI_PC_get_max_railway_level_on_route = yes
-								set_temp_variable = { route_level = _max_route_level_ }
-								add_to_temp_variable = { route_level = 1 }
-								if = { limit = { check_variable = { route_level > 5 } }
-									set_temp_variable = { route_level = 5 }
-								}
+								limit = { check_variable = { _route_level_from_path = 1 } }
+								set_temp_variable = { _rsize_entry_mode_ = 2 }
+								set_temp_variable = { _rsize_entry_supply_ = 0 }
+								WA_AI_PC_railway_land_size_this_route = yes
 							}
 
 							add_to_temp_array = { railway_start_provinces_ = route_start }
@@ -648,7 +706,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 				}
 
 				# Find front-line states on this continent with supply hubs
-				set_temp_variable = { _check_railway_level = 5 }
+				set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# Fix 135: was 5, see the land-war strategy
 				ROOT = {
 					# Fix 74: frontline targets on ally/subject soil count too
 					every_country = {
@@ -683,10 +741,32 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 										# Verify we control the supply hub province (for contested states)
 										ROOT = { controls_province = var:supply_hub_province_ }
 									}
-									# Start from beachhead, not capital
+									# Start from beachhead, not capital.
+									# Fix 135: this route used to inherit the strategy's flat
+									# `route_level = 5` (set once at the top for BOTH parts). Sized here
+									# in SUM mode over the two ends - the beachhead port is the entry
+									# capacity of this chain, and the front hub carries the demand.
+									# Part A's home-port chain deliberately keeps the flat 5: its target
+									# is constant:wa_ai_railway.supply.home_port_target_supply (44 = L5)
+									# by design, and it is fed overland from the capital, not by a port.
+									set_temp_variable = { _rsize_ob_a_ = best_beachhead_province }
+									set_temp_variable = { _rsize_ob_b_ = supply_hub_province_ }
+									ROOT = {
+										clear_temp_array = _rsize_prov_
+										clear_temp_array = _rsize_ours_
+										add_to_temp_array = { _rsize_prov_ = _rsize_ob_a_ }
+										add_to_temp_array = { _rsize_ours_ = 1 }
+										add_to_temp_array = { _rsize_prov_ = _rsize_ob_b_ }
+										add_to_temp_array = { _rsize_ours_ = 1 }
+										set_temp_variable = { _rsize_entry_mode_ = 0 }
+										set_temp_variable = { _rsize_entry_supply_ = 0 }
+										set_temp_variable = { _rsize_floor_ = constant:wa_ai_railway.land_war.rail_level_floor }
+										set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap }
+										WA_AI_PC_rail_size_route = yes
+									}
 									add_to_temp_array = { railway_start_provinces_ = best_beachhead_province }
 									add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
-									add_to_temp_array = { railway_target_levels_ = route_level }
+									add_to_temp_array = { railway_target_levels_ = rsize_rail_tgt_ }
 									add_to_temp_array = { railway_priorities_ = route_priority }
 
 									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
@@ -744,7 +824,12 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 
 	# Default route parameters (may be overridden for overseas targets)
 	set_temp_variable = { default_route_start = capital_province }
-	set_temp_variable = { default_route_level = 5 }  # Lower level for preparation
+	# Fix 135: was a flat 5 with a comment claiming it was "lower". The prewar family has no sizing
+	# of its own - it uses this as a ceiling on the port-derived level for overseas targets and as the
+	# target for same-landmass ones - so it now reads the family cap. Sizing prewar routes per route
+	# is deliberately NOT done here: nothing is standing on them yet, so the demand proxy would read
+	# a garrison and size to the floor everywhere, which is a regression, not a measurement.
+	set_temp_variable = { default_route_level = constant:wa_ai_railway.land_war.rail_level_cap }
 	set_temp_variable = { route_priority = constant:wa_ai_pc.prio.rail_prewar }
 
 	### Find potential targets: countries we're justifying against, have wargoals on, or have claims on
@@ -832,7 +917,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 			limit = { check_variable = { target_has_land_border = 1 } }
 
 			### LAND TARGET: Build to border states with supply hubs
-			set_temp_variable = { _check_railway_level = 5 }
+			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# Fix 135: was 5
 			every_controlled_state = {
 				limit = {
 					any_neighbor_state = {
@@ -962,7 +1047,16 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							if = {
 								limit = { check_variable = { _direct_success > 0 } }
 
-								# Fix 29: level the route from the actual fresh path, capped at prewar level
+								# Fix 29: level the route from the actual fresh path, capped at prewar level.
+								# Fix 135 deliberately LEFT THE RATCHET HERE, and this note exists so the
+								# next reader does not think it was missed. In peace there is no army on
+								# the target to measure, so WA_AI_PC_rail_size_route's demand proxy would
+								# read a garrison and pin every prewar route at the floor - a regression,
+								# not a measurement. "Raise what already exists by one, up to the family
+								# cap" is a defensible preparation rule, and the cap is what Fix 135
+								# actually changed here: `default_route_level` now reads
+								# constant:wa_ai_railway.land_war.rail_level_cap (4), so the clamp at 5
+								# two lines below can no longer bind.
 								if = {
 									limit = {
 										check_variable = { _route_level_from_path = 1 }

@@ -50,6 +50,28 @@
 # one that binds - level 1 is 5 supply - which is why the arm's ports are marked for raising.
 # Constantine 9976 is inland (no naval base): junction only, forced through because the pathfinder must
 # not route the arm south through the Batna branch (map/railways.txt:1152, level 1).
+#
+# Fix 130 (2026-08-21) - the INLAND junction 13481, and it is the same kind of node as Constantine:
+# a province where a DECISION lives, forced through so the pathfinder cannot take a route the
+# executor will refuse.
+#
+# THE DEFECT IT WORKS AROUND. `WA_AI_PATHFIND_PROV_get_path` type 2 filters by PROVINCE control;
+# `WA_AI_PC_start_project` admits by STATE controller (`WA_AI_PC_state_controller_allows_admission`,
+# scoped to `global.WA_AI_MAP_province_state_id^<first province of the segment>`). The two do not
+# agree on contested ground, and Tobruk -> 5078 is exactly where they disagree. MEASURED on campaign
+# 8c0fea4c (saves ITA_1941_05_23_21 / _06_10 / _10_06): every province of BOTH candidate routes is
+# ITL-held, but state 452 Marsa Matruh is ENG-CONTROLLED with an 11/3 then 10/4 province split.
+#   coastal, 3 hops: 1130 -> 10120 (451, admitted) -> 7079 (452 ENG, REFUSED) -> 5078
+#   inland,  3 hops: 1130 -> 4136 (451, admitted) -> 13481 (663, admitted) -> 5078
+# Both are three hops, so the pathfinder's tie-break decided, and when it took the coastal one the
+# last segment was refused for ever - the rail visibly ran east from Tobruk along the coast and
+# stopped. `wa_tlm_r103_corridor_blocked_n` counted it: 4 -> 5 -> 6 across those saves.
+# Forcing 13481 splits the hop into 1130->13481 (via 4136, both segments scoped to state 451) and
+# 13481->5078 (one edge, scoped to state 663), so no segment is ever scoped to an Egyptian state.
+# Both routes stay INLAND and both are ITL ground. The land-war rail family had already queued
+# `4136 -> 13481` and `13481 -> 5078` on its own, which is independent proof the route is buildable.
+# The underlying pathfinder/admission mismatch is a QUEUE row, not this node's job.
+# Node count 20 -> 21, so pairs 19 -> 20 and `corridor.max_routes_per_run` moves with it.
 WA_AI_PC_CORRIDOR_define_north_africa = {
 	clear_temp_array = corridor_node_prov_
 	clear_temp_array = corridor_node_depot_
@@ -74,6 +96,7 @@ WA_AI_PC_CORRIDOR_define_north_africa = {
 	add_to_temp_array = { corridor_node_prov_ = 10049 }	add_to_temp_array = { corridor_node_depot_ = 1 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Mechili      (663) - depot wanted, inland
 	add_to_temp_array = { corridor_node_prov_ = 7082 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Derna        (451)
 	add_to_temp_array = { corridor_node_prov_ = 1130 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Tobruk       (451)
+	add_to_temp_array = { corridor_node_prov_ = 13481 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# inland jct   (663 Cyrenaica) - Fix 130 forced junction, no in-game name recovered; see header
 	add_to_temp_array = { corridor_node_prov_ = 5078 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# hub 5078     (960 Libyan Plateau)
 	add_to_temp_array = { corridor_node_prov_ = 11967 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Marsa Matruh (452)
 	add_to_temp_array = { corridor_node_prov_ = 4076 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Alexandria   (447)

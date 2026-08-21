@@ -1053,6 +1053,98 @@ WA_AI_CONFIG_MILITARY_is_british_mission_owner = {
 	original_tag = ENG
 }
 
+# Fix 124: the Commonwealth's East-Africa delegate. Same identity/readiness split as the
+# three missions above - the readiness verdict is WA_AI_MILITARY_RAJ_east_africa_available.
+WA_AI_CONFIG_MILITARY_is_commonwealth_east_africa = {
+	original_tag = RAJ
+}
+
+# Fix 123: the Commonwealth members whose home garrison exists because of a PACIFIC threat and
+# nothing else. CAN (Atlantic) and SAF (Indian-Ocean shore, own mission) are deliberately out.
+WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = {
+	OR = {
+		original_tag = AST
+		original_tag = NZL
+		original_tag = RAJ
+	}
+}
+
+# Fix 123: who can come south. Membership, not capability - the capability half
+# (at war / justifying / committed) is WA_AI_MILITARY_pacific_threat_imminent.
+# Fix 127 (2026-08-21): the two identities the Italian-entry tripwire needs, and the one pairwise
+# question it asks. Both tags live here because this file is the only WA_AI file allowed to carry
+# them, and "are these two powers on the same political side" is a classification, not a capability.
+WA_AI_CONFIG_MILITARY_is_western_european_bulwark = {
+	original_tag = FRA
+}
+
+WA_AI_CONFIG_MILITARY_is_german_homeland_power = {
+	original_tag = GER
+}
+
+# The Italian and German powers share an ideology group, i.e. Italy is likely to come in on the
+# German side. Enumerated over the four groups because HOI4 1.19.2 has NO "same ideology as"
+# trigger - `has_government` takes a literal group and nothing compares two countries' governments
+# (checked in the install's documentation/triggers_documentation.md). If Paradox ever adds one,
+# this collapses to a single line.
+WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology = {
+	OR = {
+		AND = { ITA = { has_government = fascism }    GER = { has_government = fascism } }
+		AND = { ITA = { has_government = communism }  GER = { has_government = communism } }
+		AND = { ITA = { has_government = democratic } GER = { has_government = democratic } }
+		AND = { ITA = { has_government = neutrality } GER = { has_government = neutrality } }
+	}
+}
+
+# The western-European bulwark is coming apart. `surrender_progress > 0` and not a capitulation
+# flag: the point is to react while France is falling, not after it has fallen.
+WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing = {
+	FRA = {
+		exists = yes
+		surrender_progress > 0
+	}
+}
+
+# Who actually stands on the colonial frontier. ENG owns the theatre; RAJ is the East-Africa
+# delegate (Fix 124) and the only dominion with an army near it. AST / NZL / CAN / SAF are out:
+# a buffer they cannot reach is a wasted order, and SAF fielded 3 divisions in 1940.
+WA_AI_CONFIG_MILITARY_is_italian_frontier_tripwire_force = {
+	OR = {
+		original_tag = ENG
+		original_tag = RAJ
+	}
+}
+
+WA_AI_CONFIG_MILITARY_is_pacific_expansionist = {
+	OR = {
+		original_tag = JAP
+		WA_AI_MILITARY_is_co_prosperity_member = yes
+	}
+}
+
+# Fix 123: a Pacific expansionist has COMMITTED to a southward war before declaring one.
+# Focus ids are tag-specific, so this is classification and it belongs here, not in the
+# control panel. `JAP_strike_north_doctrine` is deliberately ABSENT: a Japan committed north is
+# less of a threat to Australia, not more.
+#
+# `JAP_strike_south_doctrine` WAS in this list and was REMOVED on 2026-08-21 after the first test
+# build. It is an army-branch DOCTRINE focus, not a decision to attack, and it completes far too
+# early to be a warning: MEASURED on campaign 8c0fea4c it was absent at 1940.6.24, complete by
+# 1940.12-1941.3, and complete again at 1941.5.23 in the retest - while the Japanese war on Britain
+# started 1942.1. Eight to twelve months of false alarm, during which the Fix 123 garrison release
+# and the Fix 124 East-Africa delegation were both held OFF and RAJ sat on 25-29 of its 40 divisions
+# in India. `JAP_strike_south` is the actual southward war focus (still `current` at 1941.12 in that
+# campaign) and is the marker kept here.
+#
+# The warning that remains is the wargoal pair in WA_AI_MILITARY_pacific_threat_imminent
+# (`has_wargoal_against` / `is_justifying_wargoal_against`), which is a real intent signal rather
+# than a doctrine purchase. Two pre-existing blocks - WA_AI_MILITARY_AST_japan_war and
+# WA_AI_MILITARY_RAJ_japan_war - read the same verdict since Fix 123 and therefore arm later than
+# they used to; that is the deliberate trade, and R84 leg 4 is its falsifier.
+WA_AI_CONFIG_MILITARY_pacific_offensive_posture = {
+	has_completed_focus = JAP_strike_south
+}
+
 # Western-allies invasion staging pool. Uses original_tag for exiled-government
 # stability so FRA continues to gate even after capitulation. Norway / Italy /
 # D-Day staging gate.

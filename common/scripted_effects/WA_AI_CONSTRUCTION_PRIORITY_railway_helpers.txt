@@ -864,7 +864,7 @@ WA_AI_PC_coastal_state_is_single_node = { # THIS = state >>> is_single_node_ (1 
 ### Finds best ports and calculates bottleneck to determine max useful railway level
 ### Fix 26: Receiving port now uses distance-limited search (WA_AI_PC_get_best_port_near_state)
 ###         instead of searching entire landmass (which picked Singapore for North Africa)
-WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_
+WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_, overseas_entry_supply_ (Fix 135)
 
 	set_temp_variable = { overseas_route_start_ = 0 }
 	set_temp_variable = { overseas_max_railway_level_ = 0 }
@@ -897,6 +897,10 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 	set_temp_variable = { _supply_capacity = bottleneck_supply_ }
 	WA_AI_PC_supply_to_railway_level = yes
 	set_temp_variable = { overseas_max_railway_level_ = max_railway_level_ }
+	# Fix 135: publish the ENTRY CAPACITY itself, not only the level it converts to.
+	# WA_AI_PC_rail_size_route needs supply units to take min(demand, entry); bottleneck_supply_
+	# is a bare chain temp that any later helper may overwrite, so it gets a named output here.
+	set_temp_variable = { overseas_entry_supply_ = bottleneck_supply_ }
 }
 
 ############################################################################################################
@@ -938,8 +942,31 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		}
 	}
 
+	# Fix 120 (2026-08-21) - CONNECT BEFORE CONSOLIDATE. Read the RAW map level, before the queued
+	# upgrades are folded in below: the question is "does a railway exist on this connection", not
+	# "has someone asked for one". A corridor segment at 0 is a BREAK in the chain and outranks every
+	# level-raising segment, its own family's and land_war's alike, because the corridor pass emits a
+	# single priority for all its hops and WA_AI_PC_assign_factories sorts by priority alone - at a tie
+	# the bubble sort serves insertion order. Campaign 8c0fea4c 1941.6 is the case: ITA's one funded
+	# railway factory was on 4120->13509 (map level 5) while 1130->10120->7079->5078 (all level 0) held
+	# 0 factories at the same priority 1000, behind 13 European land-war segments.
+	# Corridor family only (_rail_family_latched_ = 1) by decision: land_war derives its routes
+	# dynamically and the same rule there is a global re-ordering for every AI country. Widening it is
+	# a second step, behind a campaign that validates this one.
+	# This does NOT create construction capacity - it re-targets the capacity that was already spent
+	# (the same corridor reached level 5 against a cap of 4 on eight rear hops).
+	set_temp_variable = { _rail_map_level_ = current_level }
+
 	# Effective level = current level + queued upgrades
 	add_to_temp_variable = { current_level = _queued_for_segment }
+
+	if = {
+		limit = {
+			check_variable = { _rail_family_latched_ = 1 }
+			check_variable = { _rail_map_level_ < 1 }
+		}
+		set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+	}
 
 	ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY DEBUG: prov=[?_project_province_id]->[?_project_connect_id] current=[?current_level] target=[?_project_target_level] queued=[?_queued_for_segment]"
@@ -1235,24 +1262,59 @@ WA_AI_PC_get_max_railway_level_on_route = {
 }
 
 ############################################################################################################
-#	HELPER (Fix 107): size the theatre corridor - how much supply does this theatre need, how much can
-#	our ports inject, and what railway / port level does that imply.
-#	ROOT = THIS = builder country. Runs once per corridor pass, AFTER the node classification loop
-#	(it reads corridor_node_ours_). Implements documentation/WA_AI_LOGISTICS_MODEL.md 11.4-11.6.
-#	Inputs (temp arrays, filled by the caller): corridor_node_prov_, corridor_node_ours_.
-#	>>> corridor_presence_ (demand proxy), corridor_demand_, corridor_inject_ (-1 = cap not applied),
-#	    corridor_rail_tgt_ (1..rail_level_cap), corridor_port_tgt_ (0 = no port case open)
+#	HELPER (Fix 135, 2026-08-21): SIZE A RAIL ROUTE - what does the ground on this route need, what can
+#	our entry capacity inject, and what railway / port level does that imply.
+#	ROOT = THIS = builder country (COUNTRY scope: the presence walk is `every_country` and the
+#	capital test is `capital_scope`). ONE middle layer, TWO callers:
+#	  - WA_AI_PC_corridor_compute_sizing (just below), for a theatre corridor;
+#	  - WA_AI_PC_railway_land_consider_frontline (railway_strategies), for a land-war / overseas route.
+#	Implements documentation/WA_AI_LOGISTICS_MODEL.md 11.4-11.6 for both.
 #
-#	Protects against: a flat hardcoded rail target. Campaign 9d83084c measured every corridor hop at
-#	exactly 2 on all 121 saves - the pass was not blocked, it had finished, and 20 supply was the
-#	ceiling by construction while an Allied army group fought on the other end of it.
-#	Assumes: the two engine flow ladders, rail 4 + 8xlevel and port 5xlevel (constant:wa_ai_railway.supply.*,
-#	registered mirrors of 05_defines.lua). ACTUAL supply is not readable from script - nothing in the mod
-#	reads it - so this MODELS flow from levels and can never observe whether it was right. WA_TLM r107
-#	against a campaign map reading is the only validation path.
+#	Inputs, all temps set by the caller:
+#	  _rsize_prov_         ARRAY of province ids whose STATES carry the demand. The corridor passes its
+#	                       whole node list. The land-war caller passes the ONE frontline hub province -
+#	                       the demand that sizes a chain is the garrison at its head - and that is also
+#	                       what keeps it affordable: the presence walk below is `every_country` x
+#	                       states, and the land-war caller runs it once PER ROUTE, up to
+#	                       routes.max_total times per execution.
+#	  _rsize_ours_         ARRAY parallel to _rsize_prov_, 1 = this node's port counts as ours.
+#	                       Read in SUM mode only.
+#	  _rsize_entry_mode_   0 = SUM      - add up the naval bases we hold on the route. A corridor is fed
+#	                                      by every port along it and injections ADD (LOGISTICS_MODEL 7).
+#	                       1 = GIVEN    - the caller already knows the entry capacity and passes it in
+#	                                      _rsize_entry_supply_. An overseas chain is in SERIES, so its
+#	                                      entry is the BOTTLENECK of home port and receiving port.
+#	                       2 = OVERLAND - there is no port entry to cap against: the chain runs from our
+#	                                      own capital across our own network, fed by CAPITAL_SUPPLY_BASE.
+#	                                      Demand alone decides. This is NOT the same as passing a set
+#	                                      that happens to contain no port: a frontline state that DOES
+#	                                      have a small harbour would otherwise cap an overland chain at
+#	                                      that harbour's capacity, which is the wrong physics.
+#	                       THE SPLIT IS DELIBERATE AND MUST NOT BE UNIFIED. Each rule is right in its own
+#	                       topology and any single one would be wrong in the other two. This is the whole
+#	                       reason the helper takes a mode instead of computing injection for everybody.
+#	  _rsize_entry_supply_ entry capacity in supply units. GIVEN mode only; ignored in SUM mode.
+#	  _rsize_floor_        never size below this.
+#	  _rsize_cap_          never size above this. Callers pass their own family's constants
+#	                       (corridor.rail_level_* / land_war.rail_level_*), which is what lets the two
+#	                       families be retuned apart while sharing one model.
+#	>>> rsize_presence_ (demand proxy), rsize_demand_, rsize_inject_ (-1 = cap not applied),
+#	    rsize_rail_tgt_ (floor..cap), rsize_port_tgt_ (0 = no port case open)
+#
+#	Protects against: a flat hardcoded rail target. The SAME defect was measured on the two families in
+#	turn, which is why they now share a model instead of a convention. Campaign 9d83084c: every corridor
+#	hop at exactly 2 on all 121 saves - the pass was not blocked, it had finished, and 4 + 8x2 = 20
+#	supply was the ceiling by construction (fixed by Fix 107, whose body this is). Campaign 8c0fea4c:
+#	the land-war family at level 5 across Libya from `default_route_level = 5` plus a
+#	`_max_route_level_ + 1` ratchet, against an entry port carrying 25 supply where a level-5 rail
+#	carries 44 (fixed by Fix 135, which is this extraction).
+#	Assumes: the two engine flow ladders, rail 4 + 8xlevel and port 5xlevel
+#	(constant:wa_ai_railway.supply.*, registered mirrors of 05_defines.lua). ACTUAL supply is not
+#	readable from script - nothing in the mod reads it - so this MODELS flow from levels and can never
+#	observe whether it was right. WA_TLM r107 against a campaign map reading is the only validation path.
 #	Fact is gone when: either ladder is retuned, or a script trigger for real supply appears.
 #
-#	corridor_presence_ is NOT a division count and must not be read as one. `divisions_in_state` is a
+#	rsize_presence_ is NOT a division count and must not be read as one. `divisions_in_state` is a
 #	comparison trigger, so no exact per-state count exists in script; the ladder below is the
 #	WA_AI_MILITARY_posture_count_state_divs idiom (posture_effects.txt) with bucket midpoints instead
 #	of its power weights, and WITHOUT its armour doubling (that is a combat-power proxy, not a supply
@@ -1263,148 +1325,209 @@ WA_AI_PC_get_max_railway_level_on_route = {
 #	is the knob that compensates for it and is a placeholder until a campaign calibrates it.
 ############################################################################################################
 
-WA_AI_PC_corridor_compute_sizing = {
-	set_temp_variable = { corridor_presence_ = 0 }
-	set_temp_variable = { corridor_demand_ = 0 }
-	set_temp_variable = { corridor_inject_ = 0 }
-	set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_floor }
-	set_temp_variable = { corridor_port_tgt_ = 0 }
-	clear_temp_array = _corr_states_
+WA_AI_PC_rail_size_route = {
+	set_temp_variable = { rsize_presence_ = 0 }
+	set_temp_variable = { rsize_demand_ = 0 }
+	set_temp_variable = { rsize_inject_ = 0 }
+	set_temp_variable = { rsize_rail_tgt_ = _rsize_floor_ }
+	set_temp_variable = { rsize_port_tgt_ = 0 }
+	clear_temp_array = _rz_states_
 
-	### Distinct states of the corridor nodes. Deduplicated: two North African nodes share state 665
-	### (Gabes 7005, Medenine 11957) and two more share 448 and 449 - counting a state twice would
-	### inflate the demand proxy by the exact amount of its own garrison.
-	for_each_loop = { array = corridor_node_prov_ value = _cs_prov_
-		set_temp_variable = { _cs_state_ = global.WA_AI_MAP_province_state_id^_cs_prov_ }
+	### Distinct states of the route's nodes. Deduplicated: two North African corridor nodes share
+	### state 665 (Gabes 7005, Medenine 11957) and two more share 448 and 449 - counting a state twice
+	### would inflate the demand proxy by the exact amount of its own garrison.
+	for_each_loop = { array = _rsize_prov_ value = _rz_prov_
+		set_temp_variable = { _rz_state_ = global.WA_AI_MAP_province_state_id^_rz_prov_ }
 		if = {
 			limit = {
-				check_variable = { _cs_state_ > 0 }
-				NOT = { is_in_array = { _corr_states_ = _cs_state_ } }
+				check_variable = { _rz_state_ > 0 }
+				NOT = { is_in_array = { _rz_states_ = _rz_state_ } }
 			}
-			add_to_temp_array = { _corr_states_ = _cs_state_ }
+			add_to_temp_array = { _rz_states_ = _rz_state_ }
 		}
 	}
 
 	### Presence of OUR SIDE on those states. Every side holder counts - a coalition ally's divisions
-	### eat the same corridor's supply as ours. WA_AI_PC_is_corridor_side_holder is the same three-term
-	### permission test the selector uses, reused here so a widening of "our side" moves both together.
+	### eat the same route's supply as ours. WA_AI_PC_is_corridor_side_holder is the same three-term
+	### permission test the corridor selector uses, reused here so a widening of "our side" moves both
+	### together. (The name still says corridor because that is where it is declared and where its
+	### header lives; it has no corridor-specific term in it.)
 	every_country = {
 		limit = { WA_AI_PC_is_corridor_side_holder = yes }
-		for_each_loop = { array = _corr_states_ value = _cnt_state
-			var:_cnt_state = {
+		for_each_loop = { array = _rz_states_ value = _rz_cnt_state
+			var:_rz_cnt_state = {
 				if = {
 					limit = { PREV = { divisions_in_state = { state = PREV size > 0 } } }
-					if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 35 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 20 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 25 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 15 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 17 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 10 } } } ROOT = { add_to_temp_variable = { corridor_presence_ = 12 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 7 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 8 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 5 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 6 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 4 } } }
-					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 1 } } }  ROOT = { add_to_temp_variable = { corridor_presence_ = 2 } } }
-					else    = { ROOT = { add_to_temp_variable = { corridor_presence_ = 1 } } }
+					if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } } ROOT = { add_to_temp_variable = { rsize_presence_ = 35 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 20 } } } ROOT = { add_to_temp_variable = { rsize_presence_ = 25 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 15 } } } ROOT = { add_to_temp_variable = { rsize_presence_ = 17 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 10 } } } ROOT = { add_to_temp_variable = { rsize_presence_ = 12 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 7 } } }  ROOT = { add_to_temp_variable = { rsize_presence_ = 8 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 5 } } }  ROOT = { add_to_temp_variable = { rsize_presence_ = 6 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  ROOT = { add_to_temp_variable = { rsize_presence_ = 4 } } }
+					else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 1 } } }  ROOT = { add_to_temp_variable = { rsize_presence_ = 2 } } }
+					else    = { ROOT = { add_to_temp_variable = { rsize_presence_ = 1 } } }
 				}
 			}
 		}
 	}
 
-	set_temp_variable = { corridor_demand_ = corridor_presence_ }
-	multiply_temp_variable = { corridor_demand_ = constant:wa_ai_railway.corridor.supply_per_division }
-	multiply_temp_variable = { corridor_demand_ = constant:wa_ai_railway.corridor.target_ratio }
+	set_temp_variable = { rsize_demand_ = rsize_presence_ }
+	multiply_temp_variable = { rsize_demand_ = constant:wa_ai_railway.corridor.supply_per_division }
+	multiply_temp_variable = { rsize_demand_ = constant:wa_ai_railway.corridor.target_ratio }
 
-	### Injection: what OUR ports on this corridor can put into the network. Per PROVINCE, never per
-	### state (WA_AI_PC_prov_get_naval_base_level's header records why). Injections ADD across nodes
-	### (LOGISTICS_MODEL section 7), so this is a sum, not a max.
-	###
-	### BUILT levels only - a port project in flight is invisible here, and deliberately so. While one
-	### is building, corridor_inject_ under-states the future capacity, the rail target computed from
-	### min(demand, inject) comes out LOWER, and it rises again when the port completes. That is the
-	### safe error direction: railways cannot be downgraded, so under-sizing is recoverable and
-	### over-sizing is not (LOGISTICS_MODEL section 10 rule 3). The sequencing it produces - port first,
-	### rail catching up - is also the correct one. And it cannot loop: the province-duplicate guard in
-	### WA_AI_PC_start_project admits at most one naval-base project per province at a time, so the low
-	### reading cannot turn into a second port request. The RAIL side has the opposite convention on
-	### purpose (WA_AI_PC_start_railway_project adds _queued_for_segment to the current level before
-	### comparing), because there the risk is queueing the same segment twice, not sizing it low.
-	for_each_loop = { array = corridor_node_prov_ index = _inj_i_ value = _inj_prov_
-		if = {
-			limit = { check_variable = { corridor_node_ours_^_inj_i_ = 1 } }
-			set_temp_variable = { _inj_state_ = global.WA_AI_MAP_province_state_id^_inj_prov_ }
+	### Injection - see _rsize_entry_mode_ in the header for why this is the caller's decision.
+	if = {
+		limit = { check_variable = { _rsize_entry_mode_ = 2 } }
+		### OVERLAND: nothing to cap against. Left at 0, which the cap test below reads as
+		### "we hold no entry capacity" and turns into the -1 "cap not applied" state.
+		set_temp_variable = { rsize_inject_ = 0 }
+	}
+	else_if = {
+		limit = { check_variable = { _rsize_entry_mode_ = 1 } }
+		### GIVEN: an overseas chain in SERIES. The caller passes the bottleneck it already computed
+		### (WA_AI_PC_analyze_overseas_supply_chain -> overseas_entry_supply_).
+		set_temp_variable = { rsize_inject_ = _rsize_entry_supply_ }
+	}
+	else = {
+		### SUM: what OUR ports on this route can put into the network. Per PROVINCE, never per state
+		### (WA_AI_PC_prov_get_naval_base_level's header records why). Injections ADD across nodes
+		### (LOGISTICS_MODEL section 7), so this is a sum, not a max.
+		###
+		### BUILT levels only - a port project in flight is invisible here, and deliberately so. While
+		### one is building, rsize_inject_ under-states the future capacity, the rail target computed
+		### from min(demand, inject) comes out LOWER, and it rises again when the port completes. That
+		### is the safe error direction: railways cannot be downgraded, so under-sizing is recoverable
+		### and over-sizing is not (LOGISTICS_MODEL section 10 rule 3). The sequencing it produces -
+		### port first, rail catching up - is also the correct one. And it cannot loop: the
+		### province-duplicate guard in WA_AI_PC_start_project admits at most one naval-base project
+		### per province at a time, so the low reading cannot turn into a second port request. The RAIL
+		### side has the opposite convention on purpose (WA_AI_PC_start_railway_project adds
+		### _queued_for_segment to the current level before comparing), because there the risk is
+		### queueing the same segment twice, not sizing it low.
+		for_each_loop = { array = _rsize_prov_ index = _rz_inj_i_ value = _rz_inj_prov_
 			if = {
-				limit = { check_variable = { _inj_state_ > 0 } }
-				var:_inj_state_ = {
-					set_temp_variable = { _province_hub_id = _inj_prov_ }
-					WA_AI_PC_prov_get_naval_base_level = yes
-					set_temp_variable = { _port_level = prov_naval_base_level_ }
-					WA_AI_PC_calculate_port_supply = yes
-					ROOT = { add_to_temp_variable = { corridor_inject_ = port_supply_ } }
+				limit = { check_variable = { _rsize_ours_^_rz_inj_i_ = 1 } }
+				set_temp_variable = { _rz_inj_state_ = global.WA_AI_MAP_province_state_id^_rz_inj_prov_ }
+				if = {
+					limit = { check_variable = { _rz_inj_state_ > 0 } }
+					var:_rz_inj_state_ = {
+						set_temp_variable = { _province_hub_id = _rz_inj_prov_ }
+						WA_AI_PC_prov_get_naval_base_level = yes
+						set_temp_variable = { _port_level = prov_naval_base_level_ }
+						WA_AI_PC_calculate_port_supply = yes
+						ROOT = { add_to_temp_variable = { rsize_inject_ = port_supply_ } }
+					}
 				}
 			}
 		}
 	}
 
 	### When the injection cap must NOT be applied (LOGISTICS_MODEL section 11.5): the network is also
-	### fed by land and corridor_inject_ under-states it. Two cases, both written as -1 so the probe can
+	### fed by land and rsize_inject_ under-states it. Two cases, both written as -1 so the probe can
 	### tell "cap not applied" from "we hold no port" - a 0 would conflate them.
-	###   (a) we hold no corridor port at all: min(demand, 0) would pin every target at the floor, which
-	###       is a regression, not a measurement.
-	###   (b) ROOT's capital sits ON the corridor: a native power is supplied overland from its capital
-	###       (CAPITAL_SUPPLY_BASE), which no port on this list carries.
-	set_temp_variable = { _inj_capped_ = 1 }
-	if = { limit = { NOT = { check_variable = { corridor_inject_ > 0 } } }
-		set_temp_variable = { _inj_capped_ = 0 }
+	###   (a) we hold no entry capacity at all: min(demand, 0) would pin every target at the floor,
+	###       which is a regression, not a measurement.
+	###   (b) ROOT's capital sits ON the route: a native power is supplied overland from its capital
+	###       (CAPITAL_SUPPLY_BASE), which no port on this list carries. This is also what makes the
+	###       helper correct for a land-war route that starts at the capital - the SUM there is zero
+	###       or near it, and it is the capital, not a port, that feeds the chain.
+	set_temp_variable = { _rz_capped_ = 1 }
+	if = { limit = { NOT = { check_variable = { rsize_inject_ > 0 } } }
+		set_temp_variable = { _rz_capped_ = 0 }
 	}
 	# Capital state resolved OUTSIDE the test: WA_AI_PC_get_state_id is an EFFECT and cannot run
 	# inside a limit block. state_id_ is pre-zeroed so a tag with no capital cannot match state 0.
 	set_temp_variable = { state_id_ = 0 }
 	capital_scope = { WA_AI_PC_get_state_id = yes }
-	set_temp_variable = { _corr_cap_state_ = state_id_ }
+	set_temp_variable = { _rz_cap_state_ = state_id_ }
 	if = {
 		limit = {
-			check_variable = { _corr_cap_state_ > 0 }
-			is_in_array = { _corr_states_ = _corr_cap_state_ }
+			check_variable = { _rz_cap_state_ > 0 }
+			is_in_array = { _rz_states_ = _rz_cap_state_ }
 		}
-		set_temp_variable = { _inj_capped_ = 0 }
+		set_temp_variable = { _rz_capped_ = 0 }
 	}
-	if = { limit = { check_variable = { _inj_capped_ = 0 } }
-		set_temp_variable = { corridor_inject_ = -1 }
+	if = { limit = { check_variable = { _rz_capped_ = 0 } }
+		set_temp_variable = { rsize_inject_ = -1 }
 	}
 
 	### Rail target. The chain is in SERIES (LOGISTICS_MODEL section 10 rule 3), so the useful flow is
 	### the minimum of the entry injection and every hop - a level above the weakest link buys nothing.
-	set_temp_variable = { _target_supply = corridor_demand_ }
+	set_temp_variable = { _target_supply = rsize_demand_ }
 	if = {
 		limit = {
-			check_variable = { _inj_capped_ = 1 }
-			check_variable = { corridor_inject_ < corridor_demand_ }
+			check_variable = { _rz_capped_ = 1 }
+			check_variable = { rsize_inject_ < rsize_demand_ }
 		}
-		set_temp_variable = { _target_supply = corridor_inject_ }
+		set_temp_variable = { _target_supply = rsize_inject_ }
 	}
 	WA_AI_PC_supply_to_target_railway = yes
-	set_temp_variable = { corridor_rail_tgt_ = target_railway_level_ }
-	if = { limit = { check_variable = { corridor_rail_tgt_ < constant:wa_ai_railway.corridor.rail_level_floor } }
-		set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_floor }
+	set_temp_variable = { rsize_rail_tgt_ = target_railway_level_ }
+	if = { limit = { check_variable = { rsize_rail_tgt_ < _rsize_floor_ } }
+		set_temp_variable = { rsize_rail_tgt_ = _rsize_floor_ }
 	}
-	if = { limit = { check_variable = { corridor_rail_tgt_ > constant:wa_ai_railway.corridor.rail_level_cap } }
-		set_temp_variable = { corridor_rail_tgt_ = constant:wa_ai_railway.corridor.rail_level_cap }
+	if = { limit = { check_variable = { rsize_rail_tgt_ > _rsize_cap_ } }
+		set_temp_variable = { rsize_rail_tgt_ = _rsize_cap_ }
 	}
 
 	### Port target - only when the entry capacity is what binds (LOGISTICS_MODEL section 11.7). Left at
-	### 0 otherwise, which the hub loop reads as "place a missing port at level 1", i.e. the pre-Fix-107
-	### behaviour. WHETHER to act on this target is decided by the chain-length arbitration in
-	### railway_core, not here: this effect runs before the routes are pathfound, so it cannot know N.
+	### 0 otherwise, which the corridor hub loop reads as "place a missing port at level 1", i.e. the
+	### pre-Fix-107 behaviour. WHETHER to act on this target is decided by the chain-length arbitration
+	### in railway_core, not here: this effect runs before the routes are pathfound, so it cannot know N.
 	if = {
 		limit = {
-			check_variable = { _inj_capped_ = 1 }
-			check_variable = { corridor_inject_ < corridor_demand_ }
+			check_variable = { _rz_capped_ = 1 }
+			check_variable = { rsize_inject_ < rsize_demand_ }
 		}
-		set_temp_variable = { _target_supply = corridor_demand_ }
+		set_temp_variable = { _target_supply = rsize_demand_ }
 		WA_AI_PC_supply_to_target_port = yes
-		set_temp_variable = { corridor_port_tgt_ = target_port_level_ }
-		if = { limit = { check_variable = { corridor_port_tgt_ > constant:wa_ai_railway.supply.port_max_useful_level } }
-			set_temp_variable = { corridor_port_tgt_ = constant:wa_ai_railway.supply.port_max_useful_level }
+		set_temp_variable = { rsize_port_tgt_ = target_port_level_ }
+		if = { limit = { check_variable = { rsize_port_tgt_ > constant:wa_ai_railway.supply.port_max_useful_level } }
+			set_temp_variable = { rsize_port_tgt_ = constant:wa_ai_railway.supply.port_max_useful_level }
 		}
 	}
+
+	### Editing rule 9: this effect's working set does not travel with the rest of the weekly chain.
+	clear_temp_array = _rz_states_
+}
+
+############################################################################################################
+#	HELPER (Fix 107, re-cut by Fix 135): size the theatre corridor. The MODEL moved to
+#	WA_AI_PC_rail_size_route above when the land-war family needed the same one; what is left here is
+#	the corridor's binding of it - which array is the route, which nodes' ports count, which floor/cap.
+#	Contract to WA_AI_PC_railway_STRATEGY_theatre_corridor is unchanged: same five outputs, same names,
+#	same values.
+#	ROOT = THIS = builder country. Runs once per corridor pass, AFTER the node classification loop
+#	(it reads corridor_node_ours_).
+#	Inputs (temp arrays, filled by the caller): corridor_node_prov_, corridor_node_ours_.
+#	>>> corridor_presence_, corridor_demand_, corridor_inject_ (-1 = cap not applied),
+#	    corridor_rail_tgt_ (floor..cap), corridor_port_tgt_ (0 = no port case open)
+############################################################################################################
+
+WA_AI_PC_corridor_compute_sizing = {
+	clear_temp_array = _rsize_prov_
+	clear_temp_array = _rsize_ours_
+	for_each_loop = { array = corridor_node_prov_ index = _cz_i_ value = _cz_prov_
+		add_to_temp_array = { _rsize_prov_ = _cz_prov_ }
+		add_to_temp_array = { _rsize_ours_ = corridor_node_ours_^_cz_i_ }
+	}
+
+	# SUM: a corridor is fed by every port along it (see the mode note in the helper's header).
+	set_temp_variable = { _rsize_entry_mode_ = 0 }
+	set_temp_variable = { _rsize_entry_supply_ = 0 }
+	set_temp_variable = { _rsize_floor_ = constant:wa_ai_railway.corridor.rail_level_floor }
+	set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.corridor.rail_level_cap }
+	WA_AI_PC_rail_size_route = yes
+
+	set_temp_variable = { corridor_presence_ = rsize_presence_ }
+	set_temp_variable = { corridor_demand_ = rsize_demand_ }
+	set_temp_variable = { corridor_inject_ = rsize_inject_ }
+	set_temp_variable = { corridor_rail_tgt_ = rsize_rail_tgt_ }
+	set_temp_variable = { corridor_port_tgt_ = rsize_port_tgt_ }
+
+	clear_temp_array = _rsize_prov_
+	clear_temp_array = _rsize_ours_
 }
 
 ############################################################################################################

@@ -184,7 +184,10 @@ WA_AI_MILITARY_COUNTRY_RAJ_FRONT_support_el_alamein = {
 		WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_support = yes
 	}
 	enable = {
-		WA_AI_MILITARY_RAJ_egypt_support_available = yes
+		# Fix 128 (2026-08-21): was WA_AI_MILITARY_RAJ_egypt_support_available, whose bar of 49
+		# divisions RAJ never reached (40-42 through 1941). The REINFORCEMENT verdict arms at 29 and
+		# does NOT make ENG stand down - read its header for why the two are separate.
+		WA_AI_MILITARY_RAJ_egypt_reinforcement_available = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -192,5 +195,33 @@ WA_AI_MILITARY_COUNTRY_RAJ_FRONT_support_el_alamein = {
 		type = front_unit_request
 		area = north_africa
 		value = 50
+	}
+}
+
+
+# Fix 124 (2026-08-21, campaign 8c0fea4c) - East Africa becomes a Commonwealth DELEGATED mission, the
+# fourth of the family in documentation/WA_AI_MILITARY_SYSTEM.md section 16.
+# purpose: the Indian army carries the East-African campaign so the British army can go to Egypt.
+#          MEASURED at 1940.10: ENG had 37 of 66 divisions (56 %) in the East-African theatre and only 8
+#          in Egypt/Libya, while RAJ had 24 of 42 (57 %) sitting in India. The Faction pull (+150) already
+#          reached RAJ and its own -100 suppression was NOT armed - the army was reserved, not unasked.
+#          Fix 123 is what makes this reachable; without it the released divisions do not exist.
+# range:   front_unit_request +100 on the 4-region alias, on top of the Faction +150 = +250 net for RAJ
+#          against +75 for ENG once WA_AI_MILITARY_ENG_east_africa_delegated_FRONT takes its -75.
+# policy:  Additive per area; paired with the ENG release, which reads the SAME availability verdict
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_RAJ_FRONT_east_africa_delegate = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_east_africa = yes
+	}
+	enable = {
+		WA_AI_MILITARY_RAJ_east_africa_available = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		area = WA_AI_MILITARY_east_africa_regions
+		value = 100
 	}
 }

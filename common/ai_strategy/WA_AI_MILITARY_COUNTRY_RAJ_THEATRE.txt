@@ -124,6 +124,14 @@ WA_AI_MILITARY_RAJ_unit_saving = {
 	}
 	enable = {
 		NOT = { has_war_with = JAP }
+		# Fix 123 (2026-08-21): this reserve is 0.25 of the Indian army with
+		# `subtract_fronts_from_need = no`, i.e. it does not yield to ANY front demand. Combined with
+		# minors_home_first's `garrison = +50` it is why 24 of RAJ's 42 divisions sat in India at
+		# 1940.10 while ENG fought East Africa with 37 of 66 (campaign 8c0fea4c). It is now held for
+		# the case it was written for - a Pacific war being prepared - instead of for peacetime.
+		# Residual, stated: while the Pacific is quiet RAJ keeps no non-yielding reserve at all. Its
+		# yielding cover remains WA_AI_MILITARY_RAJ_buffer_home_general_war (0.25) and _defend_ceylon.
+		WA_AI_MILITARY_pacific_threat_imminent = yes
 		NOT = { surrender_progress > 0 }
 		OR = {
 			NOT = {
@@ -203,10 +211,9 @@ WA_AI_MILITARY_RAJ_japan_war = {
 	}
 	enable = {
 		tag = RAJ
-		OR = {
-			has_war_with = JAP
-			JAP = { has_completed_focus = JAP_strike_south_doctrine }
-		}
+		# Fix 123: was `has_war_with = JAP OR JAP = { has_completed_focus = JAP_strike_south_doctrine }`.
+		# One switch for the whole Pacific family now, and it also catches a wargoal being justified.
+		WA_AI_MILITARY_pacific_threat_imminent = yes
 		NOT = {
 			surrender_progress > 0
 		}
@@ -271,6 +278,11 @@ WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_guard_kuwait = {
 	}
 	enable = {
 		WA_AI_MILITARY_RAJ_kuwait_guard_available = yes
+		# Fix 134: the watch tier. Yields to the reinforced tier below the moment an army appears on
+		# the approach - the two are gate-exclusive on the same verdict, never additive (this repo
+		# sizes put_unit_buffers tiers exclusively; see the Commonwealth-handoff section of
+		# documentation/WA_AI_MILITARY_SYSTEM.md, "no ratio is inferred by adding two orders").
+		NOT = { WA_AI_MILITARY_gulf_approach_massed = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -285,6 +297,36 @@ WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_guard_kuwait = {
 }
 
 
+# purpose: Fix 134 - the same mission, sized against the force actually standing on the approach.
+# range:   put_unit_buffers ratio 0.15
+# policy:  Gate-exclusive with WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_guard_kuwait; own order_id
+# domain:  THEATRE
+#
+# MEASURED 8c0fea4c 1941.4.28: Kuwait held 1 RAJ division against 7 Iraqi divisions on the approach,
+# and fell before 1941.9.20. 0.05 of RAJ's 45 divisions is 2; 0.15 is ~7, which is the order of the
+# force that was needed. The ratio still scales with RAJ's army, so a small Indian army is not asked
+# for an expedition it cannot mount.
+WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_guard_kuwait_reinforced = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_gulf_guard = yes
+	}
+	enable = {
+		WA_AI_MILITARY_RAJ_kuwait_guard_available = yes
+		WA_AI_MILITARY_gulf_approach_massed = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9208
+		states = { 656 }
+		ratio = 0.15
+		subtract_fronts_from_need = no # pool: same rationale as the watch tier above
+		subtract_invasions_from_need = no
+	}
+}
+
+
 # purpose: reinforce SAF on the El-Alamein state while RAJ retains a functioning field army.
 # range:   put_unit_buffers ratio 0.05
 # policy:  Additive per order; one Country writer, replaced by the ENG fallback when unavailable
@@ -294,7 +336,8 @@ WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_support_el_alamein = {
 		WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_support = yes
 	}
 	enable = {
-		WA_AI_MILITARY_RAJ_egypt_support_available = yes
+		# Fix 128 (2026-08-21): reinforcement verdict, bar 29 - see its header.
+		WA_AI_MILITARY_RAJ_egypt_reinforcement_available = yes
 	}
 	abort_when_not_enabled = yes
 

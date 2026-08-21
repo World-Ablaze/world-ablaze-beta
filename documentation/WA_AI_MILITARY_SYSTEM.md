@@ -519,6 +519,50 @@ Sudan/Kenya out of supply for three years; the Allies never fielded more than on
 
 ---
 
+**Fix 132 (2026-08-21, campaign `8c0fea4c`, checklist R93) - occupying the AOI is not expelling the
+colonial power.**
+
+`WA_AI_MILITARY_east_africa_theatre_contested` was a one-line alias of
+`WA_AI_MILITARY_AIR_theatre_contested_east_africa`, whose enemy limb is
+`<state> = { CONTROLLER = { has_war_with = ROOT } }`. MEASURED on `8c0fea4c`: at **1941.4.28** every AOI
+core state was held by ENG or ETH, so the verdict read FALSE and the whole Fix 97 Allied family fell on
+`abort_when_not_enabled` that day - while ITS still existed, was still at war, and still **OWNED** 550
+Eritrea and 559 Italian Somaliland. The Allies had 11 divisions in the theatre, five of them RAJ with no
+order at all. **Four weeks later Italy held 12 divisions in 559, nine of them on a front order**, and the
+state was Italian again; it took until September to undo.
+
+The trigger now reads:
+
+```
+WA_AI_MILITARY_east_africa_theatre_contested = {
+    OR = {
+        WA_AI_MILITARY_AIR_theatre_contested_east_africa = yes
+        AND = {
+            WA_AI_MILITARY_east_africa_not_pacified = yes    # enemy HOLDS ... or still OWNS
+            WA_AI_MILITARY_east_africa_side_present = yes    # and we stand there
+        }
+    }
+}
+```
+
+`WA_AI_MILITARY_east_africa_not_pacified` is the existing enemy-holds test OR
+`<550 559 268 269 271 909 910> = { OWNER = { has_war_with = ROOT } }`. `OWNER` is a state-scope target
+documented in the 1.19.2 install (`documentation/effects_documentation.md`, "Supported Targets: THIS,
+ROOT, PREV, FROM, OWNER, CONTROLLER, OCCUPIED, CAPITAL") and already used elsewhere in the mod.
+
+**Two triggers deliberately NOT widened.** `WA_AI_MILITARY_AIR_theatre_contested_east_africa` itself is
+also read by `WA_AI_build_theatre_air_bases`, and widening it there would keep building East-African
+airfields after the campaign is won. `WA_AI_MILITARY_ethiopian_war_finished` gates RAJ's Kuwait guard
+and Italy's `protect_periphery` blocks and answers a different question - has the colonial WAR ended,
+not has the colonial POWER been expelled.
+
+**Consumers, all Allied-side** (grep, 2026-08-21): `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`,
+`WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` / `_exec_FRONT`,
+`WA_AI_MILITARY_ALLIES_east_africa_contested_THEATRE`, `WA_AI_MILITARY_RAJ_kill_ITS_DIPLOMACY`,
+`WA_AI_MILITARY_RAJ_east_africa_available`, and `WA_TLM_core` (write-only). The widening therefore moves
+exactly one side's behaviour, which is the intent. R93 has a mandatory RELEASE leg for the same reason:
+a gate that never lets go is not a fix.
+
 ## 13. The 1936 Ethiopian war - AI Italy attacks the mission's states, on every aggressive rule (Fix 98, 2026-08-17)
 
 Campaign `0edbc955`: Italy lost the war by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success =
@@ -572,6 +616,43 @@ one on the same front. Rejected alternative, recorded: a scripted Axis spawn int
 design note) - historical-mode-only behaviour and a divisions-from-nothing spawn on the Axis side; kept behind a campaign result.
 
 ---
+
+**Fix 133 (2026-08-21, campaign `8c0fea4c`, checklist R94) - the bridge on an ALLY's ground, and the
+Italian tier.**
+
+MEASURED at 1942.11.21: Tunis 458, Bizerte 1061 and Gabes 665 all read owner GER, controller GER. Italy
+fielded **107 divisions** and had **one** in Tunisia, on a buffer order; `plans.py ITA --fronts` returns
+only Army 14 and Army 15, both on Marsa Matruh / the Libyan plateau, and **no order of any kind touches
+Tunisia**. Germany had none in Africa at all. By 1943.3.22 all three states read controller FRA.
+
+The gate was never the problem - `WA_AI_MILITARY_tunis_bridge_contested` was TRUE on that save (458 held
+by GER, in faction with ITA; 459/460 held by FRA, at war with ITA since 1940.6.11). **The FRONT half was
+inert.** `front_unit_request strategic_region = 329` sizes an EXISTING front, and on an ally's ground
+Italy has no border with the enemy inside region 329, so the +200 weights nothing. Same class as the
+inert `front_armor_score id = "ITL"` that Fix 119 deleted from the German file.
+
+Two changes:
+
+| Piece | What |
+| --- | --- |
+| `WA_AI_MILITARY_AXIS_tunis_bridge_defend_ally_DIPLOMACY` (new, `WA_AI_MILITARY_FACTION_AXIS_DIPLOMACY.txt`) | `force_defend_ally_borders target = WA_AI_MILITARY_tunisia_regions value = 200`, on the bridge gate plus "458 and 1061 are NOT ours or a subject's". The type whose documented job is a per-ally umbrella commitment rather than a front sizing. |
+| `_tunis_bridge_THEATRE` split into `_italy_THEATRE` (0.15, order_id 9619) and `_other_THEATRE` (0.05, order_id 9608) | Gate-exclusive on `WA_AI_MILITARY_is_italian_homeland_power`. 0.05 was sized on the 260-division Heer; on Italy the same number asked for 5 and delivered 1. 0.15 x 107 is ~16, still under the 0.25 Italy reserves for Libya itself. |
+
+`WA_AI_MILITARY_tunisia_regions` is an EXISTING alias and must stay one: the engine takes at most **72**
+`ai_area` definitions across the replaced folder and WA sits at exactly 72 - the 73rd crashed with
+`C0000005` in `ai_area.cpp`, boot-tested (see the header of `common/ai_areas/WA_AI_MILITARY_areas.txt`).
+
+**Deliberately NOT added: a `front_control` executor on region 329.**
+`WA_AI_MILITARY_ITA_north_africa_offensive_exec_FRONT` already writes `ordertype = front` on
+`area = north_africa`, which CONTAINS region 329; a second writer on overlapping ground breaks the
+per-area+ordertype exclusivity policy of section 4. If the DIPLOMACY writer works, the existing executor
+runs the front; if it does not, a second executor would not have helped.
+
+**ASSUMED, and it is the one unverified term of the fix:** that `force_defend_ally_borders` on an area
+makes the front allocator adopt an ally's border inside it. The 1.19.2 install documents no
+`force_defend_ally_borders` section at all; the reading comes from vanilla usage and from
+`WA_AI_MILITARY_TYPES_REFERENCE.md`. R94 leg 1 is its falsifier, and the recorded next lever if it fails
+is a heavier `put_unit_buffers` - the only type whose effect is measured in this repo.
 
 ## 15. Faction theatres - WA owns them now (2026-08-18)
 
@@ -691,13 +772,96 @@ controlled ground and home pressure rather than a focus, date or historical fact
 | British Isles | CAN `0.25` normally / `0.50` during an actual invasion | `0.10` | `0.25` | AI CAN-role country, >11 divisions, common war plus faction/subject/access relation with ENG, Britain held by ENG's side, no enemy on a Canadian core, no home-area neighbour at war with CAN and no war with USA |
 | El-Alamein primary guard | SAF `0.25` on Marsa Matruh | see ladder | see ladder | AI SAF-role country, >4 divisions, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no SAF home/border threat |
 | El-Alamein support | RAJ `0.05` on Marsa Matruh | `0.05` if both live | `0.15` if exactly one lives; `0.25` if neither lives | AI RAJ-role country, >49 divisions, operational army, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
-| Kuwait | RAJ `0.05` | `0.02` | `0.08` | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, Kuwait held by ENG's side, Ethiopian colonial war finished, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+| Kuwait | RAJ `0.05` | `0.02` | `0.08` | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, Kuwait held by ENG's side **and the Gulf approach threatened (Fix 125)**, Ethiopian colonial war finished, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+| **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+
+**Fix 124 — East Africa (2026-08-21, campaign `8c0fea4c`, checklist R85).** The first *offensive*
+delegation of the family: the other three park divisions, this one sends them. ENG's half is
+`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-75` on the same area while the delegate is live,
+netting ENG `+75` against RAJ's `+250`. **The ENG half is the point** — without it the delegate only
+adds divisions to Ethiopia and nothing is freed for Egypt. MEASURED at 1940.10: ENG had **37 of its 66
+divisions (56 %) in the East-African theatre and 8 in Egypt/Libya**, while RAJ had **24 of 42 (57 %)
+sitting in India**. The pull already reached RAJ (Faction `+150`) and its own `-100` Asia-first
+suppression was not armed — the Indian army was *reserved*, not unasked, which is why Fix 123 is a
+hard prerequisite and R85 cannot pass while R84 fails.
+
+**Fix 123 — releasing the Pacific Commonwealth's home garrison (2026-08-21, checklist R84).**
+`WA_AI_MILITARY_ARCHETYPE_minors_home_first` (`WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt`) gives
+**every minor at war `garrison = +50`** — more engine area defence, not less. AST and NZL have no
+`garrison` writer of their own, so MEASURED at 1941.6 they held **17 of 22 (77 %)** and **8 of 11
+(73 %)** of their armies in area-defence orders while Japan was still neutral; RAJ held 17 of 40.
+`WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison` (`WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt`)
+writes `garrison = -5000` plus `+60` on `north_africa` and on the East-Africa alias for AST / NZL /
+RAJ, behind `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`.
+
+The switch is **`WA_AI_MILITARY_pacific_threat_imminent`**: a Pacific war is running, a Pacific
+expansionist has a wargoal against us, is justifying one, or has completed a southward focus
+(`WA_AI_CONFIG_MILITARY_pacific_offensive_posture`, which is where the focus ids live because focus
+ids are tag-specific classification).
+
+**`JAP_strike_south_doctrine` was in that posture list for one build and was removed on 2026-08-21.**
+It is an army-branch *doctrine* focus, not a decision to attack, and it completes far too early to be
+a warning: MEASURED on the retest, absent at 1940.6.24, complete by 1941.5.23, against a Japanese war
+on Britain starting **1942.1**. Eight to twelve months of false alarm, during which this release and
+the Fix 124 delegation were both held OFF and RAJ sat on 25–29 of its 40 divisions in India. What
+remains is `JAP_strike_south` — the actual southward war focus — plus the wargoal pair, which is a
+real intent signal rather than a doctrine purchase. `WA_AI_MILITARY_AST_japan_war` and
+`WA_AI_MILITARY_RAJ_japan_war` read the same verdict and therefore arm later than they used to; that
+is the deliberate trade and R84 leg 4 is its falsifier. It now also gates `WA_AI_MILITARY_AST_japan_war`,
+`WA_AI_MILITARY_RAJ_japan_war` and `WA_AI_MILITARY_RAJ_unit_saving`, so the release and the
+re-garrison are two sides of one verdict rather than three independent Japan tests.
+
+**`garrison = -5000` is no longer an untested convention.** The paragraph below this table used to
+say the force-off convention "is not documented by the engine and remains a campaign test" — RAJ is
+its own control on campaign `8c0fea4c` and answers it: area-defence divisions read **14 / 17 / 16**
+at 1940.10 / 1941.6 / 1941.12 with no `-5000` armed, and **0 / 3 / 2** at 1942.3 / 1942.6 / 1943.6
+once the JAP war armed `WA_AI_MILITARY_RAJ_core_front_requests`, while the BUFFER count *rose*
+17 → 21 → 25. **DERIVED**, rival explanation named: the switch coincides with Japan's entry, which
+also opens fronts. The cross-section closes it without the date — on the single 1941.6 save, GER
+reads 1 of 203 and ITA 4 of 84 (both carry `-5000`) against AST's 77 % and NZL's 73 % (neither does).
+`garrison` is **Additive** (owner ruling 2026-08-21), so `-5000` over `+50` nets `-4950`; R84's first
+fail-tell is the falsifier if that ruling is wrong.
+
+**Fix 128 — the El-Alamein mission had a bar nobody could clear (2026-08-21, checklist R89).**
+The support mission's verdict `WA_AI_MILITARY_RAJ_egypt_support_available` requires
+`num_divisions > 49`. MEASURED on the retest of campaign `8c0fea4c`: RAJ fields **59** divisions in
+June 1940, loses its BEF / Norway contingents with France, and runs at **40 / 40 / 42** at 1941.5.23 /
+1941.6.10 / 1941.10.6 — so **the mission has never armed in any campaign**, and RAJ held **25 / 29 /
+25** divisions in India while the entire Allied force on the Egyptian front was **13 / 13 / 15**.
+
+**The bar was not lowered, and that is the point.** ENG's three-tier ladder reads the same verdict and
+**stands down** when it is true (0.25 → 0.15 with one delegate → 0.05 with two). On the measured armies
+lowering it would have taken ENG from 0.15×55 ≈ 8.2 to 0.05×55 ≈ 2.8 against RAJ's 0.05×40 = 2 — a net
+**loss** of about 3.5 divisions at El Alamein, the opposite of the report. Fix 128 adds a **second
+verdict**, `WA_AI_MILITARY_RAJ_egypt_reinforcement_available`, identical except `num_divisions > 29`,
+read by the three RAJ writers that ADD force (`_FRONT_support_el_alamein` +50, `_THEATRE_support_el_alamein`
+0.05, `_DIPLOMACY_defend_north_africa` 100) and by nothing else.
+
+**Stated departure from the handoff invariant of this section:** between 30 and 49 RAJ divisions, ENG
+does *not* stand down and RAJ reinforces anyway, so Egypt is deliberately double-covered. The change is
+monotone in RAJ's army size — below 30 nothing moves, above 49 both verdicts are true and the ladder
+behaves exactly as before — and there is no band where Egypt is weaker than it is today. R89 leg 3 is
+the regression test for the split.
+
+**Fix 125 — the Kuwait guard needs a threat (2026-08-21, checklist R86).**
+`WA_AI_MILITARY_ENG_kuwait_guard_active` asked only "is ENG at war" and "do we hold 656", so the
+mission ran from 1939.9 to the end of the war over interior allied ground: MEASURED, ENG held
+1 / 1 / 3 / 4 divisions in Kuwait at 1940.10 / 1941.6 / 1942.6 / 1943.6 and RAJ never took the
+delegated mission at all. The third term is `WA_AI_MILITARY_gulf_approach_threatened` — an enemy of
+ENG on 291 / 675 / 1041 (Iraq), 413 (Khuzestan) or 292 (Nejd), or `ENG = { pacific_war_active }`.
+The maritime half deliberately uses `pacific_war_active`, **not** `pacific_threat_imminent`: a fleet
+has to be at war to appear in the Gulf, and the owner's rule for Kuwait was literally "Japan not in
+the war" where the rule for the dominions' garrison was the wider "not about to attack". The term
+disarms all three consumers together — ENG floor, ENG fallback and RAJ's delegate — which is the
+intent: there is no mission, so there is nothing to delegate.
 
 CAN's Canadian-front request is split into a safe floor (`+10`) and a threatened tier (`+200`).
 The threatened tier re-arms on an enemy-controlled Canadian core, a home-area neighbour at war or war
 with the USA; CAN's British mission is disabled on the same verdict. While that mission is live, a
 Country `garrison = -5000` applies WA's force-off convention to release the generic minor-country
-area-defence army. That convention is not documented by the engine and remains a campaign test.
+area-defence army. **That convention is no longer untested** - the `garrison = -5000` paragraph
+above measures it on RAJ and on a five-country cross-section of one save (2026-08-21, campaign
+`8c0fea4c`). It is still undocumented by the engine; what changed is that its effect is observed.
 The historical Africa/date block and the permanent Dover buffer are deleted, so Canada is not told
 to defend Britain and Africa at once. The normal and invasion tiers are exclusive: one `0.25` order
 outside an invasion, one `0.50` order during it; no ratio is inferred by adding two orders.
@@ -740,6 +904,33 @@ decisions and must be measured in the campaign.
 
 ---
 
+**Fix 134 (2026-08-21, campaign `8c0fea4c`, checklist R95) - the Kuwait guard is sized against the
+force on the approach.**
+
+MEASURED: Kuwait 656 held **1 RAJ division** at 1941.4.28 while Iraq had **7** on the approach (Dhi Qar
+3, Al Hajara 2, Ninawa 1, Baghdad 1). The state read controller GER by 1941.9.20 and IRQ by 1942.4.4.
+RAJ fielded 45 divisions and ENG 68, so the guard was not short of men.
+
+**The arming was never the defect.** The pre-Fix-125 gate was true throughout; every tier of the family
+is a fraction of the GUARD's own army (0.05 RAJ, 0.02 ENG delegated, 0.08 ENG fallback) and nothing in
+it reads the other side. 0.05 x 45 = 2, and it would have been 2 against 7 or against 70.
+
+| Trigger (new) | Question it answers |
+| --- | --- |
+| `WA_AI_MILITARY_gulf_approach_massing` | PREV-relative, for `any_country`: does this country have `divisions_in_state size > 2` on 291 / 675 / 1041 / 1042 / 413 / 292 |
+| `WA_AI_MILITARY_gulf_approach_massed` | the same asked at fixed ENG scope - the SIZE question, read by the reinforced tiers |
+| `WA_AI_MILITARY_gulf_approach_imminent` | a non-allied holder of the approach that is preparing a war on Britain (`has_wargoal_against` / `is_justifying_wargoal_against`) **or** massing - the ARMING question, added as a limb of Fix 125's `gulf_approach_threatened` so the buffer is not still empty on the day of the declaration |
+
+Sizing becomes two gate-exclusive tiers on `_massed`: RAJ 0.05 -> **0.15** (order_id 9208), ENG fallback
+0.08 -> **0.20** (order_id 17). Exclusive, not additive, and on separate order_ids - this repo sizes
+`put_unit_buffers` tiers exclusively (see the handoff table above: "no ratio is inferred by adding two
+orders") and a shared id would be one diluted pool.
+
+`divisions_in_state` is a COMPARISON trigger - script carries no exact per-state count - so "massing" is
+a threshold on ONE state, never a sum across the approach. `> 2` is the bar because three divisions in
+one border state already outnumbers a 0.05-sized guard two to one; on the measured save Dhi Qar reads 3
+and clears it, **four months before the state falls**.
+
 ## 17. The Afrika Korps window - a German armoured expedition toward Egypt (Fix 119, 2026-08-20)
 
 User decision 2026-08-20: Germany sends armour to attack Egypt at least until the Soviet war or a
@@ -776,7 +967,95 @@ accepted; R80 fail-tell). Sea-lift INTO Africa is MEASURED viable (R64: 0 -> 8 G
 Tunisia in 31 days on 9d83084c). Probe: checklist R80. R64 leg 3 was re-cut the same day - its old
 "GER divisions in Libya/Egypt stay <= 3" bar forbade exactly this expedition.
 
+**Fix 121 (2026-08-21, campaign `8c0fea4c`, checklist R82) - the expedition halved.** Fix 119 worked,
+and that is the problem this retune answers. MEASURED: German divisions in the African scope went
+2 (1940.9) -> 9 (1940.11) -> **16 (1940.12)** -> 15 (1941.1) -> 1 (1941.2) -> 7 (1941.6) -> 0 (1941.12),
+the window opening on Italy's entry and closing on Barbarossa exactly as designed. But at the 1940.12
+peak the Axis held **57 divisions** in the scope (GER 16, ITA 35, ITL 6) on a corridor with **4 BREAK
+hops out of 9** and nothing above level 1 east of Sirte (same month, the Fix 120 reading in
+`WA_AI_RAILWAY_SYSTEM.md`). User ruling 2026-08-21: reduce, do not cancel; start at 50 %.
+`front_unit_request` **60 -> 30** and `area_priority` **130 -> 105** - the standing area tilt is -80, so
+the net goes +50 -> +25, half measured on the net, which is the number the engine sees.
+`front_armor_score` 150 is deliberately **not** halved: armour is the nature of the expedition, not its
+size.
+
+**The risk, stated.** It is **ASSUMED** that halving a `front_unit_request` weight halves the divisions
+that arrive; the engine's weight-to-division mapping is not observable in a save, and the one anchor
+that is measured is "at 60, the peak was 16". A division-count brake (`divisions_in_state` caps on the
+corridor states - COUNTRY scope, already used as an ai_strategy gate at
+`WA_AI_MILITARY_COUNTRY_GER_FRONT.txt` `FRA = { divisions_in_state = { state = 28 size > 4 } }`) was
+designed and **DEFERRED by owner decision**: do the arithmetic cut, measure, then decide. R82 leg 1's
+fail-tell is what puts the brake back on the table. **R80 and R82 are twins and must be scored in the
+same session** - R82 leg 2 ("not cancelled") is R80 leg 1 read from the other side.
+
 ---
+
+**Fix 131 (2026-08-21, campaign `8c0fea4c`, checklist R92) - the window no longer closes at Barbarossa.**
+User ruling 2026-08-21, which reverses one half of the 2026-08-20 rule this section was written to:
+German armour STAYS in Africa. The `NOT = { has_war_with = SOV }` clause is deleted from all three GER
+consumers. The D-Day half of the original rule is untouched and still dynamic - it lives inside
+`WA_AI_MILITARY_afrika_korps_window` as `NOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe }`,
+so the window still closes by itself when the West opens, with no date and no tag.
+
+**The paired half, and it is not optional.** `front_unit_request` is ADDITIVE per area, so removing the
+gate alone would have left `WA_AI_MILITARY_GER_war_with_soviets_2_FRONT`'s `area = north_africa` `-75`
+standing against the expedition's `+30`: net -45 over the standing -80 tilt, an expedition that exists
+in the file and never arrives. That one line is therefore split out into
+`WA_AI_MILITARY_GER_war_with_soviets_africa_suppression_FRONT`, gated `has_war_with = SOV` AND
+`NOT = { afrika_korps_window }` - exclusive with the expedition, re-arming on the same tick the window
+closes. The two `strategic_region` -35 lines and both `garrison` lines stay where they were: they are
+not part of this trade.
+
+**MEASURED, and it is why this is a fix and not a preference.** On campaign `8c0fea4c`, **zero** German
+divisions stood anywhere in North Africa on all five saves from 1941.4.28 to 1943.3.22 - including
+1942.11.21, four weeks after Torch, when Germany **owned and controlled** Tunis 458, Bizerte 1061 and
+Gabes 665 and they were defended by **one Italian division** (section 14, Fix 133). Italy, and so
+Germany, had entered the Soviet war on 1941.6.22. Every one of the window's five terms was true on that
+save; the SOV clause was the only lock.
+
+Fix 121's magnitudes (`front_unit_request` 30, `area_priority` 105) are **deliberately unchanged**.
+Extending the duration and raising the weight in one commit makes the next campaign unreadable: R92 asks
+whether the force survives Barbarossa and whether it still comes home for a D-Day, and both questions
+need the old weights to mean what they meant.
+
+---
+
+**Fix 137 (2026-08-21, campaign `8c0fea4c`, checklist R82) - `front_unit_request` 30 -> 40.** Owner
+ruling after the first in-game run of Fixes 120-135 (build `bc90346af`, saves 1940.7.24 → 1941.10.23).
+
+**MEASURED on that run.** German divisions in the African scope: 0 (1940.7) → 2 (1940.10) → **7
+(1940.11)** → 0 (1941.4) → 0 (1941.6) → 0 (1941.10). German front orders touching Africa: 8 divisions
+on a "Marsa Matruh" front at 1940.11, **1** division at 1941.4, **no African front at all** at 1941.10.
+Every one of the window's five terms was TRUE at every one of those dates (Axis with ITA/ITL; ITL holds
+448/450/451/663 on all six saves; ENG holds 446/447/453 on all six; GER `surrender_progress` 0; Western
+Europe = GER 16 / VIC 9 / RBE 5 / RHO 3, no enemy). So R82 leg 1 (peak ≤ 8) is met and **leg 2 (≥3
+divisions on ≥3 consecutive saves) fails**.
+
+**Why the number alone probably does not close it, stated before it is tested.** The collapse to ~0 in
+early 1941 also happened at weight 60 (16 at 1940.12 → 1 at 1941.2, previous campaign) - it PRECEDES the
+Fix 121 cut and is independent of it. The binding constraint is the engine's arbitration between 18
+contiguous eastern fronts and one overseas theatre; no `front_unit_request` magnitude is known to move
+it, and the mapping from weight to divisions is **ASSUMED** (§17, Fix 121's stated risk). +10 buys
+margin, not a mechanism. Recorded next lever if leg 2 fails again:
+`theatre_distribution_demand_increase` on `north_africa` gated on the window - a demand type rather than
+a front bias.
+
+**Ruled out as the lever, with the measurement (2026-08-21).** AIFC cannot bring the armour: it
+redistributes units already assigned to a front (`documentation.info` `force_concentration_factor`), it
+needs an African front to rank (`AIFC_MAX_NR_FRONTS = 4`) and Germany has none, and its sector engine
+can never anchor there - the native pass needs a ROOT-controlled state adjacent to an enemy, and the
+expeditionary pass (`WA_AI_AIFC_helpers.txt:119`) is gated on `_aifc_cand^num < 3`, which Germany's
+eastern candidates never satisfy. MEASURED sector: 144 Nord-Norge + 878 Troms from 1940.11 to 1941.6,
+then Chernigov / Sumy / Bryansk / Gomel / Kiev / Poltava at 1941.10.
+**One real collision found and NOT fixed here:** `WA_AI_AIFC_armor_reconcile` writes +400 on the sector
+enemy and **−150 on every other enemy**; MEASURED in the save (88 `persistent_strategy type=83` entries,
+net per country) SOV +400 and **ENG −150**, exactly cancelling this section's `front_armor_score id =
+"ENG" value = 150`. The claim in `WA_AI_AIFC_helpers.txt` that −150 always sits "below the explicit
+faction/country steering entries" is false for that entry. Left alone deliberately - it is second-order
+while Germany has no African front, and fixing two things at once makes R82 unreadable. QUEUE it.
+
+`area_priority` (105 over the standing −80, net +25) is **deliberately not raised with it**, for the same
+reason Fix 131 gave: two magnitudes in one commit and the next campaign cannot attribute the outcome.
 
 ## 18. Allied and Axis air policy - the Reich bombing ladder and the Western Europe / Mediterranean family
 
@@ -826,3 +1105,98 @@ The positive half of the campaign is `WA_AI_MILITARY_ENG_strategic_bombing_focus
 writes `area_priority` and is a separate axis.
 
 ---
+
+## 19. Allied convoy interdiction in the Mediterranean (Fix 122, 2026-08-21)
+
+User report on campaign `8c0fea4c`: Britain should raid harder in the central Mediterranean, with
+surface fleets if that is what it takes - regions **29** (Strait of Sicily) and **269** (Ionian Basin)
+for as long as Malta or Tunis is Allied-held, and **327** (Levantine Basin) while Tobruk is Axis-held.
+
+**The pre-fix state is a repo measurement, and it is the strongest half of the evidence.** A census of
+every `ai_strategy` in `common/ai_strategy/WA_AI_NAVAL_*.txt` finds **no Allied
+`naval_convoy_raid_region` on 29, 269 or 327 at all**. The only writers on those three regions are
+`WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy` at **-1000** and
+`WA_AI_NAVAL_COUNTRY_GER_legacy_GER_dont_convoy_raid_too_far_away` at -1000. ENG's only positive raid
+regions are 16, 18 and 365 - all home waters, all gated on Britain being invaded. The campaign
+consequence: Italy's free convoy pool read **1023 / 1008 / 1004** at 1941.6 / 1942.6 / 1943.6, a 1.9 %
+dent over three years of running the entire Libyan supply line, while 35-42 Italian divisions and up to
+16 German ones were fed across it.
+
+| Piece | File |
+| --- | --- |
+| Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_lifeline_raid` (29 + 269 at +250, `naval_avoid_region` -250, `naval_mission_threshold "MISSION_CONVOY_RAIDING" -100`) and `_tobruk_route_raid` (327 at +250, avoid -250) |
+| Switches (control panel) | `WA_AI_MILITARY_triggers.txt`, the Fix 122 section next to the NAVAL corridor triggers: `WA_AI_MILITARY_NAVAL_med_raid_base_held` (Malta 116, Tunis 458 or Bizerte 1061 held by our side), `_axis_african_lifeline_active` (an enemy holds 448/450/451/458/1061 - the convoys exist), `_tobruk_held_by_enemy` (state 451). Same PREV.PREV "our side" idiom as the Fix 99 family |
+| Capability gate | `WA_AI_MILITARY_is_major_naval` (`has_navy_size = { size > 100 }`) in each block's `enable` - **owner ruling 2026-08-21: only large, major navies raid the narrows**. MEASURED 1941.6: ENG 494 hulls and USA 476 pass; AST 11, FRA 21, NZL 7, CAN 2, RAJ 1, SAF 0 do not |
+| Probe | checklist R83 |
+
+**Three things to know before touching it.**
+
+- **The type ranks, it does not recruit.** `naval_convoy_raid_region` orders the regions the engine has
+  already decided to raid in; it cannot stage a task force that is committed elsewhere. **ASSUMED**, by
+  analogy with the documented behaviour of `strategic_air_importance` (section 18). R83 leg 1 measures
+  the outcome (the Italian convoy pool) precisely because the arming is not observable.
+- **The surface-fleet lever is `naval_mission_threshold "MISSION_CONVOY_RAIDING"`**, which lowers the
+  strength ratio the AI demands before committing a task force to that mission. The magnitude `-100`
+  copies vanilla's own `MISSION_PATROL -100` (`ENG.txt:1378`) and is ASSUMED. Removing that one line
+  turns the interdiction back into a submarine campaign.
+  **The key is `MISSION_CONVOY_RAIDING`, and `MISSION_CONVOY_RAID` shipped here first and was rejected
+  at boot** — `Error: "bad mission type: MISSION_CONVOY_RAID, near line: 860"`. It had been "verified
+  present in `hoi4.exe`" with `grep -c` plus a negative control, and **grep matches substrings**, so
+  the hit was the longer name. The mission enum is named in the install's `common/defines/00_defines.lua`
+  `MISSION_FUEL_COSTS` comment block (HOLD, PATROL, STRIKE FORCE, CONVOY RAIDING, CONVOY ESCORT, MINES
+  PLANTING, MINES SWEEPING, TRAIN, RESERVE_FLEET, NAVAL_INVASION_SUPPORT), and the exact literals come
+  out of the binary by extracting whole `MISSION_[A-Z_]+` matches, never by counting substring hits.
+- **It does not fight `ENG_med_is_lost`.** That legacy block writes `naval_avoid_region 29 = +2000`, but
+  it needs Malta **lost**, and `med_raid_base_held` needs Malta or a Tunisian port **held**. Lose Malta
+  with no Tunisian port and this block aborts in the same pass the other arms. MEASURED on `8c0fea4c`:
+  `med_is_lost` never fired - Malta 116 and Gibraltar 118 were ENG on all 121 saves, which is also why
+  **Malta, not Tunis, is what actually carries the gate** (Tunis 458 / Bizerte 1061 were Vichy until
+  1942.12 and German after, so the Tunisian terms only pay from 1943.6). Both terms are kept: a world
+  where Malta falls is exactly the world the Tunisian ones are for.
+
+## 20. The Italian-entry tripwire on the colonial frontiers (Fix 127, 2026-08-21)
+
+Section 12 gave East Africa a theatre. This gives it a **frontier before the war reaches it**.
+
+User report on campaign `8c0fea4c`: "il n'y avait personne à la frontière ITS". MEASURED at the
+**1940.6** save, four weeks before Italy's declaration on **1940.6.30**: ENG held **2 divisions in
+Aden and nothing else** on the Sudan / Kenya / Somaliland frontier; RAJ **zero**; SAF **zero**.
+
+**Why neither existing family could cover it.** Both are reactive by construction:
+`WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` (§12) needs
+`WA_AI_MILITARY_east_africa_theatre_contested`, which needs an **enemy already holding**
+East-African ground; `WA_AI_MILITARY_ENG_el_alamein_guard_active` needs an enemy on Libyan ground
+(450/663/451). Before the declaration neither can arm, and the region sits in the DEFAULT sink
+lists. The Axis has no such gap — ITA's `east_africa_garrison_THEATRE` stands on 550/559 in peace.
+
+| Piece | File |
+| --- | --- |
+| Verdict | `WA_AI_MILITARY_triggers.txt` `WA_AI_MILITARY_italian_entry_likely` — the ideology match AND (the bulwark collapsing OR `date > 1940.8.1`) |
+| Release | `WA_AI_MILITARY_italian_entry_still_pending` — false the moment the Italian homeland power is at war with us, at which point §12 and the El-Alamein ladder own the ground (Italy owns the AOI, so `east_africa_theatre_contested` is true from day one). Exclusive **by timing**, not by a gate term |
+| Identities and the pair test | `WA_AI_CONFIG.txt` — `_is_western_european_bulwark`, `_is_german_homeland_power`, `_italian_power_shares_german_ideology`, `_western_bulwark_is_collapsing`, `_is_italian_frontier_tripwire_force` (ENG + RAJ) |
+| Payload | `WA_AI_MILITARY_FACTION_ALLIES_THEATRE.txt` `WA_AI_MILITARY_ALLIES_italian_entry_tripwire_THEATRE` — `put_unit_buffers` order **9617** at 0.06 on {551 Khartoum, 1096 Kurdufan, 549 South Sudan, 1100 Northern Kenya, 269 British Somaliland, 659 Aden}, order **9618** at 0.04 on {452 Marsa Matruh, 960 Libyan Plateau} |
+| Probe | checklist R88 |
+
+**There is no "same ideology as" trigger in HOI4 1.19.2.** `has_government` takes a literal ideology
+group and nothing compares two countries' governments (checked in the install's
+`documentation/triggers_documentation.md`), so
+`WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology` enumerates the four groups. It lives in
+CONFIG because it needs two tags and CONFIG is the only WA_AI file allowed to carry them.
+
+**The date term is an OR fallback, never the only path** (design principle 1): it can only make the
+tripwire arm *earlier* in a world where France does not fall, and deleting it leaves the dynamic
+term standing alone.
+
+**KNOWN LIMITATION, measured before shipping.** On this campaign the rule as specified cannot arm
+much before the declaration. France held **29 of 29** metropolitan states at 1940.6.1 — one province
+lost, Belgium already entirely German — so `surrender_progress > 0` is at best a mid-June event, and
+`date > 1940.8.1` falls **after** Italy declared on 1940.6.30, so the calendar fallback never fires
+here at all. Expect days to three weeks of warning. The recorded widening, **not applied, owner
+decision pending**: a third OR term "the German homeland power is at war with the western bulwark",
+which on this campaign is true from **1939.9.1** and would give ten months. R88's first fail-tell
+points at it, and it is a one-line change to `WA_AI_MILITARY_italian_entry_likely`.
+
+**Ratios are a tripwire, not an army** — on the 1940.6 army sizes, ENG 66 × 0.06 ≈ 4 and RAJ 42 ×
+0.06 ≈ 2 in East Africa, ≈ 3 + 2 on the Libyan border. The point is that the border is not *empty*
+when the war starts. AST / NZL / CAN / SAF are excluded from `_is_italian_frontier_tripwire_force`:
+a buffer they cannot reach is a wasted order, and SAF fielded three divisions in 1940.

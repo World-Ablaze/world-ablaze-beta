@@ -506,9 +506,186 @@ the port wins and below it the rail does. **Read `documentation/WA_AI_LOGISTICS_
 before touching any of it** - §11.11 is the authority on the three places the code deviates from the
 frozen design. The presence index is **not** a division count; its header says why and what it biases.
 
-**Verification:** checklist items R60 and R71; `savegame.py pc <TAG> --match corridor` for the queue side,
+**Connect before consolidate (Fix 120, 2026-08-21).** The corridor emits **one priority for all its
+hops** — `_corridor_prio_` in `railway_strategies.txt`, `rail_war` 1000 or `rail_prewar` 500 — and
+`WA_AI_PC_assign_factories` sorts by priority **alone**, so at a tie the bubble sort serves insertion
+order. A hop that has no railway at all therefore competes on equal terms with a hop being raised from
+4 to 5, and with every land-war segment in Europe.
+
+MEASURED on campaign `8c0fea4c`, and it is the corridor's own behaviour, not a starved budget: at
+1941.12 the eight rear hops Tripoli→Tobruk all read level **5** — one *above* `rail_level_cap` = 4 —
+while **Tobruk 1130 → 5078 had been BREAK since 1940.6**, 21 months, of which 15 with both ends held by
+the Axis (5078 was ITL from 1940.12, GER from 1941.6; 1130 ITL throughout). At the project level, the
+1941.6 save shows the mechanism exactly: ITA's **single funded railway factory** sat on `4120 → 13509`,
+an edge already at map level 5, while `1130→10120`, `10120→7079` and `7079→5078` — all at map level
+**0** — held 0 factories with 4 weeks of stall, at the identical priority 1000, queued *behind* 13
+European land-war segments also at 1000. The dépôt the user reported as unconnected is a consequence of
+that ordering, not a separate rule: hubs are emitted at the same `_corridor_prio_` as the rails, so
+once missing links outrank everything the hubs fall in behind them with no further change.
+
+The fix is one branch in `WA_AI_PC_start_railway_project` (`railway_helpers.txt`), which **already
+computes `current_level`** from `global.WA_AI_PC_railway_connection_level_[x]^[y]` two lines earlier
+and only ever used it for an equality test. The raw map level is captured *before* `_queued_for_segment`
+is folded in — the question is "does a railway exist here", not "has someone asked for one" — and a
+corridor segment reading 0 takes `constant:wa_ai_pc.prio.rail_connect` = **1100**. That equals
+`prio.legacy_max`, the ceiling this build already writes through the ×1.1 high-route multiplier
+(`railway_helpers:543`), so **no band is added and no registry mirror moves** — `savegame.py _PC_BANDS`
+already carries `(1100, "rail-war+")`, and the Fix 41 legacy clamp tests `> legacy_max`, so 1100 is not
+clamped.
+
+Scoped to the **corridor family** (`_rail_family_latched_ = 1`) by decision: land_war derives its routes
+dynamically and the same rule there re-orders every AI country's whole rail queue. Widening it is a
+second step behind a campaign that validates this one.
+
+**Part 2 — the retest, and why priority alone was not enough (2026-08-21).** The build carrying part 1
+was run over 1940.6 → 1941.10 and the corridor behaved exactly as before: at 1941.5 **all eight queued
+railway projects were UPGRADES priced 1000**, on edges already at map level 2–5, while Derna 7082 →
+Tobruk 1130 and Tobruk 1130 → 5078 were **BREAK and absent from the queue entirely**, and the rear ran
+at level 5 against `wa_tlm_r107_sizing_rail_tgt = 4`. Priority orders **funding**; the binding
+constraint here is **admission**. The pass walks the node list west to east and admits until
+`corridor.queue_max` (8 per building type) is full, so the rear claims the budget before the head is
+ever offered — and a project that is never admitted never gets a price.
+
+`WA_AI_PC_railway_corridor_pass` therefore runs **two phases over one set of pathfinds**:
+
+| Phase | What it does |
+|---|---|
+| 0 | pathfind every route once; collect each segment's `(a, b, target, priority, state)` **and its raw map level** into parallel temp arrays. `_valid_provinces` and `_corridor_chain_len_` are filled here as before, so stale-path validation and the Fix 107 port arbitration are unchanged |
+| A — CONNECT | admit **only** segments at map level 0, **target level 1**. The clamp matters: without it the same unrailed segment is re-requested every pass until it reaches the sizing target, so one hop can hold several connect-band projects while the next hop has none |
+| B — RAISE | runs **only if phase A admitted nothing**: either the chain is whole, or every remaining hole was refused and is not ours to build |
+
+**The refusal case is why phase B is gated on "admitted nothing" rather than on "no BREAK hop exists".**
+A hop the controller gate refuses never counts as admitted, so a permanently blocked hole cannot freeze
+the corridor at level 1 for ever. That is not hypothetical: `wa_tlm_r103_corridor_blocked_n` rose 4 → 5
+→ 6 across the retest saves, and Gabès 11957 → Tripoli 1149 — across Vichy Tunisia — is BREAK on every
+save of that campaign. A naive "no upgrades while any hop is BREAK" rule would have shipped a corridor
+that never rises above level 1 as long as Tunisia stays neutral.
+
+**The mismatch phase A cannot see, and the node that works around it (Fix 130, 2026-08-21).** The
+pathfinder filters by **province** control (`WA_AI_PATHFIND_PROV_get_path` type 2); the executor admits
+by **state** controller (`WA_AI_PC_state_controller_allows_admission`, scoped to
+`global.WA_AI_MAP_province_state_id^<first province of the segment>`). On contested ground the two
+disagree, and the pass can pathfind a route whose segments are then refused in silence.
+
+MEASURED on Tobruk 1130 → 5078, saves `ITA_1941_05_23_21` / `_06_10` / `_10_06`: **every province of
+both candidate routes is ITL-held**, but **state 452 Marsa Matruh is ENG-controlled** (province split
+11/3, then 10/4; by 1941.10 state 960 is ENG-controlled too, 4/2).
+
+| Route | Hops | Segments, and the state each is scoped to |
+|---|---|---|
+| coastal | 3 | 1130→10120 (451 ITL, admitted) · 10120→**7079 (452 ENG, REFUSED)** · 7079→5078 |
+| inland | 3 | 1130→4136 (451 ITL) · 4136→13481 (451 ITL) · 13481→5078 (663 ITL) |
+
+Both routes are **three hops**, so the pathfinder's tie-break decided; when it took the coast the last
+segment was refused for ever and the rail ran east from Tobruk and stopped. `wa_tlm_r103_corridor_blocked_n`
+counted it, 4 → 5 → 6. Fix 130 adds **province 13481 (state 663) as a forced junction node** between
+Tobruk and 5078 — the same kind of node as Constantine 9976 in Fix 113 — which splits the hop into
+1130→13481 (scoped to 451 throughout) and 13481→5078 (scoped to 663), so no segment is ever scoped to
+an Egyptian state. Node count 20 → 21, `corridor.max_routes_per_run` 19 → **20** with it. Probe **R91**.
+
+**That is a work-around, not the fix.** The next contested state reproduces it; aligning the two filters
+on one shared predicate is a QUEUE row (0m). And when a node id comes in from a report, check it against
+`WA_AI_MAP_state_provinces` first: the id proposed for this junction was **13841**, a digit transposition
+of 13481, and 13841 is in **state 443 Sind, India**.
+
+**What it does not do.** It creates no construction capacity — it re-targets capacity that was already
+spent, and the proof that the capacity existed is the level-5 rear itself (eight hops one level above
+the cap ≈ 6400 construction points, against 2400 for the three missing segments). The Fix 41 aging lane
+is untouched and can still take almost the whole pool: on that same 1941.6 save it served **16 of ITA's
+17 factories** to a 10-month-old priority-**100** infrastructure project, leaving one for the sorted
+fill. That is the PC fairness subject, not this one. Probe: checklist **R81**.
+
+**Verification:** checklist items R60, R71 and R81; `savegame.py pc <TAG> --match corridor` for the queue side,
 `tlm <TAG> --match r95` for admissions, and the map (railway connection level between two nodes,
 `supply_node` at 10049 / 9980, `naval_base` at 11957) for the built side.
+
+## Route sizing — one model, two families (Fix 135, 2026-08-21)
+
+**The number a railway route targets is now computed by one helper, `WA_AI_PC_rail_size_route`
+(`railway_helpers.txt`), called by both the theatre-corridor pass and the land-war / overseas route
+selector.** Before this it was computed twice: once properly, once not at all.
+
+### Why it is one helper and not two conventions
+
+The same defect was measured on the two families in turn.
+
+| Campaign | Family | Reading |
+| --- | --- | --- |
+| `9d83084c` | corridor | every corridor hop at exactly **2** on all 121 saves. The pass was not blocked — it had finished, and `4 + 8×2 = 20` supply was the ceiling by construction while an Allied army group fought at the far end. Fixed by **Fix 107**, which is the body this helper now holds. |
+| `8c0fea4c` | land-war | Libya at level **5** from Tripoli to Derna by 1941.5 (from 6 BREAK hops at level 0–1 in 1940.6), i.e. 44 supply per hop, behind an entry port — Tripoli, `naval_base 5` — carrying **25**. The port-derived target for that chain is **2**. |
+
+The land-war number came from two lines with no reference to anything: `default_route_level = 5` in
+`WA_AI_PC_railway_STRATEGY_land_war`, and in `WA_AI_PC_railway_land_consider_frontline` a **ratchet**,
+`route_level = _max_route_level_ + 1` clamped at 5 — "one level above whatever this route already
+has", which climbs to the clamp on its own, one pass at a time. Because
+`WA_AI_PC_start_railway_project` only compares `current_level < _project_target_level`, that target
+also **overwrote the corridor's own cap of 4 on the same segments**. Both lines are gone.
+
+### The contract
+
+`WA_AI_PC_rail_size_route` runs in COUNTRY scope and reads five temps:
+
+| Input | Meaning |
+| --- | --- |
+| `_rsize_prov_` | array of province ids whose **states** carry the demand |
+| `_rsize_ours_` | parallel array, `1` = this node's port counts as ours (SUM mode only) |
+| `_rsize_entry_mode_` | `0` SUM · `1` GIVEN · `2` OVERLAND — see below |
+| `_rsize_entry_supply_` | entry capacity in supply units (GIVEN only) |
+| `_rsize_floor_` / `_rsize_cap_` | the clamp, from the **caller's own** constants |
+
+and publishes `rsize_presence_`, `rsize_demand_`, `rsize_inject_` (`-1` = cap not applied),
+`rsize_rail_tgt_`, `rsize_port_tgt_`.
+
+**The three entry modes are the one thing that must not be unified.** Each is right in its own
+topology and any single rule would be wrong in the other two:
+
+| Mode | Topology | Entry capacity |
+| --- | --- | --- |
+| `0` SUM | a corridor, fed by every port along it | **sum** of the naval bases at our nodes (injections add — `WA_AI_LOGISTICS_MODEL.md` §7) |
+| `1` GIVEN | an overseas chain, in **series** across a sea leg | the caller's **bottleneck** of home port and receiving port (`overseas_entry_supply_`, published by `WA_AI_PC_analyze_overseas_supply_chain`) |
+| `2` OVERLAND | our own capital across our own network | **none** — `CAPITAL_SUPPLY_BASE` feeds it, so demand alone decides. Deliberately not the same as "a node set that happens to contain no port": a frontline state with a small harbour would otherwise cap an overland chain at that harbour. |
+
+### Callers
+
+| Caller | Node set | Mode | Floor / cap |
+| --- | --- | --- | --- |
+| `WA_AI_PC_corridor_compute_sizing` | the corridor's whole node list | SUM | `constant:wa_ai_railway.corridor.rail_level_*` |
+| `WA_AI_PC_railway_land_size_this_route` (overland route) | the **one** frontline hub province | OVERLAND | `constant:wa_ai_railway.land_war.rail_level_*` |
+| `WA_AI_PC_railway_land_size_this_route` (overseas route, and the Fix 28 fallback) | the same one province | GIVEN | same |
+| `WA_AI_PC_railway_STRATEGY_overseas_war` part B | beachhead port + frontline hub | SUM | same |
+
+**Why the land-war caller passes ONE province while the corridor passes twenty.** The presence walk
+inside the helper is `every_country` × states. The corridor sizes **once per pass**; the land-war
+selector sizes **once per route**, up to `routes.max_total` (8) times per execution, per country. One
+state keeps that affordable, and it is also the right demand: a chain exists to feed the army at its
+head.
+
+**Why the two families keep separate floor/cap constants.** `corridor.rail_level_*` and
+`land_war.rail_level_*` are both `2 / 4` today, by choice and not by contract — nothing checks it. A
+corridor is a named theatre spine WA commits to; a land-war route is any frontline the allocator
+happens to reach. They should be retunable apart.
+
+### What was NOT changed, and why
+
+- **The pre-war family keeps its ratchet.** In peace there is no army on the target to measure, so the
+  demand proxy would read a garrison and pin every prewar route at the floor — a regression, not a
+  measurement. What Fix 135 changed there is the ceiling: `default_route_level` reads
+  `land_war.rail_level_cap`, so the ratchet stops at 4.
+- **`STRATEGY_overseas_war` part A (the home-port chain) keeps its flat 5.** Its target is
+  `constant:wa_ai_railway.supply.home_port_target_supply` (44 = level 5) by design, and it is fed
+  overland from the capital rather than by a port.
+- **`_check_railway_level` now reads the cap** in all three strategies. Left at 5 while the sizer
+  targets at most 4, every frontline would stay for ever "not done" and keep drawing routes that queue
+  nothing.
+
+### What this cannot tell you
+
+Actual supply is not readable from script — nothing in the mod reads it — so this **models** flow from
+building levels and can never observe whether it was right. The demand proxy is not a division count
+either (`divisions_in_state` is a comparison trigger; the ladder uses bucket midpoints and over-reads a
+dispersed army). Both statements were already true of Fix 107; sharing the model does not make them
+less true, it makes them true in one place. Consumers: checklist R96, and `WA_TLM r107` against a
+campaign map reading.
 
 ## Capitulated countries (Fix 75)
 

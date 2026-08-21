@@ -261,3 +261,57 @@ Steps kept for a local re-run if the cloud reading is ambiguous.
    `WA_AI_pathfind_logging` on the recipient to see `PATHFIND: START/found path/END` lines and
    record the sign of `[?_pathfind_start]` (state `.id` is engine-encoded).
 5. `wa_tlm_llr_send_failed_n` on the donor must stay 0.
+
+## 2026-08-21 — surplus dockyards, and the design defect behind them (Fixes 126 + 129)
+
+Owner ruling 2026-08-21, from campaign `8c0fea4c`: *if there is nothing to build, the countries in
+RAJ's situation should build convoys by default.*
+
+**What the campaign measured.** At 1941.6 every Commonwealth dominion ran **exactly one** active
+naval factory — RAJ 1 of **8** dockyard levels, AST 1 of 6, CAN 1 of **16**, NZL 1 of 7, SAF 1 of 4 —
+against ENG's **81 of 88**. **36 idle dockyard levels.** RAJ's last real naval line was a convoy run
+at 7 of 7 yards that ended in **August 1938**; its fleet then stayed at exactly **1 ship for ten
+years** while its yards grew from 7 to 15.
+
+**The first diagnosis was wrong, and the correction is the useful part of this section.** The idle
+yards were blamed on this system's own convoy ladder — tier 0 stopping at 200 convoys, tiers 1–3
+needing 20 shipyards, `stop_MINORS` braking above 300. The closure test killed it: **every minor on
+the GENERIC naval tech tree faces the identical ladder and saturates its yards anyway** — SWE 17
+factories on 16 levels, TUR 21/20, ARG 6/5, BRA 6/5 — while every dominion on the **British** tree
+runs one. Same save, same ladder, same `default_unit_production` composition.
+
+**The real cause (Fix 129, checklist R90).** The dominions hold British hulls — `eng_frigate_1..5`,
+`eng_destroyer_1..6`, MEASURED on all five — and **no `ai_equipment` file in the mod named them**.
+The twelve design groups of `common/ai_equipment/ENG_naval.txt` were all `available_for = { ENG }`,
+and every design in `generic_naval.txt` — which they *are* allowed to use — is gated on
+`has_tech = generic_frigate_1` / `generic_destroyer_*`, of which they hold **none**. WA meanwhile
+classes them as escort navies (`WA_AI_CONFIG_is_escort_navy` = minor AND in the Allies) and gives
+them `role_ratio naval_escort 50`, which had nothing to bind to. A frigate hull costs **80 IC**.
+Fix 129 adds `AST CAN NZL RAJ SAF MAL BRM` to `available_for` on five groups — screens, escorts,
+light cruisers (owner ruling), mine sweepers and mine layers — and leaves the capital, super-heavy,
+carrier and submarine groups ENG-only. The full reasoning lives in that file's header.
+
+**What Fix 126 is, after the correction (checklist R87).** The narrow, genuine case only: a minor
+that is not a naval power, is not the majors' arsenal, is at war and has yards should spend the
+dockyards its escort programme does not want on convoys for the side rather than on nothing.
+
+| Piece | File |
+| --- | --- |
+| Gate | `common/scripted_triggers/WA_AI_PRODUCTION_navy.txt` `WA_AI_PRODUCTION_dockyards_have_nothing_to_build` — default system, at war, `num_of_naval_factories > 3`, NOT `WA_AI_MILITARY_is_major_naval`, NOT the majors' arsenal |
+| Exemption | the same verdict negated inside `WA_DEFAULT_production_convoy_stop_MINORS`, in **both** `enable` and `abort` — the idiom `stop_MAJORS` already uses for the majors' arsenal |
+| Payload | `WA_DEFAULT_production_convoy_minor_arsenal` — `equipment_production_surplus_management id = convoy value = 100`, and nothing else |
+| Probe | checklist R87, scored **after** R90 |
+
+**`equipment_production_min_factories` was removed from this fix by Fix 129.** The first version
+carried a forced floor of 3 (≤ 9 dockyards) / 6 (above). The install's own documentation warns the
+type "doesn't take into account how many factories are actually available", and once the dominions
+have escort designs a forced convoy floor outbids the escorts WA asks them for. A forced floor is
+the wrong tool for "when there is nothing else"; `equipment_production_surplus_management` is the
+type the engine documents for exactly that question, and by construction it spends only what
+nothing else wants.
+
+**Still open, and it is the other dockyard per country:** each Commonwealth country carries a
+**start-state naval order with a ~1e8 cost that can never finish** — RAJ's `HMIS India` moved
+`produced` 162,502,808 → 162,516,602 **in seven years** against a cost of 245,000,000, ENG's
+`HMS King George V` +7,013 in three against 94,000,000, while a normal ship line in the same saves
+costs 1,500–26,000. `QUEUE.md` row 0l.

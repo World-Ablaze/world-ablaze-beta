@@ -1775,3 +1775,60 @@ WA_AI_MILITARY_ALLIES_east_africa_exec_FRONT = {
 	}
 }
 
+
+
+############################################################################################################
+# Fix 123 (2026-08-21, campaign 8c0fea4c) - the Pacific Commonwealth's home garrison is released while
+# nobody can come south. Read the section header of the same name in WA_AI_MILITARY_triggers.txt for the
+# measurement: at 1941.6, with Japan neutral, AST held 17 of 22 divisions and NZL 8 of 11 in ENGINE
+# area-defence orders, against GER 1 of 203 and ITA 4 of 84 - the difference being `garrison = -5000`.
+# The cause is WA_AI_MILITARY_ARCHETYPE_minors_home_first, which gives every minor at war `garrison = +50`.
+############################################################################################################
+
+# purpose: hand the engine's generic area-defence army back to the active theatre while no Pacific
+#          expansionist is at war with us or preparing one. AST + NZL + RAJ.
+# range:   garrison -5000 (WA's force-off convention); front_unit_request +60 on the two African theatres
+# policy:  `garrison` is ADDITIVE (owner ruling 2026-08-21), so -5000 nets -4950 over
+#          minors_home_first's +50. Section 4 of the military doc calls the same thing a
+#          "negative-override convention" - the two readings AGREE that -5000 dominates +50, and
+#          neither is engine text (the engine doc has no `garrison` section, only the bare token).
+#          MEASURED on RAJ, which carries both writers: its area-defence count goes 14/17/16
+#          (no `-5000`) -> 0/3/2 (with it) across 1942.1, while its buffer count RISES 17 -> 21 -> 25.
+#          R84's first fail-tell is the falsifier if either reading is wrong.
+# domain:  FRONT
+#
+# The two +60 requests are the DIRECTION, not the size: which divisions the engine releases and where
+# it sends them is not a script decision. 60 is deliberately below the Faction East-Africa +150 so the
+# contested theatre still outranks the standing North-African request.
+#
+# Safety: two terms inside WA_AI_MILITARY_pacific_commonwealth_garrison_releasable bound the risk -
+# `pacific_threat_imminent` (war, a wargoal against us, or a committed southward focus) and
+# `commonwealth_home_in_danger` (an enemy on a core, or a home-area neighbour at war). Either one
+# aborts the block, and `abort_when_not_enabled = yes` puts minors_home_first back in one pass.
+WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
+	}
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_pacific_commonwealth_garrison_releasable = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = garrison
+		value = -5000
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		area = north_africa
+		value = 60
+	}
+
+	ai_strategy = {
+		type = front_unit_request
+		area = WA_AI_MILITARY_east_africa_regions
+		value = 60
+	}
+}

@@ -318,6 +318,34 @@ WA_AI_PC_railway_corridor_pass = {
 				set_temp_variable = { _corridor_chain_len_ = 0 }
 
 				### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
+				###
+				### Fix 120 part 2 (2026-08-21) - CONNECT PHASE. Part 1 priced a level-0 corridor segment
+				### at constant:wa_ai_pc.prio.rail_connect, which orders FUNDING. That was necessary and
+				### not sufficient: the binding constraint here is ADMISSION, not funding. The pass walks
+				### the node list west to east and admits until corridor.queue_max (8 per building type)
+				### is full, so the rear hops claim the whole budget before the head hops are ever
+				### offered, and a project that is never admitted never gets a price.
+				### MEASURED on campaign 8c0fea4c with part 1 live (saves ITA_1941_05_23_21 /
+				### ITA_1941_06_10_02): all 8 queued railway projects were UPGRADES, priced 1000, on edges
+				### already at map level 2-5, while Derna 7082 -> Tobruk 1130 and Tobruk -> 5078 were BREAK
+				### and absent from the queue; the rear ran at level 5 against a sizing target of 4.
+				###
+				### So the pass now runs in two phases over ONE set of pathfinds:
+				###   phase 0  pathfind every route, collect its segments and each segment's RAW map level
+				###   phase A  admit ONLY segments at map level 0, target level 1 - connect the chain
+				###   phase B  only if phase A admitted nothing: admit the rest at the sizing target
+				### One admission path, not a second strategy (the Fix 77 shape). A segment the controller
+				### gate refuses never counts as admitted, so a permanently blocked hop - Gabes 11957 ->
+				### Tripoli 1149 across Vichy Tunisia, BREAK on every save of that campaign - cannot hold
+				### the corridor's upgrades hostage for ever. That is the failure mode a naive
+				### "no upgrades while any hop is BREAK" rule would have shipped.
+				clear_temp_array = _cseg_a_
+				clear_temp_array = _cseg_b_
+				clear_temp_array = _cseg_tgt_
+				clear_temp_array = _cseg_prio_
+				clear_temp_array = _cseg_state_
+				clear_temp_array = _cseg_lvl_
+
 				set_temp_variable = { _corridor_max_minus_one_ = constant:wa_ai_railway.corridor.max_routes_per_run }
 				subtract_from_temp_variable = { _corridor_max_minus_one_ = 1 }
 				for_each_loop = { array = corridor_route_end_ index = _cr_i_ value = _cr_end_ break = _cr_b_
@@ -344,22 +372,77 @@ WA_AI_PC_railway_corridor_pass = {
 								add_to_temp_variable = { _cp_next_ = 1 }
 								if = {
 									limit = { check_variable = { _cp_next_ < pathfind_prov_path_^num } }
-									set_temp_variable = { _project_province_id = _cp_v_ }
-									set_temp_variable = { _project_connect_id = pathfind_prov_path_^_cp_next_ }
-									set_temp_variable = { _project_target_level = corridor_route_level_^_cr_i_ }
-									set_temp_variable = { _project_priority = corridor_route_prio_^_cr_i_ }
+									set_temp_variable = { _cseg_next_prov_ = pathfind_prov_path_^_cp_next_ }
 									set_temp_variable = { _corridor_seg_state_ = global.WA_AI_MAP_province_state_id^_cp_v_ }
 									if = {
 										limit = { check_variable = { _corridor_seg_state_ > 0 } }
-										set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
-										set_temp_variable = { _railway_family_ = 1 }
-										var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
-										if = {
-											limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
-											add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
+										# RAW map level of this connection - the same global ledger the
+										# helper reads, seeded at startup from the generated map data
+										# and moved only at completion. 0 = there is no railway here.
+										meta_effect = {
+											text = {
+												set_temp_variable = { _cseg_this_lvl_ = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+											}
+											x = "[?_cp_v_]"
+											y = "[?_cseg_next_prov_]"
 										}
+										add_to_temp_array = { _cseg_a_ = _cp_v_ }
+										add_to_temp_array = { _cseg_b_ = _cseg_next_prov_ }
+										add_to_temp_array = { _cseg_tgt_ = corridor_route_level_^_cr_i_ }
+										add_to_temp_array = { _cseg_prio_ = corridor_route_prio_^_cr_i_ }
+										add_to_temp_array = { _cseg_state_ = _corridor_seg_state_ }
+										add_to_temp_array = { _cseg_lvl_ = _cseg_this_lvl_ }
 									}
 								}
+							}
+						}
+					}
+				}
+
+				### Phase A - CONNECT. Every collected segment with no railway at all, target level 1.
+				set_temp_variable = { _corridor_connect_admitted_ = 0 }
+				for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
+					if = {
+						limit = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } }
+						set_temp_variable = { _project_province_id = _cs_a_ }
+						set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
+						# Target 1, not the sizing target: connect the whole chain first, raise it
+						# afterwards. Without this clamp the same unrailed segment is re-requested
+						# every pass until it reaches the sizing target, so ONE hop can hold several
+						# connect-band projects while the next hop has none.
+						set_temp_variable = { _project_target_level = 1 }
+						set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
+						set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
+						set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
+						set_temp_variable = { _railway_family_ = 1 }
+						var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
+						if = {
+							limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
+							add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
+							add_to_temp_variable = { _corridor_connect_admitted_ = 1 }
+						}
+					}
+				}
+
+				### Phase B - RAISE. Only when the connect phase found nothing to admit: either the
+				### chain is whole, or every remaining hole was refused by the controller gate and is
+				### not ours to build.
+				if = {
+					limit = { check_variable = { _corridor_connect_admitted_ = 0 } }
+					for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
+						if = {
+							limit = { NOT = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } } }
+							set_temp_variable = { _project_province_id = _cs_a_ }
+							set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
+							set_temp_variable = { _project_target_level = _cseg_tgt_^_cs_i_ }
+							set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
+							set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
+							set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
+							set_temp_variable = { _railway_family_ = 1 }
+							var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
+							if = {
+								limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
+								add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
 							}
 						}
 					}
@@ -367,6 +450,16 @@ WA_AI_PC_railway_corridor_pass = {
 				# Belt and braces: the helper latches-and-zeroes this on entry, but a segment call
 				# skipped by the state-mapping guard would leave a 1 behind for the main pass.
 				set_temp_variable = { _railway_family_ = 0 }
+
+				# Fix 120 part 2: the collection arrays are this pass's working set and nothing
+				# downstream reads them. Cleared here as well as on entry so they do not travel
+				# with the rest of the weekly effect chain (editing rule 9).
+				clear_temp_array = _cseg_a_
+				clear_temp_array = _cseg_b_
+				clear_temp_array = _cseg_tgt_
+				clear_temp_array = _cseg_prio_
+				clear_temp_array = _cseg_state_
+				clear_temp_array = _cseg_lvl_
 
 				### Hubs: depots / ports at nodes we hold
 				for_each_loop = { array = corridor_hub_prov_ index = _ch_i_ value = _ch_prov_ break = _ch_b_
@@ -531,7 +624,7 @@ WA_AI_PC_railway_corridor_pass = {
 				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
 
 				if = { limit = { has_country_flag = WA_AI_construction_logging }
-					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: routes ok=[?_corridor_routes_ok_] done=[?_corridor_routes_done_] requested=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num], admitted seg=[?_corridor_seg_admitted_] depot=[?_corridor_depot_admitted_] port=[?_corridor_port_admitted_]"
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: routes ok=[?_corridor_routes_ok_] done=[?_corridor_routes_done_] requested=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num], admitted seg=[?_corridor_seg_admitted_] connect=[?_corridor_connect_admitted_] depot=[?_corridor_depot_admitted_] port=[?_corridor_port_admitted_]"
 				}
 			}
 		}

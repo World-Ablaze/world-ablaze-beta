@@ -97,3 +97,35 @@ WA_AI_PRODUCTION_main_focus_on_minelayers = {
 	WA_AI_CONFIG_focus_on_minelayers = yes
 	NOT = { WA_AI_CONFIG_main_focus_on_submarines = yes }
 }
+
+# Fix 126 (2026-08-21, campaign 8c0fea4c, checklist R87) - a minor whose dockyards have genuinely
+# nothing to build. Owner ruling: build convoys by default in that case.
+#
+# READ THIS BEFORE REUSING THE MEASUREMENT. The campaign showed 36 idle dockyard levels across the
+# five Commonwealth dominions at 1941.6 (RAJ 1 active factory of 8 levels, AST 1/6, CAN 1/16,
+# NZL 1/7, SAF 1/4, against ENG 81/88). The FIRST version of this fix blamed the convoy ladder in
+# WA_AI_PRODUCTION_DEFAULT_navy.txt - tier 0 stopping at 200 convoys, tiers 1-3 needing 20
+# shipyards, stop_MINORS braking above 300. **That was wrong**, and the closure test is what killed
+# it: every minor on the GENERIC naval tech tree faces the identical ladder and saturates its yards
+# anyway - SWE 17 factories on 16 dockyard levels, TUR 21/20, ARG 6/5, BRA 6/5. The real cause was
+# that the dominions run the BRITISH tech tree and had no matching ship DESIGN (Fix 129,
+# common/ai_equipment/ENG_naval.txt). Do not re-derive the ladder story from the same numbers.
+#
+# What survives is the narrow, real case this trigger now names: a minor that is not a naval power,
+# is not the majors' coalition arsenal, is at war and has yards - once its escort programme is
+# satisfied, its spare dockyards should make convoys for the side rather than nothing. The payload
+# is `equipment_production_surplus_management` alone, which by construction only spends what
+# nothing else wants; the forced `equipment_production_min_factories` of the first version was
+# removed with Fix 129 because it would have outbid the escorts.
+#
+# Also gates the Fix 126 exemption inside WA_DEFAULT_production_convoy_stop_MINORS, so a country in
+# this state is not simultaneously told to stop building convoys.
+# Assumes: a country that is not a major naval power has no warship programme large enough to want
+# every slipway. Gone when: WA gives minors a real capital-ship role.
+WA_AI_PRODUCTION_dockyards_have_nothing_to_build = {
+	WA_AI_PRODUCTION_is_using_default_system = yes
+	has_war = yes
+	num_of_naval_factories > 3
+	NOT = { WA_AI_MILITARY_is_major_naval = yes }
+	NOT = { WA_AI_PRODUCTION_should_build_convoy_relief = yes }
+}

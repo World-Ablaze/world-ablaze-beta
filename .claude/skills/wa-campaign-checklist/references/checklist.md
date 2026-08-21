@@ -1912,6 +1912,590 @@ Delete an item when its streak reaches its threshold (3 = narrow probe, 5 = beha
 - **History:**
 
 
+### R81. The theatre corridor connects before it consolidates (Fix 120)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Italie construit sa voie ferrée depuis Tripoli vers le front en Égypte via le système PC, mais au lieu de chercher à raccorder tous les nœuds au plus vite, elle consolide avant d'étendre le réseau"). Pre-fix state MEASURED on that campaign: the North-African corridor was built as a wave that raised the rear while the head stayed unrailed. `rail.py --corridor 1149,9980,4047,4057,1127,11954,10049,7082,1130,5078` reads Tripoli→Sirte at level **5** from 1940.12 onward — one above `corridor.rail_level_cap` = 4 — while **Tobruk 1130 → 5078 stayed BREAK from 1940.6 to somewhere between 1941.12 and 1942.3**, i.e. 21 months, of which 15 with both ends Axis-held (5078 was ITL from 1940.12, GER from 1941.6; 1130 ITL throughout). At the project level, 1941.6: ITA's single funded railway factory sat on `4120 → 13509`, an edge **already at map level 5**, while `1130→10120`, `10120→7079` and `7079→5078` (all at map level **0**) held 0 factories with 4 weeks of stall — at the **identical** priority 1000, and queued *behind* 13 European land-war segments also at 1000. The dépôt the user saw unconnected is the consequence of that ordering, not a separate rule: corridor hubs are emitted at the same `_corridor_prio_` as the rails.
+- **RETEST 2026-08-21, part 1 alone changed nothing — and the reason recut the fix.** Saves `ITA_1941_05_23_21` / `ITA_1941_06_10_02` / `ITA_1941_10_06_11`, same campaign, build carrying part 1: **all 8 queued railway projects were UPGRADES priced 1000**, on edges already at map level 2–5 (`4120→13509` at 5, `12094→4063` at 2, `10049→7082` at 4 …), while **Derna 7082 → Tobruk 1130 and Tobruk 1130 → 5078 were BREAK and absent from the queue entirely**, and the rear ran at level **5** against `wa_tlm_r107_sizing_rail_tgt = 4`. Priority orders FUNDING; the binding constraint here is **ADMISSION**. The pass walks the node list west to east and admits until `corridor.queue_max` (8 per building type) is full, so the rear claims the budget before the head is ever offered — and a project that is never admitted never gets a price. `wa_tlm_r103_corridor_blocked_n` rose 4 → 5 → 6 across those saves, so some holes are also refused by the controller gate (Gabès 11957 → Tripoli 1149 across Vichy Tunisia is BREAK on every save of the campaign) — which is exactly why the fix must not be "no upgrades while any hop is BREAK".
+- **Fix under test:** Fix 120, **two parts, one commit**. Part 1: `constant:wa_ai_pc.prio.rail_connect` = 1100 (equal to `legacy_max`, the ceiling this build already writes via the ×1.1 high-route multiplier, and already a named band in `savegame.py _PC_BANDS`), applied in `WA_AI_PC_start_railway_project` (`railway_helpers.txt`) to a **corridor-family** segment whose RAW map level is 0. Deliberately scoped to `_rail_family_latched_ = 1`; widening it to the land-war family is a second step behind a campaign that validates this one. **Part 2 (the one the retest forced):** `WA_AI_PC_railway_corridor_pass` now runs two phases over ONE set of pathfinds — phase 0 collects every route's segments and each segment's raw map level; **phase A admits only segments at map level 0, at target level 1**; **phase B runs only if phase A admitted nothing** and does the level raising. A segment the controller gate refuses never counts as admitted, so a permanently blocked hop cannot hold the corridor's upgrades hostage. The target clamp to 1 in phase A is what stops one unrailed hop holding several connect-band projects while the next hop has none.
+- **Pass (three legs):** the corridor is the 20-node North-African list of `WA_AI_PC_CORRIDOR_define_north_africa`.
+  1. **No consolidation ahead of connection.** On no save is any corridor hop above level 4 while another hop of the same corridor reads BREAK. Baseline to beat: at 1941.12, eight rear hops read 5 while `1130 → 5078` read BREAK.
+  2. **The last hop closes fast.** For the last hop to be railed, the gap between the first save where both its end nodes are held by one side and the first save where it is no longer BREAK is ≤ 6 months. Baseline: 15 months (both ends Axis at 1940.12, hop railed by 1942.3).
+  3. **A missing link is QUEUED at all, and priced at the connect band.** In any `pc <TAG> --limit 0` reading taken while the corridor has a BREAK hop whose end nodes are both held by the builder's side, at least one corridor railway project sits on a level-0 edge, and its priority band reads `rail-war+` (1100), not `rail-war`. Baseline: **zero** level-0 corridor segments in the queue on all three retest saves, every project priced 1000, while two hops were BREAK. This leg tests admission first and pricing second; a queue with no level-0 project in it fails the leg regardless of what the prices say.
+- **Probe:** `rail.py --corridor 7132,1145,9976,7081,9994,11969,7005,11957,1149,9980,4047,4057,1127,11954,10049,7082,1130,5078,11967,4076 <saves>` for legs 1/2; `savegame.py pc <TAG> <save> --limit 0` for leg 3, cross-read against `rail.py --corridor <prov_a>,<prov_b>` on the funded and starved edges (the `pc` table gives `prov ->prov`, so each row is directly checkable). `savegame.py control <state ids> --provinces` for "both ends held by one side" in leg 2. **`pc --match corridor` does NOT work** — `--match` filters the building name, never the strategy tag; read the `strategy tags` summary line and the `tag` column instead.
+  ```text
+  > rail.py --corridor 1149,9980,4047,4057,1127,11954,10049,7082,1130,5078 1941.12_Dec.hoi4
+    1149  9980   5/5  5  3  ok      Tripoli -> Tripoli
+    9980  4047   5/5  5  3  ok      Tripoli -> Sirte
+    4047  4057   5/5  5  4  ok      Sirte -> Sirte
+    4057  1127   5/5  5  2  ok      Sirte -> Benghasi
+    1127  11954  5/5  5  3  ok      Benghasi -> Benghasi
+    11954 10049  5/5  5  4  ok      Benghasi -> Cyrenaica
+    10049 7082   5/5  5  1  ok      Cyrenaica -> Derna
+    7082  1130   5/5  4  3  ok      Derna -> Derna
+    1130  5078   5/3  -  -  BREAK   Derna -> Libyan Platau
+    summary: 9 hop(s)  BREAK=1  THIN=0  ok=8
+  > savegame.py pc ITA 1941.6_Jun.hoi4 --limit 0
+    queue=28  assigned_factories_total=17  civ controlled=114  PC is using 14.9% of them
+    strategy tags: rail x12  corridor x7  theatre_air x3  supply_line x3  port x2  - x1
+     #  id building  tag       state prov ->prov  prio fact progress cost done stall
+     0  10 railway   corridor    450 4120  13509  1000    1      102  800  87%     0
+    16   9 railway   corridor    451 1130  10120  1000    0        0  800   0%     4
+    17  14 railway   corridor    451 10120  7079  1000    0        0  800   0%     4
+    18  28 railway   corridor    452 7079   5078  1000    0        0  800   0%     4
+    27  12 infrastructure supply_line 451  0     0     100   16     2508 3400  26%  0
+  > rail.py --corridor 4120,13509 1941.6_Jun.hoi4   -> 4120 13509 5/5 5 1 ok   (the FUNDED edge)
+  > rail.py --corridor 1130,10120,7079,5078 1941.6_Jun.hoi4 -> 3 hop(s) BREAK=3   (the STARVED edges)
+  ```
+- **Fail-tells to record:** every corridor hop at 1100 at once (a fully fragmented corridor re-creates the tie — no regression, but no gain either; note it rather than scoring it FAILED); the funded corridor project still being an upgrade while a level-0 segment starves (the branch did not arm — check `_rail_family_latched_` reaches the helper, and that `_project_priority` is not overwritten downstream by `WA_AI_PC_start_project`); the Fix 41 aging lane taking the whole pool again (MEASURED at 1941.6: 16 of ITA's 17 factories went to a 10-month-old priority-**100** infrastructure project, leaving one for the sorted fill — Fix 120 does not touch that and it is a separate subject); the last hop still BREAK with both ends ours for > 6 months while `WA_TLM_r103_corridor_blocked_n` rises (the admission gate, not the ordering, is the blocker).
+- **Threshold:** 3 — three legs read from the map and the queue with no interpretation, the R60/R68 precedent.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R82. The Afrika Korps expedition is halved, not cancelled (Fix 121, retuned by Fix 137)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=0a11512e8 status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Allemagne doit réduire les troupes envoyées en Afrique : elle sature la logistique — il faut réduire, pas annuler la présence; commençons par une réduction de 50 %"). Fix 119 worked: MEASURED, German divisions in the African scope went 2 (1940.9) → 9 (1940.11) → **16 (1940.12)** → 15 (1941.1) → 1 (1941.2) → 7 (1941.6) → 0 (1941.12), the window opening on Italy's entry and closing on Barbarossa exactly as designed. The problem is the total load: at the 1940.12 peak the Axis held **57 divisions** in the scope (GER 16, ITA 35, ITL 6) on a corridor with 4 BREAK hops out of 9 and nothing above level 1 east of Sirte (see R81's measurement, same campaign, same month).
+- **RETUNED 2026-08-21 (Fix 137, `0a11512e8`).** First in-game run of Fix 121 (build `bc90346af`, saves 1940.7.24 / 1940.10.12 / 1940.11.20 / 1941.4.19 / 1941.6.15 / 1941.10.23). MEASURED: German divisions in the African scope 0 → 2 → **7** → 0 → 0 → 0; German front orders touching Africa 8 divisions ("Marsa Matruh") at 1940.11, **1** at 1941.4, **none at all** at 1941.10 — while all five window terms were true on every save (ITL holds 448/450/451/663, ENG holds 446/447/453, GER `surrender_progress` 0, Western Europe GER 16 / VIC 9 / RBE 5 / RHO 3, Axis with ITA). **Leg 1 met (7 ≤ 8), leg 2 failed.** Owner ruling: `front_unit_request` **30 → 40**; `area_priority` stays 105. Not formally scored here — R82 and R80 are twins and must be scored in one session, on monthly saves, which this irregular six-save set is not. **The +10 is margin, not a mechanism**: the same collapse to ~0 in early 1941 happened at weight 60 (16 at 1940.12 → 1 at 1941.2), so it precedes and is independent of the Fix 121 cut. Recorded next lever if leg 2 fails again: `theatre_distribution_demand_increase` on `north_africa` gated on the window. Ruled out with measurement: AIFC (it redistributes units already on a front, Germany has no African front, and its sector engine anchored on Nord-Norge/Troms then Ukraine — see `WA_AI_MILITARY_SYSTEM.md` §17).
+- **Fix under test:** Fix 137 (was Fix 121) — `WA_AI_MILITARY_GER_focus_on_north_africa_FRONT` `front_unit_request` 60 → 30 → **40**, `_THEATRE` `area_priority` 130 → **105** (the standing area tilt is −80, so the net goes +50 → +25: half, measured on the net). `front_armor_score` 150 deliberately unchanged — armour is the nature of the expedition, not its size. The division-count brake (`divisions_in_state` caps on the corridor states) was designed and **DEFERRED by owner decision 2026-08-21**: do the arithmetic cut first, measure, then decide.
+- **Pass (three legs):** the African scope is states {448, 450, 451, 663, 446, 447, 452, 453, 902, 923}; "window open" is read from the same save exactly as R80 defines it.
+  1. **Halved.** Peak GER divisions in the scope over the whole window ≤ **8**. Baseline: 16, at 1940.12.
+  2. **Not cancelled.** GER holds ≥ 3 divisions in the scope on ≥ 3 consecutive monthly saves while the window is open. Baseline: 9 / 16 / 15 over 1940.11 → 1941.1, so the expedition existed and must continue to.
+  3. **The theatre stops being over-subscribed.** Peak total Axis divisions in the scope (GER + the Italian homeland power + its Libyan subject) ≤ **45**. Baseline: 57, at 1940.12.
+- **Probe:** `plans.py GER,ITA,ITL <saves> --where --limit 0`, summed over the scope states by exact name (Tripoli, Sirte, Benghasi, Cyrenaica, Derna, Marsa Matruh, Alexandria, Libyan Platau, Cairo, Suez Canal, Sinai). **`--limit 0` is honoured by `--where` in this build but the state names are multi-word**, so match on the name, never on a column index — a positional parse breaks because the order-class columns differ per save.
+  ```text
+  > plans.py GER,ITA,ITL <save> --where --limit 0   (pre-fix baseline, campaign 8c0fea4c)
+    1940.9_Sep    GER=2   ITA=41  ITL=5    total 48
+    1940.11_Nov   GER=9   ITA=38  ITL=4    total 51
+    1940.12_Dec   GER=16  ITA=35  ITL=6    total 57   <- peak
+    1941.1_Jan    GER=15  ITA=30  ITL=6    total 51
+    1941.2_Feb    GER=1   ITA=35  ITL=6    total 42
+    1941.6_Jun    GER=7   ITA=34  ITL=6    total 47
+    1941.12_Dec   GER=0   ITA=35  ITL=6    total 41
+  ```
+- **Fail-tells to record:** GER peak still ≥ 12 (halving the weight did not halve the force — the ASSUMED weight-to-division mapping is wrong, and the deferred `divisions_in_state` brake is the recorded next lever); GER peak 0 while the window is open for ≥ 3 saves (the cut went too far and cancelled the expedition — R80 leg 1 fails with it, and the two items must be scored together); total Axis still ≥ 55 with GER ≤ 8 (the saturation is Italian, not German, and the next lever is on ITA's own Libya pull, not on Fix 119's).
+- **Threshold:** 3 — division counts against a same-save window predicate; twin of R80, which must be scored in the same session.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R83. The Allies cut the Axis Mediterranean lifeline (Fix 122)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'Angleterre doit faire du raiding plus agressif, même avec des flottes de surface si besoin, sur 29 et 269 tant que Malte ou Tunis est sous contrôle allié, et 327 si Tobrouk est tenu par l'Axe"). Pre-fix state MEASURED **in the repo, not in a save, and that is the strongest half of the evidence**: a census of every `ai_strategy` in `common/ai_strategy/WA_AI_NAVAL_*.txt` finds **no Allied `naval_convoy_raid_region` on 29, 269 or 327 at all**. The only writers on those three regions are `WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy` at **−1000** and `WA_AI_NAVAL_COUNTRY_GER_legacy_GER_dont_convoy_raid_too_far_away` at −1000; ENG's only positive raid regions are 16, 18 and 365, all home waters, all gated on Britain being invaded. Consequence MEASURED in the campaign: Italy's free convoy pool read **1023 / 1008 / 1004** at 1941.6 / 1942.6 / 1943.6 — a 1.9 % dent over three years of running the entire Libyan supply line.
+- **Fix under test:** Fix 122 — `WA_AI_NAVAL_FACTION_ALLIES_med_lifeline_raid` (29 and 269 at +250, `naval_avoid_region` −250, `naval_mission_threshold "MISSION_CONVOY_RAIDING" −100`) and `_tobruk_route_raid` (327 at +250, avoid −250), both gated on `WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor` + **`WA_AI_MILITARY_is_major_naval`** (owner ruling 2026-08-21: only large, major navies raid the narrows) + the new geography triggers `WA_AI_MILITARY_NAVAL_med_raid_base_held` / `_axis_african_lifeline_active` / `_tobruk_held_by_enemy`.
+- **Pass (three legs):**
+  1. **The lifeline bleeds.** The Italian homeland power's free convoy pool (`tlm <TAG> --match nav_convoys`, or `num_equipment@convoy`) falls by ≥ **15 %** from its value at the first save where both raid blocks' preconditions hold, at some point before the African shore is cleared. Baseline: **−1.9 %** (1023 → 1004) over 1941.6 → 1943.6.
+  2. **Surface hulls actually go.** ENG ships on the `raid` mission reach ≥ **40** on at least one save while the blocks are armed. Baseline: **18** at 1941.6, of which 0 screens, against 295 idle hulls (60 % of the navy).
+  3. **Only the big navies go.** On every save, no Allied country with `has_navy_size ≤ 100` has ships on a raid mission inside the Mediterranean regions. Baseline for the gate's selectivity, 1941.6: ENG 494 hulls and USA 476 pass; AST 11, FRA 21, NZL 7, CAN 2, RAJ 1, SAF 0 do not.
+- **Probe:** `savegame.py tlm <ITA-tag> <saves> --match nav_conv` for leg 1; `savegame.py navy ENG <saves>` (the mission census line) for legs 2/3, `navy <tag>` per Allied minor for leg 3's negative half; `savegame.py control 116,458,1061,451 <save> --provinces` for the gate predicates. There is **no per-region mission field in a save** — leg 2 reads the raid-mission total and is therefore an upper bound on Mediterranean raiding; leg 1 is the outcome measure and outranks it.
+  ```text
+  > savegame.py tlm ITA <saves> --match nav_conv        (pre-fix baseline, campaign 8c0fea4c)
+    1941.6   wa_tlm_nav_convoys=1023   wa_tlm_nav_conv_killed=200  wa_tlm_nav_conv_threat=100
+    1942.6   wa_tlm_nav_convoys=1008   wa_tlm_nav_conv_killed=202  wa_tlm_nav_conv_threat=63.6
+    1943.6   wa_tlm_nav_convoys=1004   wa_tlm_nav_conv_killed=253  wa_tlm_nav_conv_threat=100
+  > savegame.py navy ENG 1941.6_Jun.hoi4
+    missions: escort=101(101scr) patrol=80(80scr) raid=18(0scr) none=229(200scr) reserve=66(48scr)
+    idle=295 (60% of the navy)
+  > savegame.py control 116,458,1061,451 <save> --provinces   (the gate, per save)
+    1940.7  116=ENG  458=FRT  1061=FRA  451=ITL   -> base held (Malta), lifeline active, Tobruk enemy
+    1942.12 116=ENG  458=GER  1061=GER  451=ITL   -> all three still true
+    1943.6  116=ENG  458=FRA  1061=FRA  451=ENG   -> Tobruk leg releases, lifeline leg releases
+  ```
+- **Fail-tells to record:** the pool untouched with ENG raid hulls above 40 (the type ranks regions but the engine sent them elsewhere — `naval_avoid_region` from another writer, or the Royal Navy is committed in the Atlantic; check `WA_AI_NAVAL_FACTION_ALLIES_atlantic_*` first); ENG raid hulls unchanged at ~18 (the `naval_mission_threshold` did nothing — the key is correct since the 2026-08-21 boot test, but its magnitude `-100` is ASSUMED, copied from vanilla's `MISSION_PATROL`. **The key shipped WRONG first**: `MISSION_CONVOY_RAID` was rejected at boot with `bad mission type ... near line: 860`, after a `grep -c` on `hoi4.exe` matched it as a substring of `MISSION_CONVOY_RAIDING`. If this leg fails, check `error.log` for a mission-type line before touching the value); an Allied minor losing ships in the Med (the `is_major_naval` gate leaked — check whether the block's `allowed` list and the `enable` capability test really both apply); the Royal Navy taking heavy capital losses in 29/269 (the interdiction is being paid for at the wrong price — retune to submarines by removing the `naval_mission_threshold` line, which is the surface-fleet lever).
+- **Threshold:** 3 — one outcome measure plus two force-composition reads.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R84. The Pacific Commonwealth's home garrison is released while the Pacific is quiet (Fix 123)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "tant que le Japon est neutre / pas sur le point d'attaquer, AST, NZL et RAJ peuvent réduire leurs divisions de garnison de territoire pour contribuer au théâtre africain"). Pre-fix state MEASURED at 1941.6: **AST held 17 of 22 divisions (77 %) and NZL 8 of 11 (73 %) in ENGINE area-defence orders**, and RAJ 17 of 40 (43 %) — against GER 1 of 203 (0.5 %) and ITA 4 of 84 (5 %), the two countries that carry `garrison = -5000`. Cause: `WA_AI_MILITARY_ARCHETYPE_minors_home_first` (`WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt`) gives **every minor at war `garrison = +50`**, i.e. more area defence; AST and NZL have no `garrison` writer of their own at all, and RAJ's `-5000` is gated on `has_war_with = JAP`.
+- **This item also carries the first in-game measurement of what `garrison = -5000` does** — the question `documentation/WA_AI_MILITARY_SYSTEM.md` §16 leaves open ("that convention is not documented by the engine and remains a campaign test") and that R74 leg 1 was written for. RAJ is its own control: area-defence divisions read **14 / 17 / 16** at 1940.10 / 1941.6 / 1941.12 (no `-5000`) and **0 / 3 / 2** at 1942.3 / 1942.6 / 1943.6 (`-5000` armed by the JAP war) while its BUFFER count *rose* 17 → 21 → 25, so the engine did not merely move the guards onto the new fronts. **DERIVED**, with the rival explanation named: the switch coincides with Japan's entry. The cross-section closes it without the date — AST and NZL, with no `garrison` writer, sit at 73–77 % on the same save where GER and ITA sit at 0.5–5 %.
+- **Fix under test:** Fix 123 — `WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison` (`WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt`): `garrison = -5000` plus `front_unit_request +60` on `north_africa` and on `WA_AI_MILITARY_east_africa_regions`, for AST / NZL / RAJ, gated on `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`. The new switch `WA_AI_MILITARY_pacific_threat_imminent` (war, a wargoal against us, a wargoal being justified, or a completed southward focus) also re-points `WA_AI_MILITARY_AST_japan_war`, `WA_AI_MILITARY_RAJ_japan_war` and `WA_AI_MILITARY_RAJ_unit_saving`, so the release and the re-garrison are two sides of one verdict.
+- **Pass (four legs):** "release armed" is read from the same save — no war between the Pacific expansionist and the dominion, and `JAP_strike_south_doctrine` / `JAP_strike_south` absent from its `focus` section.
+  1. **Australia releases.** On ≥ 2 consecutive saves while the release is armed, AST area-defence divisions are ≤ **40 %** of its army. Baseline: 90 % at 1940.10 (9 of 10) and 77 % at 1941.6 (17 of 22).
+  2. **New Zealand releases.** Same bar for NZL. Baseline: 86 % at 1940.10 (6 of 7) and 73 % at 1941.6 (8 of 11).
+  3. **India releases.** Same bar for RAJ. Baseline: 33 % at 1940.10 (14 of 42) and 43 % at 1941.6 (17 of 40) — and RAJ's non-yielding `unit_saving` reserve (0.25, `subtract_fronts_from_need = no`) is off in the same window, so its buffer count should fall too.
+  4. **It comes back.** Within 3 monthly saves of the release closing (the southward focus completing, or a war), AST area-defence divisions rise above 40 % again. This is the safety leg: a dominion that never re-garrisons is the failure mode this fix can create.
+- **Probe:** `plans.py AST,NZL,RAJ <saves>` (the order-class census line: `areadef armies=N divisions=M`) for legs 1–4; `savegame.py section <save> JAP focus | grep strike_south` for the release predicate; `savegame.py relations <save> --tag <dominion>` for the war half.
+  ```text
+  > plans.py RAJ <saves>            (the garrison = -5000 control, campaign 8c0fea4c)
+    1940.10  front 13  buffer 9   areadef 14  NO_ORDER 6     (no JAP war, no -5000)
+    1941.6   front 7   buffer 16  areadef 17                 (no JAP war, no -5000)
+    1941.12  front 6   buffer 17  areadef 16  NO_ORDER 5     (no JAP war, no -5000)
+    1942.3   front 29  buffer 21  areadef 0   NO_ORDER 8     (JAP war from 1942.1, -5000 armed)
+    1942.6   front 16  buffer 25  areadef 3   NO_ORDER 10
+    1943.6   front 21  buffer 27  areadef 2   NO_ORDER 11
+  > plans.py AST,NZL,ITA,GER,ENG 1941.6_Jun.hoi4      (the cross-section, same save)
+    AST  buffer 5   areadef 17                 22 divisions  -> 77 % areadef, no garrison writer
+    NZL  front 2  buffer 1  areadef 8          11 divisions  -> 73 % areadef, no garrison writer
+    ITA  front 38 buffer 42 areadef 4          84 divisions  ->  5 % areadef, garrison = -5000
+    GER  front 143 buffer 39 areadef 1 NO 20  203 divisions  -> 0.5 % areadef, garrison = -5000
+    ENG  front 16 buffer 31 areadef 16         63 divisions  -> 25 % areadef, garrison = 0
+  > savegame.py section <save> JAP focus | grep strike_south
+    1940.6   (absent)          1940.12  (absent)
+    1941.3   completed="JAP_strike_south_doctrine"      <- release closes here
+    1941.12  completed="JAP_strike_south_doctrine"  current="JAP_strike_south"
+    JAP-ENG war: absent at 1941.12, present at 1942.1
+  ```
+- **Fail-tells to record:** area-defence unchanged while the release is armed (`garrison` is NOT additive after all, and the `-5000` has to become a gate exclusion inside `minors_home_first` — the owner ruled Additive on 2026-08-21 and this leg is its falsifier); the released divisions going nowhere (`front_unit_request +60` is too small against the standing home requests — AST's `defend_home` writes +200 on six regions); a dominion homeland lost to a landing while the release was armed (the two safety terms are insufficient — the next lever is a coastal `put_unit_buffers` floor, not re-arming the whole area-defence army); the release window measured at less than 6 months — **this already happened and was acted on**. MEASURED on the 2026-08-21 retest: `JAP_strike_south_doctrine` was absent at 1940.6.24 and complete by 1941.5.23, against a Japanese war on Britain starting 1942.1 — eight to twelve months of false alarm, during which the release and the Fix 124 delegation were both held OFF and RAJ sat on 25–29 of its 40 divisions in India. The doctrine focus was **removed** from `WA_AI_CONFIG_MILITARY_pacific_offensive_posture` the same day, leaving `JAP_strike_south` (the actual southward war focus) plus the wargoal pair in `pacific_threat_imminent`. If the window is STILL short after that, the remaining suspect is the wargoal terms firing early, not the focus).
+- **Threshold:** 3 — four legs read from one census command; leg 4 is the safety leg and a FAILED leg 4 fails the item whatever the other three do.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R85. East Africa is the Indian army's campaign, and Britain goes to Egypt (Fix 124)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "sur la deuxième partie de 1940, l'armée anglaise est engagée en majorité contre l'Éthiopie, et l'armée indienne pas vraiment; il faut que l'armée indienne aille en Éthiopie et libère à l'ENG des divisions pour aller en Égypte"). Pre-fix state MEASURED at 1940.10: **ENG had 37 of its 66 divisions (56 %) in the East-African theatre** (Oromia 8, Amhara 6, Somali 6, N. Kenya 5, Eritrea 4, S. Sudan 3, Somaliland 2, S. Kenya 2, Khartoum 1) and only **8** in Egypt/Libya, while **RAJ had 24 of 42 (57 %) sitting in India** and 8 in East Africa. Diagnosis: the pull toward East Africa already reached RAJ (`WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT`, +150) and RAJ's own −100 suppression was NOT armed (it needs a war with PER, SOV or JAP). Nothing was missing on the demand side — the Indian army was reserved before it could be asked for, which is R84's mechanism.
+- **Fix under test:** Fix 124 — the fourth delegated mission of the Commonwealth handoff family (`documentation/WA_AI_MILITARY_SYSTEM.md` §16). `WA_AI_MILITARY_COUNTRY_RAJ_FRONT_east_africa_delegate` (+100 on the 4-region alias, on top of the Faction +150) paired with `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT` (−75 on the same alias), both reading `WA_AI_MILITARY_RAJ_east_africa_available` / `_commonwealth_east_africa_available`. Net while the delegate is live: RAJ +250, ENG +75. **Fix 123 is a hard prerequisite** — without the garrison release the delegate has no divisions to send, and this item cannot pass while R84 fails.
+- **Pass (three legs):** the theatre is the 19 states of `WA_AI_MILITARY_east_africa_regions`; "delegate live" is read from the same save (theatre contested, RAJ > 29 divisions, at war alongside ENG, Pacific quiet by R84's predicate).
+  1. **The Indian army goes.** On ≥ 2 consecutive saves while the delegate is live, RAJ holds ≥ **15** divisions in the theatre. Baseline: **8** at 1940.10.
+  2. **The British army leaves.** On the same saves, ENG holds ≤ **25** divisions in the theatre. Baseline: **37** at 1940.10.
+  3. **And goes to Egypt.** On the same saves, ENG holds ≥ **15** divisions in {446 Cairo, 447 Alexandria, 452 Marsa Matruh, 453 Sinai, 923 Suez Canal, 960 Libyan Plateau, 451 Derna}. Baseline: **8** at 1940.10.
+- **Probe:** `plans.py ENG,RAJ <saves> --where --limit 0`, summed by exact state name over the two lists; `savegame.py control 550,559,271,910,909 <save>` for "theatre contested"; `savegame.py section <save> JAP focus | grep strike_south` for the Pacific half of the delegate's gate.
+  ```text
+  > plans.py ENG,RAJ 1940.10_Oct.hoi4 --where --limit 22    (pre-fix baseline, campaign 8c0fea4c)
+    ENG  66 divisions: Oromia 8, Amhara 6, Somali 6, N.Kenya 5, Eritrea 4, S.Sudan 3,
+         Somaliland 2, S.Kenya 2, Khartoum 1  = 37 in East Africa (56 %)
+         Marsa Matruh 3, Libyan Platau 2, Upper Egypt 2, Alexandria 1 = 8 in Egypt/Libya
+    RAJ  42 divisions: Gujarat 8, Sind 4, Bombay 2, E.Bengal 2, Ceylon 2, Assam 1, W.Bengal 1,
+         Baluchistan 1, Madras 1, Tamil Nadu 1, Odisha 1 = 24 in India (57 %)
+         Br.Somaliland 2, Amhara 2, S.Sudan 1, Eritrea 1, Somali 1, Oromia 1 = 8 in East Africa
+         Libyan Platau 4, Marsa Matruh 2 = 6 in Egypt/Libya
+  > savegame.py control 550,559,271,910,909 <saves>        (the theatre's own life)
+    1940.6   ITS 5                 -> contested
+    1940.10  ITS 3  ENG 1  UKT 1   -> contested
+    1940.12  ETH 3  ENG 2          -> Ethiopia restored
+    1941.3   ETH 3  ENG 1  ITS 1
+    1941.6   ETH 4  ENG 1          -> no longer contested
+  ```
+  The two windows overlap on **1940.6 → 1941.2** — the theatre is contested from Italy's entry to about 1941.3, and the Pacific is quiet until `JAP_strike_south_doctrine` completes in the same months. That eight-month overlap is exactly the "deuxième partie de 1940" of the report, and it is the whole window this item can be scored in. If a campaign's East-African war ends before 1940.9 or its Japan commits early, score NOT CHECKED, never FAILED.
+- **Fail-tells to record:** RAJ divisions rising in East Africa with ENG's count unchanged (the ENG −75 did not arm — check that `WA_AI_MILITARY_commonwealth_east_africa_available` resolves through `any_country` from ENG's scope); both counts falling (the −75 and the Faction sinks stack into a net that abandons the theatre — the Faction +150 must stay above every brake); ENG leaving East Africa and NOT arriving in Egypt (the released divisions went to Britain or France — read `plans.py ENG --where` whole, not only the two lists); the delegate flickering on and off month to month (`east_africa_theatre_contested` or the division bar is marginal — the bar was already lowered 39 → 29 for this reason, MEASURED RAJ at 42 / 40 / 44).
+- **Threshold:** 3 — three counts from one command, on a window whose start and end are read from the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R86. The Kuwait guard needs a threat to guard against (Fix 125)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "l'ordre de garnison du Koweït peut être suspendu pour ENG si l'Irak est occupé ET le Japon pas dans la guerre"). Pre-fix state MEASURED: `WA_AI_MILITARY_ENG_kuwait_guard_active` asked only whether ENG was at war and whether 656 was held by its side, so the mission ran from 1939.9 to the end of the war over what was, for most of it, interior allied ground. ENG held **1 / 1 / 3 / 4** divisions in Kuwait at 1940.10 / 1941.6 / 1942.6 / 1943.6, and RAJ — the delegate the handoff family designates — **never took the mission in the whole campaign**. Control of the land approach: Iraq (291 / 675 / 1041) was IRQ-held and neutral until the Anglo-Iraqi war of **1941.4.24**, then British from about 1942.3; Persia 413 was PER then SOV.
+- **Fix under test:** Fix 125 — a third term on `WA_AI_MILITARY_ENG_kuwait_guard_active`: `WA_AI_MILITARY_gulf_approach_threatened`, true when an enemy of ENG controls 291 / 675 / 1041 / 413 / 292, or when `ENG = { WA_AI_MILITARY_pacific_war_active = yes }`. The maritime half uses `pacific_war_active` and **not** the wider `pacific_threat_imminent` of Fix 123: the user's rule for Kuwait is literally "Japan not in the war", and a fleet has to be at war to reach the Gulf. The term disarms all three consumers together — the ENG floor, the ENG fallback and RAJ's delegated guard — which is the intent: there is no mission, so there is nothing to delegate.
+- **Pass (two legs):**
+  1. **No garrison without a threat.** On every save where no enemy of ENG controls 291 / 675 / 1041 / 413 / 292 and ENG is at war with no country whose capital is in Asia, ENG holds **0** divisions with a buffer or area-defence order in state 656, and so does RAJ. Baseline: **1** at 1940.10 and 1941.6.
+  2. **The guard still works.** On every save where either half of the threat test is true, ENG or RAJ holds ≥ **1** division in 656 within one monthly save. Baseline: 3 at 1942.6 and 4 at 1943.6, both inside the Japanese war.
+- **Probe:** `plans.py ENG,RAJ <saves> --where --limit 0`, row `Kuwait`; `savegame.py control 291,675,1041,413,292 <save>` for the land half; `savegame.py relations <save> --tag IRQ` and `--tag ENG` for the war half. **Expected effect in this campaign's shape is small — one division** — because the two release conditions and the Anglo-Iraqi war interleave; the fix earns its keep in a world where Iraq falls early and Japan stays out, where the pinned force was 3–4.
+  ```text
+  > plans.py ENG <saves> --where --limit 0 | grep Kuwait     (pre-fix baseline, campaign 8c0fea4c)
+    1940.10   Kuwait  1  (buffer 1)          RAJ: absent
+    1941.6    Kuwait  1  (buffer 1)          RAJ: absent
+    1942.6    Kuwait  3  (buffer 3)          RAJ: absent
+    1943.6    Kuwait  4  (invasion 4)        RAJ: absent
+  > savegame.py control 291,675,1041,413 <saves>
+    1940.10  IRQ 3  PER 1        (neutral - no enemy on the approach)
+    1941.6   IRQ 3 with 8 ENG provinces inside, PER 1   (Anglo-Iraqi war, from 1941.4.24)
+    1942.6   ENG 3  SOV 1
+    1943.6   ENG 3  SOV 1
+  > savegame.py relations <saves> --tag IRQ
+    1941.3  at war with: none
+    1941.5  at war with: 27, FRA/AST/CAN since 1941.4.24.1
+    1941.8  at war with: 26
+  > savegame.py relations <saves> --tag ENG | grep -c JAP
+    1941.11 0   1941.12 0   1942.1 1   1942.2 1      (JAP-ENG war starts 1942.1)
+  ```
+- **Fail-tells to record:** Kuwait lost while the guard was suspended (the approach list is incomplete — add the missing state and say which); the guard never suspending (`pacific_war_active` reads true throughout because it also matches any enemy with an Asian capital, which in 1941 includes Iraq itself — that is not wrong for Kuwait, but if it makes the fix inert, split the maritime half onto an explicit naval-power test); RAJ taking the Kuwait mission during a suspension (the third term did not reach `WA_AI_MILITARY_RAJ_kuwait_guard_available`, which reads the same trigger).
+- **Threshold:** 2 — two binary legs on one state, and the measured effect is one to four divisions, so a long streak would buy nothing.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R87. Surplus dockyards make convoys instead of nothing (Fix 126)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user ruling on campaign `8c0fea4c`: "s'il n'y a rien à construire, les pays comme RAJ dans cette situation devraient construire des convois par défaut"). **RECUT the same day — read the correction before scoring.** The item first claimed the idle dockyards were caused by this system's convoy ladder (tier 0 stopping at 200 convoys, tiers 1–3 needing 20 shipyards, `stop_MINORS` braking above 300). **That was wrong.** The closure test: every minor on the **generic** naval tech tree faces the identical ladder and saturates its yards anyway — SWE **17** factories on 16 dockyard levels, TUR **21/20**, ARG **6/5**, BRA **6/5** — while every dominion on the **British** tree runs exactly one. The idle dockyards are Fix 129's subject (no matching ship design), scored by **R90**. What is left for this item is the narrow, genuine case: a minor with spare dockyards after its escort programme is satisfied.
+- **Fix under test:** Fix 126 — `WA_AI_PRODUCTION_dockyards_have_nothing_to_build` (`WA_AI_PRODUCTION_navy.txt`: default system, at war, `num_of_naval_factories > 3`, NOT `is_major_naval`, NOT the majors' arsenal), the same verdict negated inside `WA_DEFAULT_production_convoy_stop_MINORS` (`enable` **and** `abort`), and one payload block `WA_DEFAULT_production_convoy_minor_arsenal` carrying `equipment_production_surplus_management id = convoy value = 100` and nothing else. The `equipment_production_min_factories id = convoy value = 3/6` of the first version was **removed with Fix 129** — a forced floor would outbid the escorts WA now asks these countries for (`role_ratio naval_escort 50`).
+- **Pass (two legs).** Score **after** R90, and only on countries where R90 passes — a country with no design has no surplus, only an absence.
+  1. **Surplus becomes convoys, not idleness.** On any save where a country matching the trigger has more dockyard levels than active naval factories in the pre-fix reading, active naval factories are now ≥ dockyard levels − 2. Baseline at 1941.6: RAJ 1 of 8, AST 1 of 6, CAN 1 of 16, NZL 1 of 7, SAF 1 of 4.
+  2. **Escorts still come first.** On the same saves, the country's convoy line does **not** hold more factories than its screen/escort lines combined. This is the leg that catches the removed `min_factories` coming back by another route, and it is the reason the threshold is 2 rather than 3: the item is now a guard, not a mechanism.
+- **Probe:** `savegame.py section <save> <TAG> production --max-lines 0`, then per `naval_lines={` block read `active_factories` and the `names`/`equipment_variant_index` to tell a convoy line (cost **700**, `amount = -1`, no name) from a warship line. **`--max-lines 0` is mandatory** — the default 400-line cap truncated RAJ's production section and made a first pass report "zero naval lines", which was false. `savegame.py buildings <TAG> <save> --match dockyard` for the denominator.
+  ```text
+  > per-tag naval usage at 1941.6_Jun (pre-fix baseline, campaign 8c0fea4c)
+    RAJ: dockyard levels=8   naval factories active=1   [HMIS India 1/1 cost=239,999,998 - the 1e8 line, QUEUE 0l]
+    AST: dockyard levels=6   naval factories active=1
+    CAN: dockyard levels=16  naval factories active=1
+    NZL: dockyard levels=7   naval factories active=1
+    SAF: dockyard levels=4   naval factories active=1
+    ENG: dockyard levels=88  naval factories active=81  [15 naval lines]
+  > the closure test that recut this item (same save)
+    SWE: 16 levels / 17 active   TUR: 20 / 21   ARG: 5 / 6   BRA: 5 / 6      generic tech tree
+    RAJ:  8 levels /  1 active   AST: 6 / 1     CAN: 16 / 1  NZL: 7 / 1      british tech tree
+  > RAJ's last real naval line, 1938.6: unnamed 7/8, cost=700, amount=-1  -> convoys
+    (convoy build_cost_ic = 700, common/units/equipment/convoys.txt:41)
+  ```
+- **Fail-tells to record:** naval factories still 1 while R90 passes (the surplus type does not reach dockyards — the pools may be separate, which is **ASSUMED**; the recorded fallback is a small `equipment_production_min_factories` tier gated on the escort programme being full); convoy lines outnumbering escort lines (leg 2 — the surplus weight of 100 is too high against the other surplus types, cut it before touching anything else); a 4-dockyard minor losing army production (the `> 3` bar is one too low).
+- **Threshold:** 2 — one outcome count and one guard, on a mechanism that only spends what nothing else wants.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R88. The Allies man the Italian colonial frontiers before Italy declares (Fix 127)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "il n'y avait personne à la frontière ITS", and the ruling that follows it — if the Italian and German powers share an ideology and France is collapsing, or the date has passed 1940.8.1, the Allies put divisions on the ITS and ITL frontiers). Pre-fix state MEASURED at the **1940.6** save, four weeks before Italy's declaration on **1940.6.30**: ENG held **2 divisions in Aden and nothing else** anywhere on the Sudan / Kenya / Somaliland frontier; RAJ held **zero**; SAF **zero**. Diagnosis: the whole Allied East-Africa family is reactive — `WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` (Fix 97) needs `east_africa_theatre_contested`, which needs an **enemy already holding** East-African ground, and `WA_AI_MILITARY_ENG_el_alamein_guard_active` needs an enemy on Libyan ground. Neither frontier can be manned before the declaration. The Axis has no such gap: ITA's `east_africa_garrison_THEATRE` stands on 550/559 in peace.
+- **Fix under test:** Fix 127 — `WA_AI_MILITARY_italian_entry_likely` (`WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology`, an enumerated four-group match because HOI4 1.19.2 has no "same ideology as" trigger, AND either `WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing` or `date > 1940.8.1`), released by `WA_AI_MILITARY_italian_entry_still_pending`; payload `WA_AI_MILITARY_ALLIES_italian_entry_tripwire_THEATRE` — `put_unit_buffers` order 9617 at 0.06 on {551, 1096, 549, 1100, 269, 659} and order 9618 at 0.04 on {452, 960}, for ENG and RAJ.
+- **KNOWN LIMITATION, measured before shipping — read this before scoring:** on this campaign the rule as specified **cannot arm much before the declaration**. France still held **29 of 29** metropolitan states at 1940.6.1 (1 province lost, Belgium already entirely German), so `surrender_progress > 0` is at best a mid-June event; and `date > 1940.8.1` falls **after** Italy declared on 1940.6.30, so the calendar fallback never fires at all here. Expect an arming window of days to three weeks. A campaign that scores leg 1 FAILED on "the tripwire armed too late" is confirming this, not finding something new — the recorded widening is a third OR term, "the German homeland power is at war with the western bulwark", which on this campaign is true from **1939.9.1** and would give ten months of warning. Owner decision pending.
+- **Pass (three legs):**
+  1. **The border is not empty.** On the last monthly save before the Italian homeland power declares war, the Allied side holds ≥ **4** divisions across {551, 1096, 549, 1100, 269, 659}. Baseline: **2** (Aden only), at 1940.6.
+  2. **The Libyan border too.** On the same save, the Allied side holds ≥ **2** divisions across {452, 960}. Baseline: **0** at 1940.6 (ENG's Egyptian divisions were at Upper Egypt / Nahr, not on the border).
+  3. **It hands over and does not stack.** On the first monthly save after the declaration, the tripwire orders are gone and the reactive families own the ground: no state of either list carries divisions under **two** distinct buffer orders. Baseline: not applicable pre-fix (no tripwire existed).
+- **Probe:** `plans.py ENG,RAJ,SAF <saves> --where --limit 0` summed over the two state lists by exact name (Khartoum, Kurdufan, South Sudan, Northern Kenya, British Somaliland, Aden / Marsa Matruh, Libyan Platau); `savegame.py relations <save> --tag ENG` for the declaration date; `savegame.py control owner:FRA <save>` for the collapse term; `savegame.py section <save> ITA politics` and `... GER politics` (`ruling_party=`) for the ideology term; `plans.py <TAG> --oob` to see the order ids for leg 3.
+  ```text
+  > plans.py ENG,RAJ,SAF <saves> --where --limit 0   (pre-fix baseline, campaign 8c0fea4c)
+    1940.6   ENG: Aden 2, nothing else on the frontier       RAJ: 0    SAF: 0
+    1940.10  ENG: Oromia 8, Amhara 6, Somali 6, N.Kenya 5, Eritrea 4, S.Sudan 3,
+                  Somaliland 2, S.Kenya 2, Khartoum 1, Aden 1  = 38     RAJ: 8    SAF: 0
+    1941.6   ENG: Aden 3, Eritrea 1                            RAJ: 0    SAF: 0
+  > savegame.py relations 1940.6_Jun.hoi4 --tag FRA   ->  GER since 1939.9.1.10
+  > savegame.py control owner:FRA <saves>
+    1940.4  FRA 29 states      1940.5  FRA 29      1940.6  FRA 29 (250 prov FRA / 1 GER)
+    1940.7  FRA 27  GER 2
+  > savegame.py control owner:BEL 1940.6_Jun.hoi4   ->  GER 5   (Belgium already gone)
+  > ITA / ENG war: ITA and ITS recorded at war with ENG since 1940.6.30.3
+  ```
+- **Fail-tells to record:** the tripwire never armed before the declaration (the KNOWN LIMITATION above — apply the third OR term rather than retuning the ratios); divisions sitting on the frontier for a year with no Italian entry (the release term is not doing its job, or the ideology match is true in a world where Italy never comes in — check `italian_entry_still_pending` and consider adding an Italian-mobilisation term); the same state under two buffer orders after the declaration (leg 3 — the hand-over is not exclusive, and the fix is a gate term, never a ratio change); ENG pulling divisions out of Egypt to fill Sudan (the 0.06/0.04 ratios are competing with the El-Alamein ladder — both are `put_unit_buffers` on one army).
+- **Threshold:** 3 — division counts on two fixed state lists, with the declaration date read from the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R89. The Indian army reinforces El Alamein without Britain standing down (Fix 128)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on the first retest build of campaign `8c0fea4c`: "RAJ garde encore beaucoup de divisions en Inde, au lieu d'aider à El Alamein — les Alliés manquent de divisions"). Pre-fix state MEASURED on the retest saves: RAJ fields **59** divisions in June 1940, loses its BEF / Norway contingents with France, and runs at **40 / 40 / 42** at 1941.5.23 / 1941.6.10 / 1941.10.6 — permanently **below the bar of 49** on `WA_AI_MILITARY_RAJ_egypt_support_available`, so the El-Alamein support mission has never armed in any campaign. Consequence in the same saves: RAJ holds **25 / 29 / 25** divisions in India while the entire Allied force on the Egyptian front is **13 / 13 / 15** (ENG 11/11/10, RAJ 1/1/2, SAF 1, NZL 0/0/2).
+- **Fix under test:** Fix 128 — a SECOND verdict, `WA_AI_MILITARY_RAJ_egypt_reinforcement_available`, identical to the handoff verdict except `num_divisions > 29`. It is read by the three RAJ writers that ADD force — `..._FRONT_support_el_alamein` (+50 `front_unit_request` on `north_africa`), `..._THEATRE_support_el_alamein` (0.05 on Marsa Matruh) and `..._DIPLOMACY_defend_north_africa` (`force_defend_ally_borders` 100) — and by nothing else.
+- **Why the existing bar was NOT simply lowered, and this is the load-bearing part of the item.** ENG's three-tier El-Alamein ladder reads the handoff verdict through `WA_AI_MILITARY_commonwealth_egypt_support_available` and **stands down** when it is true: `put_unit_buffers` 0.25 → 0.15 with one delegate, → 0.05 with two. On the measured armies (ENG 55, RAJ 40, SAF 6) lowering the handoff bar would have moved ENG from 0.15×55 ≈ 8.2 to 0.05×55 ≈ 2.8 while RAJ contributed 0.05×40 = 2 — **a net loss of about 3.5 divisions at El Alamein**, the exact opposite of the report. Splitting the verdict is what makes the change monotone: below 30 nothing changes, between 30 and 49 RAJ reinforces and ENG does **not** stand down (Egypt is deliberately double-covered, a stated departure from the §16 handoff invariant), above 49 both verdicts are true and the ladder behaves as it always did.
+- **Pass (three legs):** the Egyptian front is {446 Cairo, 447 Alexandria, 452 Marsa Matruh, 453 Sinai, 923 Suez Canal, 960 Libyan Plateau, 451 Derna, 1097 Nahr}. "Reinforcement live" is read from the same save: RAJ > 29 divisions, at war alongside ENG, ENG holds Marsa Matruh.
+  1. **India lets go.** On ≥ 2 consecutive saves while the reinforcement verdict is live, RAJ divisions in the Indian home states are ≤ **15**. Baseline: 25 / 29 / 25 at 1941.5.23 / 1941.6.10 / 1941.10.6.
+  2. **Egypt is stronger, not merely redistributed.** Total Allied divisions on the Egyptian front (ENG + RAJ + AST + NZL + SAF) reach ≥ **20** on at least one save while the verdict is live. Baseline: 13 / 13 / 15.
+  3. **Britain does not stand down early.** On every save where RAJ holds ≤ 49 divisions, ENG's own contribution to that front is **not below** its pre-fix level of 10. This is the regression leg for the split: if ENG's count falls while RAJ is between 30 and 49, the handoff verdict is being armed by mistake.
+- **Probe:** `plans.py ENG,RAJ,AST,NZL,SAF <saves> --where --limit 0`, summed by exact state name over the two lists; the order-class census line of `plans.py RAJ <save>` for RAJ's total. `savegame.py control 452 <save>` for the destination half of the verdict.
+  ```text
+  > plans.py <TAG> <save> --where --limit 0        (pre-fix baseline, retest of campaign 8c0fea4c)
+    save                 ENG tot  Egy  India | RAJ tot  Egy  India | AST  NZL  SAF (Egy)
+    RAJ_1940_06_24_01      71      8     1   |   59      3    12   |  0    0    0
+    ITA_1941_05_23_21      55     11     0   |   40      1    27   |  0    0    1
+    ITA_1941_06_10_02      55     11     0   |   40      1    29   |  0    0    1
+    ITA_1941_10_06_11      55     10     0   |   42      2    25   |  0    2    1
+  > plans.py RAJ ITA_1941_05_23_21.hoi4
+    front armies=2 divisions=3   buffer armies=5 divisions=14   areadef armies=3 divisions=16
+    NO_ORDER armies=2 divisions=7        -> 40 divisions, bar is >49, mission cannot arm
+  ```
+- **Fail-tells to record:** RAJ still above 15 divisions in India with the verdict live (the release is not the binding constraint — check R84 first, because `garrison = +50` and the Pacific verdict hold the same divisions); ENG's Egyptian count falling while RAJ is between 30 and 49 (the split leaked — some ENG reader is on the reinforcement verdict); Egypt's total unchanged while RAJ's Indian count falls (the divisions went somewhere else — read `plans.py RAJ --where` whole); RAJ crossing 49 and Egypt getting *weaker* (the handoff ladder's stand-down is larger than the delegates' contribution at that army size, which is a defect in §16's ratios and not in this fix).
+- **Threshold:** 3 — three counts from one command, with leg 3 a pure regression check.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R90. The Commonwealth dominions have a ship design they can build (Fix 129)
+- **Ledger:** `class=RETIREABLE threshold=3 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user question on campaign `8c0fea4c`: "le RAJ commence avec des frégates débloquées pourtant, pourquoi il fait pas des navires d'escorte ?"). **The question was right and it overturned the previous diagnosis.** MEASURED at 1941.6: every Commonwealth dominion holds British frigate and destroyer technology — RAJ `eng_frigate_1..5` and `eng_destroyer_1..6`, AST `eng_frigate_1..6` — and **zero** `generic_*` naval technologies. Meanwhile **no `ai_equipment` file in the mod names RAJ, AST, CAN, NZL or SAF**: the twelve design groups of `common/ai_equipment/ENG_naval.txt` were all `available_for = { ENG }`, and every design in `common/ai_equipment/generic_naval.txt` — which they *are* allowed to use, since it blocks only the seven majors — is gated on `has_tech = generic_frigate_1` / `generic_destroyer_*`. They had the role, the hulls, and no design.
+- **The role was already theirs**, which is what makes this a defect and not a design choice: `WA_AI_CONFIG_is_escort_navy` = minor AND in the Allies, so `WA_AI_CONFIG_focus_on_escorts` is true for all five, and `WA_DEFAULT_production_navy_main_focus_on_escorts` gives them `role_ratio naval_escort 50 / naval_screen −50`. A frigate hull costs **80 IC** (`ship_hull_very_light.txt`) and they had **36 idle dockyard levels**.
+- **Fix under test:** Fix 129 — `AST CAN NZL RAJ SAF MAL BRM` added to `available_for` on five of the twelve groups in `ENG_naval.txt`: `ENG_destroyers` (naval_screen), `ENG_escorts` (naval_escort, the `eng_frigate_hull_*` group), `ENG_naval_light_cruiser` (opened by owner ruling), `ENG_naval_mine_sweeper` and `ENG_naval_mine_layer`. The capital, super-heavy, carrier and submarine groups stay ENG-only by decision.
+- **Pass (three legs):**
+  1. **They build.** On ≥ 2 consecutive saves after 1940, each of RAJ, AST, CAN and NZL runs ≥ **3** active naval factories. Baseline: **1** each, on every save from 1938.9 to 1945.6.
+  2. **They build the right thing.** On those saves, at least one naval line per country carries a screen or escort hull (`eng_frigate_hull_*` or `eng_destroyer_hull_*`), and **no** dominion runs a capital-ship, carrier or submarine line. Baseline: no warship line of any kind.
+  3. **The fleet grows.** RAJ's ship count is > **1** at 1943.6. Baseline: exactly **1** on every save of the campaign, 1936 to 1945.
+- **Probe:** `savegame.py section <save> <TAG> production --max-lines 0` (`--max-lines 0` mandatory) for legs 1–2 — a warship line carries a `names={ override=... }` block and a cost in the 1,500–26,000 range, a convoy line reads cost **700** with `amount = -1`; `savegame.py navy <TAG> <save>` for leg 3; `savegame.py section <save> <TAG> technology --max-lines 0 | grep -oE 'eng_(frigate|destroyer)_[0-9]+'` to confirm the tech precondition on the campaign being scored.
+  ```text
+  > technology at 1941.6_Jun (pre-fix baseline, campaign 8c0fea4c)
+    RAJ: eng_frigate_1..5  eng_destroyer_1..6  mtg_transport   generic_* naval: NONE
+    AST: eng_frigate_1..6                                      generic_* naval: NONE
+    CAN / NZL / SAF:                                           generic_* naval: NONE
+    ENG: the full eng_* tree (battleship, carrier, cruiser, submarine, frigate 1..8, destroyer 1..10)
+  > naval usage, same save
+    RAJ 1 active / 8 dockyard levels   AST 1/6   CAN 1/16   NZL 1/7   SAF 1/4   ENG 81/88
+  > the closure test - minors on the GENERIC tree, same save
+    SWE 17 active / 16 levels (generic_destroyer_1,2)   TUR 21/20   ARG 6/5   BRA 6/5
+  > design availability, read in the repo
+    common/ai_equipment/ENG_naval.txt   12 groups, all `available_for = { ENG }` before the fix
+    common/ai_equipment/generic_naval.txt:1443   `has_tech = generic_frigate_1`
+    grep -rlnE "\b(RAJ|AST|CAN|NZL|SAF)\b" common/ai_equipment/   ->  no match
+  ```
+- **Fail-tells to record:** still 1 active factory (the design is not the binding constraint after all — then the engine's wanted-navy for these countries is ~0, which is **ASSUMED** and unobservable in a save; the next lever is `unit_ratio screen_ship` or `equipment_production_factor`, not another design); a dominion running a light-cruiser line while its escort lines are empty (the light-cruiser opening was a mistake — its `role_ratio` is 10 against escort 50, so this should not happen; close `ENG_naval_light_cruiser` again); army production falling (dockyards and mils are separate pools, so this should be impossible — if it happens, something else changed); MAL or BRM producing (harmless, they hold one dockyard each; record it, do not score it FAILED).
+- **Threshold:** 3 — three counts from two commands, against a baseline that is identical on every one of the campaign's 121 saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+
+### R91. Tobruk reaches 5078 inland, not along the Egyptian coast (Fix 130)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report with a screenshot, after Fix 120 part 2: "l'IA met vraiment du temps à relier 1130 et 5078 : je vois qu'elle passe par la côte — si c'est un problème de détection de contrôle de state, pourquoi ne pas penser à un chemin alternatif ?"). The diagnosis in the report is correct and this item records the measurement behind it.
+- **The defect, MEASURED.** `WA_AI_PATHFIND_PROV_get_path` type 2 filters by **province** control; `WA_AI_PC_start_project` admits by **state** controller (`WA_AI_PC_state_controller_allows_admission`, scoped to `global.WA_AI_MAP_province_state_id^<first province of the segment>`). On contested ground the two disagree, and Tobruk → 5078 is where. On saves `ITA_1941_05_23_21` / `ITA_1941_06_10_02` / `ITA_1941_10_06_11`, **every province of both candidate routes is ITL-held**, but **state 452 Marsa Matruh is ENG-controlled** with an 11/3 then 10/4 province split (and by 1941.10 state 960 is ENG-controlled too, 4/2):
+
+  | Route | Hops | Segments and the state each is scoped to |
+  |---|---|---|
+  | coastal | 3 | 1130→10120 (451 ITL, admitted) · 10120→**7079 (452 ENG, REFUSED)** · 7079→5078 |
+  | inland | 3 | 1130→4136 (451 ITL) · 4136→13481 (451 ITL) · 13481→5078 (663 ITL) |
+
+  **Both are three hops**, so the pathfinder's tie-break chose, and when it chose the coast the last segment was refused for ever — the rail ran east from Tobruk along the coast and stopped, which is what the screenshot shows. `wa_tlm_r103_corridor_blocked_n` counted it: **4 → 5 → 6** across those three saves. Independent proof the inland route is buildable: the land-war rail family had already queued `4136 → 13481` and `13481 → 5078` on its own (visible in the 1941.6 `pc ITA` queue).
+- **Fix under test:** Fix 130 — province **13481** (state 663 Cyrenaica; no in-game name recovered) added to `WA_AI_PC_CORRIDOR_define_north_africa` between Tobruk 1130 and 5078, as a **forced junction**, which is the same kind of node as Constantine 9976 in Fix 113. Node count 20 → 21, so `constant:wa_ai_railway.corridor.max_routes_per_run` moves 19 → 20 with it. It does **not** fix the pathfinder/admission mismatch itself — that is a QUEUE row.
+  - Note for whoever reads the report this came from: the id proposed there was **13841**, which is a digit transposition. Province 13841 is in **state 443 Sind, India**. The North-African junction is **13481**.
+- **Pass (two legs):**
+  1. **The route is inland.** In any `pc <TAG> --limit 0` reading with corridor segments queued between Tobruk and 5078, no queued corridor segment has a first province in state **452** or **960**. Baseline: `10120 → 7079` and `7079 → 5078` queued at 1941.6 on the pre-fix build, the second permanently refused.
+  2. **And it completes.** `rail.py --corridor 1130,13481,5078` reports no BREAK within **8 months** of the first save where 1130, 4136, 13481 and 5078 are all held by one side. Baseline: BREAK from 1940.6 to somewhere between 1941.12 and 1942.3 on the first campaign — 21 months — and still BREAK at 1941.6.10 on the retest.
+- **Probe:** `savegame.py pc <TAG> <save> --limit 0` (read the `state` column of every `corridor`-tagged railway row) for leg 1; `rail.py --corridor 1130,13481,5078 <saves>` and `savegame.py control 451,663,960,452 <save> --provinces` for leg 2; `tlm <TAG> --match r103_corridor` as the supporting counter.
+  ```text
+  > savegame.py control 451,663,960,452 ITA_1941_05_23_21.hoi4          (the mismatch, pre-fix)
+    by state controller : ITL 3  ENG 1
+    states whose province split contradicts the state controller (1):
+      state 452  owner ENG  st.ctrl ENG   ENG 11  ITL 3
+    per province: 1130=ITL 4136=ITL 10120=ITL 7079=ITL 13481=ITL 5078=ITL
+  > savegame.py control 451,663,960,452 ITA_1941_10_06_11.hoi4
+      state 452  owner ENG  st.ctrl ENG   ENG 10  ITL 4
+      state 960  owner ENG  st.ctrl ENG   ENG 4   ITL 2
+  > savegame.py pc ITA 1941_06 (pre-fix build, first campaign): corridor rows
+     16   9 railway corridor 451 1130 10120 1000 0 0/800 stall 4
+     17  14 railway corridor 451 10120 7079 1000 0 0/800 stall 4
+     18  28 railway corridor 452 7079  5078 1000 0 0/800 stall 4   <- state 452, refused
+  > tlm ITA --match r103_corridor:  blocked_n = 4 -> 5 -> 6 over the three retest saves
+  ```
+- **Fail-tells to record:** a corridor segment still scoped to state 452 or 960 (the node did not force the route — check that `max_routes_per_run` really reached 20, because a cap below the pair count silently drops the last pairs); `blocked_n` still rising with no segment in 452/960 (a DIFFERENT hop is being refused — Gabès 11957 → Tripoli 1149 across Vichy Tunisia is the known one and is not this item's); the inland hop connecting but the corridor stalling one hop further east (the same mismatch at the next contested state — that is the general defect and the QUEUE row, not a failure of this node).
+- **Threshold:** 2 — two readings off one map and one queue, on a single named hop.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R92. German armour stays in Africa past Barbarossa (Fix 131)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user ruling on campaign `8c0fea4c`: "j'aimerais finalement que des chars allemands restent en afrique, donc je ne veux pas que leur participation s'arrête à barbarossa"). This reverses one half of the 2026-08-20 rule that Fix 119 was written to; the D-Day half is unchanged.
+- **Pre-fix state, MEASURED.** `plans.py GER <save> --where --limit 0` over the African scope returns **zero German divisions on all five saves of the afternoon branch** — `ENG_1941_04_28_01`, `ITA_1941_09_20_20`, `ITA_1942_04_04_11`, `FRA_1942_11_21_01`, `ENG_1943_03_22_01` — i.e. 1941.4 → 1943.3 inclusive. It matches the monthly-branch reading already recorded in R82 (16 at 1940.12 → 0 at 1941.12). Italy, and therefore Germany, entered the Soviet war on **1941.6.22.7** (`relations FRA_1942_11_21_01.hoi4 --tag ITA`).
+- **The window was open the whole time.** Evaluated term by term on `FRA_1942_11_21_01` (1942.11.21), four weeks after Torch:
+
+  | `WA_AI_MILITARY_afrika_korps_window` term | measured | verdict |
+  |---|---|---|
+  | allied with an Italian homeland power | faction Axis, leader GER | true |
+  | our-side Libyan staging ground | ITL controls 448 / 450 / 451 | true |
+  | an enemy controls the East-Egypt anchor 446 / 447 / 453 | ENG / ENG / ENG | true |
+  | `NOT home_threatened` | no enemy on Reich soil | true |
+  | `NOT AIR_theatre_contested_western_europe` | no Allied ground in Western Europe | true |
+  | **the window itself** | | **OPEN** |
+  | `NOT = { has_war_with = SOV }` in each consumer's `enable` | war since 1941.6.22 | **false — the only lock** |
+
+  On the same save Germany **owned and controlled** Tunis 458, Bizerte 1061 and Gabès 665, defended by **one Italian division** (see R94). By `ENG_1943_03_22_01` all three read controller FRA.
+- **Fix under test:** Fix 131 — the `NOT = { has_war_with = SOV }` clause deleted from all three GER consumers (`_focus_on_north_africa_FRONT`, `_north_africa_offensive_exec_FRONT`, `_focus_on_north_africa_THEATRE`), **and** the `front_unit_request area = north_africa value = -75` line split out of `WA_AI_MILITARY_GER_war_with_soviets_2_FRONT` into `WA_AI_MILITARY_GER_war_with_soviets_africa_suppression_FRONT`, gated `has_war_with = SOV` AND `NOT = { afrika_korps_window }`. The split is not cosmetic: `front_unit_request` is additive per area, so without it the +30 and the −75 would both stand and the expedition would exist on paper only. Fix 121's 30 / 105 magnitudes are **deliberately not touched** — extending the duration and raising the weight in one change would make the next measurement unreadable.
+- **Pass (two legs):**
+  1. **It survives Barbarossa.** GER holds ≥ 3 divisions in the African scope (R82's state list) on ≥ 3 consecutive monthly saves **taken after the Soviet war starts** while the window is open. Baseline: 0 on every save after 1941.6.
+  2. **It still closes on the West.** GER divisions in the scope fall below 3 within 6 months of `AIR_theatre_contested_western_europe` becoming true (a real Allied landing in Western Europe). This is the leg that proves the removal did not turn a window into a permanent sink.
+- **Probe:** `plans.py GER <saves> --where --limit 0` summed over the scope states by exact name, beside `relations <save> --tag GER` for the SOV war date and the Western-Europe contest reading.
+  ```text
+  > plans.py GER <save> --where --limit 0, summed over the African scope   (pre-fix, campaign 8c0fea4c)
+    ENG_1941_04_28_01   GER in African scope: 0
+    ITA_1941_09_20_20   GER in African scope: 0
+    ITA_1942_04_04_11   GER in African scope: 0
+    FRA_1942_11_21_01   GER in African scope: 0     <- Germany OWNS Tunis 458 / Bizerte 1061 / Gabes 665 here
+    ENG_1943_03_22_01   GER in African scope: 0
+  > relations FRA_1942_11_21_01.hoi4 --tag ITA
+    SOV   since 1941.6.22.7      recorded in own block
+  ```
+  The scope filter is the R82 state-name list plus Tunisia / Bizerte / Gabes. `plans.py` prints nothing at all for a country with no divisions in a state, so a zero here is a real absence, not a parse miss - the same command returns 107 rows for ITA on the same save.
+- **Fail-tells to record:** GER in the scope stays at 0 after the fix (the SOV clause was not the binding term — look next at the standing −80 area tilt and at `garrison = -5000`); GER in the scope ≥ 12 (the Fix 121 halving no longer holds once the window runs for years, and the deferred `divisions_in_state` brake is the next lever); leg 2 fails (the expedition never comes home and the D-Day front is under-manned — that is a regression, not a tuning question).
+- **Threshold:** 2 — division counts against a same-save window predicate.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R93. The Allies do not stand down in East Africa while Italy still owns it (Fix 132)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "lorsque ITS se rend, ETH est libérée. Des divisions alliées semblent se redéployer, alors qu'il reste des territoires sous controle italien (la somalie). Il faut vérifier que les changement de stratégie se font une fois les italiens complètement repoussés de la zone").
+- **Pre-fix state, MEASURED, and worse than reported — the enclave did not merely survive, it counter-attacked.** Owner/controller of the AOI core, save by save:
+
+  | date | 550 Eritrea | 559 It. Somaliland | 271 / 909 / 910 | Allied div. in the AOI | **ITA div. in 559** |
+  |---|---|---|---|---|---|
+  | 1940.6.24 | ITS / ITS | ITS / ITS | ITS | — | — |
+  | **1941.4.28** | ITS / **ENG** | ITS / **ETH** | ETH | 11, of which **5 RAJ with NO ORDER** | 0 |
+  | **1941.5.23** | ITS / ENG | ITS / **ITS** | ETH | ~9 | **12**, of which **9 on a front order**, + ITS 1 |
+  | 1941.6.10 | ITS / ENG | ITS / **ITS** | ETH | ~13 | 8 + ITS 1 |
+  | 1941.9.20 | ETH-side | ETH | ETH | 13 | 0 |
+
+  At 1941.4.28 **every** AOI state was held by ENG or ETH, so `WA_AI_MILITARY_AIR_theatre_contested_east_africa` — whose enemy limb is `CONTROLLER = { has_war_with = ROOT }` — read FALSE and the whole Fix 97 Allied family fell on `abort_when_not_enabled` that day. ITS still existed, was still at war, and still **owned** 550 and 559. Four weeks later Italy had landed twelve divisions and retaken Italian Somaliland; it was September before the Allies had it back.
+- **Fix under test:** Fix 132 — new `WA_AI_MILITARY_east_africa_not_pacified` (the existing enemy-**holds** limb OR an enemy still **owns** 550 / 559 / 268 / 269 / 271 / 909 / 910) and `WA_AI_MILITARY_east_africa_side_present`; `WA_AI_MILITARY_east_africa_theatre_contested` becomes `OR { AIR_theatre_contested_east_africa , AND { not_pacified , side_present } }`. The AIR trigger itself is **not** widened — it is also read by `WA_AI_build_theatre_air_bases` and would keep building AOI airfields after the campaign is won. `WA_AI_MILITARY_ethiopian_war_finished` is **not** touched — it gates RAJ's Kuwait guard and Italy's `protect_periphery` and answers a different question.
+- **Pass (two legs) — the item is only satisfied if BOTH fire, because a trigger that never releases is not a fix:**
+  1. **It holds.** On a save where our side controls every AOI state but an enemy still owns one, Allied divisions in the AOI do **not** fall by more than a third month-over-month, and no AOI state changes hands to the Axis afterwards. Baseline: 11 → the theatre disarmed → 559 lost within four weeks.
+  2. **It releases.** Within 3 months of the last AOI state passing to our side's ownership, the Allied AOI division count falls below 6 — i.e. the pull genuinely lets go once the colonial power is expelled.
+- **Probe:** the owner/controller split of the AOI core, plus `plans.py ALL <saves> --where --limit 0` filtered to the AOI state names for the division counts. **The owner column is the new term and `savegame.py control` does not print it per state** - it only shows owner for states whose province split contradicts their controller - so the reading below comes from a streaming parse of the `states={}` block's `owner=` / `controller=` fields. An `--owner` column on `control` is a QUEUE row.
+  ```text
+  > owner/controller of 550, 559, 271, 909, 910   (pre-fix, campaign 8c0fea4c)
+    RAJ_1940_06_24_01   271 ITS/ITS   550 ITS/ITS   559 ITS/ITS   909 ITS/ITS   910 ITS/ITS
+    ENG_1941_04_28_01   271 ETH/ETH   550 ITS/ENG   559 ITS/ETH   909 ETH/ETH   910 ETH/ETH
+    ITA_1941_05_23_21   271 ETH/ETH   550 ITS/ENG   559 ITS/ITS   909 ETH/ETH   910 ETH/ETH
+    ITA_1941_09_20_20   271 ETH/ETH   550 ITS/ENG   559 ITS/ETH   909 ETH/ETH   910 ETH/ETH
+  ```
+  Read the 1941.4.28 row against the 1941.5.23 row: every controller is on our side, every OWNER is still ITS, and four weeks later 559 is Italian again. That is the whole item in two lines.
+- **Fail-tells to record:** leg 2 fails (the ownership term never clears — check whether the peace conference actually transfers AOI ownership in this build, and if not the term needs a "the owner has capitulated and holds nothing" escape); the Allied count rises above ~20 (the theatre now over-pulls and the next lever is the +150 `front_unit_request`, not the gate); Italy still lands in 559 despite the pull (the gate was never the mechanism — look at the Allied naval cover of region 100 / 308 instead).
+- **Threshold:** 2 — an ownership/control reading and a division count off the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R94. Italy mans the Tunis bridge when it is German ground (Fix 133)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "une fois torch lancée, la tunisie passe allemande, mais l'italie n'envoie pas de divisions là bas (aucune ligne de front : cela doit être corrigé)"). The parenthesis is the diagnosis and it is right.
+- **Pre-fix state, MEASURED on `FRA_1942_11_21_01` (1942.11.21):** Tunis 458, Bizerte 1061 and Gabès 665 all read **owner GER, controller GER** (they were FRT at `ITA_1942_04_04_11`). Italy fielded **107 divisions** and had **1** in Tunisia, on a buffer order. Its distribution: Tripoli 13 (8 buffer, 5 no-order), Derna 10 (8 buffer), Benghazi 6 (3 buffer, 3 no-order), Gabès 2 (2 buffer), Marsa Matruh 11 (7 front). `plans.py ITA --fronts` returns **only** Army 14 and Army 15, both on Marsa Matruh / the Libyan plateau — **no order of any kind touches Tunisia**. Germany had 0 divisions anywhere in Africa (R92). By `ENG_1943_03_22_01` all three states read controller FRA.
+- **Why the existing block could not work.** `WA_AI_MILITARY_AXIS_tunis_bridge_FRONT` writes `front_unit_request strategic_region = 329 value = 200`, and `front_unit_request` sizes an **existing** front (`WA_AI_MILITARY_TYPES_REFERENCE.md`, domain definitions: "how divisions are deployed along **existing** land borders"). The ground is the ally's, so Italy has no border with the enemy in Tunisia and the +200 weights nothing. Same class as the inert `front_armor_score id = "ITL"` that Fix 119 deleted. The gate itself was fine: on that save `has_war` ✔, `tunis_bridge_held` ✔ (458 controller GER, in faction with ITA), `maghreb_enemy_landed` ✔ (459 / 460 controller FRA, at war with ITA since 1940.6.11.3), `can_open_secondary_fronts` ✔ (107 > 100) — so `tunis_bridge_contested` was **true** and delivered one division.
+- **Fix under test:** Fix 133, two legs.
+  1. `WA_AI_MILITARY_AXIS_tunis_bridge_defend_ally_DIPLOMACY` — `force_defend_ally_borders target = WA_AI_MILITARY_tunisia_regions value = 200`, on the same gate plus "the Tunisian ports are **not** ours or a subject's". `WA_AI_MILITARY_tunisia_regions` is an existing alias; no `ai_area` is minted, because WA sits at the engine's 72-definition ceiling (the 73rd crashes `C0000005` in `ai_area.cpp`, boot-tested).
+  2. The THEATRE buffer split into gate-exclusive tiers on `WA_AI_MILITARY_is_italian_homeland_power`: **0.15** for the Italian homeland power (order_id 9619), 0.05 unchanged for everyone else (order_id 9608). 0.15 × 107 ≈ 16 divisions, against 5 asked and 1 delivered; still under the 0.25 Italy reserves for Libya itself.
+  - **Deliberately NOT done:** a `front_control` executor on `strategic_region = 329`. `WA_AI_MILITARY_ITA_north_africa_offensive_exec_FRONT` already writes `ordertype = front` on `area = north_africa`, which **contains** region 329, and a second writer on overlapping ground breaks the per-area+ordertype exclusivity policy. If leg 1 works the front will be executed by the existing writer; if it does not, adding a second executor would not have helped.
+- **The one ASSUMED term, stated plainly.** That `force_defend_ally_borders` on an area makes the front allocator adopt an ally's border inside it. The 1.19.2 install documents **no** `force_defend_ally_borders` section; the reading is deduced from vanilla usage and from `WA_AI_MILITARY_TYPES_REFERENCE.md`. This leg is a hypothesis carried by the probe below, not a fact.
+- **Pass (two legs):**
+  1. **The bridge is manned.** ≥ 6 Axis divisions standing in states 458 / 1061 / 665 within **60 days** of `tunis_bridge_contested` becoming true. Baseline: 1, and it never rose.
+  2. **And it holds.** Tunis 458 and Bizerte 1061 are still Axis-controlled 120 days after the contest opens. Baseline: lost by 1943.3.22, ~4 months after Torch.
+- **Probe:** `plans.py ITA,GER <saves> --where --limit 0` filtered to Tunisia / Bizerte / Gabes, beside `control 458,1061,665,459,460 <saves>`.
+  ```text
+  > plans.py ITA,GER FRA_1942_11_21_01.hoi4 --where --limit 0   (pre-fix, campaign 8c0fea4c)
+    GER  FRA_1942_11_21_01.hoi4   248 divisions
+    ITA  FRA_1942_11_21_01.hoi4   107 divisions
+      state                      divs  front     invasion  buffer    areadef   NO_ORDER
+      ITA  Tripoli                13    0         0         8         0         5
+      ITA  Derna                  10    0         0         8         0         2
+      ITA  Benghasi                6    0         0         3         0         3
+      ITA  Tunisia                 1    0         0         1         0         0
+    (GER has no row in any Tunisian or Libyan state at all - see R92)
+  ```
+  Thirteen thousand tons of Italian infantry parked in buffers one province behind a bridgehead held by one division. The `front` column being 0 in every Libyan state is the same reading from the other side.
+- **Fail-tells to record:** still 1–2 Italian divisions in Tunisia (the `force_defend_ally_borders` hypothesis is wrong — the recorded next lever is a heavier `put_unit_buffers`, the only type whose effect is measured in this repo, not a third strategy type); the divisions arrive but Libya empties below its own 0.25 buffer (the tiers are competing and the Italian tier must drop back toward 0.10); Germany, not Italy, fills Tunisia (that is R92 working and is **not** a failure here — record it and score leg 1 on the Axis total, which is what leg 1 counts).
+- **Threshold:** 2 — division placement and control, both off the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R95. The Kuwait guard is sized against what is on the approach (Fix 134)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "la stratégie de garnison du koweit a fail : l'irak a pu le prendre facilement quand il a rejoint la guerre, il n'y avait qu'une division indienne là bas").
+- **Pre-fix state, MEASURED.** State 656 Kuwait, ENG-owned:
+
+  | save | 656 owner / controller | divisions in 656 | IRQ divisions on the approach |
+  |---|---|---|---|
+  | 1940.4.13 | ENG / ENG | — | — |
+  | **1941.4.28** | ENG / ENG | **1 (RAJ, front order)** | **7** — Dhi Qar 3, Al Hajara 2, Ninawa 1, Baghdad 1 |
+  | 1941.9.20 | ENG / **GER** | 0 | — |
+  | 1942.4.4 | ENG / **IRQ** | 0 | — |
+  | 1943.3.22 | ENG / ENG | — | — |
+
+  RAJ fielded 45 divisions and ENG 68 on 1941.4.28, so the guard was not short of men. The cause is arithmetic: every tier of the family is a fraction of the **guard's own army** (0.05 RAJ, 0.02 ENG delegated, 0.08 ENG fallback) and nothing in it reads the other side. 0.05 × 45 = 2. Note that the pre-Fix-125 gate was **true** throughout — the arming was never the defect, the sizing was.
+- **Fix under test:** Fix 134 — `WA_AI_MILITARY_gulf_approach_massing` (a non-allied controller of 291 / 675 / 1041 / 1042 / 413 / 292 with `divisions_in_state size > 2` on any of them), `WA_AI_MILITARY_gulf_approach_massed` (the same, asked at fixed ENG scope) and `WA_AI_MILITARY_gulf_approach_imminent` (that holder is preparing a war against Britain **or** massing), the last of which is added as a limb of Fix 125's `WA_AI_MILITARY_gulf_approach_threatened` so the guard can arm before the declaration. Sizing becomes two gate-exclusive tiers on `_massed`: RAJ 0.05 → **0.15** (order_id 9208), ENG fallback 0.08 → **0.20** (order_id 17). `divisions_in_state` is a comparison trigger with no exact count in script, so "massing" is a threshold on **one** state, never a sum.
+- **Trigger replay on the pre-fix save `ENG_1941_04_28_01`:** IRQ exists, is not in ENG's faction and is not its subject ✔; controls 291, 675 and 1041 ✔; `divisions_in_state = { state = 1041 size > 2 }` — Dhi Qar reads **3** ✔. So `_imminent` and `_massed` are both **true on 1941.4.28**, four-plus months before the state falls, and the reinforced tier asks for 0.15 × 45 ≈ **7** divisions instead of 1.
+- **Pass (two legs):**
+  1. **The garrison exists before the attack.** ≥ 5 Allied divisions standing in 656 on the last save before its controller changes, or on every save while `_massed` holds if it never changes. Baseline: 1.
+  2. **Kuwait is not lost.** 656 is never controlled by a country at war with ENG. Baseline: GER by 1941.9, IRQ by 1942.4.
+- **Probe:** `plans.py ALL <saves> --where --limit 0` filtered to Kuwait for the garrison and to Dhi Qar / Al Hajara / Ninawa / Baghdad for the massing reading, plus the owner/controller of 656 across the campaign.
+  ```text
+  > plans.py ALL ENG_1941_04_28_01.hoi4 --where --limit 0   (pre-fix, campaign 8c0fea4c)
+    IRQ     Dhi Qar                 3     3         0
+    IRQ     Al Hajara               2     1         1
+    IRQ     Ninawa                  1     0         1
+    IRQ     Baghdad                 1     0         1
+    RAJ     Kuwait                  1     1         0         0         0
+  > owner/controller of 656
+    ENG_1941_04_28_01   656 ENG/ENG
+    ITA_1941_09_20_20   656 ENG/GER
+    ITA_1942_04_04_11   656 ENG/IRQ
+    ENG_1943_03_22_01   656 ENG/ENG
+  ```
+  Dhi Qar's 3 is the reading `divisions_in_state = { state = 1041 size > 2 }` clears, and it clears on the save four months before the state changes hands.
+- **Fail-tells to record:** the reinforced tier arms and the divisions never arrive (Kuwait is reachable from India only by sea — the failure is transport, not sizing, and the next lever is a naval one); RAJ's Asian fronts thin out by more than the 5 divisions Kuwait gains (0.15 is too much of the Indian army and 0.10 is the retune); `_massed` is true for the whole war because some neutral keeps 3 divisions in Nejd (the threshold is on the wrong states — narrow the list to 291 / 675 / 1041, which are the ones that actually border 656).
+- **Threshold:** 2 — a division count and a control history off the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
+### R96. A rail route is sized against demand and entry capacity, not against itself (Fix 135)
+- **Ledger:** `class=RETIREABLE threshold=2 streak=0 fix=bc90346af status=NOT_YET_TESTED`
+
+- **Opened 2026-08-21** (user report on campaign `8c0fea4c`: "ITA semble construire des rails 5 en libye, alors qu'aucun port ne justifie un tel niveau", followed by "vu les similitudes entre les deux systèmes, une refactorisation est-elle possible ? — ok, fait cette refacto").
+- **Pre-fix state, MEASURED.** The Libyan chain, narrowest link per hop (`rail.py --corridor`):
+
+  | hop | 1940.4.13 | 1940.6.24 | **1941.5.23** | 1942.4.4 | 1943.3.22 |
+  |---|---|---|---|---|---|
+  | 1149→9980 Tripoli | 2 | 2 | **5** | 4 | 4 |
+  | 9980→4047 Misrata→Sirte | 1 THIN | 1 THIN | **5** | 5 | 5 |
+  | 4047→4057 Sirte | BREAK | BREAK | **5** | 5 | 5 |
+  | 4057→1127 Sirte→Ajdabiya | BREAK | BREAK | **5** | 4 | 4 |
+  | 1127→11954 Benghazi | BREAK | BREAK | 4 | 4 | 4 |
+  | 11954→10049 Benghazi→Mechili | BREAK | BREAK | 4 | 5 | 5 |
+  | 10049→7082 Mechili→Derna | BREAK | BREAK | 4 | 5 | 5 |
+  | 7082→1130 Derna→Tobruk | BREAK | BREAK | BREAK | 5 | 5 |
+
+  Ports actually built on the Italian side at 1942.4.4: **Tripoli 1149 = 5**, Misrata 9980 = 2,
+  Benghazi 11954 = 4, Tobruk 1130 = 2, Marsa Matruh 11967 = 1, Medenine 11957 = 1. The mirrored engine
+  ladders are port `5 × level` and rail `4 + 8 × level`, so Tripoli carries **25 supply** and a level-5
+  rail carries **44**. The port-derived target for that chain is
+  `(25 − 4) / 8 = 2.6 → 2`. The corridor's own cap is **4**, and it was being overwritten.
+- **The two lines that produced it.** `WA_AI_PC_railway_STRATEGY_land_war` set a flat
+  `default_route_level = 5`, and `WA_AI_PC_railway_land_consider_frontline` then recomputed
+  `route_level = _max_route_level_ + 1` clamped at 5 — a ratchet with no reference to demand or to
+  entry capacity, which climbs to the clamp on its own one pass at a time. It beat the corridor because
+  `WA_AI_PC_start_railway_project` admits on `current_level < _project_target_level` alone.
+- **Fix under test:** Fix 135 — the sizing model extracted from `WA_AI_PC_corridor_compute_sizing`
+  into `WA_AI_PC_rail_size_route`, now called by **both** families. Three entry modes (SUM for a
+  corridor, GIVEN for an overseas chain's bottleneck, OVERLAND for a chain fed from our own capital);
+  new `constant:wa_ai_railway.land_war.rail_level_floor/cap` = 2/4; the flat 5 and the `+1` ratchet
+  deleted; `_check_railway_level` moved to the cap in all three strategies so a finished frontline can
+  actually read "done". The pre-war ratchet and `overseas_war` part A's flat 5 are deliberately kept —
+  see `documentation/WA_AI_RAILWAY_SYSTEM.md`, "Route sizing — one model, two families".
+- **Pass (three legs):**
+  1. **No land-war target above the cap.** In any `pc <TAG> --limit 0` reading, no railway project
+     carries a target level above 4, and `rail.py --corridor` over a theatre the AI has developed shows
+     no hop above 4 that the AI built. Baseline: five hops at 5 by 1941.5, eight by 1942.4.
+  2. **And the head still gets connected.** On the same theatre, BREAK count reaches 0 no later than it
+     did pre-fix. Baseline: Derna→Tobruk was still BREAK at 1941.5 and closed by 1942.4. This is the
+     leg that catches an over-correction: sizing everything at the floor would starve nothing visibly
+     except the chain that never completes.
+  3. **The corridor is unchanged.** Corridor-tagged projects still target 2–4 with the same
+     distribution as the pre-Fix-135 build. The extraction is meant to be behaviour-neutral on that
+     side; a shift here means the refactor changed the model, not just its address.
+- **Probe:** `rail.py --corridor <node list> <saves>` for the built levels, `pc <TAG> <saves> --limit 0`
+  for the targets in flight, and the province-building dump for the entry ports.
+  ```text
+  > rail.py --corridor 1149,9980,4047,4057,1127,11954,10049,7082,1130 ITA_1941_05_23_21.hoi4   (pre-fix)
+    1149     9980     5/5     5        3     ok      Tripoli -> Tripoli
+    9980     4047     5/5     5        3     ok      Tripoli -> Sirte
+    4047     4057     5/5     5        4     ok      Sirte -> Sirte
+    4057     1127     5/5     5        2     ok      Sirte -> Benghasi
+    1127     11954    5/4     4        3     ok      Benghasi -> Benghasi
+    11954    10049    4/4     2        4     ok      Benghasi -> Cyrenaica
+    10049    7082     4/4     4        1     ok      Cyrenaica -> Derna
+    7082     1130     4/0     -        -     BREAK   Derna -> Derna
+    summary: 8 hop(s)  BREAK=1  THIN=0  ok=7
+  > naval bases on the Italian side, ITA_1942_04_04_11.hoi4
+    state 448 prov  1149  {'naval_base': 5, 'supply_node': 1}
+    state 448 prov  9980  {'naval_base': 2, 'supply_node': 1}
+    state 450 prov 11954  {'naval_base': 4, 'supply_node': 1}
+    state 451 prov  1130  {'naval_base': 2, 'supply_node': 1}
+  ```
+  Read the two together: eight hops sized for 44 supply behind an entry that carries 25.
+- **Fail-tells to record:** targets still 5 (a caller was missed — the three that remain by design are
+  prewar, `overseas_war` part A and the `home_port_target_supply` constant, so check those first);
+  every land-war target at the floor of 2 (the demand proxy is reading zero — check that the sizer is
+  reached in COUNTRY scope, since `every_country` and `capital_scope` both need it); corridor targets
+  moved (leg 3 failed and the extraction was not behaviour-neutral); a frontline state that keeps
+  drawing routes which queue nothing (`_check_railway_level` did not follow the cap somewhere).
+- **Threshold:** 2 — built levels off `rail.py` and queued targets off `pc`, on the same saves.
+- **Streak:** 0
+- **Status:** NOT YET TESTED
+- **History:**
+
 ## Retired and merged items — ledger
 
 Working queue, not an archive: an item leaves the sections above when its streak reaches its threshold (retired) or when another item owns its mechanism (merged). Durable rules belong in `wa-lessons-learned`; this ledger keeps the retirement evidence, the pending instrumentation dispositions, and the hand-offs that no live item carries. Full item text is in this file's git history at the date shown.
