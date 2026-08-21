@@ -759,6 +759,30 @@ DIPLOMACY_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 			always = no
 		}
 	}
+	# WA: a depowered Vichy hosts no foreign air force - the Luftwaffe included. Military access
+	# (DIPLOMACY_MILACC_ENABLE_TRIGGER) and docking rights already carry this exact clause; air
+	# base access was the one door left open, which is why RULE_REQUEST_MILITARY_ACCESS_BLOCKED_TT
+	# already names all three. Own `if`, not an `else_if` on the distance chain above, so the
+	# refusal holds whatever that chain decided. FROM is the country being asked.
+	if = {
+		limit = {
+			OR = {
+				FROM = {
+					has_idea = VIC_depowered_government
+				}
+				AND = {
+					FROM = {
+						is_subject_of = VIC
+						VIC = { has_idea = VIC_depowered_government }
+					}
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_REQUEST_AIR_BASE_ACCESS_BLOCKED_TT
+			always = no
+		}
+	}
 }
 DIPLOMACY_OFFER_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 	if = {
@@ -840,6 +864,24 @@ DIPLOMACY_OFFER_AIR_BASE_ACCESS_ENABLE_TRIGGER = {
 		}
 		custom_trigger_tooltip = {
 			tooltip = RULE_NON_BELLIGERENCE_AIR_BASE_ACCESS_TT
+			always = no
+		}
+	}
+	# WA: other half of the same door - a depowered Vichy cannot volunteer its airfields either,
+	# so the block cannot be walked around by having Vichy offer instead of Germany asking.
+	# Root scope is the offering country here (see DIPLOMACY_OFFER_MILACC_ENABLE_TRIGGER).
+	if = {
+		limit = {
+			OR = {
+				has_idea = VIC_depowered_government
+				AND = {
+					is_subject_of = VIC
+					VIC = { has_idea = VIC_depowered_government }
+				}
+			}
+		}
+		custom_trigger_tooltip = {
+			tooltip = RULE_OFFER_AIR_BASE_ACCESS_BLOCKED_TT
 			always = no
 		}
 	}
