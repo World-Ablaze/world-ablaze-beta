@@ -1,0 +1,21 @@
+############################################################################################################
+#	Minimal predicate effect for the scope-sanity harness (fired by wa_iso.2 in
+#	events/wa_test_scope_isolation.txt - read the harness header there).
+#
+#	Its ONLY job is to run the predicates that disagree between a clean event immediate and a
+#	suspect scripted effect, through a scripted-effect indirection in a file with nothing else in
+#	it. Reads 1 from wa_iso.2 -> the indirection is innocent and the suspect effect's HOME FILE is
+#	the fault (the "Two call sites, one effect" anomaly, lessons log). Reads 0 -> the indirection
+#	itself is the fault. Keep this file minimal: anything added here widens the fault domain the
+#	harness exists to keep at zero.
+############################################################################################################
+
+WA_TEST_ISO_predicates = {
+	set_temp_variable = { _iso_p1_ = 0 }
+	set_temp_variable = { _iso_p2_ = 0 }
+	set_temp_variable = { _iso_p3_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _iso_p1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _iso_p2_ = 1 } }
+	if = { limit = { tag = GER } set_temp_variable = { _iso_p3_ = 1 } }
+	log = "  via scripted effect : always=[?_iso_p1_|.0]  tag=ROOT -> [?_iso_p2_|.0]  tag=GER -> [?_iso_p3_|.0]"
+}

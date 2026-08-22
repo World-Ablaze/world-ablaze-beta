@@ -26,8 +26,11 @@ class DecisionMetadata:
     end_line: int
 
 
-STRATEGIC_RESOURCES = {'tungsten', 'rubber', 'chromium', 'aluminum'}
-COMMODITY_RESOURCES = {'coal', 'oil', 'iron', 'steel', 'bauxite'}
+# coal moved to strategic 2026-08-15: it feeds every synthetic refinery, so it
+# is prospected proactively (balance < +100, see WA_AI_should_prospect_resource_coal)
+# rather than only on shortage.
+STRATEGIC_RESOURCES = {'tungsten', 'rubber', 'chromium', 'aluminum', 'coal'}
+COMMODITY_RESOURCES = {'oil', 'iron', 'steel', 'bauxite'}
 ALL_RESOURCES = STRATEGIC_RESOURCES | COMMODITY_RESOURCES
 
 # Strategic exporters: tag -> resource
@@ -47,6 +50,16 @@ def extract_resource_type(content: str) -> Optional[str]:
     match = re.search(r'type\s*=\s*(\w+)', content)
     if match:
         resource = match.group(1).lower()
+        # Some decisions build a '<resource>_refinery' (add_building_construction)
+        # instead of add_resource; treat them as prospecting that resource.
+        if resource.endswith('_refinery'):
+            resource = resource[:-len('_refinery')]
+        # The game resource is spelled 'aluminium'; the WA_AI_*_aluminum
+        # scripted triggers keep the American spelling (see
+        # WA_AI_RESOURCE_NEEDS_triggers.txt). Without this mapping the three SOV
+        # aluminium decisions were skipped and kept an ungated 'factor = 1'.
+        if resource == 'aluminium':
+            resource = 'aluminum'
         if resource in ALL_RESOURCES:
             return resource
     return None

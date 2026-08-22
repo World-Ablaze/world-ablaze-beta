@@ -1,0 +1,178 @@
+############################################################################################################
+#	WA_TEST - convoy arsenal chain (Fix 115 / 116 / 117 / 118), console-driven.
+#
+#	Fired by wa_ca.1 (one country) and wa_ca.2 (every AI major at war) in
+#	events/wa_test_convoy_arsenal.txt. Read the recipe there, not here.
+#
+#	WHY THIS IS NOT A tests/ BUNDLE: the chain's answer depends on the world (who is in which
+#	faction, who holds what ground, who is short of hulls), so there is no date at which a fixed
+#	success trigger is meaningful. What a human needs is the INTERMEDIATE readings - the shipped
+#	gate is one boolean, and a 0 can come from five different terms. Every effect here is
+#	write-nothing-but-the-log except the one call to the real effect.
+#
+#	SCOPE: ROOT = the country under test, and it must BE the event's country - the shipped effect
+#	resolves its coalition with `tag = ROOT` / `is_in_faction_with = ROOT`, so calling it from
+#	inside an every_country walk would score every candidate against the FIRING country's alliance.
+#	That is why wa_ca.2 fires wa_ca.1 per country instead of looping in one scope.
+############################################################################################################
+
+# ROOT = country under test. Runs the shipped effect, then reports every term that decides the gate.
+WA_TEST_CA_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | CONVOY ARSENAL TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Lessons log, "A probe that does not print the
+	### context it ran in produces confident nonsense": without these two lines this harness spent a
+	### day reporting an empty coalition as a measurement. `I-am-ROOT = 0` here means every predicate
+	### naming ROOT is asking about a country that is not this one - and the loc token [Root.GetName]
+	### can still print the right name beside it, which is what makes it so easy to miss.
+	### The fifth check is a KNOWN-FALSE control: it must read 0. Four 1s alone cannot tell "the
+	### checks pass" from "everything prints 1" - the same reason the Fix-999 control existed.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _ca_e1_ = 0 }
+	set_temp_variable = { _ca_e2_ = 0 }
+	set_temp_variable = { _ca_e3_ = 0 }
+	set_temp_variable = { _ca_e4_ = 0 }
+	set_temp_variable = { _ca_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _ca_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _ca_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _ca_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _ca_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _ca_e5_ = 1 } }
+	log = "  scope : always=[?_ca_e1_|.0]  I-am-ROOT=[?_ca_e2_|.0]  I-am-THIS=[?_ca_e3_|.0]  ROOT-scope-usable=[?_ca_e4_|.0]  control-false=[?_ca_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	if = {
+		limit = { has_global_flag = WA_TEST_CA_nested_sweep }
+		log = "  context: fired by the wa_ca.2 sweep, i.e. one event per country from inside an every_country walk."
+	}
+	else = {
+		log = "  context: fired directly on one country."
+	}
+
+	### 1. the shipped effect, unmodified. _csw_off_ic_ / _csw_side_ic_ survive into the lines below.
+	WA_AI_PRODUCTION_update_coalition_sea_weight = yes
+
+	log = "  gauge : coalition_sea_share = [?WA_AI_PRODUCTION_coalition_sea_share|.3]   (unreachable [?_csw_off_ic_|.0] of [?_csw_side_ic_|.0] factories on our side)"
+	log = "  state : dockyards = [?num_of_naval_factories|.0]   convoys held (free pool) = [?num_equipment@convoy|.0]"
+
+	### 2. the coalition, member by member - an INDEPENDENT walk, deliberately duplicated rather
+	### than shared with the shipped effect: if the two disagree, the fault is localised to one of
+	### them instead of hidden inside a helper both of them trust. Keep this limit identical in
+	### SHAPE to WA_AI_PRODUCTION_update_coalition_sea_weight's, or the comparison means nothing.
+	log = "  side  : (tag / factories / overland?)"
+	set_temp_variable = { _ca_self_seen_ = 0 }
+	every_country = {
+		limit = {
+			exists = yes
+			has_capitulated = no
+			OR = {
+				tag = ROOT
+				is_in_faction_with = ROOT
+				is_subject_of = ROOT
+				AND = {
+					is_subject = yes
+					OVERLORD = { is_in_faction_with = ROOT }
+				}
+			}
+		}
+		set_temp_variable = { _ca_ic_ = num_of_civilian_factories }
+		add_to_temp_variable = { _ca_ic_ = num_of_military_factories }
+		add_to_temp_variable = { _ca_ic_ = num_of_naval_factories }
+		if = {
+			limit = { check_variable = { _ca_ic_ > 0 } }
+			if = {
+				limit = { tag = ROOT }
+				set_temp_variable = { _ca_self_seen_ = 1 }
+				log = "            [This.GetName]  [?_ca_ic_|.0]  self"
+			}
+			else = {
+				set_temp_variable = { _llr_donor = THIS.id }
+				WA_AI_LEND_LEASE_relief_land_access = yes
+				if = {
+					limit = { check_variable = { _llr_path_ok = 1 } }
+					log = "            [This.GetName]  [?_ca_ic_|.0]  overland"
+				}
+				else = {
+					log = "            [This.GetName]  [?_ca_ic_|.0]  ACROSS SEA"
+				}
+			}
+		}
+	}
+
+	# SELF-CHECK. The country under test is the first entry of its own coalition - it matches its own
+	# `tag = ROOT`. If it does not appear, the limit is broken for EVERY country, not just for edge
+	# cases, and the share printed above is an artefact rather than a reading.
+	if = {
+		limit = { NOT = { check_variable = { _ca_self_seen_ = 1 } } }
+		log = "  !! BROKEN: the country under test did not match its own coalition limit. Every share above is an artefact, not a measurement."
+		log = "  !! DO THIS FIRST, before suspecting the limit: fire the SAME report from a different event file (tag GER, then event wa_iso.3). On 2026-08-20 this exact block read empty from one event file and correct from another, with byte-identical script and a clean error.log - lessons log, Two call sites one effect. Only if the OTHER call site also reads empty is the limit itself the suspect, and then the shape to distrust is a scope that is invalid on some countries inside the OR: it fails the whole limit, not just its own branch."
+	}
+
+	### 3. every term of WA_AI_PRODUCTION_should_build_convoy_relief, separately. The shipped
+	### trigger is one boolean and a 0 can come from any of five places.
+	set_temp_variable = { _ca_default_ = 0 }
+	set_temp_variable = { _ca_major_ = 0 }
+	set_temp_variable = { _ca_dock_ = 0 }
+	set_temp_variable = { _ca_share_ = 0 }
+	set_temp_variable = { _ca_partner_ = 0 }
+	set_temp_variable = { _ca_gate_ = 0 }
+	if = { limit = { WA_AI_PRODUCTION_is_using_default_system = yes } set_temp_variable = { _ca_default_ = 1 } }
+	if = { limit = { is_major = yes } set_temp_variable = { _ca_major_ = 1 } }
+	if = { limit = { num_of_naval_factories > constant:wa_ai_lend_lease.convoy.dockyards_large } set_temp_variable = { _ca_dock_ = 1 } }
+	if = { limit = { check_variable = { WA_AI_PRODUCTION_coalition_sea_share > constant:wa_ai_lend_lease.convoy.coalition_sea_share_bar } } set_temp_variable = { _ca_share_ = 1 } }
+	if = {
+		limit = {
+			any_country = {
+				WA_AI_LEND_LEASE_is_starving_convoys = yes
+				WA_AI_LEND_LEASE_convoy_pair_is_valid = yes
+			}
+		}
+		set_temp_variable = { _ca_partner_ = 1 }
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_build_convoy_relief = yes } set_temp_variable = { _ca_gate_ = 1 } }
+
+	log = "  gate  : default_system=[?_ca_default_|.0] major=[?_ca_major_|.0] dockyards>80=[?_ca_dock_|.0] share>bar=[?_ca_share_|.0] partner_short=[?_ca_partner_|.0]  ==>  ARSENAL = [?_ca_gate_|.0]"
+
+	# Name one short partner, when there is one - "partner_short=1" with no name means the any_country
+	# matched something the log cannot show, which is worth knowing.
+	if = {
+		limit = { check_variable = { _ca_partner_ = 1 } }
+		random_country = {
+			limit = {
+				WA_AI_LEND_LEASE_is_starving_convoys = yes
+				WA_AI_LEND_LEASE_convoy_pair_is_valid = yes
+			}
+			log = "  short : [This.GetName] is below its convoy reserve and is a valid pair"
+		}
+	}
+
+	### 4. the brake, whose enable carries NOT = { the gate above }.
+	set_temp_variable = { _ca_stock_ = 0 }
+	set_temp_variable = { _ca_stop_ = 0 }
+	if = { limit = { has_equipment = { convoy > 1000 } } set_temp_variable = { _ca_stock_ = 1 } }
+	if = {
+		limit = {
+			is_major = yes
+			has_equipment = { convoy > 1000 }
+			NOT = { WA_AI_PRODUCTION_should_build_convoy_relief = yes }
+		}
+		set_temp_variable = { _ca_stop_ = 1 }
+	}
+	log = "  brake : convoys>1000=[?_ca_stock_|.0]  ==>  STOP_MAJORS = [?_ca_stop_|.0]   (the stop is disarmed by design while ARSENAL = 1)"
+
+	### 5. the verdict a human should read, spelled out so nobody has to recombine the flags.
+	if = {
+		limit = { check_variable = { _ca_gate_ = 1 } }
+		log = "  VERDICT: MARITIME coalition - this country builds hulls for its side (+85 unit_ratio, 15-dockyard floor) and is exempt from the >1000 brake."
+	}
+	else_if = {
+		limit = { check_variable = { _ca_share_ = 0 } }
+		log = "  VERDICT: LAND coalition - no arsenal. This is Fix 115/117 doing its job; the tier floors still keep a small line while its OWN stock is low."
+	}
+	else = {
+		log = "  VERDICT: no arsenal, and NOT because of the sea share - read the gate flags above; one of default_system / major / dockyards / partner_short is 0."
+	}
+}

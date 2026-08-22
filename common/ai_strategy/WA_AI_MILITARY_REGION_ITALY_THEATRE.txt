@@ -1,0 +1,169 @@
+############################################################################################################
+# WA AI Military V2 - REGION_ITALY_THEATRE
+############################################################################################################
+# Fix 96 (2026-08-17). Region layer: geography-driven home defence of the Italian peninsula for
+# WHOEVER is "an Italy" - gate is WA_AI_MILITARY_is_italian_homeland_power (owns AND cores mainland
+# soil), so the same rules serve fascist ITA, the co-belligerent ITA after ita_armor.897 (same tag),
+# the released RSI (RIT) and a civil-war dynamic Italy, without a single `tag =`.
+#
+# Why this file exists (campaign 0edbc955, Oct-Dec 1943): the whole Italian army was in Libya /
+# Sudan / Kenya, 0-3 divisions on the peninsula, and the Allies walked from Sicily to the Alps with
+# 7-12 divisions. The only home-defence content was a put_unit_buffers block gated on a DATE, and no
+# rule at all pulled a front to Italian soil once an enemy stood on it. Every gate here is a
+# controller/owner question that flips both ways as ground is lost and retaken (design principle 1).
+#
+# Three tiers, each additive on the previous:
+#   floor      - any war: a light island / mainland garrison so the peninsula is never empty
+#   threatened - an enemy holds owned belt ground (Sardinia, Corsica, Dodecanese, Zadar, Albania,
+#                Istria, Primorska), or a foreign army occupies Tunisia, or the mainland is invaded
+#   invaded    - an enemy stands on cored mainland / Sicilian soil (FRONT twin pulls the front)
+# Ratios per block are E4-legal (<= 0.25); summed per state group with the AXIS guard
+# (WA_AI_MILITARY_FACTION_AXIS_THEATRE.txt) they read: Sicily/south 0.10 + 0.20 (+ ally 0.06/0.12),
+# mainland anchors 0.15 + 0.10 (+ ally 0.06/0.12), Sardinia 0.05, Corsica 0.03 (Fix 111).
+# Anchors = all 15 states (mainland + Sicily): after the Fall Achse transfer the co-belligerent ITA may own
+# nothing north of Naples, and it must still be an Italy here.
+# Every buffer has its own order_id (floor 9601-9603 + 9615, threatened 9604-9605 - separate orders, so the
+# tiers stack whatever the engine does with two blocks on one order_id) and
+# subtract_fronts_from_need = no - see `# pool:`.
+# Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+############################################################################################################
+
+# purpose: floor - the peninsula and Sicily are never left empty while at war (the 0edbc955 shape:
+#          1 division in Veneto for the whole 1943 campaign)
+# range:   0.10 / 0.15 / 0.05 (E4)
+# policy:  Additive per state
+# domain:  THEATRE
+WA_AI_MILITARY_REGION_ITALY_home_floor_THEATRE = {
+	# no `allowed`: the engine evaluates `allowed` once, at country creation - RIT is released and a
+	# civil-war Italy is created BEFORE their states are transferred, so a static ownership test there
+	# would lock them out for the game. The homeland test lives in `enable` (DEFAULT_INVASION precedent).
+	enable = {
+		# war first (cheap), then the 15-state ownership walk. Arms at our own war OR while any major is
+		# at war - a neutral Italy pre-positions its garrisons during someone else's war (the 1939-40
+		# shape the deleted ITA_protect_home block covered with `FRA/ENG = { has_war }`; review 2026-08-17)
+		OR = {
+			has_war = yes
+			any_other_country = { is_major = yes has_war = yes }
+		}
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9601
+		# south_italy - Sicily + the toe (must match REGION_ITALY_home_threatened below)
+		states = {
+			115
+			1032
+			156
+			117
+		}
+		ratio = 0.10
+		area = south_italy
+		subtract_invasions_from_need = no
+		# pool: island garrison must not be drained by a front elsewhere - the Sicily/Calabria
+		# garrison IS the anti-landing reserve; a front in Libya eating it is the 1943 failure
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9602
+		# mainland anchors (Piedmont, Tuscany, Latium, Rome)
+		states = {
+			158
+			162
+			2
+			856
+		}
+		ratio = 0.15
+		area = italy
+		subtract_invasions_from_need = no
+		# pool: same reason - the mainland reserve exists precisely for the day a front appears
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9603
+		# Sardinia
+		states = {
+			114
+		}
+		ratio = 0.05
+		area = mediterranean
+		subtract_invasions_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9615
+		# Fix 111 (2026-08-19): Corsica. It is the one island in the belt that
+		# WA_AI_MILITARY_italy_home_threatened reacts to losing while NO buffer ever put a division on
+		# it - on campaign 07270b64 Italy held it 1941-1944 with 0-1 divisions, and that one came from
+		# an ENGINE area-defence order which Fix 108 is meant to suppress. Own order_id and its own
+		# ratio rather than joining Sardinia's 9603: sharing that list would halve the Sardinian
+		# reserve to pay for this one. Occupied French soil, so it sits here rather than in the ITA
+		# Country periphery block - the gate must be "whoever is an Italy", not `tag = ITA` (the RSI
+		# and a civil-war Italy can hold it too). Checklist R74 leg 4.
+		states = {
+			1
+		}
+		ratio = 0.03
+		area = mediterranean
+		subtract_invasions_from_need = no
+	}
+}
+
+# purpose: threatened - an enemy has taken owned belt ground, occupies Tunisia, or is on the
+#          mainland: thicken the island / mainland reserve and re-weight the theatre pull. Adds to
+#          the floor (0.10 -> 0.30 on Sicily/south, 0.15 -> 0.25 on the mainland anchors).
+# range:   0.20 / 0.10 (E4); area_priority +200 on 2- and 1-region areas (E1 narrow: legal to +1000)
+# policy:  Additive
+# domain:  THEATRE
+WA_AI_MILITARY_REGION_ITALY_home_threatened_THEATRE = {
+	enable = {
+		WA_AI_MILITARY_italy_home_threatened = yes # implies is_italian_homeland_power; no `allowed` (see home_floor)
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9604
+		states = {
+			115
+			1032
+			156
+			117
+		}
+		ratio = 0.20
+		area = south_italy
+		subtract_invasions_from_need = no
+		# pool: see home_floor - the threatened tier is the landing reserve, it must not yield to
+		# the Libyan / Balkan front
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9605
+		states = {
+			158
+			162
+			2
+			856
+		}
+		ratio = 0.10
+		area = italy
+		subtract_invasions_from_need = no
+		# pool: see home_floor
+		subtract_fronts_from_need = no
+	}
+	ai_strategy = {
+		type = area_priority
+		id = italy
+		value = 200
+	}
+	ai_strategy = {
+		type = area_priority
+		id = south_italy
+		value = 200
+	}
+}

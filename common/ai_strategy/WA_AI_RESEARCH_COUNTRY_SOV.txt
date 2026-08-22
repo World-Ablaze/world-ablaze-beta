@@ -1,0 +1,67 @@
+############################################################################################################
+# WA AI Research - COUNTRY_SOV
+############################################################################################################
+# Fix 57 (2026-08-13, checklist R35): suppress T-43 so the SOV medium line lands on the T-34-85.
+#
+# Campaign 02bd4445: SOV researched `sov_medium_tank_chassis_3_4` (T 34 85) on 1944.2.6 and
+# NEVER opened a line on it, jumping `tank_sov_medium_chassis_3_2` -> `tank_sov_medium_chassis_5`
+# (T 43, researched 1944.3.5) instead. The evaluator's own frontier ranks T 34 85 above T 43
+# (rank 9 PRIMARY vs rank 8), so this suppression follows the existing ranking rather than
+# introducing a new opinion.
+#
+# STRANDING CHECK (mandatory before suppressing any technology):
+# `sov_medium_tank_chassis_5` leads to `sov_modern_tank_chassis_1` and from there to the whole
+# SOV modern line (T-44 -> T-54, 5 equipment tokens) - SOV reached
+# `tank_sov_modern_chassis_1_2` with 13 factories by 1946.1, so this is live content, not
+# theory. It is NOT the sole path: `sov_modern_tank_chassis_1` is also reachable from
+# `sov_medium_tank_chassis_3_4` (T 34 85), the branch being steered onto. Nothing is stranded.
+#
+# NOT DONE HERE, deliberately: the SOV *submarine* problem (R30) cannot be fixed this way.
+# `sov_submarine_3` (the coastal Malyutka) is a 1936.1.1 START technology in
+# history/countries/SOV - Soviet union.txt:152, so there is no research decision to suppress.
+# The only route there is removing the start tech, and whether the 49 Malyutka hulls in the
+# 1936 OOB still spawn without it is unverified - that needs an isolated in-game test first.
+
+
+# FIX 69 (2026-08-14, checklist R40/R35) - THE SUPPRESSION HALF OF FIX 57 IS GONE FROM HERE.
+# ==========================================================================================
+# `research_weight_factor = -100` on `sov_medium_tank_chassis_5` used to live in this file.
+# It did not work: campaign f9321934 researched T-43 on 1944.2.27 and opened three 68-factory
+# T-43 lines from 1946.1, while `tank_sov_medium_chassis_3_4` (T-34-85) - researched
+# 1944.1.26 - never saw a single factory in 127 monthly saves.
+# The failure is a property of the lever, not the value; the full argument is in the sibling
+# file WA_AI_RESEARCH_COUNTRY_USA.txt and is not repeated here.
+# Replacement: a hard `allow = { NOT = { is_ai = yes } }` on the technology itself, in
+# common/technologies/armor_sov.txt.
+#
+# STRANDING, re-verified from the graph: `sov_modern_tank_chassis_1` has TWO incoming
+# `leads_to_tech` edges - `sov_medium_tank_chassis_3_4` (T-34-85) and `_5` (T-43). Gating
+# T-43 leaves the T-34-85 prong, which SOV reached on 1944.1.26. The boost below keeps it
+# prioritised and MUST NOT be removed independently of the gate.
+
+# purpose: keep T 34 85 prioritised - it is now the ONLY route to sov_modern_tank_chassis_1
+# range:   +100
+# policy:  Country layer; pairs with the Fix 69 `allow` gate on sov_medium_tank_chassis_5 in
+#          common/technologies/armor_sov.txt and must not be removed without it
+# always-on: same reasoning as the block above.
+WA_AI_RESEARCH_COUNTRY_SOV_prefer_t34_85 = {
+
+	allowed = {
+		original_tag = SOV
+	}
+	enable = {
+		always = yes
+	}
+	# Permanently on by design, so there is nothing to abort on. Stated explicitly because
+	# the engine warns on a strategy with no abort condition at all (ai_strategy.cpp:6907).
+	abort = {
+		always = no
+	}
+
+	# T 34 85 - enables tank_sov_medium_chassis_3_4 and leads to sov_modern_tank_chassis_1
+	ai_strategy = {
+		type = research_weight_factor
+		id = sov_medium_tank_chassis_3_4
+		value = 100
+	}
+}

@@ -1,0 +1,197 @@
+####################################################################################################
+#	World Ablaze AI - PRIORITY CONSTRUCTION (PC) constants.
+#	Read from script with `constant:wa_ai_pc.<group>.<key>` (HOI4 1.18 script constants). One
+#	declaration, visible from every file - this replaces the file-scoped `@` copies that had to be
+#	kept in sync by hand across core / strategies / queue_functions / triggers / railway_* /
+#	wa_events_debug (registry cleanup 2026-08-16, in-game probe events/wa_test_constants.txt).
+#	Cross-format mirrors (05_defines.lua, 00_buildings.txt, savegame.py) are still tracked by
+#	tools/constants_registry.json - run `python tools/check_constants.py` after editing this file.
+#	Schema is one level of groups, fixed_point leaves (integers are fine under fixed_point).
+#	The game reloads this database separately from the scripts that read it: full restart, not
+#	`reload`, when tuning.
+####################################################################################################
+
+wa_ai_pc = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# WA_AI_PC_assign_factories budget (core.txt) and the gates that must judge at the same numbers
+	# (WA_AI_PC_can_afford_project / civs_16 / civs_20 in WA_AI_CONSTRUCTION_triggers.txt, debug mirror wa_debug.9).
+	alloc = {
+		fraction                  = 0.40	# share of the reconstructed available pool given to projects (Fix 90: gate and fill agree)
+		                            # was @AI_PC_ALLOC_FRACTION
+		stable_base_fraction      = 0.30	# floor: share of TOTAL civs the base can never drop below (breaks the 0.35^n decay)
+		                            # was @AI_PC_STABLE_BASE_FRACTION
+		hard_cap_fraction         = 0.50	# ceiling: allocation never exceeds this share of total civs
+		                            # was @AI_PC_ALLOC_HARD_CAP_FRACTION
+		stall_cancel_weeks        = 30	# weeks a project may sit with 0 factories before the stall sweep cancels it
+		                            # was @AI_PC_STALL_CANCEL_WEEKS
+		min_economy_civs          = 20	# below this many civs the economy is not alive - no stable-base floor
+		                            # was @AI_PC_MIN_ECONOMY_CIVS
+		max_civs_per_project      = 20	# per-project civ clamp in the fill = one slot; the affordability gate asks for one slot of headroom
+		                            # was @AI_PC_MAX_CIVS_PER_PROJECT, @AI_MIN_NUM_OF_FACTORIES_TO_ASSIGN_ON_PROJECT
+		max_surrender             = 0.3	# affordability gate: no stable-base floor above this surrender progress
+		                            # was @AI_PC_MAX_SURRENDER
+		aging_lane_weeks          = 12	# Fix 41: stalled weeks before a project qualifies for the overtake lane
+		                            # was @AI_PC_AGING_LANE_WEEKS
+		aging_lane_max_candidates = 3	# Fix 41: revalidation attempts per pass (cost cap)
+		                            # was @AI_PC_AGING_LANE_MAX_CANDIDATES
+		air_lane_2nd_slot_pct     = 20	# Fix 87/87b: UK air deficit (% of capacity) that opens the 2nd air-lane slot AND widens the UK hosting budget - one number, two readers
+		                            # was @AI_PC_AIR_LANE_2ND_SLOT_PCT, @UK_AIR_DEEP_DEFICIT_PCT
+		air_host_funding_floor    = 40	# UK hosting builder stands down below this many civs assigned to air (Fix 47)
+		                            # was @AI_PC_AIR_HOST_FUNDING_FLOOR
+	}
+
+	# Fix 41 PRIORITY BAND TABLE - every _project_priority in the PC system is one of these (see the
+	# table comment above WA_AI_PC_assign_factories in core.txt). savegame.py _PC_BANDS mirrors it (registry).
+	prio = {
+		legacy_max  = 1100	# highest legitimate post-Fix-41 priority (rail-war x1.1); above = legacy save, clamped
+		              # was @AI_PC_PRIO_LEGACY_MAX
+		rail_connect = 1100	# Fix 120: a THEATRE-CORRIDOR segment that carries NO railway at all (map level 0).
+		              # Protects: the continuity of a corridor. BREAK and THIN are different failures with
+		              # different levers (WA_AI_LOGISTICS_MODEL); a level added anywhere else is throughput
+		              # on a chain that carries nothing. Campaign 8c0fea4c 1941.6: Italy's ONE funded railway
+		              # factory was raising 4120->13509, already at map level 5, while 1130->10120->7079->5078
+		              # - all three at level 0 - sat at 0 factories and 4 weeks of stall, at the IDENTICAL
+		              # priority 1000, behind 13 European land-war segments also at 1000. The rear reached
+		              # level 5 against a cap of 4 while the head was never railed at all: the spend existed,
+		              # the sort chose where it went.
+		              # Equals legacy_max on purpose - 1100 is already the ceiling this build writes (the
+		              # x1.1 high-route multiplier, railway_helpers:543) and savegame.py _PC_BANDS already
+		              # carries (1100, "rail-war+"), so no band is added and no mirror moves.
+		              # Gone when: WA_AI_PC_assign_factories stops sorting by priority alone.
+		rail_war    = 1000	# wartime railway segments (x1.1 high-route multiplier applies on top)
+		              # was @AI_PC_PRIO_RAIL_WAR, @WA_AI_PC_railway_PRIO
+		rail_prewar = 500	# pre-war railway preparation
+		              # was @WA_AI_PC_railway_PRIO_PREWAR
+		air_front   = 350	# Fix 85: theatre air bases where the builder's own divisions stand
+		              # was @AI_PC_PRIO_AIR_FRONT
+		air_basing  = 300	# Fix 47: air bases while the hosted air force outgrows its basing
+		              # was @AI_PC_PRIO_AIR_BASING
+		strategic   = 250	# the shortage-driven refinery families
+		              # was @AI_PC_PRIO_STRATEGIC
+		default     = 100	# radar, supply lines, MIC/CIC, air bases at rest
+		              # was @AI_PC_PRIO_DEFAULT
+	}
+
+	# WA_AI_PC_type_id strategy tags - ONE numbering space (13/14 railway system, 20+ strategies). A new
+	# tag is added here AND to savegame.py _PC_TYPE_ID (registry).
+	type_id = {
+		rail         = 13	# railway projects (railway_core / helpers)
+		               # was @WA_AI_PC_railway_TYPE_ID, global.WA_AI_PC_RAIL
+		port         = 14	# naval-base projects (railway_helpers frontier-port helper)
+		               # was global.WA_AI_PC_NAVAL_BASE
+		uk_air       = 20	# Fix 47: WA_AI_build_uk_air_hosting_capacity
+		               # was @AI_PC_TYPE_ID_UK_AIR
+		theatre_air  = 21	# Fix 47: WA_AI_build_theatre_air_bases
+		               # was @AI_PC_TYPE_ID_THEATRE_AIR
+		islands      = 23	# Fix 90: WA_AI_fortify_strategic_islands
+		               # was @AI_PC_TYPE_ID_ISLANDS
+		supply_line  = 24	# Fix 90b: supply-line infrastructure
+		               # was @AI_PC_TYPE_ID_SUPPLY_LINE
+		inf_resource = 25	# Fix 90b: resource-state infrastructure (queue_functions)
+		               # was @AI_PC_TYPE_ID_INF_RESOURCE
+		corridor     = 27	# Fix 95: theatre-corridor logistics (railway_core corridor pass) - the rails (13), ports (14)
+		               # AND depots (17) it queues all carry this tag, so its queue budget is Fix-47 scoped and
+		               # land_war's type-13 budget / skip gate never count them
+	}
+
+	# Fix 90 per-strategy concurrent-project budgets (_project_queue_max), replacing the legacy dispatcher `< 5` gate.
+	qmax = {
+		radar        = 3	# radar projects (type 4) in flight per country
+		               # was @AI_PC_QMAX_RADAR
+		supply_line  = 3	# supply-line infrastructure projects in flight per country
+		               # was @AI_PC_QMAX_SUPPLY_LINE
+		islands      = 2	# island fortification projects per building type
+		               # was @AI_PC_QMAX_ISLANDS
+		inf_resource = 2	# resource-state infrastructure projects in flight per country
+		               # was @AI_PC_QMAX_INF_RESOURCE
+		mic_to_cic   = 1	# MIC->CIC conversion legs of the steel/aluminium refinery strategies
+		               # was @AI_PC_QMAX_MIC_TO_CIC
+		uk_air       = 3	# UK hosting: concurrent air-base projects per builder (Fix 47)
+		               # was @UK_AIR_QUEUE_MAX
+		uk_air_deep  = 5	# ...while the deficit exceeds alloc.air_lane_2nd_slot_pct (Fix 87b)
+		               # was @UK_AIR_QUEUE_MAX_DEEP
+		theatre_air  = 3	# theatre air bases: concurrent projects per builder (matches uk_air)
+		               # was @THEATRE_AIR_QUEUE_MAX
+	}
+
+	# WA_AI_PC_air_force_needs_basing_priority (triggers): deployed planes above which air-basing outranks the strategic band.
+	air_prio = {
+		own_planes  = 500	# own air force big enough
+		              # was @AI_PC_AIR_PRIO_OWN_PLANES
+		ally_planes = 1000	# or a hosted faction partner's
+		              # was @AI_PC_AIR_PRIO_ALLY_PLANES
+	}
+
+	# Air-basing builders (WA_AI_build_uk_air_hosting_capacity / WA_AI_build_theatre_air_bases, strategies.txt).
+	air = {
+		capacity_per_level             = 100	# MUST MATCH NDefines.NBuildings.AIRBASE_CAPACITY_MULT (registry engine_airbase_capacity_per_level)
+		                                 # was @UK_AIR_CAPACITY_PER_LEVEL, @THEATRE_AIR_CAPACITY_PER_LEVEL
+		uk_priority_version            = 1	# bump when the UK hosting-state order or membership changes
+		                                 # was @UK_AIR_PRIORITY_VERSION
+		uk_target_level_cap            = 12	# UK per-state cap, leaves slots for other buildings
+		                                 # was @UK_AIR_TARGET_LEVEL_CAP
+		uk_hosted_faction_share        = 1.0	# share of the faction's planes the UK should be able to host
+		                                 # was @UK_AIR_HOSTED_FACTION_SHARE
+		uk_nominal_fill                = 0.9	# planes present / nominal wing slots
+		                                 # was @UK_AIR_NOMINAL_FILL
+		theatre_target_level           = 4	# theatre per-state ladder cap: the 2-4 level goal
+		                                 # was @THEATRE_AIR_TARGET_LEVEL
+		theatre_target_level_committed = 8	# Fix 85: ladder cap where ROOT's own divisions stand
+		                                 # was @THEATRE_AIR_TARGET_LEVEL_COMMITTED
+		theatre_hosted_share           = 0.25	# share of the side's planes one theatre should host
+		                                 # was @THEATRE_AIR_HOSTED_SHARE
+	}
+
+	# PC SHADOW PRICES. SOURCE OF TRUTH: common/buildings/00_buildings.txt (base_cost / per_level_extra_cost /
+	# base_cost_conversion). PC is a SHADOW construction system - it never pays the engine's price, it pays
+	# this table's, then spawns the building with instant_build; an under-estimate here is free industry for
+	# the AI, so every key is a registered mirror (tools/constants_registry.json cost_*) and
+	# `python tools/check_constants.py` reports a re-price. Per-level components live in
+	# WA_AI_PC_get_building_cost (core.txt), not here. Until 2026-08-16 these were global.WA_AI_PC_BUILDING_*
+	# variables set at startup (and saved in every save); the railway route scorer reads railway / naval_base too.
+	cost = {
+		railway                   = 800		# rail_way.base_cost, flat: per_level_extra_cost is 0 in this mod (vanilla 170/130); charged once per province connection (Fix 73)
+		                            # was global.WA_AI_PC_BUILDING_RAILWAY_COST, @WA_AI_PC_RAILWAY_BASE_COST (railway_helpers scoring)
+		infrastructure            = 3000
+		                            # was global.WA_AI_PC_BUILDING_INFRASTRUCTURE_COST
+		air_base                  = 500
+		                            # was global.WA_AI_PC_BUILDING_AIRBASE_COST
+		anti_air                  = 1200
+		                            # was global.WA_AI_PC_BUILDING_ANTIAIR_COST
+		radar                     = 2000
+		                            # was global.WA_AI_PC_BUILDING_RADAR_COST
+		military_factory          = 7500
+		                            # was global.WA_AI_PC_BUILDING_MILITARY_FACTORY_COST
+		civilian_factory          = 10000
+		                            # was global.WA_AI_PC_BUILDING_CIVILIAN_FACTORY_COST
+		dockyard                  = 10000
+		                            # was global.WA_AI_PC_BUILDING_DOCKYARD_COST
+		synthetic_refinery        = 18000
+		                            # was global.WA_AI_PC_BUILDING_REFINERY_COST
+		hydro_steel_mill          = 12500
+		                            # was global.WA_AI_PC_BUILDING_HYDROPOWEREDSTEELMILL_COST
+		hydro_aluminium_smelter   = 12500
+		                            # was global.WA_AI_PC_BUILDING_HYDROPOWEREDALUMINIUMSMELTER_COST
+		steel_mill                = 10000
+		                            # was global.WA_AI_PC_BUILDING_STEELMILL_COST
+		aluminium_smelter         = 10000
+		                            # was global.WA_AI_PC_BUILDING_ALUMINIUMSMELTER_COST
+		naval_base                = 10000	# Fix 72: naval_base.base_cost, flat - exact at level 0, over-charges upgrades (the -556/level taper is modelled in route SCORING only: railway.cost.naval_base_per_level)
+		                            # was global.WA_AI_PC_BUILDING_NAVAL_BASE_COST, @WA_AI_PC_NAVAL_BASE_BASE_COST (railway_helpers scoring)
+		supply_node               = 10000	# Fix 95: supply_node.base_cost, flat - PC building type 17 (province building, spawned by WA_AI_PC_add_finished_building_by_id)
+		conversion_mil_to_civ     = 8000	# industrial_complex.base_cost_conversion (conversions read the TARGET building's base_cost_conversion, not base_cost; verified 2026-08-14)
+		                            # was global.WA_AI_PC_CONVERSION_COST_MIL_TO_CIV
+		conversion_civ_to_mil     = 6800	# arms_factory.base_cost_conversion
+		                            # was global.WA_AI_PC_CONVERSION_COST_CIV_TO_MIL
+	}
+
+}

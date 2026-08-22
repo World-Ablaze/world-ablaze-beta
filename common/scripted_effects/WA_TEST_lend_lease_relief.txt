@@ -1,0 +1,594 @@
+############################################################################################################
+#	WA_TEST - lend-lease relief v2 boot probe (see events/wa_events_test.txt, wa_test.300)
+#	THIS = donor. Inputs (temp): _llr_arch_idx (1 inf, 2 hv_inf, 3 artillery, 4 train, 5 convoy),
+#	_llr_amount, _llr_target (country id). Sends via ONE meta_effect whose type/amount/target
+#	are all rendered from variables - the thing option C of the relief redesign must prove.
+#	Everything is set and rendered in the SAME scope (no scope hop between set and render).
+############################################################################################################
+
+WA_TEST_LLR_send_one = {
+	# index -> archetype literal (the per-archetype 2 lines option C keeps)
+	if = { limit = { check_variable = { _llr_arch_idx = 1 } }
+		meta_effect = {
+			text = { send_equipment = { type = infantry_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: infantry_equipment x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+	else_if = { limit = { check_variable = { _llr_arch_idx = 2 } }
+		meta_effect = {
+			text = { send_equipment = { type = heavy_infantry_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: heavy_infantry_equipment x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+	else_if = { limit = { check_variable = { _llr_arch_idx = 3 } }
+		meta_effect = {
+			text = { send_equipment = { type = artillery_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: artillery_equipment x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+	else_if = { limit = { check_variable = { _llr_arch_idx = 4 } }
+		meta_effect = {
+			text = { send_equipment = { type = train_equipment amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: train_equipment x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+	else_if = { limit = { check_variable = { _llr_arch_idx = 5 } }
+		meta_effect = {
+			text = { send_equipment = { type = convoy_1 amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: convoy_1 x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+	# 6 = the convoy ARCHETYPE, the control for row 5's variant spelling
+	else_if = { limit = { check_variable = { _llr_arch_idx = 6 } }
+		meta_effect = {
+			text = { send_equipment = { type = convoy amount = [AMT] target = [TGT] } }
+			AMT = "[?_llr_amount]"
+			TGT = "[?_llr_target.GetTag]"
+		}
+		log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR BOOT TEST: convoy x [?_llr_amount] -> [?_llr_target.GetTag]"
+	}
+}
+
+############################################################################################################
+#	Scope + delivery probes for the relief legs (wa_test.301). THIS = donor, ROOT = recipient -
+#	the exact scope shape WA_AI_LEND_LEASE_request_surplus_relief calls the legs in.
+#
+#	They exist because campaign 07270b64 could not tell two engine facts apart from the save:
+#	whether a temp written inside `ROOT = { }` is readable in the donor's scope, and whether
+#	num_equipment@ reflects a send_equipment made earlier in the SAME effect execution. Every
+#	conclusion about why llr_sent_n stayed 0 for ten years rests on those two, and neither is
+#	documented anywhere in the engine's own files.
+############################################################################################################
+
+# Settles the first question in one log line. 4242 = temps are shared across scopes for the
+# duration of the execution; 0 = temps are owned by the scope that set them.
+WA_TEST_LLR_probe_scope = {
+	set_temp_variable = { _wt_scope_probe = 0 }
+	ROOT = { set_temp_variable = { _wt_scope_probe = 4242 } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR SCOPE PROBE: temp set inside ROOT = { } reads [?_wt_scope_probe] in the donor scope (4242 = shared, 0 = scope-owned)"
+}
+
+# Runs the real land-access A* and the real infantry + convoy legs, then prints every input and
+# output of the decision from the donor's scope. A leg that prints amount = 0 never called
+# send_equipment; a leg that prints after = stock either did not land or the read-back is stale.
+WA_TEST_LLR_probe_legs = {
+	WA_AI_LEND_LEASE_relief_land_access = yes
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR PROBE land access: start=[?_pathfind_start] target=[?_pathfind_target] path_ok=[?_llr_path_ok]"
+
+	WA_AI_LEND_LEASE_relief_leg_infantry = yes
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR PROBE infantry: donor=[?_llr_donor_stock] floor=[?_llr_floor] recipient=[?_llr_recipient_stock] starve=[?_llr_starve] base=[?_llr_base] amount=[?_llr_amount] after=[?_llr_recipient_after]"
+
+	WA_AI_LEND_LEASE_relief_leg_convoy = yes
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR PROBE convoy: donor=[?_llr_donor_stock] floor=[?_llr_floor] recipient=[?_llr_recipient_stock] starve=[?_llr_starve] base=[?_llr_base] amount=[?_llr_amount] after=[?_llr_recipient_after]"
+}
+
+# SETTLED 2026-08-19, kept as the negative control: neither convoy spelling moves through
+# send_equipment. This block sends 50 as `convoy_1` and 50 as the `convoy` archetype and reads
+# BOTH sides, then sends 500 rifles from the same scope in the same execution as a positive
+# control. Expected now: both convoy rows leave donor and recipient unchanged, the rifle row
+# drops the donor by 500, and the leg above - which uses the add_equipment_to_stockpile pair -
+# is the row that actually moves hulls.
+WA_TEST_LLR_probe_convoy_token = {
+	set_temp_variable = { _llr_target = ROOT.id }
+	set_temp_variable = { _llr_amount = 50 }
+
+	# The DONOR side is read too, and it is the reading that matters: num_equipment@convoy is the
+	# FREE pool, so a recipient that is short can absorb an arriving hull into an unserved trade or
+	# supply route and still read 0. The donor holds ~60,000 free and cannot be clamped that way -
+	# if its stock falls by 50, the send executed and the question is only where the hulls went; if
+	# it does not move, send_equipment did nothing at all for that token.
+	ROOT = { set_temp_variable = { _wt_cv_before = num_equipment@convoy } }
+	set_temp_variable = { _wt_dn_before = num_equipment@convoy }
+	set_temp_variable = { _llr_arch_idx = 5 }
+	WA_TEST_LLR_send_one = yes
+	ROOT = { set_temp_variable = { _wt_cv_mid = num_equipment@convoy } }
+	set_temp_variable = { _wt_dn_mid = num_equipment@convoy }
+	set_temp_variable = { _llr_arch_idx = 6 }
+	WA_TEST_LLR_send_one = yes
+	ROOT = { set_temp_variable = { _wt_cv_after = num_equipment@convoy } }
+	set_temp_variable = { _wt_dn_after = num_equipment@convoy }
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR CONVOY TOKEN A/B (each send = 50): RECIPIENT before=[?_wt_cv_before] after convoy_1=[?_wt_cv_mid] after convoy=[?_wt_cv_after] | DONOR before=[?_wt_dn_before] after convoy_1=[?_wt_dn_mid] after convoy=[?_wt_dn_after]"
+
+	# Control in the same execution with a token already proven to move: if the donor's rifle
+	# stock falls by 500 and its convoy stock does not, the difference is the equipment, not the
+	# effect, the scope, the amount or the target.
+	set_temp_variable = { _wt_inf_before = num_equipment@infantry_equipment }
+	set_temp_variable = { _llr_arch_idx = 1 }
+	set_temp_variable = { _llr_amount = 500 }
+	WA_TEST_LLR_send_one = yes
+	set_temp_variable = { _wt_inf_after = num_equipment@infantry_equipment }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR CONTROL infantry x 500: DONOR before=[?_wt_inf_before] after=[?_wt_inf_after]"
+
+}
+
+# Per-archetype delivery matrix: does send_equipment actually move EACH of the nine land cargos?
+# Only row 1 was ever measured (12 000 rifles, wa_test.301 2026-08-19); the other eight are the
+# same code shape with a different literal, and the convoy row proved that "same shape, valid
+# token" is not enough - send_equipment silently declines some cargo. THIS = donor, ROOT = recipient.
+#
+# `target = ROOT` is the engine's own scope keyword (effects_documentation.md, Supported Targets),
+# so no meta render is involved here - this isolates the TOKEN. The donor's own stock is logged
+# beside each row: donor = 0 means the row proves nothing, not that the send failed.
+WA_TEST_LLR_probe_all_archetypes = {
+	set_temp_variable = { _wt_dn = num_equipment@infantry_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@infantry_equipment } }
+	send_equipment = { type = infantry_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@infantry_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 1 infantry_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@heavy_infantry_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@heavy_infantry_equipment } }
+	send_equipment = { type = heavy_infantry_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@heavy_infantry_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 2 heavy_infantry_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@support_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@support_equipment } }
+	send_equipment = { type = support_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@support_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 3 support_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@artillery_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@artillery_equipment } }
+	send_equipment = { type = artillery_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@artillery_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 4 artillery_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@heavy_artillery_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@heavy_artillery_equipment } }
+	send_equipment = { type = heavy_artillery_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@heavy_artillery_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 5 heavy_artillery_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@anti_tank_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@anti_tank_equipment } }
+	send_equipment = { type = anti_tank_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@anti_tank_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 6 anti_tank_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@anti_air_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@anti_air_equipment } }
+	send_equipment = { type = anti_air_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@anti_air_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 7 anti_air_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@motorized_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@motorized_equipment } }
+	send_equipment = { type = motorized_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@motorized_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 8 motorized_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+
+	set_temp_variable = { _wt_dn = num_equipment@train_equipment }
+	ROOT = { set_temp_variable = { _wt_rc = num_equipment@train_equipment } }
+	send_equipment = { type = train_equipment amount = 10 target = ROOT }
+	ROOT = { set_temp_variable = { _wt_rc2 = num_equipment@train_equipment } }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | LLR ARCHETYPE PROBE 9 train_equipment: donor=[?_wt_dn] recipient before=[?_wt_rc] after=[?_wt_rc2] (sent 10)"
+}
+
+############################################################################################################
+#	wa_test.302 - the neighbour predicate OUTSIDE the pathfinder.
+#
+#	Inside WA_AI_PATHFIND_get_neighbors, on 1943.04, Bucharest has exactly ONE raw neighbour
+#	(Muntenia, controller renders as ROM) and EVERY predicate is false: tag = ROOT, tag = <literal>,
+#	is_controlled_by = ROOT, is_owned_by = ROOT, faction, co-belligerent - while `always = yes` is
+#	true and ROOT.id renders as ROM in the same breath. That combination cannot be explained by the
+#	predicate, so this runs the SAME predicate at three nesting depths and lets the depths disagree.
+#	ROOT = the recipient country. Console: tag ROM, event wa_test.302.
+############################################################################################################
+
+# Depth 1 - straight from the event scope, no scripted effect, no var: hop.
+WA_TEST_PF_pred_depth1 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	capital_scope = {
+		every_neighbor_state = {
+			add_to_temp_variable = { _wt_pf_n = 1 }
+			if = { limit = { CONTROLLER = { tag = ROOT } } add_to_temp_variable = { _wt_pf_hit = 1 } }
+		}
+	}
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth1 (event -> capital_scope -> every_neighbor_state): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+}
+
+# Depth 2 - same thing, one scripted-effect frame deeper. Depth 1 and 2 differing means the frame
+# is the variable, not the predicate.
+WA_TEST_PF_pred_depth2 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	capital_scope = { WA_TEST_PF_pred_inner = yes }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth2 (event -> capital_scope -> scripted effect): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+}
+
+WA_TEST_PF_pred_inner = {
+	every_neighbor_state = {
+		add_to_temp_variable = { _wt_pf_n = 1 }
+		if = { limit = { CONTROLLER = { tag = ROOT } } add_to_temp_variable = { _wt_pf_hit = 1 } }
+	}
+}
+
+# Depth 3 - reached through `var:<state id>`, the way the A* reaches every state it expands. This
+# is the only structural difference left between the working call sites and the pathfinder.
+WA_TEST_PF_pred_depth3 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+	var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth3 (event -> var:state -> scripted effect): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+
+}
+
+# Depth 4 - the ONE difference left between this harness and the pathfinder: the weekly pull
+# hops into the donor with random_other_country before anything else runs, so the whole A* is
+# executed in the DONOR's country scope while its predicates ask about ROOT. Depths 1-3 all
+# matched; if this one does not, the country-scope hop is the variable and every ROOT-relative
+# trigger inside the pathfinder is answering about the wrong country.
+WA_TEST_PF_pred_depth4 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+		var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth4 (event -> random_other_country -> var:state -> scripted effect): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+
+}
+
+# Depth 5 - depth 4 plus the while_loop_effect frame. Depths 1-4 all matched, so the predicate,
+# the var:<state> hop, the scripted-effect frame and the country hop are all cleared. The A* runs
+# its neighbour scan INSIDE a while_loop_effect, and that frame has never been reconstructed here.
+WA_TEST_PF_pred_depth5 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+			var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth5 (+ while_loop_effect): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+}
+
+# Depth 6 - depth 5 plus a for_each_loop over a temp array run BEFORE the scan, which is what
+# WA_AI_PATHFIND_get_lowest_from_open_list does on every iteration (`for_each_loop` + `var:v = {}`).
+# If 5 matches and 6 does not, the state that kills the predicate is left behind by that picker.
+WA_TEST_PF_pred_depth6 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+
+			clear_temp_array = _wt_pf_list
+			add_to_temp_array = { _wt_pf_list = _wt_pf_state }
+			for_each_loop = { array = _wt_pf_list
+				var:v = { set_temp_variable = { _wt_pf_dummy = THIS.id } }
+			}
+
+			var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth6 (+ for_each_loop picker before the scan): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+
+	clear_temp_array = _wt_pf_list
+}
+
+# Depth 7 - depth 6 plus the one statement of the pathfinder's preamble that is not structural:
+# `set_temp_variable = { break = 0 }`. `break` is the engine's default loop-control name, and the
+# pathfinder puts a temp of exactly that name into the shared pool for its whole execution (the
+# Fix 30 "break hygiene" block). Nothing in depths 1-6 has one. If this line alone turns
+# matched=1 into matched=0, the hygiene that was meant to protect the loops is what blinds them.
+WA_TEST_PF_pred_depth7 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { break = 0 }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+			clear_temp_array = _wt_pf_list
+			add_to_temp_array = { _wt_pf_list = _wt_pf_state }
+			for_each_loop = { array = _wt_pf_list
+				var:v = { set_temp_variable = { _wt_pf_dummy = THIS.id } }
+			}
+			var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth7 (+ a temp literally named `break`): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+}
+
+# Depth 8 - the other preamble statement: the A* clears two persistent variables ON THE START
+# STATE before expanding it (`var:_pathfind_start = { clear_variable = ... }`). Same scan, run
+# after clearing a variable on the very state whose neighbours are then tested.
+WA_TEST_PF_pred_depth8 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		var:_wt_pf_state = {
+			clear_variable = WA_AI_PATHFIND_g_score
+			clear_variable = WA_AI_PATHFIND_f_score
+		}
+
+		var:_wt_pf_state = { WA_TEST_PF_pred_inner = yes }
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth8 (+ clear_variable on the start state): raw=[?_wt_pf_n] matched=[?_wt_pf_hit]"
+
+	clear_temp_array = _wt_pf_list
+}
+
+# Depths 9 and 10 - stop imitating the helpers, CALL them. Depths 1-8 reconstructed every frame
+# and every preamble statement of the A* and all matched, so what breaks the scan is inside one of
+# the two effects the loop runs before it. Each depth adds exactly one real helper.
+#
+# 9 = WA_AI_PATHFIND_check_success_conditions. It evaluates an `if = { limit = { ... } }` whose
+#     limit contains a nested `if` that carries EFFECTS (`set_temp_variable`) inside what is a
+#     trigger context. That runs on every iteration, immediately before the neighbour scan.
+# 10 = WA_AI_PATHFIND_get_lowest_from_open_list, the picker, with a real open_list.
+#
+# First attempt at these two was INVALID and its readings must not be quoted: it passed the state
+# id in as `PREV._wt_pf_state`, a scope-prefixed temp read, which resolves to nothing (the shared
+# flat temp pool takes bare names only). The picker then set `current` to a COUNTRY reference
+# (positive, 0x40000000 family) instead of a state (negative, 0xC0000000), `var:current` entered a
+# country, and `every_neighbor_state` yielded raw=0 - a self-inflicted symptom that looks exactly
+# like the one under investigation. Bare names below.
+WA_TEST_PF_pred_depth9 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _pathfind_type = 3 }
+		set_temp_variable = { current = _wt_pf_state }
+		capital_scope = { set_temp_variable = { _pathfind_target = THIS.id } }
+
+		WA_AI_PATHFIND_check_success_conditions = yes
+
+		var:current = { WA_TEST_PF_pred_inner = yes }
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth9 (+ real check_success_conditions): raw=[?_wt_pf_n] matched=[?_wt_pf_hit] found_path=[?found_path]"
+}
+
+WA_TEST_PF_pred_depth10 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		clear_temp_array = open_list
+		add_to_temp_array = { open_list = _wt_pf_state }
+
+		WA_AI_PATHFIND_get_lowest_from_open_list = yes
+
+		var:current = { WA_TEST_PF_pred_inner = yes }
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth10 (+ real picker): raw=[?_wt_pf_n] matched=[?_wt_pf_hit] current=[?current]"
+
+	clear_temp_array = open_list
+}
+
+# Depth 11 - both helpers, in the loop's real order: picker -> success check -> var:current -> scan.
+# If 9 and 10 each match on their own and 11 does not, the failure is an interaction between them
+# and not attributable to either.
+WA_TEST_PF_pred_depth11 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _pathfind_type = 3 }
+		capital_scope = { set_temp_variable = { _pathfind_target = THIS.id } }
+		clear_temp_array = open_list
+		clear_temp_array = closed_list
+		add_to_temp_array = { open_list = _wt_pf_state }
+
+		WA_AI_PATHFIND_get_lowest_from_open_list = yes
+		WA_AI_PATHFIND_check_success_conditions = yes
+
+		var:current = {
+			add_to_temp_array = { closed_list = THIS.id }
+			WA_TEST_PF_pred_inner = yes
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth11 (real picker + real success check, loop order): raw=[?_wt_pf_n] matched=[?_wt_pf_hit] current=[?current] found_path=[?found_path]"
+
+	clear_temp_array = open_list
+	clear_temp_array = closed_list
+}
+
+# Depth 12 - the last untested combination: depth 11 (both real helpers, loop order) INSIDE a
+# while_loop_effect. Depth 7 had the while frame with imitation helpers, depth 11 had the real
+# helpers with no while frame; the real A* has both.
+WA_TEST_PF_pred_depth12 = {
+	set_temp_variable = { _wt_pf_n = 0 }
+	set_temp_variable = { _wt_pf_hit = 0 }
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _pathfind_type = 3 }
+		capital_scope = { set_temp_variable = { _pathfind_target = THIS.id } }
+		clear_temp_array = open_list
+		clear_temp_array = closed_list
+		add_to_temp_array = { open_list = _wt_pf_state }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+			WA_AI_PATHFIND_get_lowest_from_open_list = yes
+			WA_AI_PATHFIND_check_success_conditions = yes
+			var:current = {
+				add_to_temp_array = { closed_list = THIS.id }
+				WA_TEST_PF_pred_inner = yes
+			}
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth12 (real helpers INSIDE while_loop_effect): raw=[?_wt_pf_n] matched=[?_wt_pf_hit] current=[?current]"
+}
+
+# Depth 13 - identical to 12 except the scan is the REAL WA_AI_PATHFIND_get_neighbors instead of
+# the harness copy. Same predicate, same frames; only the effect that owns the loop differs. If 12
+# matches and 13 does not, the fault is inside that effect and not in anything around it.
+WA_TEST_PF_pred_depth13 = {
+	set_temp_variable = { _wt_pf_state = 0 }
+	capital_scope = { set_temp_variable = { _wt_pf_state = THIS.id } }
+
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _pathfind_type = 3 }
+		set_temp_variable = { _llr_donor = THIS.id }
+		capital_scope = { set_temp_variable = { _pathfind_target = THIS.id } }
+		clear_temp_array = open_list
+		clear_temp_array = closed_list
+		add_to_temp_array = { open_list = _wt_pf_state }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+			WA_AI_PATHFIND_get_lowest_from_open_list = yes
+			WA_AI_PATHFIND_check_success_conditions = yes
+			var:current = {
+				add_to_temp_array = { closed_list = THIS.id }
+				WA_AI_PATHFIND_get_neighbors = yes
+			}
+			set_temp_variable = { _wt_pf_nb = neighbors^num }
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth13 (real get_neighbors, type 3): neighbors=[?_wt_pf_nb] current=[?current]"
+
+	# Depth 14 - the same call with _pathfind_type = 1, the branch the supply-line system uses and
+	# whose consumer reads 1,814 calls / 0 successes in campaign 07270b64. If type 1 also yields 0
+	# here, the whole effect is broken and both dead systems have one cause; if type 1 yields
+	# neighbours and type 3 does not, only the Fix 92 branch is at fault.
+	random_other_country = {
+		limit = { original_tag = GER }
+
+		set_temp_variable = { _pathfind_type = 1 }
+		clear_temp_array = open_list
+		clear_temp_array = closed_list
+		add_to_temp_array = { open_list = _wt_pf_state }
+
+		set_temp_variable = { _wt_pf_brk = 0 }
+		set_temp_variable = { _wt_pf_it = 0 }
+		while_loop_effect = { break = _wt_pf_brk limit = { check_variable = { _wt_pf_it < 1 } }
+			WA_AI_PATHFIND_get_lowest_from_open_list = yes
+			WA_AI_PATHFIND_check_success_conditions = yes
+			var:current = {
+				add_to_temp_array = { closed_list = THIS.id }
+				WA_AI_PATHFIND_get_neighbors = yes
+			}
+			set_temp_variable = { _wt_pf_nb = neighbors^num }
+			add_to_temp_variable = { _wt_pf_it = 1 }
+		}
+	}
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF PRED depth14 (real get_neighbors, type 1 - the supply-line branch): neighbors=[?_wt_pf_nb] current=[?current]"
+
+	clear_temp_array = open_list
+	clear_temp_array = closed_list
+}
+
+# Run header. Added 2026-08-19 after the harness returned DIFFERENT answers for identical inputs
+# on the same save at the same in-game time: depths 1-3 read matched=1 in six consecutive runs and
+# matched=0 in the seventh, while depths 4+ read raw=0 because the donor pick found nothing. Every
+# reading in this file is conditional on the context printed here; without it a code result and a
+# context difference are indistinguishable, and the whole series has to be thrown away - which is
+# what happened. Print it FIRST, on every run, and quote it beside any figure taken from this file.
+WA_TEST_PF_header = {
+	set_temp_variable = { _wt_hdr_self = THIS.id }
+	set_temp_variable = { _wt_hdr_root = ROOT.id }
+	set_temp_variable = { _wt_hdr_cap = 0 }
+	capital_scope = { set_temp_variable = { _wt_hdr_cap = THIS.id } }
+	set_temp_variable = { _wt_hdr_ger = 0 }
+	random_other_country = {
+		limit = { original_tag = GER }
+		PREV = { set_temp_variable = { _wt_hdr_ger = 1 } }
+	}
+	set_temp_variable = { _wt_hdr_nb = 0 }
+	capital_scope = { every_neighbor_state = { PREV = { PREV = { add_to_temp_variable = { _wt_hdr_nb = 1 } } } } }
+
+	log = "[GetYear] [GetMonth] | TEST | [This.GetName] | PF HEADER: THIS=[?_wt_hdr_self.GetTag] ROOT=[?_wt_hdr_root.GetTag] capital=[?_wt_hdr_cap.GetName] capital_neighbours=[?_wt_hdr_nb] GER_pickable=[?_wt_hdr_ger]"
+
+}

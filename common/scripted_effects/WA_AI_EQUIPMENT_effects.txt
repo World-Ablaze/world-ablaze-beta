@@ -1,0 +1,187 @@
+###############################################################################
+# WA_AI_EQUIPMENT - context latching for the ai_equipment designers
+#
+# Fix 47. Companion to common/scripted_triggers/WA_AI_EQUIPMENT_triggers.txt.
+#
+# SCOPE: country (THIS = ROOT = the evaluated country).
+# CADENCE: MONTHLY, from the existing on_monthly pulse in
+#          common/on_actions/WA_AI_misc_on_actions.txt, inside the is_ai gate.
+#          No new on_action - see AGENTS.md / wa-ai-systems on cadence.
+# INPUTS:  the Tier-1 instantaneous triggers in WA_AI_EQUIPMENT_triggers.txt.
+# OUTPUTS: six timed country flags read by the Tier-2 public triggers, plus the
+#          WA_TLM_r47_* probes (write-only telemetry, never read by gameplay).
+#
+# WHY LATCH AT ALL
+# An ai_equipment design switch is not free: it spends air/army XP on the
+# variant and re-tools the production line (efficiency reset). A gate built
+# straight on `resource@aluminium > 50` would flip several times a year on any
+# major with a moving trade balance, and each flip would cost more than the
+# gate saves. Every gate below is therefore hysteretic, and the hysteresis is
+# ASYMMETRIC in the direction that matters for its consumer.
+#
+# THE TWO SHAPES
+#
+#   Resource gates (can_absorb_*): OPENING is the dangerous direction - it
+#   commits the economy to a permanently higher per-factory draw. They need
+#   TWO CONSECUTIVE confirming monthly samples to open (an `_armed` flag with a
+#   45-day life carries the first sample forward; 45 > 31 so it survives the
+#   month gap and nothing longer), and they stay open for 180 days after the
+#   last confirming sample. Net effect: a single good month cannot open the
+#   gate, and a single bad month cannot slam it shut mid-production-run.
+#
+#   Situation gates (needs_long_range_air, faces_strategic_bombing): serving
+#   them when they are not strictly needed costs a little performance; failing
+#   to serve them costs the air war. They open on the FIRST confirming sample
+#   and close 180 days after the last one.
+#
+# 180 days is deliberately longer than the fix's own re-evaluation horizon: it
+# is roughly the time it takes a re-tooled line to pay back its efficiency
+# reset, so a gate cannot cycle faster than the cost it imposes.
+#
+# ALL FLAGS ARE POSITIVE LATCHES. If this effect never runs for a country the
+# public triggers all read false, which reproduces pre-Fix-47 behaviour for the
+# situation gates and keeps the expensive design gated off for the resource
+# gates. See the fail-safe note in the trigger file.
+###############################################################################
+
+WA_AI_EQUIPMENT_update_context_flags = {
+
+	### ------------------------------------------------------------------
+	### Resource shock gates - two consecutive confirming months to open
+	### ------------------------------------------------------------------
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_steel_headroom_small = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_steel_small_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_steel_small_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_small_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_steel_headroom_large = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_steel_large_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_steel_large_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_large_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_aluminium_headroom_small = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_alu_small_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_alu_small_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_small_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_aluminium_headroom_large = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_alu_large_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_alu_large_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_large_armed value = 1 days = 45 }
+	}
+
+	# Chromium and tungsten - the jet-era pair. Same two-consecutive-months
+	# shape as steel/aluminium above; a jet generation introduces BOTH at once,
+	# so a jet gate ANDs the two and needs both latches open.
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_chromium_headroom_small = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_chr_small_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_chr_small_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_small_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_chromium_headroom_large = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_chr_large_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_chr_large_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_large_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_tungsten_headroom_small = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_tun_small_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_tun_small_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_small_armed value = 1 days = 45 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_tungsten_headroom_large = yes }
+		if = {
+			limit = { has_country_flag = WA_AI_EQUIPMENT_tun_large_armed }
+			set_country_flag = { flag = WA_AI_EQUIPMENT_tun_large_ok value = 1 days = 180 }
+		}
+		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_large_armed value = 1 days = 45 }
+	}
+
+	### ------------------------------------------------------------------
+	### Situation gates - open on the first confirming month
+	### ------------------------------------------------------------------
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_air_war_wants_range = yes }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_lrange_ok value = 1 days = 180 }
+	}
+
+	if = {
+		limit = { WA_AI_EQUIPMENT_enemy_fields_strategic_bombers = yes }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_stratbomb_ok value = 1 days = 180 }
+	}
+
+	### ------------------------------------------------------------------
+	### WA_TLM probes - checklist R31 (SOV long range) and R32 (ENG aluminium)
+	###
+	### Write-only telemetry (documentation/WA_TLM_TELEMETRY_SYSTEM.md). These
+	### are sampled AFTER the latch update above, so they measure the gate as
+	### the ai_equipment priorities will see it this month - the verified
+	### effect, not entry into the code path (honesty rule 1). The counters are
+	### "months the gate was open", which is what makes PERSISTENCE measurable;
+	### a bare first-open stamp would over-affirm exactly the way R13's
+	### fire_only_once stamps did (honesty rule 2).
+	###
+	### Only the two gates the pilots actually consume are instrumented. The
+	### steel pair and the strategic-bombing latch carry no probe on purpose -
+	### a WA_TLM_ write with no registry consumer is an orphan (rule 6).
+	###
+	### Note on _first_t = 0: the clock is 0 in 1936.1, so a gate that opened in
+	### the first month would stamp 0. Both probes are keyed to 1941+ behaviour,
+	### and the paired _n counter disambiguates (n > 0 with first_t = 0 means it
+	### really did open at clock 0).
+	### ------------------------------------------------------------------
+
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_lrange_ok }
+		# tlm: r47_lrange_n / _first_t / _last_t - months the long-range context
+		# latch is up - consumer: checklist R31
+		add_to_variable = { WA_TLM_r47_lrange_n = 1 }
+		set_variable = { WA_TLM_r47_lrange_last_t = global.WA_TLM_clock }
+		if = {
+			limit = { check_variable = { WA_TLM_r47_lrange_n = 1 } }
+			set_variable = { WA_TLM_r47_lrange_first_t = global.WA_TLM_clock }
+		}
+	}
+
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_alu_large_ok }
+		# tlm: r47_alu_large_n / _first_t / _last_t - months the large aluminium
+		# shock gate is open - consumer: checklist R32
+		add_to_variable = { WA_TLM_r47_alu_large_n = 1 }
+		set_variable = { WA_TLM_r47_alu_large_last_t = global.WA_TLM_clock }
+		if = {
+			limit = { check_variable = { WA_TLM_r47_alu_large_n = 1 } }
+			set_variable = { WA_TLM_r47_alu_large_first_t = global.WA_TLM_clock }
+		}
+	}
+}

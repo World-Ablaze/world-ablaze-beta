@@ -1,0 +1,236 @@
+############################################################################################################
+#	WA_TEST - air-actor reduction harness (2026-08-16, checklist R15 diagnosis)
+#
+#	Theory under test: the USAAF's cancelled CONUS->UK transfers and the airfield shuffle are an
+#	instability of the engine's air assignment when MANY actors (every Allies member with a few
+#	wings) bid for the same regions and the same airfields. These effects remove the small actors
+#	so the theory can be tested on a forked save. Console: `effect WA_TEST_air_<name> = yes`
+#	(the player-country scope is ROOT; the effects walk every_country themselves).
+#
+#	Two knobs, separable on purpose:
+#	  MUTE      - country flag WA_TEST_air_muted: every generic / faction AIR block reads
+#	              WA_AI_MILITARY_AIR_actor_enabled (WA_AI_MILITARY_triggers.txt) in its enable, so a
+#	              muted country writes NO scripted strategic_air_importance any more (its planes stay
+#	              and follow the engine's own terms only).
+#	  TRANSFER  - transfer_units_fraction air_ratio = 1.0 hands every deployed wing to the Allies
+#	              faction leader (fewer actors, same plane count in the theatre). There is no script
+#	              effect that deletes air wings; to REMOVE planes instead, tag-switch and use the
+#	              console `deleteallairwings` (check on a throwaway save whether it is per-tag or
+#	              global before relying on it).
+#
+#	Selection: WA_AI_MILITARY_is_allies_member with fewer than @WA_TEST_AIR_MINOR_PLANES deployed
+#	aircraft, faction leader excluded (has_deployed_air_force_size counts AIRCRAFT, carrier-based
+#	ones included - "amount of aircrafts", install triggers_documentation.md).
+#	Newly produced wings of a transferred country will re-appear over time (AIR_DEPLOYMENT_DAYS 7):
+#	re-run the transfer effect, or run the mute only.
+############################################################################################################
+
+@WA_TEST_AIR_MINOR_PLANES = 5000
+
+# List candidates and their sizes in game.log - run this first.
+WA_TEST_air_list_allied_minors = {
+	log = "[GetDateText] WA_TEST_air_list_allied_minors: Allies members under @WA_TEST_AIR_MINOR_PLANES deployed planes"
+	every_country = {
+		limit = {
+			WA_AI_MILITARY_is_allies_member = yes
+			NOT = { is_faction_leader = yes }
+			has_deployed_air_force_size = { size < @WA_TEST_AIR_MINOR_PLANES }
+		}
+		if = { limit = { has_country_flag = WA_TEST_air_muted }
+			log = "  [This.GetTag] MUTED"
+		}
+		else = {
+			log = "  [This.GetTag] active"
+		}
+	}
+}
+
+# MUTE only: the small actors keep their planes but lose every WA scripted air strategy.
+WA_TEST_air_mute_allied_minors = {
+	every_country = {
+		limit = {
+			WA_AI_MILITARY_is_allies_member = yes
+			NOT = { is_faction_leader = yes }
+			has_deployed_air_force_size = { size < @WA_TEST_AIR_MINOR_PLANES }
+		}
+		set_country_flag = WA_TEST_air_muted
+		log = "[GetDateText] WA_TEST_air_mute: [This.GetTag] muted"
+	}
+}
+
+# MUTE + TRANSFER: the small actors hand every deployed wing to the Allies faction leader.
+# Stockpile, army, navy and unit leaders stay where they are.
+WA_TEST_air_consolidate_allied_minors = {
+	# The sink is resolved by the same condition twice: HOI4 has no trigger that asks whether a
+	# global event target is set (has_global_event_target is CK2/EU4), so the guard tests the
+	# existence of the leader itself and the target is only saved inside the guarded branch.
+	if = {
+		limit = {
+			any_country = {
+				is_faction_leader = yes
+				WA_AI_MILITARY_is_allies_member = yes
+			}
+		}
+		random_country = {
+			limit = {
+				is_faction_leader = yes
+				WA_AI_MILITARY_is_allies_member = yes
+			}
+			save_global_event_target_as = WA_TEST_air_sink
+		}
+		every_country = {
+			limit = {
+				WA_AI_MILITARY_is_allies_member = yes
+				NOT = { is_faction_leader = yes }
+				has_deployed_air_force_size = { size < @WA_TEST_AIR_MINOR_PLANES }
+			}
+			set_country_flag = WA_TEST_air_muted
+			transfer_units_fraction = {
+				target = event_target:WA_TEST_air_sink
+				size = 0
+				stockpile_ratio = 0
+				army_ratio = 0
+				navy_ratio = 0
+				air_ratio = 1.0
+				keep_unit_leaders_trigger = { always = yes }
+			}
+			log = "[GetDateText] WA_TEST_air_consolidate: [This.GetTag] muted, wings -> [WA_TEST_air_sink.GetTag]"
+		}
+		clear_global_event_target = WA_TEST_air_sink
+	}
+	else = {
+		log = "[GetDateText] WA_TEST_air_consolidate: no Allies faction leader found - nothing done"
+	}
+}
+
+# Undo the mute on everyone (transferred wings do not come back).
+WA_TEST_air_unmute_all = {
+	every_country = {
+		limit = { has_country_flag = WA_TEST_air_muted }
+		clr_country_flag = WA_TEST_air_muted
+		log = "[GetDateText] WA_TEST_air_unmute: [This.GetTag]"
+	}
+}
+
+############################################################################################################
+#	Single-actor / unlimited-capacity variants (2026-08-16)
+############################################################################################################
+
+# Every air base on the British home islands set to this level (the UK hosting builder's cap is
+# constant:wa_ai_pc.air.uk_target_level_cap = 12; kept as a literal here on purpose - the test wants
+# "max", not "what the builder would build").
+@WA_TEST_AIR_UK_MAX_LEVEL = 12
+
+# ONE actor: every Allies member (ENG included) hands every deployed wing to the USA.
+# Carrier-deck wings move too (transfer_units_fraction cannot filter them) - USA wings on ENG decks
+# is a state the engine tolerates but read the deck split (cvair.py) with that in mind.
+# Stockpile, army, navy, unit leaders stay. Requires USA to exist and be an Allies member.
+WA_TEST_air_all_to_usa = {
+	if = {
+		limit = {
+			USA = { exists = yes WA_AI_MILITARY_is_allies_member = yes }
+		}
+		every_country = {
+			limit = {
+				WA_AI_MILITARY_is_allies_member = yes
+				NOT = { tag = USA }
+				has_deployed_air_force_size = { size > 0 }
+			}
+			set_country_flag = WA_TEST_air_muted
+			transfer_units_fraction = {
+				target = USA
+				size = 0
+				stockpile_ratio = 0
+				army_ratio = 0
+				navy_ratio = 0
+				air_ratio = 1.0
+				keep_unit_leaders_trigger = { always = yes }
+			}
+			log = "[GetDateText] WA_TEST_air_all_to_usa: [This.GetTag] muted, all wings -> USA"
+		}
+	}
+	else = {
+		log = "[GetDateText] WA_TEST_air_all_to_usa: USA missing or not an Allies member - nothing done"
+	}
+}
+
+# Railway level 3 is laid on every star spoke and on the state-to-London trunk (build_railway ADDS
+# levels, so overlapping spokes compound and the engine caps them - fine for a test). London
+# (126 North London) is the trunk hub every state's own hub is railed to. Both are literals below:
+# @-constants are not substituted inside meta_effect text or inside an array@<id> suffix.
+
+# UNLIMITED hosting only: every ENG-owned state on the British home islands (strategic regions
+# 1 Southern England, 2 Northern England, 3 Scotland, 4 Ireland - N. Ireland only, IRE is not ENG)
+# gets an air base at @WA_TEST_AIR_UK_MAX_LEVEL, built instantly. Removes airfield CAPACITY as a
+# variable from the test and nothing else (supply stays as it is).
+WA_TEST_air_uk_max_airbases = {
+	every_state = {
+		limit = {
+			is_owned_by = ENG
+			OR = { region = 1 region = 2 region = 3 region = 4 }
+		}
+		set_building_level = {
+			type = air_base
+			level = @WA_TEST_AIR_UK_MAX_LEVEL
+			instant_build = yes
+		}
+		log = "[GetDateText] WA_TEST_air_uk_max_airbases: state [This.GetName] air_base -> @WA_TEST_AIR_UK_MAX_LEVEL"
+	}
+}
+
+# UNLIMITED supply only (airfields untouched): the same states get (b) a supply node on EVERY
+# province, (c) a railway star from each province to the state's first province
+# (WA_AI_MAP_state_province_ids@THIS^0) and (d) a trunk from that hub to London's hub - all instant.
+# Removes supply (fuel / capacity_penalty / disrupted_supply on the base) as a variable from the test.
+# Orthogonal to WA_TEST_air_uk_max_airbases: run one, the other, or both. Needs the WA_AI_MAP data
+# (global arrays, present in any save that ran the startup on_action).
+WA_TEST_air_uk_supply = {
+	set_temp_variable = { _wt_trunk_hub = global.WA_AI_MAP_state_province_ids@126^0 }
+	every_state = {
+		limit = {
+			is_owned_by = ENG
+			OR = { region = 1 region = 2 region = 3 region = 4 }
+		}
+		# (b) a depot on every province of the state
+		add_building_construction = {
+			type = supply_node
+			level = 1
+			instant_build = yes
+			province = { all_provinces = yes }
+		}
+		# (c) rail star: every province -> the state's hub (first province of the map array)
+		set_temp_variable = { _wt_state_hub = global.WA_AI_MAP_state_province_ids@THIS^0 }
+		for_each_loop = {
+			array = global.WA_AI_MAP_state_province_ids@THIS
+			value = _wt_prov
+			if = { limit = { NOT = { check_variable = { _wt_prov = _wt_state_hub } } }
+				meta_effect = {
+					text = {
+						build_railway = {
+							level = 3
+							start_province = [P]
+							target_province = [H]
+						}
+					}
+					P = "[?_wt_prov]"
+					H = "[?_wt_state_hub]"
+				}
+			}
+		}
+		# (d) trunk: the state's hub -> London's hub
+		if = { limit = { NOT = { check_variable = { _wt_state_hub = _wt_trunk_hub } } }
+			meta_effect = {
+				text = {
+					build_railway = {
+						level = 3
+						start_province = [H]
+						target_province = [T]
+					}
+				}
+				H = "[?_wt_state_hub]"
+				T = "[?_wt_trunk_hub]"
+			}
+		}
+		log = "[GetDateText] WA_TEST_air_uk_supply: state [This.GetName] depots on all provinces, rail star + trunk to [?_wt_trunk_hub]"
+	}
+}

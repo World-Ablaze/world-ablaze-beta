@@ -1,0 +1,653 @@
+﻿####### Division Templates #######
+#
+# AI-ONLY ORDER OF BATTLE. Loaded instead of ITA_1936_land_nsb.txt when
+# has_dlc = "No Step Back" and is_ai = yes (see history/countries/ITA - Italy.txt).
+# Mirrors the SOV_1936_land_nsb / SOV_1936_land_nsb_ai split.
+#
+# It exists for exactly one reason: "Divisione di Fanteria" is buffed here so the AI
+# template designer assigns it the infantry role instead of "Camicie Nere".
+#
+# The engine keeps ONE division template per role and decommissions the rest during its
+# first template pass (around 1936.1.5-1.7). A decommissioned template can never be
+# recruited, so its division count is frozen for the rest of the campaign. The role goes
+# to whichever template scores highest against the role's ENABLED target, scoring
+# (matched units - per-category oversize) / total target units.
+#
+# WHICH TARGET MATTERS: none of the flag-gated targets in WA_infantry_role are enabled
+# until WA_AI_TEMPLATES_has_infantry_focus_completed fires - for Italy that is
+# ITA_infantry_modernization, which the AI does not reach for well over a year. Until
+# then WA_INFANTRY_TEMPLATE is unset and the only enabled infantry target in the game is
+# WA_AI_TEMPLATES_GENERIC_INFANTRY_FALLBACK (15x heavy infantry, 3 pack artillery + 3
+# anti-tank regimental, 9 support companies). The templates are decommissioned in the
+# first week of 1936, so THE FALLBACK IS THE TARGET THAT DECIDES. Tune against it.
+#
+#                              vs FALLBACK   vs 1004 (after the focus fires)
+#     Camicie Nere                 0.6000       0.6000
+#     Divisione di Fanteria        0.2333       0.3333   <- player OOB, loses, decommissioned
+#     Divisione di Fanteria        0.6667       0.7667   <- this file, wins both
+#
+# Camicie Nere carries division_cap = ITA_militias_cap (12), so when it held the infantry
+# role Italian infantry was capped at 12 divisions for the whole pre-war period. SOV had
+# the same end state via a different route - see the warning in
+# common/ai_templates/WA_AI_TEMPLATES_garrison.txt.
+#
+# The changes below are all-heavy line battalions, a 6th regimental support, and two extra
+# support companies. Keep the two files in sync for everything EXCEPT this template; the
+# divergence is deliberate and documented here.
+#
+# Not done in the shared OOB because it rewrites a historical Italian division, which
+# should not change for human players.
+
+division_template = {
+	name = "Reggimento di Cavalleria"
+	division_names_group = ITA_CAV_01
+	priority = 0
+	is_locked = yes
+	force_allow_recruiting = yes
+
+	regiments = {
+		light_cavalry_horse_battalion_line = { x = 0 y = 0 }
+        light_cavalry_horse_battalion_line = { x = 0 y = 1 }
+        light_cavalry_horse_battalion_line = { x = 0 y = 2 }
+
+        light_cavalry_horse_battalion_line = { x = 1 y = 0 }
+		light_cavalry_horse_battalion_line = { x = 1 y = 1 }
+		light_cavalry_horse_battalion_line = { x = 1 y = 2 }
+	}
+	support = {
+		military_police_horse_company_divisional = { x = 0 y = 0 }
+	}
+}
+
+division_template = {
+	name = "Camicie Nere"
+	division_names_group = ITA_INF_02
+	template_counter = 82
+	is_locked = yes
+	force_allow_recruiting = yes
+	division_cap = 12	#WARNING THIS VALUE NEEDS TO MATCH THE value in var ITA_militias_cap set in history file
+
+	regiments = {
+		infantry_heavy_horse_battalion_line = { x = 0 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 0 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 0 y = 2 }
+
+		infantry_heavy_horse_battalion_line = { x = 1 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 1 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 1 y = 2 }
+
+		infantry_heavy_horse_battalion_line = { x = 2 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 2 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 2 y = 2 }
+
+		infantry_heavy_horse_battalion_line = { x = 3 y = 0 }
+	}
+	regimental_support = {
+		pack_artillery_horse_company_regimental = { x = 0 y = 0 }
+		pack_artillery_horse_company_regimental = { x = 1 y = 0 }
+		pack_artillery_horse_company_regimental = { x = 2 y = 0 }
+	}
+	support = {
+		engineer_horse_company_divisional = { x = 0 y = 0 }
+		artillery_horse_company_divisional = { x = 0 y = 1 }
+		logistics_horse_company_divisional = { x = 0 y = 2 }
+		field_hospital_horse_company_divisional = { x = 0 y = 3 }
+
+		recon_horse_company_divisional = { x = 1 y = 0 }
+		blackshirt_officers_mot_company_divisional = { x = 1 y = 1 }
+	}
+}
+
+division_template = {
+	name = "Divisione di Fanteria"
+	template_counter = 98
+	division_names_group = ITA_INF_01
+	is_locked = yes
+	force_allow_recruiting = yes
+
+	# Represents nearly all infantry divisions
+	# In later years, CC.NN. Brigade added to INF Division (1x2 MIL/INF regiments)
+	# Also represent semi-mountain divisions (1st, 2nd, 3rd, 4th, 6th Divisions)
+	#
+	# AI-ONLY DIVERGENCE from ITA_1936_land_nsb.txt - the whole reason this file exists.
+	# Player version is 6x light + 3x heavy with a single pack artillery regimental.
+	# That scored 0.3333 against Italy's enabled infantry target while Camicie Nere
+	# scored 0.6000, so the militia template took the infantry role and this division was
+	# decommissioned and frozen at its 1936 count. All-heavy plus 5 regimental supports
+	# scores 0.6667 and wins the role. See the header of this file.
+	regiments = {
+		infantry_heavy_horse_battalion_line = { x = 0 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 0 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 0 y = 2 }
+
+		infantry_heavy_horse_battalion_line = { x = 1 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 1 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 1 y = 2 }
+
+		infantry_heavy_horse_battalion_line = { x = 2 y = 0 }
+		infantry_heavy_horse_battalion_line = { x = 2 y = 1 }
+		infantry_heavy_horse_battalion_line = { x = 2 y = 2 }
+
+		artillery_horse_battalion_line = { x = 3 y = 0 }
+		artillery_horse_battalion_line = { x = 3 y = 1 }
+		artillery_horse_battalion_line = { x = 3 y = 2 }
+	}
+	regimental_support = {
+		pack_artillery_horse_company_regimental = { x = 0 y = 0 }
+		anti_tank_horse_company_regimental = { x = 0 y = 1 }
+
+		pack_artillery_horse_company_regimental = { x = 1 y = 0 }
+		anti_tank_horse_company_regimental = { x = 1 y = 1 }
+
+		pack_artillery_horse_company_regimental = { x = 2 y = 0 }
+		anti_tank_horse_company_regimental = { x = 2 y = 1 }
+	}
+	support = {
+		engineer_horse_company_divisional = { x = 0 y = 0 }
+        logistics_horse_company_divisional = { x = 0 y = 1 }
+		# field hospital and divisional artillery are AI-only additions. Both are already
+		# fielded by Camicie Nere in this same OOB, so Italy can certainly build them.
+		field_hospital_horse_company_divisional = { x = 0 y = 2 }
+
+		recon_horse_company_divisional = { x = 1 y = 0 }
+		artillery_horse_company_divisional = { x = 1 y = 1 }
+	}
+}
+
+division_template = {
+	name = "Divisione Alpina"
+	division_names_group = ITA_MNT_01
+	is_locked = yes
+	force_allow_recruiting = yes
+
+	regiments = {
+		mountaineer_horse_batallion_line = { x = 0 y = 0 } 												# (elite) Alpini Regiment
+		mountaineer_horse_batallion_line = { x = 0 y = 1 }
+		mountaineer_horse_batallion_line = { x = 0 y = 2 }
+
+		mountaineer_horse_batallion_line = { x = 1 y = 0 }
+		mountaineer_horse_batallion_line = { x = 1 y = 1 }
+		mountaineer_horse_batallion_line = { x = 1 y = 2 }
+	}
+	regimental_support = {
+		pack_artillery_horse_company_regimental = { x = 0 y = 0 }
+		pack_artillery_horse_company_regimental = { x = 1 y = 0 }
+	}
+	support = {
+		engineer_mot_battalion_divisional = { x = 0 y = 0 }
+		pack_artillery_horse_company_divisional = { x = 0 y = 1 }
+        logistics_horse_company_divisional = { x = 0 y = 2 }
+		field_hospital_horse_company_divisional = { x = 0 y = 3 }
+	}
+
+	priority = 2
+}
+
+division_template = {
+	name = "Divisione Coloniale"
+	division_names_group = ITA_COL_01
+	is_locked = yes
+	force_allow_recruiting = yes
+
+	# Represents lesser-equipped colonial units
+	regiments = {
+		infantry_light_horse_battalion_line = { x = 0 y = 0 }
+		infantry_light_horse_battalion_line = { x = 0 y = 1 }
+		infantry_light_horse_battalion_line = { x = 0 y = 2 }
+
+		infantry_light_horse_battalion_line = { x = 1 y = 0 }
+		infantry_light_horse_battalion_line = { x = 1 y = 1 }
+		infantry_light_horse_battalion_line = { x = 1 y = 2 }
+	}
+	support = {
+        logistics_horse_company_divisional = { x = 0 y = 0 }
+	}
+
+	priority = 0
+}
+
+division_template = {
+	name = "Divisione Celere"
+	template_counter = 101
+	division_names_group = ITA_CAV_02
+	is_locked = yes
+	force_allow_recruiting = yes
+
+	regiments = {
+		heavy_cavalry_horse_battalion_line = { x = 0 y = 0 }
+		heavy_cavalry_horse_battalion_line = { x = 0 y = 1 }
+		scout_car_battalion_line = { x = 0 y = 2 }
+
+		infantry_heavy_motorized_battalion_line = { x = 1 y = 0 }
+		infantry_heavy_motorized_battalion_line = { x = 1 y = 1 }
+		infantry_heavy_motorized_battalion_line = { x = 1 y = 2 }
+
+		light_armor_battalion_line = { x = 2 y = 0 }
+		light_armor_battalion_line = { x = 2 y = 1 }
+		light_armor_battalion_line = { x = 2 y = 2 }
+
+		artillery_mot_battalion_line = { x = 3 y = 0 }
+	}
+	regimental_support = {
+		pack_artillery_mot_company_regimental = { x = 0 y = 0 }
+		pack_artillery_mot_company_regimental = { x = 1 y = 0 }
+	}
+	support = {
+		engineer_mot_battalion_divisional = { x = 0 y = 0 }
+		artillery_mot_company_divisional = { x = 0 y = 1 }
+        logistics_mot_company_divisional = { x = 0 y = 2 }
+	}
+
+	priority = 3
+}
+
+####### OOB #######
+units = {
+	##### Commando Superiore Metropolitana #####
+	### Gruppo d'Armata Ovest ###
+	## 1a Armata ##
+	# II Corpo d'Armata #
+	division = { # "4a Divisione di Fanteria 'Livorno'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 4
+		}
+		location = 11721
+		division_template = "Divisione di Fanteria"	# 'Semi-Mountain' (less trained & equipped than Alpina)
+		start_experience_factor = 0.4
+		start_equipment_factor = 0.7
+	}
+	division = { # "4a Divisione Alpina 'Cuneense'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 4
+		}
+		location = 11721
+		division_template = "Divisione Alpina"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+
+	# III Corpo d'Armata #
+	division = { # "3a Divisione di Fanteria 'Ravenna'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 3
+		}
+		location = 11891
+		division_template = "Divisione di Fanteria"	# 'Semi-Mountain' (less trained & equipped than Alpina)
+		start_experience_factor = 0.4
+		start_equipment_factor = 0.7
+	}
+	division = { # "6a Divisione di Fanteria 'Cuneo'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 6
+		}
+		location = 11891
+		division_template = "Divisione di Fanteria"	# 'Semi-Mountain' (less trained & equipped than Alpina)
+		start_experience_factor = 0.4
+		start_equipment_factor = 0.7
+	}
+
+
+	## 4a Armata ##
+	# Corpo d'Armata Alpina #
+	division = { # "1a Divisione Alpina 'Taurinense'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 1
+		}
+		location = 9738
+		division_template = "Divisione Alpina"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+
+	# I Corpo d'Armata #
+	division = { # "11a Divisione di Fanteria 'Brennero'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 11
+		}
+		location = 6780
+		division_template = "Divisione di Fanteria"	# 'Semi-Mountain' (less trained & equipped than Alpina)
+		start_experience_factor = 0.4
+		start_equipment_factor = 0.7
+	}
+	division = { # "2a Divisione Alpina 'Tridentina'"
+		division_name = {
+			is_name_ordered = yes
+			name_order = 2
+		}
+		location = 6780
+		division_template = "Divisione Alpina"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+
+	# IV Corpo d'Armata #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 23
+		} #  "23a Divisione di Fanteria 'Ferrara'"
+		location = 1964
+		division_template = "Divisione di Fanteria"	# 'Semi-Mountain' (less trained & equipped than Alpina)
+		start_experience_factor = 0.4
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 7
+		} #  "7a Divisione di Fanteria 'Lupi di Toscana'"
+		location = 611
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+
+	### Gruppo d'Armata Est ###
+	## 2a Armata ##
+	# V Corpo d'Armata #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 9
+		} #  "9a Divisione Autotrasportabile 'Pasubio'"
+		location = 11735
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.6
+	}
+
+	# VI Corpo d'Armata #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 8
+		} #  "8a Divisione Motorizzata 'Po'"
+		location = 628
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.6
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 3
+		} #  "3a Divisione Alpina 'Julia'"
+		location = 628
+		division_template = "Divisione Alpina"
+		start_experience_factor = 0.45
+		start_equipment_factor = 0.8
+	}
+
+
+	## 6a Armata ##
+	# Corpo d'Armata Celere #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 1
+		} #  "1a Divisione Celere 'Eugenio di Savoia'"
+		location = 13386
+		division_template = "Divisione Celere"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 2
+		} #  "2a Divisione Celere 'Emanuele Filiberto'"
+		location = 13386
+		division_template = "Divisione Celere"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 3
+		} #  "3a Divisione Celere 'Principe Amedeo'"
+		location = 2020
+		division_template = "Divisione Celere"
+		start_experience_factor = 0.45
+		start_equipment_factor = 1.0
+	}
+
+	### Gruppo d'Armata Sud ###
+	# VII Corpo d'Armata #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 20
+		} #  "20a Divisione di Fanteria 'Friuli'"
+		location = 4159
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.6
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 25
+		} #  "25a Divisione di Fanteria 'Bologna'"
+		location = 10074
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.6
+	}
+
+	##### Commando Superiore Africa #####
+	# Subordinate to Theater #
+	division = { #
+		name = "7a Divisione CC.NN. 'Cirene'"
+		location = 1149
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.2
+		start_equipment_factor = 0.4
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 2
+		} #  "2a Divisione Coloniale 'Libia'"
+		location = 1130
+		division_template = "Divisione Coloniale" # Colonial militia, lower training and equipment
+		start_equipment_factor = 0.4
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	### Armata dell'Africa Orientale Italiana ###
+	# I Corpo d'Armata dell'A.O.I. #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 26
+		} #  "26a Divisione di Fanteria 'Assietta'"
+		location = 12723
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.45
+		start_equipment_factor = 0.8
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 30
+		} #  "30a Divisione di Fanteria 'Sabauda'"
+		location = 12723
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 5
+		} #  "5a Divisione Alpina 'Pusteria'"
+		location = 12723
+		division_template = "Divisione Alpina"
+		start_experience_factor = 0.45
+		start_equipment_factor = 0.8
+	}
+	division = { #
+		name = "4a Divisione CC.NN. '3 Gennaio'"
+		location = 12723
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	# II Corpo d'Armata dell'A.O.I. #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 19
+		} #  "19a Divisione di Fanteria 'Venezia'"
+		location = 2072
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 24
+		} #  "24a Divisione di Fanteria 'Pinerolo'"
+		location = 2072
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		name = "3a Divisione CC.NN. '21 Aprile'"
+		location = 2072
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	# III Corpo d'Armata dell'A.O.I. #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 27
+		} #  "27a Divisione Autotrasportabile 'Brescia'"
+		location = 8043
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.45
+		start_equipment_factor = 0.8
+	}
+	division = { #
+		name = "1a Divisione CC.NN. '23 Marzo'"
+		location = 8043
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	# IV Corpo d'Armata dell'A.O.I. #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 5
+		} #  "5a Divisione di Fanteria 'Cosseria'"
+		location = 8043
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		name = "2a Divisione CC.NN. '28 Ottobre'"
+		location = 8043
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+	division = { #
+		name = "5a Divisione CC.NN. '1 Febbraio'"
+		location = 8043
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	# Corpo d'Armata Eritreo #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 31
+		} #  "1a Divisione Coloniale 'Eritrea'"
+		location = 2072
+		division_template = "Divisione Coloniale" # Colonial militia, lower training and equipment
+		start_equipment_factor = 0.5
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 32
+		} #  "2a Divisione Coloniale 'Eritrea'"
+		location = 2072
+		division_template = "Divisione Coloniale" # Colonial militia, lower training and equipment
+		start_equipment_factor = 0.5
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+
+	# Corpo d'Armata Libico #
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 29
+		} #  "29a Divisione di Fanteria 'Piemonte'"
+		location = 11014
+		division_template = "Divisione di Fanteria"
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 1
+		} #  "1a Divisione Coloniale 'Libia'"
+		location = 4995
+		division_template = "Divisione Coloniale" # Colonial militia, lower training and equipment
+		start_equipment_factor = 0.5
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+	division = { #
+		division_name = {
+			is_name_ordered = yes
+			name_order = 101
+		} #  "101a Divisione Coloniale 'Somalia'"
+		location = 2020
+		division_template = "Divisione Coloniale" # Colonial militia, lower training and equipment
+		start_equipment_factor = 0.5
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+	division = { #
+		name = "6a Divisione CC.NN. 'Tevere'"
+		location = 4995
+		division_template = "Camicie Nere"	# CC.NN. militia, lower training and equipment
+		start_experience_factor = 0.3
+		start_equipment_factor = 0.7
+		force_equipment_variants = { ita_inf_0 = { owner = "ITA" } }
+	}
+}
+
+####### Starting Production Queue #######
+instant_effect = {
+	if = {
+		limit = { is_tutorial = no }
+
+	}
+}

@@ -1,0 +1,101 @@
+############################################################################################################
+#	WA AI LANDING - scripted-landing invasion freeze (CONTROL PANEL)
+############################################################################################################
+#	WHAT THIS SYSTEM IS
+#	When a country executes a WA-scripted amphibious landing, the AI-planned naval invasions of that
+#	country's whole faction are suppressed for a fixed window, so the scripted operation is not diluted
+#	by the engine deciding to open a second beachhead somewhere else at the same time.
+#
+#	THE MARKER IS GENERIC, NOT D-DAY-SPECIFIC. Every scripted landing in the mod - all ~90 operations in
+#	events/WA_AI_invasions.txt, from Weserubung 1940 to Downfall 1945, for GER / JAP / ENG / USA / AST -
+#	executes through the single scripted effect WA_AI_DIVISION_spawn_invasion. The freeze is stamped
+#	there, on the verified-execution path (divisions actually created), so it covers a Torch that happens
+#	in 1943 without a Normandy, a Sealion, a Japanese landing in Australia, and any landing added later,
+#	with no per-operation wiring. Nothing here reads a date or a country tag.
+#
+#	FILES
+#	  this file                                                  switches + window tests (edit behaviour HERE)
+#	  common/scripted_effects/WA_AI_LANDING_effects.txt           the marker: stamps the freeze faction-wide
+#	  common/scripted_effects/WA_AI_DIVISION_CREATOR_effects.txt  the single call site (spawn_invasion)
+#	  common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt   the suppression blocks
+#	  documentation/WA_AI_MILITARY_SYSTEM.md sec.10               the spec
+#
+#	WHY THEATRE-SCOPED RATHER THAN BLANKET - the measurement that decided it.
+#	A blanket faction-wide freeze was the requested default. It is untenable in this mod because the
+#	Allied scripted-landing calendar is dense: common/scripted_effects/WA_KDE_AI_effects.txt schedules
+#	17 USA landings in 1944 alone (days 21/30/48/59/65/112/121/147/157/166/202/211/227/229/258/258/347)
+#	and 9 more in 1945. The largest gap between two consecutive Allied landings in 1944 is 89 days. With
+#	a 90-day blanket freeze, the Allied faction would therefore be frozen CONTINUOUSLY from 1944.1.21 to
+#	the end of 1945 - a two-year total lockout on AI invasion planning, not an occasional stall. Splitting
+#	the freeze by macro-theatre keeps D-Day from freezing the Pacific and vice versa, which is the only
+#	thing the blanket form was ever going to get wrong.
+#	The blanket form is still shipped, one switch away: see WA_AI_LANDING_freeze_is_faction_wide below.
+#
+#	KNOWN NON-ALLIED WINDOWS THIS OPENS (check here before blaming the freeze for Axis passivity).
+#	The rule is faction-generic, so GER's own scripted landings freeze the AXIS too:
+#	  Weserubung  1940.4.9  -> WEST frozen to ~1940.7.8  (overlaps the Battle of France; a Sealion the
+#	                           AI would plan itself becomes plannable again right as France falls)
+#	  Mercury     1941.5.20 -> WEST frozen to ~1941.8.18
+#	  Beowulf     1941.9.8  -> WEST frozen to ~1941.12.7
+#	Japan's opening (Dec 1941 - mid 1942) keeps EAST frozen almost continuously for the Co-Prosperity
+#	Sphere, which is harmless in practice because that theatre's landings are themselves scripted - but
+#	it is the one place where the density problem measured above also applies to a non-Allied faction.
+############################################################################################################
+
+############################################################################################################
+#	TUNING
+############################################################################################################
+#	The freeze window, in days, expressed strictly (HOI4 has no >=): "days > 89" first becomes true on the
+#	90th day, so the freeze covers days 0-89 inclusive = 90 days = 3 months. Change this ONE number to
+#	retune the duration.
+@WA_AI_LANDING_FREEZE_DAYS_STRICT = 89
+
+############################################################################################################
+#	SWITCHES
+############################################################################################################
+
+# Blanket mode. Default OFF (theatre-scoped). Flip to `always = yes` to get the literal
+# "no country in the faction plans ANY naval invasion for 3 months" behaviour - see the measurement in
+# the header before doing so. When ON, the two theatre blocks go inert and the faction-wide block takes
+# over; the marker side is unchanged either way.
+# THIS = country
+WA_AI_LANDING_freeze_is_faction_wide = {
+	always = no
+}
+
+############################################################################################################
+#	WINDOW TESTS - is a scripted landing in this macro-theatre still inside its freeze window?
+############################################################################################################
+#	The flags are stamped by WA_AI_LANDING_stamp_freeze_west / _east and are deliberately never cleared:
+#	a stale flag is inert once its age passes the window, and re-stamping (clr + set) restarts the clock.
+#	Both terms are needed - `has_country_flag` alone never expires, and the aged NOT alone is vacuously
+#	true on a country that has never landed anywhere.
+#
+#	MACRO-THEATRES (continents per map/continent.txt: europe, north_america, south_america, australia,
+#	africa, asia, middle_east):
+#	  WEST = europe + africa + middle_east   (Normandy, Dragoon, Torch, Husky, Avalanche, Shingle,
+#	                                          Slapstick, Weserubung, Beowulf, Mercury, Battleaxe)
+#	  EAST = asia + australia                (every Pacific / SE-Asia / China operation, Downfall,
+#	                                          Matador, Dracula, Oboe, Postern)
+#	  north_america / south_america belong to NEITHER on purpose: no scripted landing targets them, and
+#	  a landing there should not freeze a real theatre.
+
+# THIS = country
+WA_AI_LANDING_freeze_active_west = {
+	has_country_flag = WA_AI_LANDING_freeze_west
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_freeze_west days > @WA_AI_LANDING_FREEZE_DAYS_STRICT } }
+}
+
+# THIS = country
+WA_AI_LANDING_freeze_active_east = {
+	has_country_flag = WA_AI_LANDING_freeze_east
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_freeze_east days > @WA_AI_LANDING_FREEZE_DAYS_STRICT } }
+}
+
+# THIS = country. Used only by the blanket-mode block.
+WA_AI_LANDING_freeze_active_any = {
+	OR = {
+		WA_AI_LANDING_freeze_active_west = yes
+		WA_AI_LANDING_freeze_active_east = yes
+	}
+}

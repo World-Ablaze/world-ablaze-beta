@@ -1,0 +1,141 @@
+############################################################################################################
+#	WA AI LANDING - scripted-landing invasion freeze (MARKER)
+############################################################################################################
+#	Control panel (switches, window length, macro-theatre definition):
+#	    common/scripted_triggers/WA_AI_LANDING_triggers.txt
+#	Consumers (the ai_strategy blocks that do the suppressing):
+#	    common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt
+#	Spec: documentation/WA_AI_MILITARY_SYSTEM.md sec.10
+#
+#	WHY A SCRIPTED MARKER EXISTS AT ALL. An ai_strategy block cannot set a flag, and the *execution* of a
+#	scripted landing is not expressible as an ai_strategy `enable` - a landing's enable turning true and a
+#	landing actually happening are different events (every operation in events/WA_AI_invasions.txt re-fires
+#	itself every 7 days until its preconditions hold, so "enabled" is true for months before anything
+#	lands). The only place that knows a landing has really happened is the effect that creates the
+#	divisions on the enemy beach: WA_AI_DIVISION_spawn_invasion. That is the single shared marker point -
+#	all ~90 scripted operations route through it - and it is where this system is called from.
+############################################################################################################
+
+############################################################################################################
+#	WA_AI_LANDING_register_scripted_landing
+#
+#	SCOPE:   ROOT = THIS = the invading country (the scope WA_AI_DIVISION_spawn_invasion runs in).
+#	INPUT:   _invasion_state - temp variable, state ID of the landing site. Already set by every caller;
+#	         this effect is only ever called from inside spawn_invasion's own success branch.
+#	OUTPUT:  a freeze flag stamped on the invader and on every AI country in its faction, for the
+#	         macro-theatre the landing site sits in. WA_TLM probe counters on each stamped country.
+#	         No output at all for a landing in the Americas (see the triggers file) - by design.
+#
+#	COST: one `every_other_country` sweep with a 3-term limit, per landing operation per target country
+#	(the call site sits inside spawn_invasion's has_relation_modifier guard, so a multi-wave operation
+#	such as Weserubung books ONE sweep, not six). ~200 country evaluations on a few dozen days per
+#	campaign - negligible against the weekly AI work, and event-driven rather than on a pulse.
+############################################################################################################
+WA_AI_LANDING_register_scripted_landing = {
+	if = {
+		limit = { check_variable = { _invasion_state > 0 } }
+		# Enter the landing state to read its continent. Nothing is written in state scope: the two
+		# stamp effects below run back in country scope via PREV, so no temp variable ever has to
+		# survive a scope hop.
+		var:_invasion_state = {
+			if = {
+				limit = {
+					OR = {
+						is_on_continent = europe
+						is_on_continent = africa
+						is_on_continent = middle_east
+					}
+				}
+				PREV = { WA_AI_LANDING_stamp_freeze_west = yes }
+			}
+			else_if = {
+				limit = {
+					OR = {
+						is_on_continent = asia
+						is_on_continent = australia
+					}
+				}
+				PREV = { WA_AI_LANDING_stamp_freeze_east = yes }
+			}
+			# else: north_america / south_america - no scripted landing targets them and freezing a
+			# real theatre off an American landing would be wrong. Deliberately no branch.
+		}
+	}
+}
+
+############################################################################################################
+#	WA_AI_LANDING_stamp_freeze_west / _stamp_freeze_east
+#
+#	SCOPE: ROOT = THIS = the invading country.
+#
+#	THE TWO BODIES MUST MATCH except for the flag name and the two theatre-specific counter names. They
+#	are duplicated rather than parameterised because the flag name is a literal token and a meta_effect
+#	round-trip to inject it would cost more than it saves for two cases.
+#
+#	clr + set rather than a bare set: re-stamping must restart the 90-day clock deterministically, and
+#	the codebase does not rely on set_country_flag refreshing an existing flag's date.
+############################################################################################################
+WA_AI_LANDING_stamp_freeze_west = {
+	clr_country_flag = WA_AI_LANDING_freeze_west
+	set_country_flag = WA_AI_LANDING_freeze_west
+	# tlm: r44_freeze_n / _freeze_west_n / _freeze_first_t / _freeze_last_t - consumer: checklist R44.
+	# Verified effect (doc sec.3.6 rule 1): the flag this counts is written on the line above, so the
+	# counter cannot run ahead of the behaviour. _first_t is written under an `= 1` guard, so read
+	# _freeze_n > 0 before trusting _first_t (a stamp at clock 0 is a legitimate 0).
+	add_to_variable = { WA_TLM_r44_freeze_n = 1 }
+	add_to_variable = { WA_TLM_r44_freeze_west_n = 1 }
+	if = {
+		limit = { check_variable = { WA_TLM_r44_freeze_n = 1 } }
+		set_variable = { WA_TLM_r44_freeze_first_t = global.WA_TLM_clock }
+	}
+	set_variable = { WA_TLM_r44_freeze_last_t = global.WA_TLM_clock }
+
+	every_other_country = {
+		limit = {
+			exists = yes
+			is_ai = yes
+			is_in_faction_with = ROOT
+		}
+		clr_country_flag = WA_AI_LANDING_freeze_west
+		set_country_flag = WA_AI_LANDING_freeze_west
+		# tlm: same family, on the faction member that received the freeze - consumer: checklist R44
+		add_to_variable = { WA_TLM_r44_freeze_n = 1 }
+		add_to_variable = { WA_TLM_r44_freeze_west_n = 1 }
+		if = {
+			limit = { check_variable = { WA_TLM_r44_freeze_n = 1 } }
+			set_variable = { WA_TLM_r44_freeze_first_t = global.WA_TLM_clock }
+		}
+		set_variable = { WA_TLM_r44_freeze_last_t = global.WA_TLM_clock }
+	}
+}
+
+WA_AI_LANDING_stamp_freeze_east = {
+	clr_country_flag = WA_AI_LANDING_freeze_east
+	set_country_flag = WA_AI_LANDING_freeze_east
+	# tlm: r44_freeze_n / _freeze_east_n / _freeze_first_t / _freeze_last_t - consumer: checklist R44
+	add_to_variable = { WA_TLM_r44_freeze_n = 1 }
+	add_to_variable = { WA_TLM_r44_freeze_east_n = 1 }
+	if = {
+		limit = { check_variable = { WA_TLM_r44_freeze_n = 1 } }
+		set_variable = { WA_TLM_r44_freeze_first_t = global.WA_TLM_clock }
+	}
+	set_variable = { WA_TLM_r44_freeze_last_t = global.WA_TLM_clock }
+
+	every_other_country = {
+		limit = {
+			exists = yes
+			is_ai = yes
+			is_in_faction_with = ROOT
+		}
+		clr_country_flag = WA_AI_LANDING_freeze_east
+		set_country_flag = WA_AI_LANDING_freeze_east
+		# tlm: same family, on the faction member that received the freeze - consumer: checklist R44
+		add_to_variable = { WA_TLM_r44_freeze_n = 1 }
+		add_to_variable = { WA_TLM_r44_freeze_east_n = 1 }
+		if = {
+			limit = { check_variable = { WA_TLM_r44_freeze_n = 1 } }
+			set_variable = { WA_TLM_r44_freeze_first_t = global.WA_TLM_clock }
+		}
+		set_variable = { WA_TLM_r44_freeze_last_t = global.WA_TLM_clock }
+	}
+}

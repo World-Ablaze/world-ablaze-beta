@@ -1,0 +1,120 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_INVASION - scripted-landing invasion freeze
+############################################################################################################
+# Every ai_strategy in this file has type = invasion_unit_request. Canonical domain: INVASION.
+# Spec: documentation/WA_AI_MILITARY_SYSTEM.md sec.10. Control panel (switches, window length, theatre
+# definitions): common/scripted_triggers/WA_AI_LANDING_triggers.txt. Marker: WA_AI_LANDING_effects.txt.
+#
+# LAYER. Default, not Faction. The rule is "a faction that has just landed does not open a second front by
+# itself", which is not an Allied property - GER (Weserubung, Beowulf, Mercury) and JAP (the whole Pacific
+# opening) execute scripted landings too, and an ahistorical faction that acquires one gets the behaviour
+# for free. The faction-wide scope lives in the marker (which stamps the flag on every faction member);
+# the blocks below are gated purely on the resulting per-country flag, so they carry no tag and no
+# archetype trigger at all.
+#
+# WHY invasion_unit_request AND NOT invade / naval_invasion_focus. Of the three INVASION-domain types,
+# only `invade` and `invasion_unit_request` suppress anything, and `invade` is keyed per TARGET COUNTRY
+# (id = "GER"), which cannot express "not in this theatre" - GER, JAP and every co-belligerent span
+# several theatres at once, so an `invade` freeze is either an enumeration that goes stale or a blanket.
+# `invasion_unit_request` is the only one that accepts a geographic scope (documentation.info section front_unit_request / invasion_unit_request
+# lists tag / state / strategic_region / area / country_trigger / state_trigger, and the invasion form
+# tests the INVASION TARGET), and it throttles the units an invasion order can request rather than which
+# country looks attractive - i.e. it throttles planning, not target choice. state_trigger acceptance on
+# this type is established in-repo, see the note at WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:442.
+#
+# WHY -200 AND NOT -2000. The type is Additive and the engine reads it as a factor over a base of 100, so
+# -200 already floors the request at zero: it is the magnitude the existing generic freeze in
+# WA_AI_MILITARY_DEFAULT_INVASION.txt (WA_AI_MILITARY_INV_freeze_when_home_threatened) uses for the same
+# job. Keeping it at -200 is load-bearing rather than timid: WA_AI_MILITARY_ALLIES_dday_prep_INVASION
+# puts +1000 on states 15 and 1016 while it builds the Normandy operation, and Anzio (1944.1.21, europe)
+# lands inside that prep window. At -200 the explicitly-boosted landing site still nets +800 and the prep
+# survives; at -2000 a generic freeze would flatten a deliberate Faction-layer plan. A scripted operation
+# that names its own beach must outrank a generic "we just landed somewhere" brake.
+#
+# GEOGRAPHY. is_on_continent, not strategic_region ids: WA replaces the whole region table (383 regions,
+# ids repurposed against vanilla) and region ids are a documented source of wrong claims - see
+# wa-lessons-learned "Strategic-region ids are WA's own". The continent tokens are the mod's own
+# map/continent.txt and the same seven the railway system already keys on
+# (WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt:38-49).
+#
+# PERFORMANCE. Each state_trigger is one or three is_on_continent lookups and nothing else. The engine
+# evaluates these per candidate invasion target - keep them this cheap (same contract as the AIFC
+# state_triggers, WA_AI_MILITARY_DEFAULT_FRONT_aifc.txt:367).
+############################################################################################################
+
+
+# purpose: after a scripted landing in Europe/Africa/the Middle East, stop the landing faction opening a
+#          second AI-planned beachhead in the SAME macro-theatre for 90 days
+# range:   -200 (floors an invasion order's unit request; an explicit +1000 site boost still wins)
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_freeze_after_scripted_landing_west = {
+	enable = {
+		has_war = yes
+		WA_AI_LANDING_freeze_active_west = yes
+		NOT = { WA_AI_LANDING_freeze_is_faction_wide = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = europe
+				is_on_continent = africa
+				is_on_continent = middle_east
+			}
+		}
+	}
+}
+
+
+# purpose: the Asia/Pacific half of the same rule - a Japanese or Allied Pacific landing freezes Pacific
+#          AI invasion planning, and leaves the European theatre alone
+# range:   -200
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_freeze_after_scripted_landing_east = {
+	enable = {
+		has_war = yes
+		WA_AI_LANDING_freeze_active_east = yes
+		NOT = { WA_AI_LANDING_freeze_is_faction_wide = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = asia
+				is_on_continent = australia
+			}
+		}
+	}
+}
+
+
+# purpose: BLANKET MODE - the literal "no country in the faction plans any naval invasion for 3 months".
+#          Inert unless WA_AI_LANDING_freeze_is_faction_wide is switched on; the two theatre blocks above
+#          switch themselves off when it is, so the two modes never stack.
+#          Read the measurement in the triggers file header before enabling: on the historical Allied
+#          landing calendar this freezes the whole faction continuously from 1944.1.21 into 1946.
+# range:   -200, untargeted (all invasion targets)
+# policy:  Additive
+# domain:  INVASION
+WA_AI_MILITARY_INV_freeze_after_scripted_landing_faction_wide = {
+	enable = {
+		has_war = yes
+		WA_AI_LANDING_freeze_is_faction_wide = yes
+		WA_AI_LANDING_freeze_active_any = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		country_trigger = { has_war_with = ROOT }
+	}
+}

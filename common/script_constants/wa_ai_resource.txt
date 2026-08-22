@@ -1,0 +1,60 @@
+####################################################################################################
+#	World Ablaze AI - resource trade facts.
+#	Read with `constant:wa_ai_resource.<group>.<key>` from WA_AI_check_resource_needs
+#	(common/scripted_effects/WA_AI_misc_effects.txt), which computes WA_AI_coop_can_supply_<r>,
+#	and from WA_AI_calculate_resource_need (common/scripted_effects/WA_AI_law_effects.txt).
+#	`cic` and `min_export` are COPIES of game data, not tunables - change them only to follow the
+#	file they mirror. `trade_law` is the one group that IS a tunable. Full restart (not `reload`).
+####################################################################################################
+
+wa_ai_resource = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# MIRROR of `cic` in common/resources/00_resources.txt - civilian factories per unit imported.
+	# Its inverse is the TRADE QUANTUM: the units one civilian factory buys. Trade is committed in
+	# whole factories, so a residue below one quantum has no purchase that can fill it - which is
+	# what "the offered share is sold out" means.
+	# Stored as cic, NOT as the quantum, on purpose: check_constants.py compares mirrors verbatim
+	# and has no reciprocal transform, so a `100` mirroring `0.010` could not be verified. The
+	# reader multiplies by cic instead of dividing by the quantum.
+	cic = {
+		oil       = 0.05		# quantum 20
+		aluminium = 0.1			# quantum 10
+		rubber    = 0.1			# quantum 10
+		tungsten  = 0.0625		# quantum 16
+		steel     = 0.0625		# quantum 16
+		chromium  = 0.0625		# quantum 16
+		coal      = 0.010		# quantum 100
+		bauxite   = 0.03125		# quantum 32
+		iron      = 0.04		# quantum 25
+	}
+
+	# MIRROR of `min_export` on the four trade laws in common/ideas/_trade.txt - the share of a
+	# country's available resources that goes to the world market.
+	# THESE ARE BASE VALUES ONLY. Country leader traits (common/country_leader/00_traits.txt),
+	# national ideas and dynamic modifiers shift min_export by as much as +/-0.3, and nothing in
+	# script exposes the shifted value. Any reader is therefore an ESTIMATOR - see the falsifier
+	# in the WA_AI_coop_can_supply_<r> header.
+	min_export = {
+		free_trade      = 0.8
+		export_focus    = 0.5
+		limited_exports = 0.25
+		closed_economy  = 0.0	# also the value used when a country holds NO trade-law idea
+	}
+
+	# TUNABLE (the only group here that is).
+	trade_law = {
+		resource_floor = 75	# skip a resource this country barely produces. Read by the eight gates
+		                 	# of WA_AI_calculate_resource_need, which were bare 75 literals until
+		                 	# 2026-08-19 and so could drift against each other.
+	}
+
+}

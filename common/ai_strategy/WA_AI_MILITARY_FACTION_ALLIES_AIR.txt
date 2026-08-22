@@ -1,0 +1,884 @@
+############################################################################################################
+# WA AI Military V2 - FACTION_ALLIES_AIR
+############################################################################################################
+# Canonical domain: AIR (strategic_air_importance, land-theatre-facing).
+# See documentation/WA_AI_MILITARY_SYSTEM.md sections 2-4 and WA_AI_MILITARY_TYPES_REFERENCE.md.
+#
+# WHAT THIS FILE OWNS
+# The Allied strategic bombing campaign against the Reich: how hard the western coalition is told
+# to stay away from German air space, and when that avoidance is released. It replaces three
+# legacy ENG.txt blocks, relocated here as Faction-layer content (Phase 7c):
+#
+#   ENG_FRA_allies_avoid_bombing_GER        -> WA_AI_MILITARY_ALLIES_AIR_reich_blackout
+#   Allies_bombing_germany_is_too_costly    -> WA_AI_MILITARY_ALLIES_AIR_reich_raid_too_costly
+#   allies_avoid_bombing_austria_prussia    -> WA_AI_MILITARY_ALLIES_AIR_reich_deep_out_of_reach
+#
+# THE LADDER
+# Every switch is a deployed-strategic-bomber count, coalition-wide. All four thresholds and both
+# ring definitions live in common/scripted_triggers/WA_AI_MILITARY_triggers.txt (section "AIR -
+# Allied Reich bombing ladder"); tune the campaign there, never by editing the values below.
+# The legacy blocks decided the same question with dates (a blackout until 1941.10.1, a
+# suppression until a 1944.2.1 hard backstop) plus a USA-only tech gate - assumptions that hold
+# only on the historical path. Capability gating gives the same historical shape while still
+# producing sane play when the Allies arm early, arm late, or never arm at all.
+#
+# Rungs are additive and deliberately overlap, so the net walks down one step at a time. Each
+# rung enables below its own bar and aborts above the NEXT bar, which gives free hysteresis: a
+# fleet oscillating around a threshold does not flip the campaign on and off week to week.
+#
+#   coalition strat bombers |  near ring (6/7/8/296)  |  deep ring (294/38)
+#   ------------------------+-------------------------+---------------------
+#   0   - 450               |  -60,000                |  -80,000
+#   451 - 700               |  -40,000 +50,000 = +10k |  -60,000
+#   701 - 900               |        0 +50,000 = +50k |  -20,000 +50,000 = +30k
+#   901 +                   |        0 +50,000 = +50k |        0 +50,000 = +50k
+#
+# THE HANDOVER (Fix 71)
+# The three suppression rungs only ever LIFT avoidance. Until Fix 71 nothing then pulled the
+# bomber arm ONTO the Reich: with every rung aborted the net was exactly 0 and the engine's own
+# front-following terms picked the targets. Campaign 5078fe10 is the proof - the ladder released
+# fully between 1943.12 and 1944.4 and never re-armed, and in the 22 months that followed the RAF
+# flew every strategic-bombing sortie over France, Italy and the Balkans, not one over a German
+# region, while German factory levels rose 453 -> 602 and no German state carried
+# last_strategic_bombing before November 1945. WA_AI_MILITARY_ALLIES_AIR_reich_raid_pull and
+# _reich_deep_raid_pull are the missing positive half: each turns ON at the same bar its matching
+# suppression turns OFF at, which is why the middle rows of the table above now net positive.
+# The pull is additionally gated on ROOT's OWN bomber count (@WA_AI_AIR_BOMBER_OWN_ARM) because
+# strategic_air_importance moves EVERY mission in a region - a fighter-only air force handed the
+# pull would send its fighters to Germany instead of to its own front.
+#
+# The deep ring lags the near ring by one rung. That is the old B-17 range gate
+# (allies_avoid_bombing_austria_prussia, which keyed on a USA tech the AI never researched in
+# time and therefore carried a hardcoded 1944.2.1 backstop) restated as capability: a coalition
+# fielding 700+ heavy bombers has the generation that reaches Vienna; one fielding 350 does not.
+#
+# VALUE ECONOMY
+# The contract set by the ENG.txt suppression retune holds: the deepest contested-theatre pull is
+# +50,000 per region (WA_AI_MILITARY_DEFAULT_AIR_theatres.txt) and the engine's hot-main-front
+# reference is ~35,000. A -60,000 net therefore keeps the region off the target list against
+# standing pulls while staying far below the emergency family (+100k Husky / +200k D-Day), which
+# must keep precedence. The legacy -500,000 and -1,000,000 values these blocks carried were black
+# holes in the sense of WA_AI_MILITARY_ECONOMY.md principle 2: nothing in the ledger could ever
+# out-vote them, so every other air signal over Europe was unreadable.
+#
+# LEDGER - other writers on these regions:
+# - WA_AI_MILITARY_DEFAULT_AIR_theatres.txt has NO Germany block by design (the capital-theatre
+#   exclusion, and the engine's own combat/army terms, already cover the Reich once fronts reach
+#   it). The rings below are therefore the only standing scripted weight on 6/7/8/294/38.
+# - WA_AI_MILITARY_ALLIES_AIR_avoid_occupied_europe (Phase 7d, this file) adds -8,000 on 296 (Poland)
+#   while the Channel coast is entirely enemy-held; WA_AI_MILITARY_ALLIES_AIR_avoid_out_of_theatre
+#   adds -40,000 on 22 (Czechoslovakia). Their target sets are occupied-ally and out-of-theatre,
+#   not the Reich.
+# - WA_AI_MILITARY_ALLIES_AIR_home_islands_lost pushes +20,000 on 6/8/38 and +200,000 on 294 once the
+#   British home islands are lost. Under the legacy -500,000 blackout that push was arithmetically
+#   dead; against the -60,000/-80,000 here it wins, which is what that block always intended.
+# - THE ONE THING NONE OF THESE VALUES DO: create demand. strategic_air_importance ranks regions for
+#   the planes the engine already requests; see the Phase 7d banner further down and checklist R15.
+# - WA_AI_MILITARY_COUNTRY_ENG_THEATRE.txt WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE and
+#   its USA twin in WA_AI_MILITARY_COUNTRY_USA_THEATRE.txt write area_priority (+4000 on
+#   germany/prussia/austria). area_priority is an ARMY theatre-distribution type - it is listed
+#   with front_control / garrison / put_unit_buffers in common/ai_strategy/documentation.info and
+#   air mission target selection never reads it. Those two blocks were the intended positive half
+#   and they have been writing to the wrong axis; they are left alone because they are correct as
+#   army-weighting blocks, and the actual air-side positive half is the raid pull below.
+############################################################################################################
+
+
+# purpose: keep the coalition out of German air space entirely while it has no bomber arm to send
+# range:   -20000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_blackout = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_nucleus = yes }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	# near ring
+	ai_strategy = { type = strategic_air_importance id = 6 value = -20000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -20000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -20000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = -20000 }	# Poland
+	# deep ring
+	ai_strategy = { type = strategic_air_importance id = 294 value = -20000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -20000 }		# Prussia
+}
+
+
+# purpose: hold the raid down to mild avoidance while the bomber arm is still too small to absorb
+#          the losses over the Reich; a contested theatre elsewhere out-shouts it
+# range:   -40000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_raid_too_costly = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			WA_AI_MILITARY_AIR_allies_bombers_reach_deep = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	# near ring
+	ai_strategy = { type = strategic_air_importance id = 6 value = -40000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -40000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -40000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = -40000 }	# Poland
+	# deep ring
+	ai_strategy = { type = strategic_air_importance id = 294 value = -40000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -40000 }		# Prussia
+}
+
+
+# purpose: keep the deepest Reich targets off the list one rung longer than the near ring - the
+#          old B-17 range gate, restated as bomber-force capability instead of a USA tech + date
+# range:   -20000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_deep_out_of_reach = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_deep = yes }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			WA_AI_MILITARY_AIR_allies_bombers_reach_deep_off = yes
+			WA_AI_MILITARY_AIR_theatre_contested_germany = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_germany = yes }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 294 value = -20000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -20000 }		# Prussia
+}
+
+
+# purpose: once the coalition fields a raid force AND this country has a bomber arm of its own,
+#          actively pull the heavies onto the Reich. The three rungs above only lift avoidance;
+#          this is the positive half of the handover (see THE HANDOVER in the file header)
+# range:   +50000 per strategic region (engine main-front reference ~35000; same magnitude as the
+#          standing contested-theatre pull in WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, which has
+#          no Germany block by design - this file is the only scripted weight on these regions)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_raid_pull = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_allies_should_raid_reich = yes
+	}
+	abort_when_not_enabled = yes
+
+	# near ring - composes with reich_raid_too_costly, which aborts at the same bar
+	ai_strategy = { type = strategic_air_importance id = 6 value = 50000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = 50000 }		# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = 50000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = 50000 }	# Poland
+}
+
+
+# purpose: the deep-ring half of the handover, held back one rung so it lines up with
+#          reich_deep_out_of_reach exactly as the near ring lines up with reich_raid_too_costly
+# range:   +50000 per strategic region (engine main-front reference ~35000)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_reich_deep_raid_pull = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_allies_should_raid_reich = yes
+		WA_AI_MILITARY_AIR_allies_bombers_reach_deep = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 294 value = 50000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = 50000 }		# Prussia
+}
+
+
+############################################################################################################
+# Phase 7d (2026-08-16): the legacy ENG.txt Allied air family, relocated here as Faction-layer content.
+############################################################################################################
+# Replaced blocks (ENG.txt) -> successor below:
+#   battle_of_britain_priority             -> WA_AI_MILITARY_ALLIES_AIR_home_islands_invasion_threat
+#   Allies_avoid_bombing_occupied_allies   -> WA_AI_MILITARY_ALLIES_AIR_avoid_occupied_europe   (merged
+#   Allies_bomb_germany                    ->   with the block above: identical gate, summed values)
+#   Allies_dont_logi_strike_during_bob     -> WA_AI_MILITARY_ALLIES_AIR_channel_coast_no_foothold
+#   Allies_dday_air                        -> WA_AI_MILITARY_ALLIES_AIR_channel_coast_push
+#   Allies_husky_air                       -> WA_AI_MILITARY_ALLIES_AIR_sicily_landing_push
+#   Allies_avoid_bombing_occupied_uk       -> WA_AI_MILITARY_ALLIES_AIR_home_islands_lost
+#   Allies_bomb_germany_2                  -> WA_AI_MILITARY_ALLIES_AIR_avoid_italy_no_foothold
+#   Allies_dont_bomb_random_places         -> WA_AI_MILITARY_ALLIES_AIR_avoid_out_of_theatre
+#
+# What changed and why (AGENTS.md principles 1 and 2):
+# - Gating: the `is_in_faction_with = ENG` anchor becomes WA_AI_MILITARY_is_allies_member - whoever
+#   leads the faction. The PUSH blocks (Channel coast, Sicily, home islands) are open to every member;
+#   the SUPPRESSION blocks keep the legacy eight-tag scope as the CONFIG archetype
+#   WA_AI_CONFIG_MILITARY_is_western_allies_air_power (ENG/FRA/USA/RAJ/CAN/SAF/AST/NZL) in `allowed`, plus
+#   a capital-region exclusion where the suppressed set contains a member's own homeland (France for
+#   FRA) - a continental member must never be told to avoid its own airspace (the DEFAULT_AIR
+#   capital-theatre rule). Blocks that need an air force worth moving carry the same
+#   `has_deployed_air_force_size = { size > 99 }` floor as WA_AI_MILITARY_DEFAULT_AIR_theatres.txt.
+# - Dates: the Husky window (1943.7.1-11.1) and the D-Day pre-arm (1944.2.1-7.1) become state -
+#   Sicily foothold / Channel-coast staging - see the "AIR - Allied Western Europe / Mediterranean"
+#   section of common/scripted_triggers/WA_AI_MILITARY_triggers.txt. Staging is a two-bar band
+#   (@WA_AI_AIR_STAGING_DIVISIONS_ON 6 to arm, _OFF 2 to release, one Channel county, overseas ally),
+#   so a stack splitting across Kent/Sussex or embarking piecemeal does not flap the ledger every
+#   5-day air-priority update (DAYS_BETWEEN_AIR_PRIORITIES_UPDATE). `GER = { is_ai = no }` becomes
+#   "the far shore is held by a human enemy". `has_global_flag = fall_of_france` becomes the state
+#   it stood for (the Channel coast enemy-held).
+# - Values: the two -500,000 survivors (channel_coast_no_foothold, the UK regions of home_islands_lost)
+#   join the SUPPRESSION RETUNE tier (-500k -> -20k, see the ENG.txt banner: mild avoidance a
+#   contested theatre or an emergency push overrides). The +500,000 home push of
+#   battle_of_britain_priority moves to +200,000, the emergency tier this file and the D-Day push
+#   use; it now composes with WA_AI_NAVAL_FACTION_ALLIES_sealion_is_happening (+500k on 1/2) instead
+#   of doubling it. Everything else keeps its retuned value; the merged block sums where two blocks
+#   wrote one region.
+#
+# What this family cannot do: strategic_air_importance RANKS regions for the planes the engine already
+# requests (own combats/armies, enemy planes in a combat region, enemy factories, ships) - it does not
+# create demand. On a232d96c every USAAF wing based in the continental US read mission type=0 while
+# region 239 stood at +250k, and USA planes over Northern France tracked USA divisions in France
+# (0 -> 673, 70 -> ~3 800). The push blocks below bias WHERE requested planes go; they cannot stage an
+# air force before the ground war creates the request (checklist R15 RECUT 2026-08-16).
+#
+# LEDGER on 239 Northern France for an Allies member, walked at the 5-day air-priority cadence
+# (push and no_foothold are gate-exclusive: push arms at ON=6, releases below OFF=2 or on a foothold;
+# no_foothold enables only while nobody is above OFF):
+#   t0 1940-43, coast enemy-held, no stager above 2:      no_foothold -20k                       = -20k
+#   t1 build-up, one overseas ally > 6 in a county:        push +200k                              = +200k
+#   t1' stack thins to 3-6 (splits, part embarked):        push holds (OFF band), no_foothold off  = +200k
+#   t2 crossing, every county <= 2, no far shore yet:      push aborts, no_foothold re-enables     = -20k
+#      (a few days: the fleet is at sea; wings already assigned to 239 by engine demand are ~0
+#      pre-landing anyway - see WHAT THIS FAMILY CANNOT DO - so the flip costs no transfers)
+#   t3 foothold on the far shore:                          push +200k + DEFAULT_AIR +50k           = +250k
+#   t4 beachhead lost, stagers gone:                       -20k (legacy pair read -500k +200k = -300k)
+#   t4' beachhead lost, next wave > 6 in Kent:             +200k (legacy: still -300k)
+############################################################################################################
+
+
+# purpose: keep the RAF/USAAF over the home islands while a HUMAN enemy holds the far shore of the
+#          Channel and no Allied army has crossed - the only case in which a Sealion is a live threat
+# range:   +200000 per strategic region (emergency tier; composes with the NAVAL sealion block)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_islands_invasion_threat = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		has_deployed_air_force_size = { size > 99 }
+		NOT = { WA_AI_MILITARY_AIR_home_islands_lost = yes }
+		WA_AI_MILITARY_AIR_channel_coast_enemy_is_human = yes
+		NOT = { WA_AI_MILITARY_AIR_allies_hold_far_shore = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 1 value = 200000 }		# Southern England
+	ai_strategy = { type = strategic_air_importance id = 2 value = 200000 }		# Northern England
+}
+
+
+# purpose: mild avoidance of occupied Europe (France, Benelux, Scandinavia, the Balkans, the Danish
+#          Belts) while the Channel coast is entirely enemy-held - there is no front to support, and a
+#          contested theatre (+50k) out-shouts every value here
+# range:   -7500 to -40000 per strategic region (SUPPRESSION RETUNE tiers; two legacy blocks summed)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_avoid_occupied_europe = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_air_power = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_channel_coast_fully_enemy_held = yes
+		# never tell a member to avoid its own homeland (France for a non-exiled FRA)
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort_when_not_enabled = yes
+
+	# was Allies_avoid_bombing_occupied_allies -20k + Allies_bomb_germany -20k
+	ai_strategy = { type = strategic_air_importance id = 19 value = -40000 }	# Central France
+	ai_strategy = { type = strategic_air_importance id = 290 value = -40000 }	# Western France
+	ai_strategy = { type = strategic_air_importance id = 20 value = -40000 }	# Southern France
+	ai_strategy = { type = strategic_air_importance id = 293 value = -40000 }	# Switzerland
+	ai_strategy = { type = strategic_air_importance id = 24 value = -40000 }	# Western Balkans
+	ai_strategy = { type = strategic_air_importance id = 295 value = -40000 }	# Southern Balkans
+	ai_strategy = { type = strategic_air_importance id = 25 value = -40000 }	# Greece
+	# was Allies_bomb_germany only
+	ai_strategy = { type = strategic_air_importance id = 5 value = -30000 }		# Benelux
+	ai_strategy = { type = strategic_air_importance id = 207 value = -20000 }	# Danish Belts
+	ai_strategy = { type = strategic_air_importance id = 26 value = -20000 }	# Eastern Balkans
+	ai_strategy = { type = strategic_air_importance id = 154 value = -7500 }	# Southern Home Islands (JAP; outside the family range, kept as was)
+	# was Allies_avoid_bombing_occupied_allies only
+	ai_strategy = { type = strategic_air_importance id = 296 value = -8000 }	# Poland (stacks with the Reich ladder: -48k once the ladder is at one rung, -68k in the 0-450-bomber band where blackout -20k and too_costly -40k both hold - there the +50k Eastern-Europe pull nets -18k, accepted: a coalition with no bomber arm has nothing to send over Poland)
+	ai_strategy = { type = strategic_air_importance id = 27 value = -20000 }	# Northern Balkans
+	ai_strategy = { type = strategic_air_importance id = 11 value = -20000 }	# Southern Norway
+	ai_strategy = { type = strategic_air_importance id = 297 value = -20000 }	# Central Norway
+	ai_strategy = { type = strategic_air_importance id = 192 value = -20000 }	# Northern Sweden
+	ai_strategy = { type = strategic_air_importance id = 298 value = -20000 }	# Central Sweden
+	ai_strategy = { type = strategic_air_importance id = 10 value = -20000 }	# Southern Sweden
+	ai_strategy = { type = strategic_air_importance id = 9 value = -20000 }		# Upper Baltic Sea
+}
+
+
+# purpose: mild avoidance of Northern France while the Channel coast is entirely enemy-held and no
+#          overseas Allied army is staging in the Channel counties - the legacy "no logistics strikes
+#          during the Battle of Britain"; the staging push below replaces its 1944.2-7 date exemption
+# range:   -20000 per strategic region (was -500000: the last black hole of the family, which re-armed
+#          after 1944.7.1 the moment a beachhead was lost and dead-netted the +200k push)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_channel_coast_no_foothold = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_air_power = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_channel_coast_fully_enemy_held = yes
+		# off while any overseas ally is above the OFF bar - keeps this block gate-exclusive with the push
+		NOT = { WA_AI_MILITARY_AIR_allies_still_staging_on_channel_coast = yes }
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 239 value = -20000 }	# Northern France
+}
+
+
+# purpose: push the coalition's air over Northern France while an overseas Allied army is staging in
+#          the Channel counties, and keep it there while the Allies hold any of the far shore
+# range:   +200000 per strategic region (emergency tier)
+# policy:  Additive per region (composes with DEFAULT_AIR western_europe +50k once contested)
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_channel_coast_push = {
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		has_deployed_air_force_size = { size > 99 }
+		WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes
+		OR = {
+			WA_AI_MILITARY_AIR_allies_staging_on_channel_coast = yes		# arm at ON = 6
+			WA_AI_MILITARY_AIR_allies_hold_far_shore = yes
+		}
+	}
+	# release only below OFF = 2 (or once the coast is no longer enemy-held): the ON/OFF band is the
+	# hysteresis; abort_when_not_enabled would drop the push the tick a stack splits across counties
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			NOT = { WA_AI_MILITARY_is_allies_member = yes }
+			NOT = { WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes }
+			AND = {
+				NOT = { WA_AI_MILITARY_AIR_allies_still_staging_on_channel_coast = yes }
+				NOT = { WA_AI_MILITARY_AIR_allies_hold_far_shore = yes }
+			}
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 239 value = 200000 }	# Northern France
+}
+
+
+# purpose: push the coalition's air over Southern Italy from the Sicily foothold until the mainland
+#          toe is taken (the Husky -> Avalanche window as state, not as 1943.7-11)
+# range:   +100000 per strategic region (emergency tier; composes with DEFAULT_AIR italy +50k)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_sicily_landing_push = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		has_deployed_air_force_size = { size > 99 }
+		WA_AI_MILITARY_AIR_allies_sicily_foothold = yes
+		WA_AI_MILITARY_AIR_southern_italy_enemy_held = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 238 value = 100000 }	# Southern Italy
+}
+
+
+# purpose: once the British home islands are lost, stop flying over them and shift the weight onto
+#          the Reich (the exile RAF/USAAF pattern; +200k Austria is where the surviving heavies reach)
+# range:   -20000 (was -500000) on the British regions; +20000 / +200000 on the Reich
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_islands_lost = {
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_home_islands_lost = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 1 value = -20000 }		# Southern England
+	ai_strategy = { type = strategic_air_importance id = 2 value = -20000 }		# Northern England
+	ai_strategy = { type = strategic_air_importance id = 3 value = -20000 }		# Scotland
+	ai_strategy = { type = strategic_air_importance id = 4 value = -20000 }		# Ireland
+	ai_strategy = { type = strategic_air_importance id = 6 value = 20000 }		# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = 20000 }		# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 38 value = 20000 }		# Prussia
+	ai_strategy = { type = strategic_air_importance id = 294 value = 200000 }	# Austria
+}
+
+
+# purpose: mild avoidance of the Italian peninsula while an enemy holds it and no Allied army has
+#          landed anywhere in the theatre (contested Italy, +50k, replaces this the day it does)
+# range:   -20000 per strategic region (SUPPRESSION RETUNE tier)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_avoid_italy_no_foothold = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_air_power = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_italy_enemy_held = yes
+		NOT = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 21 value = -20000 }	# Northern Italy
+	ai_strategy = { type = strategic_air_importance id = 23 value = -20000 }	# Central Italy
+	ai_strategy = { type = strategic_air_importance id = 238 value = -20000 }	# Southern Italy
+}
+
+
+# purpose: mild avoidance of airspace outside the war against the Axis - Soviet/Finnish regions while
+#          not at war with the Comintern, Czechoslovakia, Burma/Thailand, the Skagerrak/Danish Belts
+# range:   -2000 to -40000 per strategic region (SUPPRESSION RETUNE tiers)
+# policy:  Additive per region (a contested Eastern Europe / Burma theatre nets positive over it)
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_avoid_out_of_theatre = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_western_allies_air_power = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_actor_enabled = yes
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_AIR_allies_fighting_axis_not_comintern = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = strategic_air_importance id = 22 value = -40000 }	# Czechoslovakia
+	ai_strategy = { type = strategic_air_importance id = 270 value = -20000 }	# Eastern Ukraine
+	ai_strategy = { type = strategic_air_importance id = 275 value = -20000 }	# Transvolga
+	ai_strategy = { type = strategic_air_importance id = 12 value = -20000 }	# Northern Finland
+	ai_strategy = { type = strategic_air_importance id = 13 value = -20000 }	# Southern Finland
+	ai_strategy = { type = strategic_air_importance id = 133 value = -20000 }	# Central Russia
+	ai_strategy = { type = strategic_air_importance id = 40 value = -20000 }	# Baschkortostan
+	ai_strategy = { type = strategic_air_importance id = 137 value = -20000 }	# Western Steppe
+	ai_strategy = { type = strategic_air_importance id = 313 value = -20000 }	# Sea of Azov
+	ai_strategy = { type = strategic_air_importance id = 30 value = -20000 }	# Black Sea
+	ai_strategy = { type = strategic_air_importance id = 257 value = -20000 }	# Southern Russia
+	ai_strategy = { type = strategic_air_importance id = 202 value = -20000 }	# Aegean Sea
+	ai_strategy = { type = strategic_air_importance id = 135 value = -20000 }	# Kuban
+	ai_strategy = { type = strategic_air_importance id = 134 value = -20000 }	# Caucasus
+	ai_strategy = { type = strategic_air_importance id = 272 value = -20000 }	# Black Land Area
+	ai_strategy = { type = strategic_air_importance id = 130 value = -20000 }	# Western Ukraine
+	ai_strategy = { type = strategic_air_importance id = 131 value = -20000 }	# Belarus
+	ai_strategy = { type = strategic_air_importance id = 271 value = -20000 }	# Moscow Area
+	ai_strategy = { type = strategic_air_importance id = 132 value = -20000 }	# Northern Russia
+	ai_strategy = { type = strategic_air_importance id = 39 value = -20000 }	# Western Belorussia
+	ai_strategy = { type = strategic_air_importance id = 37 value = -20000 }	# Baltic States
+	ai_strategy = { type = strategic_air_importance id = 273 value = -20000 }	# Vologda
+	ai_strategy = { type = strategic_air_importance id = 326 value = -20000 }	# Southern Karelia
+	ai_strategy = { type = strategic_air_importance id = 189 value = -2000 }	# Burma
+	ai_strategy = { type = strategic_air_importance id = 340 value = -2000 }	# Thailand
+	# sea
+	ai_strategy = { type = strategic_air_importance id = 250 value = -20000 }	# Skagerrak
+	ai_strategy = { type = strategic_air_importance id = 207 value = -20000 }	# Danish Belts
+}
+
+
+############################################################################################################
+# A small Allied air force stays over its own soil (2026-08-18)
+############################################################################################################
+# An Allies member fielding 399 aircraft or fewer keeps its whole air force on its own national
+# territory: every foreign air theatre this mod pulls toward is suppressed for it, and the one theatre
+# containing its own capital is left alone.
+#
+# WHY. strategic_air_importance RANKS regions and the engine fills them in that order with the planes
+# it requests (see the WHY THIS FILE EXISTS banner of WA_AI_MILITARY_DEFAULT_AIR_theatres.txt). A
+# coalition minor is ranked by exactly the same +50,000 contested-theatre pull and +100k/+200k
+# emergency pushes as the RAF and the USAAF, so its 200 planes go to the head of a foreign queue and
+# its own airspace gets whatever is left - which, for a small force, is nothing. A major with thousands
+# of planes can afford that; a minor cannot. The bar is the whole rule.
+#
+# WHY THE COALITION WANTS THIS, not just the minor. A forward theatre has a FINITE amount of friendly
+# air-base capacity, and in WA it is half of vanilla's: NDefines.NBuildings.AIRBASE_CAPACITY_MULT is
+# 100 per airbase level here against vanilla's 200 (common/defines/05_defines.lua), and overcrowding a
+# base is penalised on top of that (NDefines.NAir.CAPACITY_PENALTY = 2). Every plane a coalition minor
+# parks on a Mediterranean or Channel field is capacity the RAF and the USAAF cannot use - and their
+# aircraft are the better ones, built on deeper research and upgraded designs, so the same slot is
+# worth more in their hands. Sending the minors home is how the front gets cleared for the machines
+# that actually win the air war; keeping their obsolete airframes out of the queue is the point, not a
+# side effect. (MEASURED: the two defines and the finite-capacity rule - see the KNOWN LIMITS banner of
+# WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, "the engine only rebases into friendly capacity". ASSUMED:
+# that a minor's wings actually displace a major's in a given region - nothing in a savegame has been
+# read to confirm the contention, only that the capacity it competes for is bounded.)
+#
+# WHAT IS SUPPRESSED. The ten air theatres of WA_AI_MILITARY_DEFAULT_AIR_theatres.txt, plus the two
+# region groups this file's own pushes target: the British Isles (home_islands_invasion_threat +200k)
+# and the Reich ring (the raid pull +50k). East Africa is deliberately absent - no scripted air pull
+# points there, so suppressing it would create a black hole with nothing to cancel.
+#
+# WHY NO ARCHETYPE GATE IN allowed. The rest of the suppression family carries
+# WA_AI_CONFIG_MILITARY_is_western_allies_air_power so that a continental member is never told to avoid
+# its own homeland. Here the per-block capital-region exclusion does that job generically, for any
+# member, on any map - and gating on the eight-tag western-allies archetype would exclude precisely the
+# minors this family exists for.
+#
+# WHY -300,000, when Phase 7d retired the -500k black holes. That retune was about avoidance applied to
+# the WHOLE coalition, where a net-negative ledger made every pull inert everywhere. This one applies
+# only to countries with nothing to spare, and each of them keeps one non-suppressed theatre by
+# construction. The value has to dominate or it does nothing: the largest stack a member can see on a
+# suppressed region is +250,000 (this file's t3 row - the Channel push +200k composed with the
+# contested western-Europe pull +50k). -300,000 nets -50,000 there and out-shouts every other pull.
+#
+# LEDGER for a 250-plane Allied minor whose capital is outside Western Europe, on region 239:
+#   t0  no landing, no staging:                 no_foothold -20k + home_only -300k        = -320k
+#   t1  an overseas ally stages, push arms:     +200k - 300k                              = -100k
+#   t2  theatre contested, DEFAULT pull adds:   +200k + 50k - 300k                        =  -50k
+#   t3  the minor rebuilds past 500 planes:     home_only releases, ledger returns to +250k
+#   t4  it attrites back under 400:             home_only re-arms (band: arm 399, release 499)
+#
+# WHAT THIS CANNOT DO. The same limit as every block in this file: it decides WHERE requested planes
+# go, it does not create demand. A minor whose own divisions are fighting abroad still generates engine
+# demand there, and this family now ranks that region below its homeland - that is the intended trade,
+# and the one case where the rule costs something.
+############################################################################################################
+
+# purpose: a small Allied air force never joins the North Africa / Mediterranean air theatre
+# range:   -300000 per strategic region (dominance tier - see the banner)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_north_africa = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 182 region = 126 region = 329 region = 215 region = 328 region = 128 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 182 region = 126 region = 329 region = 215 region = 328 region = 128 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 182 value = -300000 }	# Morocco
+	ai_strategy = { type = strategic_air_importance id = 126 value = -300000 }	# Algeria
+	ai_strategy = { type = strategic_air_importance id = 329 value = -300000 }	# Tunisia
+	ai_strategy = { type = strategic_air_importance id = 215 value = -300000 }	# Libya
+	ai_strategy = { type = strategic_air_importance id = 328 value = -300000 }	# Cyrenaica
+	ai_strategy = { type = strategic_air_importance id = 128 value = -300000 }	# Egypt
+	ai_strategy = { type = strategic_air_importance id = 29  value = -300000 }	# Malta
+}
+
+# purpose: a small Allied air force never joins the Italian peninsula air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_italy = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 21 region = 23 region = 238 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 21 region = 23 region = 238 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 21 value = -300000 }	# Northern Italy
+	ai_strategy = { type = strategic_air_importance id = 23 value = -300000 }	# Central Italy
+	ai_strategy = { type = strategic_air_importance id = 238 value = -300000 }	# Southern Italy
+}
+
+# purpose: a small Allied air force never joins the Western Europe (France / Benelux) air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_western_europe = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 239 value = -300000 }	# Northern France
+	ai_strategy = { type = strategic_air_importance id = 19 value = -300000 }	# Central France
+	ai_strategy = { type = strategic_air_importance id = 290 value = -300000 }	# Western France
+	ai_strategy = { type = strategic_air_importance id = 20 value = -300000 }	# Southern France
+	ai_strategy = { type = strategic_air_importance id = 5 value = -300000 }	# Benelux
+}
+
+# purpose: a small Allied air force never joins the Scandinavia (Norway) air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_scandinavia = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 11 region = 297 region = 191 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 11 region = 297 region = 191 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 11 value = -300000 }	# Southern Norway
+	ai_strategy = { type = strategic_air_importance id = 297 value = -300000 }	# Central Norway
+	ai_strategy = { type = strategic_air_importance id = 191 value = -300000 }	# Northern Norway
+}
+
+# purpose: a small Allied air force never joins the Balkans / Greece air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_balkans = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 24 region = 25 region = 26 region = 27 region = 295 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 24 region = 25 region = 26 region = 27 region = 295 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 24 value = -300000 }	# Western Balkans
+	ai_strategy = { type = strategic_air_importance id = 25 value = -300000 }	# Greece
+	ai_strategy = { type = strategic_air_importance id = 26 value = -300000 }	# Eastern Balkans
+	ai_strategy = { type = strategic_air_importance id = 27 value = -300000 }	# Northern Balkans
+	ai_strategy = { type = strategic_air_importance id = 295 value = -300000 }	# Southern Balkans
+}
+
+# purpose: a small Allied air force never joins the Eastern Europe (Poland / Baltics / Ukraine) theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_eastern_europe = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 296 region = 37 region = 39 region = 131 region = 130 region = 270 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 296 region = 37 region = 39 region = 131 region = 130 region = 270 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 296 value = -300000 }	# Poland
+	ai_strategy = { type = strategic_air_importance id = 37 value = -300000 }	# Baltic States
+	ai_strategy = { type = strategic_air_importance id = 39 value = -300000 }	# Western Belorussia
+	ai_strategy = { type = strategic_air_importance id = 131 value = -300000 }	# Belarus
+	ai_strategy = { type = strategic_air_importance id = 130 value = -300000 }	# Western Ukraine
+	ai_strategy = { type = strategic_air_importance id = 270 value = -300000 }	# Eastern Ukraine
+}
+
+# purpose: a small Allied air force never joins the Middle East (Levant / Iraq / Anatolia) theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_middle_east = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 28 region = 348 region = 259 region = 129 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 28 region = 348 region = 259 region = 129 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 28 value = -300000 }	# Southern Levant
+	ai_strategy = { type = strategic_air_importance id = 348 value = -300000 }	# Northern Levant
+	ai_strategy = { type = strategic_air_importance id = 259 value = -300000 }	# Iraq
+	ai_strategy = { type = strategic_air_importance id = 129 value = -300000 }	# Asia Minor
+}
+
+# purpose: a small Allied air force never joins the Burma / Eastern India air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_burma_india = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 189 region = 141 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 189 region = 141 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 189 value = -300000 }	# Burma
+	ai_strategy = { type = strategic_air_importance id = 141 value = -300000 }	# Eastern India
+}
+
+# purpose: a small Allied air force never joins the South East Asia air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_southeast_asia = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 142 region = 340 region = 188 region = 187 region = 234 region = 159 region = 287 region = 158 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 142 region = 340 region = 188 region = 187 region = 234 region = 159 region = 287 region = 158 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 142 value = -300000 }	# South East Asia (Indochina)
+	ai_strategy = { type = strategic_air_importance id = 340 value = -300000 }	# Thailand
+	ai_strategy = { type = strategic_air_importance id = 188 value = -300000 }	# Malaya
+	ai_strategy = { type = strategic_air_importance id = 187 value = -300000 }	# Sumatra
+	ai_strategy = { type = strategic_air_importance id = 234 value = -300000 }	# Northern Borneo
+	ai_strategy = { type = strategic_air_importance id = 159 value = -300000 }	# Southern Borneo
+	ai_strategy = { type = strategic_air_importance id = 287 value = -300000 }	# Java
+	ai_strategy = { type = strategic_air_importance id = 158 value = -300000 }	# Sunda Islands
+}
+
+# purpose: a small Allied air force never joins the Pacific island-chain air theatre
+# range:   -300000 per strategic region
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_pacific_islands = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 160 region = 167 region = 83 region = 97 region = 227 region = 350 region = 94 region = 225 region = 349 region = 353 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 160 region = 167 region = 83 region = 97 region = 227 region = 350 region = 94 region = 225 region = 349 region = 353 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 160 value = -300000 }	# Philippines
+	ai_strategy = { type = strategic_air_importance id = 167 value = -300000 }	# New Guinea
+	ai_strategy = { type = strategic_air_importance id = 83 value = -300000 }	# Solomon Islands
+	ai_strategy = { type = strategic_air_importance id = 97 value = -300000 }	# Marshall Islands
+	ai_strategy = { type = strategic_air_importance id = 227 value = -300000 }	# Micronesian Islands
+	ai_strategy = { type = strategic_air_importance id = 350 value = -300000 }	# Mariana Islands
+	ai_strategy = { type = strategic_air_importance id = 94 value = -300000 }	# W. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 225 value = -300000 }	# E. Mariana Region
+	ai_strategy = { type = strategic_air_importance id = 349 value = -300000 }	# Hawaii
+	ai_strategy = { type = strategic_air_importance id = 353 value = -300000 }	# New Caledonia
+}
+
+# purpose: a small Allied air force is not drawn to the British Isles by the home-islands push
+# range:   -300000 per strategic region
+# policy:  Additive per region (cancels home_islands_invasion_threat +200k for a non-British member)
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_british_isles = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 1 region = 2 region = 3 region = 4 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 1 region = 2 region = 3 region = 4 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 1 value = -300000 }	# Southern England
+	ai_strategy = { type = strategic_air_importance id = 2 value = -300000 }	# Northern England
+	ai_strategy = { type = strategic_air_importance id = 3 value = -300000 }	# Scotland
+	ai_strategy = { type = strategic_air_importance id = 4 value = -300000 }	# Ireland
+}
+
+# purpose: a small Allied air force is not drawn onto the Reich by the coalition raid pull
+# range:   -300000 per strategic region (Poland 296 is covered by the eastern_europe block above)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_home_only_reich = {
+	enable = {
+		WA_AI_MILITARY_AIR_home_only_arm = yes
+		NOT = { capital_scope = { OR = { region = 6 region = 7 region = 8 region = 294 region = 38 } } }
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_home_only_actor = yes }
+			WA_AI_MILITARY_AIR_home_only_release = yes
+			capital_scope = { OR = { region = 6 region = 7 region = 8 region = 294 region = 38 } }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 6 value = -300000 }	# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -300000 }	# South Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -300000 }	# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 294 value = -300000 }	# Austria
+	ai_strategy = { type = strategic_air_importance id = 38 value = -300000 }	# Prussia
+}
