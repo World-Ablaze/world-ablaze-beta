@@ -388,13 +388,13 @@ d_WA_TEST_results = {
 #	Console: effect d_railway_strategy_debug
 #	Replays the overseas war + land war strategy decision logic but only logs — queues nothing
 #	Use to diagnose why a country builds railways in unexpected locations
-#	Fix 26: Updated to match corrected logic (distance-based port search, landmass exclusion)
+#	[railway-pathfinding] Updated to match corrected logic (distance-based port search, landmass exclusion)
 ############################################################################################################
 
 d_railway_strategy_debug = {
 	log = "====================================================================="
 	log = "  RAILWAY STRATEGY DEBUG for [Root.GetName] ([Root.GetTag])"
-	log = "  (Fix 26: distance-based port search + landmass exclusion)"
+	log = "  (railway-pathfinding: distance-based port search + landmass exclusion)"
 	log = "====================================================================="
 
 	### SECTION 1: Country Context
@@ -423,7 +423,7 @@ d_railway_strategy_debug = {
 	else = { log = "  Best home port: NONE FOUND" }
 
 	### SECTION 3: Enemy Analysis (Overseas Strategy Replay)
-	### Fix 26: Added landmass exclusion — beachhead candidates must NOT be on capital's landmass
+	### [railway-pathfinding] Added landmass exclusion — beachhead candidates must NOT be on capital's landmass
 	log = "---------------------------------------------------------------------"
 	log = "  ENEMY ANALYSIS (Overseas Strategy Replay)"
 	log = "---------------------------------------------------------------------"
@@ -461,7 +461,7 @@ d_railway_strategy_debug = {
 			log = "  -> OVERSEAS enemy | capital_continent=[?_dbg_enemy_continent] capital_state=[?_dbg_enemy_cap_state]"
 
 			# Find best controlled port on enemy's continent
-			# Fix 26: Exclude ports on capital's landmass (e.g. UK home ports for European enemies)
+			# [railway-pathfinding] Exclude ports on capital's landmass (e.g. UK home ports for European enemies)
 			set_temp_variable = { _dbg_best_bh_state = 0 }
 			set_temp_variable = { _dbg_best_bh_port = 0 }
 			set_temp_variable = { _dbg_best_bh_prov = 0 }
@@ -477,7 +477,7 @@ d_railway_strategy_debug = {
 						limit = {
 							check_variable = { continent_id_ = _dbg_enemy_continent }
 							is_coastal = yes
-							# Fix 26: Exclude home territory (same landmass as capital)
+							# [railway-pathfinding] Exclude home territory (same landmass as capital)
 							NOT = { check_variable = { global.WA_AI_MAP_state_landmass^_bh_sid = capital_landmass } }
 						}
 						WA_AI_PC_railway_get_naval_base_province = yes
@@ -605,7 +605,7 @@ d_railway_strategy_debug = {
 	log = "  Excluded home-landmass ports: [?_dbg_excluded_home_ports]"
 
 	### SECTION 4: Land War Strategy Replay
-	### Fix 26: Removed per-landmass caching. Each target gets its own nearest-port search (BFS 15 states).
+	### [railway-pathfinding] Removed per-landmass caching. Each target gets its own nearest-port search (BFS 15 states).
 	log = "====================================================================="
 	log = "  LAND WAR STRATEGY REPLAY"
 	log = "====================================================================="
@@ -669,13 +669,13 @@ d_railway_strategy_debug = {
 
 							if = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
-								ROOT = { log = "     frontline: [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (Fix 28: overseas fallback if path fails)" }
+								ROOT = { log = "     frontline: [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (railway-pathfinding overseas fallback if path fails)" }
 							}
 							else = {
 								add_to_temp_variable = { _dbg_lw_overseas_targets = 1 }
 								ROOT = { log = "     frontline: [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> DIFFERENT from capital (lm=[?capital_landmass])" }
 
-								# Fix 26: Per-target overseas supply chain analysis (no caching)
+								# [railway-pathfinding] Per-target overseas supply chain analysis (no caching)
 								ROOT = { log = "     >>> OVERSEAS SUPPLY CHAIN for target state [?_target_state_id]" }
 
 								# Find home port (on capital landmass — unchanged)
@@ -698,7 +698,7 @@ d_railway_strategy_debug = {
 									}
 								}
 
-								# Fix 26: Find receiving port via DISTANCE-BASED search (BFS 15 states from target)
+								# [railway-pathfinding] Find receiving port via DISTANCE-BASED search (BFS 15 states from target)
 								set_temp_variable = { _target_state_for_port = _target_state_id }
 								set_temp_variable = { _port_search_radius = 15 }
 								ROOT = { WA_AI_PC_get_best_port_near_state = yes }
@@ -750,7 +750,7 @@ d_railway_strategy_debug = {
 											}
 										}
 									}
-									# Fix 28: Also show puppet ports
+									# [railway-pathfinding] Also show puppet ports
 									every_subject_country = {
 										every_controlled_state = {
 											WA_AI_PC_get_state_id = yes
@@ -775,7 +775,7 @@ d_railway_strategy_debug = {
 					}
 				}
 
-				# Fix 27: Also scan puppet/subject frontline states
+				# [railway-pathfinding] Also scan puppet/subject frontline states
 				every_subject_country = {
 					every_controlled_state = {
 						limit = {
@@ -812,7 +812,7 @@ d_railway_strategy_debug = {
 
 								if = {
 									limit = { check_variable = { target_landmass = capital_landmass } }
-									ROOT = { log = "     frontline (PUPPET): [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (Fix 28: overseas fallback if path fails)" }
+									ROOT = { log = "     frontline (PUPPET): [Prev.GetName] (state=[?_target_state_id]) hub=[?supply_hub_province_] landmass=[?target_landmass] -> SAME landmass as capital, route_start=capital (railway-pathfinding overseas fallback if path fails)" }
 								}
 								else = {
 									add_to_temp_variable = { _dbg_lw_overseas_targets = 1 }
@@ -892,7 +892,7 @@ d_railway_strategy_debug = {
 }
 
 ############################################################################################################
-#	Fix 27 Diagnostic: Single-Node Filter Analysis
+#	[railway-pathfinding] Diagnostic: Single-Node Filter Analysis
 #	Checks all controlled states bordering ENG to see which filters block them
 #	Console: effect d_railway_diagnose_single_node
 ############################################################################################################
@@ -967,7 +967,7 @@ d_railway_diagnose_single_node = {
 	log = "  Blocked by single-node filter: [?_diag_single_count]"
 	log = "---------------------------------------------------------------------"
 	log = "  Expected: Libya states show hub=1, single_node=1 (this is the bug)"
-	log = "  If single_node=1 for Libya => confirms Fix 27 diagnosis"
+	log = "  If single_node=1 for Libya => confirms the railway-pathfinding single-node diagnosis"
 	log = "====================================================================="
 }
 
@@ -1122,14 +1122,14 @@ d_railway_route_debug = {
 										}
 									}
 
-									# Fix 28: Overseas fallback — if same-landmass and not full success
+									# [railway-pathfinding] Overseas fallback — if same-landmass and not full success
 									set_temp_variable = { _direct_success = pathfind_prov_success_ }
 									if = {
 										limit = {
 											check_variable = { target_landmass = capital_landmass }
 											NOT = { check_variable = { _direct_success = 1 } }
 										}
-										log = "        >>> Fix 28: Direct route not full success — trying OVERSEAS FALLBACK..."
+										log = "        >>> railway-pathfinding: Direct route not full success — trying OVERSEAS FALLBACK..."
 										set_temp_variable = { _target_state_for_port_search = _target_state_id }
 										WA_AI_PC_analyze_overseas_supply_chain = yes
 
@@ -1275,14 +1275,14 @@ d_railway_route_debug = {
 											}
 										}
 
-										# Fix 28: Overseas fallback for puppet targets
+										# [railway-pathfinding] Overseas fallback for puppet targets
 										set_temp_variable = { _direct_success = pathfind_prov_success_ }
 										if = {
 											limit = {
 												check_variable = { target_landmass = capital_landmass }
 												NOT = { check_variable = { _direct_success = 1 } }
 											}
-											log = "        >>> Fix 28: Direct route not full success — trying OVERSEAS FALLBACK..."
+											log = "        >>> railway-pathfinding: Direct route not full success — trying OVERSEAS FALLBACK..."
 											set_temp_variable = { _target_state_for_port_search = _target_state_id }
 											WA_AI_PC_analyze_overseas_supply_chain = yes
 

@@ -32,7 +32,7 @@ WA_AI_MILITARY_CAPS_remote_fronts_when_home_threatened = {
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_east_africa_regions
-		value = -100 # Fix 97: East Africa left the sink alias; this block's intent still keeps it out
+		value = -100 # [med-axis-posture] East Africa left the sink alias; this block's intent still keeps it out
 	}
 
 	ai_strategy = {
@@ -60,7 +60,7 @@ WA_AI_MILITARY_CAPS_minors_no_remote_fronts_when_weak = {
 	enable = {
 		WA_AI_MILITARY_is_minor_country = yes
 		has_war = yes
-		num_divisions < 80
+		num_divisions < 30
 		NOT = { WA_AI_MILITARY_is_allies_member = yes }
 		NOT = { WA_AI_MILITARY_italy_ethiopian_war_active = yes }
 	}
@@ -74,7 +74,7 @@ WA_AI_MILITARY_CAPS_minors_no_remote_fronts_when_weak = {
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_east_africa_regions
-		value = -100 # Fix 97: East Africa left the sink alias; this block's intent still keeps it out
+		value = -100 # [med-axis-posture] East Africa left the sink alias; this block's intent still keeps it out
 	}
 
 	ai_strategy = {
@@ -114,7 +114,7 @@ WA_AI_MILITARY_CAPS_no_remote_fronts_when_not_safe = {
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_east_africa_regions
-		value = -100 # Fix 97: East Africa left the sink alias; this block's intent still keeps it out
+		value = -100 # [med-axis-posture] East Africa left the sink alias; this block's intent still keeps it out
 	}
 
 	ai_strategy = {
@@ -133,5 +133,35 @@ WA_AI_MILITARY_CAPS_no_remote_fronts_when_not_safe = {
 		type = front_unit_request
 		area = central_america
 		value = -100 # economy: was -300
+	}
+}
+
+
+
+# [minor-expeditionary-fitness]
+# purpose: a country that cannot equip a real infantry division does not hold a front outside its own
+#          neighbourhood - no militia expeditionary corps in someone else's theatre
+# range:   -100 (E2: the type is a percent factor, -100 is the full veto, lower is saturation)
+# policy:  Additive with the other caps in this file - every one of them brakes, none pulls
+# domain:  FRONT
+# escape hatch (WA_AI_MILITARY_ECONOMY.md section 2.4): built into the state_trigger. Own, core and
+#          adjacent states are excluded by the predicate, so the veto can never starve the country's
+#          own defence - it only ever removes fronts that are somebody else's.
+# residual: the Faction layer pulls up to +150 on some areas (ALLIES on east_africa). An unfit member of
+#          a faction carrying such a pull nets +50 there rather than 0. E2 caps this type at -100, so
+#          closing that gap means lowering the pull, not deepening this brake.
+# unlike the three caps above, this one does NOT exempt Allies members: the case it exists for is
+#          precisely a badly equipped minor being pulled onto a faction's overseas front.
+WA_AI_MILITARY_CAPS_unfit_army_stays_home = {
+	enable = {
+		has_war = yes
+		NOT = { WA_AI_MILITARY_is_fit_for_expeditionary_front = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		state_trigger = { WA_AI_MILITARY_state_is_beyond_home_reach = yes }
+		value = -100
 	}
 }

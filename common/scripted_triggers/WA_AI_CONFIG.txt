@@ -78,7 +78,7 @@ WA_AI_CONFIG_is_minor_country = {
 
 WA_AI_CONFIG_is_in_allies = {
 	OR = {
-		# Fix 63 (2026-08-14): `is_in_faction_with = USA` was listed twice. Harmless
+		# [atlantic-naval] (2026-08-14): `is_in_faction_with = USA` was listed twice. Harmless
 		# to the engine - an OR of a term with itself - but this trigger gates a
 		# large share of the Allied AI, so a reader checking it should not have to
 		# wonder whether the third line was meant to be a third country.
@@ -338,15 +338,15 @@ WA_AI_CONFIG_focus_on_minelayers = {
 	}
 }
 
-# Fix 64: SOV added. Routing a submarine navy through this trigger moves its production
+# [equipment-selection] SOV added. Routing a submarine navy through this trigger moves its production
 # from the naval_submarine role to the cruiser_submarine role: WA_AI_PRODUCTION_focus_on_submarines
 # (WA_AI_PRODUCTION_navy.txt:22) excludes members of this list, so the country picks up
 # WA_DEFAULT_production_navy_main_focus_on_cruiser_submarines instead, which takes
 # naval_submarine to 0 (base 25 - 25) and cruiser_submarine to 100.
-# For SOV that is the only lever that reaches the defect R30/Fix 51 could not: the coastal
+# For SOV that is the only lever that reaches the defect R30/[equipment-selection] could not: the coastal
 # Malyutka (sov_submarine_hull_3, range 1640 / str 6) is the highest-priority REACHABLE design
 # of the naval_submarine role, its tech is a 1936 START tech so research suppression is
-# impossible, and both the design layer (Fix 46) and production_upgrade_desire_offset (Fix 51)
+# impossible, and both the design layer ([uk-air-basing]) and production_upgrade_desire_offset ([equipment-selection])
 # were tried and moved nothing. Emptying the role is what remains.
 # Preconditions checked before adding SOV (all already true, nothing else was needed):
 #   - designs: SOV_naval_cruiser_submarine exists (ai_equipment/SOV_naval.txt), 5 hulls
@@ -1001,7 +1001,7 @@ WA_AI_CONFIG_MILITARY_is_axis_eastern_force_extended = {
 
 # Axis continental core: the European Axis land powers whose armies the Soviet war absorbs
 # (GER + ITA + ROM + HUN + SLO). Phase-3 archetype for the former 5-tag OR-list of
-# WA_AI_MILITARY_AXIS_stop_shuffling (Fix 96 Lot 4, 2026-08-17). original_tag so a civil-war successor
+# WA_AI_MILITARY_AXIS_stop_shuffling ([med-axis-posture] Lot 4, 2026-08-17). original_tag so a civil-war successor
 # keeps the classification (a RELEASED tag such as RIT does not - its original_tag is its own).
 WA_AI_CONFIG_MILITARY_is_axis_continental_core = {
 	OR = {
@@ -1053,13 +1053,13 @@ WA_AI_CONFIG_MILITARY_is_british_mission_owner = {
 	original_tag = ENG
 }
 
-# Fix 124: the Commonwealth's East-Africa delegate. Same identity/readiness split as the
+# [commonwealth-handoff] the Commonwealth's East-Africa delegate. Same identity/readiness split as the
 # three missions above - the readiness verdict is WA_AI_MILITARY_RAJ_east_africa_available.
 WA_AI_CONFIG_MILITARY_is_commonwealth_east_africa = {
 	original_tag = RAJ
 }
 
-# Fix 123: the Commonwealth members whose home garrison exists because of a PACIFIC threat and
+# [commonwealth-handoff] the Commonwealth members whose home garrison exists because of a PACIFIC threat and
 # nothing else. CAN (Atlantic) and SAF (Indian-Ocean shore, own mission) are deliberately out.
 WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = {
 	OR = {
@@ -1069,9 +1069,9 @@ WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = {
 	}
 }
 
-# Fix 123: who can come south. Membership, not capability - the capability half
+# [commonwealth-handoff] who can come south. Membership, not capability - the capability half
 # (at war / justifying / committed) is WA_AI_MILITARY_pacific_threat_imminent.
-# Fix 127 (2026-08-21): the two identities the Italian-entry tripwire needs, and the one pairwise
+# [commonwealth-handoff] (2026-08-21): the two identities the Italian-entry tripwire needs, and the one pairwise
 # question it asks. Both tags live here because this file is the only WA_AI file allowed to carry
 # them, and "are these two powers on the same political side" is a classification, not a capability.
 WA_AI_CONFIG_MILITARY_is_western_european_bulwark = {
@@ -1106,7 +1106,7 @@ WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing = {
 }
 
 # Who actually stands on the colonial frontier. ENG owns the theatre; RAJ is the East-Africa
-# delegate (Fix 124) and the only dominion with an army near it. AST / NZL / CAN / SAF are out:
+# delegate ([commonwealth-handoff]) and the only dominion with an army near it. AST / NZL / CAN / SAF are out:
 # a buffer they cannot reach is a wasted order, and SAF fielded 3 divisions in 1940.
 WA_AI_CONFIG_MILITARY_is_italian_frontier_tripwire_force = {
 	OR = {
@@ -1122,7 +1122,7 @@ WA_AI_CONFIG_MILITARY_is_pacific_expansionist = {
 	}
 }
 
-# Fix 123: a Pacific expansionist has COMMITTED to a southward war before declaring one.
+# [commonwealth-handoff] a Pacific expansionist has COMMITTED to a southward war before declaring one.
 # Focus ids are tag-specific, so this is classification and it belongs here, not in the
 # control panel. `JAP_strike_north_doctrine` is deliberately ABSENT: a Japan committed north is
 # less of a threat to Australia, not more.
@@ -1131,15 +1131,15 @@ WA_AI_CONFIG_MILITARY_is_pacific_expansionist = {
 # build. It is an army-branch DOCTRINE focus, not a decision to attack, and it completes far too
 # early to be a warning: MEASURED on campaign 8c0fea4c it was absent at 1940.6.24, complete by
 # 1940.12-1941.3, and complete again at 1941.5.23 in the retest - while the Japanese war on Britain
-# started 1942.1. Eight to twelve months of false alarm, during which the Fix 123 garrison release
-# and the Fix 124 East-Africa delegation were both held OFF and RAJ sat on 25-29 of its 40 divisions
+# started 1942.1. Eight to twelve months of false alarm, during which the [commonwealth-handoff] garrison release
+# and the [commonwealth-handoff] East-Africa delegation were both held OFF and RAJ sat on 25-29 of its 40 divisions
 # in India. `JAP_strike_south` is the actual southward war focus (still `current` at 1941.12 in that
 # campaign) and is the marker kept here.
 #
 # The warning that remains is the wargoal pair in WA_AI_MILITARY_pacific_threat_imminent
 # (`has_wargoal_against` / `is_justifying_wargoal_against`), which is a real intent signal rather
 # than a doctrine purchase. Two pre-existing blocks - WA_AI_MILITARY_AST_japan_war and
-# WA_AI_MILITARY_RAJ_japan_war - read the same verdict since Fix 123 and therefore arm later than
+# WA_AI_MILITARY_RAJ_japan_war - read the same verdict since [commonwealth-handoff] and therefore arm later than
 # they used to; that is the deliberate trade, and R84 leg 4 is its falsifier.
 WA_AI_CONFIG_MILITARY_pacific_offensive_posture = {
 	has_completed_focus = JAP_strike_south
@@ -1164,7 +1164,7 @@ WA_AI_CONFIG_MILITARY_is_western_invasion_pool = {
 # Allied countries that should inherit coalition naval routing through Suez/Cape
 # and Atlantic corridors.
 #
-# Fix 61 (2026-08-14, checklist R36): added FRA and SAF. Both are Allied Atlantic
+# [atlantic-naval] (2026-08-14, checklist R36): added FRA and SAF. Both are Allied Atlantic
 # powers by geography - FRA has a real fleet in 1936-40 and Atlantic ports, SAF sits
 # on the Cape leg - and until this fix their mid-ocean gap avoidance came from
 # WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_azores_safe, a Country-layer block that had no

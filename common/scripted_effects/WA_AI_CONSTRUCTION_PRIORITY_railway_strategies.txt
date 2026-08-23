@@ -3,17 +3,17 @@
 #	Land War, Overseas War, and Pre-War Preparation strategies
 ############################################################################################################
 
-### Constants: this file declares none since 2026-08-16. The pre-war band it reads is the PC-wide
-### script constant constant:wa_ai_pc.prio.rail_prewar (common/script_constants/wa_ai_pc.txt);
-### the per-enemy route budget is enforced by WA_AI_PC_railway_land_frontline_candidate in
-### WA_AI_CONSTRUCTION_triggers.txt - the strategies only count _routes_for_this_enemy up.
+### Constants: this file declares none. Priority bands are constant:wa_ai_pc.prio.*, rail levels are
+### constant:wa_ai_railway.*; the per-enemy route budget is enforced by
+### WA_AI_PC_railway_land_frontline_candidate (WA_AI_CONSTRUCTION_triggers.txt) - this file only
+### counts _routes_for_this_enemy up.
 
 ############################################################################################################
 #	STRATEGY 1: LAND WAR
-#	Build railways from capital to front-line states with supply hubs/naval bases
-#	Now properly detects supply_node buildings and finds exact province ID
-#	Uses has_railway_level to skip states that already have level 5 railways (including focus-built)
-#	Only builds to frontlines where ROOT (or puppets) directly borders the enemy
+#	Capital -> frontline states holding a supply hub / naval base, skipping states already at the
+#	family cap (native has_railway_level check, so focus- and event-built rail counts).
+#	Only frontlines where ROOT or a subject DIRECTLY borders the enemy: a frontline reached through
+#	an ally (Italy -> SOV through Germany) is not ours to supply.
 ############################################################################################################
 
 WA_AI_PC_railway_STRATEGY_land_war = {
@@ -25,11 +25,9 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 	# Default route parameters (will be overridden for overseas targets)
 	set_temp_variable = { default_route_start = capital_province }
-	# Fix 135 (2026-08-21, campaign 8c0fea4c): was a flat 5. It is now only the PROVISIONAL floor a
-	# route carries between its selection and its sizing - WA_AI_PC_railway_land_consider_frontline
-	# calls WA_AI_PC_rail_size_route once the path is known and overwrites it. A 5 here was a target
-	# nothing had asked for: on 8c0fea4c it built Tripoli->Derna to level 5 (44 supply per hop) behind
-	# an entry port carrying 25.
+	# [na-corridor] PROVISIONAL floor only: every route is overwritten by WA_AI_PC_rail_size_route in
+	# WA_AI_PC_railway_land_consider_frontline. A fixed target here is a level nothing asked for -
+	# it lays rail behind an entry port that cannot feed it.
 	set_temp_variable = { default_route_level = constant:wa_ai_railway.land_war.rail_level_floor }
 	set_temp_variable = { route_priority = _project_priority }
 	set_temp_variable = { high_route_priority = route_priority }
@@ -59,11 +57,11 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 			### Per-enemy route counter, and the railway level at which a frontline is "done"
 			set_temp_variable = { _routes_for_this_enemy = 0 }
-			# Fix 135: reads the family cap. Left at 5 while the sizer targets at most 4, every
-			# frontline would stay for ever "not done" and keep drawing routes that queue nothing.
+			# [na-corridor] must stay equal to the sizer's cap. Set higher, no frontline ever reads
+			# "done" and every pass redraws routes that queue no segments.
 			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }
 
-			### Fix 74: three candidate populations, ONE shared body
+			### [na-corridor] three candidate populations, ONE shared body
 			### (WA_AI_PC_railway_land_consider_frontline). Order is load-bearing - the per-enemy
 			### route budget is consumed top-down, so ROOT's own soil always outranks a subject's
 			### and a subject's outranks an ally's.
@@ -76,16 +74,13 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 				}
 			}
 
-			### 2. Fix 27: ROOT's subject frontline states (revokes Fix 25). Pathfinder type 2
-			### traverses puppet provinces (commit 9aef32f41) and build_railway works on any
-			### province regardless of controller.
-			###
-			### Fix 74 SCOPE CORRECTION: this loop used to sit in the for_each_scope_loop's own
-			### scope, i.e. THIS = the ENEMY - so it walked the *enemy's* puppets, where its own
-			### `controller = { is_subject_of = ROOT }` acceptance test can never pass and ROOT
-			### never controls the hub province. Fix 27 has therefore been dead since it was
-			### written; the explicit ROOT wrapper is what makes it run. Expect subject
-			### frontlines (UKE Egypt, ITL Libya, RAJ Burma) to start receiving routes.
+			### 2. [railway-pathfinding] ROOT's subject frontline states. Puppet ground is deliberately
+			### included - pathfinder type 2 traverses puppet provinces and build_railway works on any
+			### province regardless of controller; excluding it was tried and left subject frontlines
+			### (UKE Egypt, ITL Libya, RAJ Burma) with no routes at all.
+			### The explicit ROOT wrapper is load-bearing: unwrapped, this loop runs in the
+			### for_each_scope_loop's scope (THIS = the ENEMY) and walks the ENEMY's puppets, where the
+			### acceptance test below can never pass. Tell it is gone: subject frontlines stop scoring.
 			ROOT = {
 				every_subject_country = {
 					every_controlled_state = {
@@ -95,32 +90,18 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 				}
 			}
 
-			### 3. Fix 74: faction allies that cannot build their own logistics. The PC executor
-			### already accepts allied ground (WA_AI_PC_start_project, the Fix 34 controller test
-			### and the completion path all pass on is_in_faction_with), and rail/ports are
-			### allied_build = yes - only the selectors excluded allies, so a corridor that ended
-			### up on an ally's soil had no builder at all. Observed on FRA-held Tunisia and
-			### Free-French Normandy. Restricted to allies that cannot build for themselves so
-			### two healthy majors do not queue into each other's rail networks.
-			###
-			### Fix 104: "cannot build" is now "cannot FUND" - the authority test has no civ-factory
-			### term at war, so a belligerent under the run's own wartime floor (FRA, 10-19 civs and
-			### 46 states on 7c7803a8) read capable and locked its allies out of ground it could not
-			### develop itself. The healthy-majors guarantee is unchanged: anyone above the floor is
-			### still excluded.
-			###
-			### What the widening is and is NOT bounded by, stated apart because the two are different
-			### resources:
-			###   BOUNDED - the per-RUN route list. routes.max_per_enemy (4) is consumed at population
-			###   time inside WA_AI_PC_railway_land_frontline_candidate, and this loop runs THIRD, so
-			###   it only ever sees budget the ROOT and subject loops left; routes.max_total (8) caps
-			###   the pathfinds per execution; the threat re-sort reorders without adding.
-			###   NOT BOUNDED, and deliberately not claimed to be - the QUEUE. routes.queue_full (12)
-			###   is a stock held for months while an 8-week execution re-scores routes, so nothing
-			###   here proves an ally's segments cannot crowd out ROOT's own. On 7c7803a8 ENG already
-			###   carried stale_n 44 and 24 aging-revalidation cancels BEFORE this change. That is
-			###   what WA_TLM_r104_ally_fund_n measures against wa_tlm_pc_stale_n; until a campaign
-			###   reads them, queue-slot competition is unproven, not safe.
+			### 3. [na-corridor] faction allies that cannot FUND their own logistics. The PC executor
+			### already accepts allied ground (rail and ports are allied_build = yes); only the
+			### selectors excluded allies, so a corridor ending on an ally's soil had no builder at
+			### all - seen on FRA-held Tunisia and Free-French Normandy.
+			### "Cannot fund", not "cannot build": the authority test has no civ-factory term at war,
+			### so a broke belligerent reads capable and locks its allies out of ground it cannot
+			### develop itself. Anyone above the wartime funding floor stays excluded, which is what
+			### keeps two healthy majors out of each other's rail networks.
+			### BOUNDED by the per-run route list: routes.max_per_enemy is consumed at population time
+			### and this loop runs THIRD, so it only sees budget the ROOT and subject loops left.
+			### NOT bounded, and deliberately not claimed to be, by the QUEUE - queue slots are held
+			### for months, so an ally's segments can still crowd out ROOT's own.
 			ROOT = {
 				every_country = {
 					limit = {
@@ -150,7 +131,7 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 }
 
 ############################################################################################################
-#	Fix 74: shared per-state body for STRATEGY_land_war
+#	[na-corridor] shared per-state body for STRATEGY_land_war
 #
 #	THIS = a frontline state that already passed WA_AI_PC_railway_land_frontline_candidate.
 #	ROOT = the builder country (NOT necessarily the state's controller).
@@ -160,30 +141,23 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 #	Outputs: appends to railway_start_provinces_ / _end_provinces_ / _target_levels_ / _priorities_ /
 #	  _enemy_tags_ / _port_upgrades_, and increments _routes_for_this_enemy.
 #
-#	This body used to exist twice - once in the ROOT loop, once in the Fix 27 subject loop - and the
-#	two copies differed in exactly one term: the supply-hub acceptance test. That term is now the
-#	generalised OR below, which is why one copy can serve all three populations.
+#	One body serves all three populations because the supply-hub acceptance test is the generalised
+#	OR below; per-population copies of this body differed only in that term.
 ############################################################################################################
 
 ############################################################################################################
-#	Fix 135 (2026-08-21): the land-war family's binding of WA_AI_PC_rail_size_route (railway_helpers).
-#
-#	THIS = the frontline state (so supply_hub_province_ and route_start are in scope), ROOT = the
-#	builder. Sets `route_level` and nothing else.
-#
-#	Inputs the CALLER must set before calling, because they are the one thing that differs between the
-#	three call sites in WA_AI_PC_railway_land_consider_frontline:
-#	  _rsize_entry_mode_ = 2  overland from our own capital  -> demand decides, no entry cap
-#	  _rsize_entry_mode_ = 1  overseas   -> _rsize_entry_supply_ = overseas_entry_supply_ (the sea leg's
+#	[na-corridor] the land-war family's binding of WA_AI_PC_rail_size_route (railway_helpers).
+#	THIS = the frontline state (supply_hub_province_ and route_start in scope), ROOT = the builder.
+#	Sets `route_level` and nothing else.
+#	The CALLER must set the entry mode - the one thing that differs between the three call sites:
+#	  _rsize_entry_mode_ = 2  overland from our own capital -> demand decides, no entry cap
+#	  _rsize_entry_mode_ = 1  overseas -> _rsize_entry_supply_ = overseas_entry_supply_ (the sea leg's
 #	                          bottleneck, published by WA_AI_PC_analyze_overseas_supply_chain)
-#
-#	Why the demand set is the ONE frontline hub province and not the whole path: the chain exists to
-#	feed the army at its head, and the presence walk inside the sizer is `every_country` x states while
-#	this runs once PER ROUTE, up to routes.max_total times per execution. The corridor can afford its
-#	whole node list because it sizes once per pass; this cannot.
-#
-#	Floor/cap come from constant:wa_ai_railway.land_war.*, NOT from the corridor's pair - the two
-#	families share a model, not a tuning.
+#	Demand is the ONE frontline hub province, not the whole path: this runs once PER ROUTE (up to
+#	routes.max_total per execution) while the sizer's presence walk is every_country x states. The
+#	corridor can afford its whole node list only because it sizes once per pass.
+#	Floor/cap are constant:wa_ai_railway.land_war.*, NOT the corridor's pair - the two families share
+#	a model, not a tuning.
 ############################################################################################################
 
 WA_AI_PC_railway_land_size_this_route = {
@@ -222,13 +196,10 @@ WA_AI_PC_railway_land_consider_frontline = {
 				check_variable = { supply_hub_province_ > 0 }
 				NOT = { is_in_array = { railway_end_provinces_ = supply_hub_province_ } }
 				# Verify the supply hub PROVINCE is actually held, not just the state - province
-				# control diverges from state control on contested fronts (campaign f9321934:
-				# 663 Cyrenaica is ITL-controlled with three ENG provinces inside it, and
-				# 448 Tripoli is ITL-controlled with province 12039 held by FRA).
-				# Fix 74: ROOT, or this state's controller - which the caller's candidate filter
-				# has already vetted as ROOT / a subject of ROOT / a dependent faction ally. This
-				# single OR replaces the two divergent tests the duplicated bodies used to carry
-				# (ROOT-only in the ROOT loop, ROOT-or-subject in the Fix 27 loop).
+				# control diverges from state control on contested fronts (an ITL-controlled
+				# Cyrenaica can hold ENG provinces inside it).
+				# [na-corridor] ROOT, or this state's controller - which the caller's candidate filter
+				# has already vetted as ROOT / a subject of ROOT / a dependent faction ally.
 				OR = {
 					ROOT = { controls_province = var:supply_hub_province_ }
 					CONTROLLER = { controls_province = var:supply_hub_province_ }
@@ -248,26 +219,23 @@ WA_AI_PC_railway_land_consider_frontline = {
 			if = {
 				limit = { check_variable = { target_landmass = capital_landmass } }
 				# Same landmass: use capital as route start.
-				# Fix 29 put the levelling AFTER the pathfind (it used to read the PREVIOUS
-				# target's path, or nothing, so every land route targeted level 1 and queued
-				# no segments). Fix 135 keeps that ordering and replaces what runs there: the
-				# route is SIZED, not ratcheted. Until then this carries the family floor, and
-				# _route_level_from_path marks it for that recompute.
+				# [railway-landwar] the levelling MUST stay after the pathfind - read before it, the
+				# path is the PREVIOUS target's or empty, and every land route targets level 1 and
+				# queues no segments. Until then this carries the family floor and
+				# _route_level_from_path marks the route for the recompute (a sizing, not a ratchet).
 				set_temp_variable = { route_level = default_route_level }
 				set_temp_variable = { _route_level_from_path = 1 }
 			}
 			else = {
-				# Different landmass: find nearest receiving port via distance-limited search
-				# Fix 26: Each target gets its own port analysis (no caching per-landmass)
-				# Previously cached per-landmass, which on mega-landmasses like Afro-Eurasia
-				# caused all targets to share one port (e.g., Singapore for North Africa)
+				# Different landmass: find nearest receiving port via distance-limited search.
+				# [railway-pathfinding] one port analysis PER TARGET; caching it per landmass was tried
+				# and made every target on a mega-landmass share one port (Singapore for North Africa).
 				set_temp_variable = { _target_state_for_port_search = _target_state_id }
 				ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 				set_temp_variable = { route_start = overseas_route_start_ }
-				# Fix 135: the port analysis gives the ENTRY capacity; it says nothing about whether
-				# anything on the far end needs it. Size against min(demand, entry) through the shared
-				# helper, in GIVEN mode - an overseas chain is in SERIES, so its entry is the
-				# BOTTLENECK of home and receiving port, never a sum of the ports along it.
+				# [na-corridor] the port analysis gives ENTRY capacity only, not whether anything on the
+				# far end needs it: size against min(demand, entry) in GIVEN mode. An overseas chain is
+				# in SERIES, so entry is the BOTTLENECK of home and receiving port, never their sum.
 				set_temp_variable = { route_level = overseas_max_railway_level_ }
 				set_temp_variable = { _rsize_entry_mode_ = 1 }
 				set_temp_variable = { _rsize_entry_supply_ = overseas_entry_supply_ }
@@ -316,7 +284,7 @@ WA_AI_PC_railway_land_consider_frontline = {
 						set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 						WA_AI_PATHFIND_PROV_get_path = yes
 
-						# Fix 28: If same-landmass route got PARTIAL or FAIL, try overseas fallback
+						# [railway-pathfinding] If same-landmass route got PARTIAL or FAIL, try overseas fallback
 						# This handles cases like Italy→Libya where both are on landmass 2 (Afro-Eurasia)
 						# but there's no land path across the Mediterranean
 						set_temp_variable = { _direct_success = pathfind_prov_success_ }
@@ -347,10 +315,10 @@ WA_AI_PC_railway_land_consider_frontline = {
 									}
 									set_temp_variable = { route_start = overseas_route_start_ }
 									set_temp_variable = { route_level = overseas_max_railway_level_ }
-									set_temp_variable = { _rsize_entry_mode_ = 1 }	# Fix 135
+									set_temp_variable = { _rsize_entry_mode_ = 1 }	# [na-corridor]
 									set_temp_variable = { _rsize_entry_supply_ = overseas_entry_supply_ }
 									WA_AI_PC_railway_land_size_this_route = yes
-									set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
+									set_temp_variable = { _route_level_from_path = 0 }	# [railway-landwar] level now owned by port analysis
 									set_temp_variable = { _direct_success = pathfind_prov_success_ }
 									if = {
 										limit = {
@@ -362,12 +330,9 @@ WA_AI_PC_railway_land_consider_frontline = {
 									}
 								}
 								else = {
-									# Fix 29 kept the flat default here because the fallback pathfind had
-									# overwritten pathfind_prov_path_ and the direct route's path was gone.
-									# Fix 135: the sizer does not read the path at all - it reads the
-									# frontline hub province, which this branch has not touched - so the
-									# route can be sized after all. This was the last hole through which a
-									# flat 5 reached the queue.
+									# [na-corridor] marking for the recompute is safe even though the fallback
+									# pathfind overwrote pathfind_prov_path_: the sizer reads the frontline
+									# hub province, not the path, and this branch has not touched it.
 									set_temp_variable = { _route_level_from_path = 1 }
 									if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 										ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] overseas fallback also PARTIAL — keeping direct route" }
@@ -379,18 +344,14 @@ WA_AI_PC_railway_land_consider_frontline = {
 						if = {
 							limit = { check_variable = { _direct_success > 0 } }
 
-							# Fix 135: THE RATCHET IS GONE. What stood here was
-							#   route_level = _max_route_level_ + 1, clamped at 5
-							# - "one level above whatever this route already has" - which has no
-							# reference to demand or to entry capacity and climbs to the clamp on its
-							# own, one pass at a time. MEASURED on 8c0fea4c: Libya went from 6 BREAK
-							# hops at level 0-1 (1940.6) to level 5 from Tripoli to Derna (1941.5),
-							# 44 supply per hop behind a 25-supply entry port, and it overwrote the
-							# corridor's own cap of 4 on the same segments because
+							# [na-corridor] NO ratchet in the war family - the route is sized by the same
+							# helper the corridor uses. "One level above what this route already has,
+							# clamped at 5" was tried: it references neither demand nor entry capacity,
+							# climbs to the clamp on its own one pass at a time, and overwrites the
+							# corridor's lower cap on shared segments because
 							# WA_AI_PC_start_railway_project only compares current < target.
-							# The route is now sized by the same helper the corridor uses.
-							# `pathfind_prov_path_^num > 1` is no longer a condition: the sizer reads
-							# the frontline hub, not the path, so a 1-node path is sized like any other.
+							# No `pathfind_prov_path_^num > 1` condition: the sizer reads the frontline
+							# hub, not the path, so a 1-node path sizes like any other.
 							if = {
 								limit = { check_variable = { _route_level_from_path = 1 } }
 								set_temp_variable = { _rsize_entry_mode_ = 2 }
@@ -467,7 +428,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 		}
 	}
 
-	### Fix 11: Always mark best port for upgrade (even if it's the capital)
+	### [railway-pathfinding] Always mark best port for upgrade (even if it's the capital)
 	if = {
 		limit = { check_variable = { best_home_port_state_ > 0 } }
 		add_to_temp_array = { railway_port_upgrades_ = best_home_port_state_ }
@@ -527,7 +488,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 			set_temp_variable = { best_beachhead_province = 0 }
 
 			ROOT = {
-				# Fix 74: the beachhead itself may be an ally/subject port
+				# [na-corridor] the beachhead itself may be an ally/subject port
 				every_country = {
 					limit = { WA_AI_PC_is_logistics_build_partner = yes }
 					every_controlled_state = {
@@ -540,7 +501,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 							limit = {
 								check_variable = { continent_id_ = enemy_continent }
 								is_coastal = yes
-								# Fix 26: Exclude home territory (same landmass as capital)
+								# [railway-pathfinding] Exclude home territory (same landmass as capital)
 								# Beachheads should be on foreign soil, not home island ports
 								NOT = { check_variable = { global.WA_AI_MAP_state_landmass^_bh_sid = capital_landmass } }
 							}
@@ -623,7 +584,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 
 				# Find any frontline supply hub on this continent and test pathfinding
 				ROOT = {
-					# Fix 74: a beachhead may validate against an ally-held frontline
+					# [na-corridor] a beachhead may validate against an ally-held frontline
 					every_country = {
 						limit = { WA_AI_PC_is_logistics_build_partner = yes }
 						every_controlled_state = {
@@ -665,7 +626,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 										# Test pathfinding from beachhead to this frontline
 										set_temp_variable = { _pathfind_prov_start = best_beachhead_province }
 										set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
-										set_temp_variable = { _pathfind_prov_type = 2 } # Fix 21: Rail networks - only ROOT-controlled provinces (not allied)
+										set_temp_variable = { _pathfind_prov_type = 2 } # [railway-pathfinding] Rail networks - only ROOT-controlled provinces (not allied)
 										WA_AI_PATHFIND_PROV_get_path = yes
 
 										if = {
@@ -706,9 +667,9 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 				}
 
 				# Find front-line states on this continent with supply hubs
-				set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# Fix 135: was 5, see the land-war strategy
+				set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# [na-corridor] family cap, see the land-war strategy
 				ROOT = {
-					# Fix 74: frontline targets on ally/subject soil count too
+					# [na-corridor] frontline targets on ally/subject soil count too
 					every_country = {
 						limit = { WA_AI_PC_is_logistics_build_partner = yes }
 						every_controlled_state = {
@@ -742,13 +703,11 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 										ROOT = { controls_province = var:supply_hub_province_ }
 									}
 									# Start from beachhead, not capital.
-									# Fix 135: this route used to inherit the strategy's flat
-									# `route_level = 5` (set once at the top for BOTH parts). Sized here
-									# in SUM mode over the two ends - the beachhead port is the entry
-									# capacity of this chain, and the front hub carries the demand.
-									# Part A's home-port chain deliberately keeps the flat 5: its target
-									# is constant:wa_ai_railway.supply.home_port_target_supply (44 = L5)
-									# by design, and it is fed overland from the capital, not by a port.
+									# [na-corridor] sized in SUM mode over the two ends - the beachhead
+									# port is this chain's entry capacity, the front hub carries the
+									# demand. Part A's home-port chain deliberately keeps its flat 5:
+									# its target is constant:wa_ai_railway.supply.home_port_target_supply
+									# (44 = L5) and it is fed overland from the capital, not by a port.
 									set_temp_variable = { _rsize_ob_a_ = best_beachhead_province }
 									set_temp_variable = { _rsize_ob_b_ = supply_hub_province_ }
 									ROOT = {
@@ -824,11 +783,10 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 
 	# Default route parameters (may be overridden for overseas targets)
 	set_temp_variable = { default_route_start = capital_province }
-	# Fix 135: was a flat 5 with a comment claiming it was "lower". The prewar family has no sizing
-	# of its own - it uses this as a ceiling on the port-derived level for overseas targets and as the
-	# target for same-landmass ones - so it now reads the family cap. Sizing prewar routes per route
-	# is deliberately NOT done here: nothing is standing on them yet, so the demand proxy would read
-	# a garrison and size to the floor everywhere, which is a regression, not a measurement.
+	# [na-corridor] the prewar family has no sizing of its own: this is the ceiling on the port-derived
+	# level for overseas targets and the target for same-landmass ones. Per-route sizing is
+	# deliberately NOT used in peace - with no army standing on the target the demand proxy reads a
+	# garrison and pins every prewar route at the floor.
 	set_temp_variable = { default_route_level = constant:wa_ai_railway.land_war.rail_level_cap }
 	set_temp_variable = { route_priority = constant:wa_ai_pc.prio.rail_prewar }
 
@@ -897,7 +855,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 			}
 			set_temp_variable = { target_has_land_border = 1 }
 		}
-		# Fix 27: Also check puppet borders
+		# [railway-pathfinding] Also check puppet borders
 		every_subject_country = {
 			every_controlled_state = {
 				limit = {
@@ -917,7 +875,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 			limit = { check_variable = { target_has_land_border = 1 } }
 
 			### LAND TARGET: Build to border states with supply hubs
-			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# Fix 135: was 5
+			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# [na-corridor] family cap
 			every_controlled_state = {
 				limit = {
 					any_neighbor_state = {
@@ -955,13 +913,13 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						limit = { check_variable = { target_landmass = capital_landmass } }
 						# Same landmass: use capital as route start
 						set_temp_variable = { route_start = default_route_start }
-						# Fix 29: level computed after the pathfind below; floor at default
+						# [railway-landwar] level computed after the pathfind below; floor at default
 						set_temp_variable = { route_level = default_route_level }
 						set_temp_variable = { _route_level_from_path = 1 }
 					}
 					else = {
 						# Different landmass: find nearest receiving port via distance-limited search
-						# Fix 26: Each target gets its own port analysis (no caching per-landmass)
+						# [railway-pathfinding] Each target gets its own port analysis (no caching per-landmass)
 						set_temp_variable = { _target_state_for_port_search = _this_state_id }
 						ROOT = { WA_AI_PC_analyze_overseas_supply_chain = yes }
 						set_temp_variable = { route_start = overseas_route_start_ }
@@ -997,7 +955,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
 							WA_AI_PATHFIND_PROV_get_path = yes
 
-							# Fix 28: Overseas fallback for same-landmass prewar targets
+							# [railway-pathfinding] Overseas fallback for same-landmass prewar targets
 							set_temp_variable = { _direct_success = pathfind_prov_success_ }
 							if = {
 								limit = {
@@ -1023,7 +981,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 										}
 										set_temp_variable = { route_start = overseas_route_start_ }
 										set_temp_variable = { route_level = overseas_max_railway_level_ }
-										set_temp_variable = { _route_level_from_path = 0 }	# Fix 29: level now owned by port analysis
+										set_temp_variable = { _route_level_from_path = 0 }	# [railway-landwar] level now owned by port analysis
 										# Cap at prewar level
 										if = { limit = { check_variable = { route_level > default_route_level } }
 											set_temp_variable = { route_level = default_route_level }
@@ -1038,7 +996,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 										}
 									}
 									else = {
-										# Fix 29: fallback pathfind overwrote pathfind_prov_path_ - keep the floor
+										# [railway-landwar] fallback pathfind overwrote pathfind_prov_path_ - keep the floor
 										set_temp_variable = { _route_level_from_path = 0 }
 									}
 								}
@@ -1047,16 +1005,12 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							if = {
 								limit = { check_variable = { _direct_success > 0 } }
 
-								# Fix 29: level the route from the actual fresh path, capped at prewar level.
-								# Fix 135 deliberately LEFT THE RATCHET HERE, and this note exists so the
-								# next reader does not think it was missed. In peace there is no army on
-								# the target to measure, so WA_AI_PC_rail_size_route's demand proxy would
-								# read a garrison and pin every prewar route at the floor - a regression,
-								# not a measurement. "Raise what already exists by one, up to the family
-								# cap" is a defensible preparation rule, and the cap is what Fix 135
-								# actually changed here: `default_route_level` now reads
-								# constant:wa_ai_railway.land_war.rail_level_cap (4), so the clamp at 5
-								# two lines below can no longer bind.
+								# [railway-landwar] level from the fresh path, capped at the prewar level.
+								# [na-corridor] the ratchet is deliberately KEPT in the prewar family, not
+								# missed: in peace there is no army on the target, so the demand sizer
+								# would pin every prewar route at the floor. "Raise what exists by one,
+								# up to the family cap" is the preparation rule; default_route_level is
+								# that cap, so the clamp at 5 two lines below can no longer bind.
 								if = {
 									limit = {
 										check_variable = { _route_level_from_path = 1 }
@@ -1084,7 +1038,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 				} # end if not single-node
 			}
 
-			# Fix 27: Also scan puppet/subject frontline states
+			# [railway-pathfinding] Also scan puppet/subject frontline states
 			every_subject_country = {
 				every_controlled_state = {
 					limit = {
@@ -1150,7 +1104,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
 									WA_AI_PATHFIND_PROV_get_path = yes
 
-									# Fix 28: Overseas fallback for same-landmass prewar puppet targets
+									# [railway-pathfinding] Overseas fallback for same-landmass prewar puppet targets
 									set_temp_variable = { _direct_success = pathfind_prov_success_ }
 									if = {
 										limit = {
@@ -1206,9 +1160,8 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 			}
 		}
 		else_if = {
-			# Fix 22: Only execute overseas logic if ROOT has coastal access
-			# This prevents landlocked nations (e.g., Hungary) from trying to build port infrastructure
-			# when they have claims on non-bordering countries (e.g., Romania via Fix 14)
+			# [railway-pathfinding] overseas logic only if ROOT has coastal access - without it a
+			# landlocked country with a claim on a non-bordering target queues port infrastructure.
 			limit = { any_controlled_state = { is_coastal = yes } }
 
 			### OVERSEAS TARGET: Upgrade home port infrastructure
@@ -1261,7 +1214,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 }
 
 ############################################################################################################
-#	STRATEGY 4: THEATRE CORRIDOR (Fix 95)
+#	STRATEGY 4: THEATRE CORRIDOR ([na-corridor])
 #	Selection only. Reads a corridor node list (WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt) and
 #	publishes the routes and hubs ROOT should build THIS pass; WA_AI_PC_railway_corridor_pass
 #	(railway_core) does the pathfinding, admission, validation and telemetry.
@@ -1274,21 +1227,19 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 #	                                            14 = naval base
 #
 #	The corridor is SYMMETRIC and tag-free; the priority band is rail_war when any node is enemy-held,
-#	rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace, decision 4).
-#	Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is held,
-#	Mechili<->Benghazi never before Benghazi. Cadence and level are constant:wa_ai_railway.corridor.*.
+#	rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace).
+#	Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is held.
+#	Cadence and level are constant:wa_ai_railway.corridor.*.
 #
-#	Fix 103 - PERMISSION and PAYMENT are two questions, asked separately, both per PROVINCE:
+#	[na-corridor] PERMISSION and PAYMENT are two questions, asked separately, both per PROVINCE:
 #	  corridor_node_ours_   WA_AI_PC_corridor_node_is_ours       may ROOT build here? ROOT / subject /
 #	                                                             ANY faction ally
 #	  corridor_node_charge_ WA_AI_PC_corridor_node_is_my_charge  should ROOT pay for it? ROOT / subject /
-#	                                                             a Fix-74 partner (unchanged)
-#	A hop is requested when BOTH ends are ours and AT LEAST ONE is our charge. Before Fix 103 both ends
-#	had to be our charge, so a hop between a healthy ally's node and our own had no builder anywhere
-#	(campaign 7c7803a8, Medenine 11957 <-> Tripoli 1149, unbuilt across all 123 monthly saves).
-#	Hubs keep the charge test ALONE - hub behaviour is unchanged by Fix 103.
-#	The pass gate is _corridor_claim_n_ > 0, the SAME predicate the pre-Fix-103 gate used, so the set of
-#	countries that enter this pass is unchanged: permission alone never admits anyone new.
+#	                                                             an ally that cannot fund its own
+#	A hop is requested when BOTH ends are ours and AT LEAST ONE is our charge. Requiring charge on both
+#	ends was tried and left a hop between a healthy ally's node and our own with no builder anywhere.
+#	Hubs keep the charge test ALONE. The pass gate is _corridor_claim_n_ > 0, so permission alone never
+#	admits a country with no stake in the theatre.
 ############################################################################################################
 
 WA_AI_PC_railway_STRATEGY_theatre_corridor = {
@@ -1341,12 +1292,10 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 	}
 
-	# Fix 103: gated on the CHARGE count, not the permission count. This is the same predicate the
-	# pre-Fix-103 gate used (`_corridor_ours_n_ > 0` when "ours" still meant is_logistics_build_partner),
-	# so the pass-entry population is unchanged. Gating on permission instead would let any faction
-	# member with no stake in the theatre run the whole pass - JAP passes
-	# WA_AI_MILITARY_AIR_theatre_contested_north_africa the moment ENG holds Egypt, and would then
-	# classify, pathfind and run stale-path validation with an empty valid set.
+	# [na-corridor] gate on the CHARGE count, not the permission count. Gating on permission lets any
+	# faction member with no stake in the theatre run the whole pass - JAP passes the North Africa
+	# theatre gate the moment ENG holds Egypt - and it would then classify, pathfind and run
+	# stale-path validation over an empty valid set.
 	if = {
 		limit = {
 			check_variable = { _corridor_claim_n_ > 0 }
@@ -1354,10 +1303,9 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		}
 		set_temp_variable = { corridor_ran_ = 1 }
 
-		### Fix 107: size the corridor before emitting anything. Publishes corridor_rail_tgt_ (used as
-		### the route level below, in place of the old flat constant) and corridor_port_tgt_ (the level a
-		### port node should reach, 0 = leave it at the pre-Fix-107 "place if missing"). Runs here because
-		### it reads corridor_node_ours_, which the classification loop above has just filled.
+		### [na-corridor] size the corridor before emitting anything. Publishes corridor_rail_tgt_ (the
+		### route level below) and corridor_port_tgt_ (the level a port node should reach, 0 = "place
+		### if missing"). Must run here: it reads corridor_node_ours_, just filled by the loop above.
 		WA_AI_PC_corridor_compute_sizing = yes
 
 		### Band: war when an enemy holds a node of this corridor, preparation otherwise
@@ -1377,7 +1325,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 				limit = { check_variable = { _ci_ < _corridor_last_i_ } }
 				set_temp_variable = { _ci_next_ = _ci_ }
 				add_to_temp_variable = { _ci_next_ = 1 }
-				# Fix 103: permission on BOTH ends, payment on AT LEAST ONE.
+				# [na-corridor] permission on BOTH ends, payment on AT LEAST ONE.
 				if = {
 					limit = {
 						check_variable = { corridor_node_ours_^_ci_ = 1 }
@@ -1391,29 +1339,25 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 						add_to_temp_array = { corridor_route_end_ = corridor_node_prov_^_ci_next_ }
 						add_to_temp_array = { corridor_route_level_ = corridor_rail_tgt_ }
 						add_to_temp_array = { corridor_route_prio_ = _corridor_prio_ }
-						# tlm gauge: hops only Fix 103 made requestable - one end is a healthy ally's,
-						# so the pre-Fix-103 both-ends-charge rule refused them. consumer: R68
+						# tlm gauge [na-corridor]: hops requestable only because one end is a healthy
+						# ally's - a both-ends-charge rule refuses them.
 						if = {
 							limit = { check_variable = { _hop_charge_n_ = 1 } }
 							add_to_temp_variable = { corridor_reach_ = 1 }
 						}
 					}
 					else = {
-						# tlm gauge: both ends ours, NEITHER our charge. After Fix 104 (the ally leg
-						# tests FUNDING) that means both ends are held by partners that genuinely can
-						# fund - so each has a foot on the hop and builds it itself, and a transient
-						# reading here is normal: the hop belongs to someone else. Sustained high WHILE
-						# the hop stays unbuilt on the map is the real signal - the owner is not
-						# building it either. consumer: R68
+						# tlm gauge [na-corridor]: both ends ours, NEITHER our charge - both ends are
+						# held by partners that can fund, so the hop belongs to someone else and a
+						# transient reading is normal. Sustained high WHILE the hop stays unbuilt on
+						# the map is the signal: the owner is not building it either.
 						add_to_temp_variable = { corridor_orphan_ = 1 }
 					}
 				}
 			}
 			### Hubs: a depot / port wanted at a node we hold.
-			# Fix 103: CHARGE, not permission - a hub is a whole building on one node, so unlike a hop
-			# there is no "we have a foot on it" half to reason about. Reading the charge array here
-			# leaves hub behaviour identical to the pre-Fix-103 build, which is why Fix 103 cannot
-			# regress R60 leg 3 (the Medenine 11957 naval base on Free-French soil).
+			# [na-corridor] CHARGE, not permission - a hub is a whole building on one node, so unlike a
+			# hop there is no "we have a foot on it" half to reason about.
 			if = {
 				limit = { check_variable = { corridor_node_charge_^_ci_ = 1 } }
 				if = {
@@ -1421,7 +1365,7 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 					add_to_temp_array = { corridor_hub_kind_ = 17 }
 					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
-					# Fix 107: a supply_node has no level (LOGISTICS_MODEL section 3) - always 1.
+					# [na-corridor] a supply_node has no level (LOGISTICS_MODEL section 3) - always 1.
 					add_to_temp_array = { corridor_hub_target_ = 1 }
 				}
 				if = {
@@ -1429,35 +1373,26 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 					add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 					add_to_temp_array = { corridor_hub_kind_ = 14 }
 					add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
-					# Fix 107: the level this port should REACH. corridor_port_tgt_ is 0 unless the
-					# sizing found the ENTRY CAPACITY to be what binds; the hub loop reads 0 as
-					# "place a missing port at level 1", i.e. the pre-Fix-107 behaviour exactly.
-					# Carried as a PARALLEL ARRAY rather than a chain temp on purpose: the hub loop in
-					# railway_core re-sets _hub_prov_ / _kind_ / _prio_ per iteration, so a fourth
-					# chain temp would be inherited by the next port from the previous one.
+					# [na-corridor] the level this port should REACH. corridor_port_tgt_ is 0 unless
+					# sizing found ENTRY CAPACITY to be what binds; the hub loop reads 0 as "place a
+					# missing port at level 1". Carried as a PARALLEL ARRAY, not a chain temp, on
+					# purpose: the hub loop in railway_core re-sets _hub_prov_ / _kind_ / _prio_ per
+					# iteration, so a fourth chain temp would leak from one port to the next.
 					add_to_temp_array = { corridor_hub_target_ = corridor_port_tgt_ }
 				}
-				### FORWARD port - the attacker's supply port at a spearhead node (user ruling
-				### 2026-08-16: only the faction attacking Libya builds it, never the defender).
+				### FORWARD port - the attacker's supply port at a spearhead node: only the side
+				### attacking along the corridor builds it, never the defender on its own ground.
 				### Attacker = the node's province is OWNED by an enemy (WA_AI_PC_corridor_node_is_
 				### conquered - we stand on conquered soil); spearhead = one neighbouring node is
-				### enemy-held (the front is right there, e.g. blocked at El Agheila) and the other
-				### neighbouring node is ours (the rear - Benghazi - already fell). A corridor end
-				### node has one neighbour only; that neighbour must be the hostile one.
-				###
-				### Fix 103, per-read decision: the two _fwd_rear_ tests below deliberately keep
-				### reading corridor_node_ours_ (PERMISSION), not the charge array. "Has the rear
-				### fallen to our side" is a question about SIDES - a military fact - not about who
-				### pays; a faction ally standing in Benghazi secures our rear whether or not it could
-				### fund a railway. Intentional widening, not an oversight: before Fix 103 a healthy
-				### ally holding Benghazi read as "not ours" and suppressed the forward port even
-				### though the rear was genuinely secure. The port stays bounded by the three other
-				### terms, all unchanged - the outer gate is CHARGE (we must have a stake in Ajdabiya
-				### itself), one neighbour must be enemy-held, and WA_AI_PC_corridor_node_is_conquered
-				### still restricts it to the attacker on conquered soil, so the defender on its own
-				### ground never gets one. Delta: on campaign 7c7803a8 no forward port was ever
-				### requested by anyone (_port_n = 0 everywhere, R60 leg 2 sub-leg NOT EXERCISED); the
-				### case this opens is ENG holding Ajdabiya with USA or a restored FRA in Benghazi.
+				### enemy-held (the front is right there) and the other is ours (the rear already
+				### fell). A corridor end node has one neighbour only, which must then be the hostile
+				### one.
+				### [na-corridor] the two _fwd_rear_ tests deliberately read corridor_node_ours_
+				### (PERMISSION), not charge: "has the rear fallen to our side" is a question about
+				### SIDES, and an ally standing in the rear secures it whether or not it could fund a
+				### railway. Deliberate widening; the port stays bounded by three unchanged terms -
+				### outer gate is CHARGE (we need a stake in the node itself), one neighbour must be
+				### enemy-held, and the conquered-soil test excludes the defender.
 				if = {
 					limit = { check_variable = { corridor_node_fwdport_^_ci_ = 1 } }
 					set_temp_variable = { _fwd_front_ = 0 }
@@ -1486,11 +1421,10 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 						add_to_temp_array = { corridor_hub_prov_ = _ci_prov_ }
 						add_to_temp_array = { corridor_hub_kind_ = 14 }
 						add_to_temp_array = { corridor_hub_prio_ = _corridor_prio_ }
-						# Fix 107: a FORWARD port is placed, never raised. It exists to inject supply at
-						# a spearhead on conquered soil, where the RANGE model - not the flow model - is
-						# what is failing (LOGISTICS_MODEL section 6, the 2.5% non-core cliff), and the
-						# spearhead moves, so a multi-level climb would pay for a port the front has
-						# already left. Level 1, deliberately.
+						# [na-corridor] a FORWARD port is placed, never raised: it injects supply at a
+						# spearhead on conquered soil, where the RANGE model fails and not the flow
+						# model (LOGISTICS_MODEL section 6), and the spearhead moves, so a multi-level
+						# climb would pay for a port the front has already left. Level 1, deliberately.
 						add_to_temp_array = { corridor_hub_target_ = 1 }
 					}
 				}

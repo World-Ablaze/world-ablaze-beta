@@ -1,11 +1,10 @@
 ############################################################################################################
 # WA AI Military V2 - COUNTRY_ITA_THEATRE
 ############################################################################################################
-# Phase 6 split: every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
+# Every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
 # Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_crush_ethiopia_1 (THEATRE domain)
 WA_AI_MILITARY_ITA_crush_ethiopia_1_THEATRE = {
 
 	allowed = {
@@ -13,10 +12,9 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_THEATRE = {
 	}
 	enable = {
 		has_war_with = ETH
-		# Fix 98 (2026-08-17, campaign 0edbc955): was `date < 1937.1.1` + rule in {DEFAULT, FASCIST_HISTORICAL} -
-		# FASCIST_ALTERNATE / RANDOM had NO execute order vs Ethiopia before 1937, nobody had one after 1938.
-		# Now: every rule option except the deliberately slow DEMOCRATIC / MONARCHIST path (struggle -> prolong
-		# -> end_the_struggle), for as long as the war lasts. crush_ethiopia_2 (the 1937-38 twin) merged here.
+		# [med-axis-posture] every ITA_ai_behavior option except the deliberately slow DEMOCRATIC / MONARCHIST
+		# path (struggle -> prolong -> end_the_struggle), for as long as the war lasts. No date gate: a rule
+		# option with no window here means no execute order against Ethiopia at all.
 		NOT = { has_game_rule = { rule = ITA_ai_behavior option = DEMOCRATIC } }
 		NOT = { has_game_rule = { rule = ITA_ai_behavior option = MONARCHIST } }
 	}
@@ -35,14 +33,6 @@ WA_AI_MILITARY_ITA_crush_ethiopia_1_THEATRE = {
 }
 
 
-# Fix 98 (2026-08-17): WA_AI_MILITARY_ITA_crush_ethiopia_2_THEATRE (the 1937.1.1-1938.1.1 twin, no rule gate) merged into
-# crush_ethiopia_1_THEATRE above, which now runs for the whole war on every rule except DEMOCRATIC / MONARCHIST. Those two
-# keep struggle/prolong/end_the_struggle (end_the_struggle_THEATRE still carries the +200 area pulls for them; the +200
-# `front_unit_request tag = ETH` of this block is the one thing the DEM/MON 1937-38 window loses).
-
-
-
-# Phase 6 split from WA_AI_MILITARY_ITA_struggle_in_ethiopia (THEATRE domain)
 WA_AI_MILITARY_ITA_struggle_in_ethiopia_THEATRE = {
 
 	allowed = {
@@ -77,7 +67,6 @@ WA_AI_MILITARY_ITA_struggle_in_ethiopia_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_prolong_the_struggle_in_ethiopia (THEATRE domain)
 WA_AI_MILITARY_ITA_prolong_the_struggle_in_ethiopia_THEATRE = {
 
 	allowed = {
@@ -112,26 +101,20 @@ WA_AI_MILITARY_ITA_prolong_the_struggle_in_ethiopia_THEATRE = {
 }
 
 
-# purpose: Fix 96 - Italy's main effort is North Africa WHILE it holds a Libyan bridgehead port and the
-#          home is safe. One source of +200 where three used to stack (war_against_ENG +200 on any
-#          ITA/ITL-held Libyan state, north_africa_focus +200 on `date > 1937` for ever,
-#          hold_africa +200 to 1941 - up to +600 on a 7-region area, E1 ceiling is +200). Fires at
-#          peace too (pre-positioning the Libyan garrison, R60 corridor prep) and at war with whoever
-#          holds East Egypt or Tunisia - controller-based, no ENG/FRA tag, so an ahistorical enemy
-#          in Egypt gets the same effort. Ethiopia's conquest phase keeps precedence (its own +200s).
-#          Fix 99: gate is WA_AI_MILITARY_african_shore_port_held (Libyan ports OR Tunis/Bizerte) - a
-#          Tunis-only foothold after the loss of Libya keeps the effort alive instead of reading "no
-#          bridgehead"; and an enemy in Algeria (459/460) arms the pull like an enemy in Egypt does.
-# range:   +200 (E1)
-# policy:  Additive per area (sole ITA-scope +200 writer for north_africa; the R13 FRONT pair is
-#          the +60 front_unit_request beside it)
+# purpose: [med-axis-posture] - Italy's main effort is North Africa while it holds an African-shore port
+#          (Libyan four OR Tunis/Bizerte, so a Tunis-only foothold after the loss of Libya keeps the
+#          effort alive) and the home is safe. Fires at peace too, for pre-positioning, and at war with
+#          whoever controls East Egypt / Tunisia / Algeria - controller-based, no ENG/FRA tag, so an
+#          ahistorical enemy there gets the same effort. Ethiopia's conquest phase keeps precedence.
+# range:   +200 (E1) - the E1 ceiling, and this is the sole ITA-scope +200 writer for north_africa
+# policy:  Additive per area (the FRONT-layer pair beside it is the +60 front_unit_request)
 # domain:  THEATRE
 WA_AI_MILITARY_ITA_africa_pull_THEATRE = {
 	allowed = {
 		tag = ITA
 	}
 	enable = {
-		WA_AI_MILITARY_african_shore_port_held = yes # Fix 99: was libya_bridgehead_held
+		WA_AI_MILITARY_african_shore_port_held = yes # [med-axis-posture]
 		NOT = { WA_AI_MILITARY_italy_home_threatened = yes }
 		WA_AI_MILITARY_ethiopian_war_finished = yes
 		OR = {
@@ -140,8 +123,8 @@ WA_AI_MILITARY_ITA_africa_pull_THEATRE = {
 			447 = { CONTROLLER = { has_war_with = ROOT } }
 			453 = { CONTROLLER = { has_war_with = ROOT } }
 			458 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } } # Fix 99: an enemy in Algeria
-			460 = { CONTROLLER = { has_war_with = ROOT } } # Fix 99
+			459 = { CONTROLLER = { has_war_with = ROOT } } # [med-axis-posture] an enemy in Algeria (459/460)
+			460 = { CONTROLLER = { has_war_with = ROOT } } #                   arms the pull like one in Egypt
 		}
 	}
 	abort_when_not_enabled = yes
@@ -153,7 +136,7 @@ WA_AI_MILITARY_ITA_africa_pull_THEATRE = {
 	}
 }
 
-# purpose: Fix 96 - the bridgehead is still held but the home is threatened (belt ground lost, Tunisia
+# purpose: [med-axis-posture] - the bridgehead is still held but the home is threatened (belt ground lost, Tunisia
 #          occupied): Africa keeps a token pull so the line is not abandoned outright, the home tiers
 #          in WA_AI_MILITARY_REGION_ITALY_THEATRE.txt take the rest. Mutually exclusive with the two
 #          blocks around it by construction (held ∧ threatened ∧ NOT invaded).
@@ -165,7 +148,7 @@ WA_AI_MILITARY_ITA_africa_pull_reduced_THEATRE = {
 		tag = ITA
 	}
 	enable = {
-		WA_AI_MILITARY_african_shore_port_held = yes # Fix 99: was libya_bridgehead_held (a Tunis-only port keeps the token pull)
+		WA_AI_MILITARY_african_shore_port_held = yes # [med-axis-posture] a Tunis-only port keeps the token pull
 		WA_AI_MILITARY_italy_home_threatened = yes
 		NOT = { WA_AI_MILITARY_italy_homeland_invaded = yes }
 	}
@@ -178,12 +161,11 @@ WA_AI_MILITARY_ITA_africa_pull_reduced_THEATRE = {
 	}
 }
 
-# purpose: Fix 96 - give up on North Africa: no Libyan bridgehead port left to our side, or an enemy
-#          stands on the Italian mainland / Sicily. Was: ENG/UKE/USA/FRA control ALL FOUR of
-#          448/449/450/451 - a bar the 0edbc955 army never met before it died in place (Libya was
-#          still ITL-held on 1943.10.1 while Sicily, Calabria and Campania were already Allied).
-#          Releases itself when a port is retaken and the home soil is clear. Fix 99: "port" now means any
-#          African-shore port (Libyan four + Tunis + Bizerte, WA_AI_MILITARY_african_shore_port_held).
+# purpose: [med-axis-posture] - give up on North Africa: no African-shore port left to our side (Libyan four
+#          + Tunis + Bizerte, WA_AI_MILITARY_african_shore_port_held), or an enemy stands on the Italian
+#          mainland / Sicily. Either branch alone fires: a tag-list bar over all four Libyan states is a
+#          bar an army can die in place without ever meeting. Releases itself when a port is retaken and
+#          the home soil is clear.
 # range:   -200 (E1)
 # policy:  Additive per area
 # domain:  THEATRE
@@ -194,7 +176,7 @@ WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
 	enable = {
 		has_war = yes
 		OR = {
-			NOT = { WA_AI_MILITARY_african_shore_port_held = yes } # Fix 99: was libya_bridgehead_held - Libya lost but Tunis/Bizerte held is the Nov 42 - May 43 shape, not "give up"
+			NOT = { WA_AI_MILITARY_african_shore_port_held = yes } # [med-axis-posture] Libya lost but Tunis/Bizerte held is a bridgehead, not "give up"
 			WA_AI_MILITARY_italy_homeland_invaded = yes
 		}
 	}
@@ -207,29 +189,23 @@ WA_AI_MILITARY_ITA_abandon_north_africa_THEATRE = {
 	}
 }
 
-# purpose: Italy garrisons friendly rear-area ground in Southern France and Greece when applicable.
-#          The seven Greek 1936 states replace the former four-state subset; Dodecanese stays because
-#          it was already part of this Italian periphery. Each sector has an independent order_id:
-#          save measurement leaves cross-block order_id arbitration unknown. These buffers yield to
-#          a land front in their own area: the front then supplies the defenders instead of the rear
-#          reserve duplicating them. The Albania/Otranto gate is the separate block below.
+# purpose: [med-axis-posture] - Italy garrisons friendly rear-area ground in Southern France and Greece.
+#          Southern France is split shore (9610) / inland (9614) because WHICH state inside a `states`
+#          list gets a division is engine-internal: the split cannot steer placement, it shrinks the
+#          list the engine spreads over until the landable coast is most of it. Independent order_id
+#          per sector - cross-block order_id arbitration is not measurable from a save. Rear-area
+#          buffers yield to a land front in their own area so the front supplies the defenders instead
+#          of the reserve duplicating them; the anti-landing shore buffer does not (see its pool note).
+#          The Albania/Otranto gate is the separate block below.
 # range:   0.08 / 0.03 / 0.15 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
-#
-# Fix 110 (2026-08-19): Southern France was ONE flat order over nine states, five of them inland and
-# unlandable, and on campaign 07270b64 its six divisions went one per inland state with ZERO in
-# Provence - the only state carrying a port (Toulon, Marseille). Split in two: the shore keeps 9610
-# and stops yielding to a front (lessons-log put_unit_buffers rule, same safeguard as Fix 102 on the
-# Libyan buffer), the inland rear area moves to 9614 at a third of the weight. WHICH state inside a
-# `states` list receives a division is engine-internal, so this does not steer placement - it shrinks
-# the list the engine spreads over until the coast is most of it. Checklist R76.
 WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	allowed = {
 		tag = ITA
 	}
 	enable = {
-		# own war, or a major's war while we are neutral (pre-positioning - the deleted block's FRA/ENG clause)
+		# own war, or a major's war while we are neutral (pre-positioning)
 		OR = {
 			has_war = yes
 			any_other_country = { is_major = yes has_war = yes }
@@ -241,7 +217,7 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9610
-		# Fix 110: the Mediterranean shore of region 20 only - Provence (Toulon, Marseille), Languedoc,
+		# [med-axis-posture] the Mediterranean shore of region 20 only - Provence (Toulon, Marseille), Languedoc,
 		# French Alpes. These are the states an amphibious landing can take.
 		states = {
 			21
@@ -250,16 +226,16 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 		}
 		ratio = 0.08
 		area = south_france
-		# pool: Fix 110 - anti-landing reserve, must NOT be subtracted away by a front elsewhere in
-		# region 20 (lessons-log put_unit_buffers entry; same safeguard as Fix 102 on the Libyan buffer)
+		# pool: [med-axis-posture] - anti-landing reserve, must NOT be subtracted away by a front elsewhere in
+		# region 20 (lessons-log put_unit_buffers entry)
 		subtract_fronts_from_need = no
 		subtract_invasions_from_need = no
 	}
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9614
-		# Fix 110: the inland rear area of region 20 - no coast, so no landing; a third of the shore's
-		# weight, and it still yields to a front the way the whole block used to.
+		# [med-axis-posture] the inland rear area of region 20 - no coast, so no landing; a third of the
+		# shore's weight, and it yields to a front.
 		states = {
 			20
 			25
@@ -277,7 +253,7 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9611
-		# Greece's seven 1936 states, plus the Italian Dodecanese retained from the former block
+		# Greece's seven 1936 states, plus the Italian Dodecanese
 		states = {
 			47
 			184
@@ -302,17 +278,14 @@ WA_AI_MILITARY_ITA_protect_periphery_THEATRE = {
 #          11767 in Albania), the strait rule denies that enemy naval access and this rear-area
 #          reserve aborts. It returns if Otranto becomes contested or one enemy has neutral access
 #          again. Kept separate so the Otranto gate never disables the Southern-France or Greek
-#          buffers.
+#          buffers. [med-axis-posture] order 9613 covers the whole eastern shore, not Albania alone:
+#          otherwise the engine holds Split/Zadar/Gorski Kotar with its OWN area-defence orders while
+#          the strait is shut and this block has correctly aborted (the `garrison = -5000` elsewhere is
+#          the other half that stops it). Those shore states sit in strategic region 24, already inside
+#          `area = central_balkans` - no new ai_area, the engine's 72-definition ai_area budget is full.
 # range:   0.10 / 0.06 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
-#
-# Fix 109 (2026-08-19): the block covered Albania alone, so the rest of the shore behind Otranto was
-# left to the engine - which held Split, Zadar and Gorski Kotar with its OWN area-defence orders on
-# campaign 07270b64 while the strait was shut and this block had correctly aborted. Order 9613 puts
-# that shore under the same gate; Fix 108 is the other half, restoring the `garrison = -5000` that
-# stops the engine doing it anyway. The shore states sit in strategic region 24, already inside
-# `area = central_balkans` - no new ai_area, the engine's 72-definition budget is full. Checklist R75.
 WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 	allowed = {
 		tag = ITA
@@ -331,7 +304,7 @@ WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 		type = put_unit_buffers
 		order_id = 9612
 		states = {
-			44 # Albania - the only existing ITA periphery buffer behind Otranto
+			44 # Albania
 		}
 		ratio = 0.10
 		area = central_balkans
@@ -342,7 +315,7 @@ WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 	ai_strategy = {
 		type = put_unit_buffers
 		order_id = 9613
-		# Fix 109: the eastern Adriatic shore behind Otranto. Istria and Primorska head the list
+		# [med-axis-posture] the eastern Adriatic shore behind Otranto. Istria and Primorska head the list
 		# because they are the deepest a landing here can cut; Zadar and Split are the ports. If Italy
 		# holds none of them the strategy is simply invalid (documentation.info: "if no state is
 		# friendly, strat is invalid"), which is what makes the list safe in an ahistorical Balkans.
@@ -355,27 +328,22 @@ WA_AI_MILITARY_ITA_protect_adriatic_gate_THEATRE = {
 		}
 		ratio = 0.06
 		area = central_balkans
-		# pool: Fix 109 - this IS the anti-landing reserve of the shore, so unlike the Albanian buffer
-		# above it must not be subtracted away by a partisan / Balkan front inland (lessons-log
+		# pool: [med-axis-posture] - this IS the anti-landing reserve of the shore, so unlike the Albanian
+		# buffer above it must not be subtracted away by a partisan / Balkan front inland (lessons-log
 		# put_unit_buffers entry)
 		subtract_fronts_from_need = no
 		subtract_invasions_from_need = no
 	}
 }
-# purpose: Fix 96 - the Libyan garrison of the former ITA_protect_home block; only while a bridgehead
-#          port is ours (own / subject / ally-with-enemy-opposite) and the home is not invaded - a
-#          buffer on ground we are abandoning is the 0edbc955 idle-in-Tripoli shape. Same peace-time
-#          pre-positioning clause as protect_periphery above. Fix 99: deliberately KEPT on
-#          libya_bridgehead_held (not african_shore_port_held) - this buffer sits on Libyan states, so it
-#          needs a Libyan port; the Tunisian garrison is the Faction-layer AXIS_tunis_bridge_THEATRE.
+# purpose: [med-axis-posture] - the Libyan garrison; only while a bridgehead port is ours (own / subject /
+#          ally-with-enemy-opposite) and the home is not invaded, because a buffer on ground we are
+#          abandoning just idles divisions in Tripoli. Same peace-time pre-positioning clause as
+#          protect_periphery above. Deliberately gated on libya_bridgehead_held, NOT
+#          african_shore_port_held - this buffer sits on Libyan states so it needs a Libyan port; the
+#          Tunisian garrison is the Faction-layer AXIS_tunis_bridge_THEATRE.
 # range:   0.25 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
-# Fix 102 (2026-08-17): was order_id = 1 with subtract_fronts_from_need at its default (yes) over
-#          area = north_africa - i.e. yielding to the very front it garrisons. Measured on campaign
-#          7c7803a8: the order held 3 divisions at 1940.9 and was GONE at 1941.6, 1941.12 and 1942.6
-#          while the Italian army grew 79 -> 83 and the Libyan front was the whole war. Same defect,
-#          same safeguard as the ENG El-Alamein ladder: the buffer need is non-yielding.
 WA_AI_MILITARY_ITA_protect_libya_THEATRE = {
 	allowed = {
 		tag = ITA
@@ -402,25 +370,23 @@ WA_AI_MILITARY_ITA_protect_libya_THEATRE = {
 		}
 		ratio = 0.25 # economy: was 1.2
 		area = north_africa
-		subtract_fronts_from_need = no # pool: Libya must stay garrisoned while the Egyptian front asks for everything - the default (yes) let that front eat the whole need (Fix 102)
+		subtract_fronts_from_need = no # pool: [prospecting-coop] Libya must stay garrisoned while the Egyptian front asks for everything; the default (yes) lets that front eat the whole need
 		subtract_invasions_from_need = no
 	}
 }
 
-# purpose: Fix 119 - Italy garrisons the Egyptian ports its side conquers (Alexandria 447, Marsa
-#          Matruh 452, Suez 923) while the German expedition - or its own R13 offensive - pushes
-#          east: division of labour requested by the user 2026-08-20 (Germany spearheads, Italy
-#          holds the rear and the line; the line itself stays the R13 +60 in ITA_FRONT). The gate
-#          survives full conquest of the East-Egypt anchors on purpose (arch review 2026-08-20):
-#          the war branch holds it while the advance still fights, the control branch holds it
-#          after the ports fall - a garrison that dissolves at the moment of victory is no
-#          garrison. Control branch uses the Fix 99 one-side definition so a GER-conquered port
-#          still gets its Italian garrison. `area = north_africa` on purpose: the engine's ai_area
-#          database is at its 72-slot ceiling (73rd = crash, boot matrix 2026-08-17), so Egypt has
-#          no alias of its own; protect_libya above shares the same blob and the same residual.
-#          ASSUMED (R80 fail-tell): a buffer whose states are still enemy-held sits unfilled until
-#          conquest - the Tunis precedent (order 9608) drew on Axis-OWNED states, this shape is
-#          unprecedented.
+# purpose: [med-axis-posture] - Italy garrisons the Egyptian ports its side conquers (Alexandria 447, Marsa
+#          Matruh 452, Suez 923) while the German expedition - or Italy's own offensive - pushes east:
+#          Germany spearheads, Italy holds the rear; the line itself is the +60 front_unit_request in
+#          ITA_FRONT. The gate deliberately SURVIVES full conquest of the East-Egypt anchors - the war
+#          branch holds it while the advance still fights, the control branch after the ports fall,
+#          because a garrison that dissolves at the moment of victory is no garrison. The control
+#          branch uses the one-side definition so a GER-conquered port still gets its Italian garrison.
+#          `area = north_africa` on purpose: the engine's ai_area database is at its 72-slot ceiling
+#          (a 73rd definition crashes on boot), so Egypt has no alias of its own and shares
+#          protect_libya's blob and residual. ASSUMED, and the fail-tell for this block: a buffer whose
+#          states are still enemy-held sits unfilled until conquest - unverified, every prior buffer
+#          here drew on states our side already owned.
 # range:   0.10 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
@@ -456,13 +422,12 @@ WA_AI_MILITARY_ITA_garrison_conquered_ports_THEATRE = {
 		}
 		ratio = 0.10
 		area = north_africa
-		subtract_fronts_from_need = no # pool: the Egyptian front must not eat the garrison's need (Fix 102 safeguard)
+		subtract_fronts_from_need = no # pool: [prospecting-coop] the Egyptian front must not eat the garrison's need
 		subtract_invasions_from_need = no
 	}
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia (THEATRE domain)
 WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 
 	allowed = {
@@ -470,7 +435,7 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 	}
 	enable = {
 		has_war_with = ETH
-		date > 1936.05.15 # Fix 98: was 05.17 - contiguous with struggle/prolong (< 05.16); the two-day hole is closed
+		date > 1936.05.15 # [med-axis-posture] must stay contiguous with struggle/prolong (< 05.16) or DEM/MON have no order in the gap
 		OR = {
 			AND = {
 				has_game_rule = {
@@ -501,12 +466,11 @@ WA_AI_MILITARY_ITA_end_the_struggle_in_ethiopia_THEATRE = {
 }
 
 
-# purpose: Fix 97 - the East-African colony gets a GARRISON, not half the army. Campaign 0edbc955: with a
-#          neutral 40-division Ethiopia next door and nothing telling the AI otherwise, 39 of 61 Italian
-#          divisions stood in Eritrea/Somaliland in June 1940 (64 %) and two 8-division armies then camped
-#          inside the Sudan/Kenya out of supply for three years. This buffer is the reference "enough":
-#          0.10 of the army on the two colonial states, own order_id, and the AXIS_abandon_east_africa
-#          family (now tag-free) supplies the negative that keeps the rest away.
+# purpose: [med-axis-posture] - the East-African colony gets a GARRISON, not half the army: without a stated
+#          "enough", a neutral Ethiopia next door pulls most of the Italian army into Eritrea/Somaliland
+#          and then into the Sudan/Kenya out of supply. 0.10 of the army on the two colonial states with
+#          its own order_id is that "enough"; the AXIS_abandon_east_africa family supplies the negative
+#          that keeps the rest away.
 # range:   0.10 (E4)
 # policy:  Additive per state
 # domain:  THEATRE
@@ -534,11 +498,11 @@ WA_AI_MILITARY_ITA_east_africa_garrison_THEATRE = {
 		ratio = 0.10
 		# `area` = the ai_areas whose orders may draw on this buffer (documentation.info): the colony's own
 		# region only, so a front INSIDE Eritrea/Somaliland may use the garrison, the offensive into the
-		# Sudan (217) may not - review 2026-08-17
+		# Sudan (217) may not
 		area = WA_AI_MILITARY_east_africa_colony_regions
 		subtract_invasions_from_need = no
-		# pool: the buffer is not sized down when a front opens next door - that shrinkage is how the AOI
-		# army ended up inside enemy states out of supply
+		# pool: not sized down when a front opens next door - that shrinkage is how the colonial army ends
+		# up inside enemy states out of supply
 		subtract_fronts_from_need = no
 	}
 }

@@ -5,7 +5,7 @@
 #	Switches and thresholds:  common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt
 #	Cadence:                  on_weekly in common/on_actions/WA_AI_misc_on_actions.txt, behind the
 #	                          is_ai + has_capitulated gate (the Priority Construction block).
-#	                          Fix 68 moved WA_AI_AIFC_update_sector OUT of that block into its own
+#	                          [aifc] moved WA_AI_AIFC_update_sector OUT of that block into its own
 #	                          is_ai-only one, so this is no longer its neighbour and AIFC now runs
 #	                          after this effect, not before. Harmless - AIFC's weekly path reads no
 #	                          posture output; the WA_AI_AIFC_hold_the_line flag below is consumed by
@@ -62,7 +62,7 @@
 #
 #	NOTE ON STALE PER-ENEMY VARIABLES: WA_AI_MILITARY_posture_vs_<TAG> lingers after a peace. Every
 #	consumer must therefore also gate on has_war_with = <TAG>. Documented at each consumer.
-#	Since Fix 43 the entries ARE retracted for current enemies whenever the posture is reset (peace,
+#	Since [aifc] the entries ARE retracted for current enemies whenever the posture is reset (peace,
 #	ineligibility, or the hard brake) - see WA_AI_MILITARY_clear_posture. The has_war_with rule still
 #	stands: it is what makes the surviving post-peace entries inert.
 ############################################################################################################
@@ -87,7 +87,7 @@
 ###	to earn the full 0.9 to start. Do NOT collapse the two constants back into one.
 
 ### FIX 83 (2026-08-15, campaign af003548) - the FRONT-LOCAL ratio is a cliff too, so it now has hysteresis.
-###	Fix 55 gave the equipment gate an enter/hold pair and left the front-local branch as a single
+###	[offensive-posture] gave the equipment gate an enter/hold pair and left the front-local branch as a single
 ###	bar: LOCAL_RATIO = 1.5 both to start executing AND to keep executing. That is the D-Day rollback
 ###	mechanism on af003548, and it is not the equipment cliff: ENG and USA both read
 ###	posture_vs_GER 1 (1944.7) -> 0 (1944.8) -> 0 (1944.9) -> 1 (1944.10) with fielded_eq_ratio
@@ -98,7 +98,7 @@
 ###	quiet Eastern front. Both western majors dropped every front_control ... execute_order = yes
 ###	against Germany at once (abort_when_not_enabled), the unordered beachhead went 6 states ->
 ###	2 in a month, and stayed on those 2 states for 20 of the next 22 months.
-###	Same shape as Fix 55, same minimal remedy: a country ALREADY executing against this enemy
+###	Same shape as [offensive-posture], same minimal remedy: a country ALREADY executing against this enemy
 ###	keeps its orders while its side still outweighs the enemy across the line by LOCAL_RATIO_HOLD;
 ###	one that is not yet executing still has to earn the full LOCAL_RATIO to start. 1.1 is "still
 ###	ahead on the ground" - at 1944.9's 82 vs 142 (0.58) the hold band correctly releases too, so
@@ -348,7 +348,7 @@ WA_AI_MILITARY_update_posture = {
 
 			set_temp_variable = { _post_local_edge = _post_local_enemy }
 			multiply_temp_variable = { _post_local_edge = constant:wa_ai_posture.local.ratio }
-			# Fix 83: the hold bar - see the constants header. Both edges are 0 when the local
+			# [landing-freeze] the hold bar - see the constants header. Both edges are 0 when the local
 			# scan was skipped (pairwise ratio already passes), and 0 > 0 is false, so neither
 			# branch can fire off an unscanned line.
 			set_temp_variable = { _post_local_edge_hold = _post_local_enemy }
@@ -438,7 +438,7 @@ WA_AI_MILITARY_update_posture = {
 					# whatever the ground ratio says.
 					NOT = { check_variable = { _post_air_state = -1 } }
 					ROOT = {
-						# Fix 55: hysteresis. Entering an offensive costs MIN_EQ; holding one already
+						# [offensive-posture] hysteresis. Entering an offensive costs MIN_EQ; holding one already
 						# under way costs only MIN_EQ_HOLD. PREV is the enemy country here, the same
 						# tag substitution the write site below uses.
 						OR = {
@@ -464,8 +464,8 @@ WA_AI_MILITARY_update_posture = {
 							# joins the push - the pairwise ratio compares one country against the
 							# enemy's whole fighting army and no coalition member but the largest
 							# could ever pass it against a major.
-							# Fix 83: enter at LOCAL_RATIO, hold at LOCAL_RATIO_HOLD while already
-							# executing against this enemy - same enter/hold shape as the Fix 55
+							# [landing-freeze] enter at LOCAL_RATIO, hold at LOCAL_RATIO_HOLD while already
+							# executing against this enemy - same enter/hold shape as the [offensive-posture]
 							# equipment pair above. PREV is the enemy, as at the write site.
 							OR = {
 								check_variable = { _post_local_friendly > _post_local_edge }
@@ -480,7 +480,7 @@ WA_AI_MILITARY_update_posture = {
 				set_temp_variable = { _post_level = 1 }
 
 				# tlm: WA_TLM_r51_local_hold_n / _first_t / _last_t - consumer: checklist R51.
-				# Counts a level-1 verdict that ONLY the Fix 83 hold band delivered: the local count is
+				# Counts a level-1 verdict that ONLY the [landing-freeze] hold band delivered: the local count is
 				# inside (edge_hold, edge], the entry we are holding was > 0, and no other level-1 route
 				# was open - the local scan only runs when the pairwise EXEC_RATIO branch failed (see the
 				# cost gate above), so the remaining route to exclude is the hollow/air-lowered pairwise
@@ -527,7 +527,7 @@ WA_AI_MILITARY_update_posture = {
 						check_variable = { _post_xr_signal = 1 }
 					}
 					ROOT = {
-						# Fix 55: same hysteresis as level 1 - see the comment there.
+						# [offensive-posture] same hysteresis as level 1 - see the comment there.
 						OR = {
 							check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
 							AND = {
@@ -622,7 +622,7 @@ WA_AI_MILITARY_update_posture = {
 #	Reset posture to hold
 #	ROOT = country scope
 #
-#	Fix 43: this used to zero only the aggregate, on the argument that per-enemy
+#	[aifc] this used to zero only the aggregate, on the argument that per-enemy
 #	WA_AI_MILITARY_posture_vs_<TAG> entries cannot be enumerated (tag-substituted names) and that
 #	consumers gating on has_war_with make stale entries inert. That argument holds for the PEACE path
 #	and not for the HARD BRAKE path - under the brake we are still at war with exactly the enemies whose

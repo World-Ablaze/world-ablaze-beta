@@ -5,49 +5,37 @@
 
 ### functions for AI construction
 
-# Fix 88: breadth-first placement in the shared-slot queues.
-# The engine merges same-(state, building) adds into ONE construction line (amount = N); a line
-# takes at most MAX_CIV_FACTORIES_PER_LINE (WA: 20) civilian factories and builds its levels
-# serially. Every WA_AI_queue_<X> used to break on the first eligible state of the score-sorted
-# array, so a burst of N calls became one slow line instead of N parallel ones (reporter: "US has
-# ~20 parallel lines, I queued 20 alu mills and it occupies 2 or 3").
-# Each queue function now makes ONE walk over WA_AI_shared_slot_scores and classifies every
-# eligible state (WA_AI_bf_consider) into four tiers, best first:
+# [pc-queue] breadth-first placement in the shared-slot queues.
+# Engine fact this rests on: the engine merges same-(state, building) adds into ONE construction line
+# (amount = N); a line takes at most MAX_CIV_FACTORIES_PER_LINE (WA: 20) civilian factories and builds
+# its levels SERIALLY. Breaking on the first eligible state of the score-sorted array therefore turned
+# a burst of N calls into one slow line instead of N parallel ones.
+# Each queue function makes ONE walk over WA_AI_shared_slot_scores and classifies every eligible state
+# (WA_AI_bf_consider) into four tiers, best first:
 #   A  rank < K, under the per-line depth cap, not yet picked this pulse   -> the normal spread
 #   B  rank < K, under depth, already picked this pulse                    -> every top-K state has
 #      one; wrap around (picked set is cleared, round-robin restarts)
 #   C  rank < K, over depth, not yet picked                                -> the depth cap is a
 #      PREFERENCE, not a wall: a burst bigger than K x depth keeps spreading
-#   D  first eligible state in score order, whatever its depth/picked state -> exactly what the
-#      pre-Fix-88 loop picked, so no country can ever build LESS than before (picked set cleared)
+#   D  first eligible state in score order, whatever its depth/picked state -> the plain first-fit
+#      pick, so no country can ever build LESS than before (picked set cleared)
 # The first tier-A hit ends the walk (the array is score-sorted, so it is the best). K =
 # ceil((civs - civs already assigned to priority construction) / @WA_AI_BF_CIVS_PER_LINE), clamped
 # to [1, @WA_AI_BF_MAX_K] = the lines the country can actually feed. WA_AI_bf_k is kept FRACTIONAL
 # (9.15, 12.8 ...): the walk compares `_wa_bf_rank_ < WA_AI_bf_k` with an integer rank, which IS the
-# ceiling - and the WA_TLM_sq_k / _k_max gauges copy it as-is, so read them as ceil(). Score order still decides
-# WHICH K states are candidates; breadth only decides how a burst spreads among them. All eight
-# shared-slot types (CIC/MIC/NIC + the five refineries) carry the Fix 81 sum WA_AI_committed_<X>
-# and a depth trigger WA_AI_queue_depth_ok_<X> (WA_AI_CONSTRUCTION_triggers.txt). Not applied to
-# the non-shared queues (RADAR/AIR/AA/SILO/INF): different arrays, small caps - out of scope.
+# ceiling - and the WA_TLM_sq_k / _k_max gauges copy it as-is, so read them as ceil(). Score order
+# still decides WHICH K states are candidates; breadth only decides how a burst spreads among them.
+# All eight shared-slot types (CIC/MIC/NIC + the five refineries) carry the [refineries] sum
+# WA_AI_committed_<X> and a depth trigger WA_AI_queue_depth_ok_<X> (WA_AI_CONSTRUCTION_triggers.txt).
+# Not applied to the non-shared queues (RADAR/AIR/AA/SILO/INF): different arrays, small caps.
 # WA_AI_bf_k, WA_AI_bf_picked_<X> and every _wa_bf_* are TEMP (execution-scoped = one event fire =
-# one burst). The selection loop breaks on its own _wa_bf_break_; the plain `break = 1` is still set
-# on every add so the downstream contract (queue_INF fallback, MIC-replacement legs, R48 save/
-# restore) is unchanged whatever the engine does with `break` on loop entry.
+# one burst). The selection loop breaks on its own _wa_bf_break_ and never reads the plain `break` on
+# entry; the plain `break = 1` is still set on every add so the downstream contract (queue_INF
+# fallback, MIC-replacement legs) is unchanged whatever the engine does with `break` on loop entry.
 # Cadence: C.10 is gated on idle civs > 1 AND re-arms for 75-1000 days after a firing, so absorbing
-# more idle civs per firing does not lower the firing rate. Timeline, 300-civ major (K = 15), one
-# C.10 firing with 20 CIC calls: t0 old = 1 line x 20 civs (20 serial builds), new = 15 lines x 20
-# civs then wrap; t1 (next day) old: idle civs > 1 but the timer blocks C.10 anyway; t2 = first
-# completion: old 1 CIC, new 15. Same civs, same firings, ~K x the throughput. A 25-civ minor has
-# K = 2 and behaves almost as before. Bulk fire_only_once bursts are the largest change: WA_AI_C.72
-# (USA 1940.7, 354 MIC calls) goes from ~8 lines to up to 20 - the build order's intent (its author
-# is the reporter); priority construction keeps its floored share (Fix 40 stable base, 30% of civs)
-# and K is computed net of the civs PC already holds: USA 1940.7 ~350 civs, ~35% on PC -> K =
-# ceil(227 / 20) = 12 lines x 20 = 240 civs for the standard queue, never the whole pool. The old
-# "~8 lines" for C.72 is an estimate (354 / cap 45), not a measured baseline - R53 measures both.
-# Loop-entry `break` semantics: the R48 comment says a stale `break = 1` aborts a following queue
-# call; the cut-3 save BHU_1941_06_14_15 shows C.63's five consecutive WA_AI_queue_AR calls landing
-# 4+1 levels, i.e. the loop DID run five times. v2 does not depend on either reading: the selection
-# walk breaks on its own _wa_bf_break_ and never reads the plain `break` on entry.
+# more idle civs per firing does not lower the firing rate. Priority construction keeps its floored
+# share ([refineries] stable base) and K is computed net of the civs PC already holds, so even a bulk
+# fire_only_once burst never takes the whole pool.
 # num_of_civilian_factories (TOTAL) minus WA_AI_PC_assigned_factories_total on purpose - the idle
 # reading *_available_for_projects sits at ~0 once the vanilla queue saturates (see lessons-log).
 # Telemetry: WA_TLM_sq_* (standing, family "sq" = standard queue) - see WA_TLM_core.txt / doc 6d.
@@ -62,11 +50,11 @@
 
 # ROOT = THIS = country. Computes WA_AI_bf_k once per pulse (same "compute if 0" idiom as
 # WA_AI_has_shared_slot_scores).
-### PC constants read by the queue functions in this file - budgets (Fix 90 / 90b:
-### constant:wa_ai_pc.qmax.inf_resource / .mic_to_cic), the scoped type-1 strategy tag
+### PC constants read by the queue functions in this file - the budgets
+### (constant:wa_ai_pc.qmax.inf_resource / .mic_to_cic), the scoped type-1 strategy tag
 ### (constant:wa_ai_pc.type_id.inf_resource, one numbering space with strategies.txt and the railway
-### files) and the Fix 41 bands (constant:wa_ai_pc.prio.strategic / .default, bare literals until
-### 2026-08-16) - are HOI4 script constants in common/script_constants/wa_ai_pc.txt.
+### files) and the [pc-queue] priority bands (constant:wa_ai_pc.prio.strategic / .default) - are HOI4
+### script constants in common/script_constants/wa_ai_pc.txt.
 
 WA_AI_queue_breadth_prepare = {
 	if = { limit = { check_variable = { WA_AI_bf_k = 0 } }
@@ -85,7 +73,7 @@ WA_AI_bf_select_begin = {
 	set_temp_variable = { _wa_bf_b_ = 0 }
 	set_temp_variable = { _wa_bf_c_ = 0 }
 	set_temp_variable = { _wa_bf_d_ = 0 }
-	# found flags: THIS.id is a scope-encoded reference (can be negative - Fix 51 lesson), so the id
+	# found flags: THIS.id is a scope-encoded reference and can be negative, so the id
 	# temporaries above are only ever used with var: / is_in_array, never compared numerically.
 	set_temp_variable = { _wa_bf_a_found_ = 0 }
 	set_temp_variable = { _wa_bf_b_found_ = 0 }
@@ -165,7 +153,7 @@ WA_AI_queue_CIC = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
+	# [pc-queue] breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -173,7 +161,7 @@ WA_AI_queue_CIC = {
 			limit = {
 				WA_AI_available_SHARED = yes
 				infrastructure > 3
-				WA_AI_available_CIC = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_CIC = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_CIC = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -188,7 +176,7 @@ WA_AI_queue_CIC = {
 		var:_wa_bf_target_ = { WA_AI_add_CIC = yes }
 		add_to_temp_array = { WA_AI_bf_picked_CIC = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { limit = { check_variable = { break = 0 } }
@@ -203,14 +191,13 @@ WA_AI_queue_CIC_2 = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				WA_AI_available_SHARED = yes
-				WA_AI_available_CIC = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_CIC = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_CIC = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -225,19 +212,17 @@ WA_AI_queue_CIC_2 = {
 		var:_wa_bf_target_ = { WA_AI_add_CIC = yes }
 		add_to_temp_array = { WA_AI_bf_picked_CIC = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 }
 
 # military factories
-# Fix 39: when the country is industrially overextended (WA_AI_industry_overextended,
-# hysteresis flag maintained monthly by WA_AI_update_industry_overextension in
-# WA_AI_misc_effects.txt) additional MICs buy ~zero throughput (campaign 31eaf7e6:
-# ENG went 379->429 active mil lines 1943.6->1944.6 while running deficits on 5
-# resources). Substitute instead of queueing the MIC - see WA_AI_overext_substitute_MIC
-# below. Callers, all safe to substitute at the funnel: WA_AI_C.0 startup bootstrap
-# (the flag cannot be set before the first monthly evaluation, and a mid-game
-# re-fire under overextension SHOULD substitute), WA_AI_C.10 recurring construction
+# [overextension-brake] when the country is industrially overextended (WA_AI_industry_overextended,
+# the hysteresis flag maintained monthly by WA_AI_update_industry_overextension in
+# WA_AI_misc_effects.txt) additional MICs buy ~zero throughput, so substitute instead of queueing the
+# MIC - see WA_AI_overext_substitute_MIC below. All callers are safe to substitute at this funnel:
+# the WA_AI_C.0 startup bootstrap (the flag cannot be set before the first monthly evaluation, and a
+# mid-game re-fire under overextension SHOULD substitute), the WA_AI_C.10 recurring construction
 # branches, and the WA_AI_queue_NIC no-coastal-slot fallback below.
 WA_AI_queue_MIC = {
 
@@ -252,7 +237,6 @@ WA_AI_queue_MIC = {
 			WA_AI_get_shared_slot_scores = yes
 		}
 
-		# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 		WA_AI_queue_breadth_prepare = yes
 		WA_AI_bf_select_begin = yes
 		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -260,7 +244,7 @@ WA_AI_queue_MIC = {
 				limit = {
 					WA_AI_available_SHARED = yes
 					infrastructure > 3
-					WA_AI_available_MIC = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+					WA_AI_available_MIC = yes # [pc-queue] state cap incl. queued
 				}
 				set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 				if = { limit = { WA_AI_queue_depth_ok_MIC = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -275,7 +259,7 @@ WA_AI_queue_MIC = {
 			var:_wa_bf_target_ = { WA_AI_add_MIC = yes }
 			add_to_temp_array = { WA_AI_bf_picked_MIC = _wa_bf_target_ }
 			WA_AI_bf_record = yes
-			set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+			set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 		}
 
 		if = { limit = { check_variable = { break = 0 } }
@@ -285,21 +269,17 @@ WA_AI_queue_MIC = {
 	}
 }
 
-# Fix 39: substitution cascade for WA_AI_queue_MIC under industry overextension.
+# [overextension-brake] substitution cascade for WA_AI_queue_MIC under industry overextension.
 # THIS = ROOT = country (same scope contract as WA_AI_queue_MIC).
-# Refinery leg gates: synth tech researched; input self-sufficiency on coal (same
-# form as WA_AI_build_refinery_resource_shortage_rubber - refineries eat 60 coal/
-# level, only build on domestic coal); economy law at war economy or above
-# (WA economy ladder in common/ideas/_economic.txt: undisturbed_isolation <
-# isolation < civilian_economy < low_economic_mobilisation <
-# partial_economic_mobilisation < war_economy < tot_economic_mobilisation <
-# over_mobilisation). Dedup: the refinery leg is skipped while a type-8 (synthetic
-# refinery) project already sits in WA_AI_PC_queue, so the cascade cannot pile on
-# top of WA_AI_build_refinery_resource_shortage_rubber's own type-8 queueing; the
-# per-state same-type check inside WA_AI_PC_can_build_project still applies below.
-# If the refinery leg does not start a project (queue unchanged - no eligible
-# state), falls through to the CIC leg: a substituted call never builds nothing
-# beyond what WA_AI_queue_CIC itself guarantees (it has its own INF fallback).
+# Refinery leg gates: synth tech researched; coal self-sufficiency (same form as
+# WA_AI_build_refinery_resource_shortage_rubber - refineries eat 60 coal/level, so only build on
+# domestic coal); economy law at war_economy or above (WA ladder in common/ideas/_economic.txt).
+# Dedup: the refinery leg is skipped while a type-8 (synthetic refinery) project already sits in
+# WA_AI_PC_queue, so the cascade cannot pile on top of
+# WA_AI_build_refinery_resource_shortage_rubber's own type-8 queueing; the per-state same-type check
+# inside WA_AI_PC_can_build_project still applies below. If the refinery leg starts nothing (queue
+# unchanged - no eligible state) it falls through to the CIC leg, so a substituted call never builds
+# less than WA_AI_queue_CIC itself guarantees (which has its own INF fallback).
 # Debug counters (persistent country variables, savegame-visible):
 #   WA_AI_overext_dbg_mic_redirects_refinery, WA_AI_overext_dbg_mic_redirects_cic
 WA_AI_overext_substitute_MIC = {
@@ -355,14 +335,13 @@ WA_AI_queue_MIC_2 = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				WA_AI_available_SHARED = yes
-				WA_AI_available_MIC = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_MIC = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_MIC = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -377,7 +356,7 @@ WA_AI_queue_MIC_2 = {
 		var:_wa_bf_target_ = { WA_AI_add_MIC = yes }
 		add_to_temp_array = { WA_AI_bf_picked_MIC = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 }
 
@@ -389,7 +368,6 @@ WA_AI_queue_NIC = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -397,7 +375,7 @@ WA_AI_queue_NIC = {
 			limit = {
 				is_coastal = yes
 				WA_AI_available_SHARED = yes
-				WA_AI_available_NIC = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_NIC = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_NIC = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -412,7 +390,7 @@ WA_AI_queue_NIC = {
 		var:_wa_bf_target_ = { WA_AI_add_NIC = yes }
 		add_to_temp_array = { WA_AI_bf_picked_NIC = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { limit = { check_variable = { break = 0 } }
@@ -429,7 +407,6 @@ WA_AI_queue_REF = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -438,7 +415,7 @@ WA_AI_queue_REF = {
 				# is_core_of = ROOT
 				WA_AI_available_REF = yes
 				WA_AI_available_SHARED = yes
-				WA_AI_available_REF = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_REF = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_REF = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -453,7 +430,7 @@ WA_AI_queue_REF = {
 		var:_wa_bf_target_ = { WA_AI_add_REF = yes }
 		add_to_temp_array = { WA_AI_bf_picked_REF = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { # replace MIC if slots are maxed out
@@ -544,15 +521,11 @@ WA_AI_queue_INF_resource = {
 		WA_AI_get_resource_slot_scores = yes
 	}
 
-	# Fix 90b (2026-08-16): this vanilla build-list function used to double-admit into the PC -
-	# `if { active_nonrail < 5 AND WA_AI_PC_can_afford_project } WA_AI_priority_queue_INF_resource
-	# else <vanilla add>` - both gates being the pre-2026-01 engine's admission pair (see the
-	# epitaph in WA_AI_CONSTRUCTION_triggers.txt). The PC route already has an owner: the dispatcher
-	# strategy WA_AI_resource_extraction (every 2 days, floored civ gate, needs = 3) calls the same
-	# WA_AI_priority_queue_INF_resource. So this function now does what its caller (WA_AI_C.10)
-	# asks of it - one vanilla infrastructure add per call - and never skips it in favour of a PC
-	# project. C.10 fires only with spare vanilla civs, which is exactly the regime a vanilla add
-	# is for.
+	# [refineries] one vanilla infrastructure add per call, never a PC project. The PC route already
+	# has an owner: the dispatcher strategy WA_AI_resource_extraction (every 2 days, floored civ gate,
+	# needs = 3) calls WA_AI_priority_queue_INF_resource itself, and double-admitting here meant this
+	# function skipped the vanilla add its caller asked for. WA_AI_C.10 fires only with spare vanilla
+	# civs, which is exactly the regime a vanilla add is for.
 	for_each_scope_loop = { array = WA_AI_resource_slot_scores
 
 		if = {
@@ -578,11 +551,10 @@ WA_AI_priority_queue_INF_resource = {
 	set_temp_variable = { _project_province_id = 0 }
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.default }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 90: explicit budget - this function used to be bounded only by the dispatcher's legacy < 5 gate.
-	# Fix 90b: scoped to its own type_id - WA_AI_build_supply_line also creates building type 1
-	# (type_id 24); unscoped, the two budgets counted each other's projects. _project_queue_max_scoped
-	# is clear-on-read in WA_AI_PC_start_project (armed right before the single call below);
-	# _project_type_id persists and is retired at the end of this function.
+	# [refineries] explicit budget, scoped to its own type_id: WA_AI_build_supply_line also creates
+	# building type 1 (type_id 24), and unscoped the two budgets counted each other's projects.
+	# _project_queue_max_scoped is clear-on-read in WA_AI_PC_start_project (armed right before the
+	# single call below); _project_type_id persists and is retired at the end of this function.
 	set_temp_variable = { _project_queue_max = constant:wa_ai_pc.qmax.inf_resource }
 	set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.inf_resource }
 	set_temp_variable = { _project_target_state = 0 }
@@ -610,7 +582,6 @@ WA_AI_queue_HSR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -619,7 +590,7 @@ WA_AI_queue_HSR = {
 				# is_core_of = ROOT
 				WA_AI_available_HSR = yes
 				WA_AI_available_SHARED = yes
-				WA_AI_available_HSR = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_HSR = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_HSR = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -634,7 +605,7 @@ WA_AI_queue_HSR = {
 		var:_wa_bf_target_ = { WA_AI_add_HSR = yes }
 		add_to_temp_array = { WA_AI_bf_picked_HSR = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { # replace MIC if slots are maxed out
@@ -675,7 +646,6 @@ WA_AI_queue_SR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -684,7 +654,7 @@ WA_AI_queue_SR = {
 				# is_core_of = ROOT
 				WA_AI_available_SR = yes
 				WA_AI_available_SHARED = yes
-				WA_AI_available_SR = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_SR = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_SR = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -699,7 +669,7 @@ WA_AI_queue_SR = {
 		var:_wa_bf_target_ = { WA_AI_add_SR = yes }
 		add_to_temp_array = { WA_AI_bf_picked_SR = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { # replace MIC if slots are maxed out
@@ -740,16 +710,15 @@ WA_AI_queue_HAR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 		if = {
 			limit = {
 				# is_core_of = ROOT
-				WA_AI_available_HAR = yes # Fix 81: was WA_AI_available_REF (copy-paste) - gated HAR on the synth-refinery slot check
+				WA_AI_available_HAR = yes # [refineries] HAR's own slot test, not REF
 				WA_AI_available_SHARED = yes
-				WA_AI_available_HAR = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_HAR = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_HAR = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -764,7 +733,7 @@ WA_AI_queue_HAR = {
 		var:_wa_bf_target_ = { WA_AI_add_HAR = yes }
 		add_to_temp_array = { WA_AI_bf_picked_HAR = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { # replace MIC if slots are maxed out
@@ -805,7 +774,6 @@ WA_AI_queue_AR = {
 		WA_AI_get_shared_slot_scores = yes
 	}
 
-	# Fix 88: breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
 	WA_AI_queue_breadth_prepare = yes
 	WA_AI_bf_select_begin = yes
 	for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
@@ -814,7 +782,7 @@ WA_AI_queue_AR = {
 				# is_core_of = ROOT
 				WA_AI_available_AR = yes
 				WA_AI_available_SHARED = yes
-				WA_AI_available_AR = yes # Fix 88: state cap incl. queued (Fix 81 sum)
+				WA_AI_available_AR = yes # [pc-queue] state cap incl. queued
 			}
 			set_temp_variable = { _wa_bf_depth_ok_ = 0 }
 			if = { limit = { WA_AI_queue_depth_ok_AR = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
@@ -829,7 +797,7 @@ WA_AI_queue_AR = {
 		var:_wa_bf_target_ = { WA_AI_add_AR = yes }
 		add_to_temp_array = { WA_AI_bf_picked_AR = _wa_bf_target_ }
 		WA_AI_bf_record = yes
-		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs, R48)
+		set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 	}
 
 	if = { # replace MIC if slots are maxed out
@@ -936,31 +904,24 @@ WA_AI_queue_AA = {
 # mil to civ conversion
 WA_AI_priority_convert_MIC_to_CIC = {
 
-	# Fix 90b (2026-08-16): the brake on industry conversion is the explicit budget below, nothing
-	# else. Callers: the MIC->CIC else_if legs of WA_AI_build_refinery_resource_shortage_steel /
-	# _aluminium (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt) - reached only with shortage_months = 3,
-	# mil share > 0.4 and no free shared slot anywhere. Until today those legs were gated by
-	# WA_AI_PC_can_afford_project (Fix 40 kept it there so the conversion "could not widen as a side
-	# effect") and this function by its own `active_nonrail < 5` - both halves of the pre-2026-01
-	# engine's admission gate, both deleted. can_afford was dead on saturated majors (the countries
-	# that meet the mil-share / no-slot terms) and redundant on slack ones (a band-100 project is
-	# funded iff the pool has slack after the higher bands - the fill's own answer). What bounds
-	# conversion now:
-	#   - constant:wa_ai_pc.qmax.mic_to_cic = 1 : ONE type-9 project in flight per country, across both callers
-	#     (unscoped budget over building type 9, whose only creator is this function);
+	# [refineries] the brake on industry conversion is the explicit budget below, nothing else.
+	# Callers: the MIC->CIC else_if legs of WA_AI_build_refinery_resource_shortage_steel / _aluminium
+	# (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt), reached only with shortage_months = 3, mil share
+	# > 0.4 and no free shared slot anywhere. What bounds conversion:
+	#   - constant:wa_ai_pc.qmax.mic_to_cic = 1 : ONE type-9 project in flight per country, across both
+	#     callers (unscoped budget over building type 9, whose only creator is this function);
 	#   - the MIC is removed at COMPLETION (WA_AI_PC_complete_project), never at admission - a queued
 	#     project that the fill never funds removes nothing;
-	#   - band 100 (constant:wa_ai_pc.prio.default): on a saturated major (ENG-like: pool eaten by rail/air) it
-	#     never funds - it sits 30 weeks, the stall sweep drops it, the leg re-queues it 2 days
-	#     later, forever: a permanent 1-slot clutter, MIC count unchanged. Do NOT read this leg as
-	#     the industry-overextension lever - it is inert exactly where overextension lives.
+	#   - band 100 (constant:wa_ai_pc.prio.default): on a saturated major (pool eaten by rail/air) it
+	#     never funds - it sits 30 weeks, the stall sweep drops it, the leg re-queues it 2 days later,
+	#     forever: a permanent 1-slot clutter, MIC count unchanged. Do NOT read this leg as the
+	#     industry-overextension lever - it is inert exactly where overextension lives.
 	#   - on a slack country: funded at <= 20 civs, ~80 days per 8000-IC conversion, so at most one
-	#     MIC -> CIC per ~3 months while shortage = 3 AND mil share > 0.4 AND no free slot persist;
-	#     each conversion lowers the mil share toward the 0.4 floor, which ends it.
-	# This function never set _project_queue_max before (it inherited 2 or 3 from whichever strategy
-	# ran last - the Fix 40 leak) nor zeroed target_state / target_level / type_id (a leaked type_id
-	# 24/25 would now eat a scoped budget of exactly 1) - same leak hygiene as the refinery
-	# functions below.
+	#     MIC -> CIC per ~3 months while the three caller conditions persist; each conversion lowers the
+	#     mil share toward the 0.4 floor, which ends it.
+	# Sets _project_queue_max and zeroes target_state / target_level / type_id explicitly: these temps
+	# are shared with every other PC caller, so an inherited value silently rebudgets or redirects the
+	# project - same leak hygiene as the refinery functions below.
 	if = { limit = { check_variable = { WA_AI_has_mil_to_civ_conversion_slot_scores = 0 } }
 
 		WA_AI_get_mil_to_civ_conversion_slot_scores = yes
@@ -985,85 +946,60 @@ WA_AI_priority_convert_MIC_to_CIC = {
 	}
 }
 
-# Fix 40 (campaign 31eaf7e6) - three changes shared by all five refinery queue
-# functions below (types 8 synthetic / 11 hydro steel / 12 hydro aluminium /
-# 15 steel / 16 aluminium; mapping per WA_AI_PC_get_build_speed and
-# WA_AI_PC_get_building_cost in WA_AI_CONSTRUCTION_PRIORITY_core.txt):
+# [refineries] shared by all five refinery queue functions below (types 8 synthetic / 11 hydro steel /
+# 12 hydro aluminium / 15 steel / 16 aluminium; mapping per WA_AI_PC_get_build_speed and
+# WA_AI_PC_get_building_cost in WA_AI_CONSTRUCTION_PRIORITY_core.txt).
+# THIS = ROOT = country for all five (called from WA_AI_build_refinery_resource_shortage_* and, for
+# the synthetic one, from WA_AI_overext_substitute_MIC).
 #
-# 1. FILTERED DRAW. The old form was a BARE random_scope_in_array over
-#    controlled_states with the eligibility test in an inner `if`: the engine drew
-#    ONE state per pulse and then usually discarded it, so the hit rate was
-#    (eligible states / controlled states) - under 9% for a 1943 ENG holding tens
-#    of controlled states with a handful of buildable ones. The tests now live in
-#    `limit`, the engine's own filtered form (same shape as the radar strategy in
-#    WA_AI_CONSTRUCTION_PRIORITY_strategies.txt), so the draw can only land on an
-#    eligible state.
+# 1. FILTERED DRAW. The eligibility tests live in `limit`, the engine's own filtered form (same shape
+#    as the radar strategy in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt), never in an inner `if`: a
+#    bare random_scope_in_array over controlled_states draws ONE state per pulse and then usually
+#    discards it, so the hit rate is (eligible states / controlled states) - under 9% for a major
+#    holding tens of controlled states with a handful of buildable ones.
 #
-# 2. EXPLICIT _project_queue_max = 1. These functions set _project_queue_num but
-#    never _project_queue_max, so WA_AI_PC_start_project inherited whatever an
-#    earlier caller left in that shared temp variable (3 from the two air
-#    strategies, 5 from the railway core, 0 = unlimited from the railway helpers).
-#    One refinery project of a given type in flight per country is the intended
-#    budget, and it is now also what bounds these strategies, which since Fix 40
-#    run outside the dispatcher's affordability gate. _project_target_state and
-#    _project_target_level are zeroed in the same spirit: a stale non-zero
-#    target_state would redirect the project to an entirely unrelated state.
+# 2. EXPLICIT _project_queue_max = 1, plus zeroed _project_target_state / _project_target_level.
+#    These temps are shared with every other PC caller: without the explicit set,
+#    WA_AI_PC_start_project inherits whatever ran last (3 from the two air strategies, 5 from the
+#    railway core, 0 = unlimited from the railway helpers), and a stale non-zero target_state
+#    redirects the project to an entirely unrelated state. One refinery project of a given type in
+#    flight per country is the intended budget.
 #
-# 3. TWO-PASS SITE SELECTION. Pass 1 keeps the historical home-area criterion
-#    (WA_AI_refinery_region_priority - a thin wrapper over WA_AI_region_priority,
-#    so SOV/CHI keep their central-Russia / western-China rule). If pass 1 queued
-#    nothing - detected by queue growth, the same idiom Fix 39 uses in
-#    WA_AI_overext_substitute_MIC above - pass 2 retries over the widened set
-#    (WA_AI_refinery_region_priority_wide: ROOT-owned and not on a hostile
-#    border). A saturated home area was the second reason ENG never built a
-#    refinery: every home-area state already held one or had no free shared slot.
+# 3. TWO-PASS SITE SELECTION. Pass 1 keeps the home-area criterion (WA_AI_refinery_region_priority - a
+#    thin wrapper over WA_AI_region_priority, so SOV/CHI keep their central-Russia / western-China
+#    rule). If pass 1 queued nothing - detected by queue growth, the same idiom
+#    [overextension-brake] uses in WA_AI_overext_substitute_MIC above - pass 2 retries over the
+#    widened set (WA_AI_refinery_region_priority_wide: ROOT-owned and not on a hostile border). A
+#    saturated home area otherwise means a country never places a refinery at all.
 #
-# Contract preserved for Fix 39: a successful queue is still visible as growth of
-# WA_AI_PC_queue within the same call, so WA_AI_overext_substitute_MIC's
-# before/after delta around WA_AI_priority_queue_synthetic_refinery still detects
-# success (both passes end in WA_AI_PC_start_project, which is what grows it).
+# Contract preserved for [overextension-brake] a successful queue is still visible as growth of
+# WA_AI_PC_queue within the same call, so WA_AI_overext_substitute_MIC's before/after delta around
+# WA_AI_priority_queue_synthetic_refinery still detects success (both passes end in
+# WA_AI_PC_start_project, which is what grows it).
 #
-# THIS = ROOT = country for all five (called from
-# WA_AI_build_refinery_resource_shortage_* and, for the synthetic one, from
-# WA_AI_overext_substitute_MIC).
-#
-# Fix 90 (2026-08-16, campaign af003548): the `ROOT.WA_AI_PC_active_nonrail_projects < 5`
-# gate these five functions (and the three strategies that call them) carried is REMOVED.
-# It was the admission cap of the PRE-2026-01 priority-construction engine, whose project
-# list was a fixed 5-slot array (`resize_array = { array = WA_AI_PC_project_array size = 5 }`
-# in the pre-38d57a137 WA_AI_CONSTRUCTION_effects.txt) - `< 5` meant "a slot is free". The
-# dynamic queue replaced the array; Fix 29b made the count non-rail; nothing ever made it
-# band-aware, so it counted default-band radars against a strategic-band refinery. Measured
-# on af003548: the USA's PC queue held 5-8 non-rail projects (4-6 radars) at every anchor
-# 1941.6-1945.6 and built ZERO refinery levels of any type through the PC in ten years
-# (built_by_type^8/11/12/15/16 absent) while its rubber ran -400 to -530. The two air
-# strategies had already bypassed the same gate for the same reason (Fix 47 / Fix 85).
-# What still bounds these functions: _project_queue_max = 1 per type (at most five refinery
-# projects of any kind in flight per country, ~100 civs), the shortage_months = 3 requirement,
-# the coal guard, WA_AI_PC_has_project_civs_20, and the sorted fill (band 250 sits below air
-# 300 and rail 500/1000, above the default band). Pre-registered cost, from the af003548
-# ledger: the USA's tail radar projects (12-20 civs each) at band 100. The dispatcher's own
-# `< 5` in WA_AI_priority_construction_strategies is gone too; every default-band strategy
-# now carries an explicit _project_queue_max (radar 3, supply lines 3, resource infra 2,
-# islands 2 per building type on their own type_id, MIC->CIC conversion 1) - see the note there.
+# There is deliberately NO admission-count gate here or in the three strategies that call these
+# functions. What bounds them: _project_queue_max = 1 per type (at most five refinery projects of any
+# kind in flight per country, ~100 civs), the shortage_months = 3 requirement, the coal guard,
+# WA_AI_PC_has_project_civs_20, and the sorted fill (band 250 sits below air 300 and rail 500/1000,
+# above the default band). Every default-band strategy carries its own explicit _project_queue_max.
 
 WA_AI_priority_queue_synthetic_refinery = {
 
 
 	set_temp_variable = { _project_building_type = 8 }
 	set_temp_variable = { _project_province_id = 0 }
-	# Fix 41: strategic band (250) - a shortage-driven refinery outranks default-100
+	# [pc-queue] strategic band (250) - a shortage-driven refinery outranks default-100
 	# projects but never a war railway; band table in WA_AI_CONSTRUCTION_PRIORITY_core.txt
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	# [refineries] explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
 	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-	# Fix 40 pass 1 - preferred sites (filtered draw)
+	# [refineries] pass 1 - preferred sites (filtered draw)
 	random_scope_in_array = { array = controlled_states
 		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
@@ -1071,7 +1007,7 @@ WA_AI_priority_queue_synthetic_refinery = {
 		set_temp_variable = { break = 1 }
 	}
 
-	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	# [refineries] pass 2 - widened sites, only when pass 1 queued nothing
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
 
 		random_scope_in_array = { array = controlled_states
@@ -1088,17 +1024,17 @@ WA_AI_priority_queue_hydro_steel_refinery = {
 
 	set_temp_variable = { _project_building_type = 11 }
 	set_temp_variable = { _project_province_id = 0 }
-	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	# [pc-queue] strategic band (250) - see the synthetic-refinery note above
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	# [refineries] explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
 	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-	# Fix 40 pass 1 - preferred sites (filtered draw)
+	# [refineries] pass 1 - preferred sites (filtered draw)
 	random_scope_in_array = { array = controlled_states
 		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
@@ -1106,7 +1042,7 @@ WA_AI_priority_queue_hydro_steel_refinery = {
 		set_temp_variable = { break = 1 }
 	}
 
-	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	# [refineries] pass 2 - widened sites, only when pass 1 queued nothing
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
 
 		random_scope_in_array = { array = controlled_states
@@ -1123,17 +1059,17 @@ WA_AI_priority_queue_hydro_aluminium_refinery = {
 
 	set_temp_variable = { _project_building_type = 12 }
 	set_temp_variable = { _project_province_id = 0 }
-	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	# [pc-queue] strategic band (250) - see the synthetic-refinery note above
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	# [refineries] explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
 	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-	# Fix 40 pass 1 - preferred sites (filtered draw)
+	# [refineries] pass 1 - preferred sites (filtered draw)
 	random_scope_in_array = { array = controlled_states
 		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
@@ -1141,7 +1077,7 @@ WA_AI_priority_queue_hydro_aluminium_refinery = {
 		set_temp_variable = { break = 1 }
 	}
 
-	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	# [refineries] pass 2 - widened sites, only when pass 1 queued nothing
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
 
 		random_scope_in_array = { array = controlled_states
@@ -1158,17 +1094,17 @@ WA_AI_priority_queue_steel_refinery = {
 
 	set_temp_variable = { _project_building_type = 15 }
 	set_temp_variable = { _project_province_id = 0 }
-	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	# [pc-queue] strategic band (250) - see the synthetic-refinery note above
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	# [refineries] explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
 	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-	# Fix 40 pass 1 - preferred sites (filtered draw)
+	# [refineries] pass 1 - preferred sites (filtered draw)
 	random_scope_in_array = { array = controlled_states
 		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
@@ -1176,7 +1112,7 @@ WA_AI_priority_queue_steel_refinery = {
 		set_temp_variable = { break = 1 }
 	}
 
-	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	# [refineries] pass 2 - widened sites, only when pass 1 queued nothing
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
 
 		random_scope_in_array = { array = controlled_states
@@ -1193,17 +1129,17 @@ WA_AI_priority_queue_aluminium_refinery = {
 
 	set_temp_variable = { _project_building_type = 16 }
 	set_temp_variable = { _project_province_id = 0 }
-	# Fix 41: strategic band (250) - see the synthetic-refinery note above
+	# [pc-queue] strategic band (250) - see the synthetic-refinery note above
 	set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.strategic }
 	set_temp_variable = { _project_queue_num = 1 }
-	# Fix 40: explicit bounds / leak hygiene - see the header note above
+	# [refineries] explicit bounds / leak hygiene - see the header note above
 	set_temp_variable = { _project_queue_max = 1 }
 	set_temp_variable = { _project_target_state = 0 }
 	set_temp_variable = { _project_target_level = 0 }
 
 	set_temp_variable = { _refinery_q_before_ = WA_AI_PC_queue^num }
 
-	# Fix 40 pass 1 - preferred sites (filtered draw)
+	# [refineries] pass 1 - preferred sites (filtered draw)
 	random_scope_in_array = { array = controlled_states
 		limit = { WA_AI_PC_can_build_project = yes WA_AI_refinery_region_priority = yes }
 
@@ -1211,7 +1147,7 @@ WA_AI_priority_queue_aluminium_refinery = {
 		set_temp_variable = { break = 1 }
 	}
 
-	# Fix 40 pass 2 - widened sites, only when pass 1 queued nothing
+	# [refineries] pass 2 - widened sites, only when pass 1 queued nothing
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_queue^num > _refinery_q_before_ } } }
 
 		random_scope_in_array = { array = controlled_states

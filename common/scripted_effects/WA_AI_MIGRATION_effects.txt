@@ -41,18 +41,18 @@
 #	MIGRATION 1 - purge stranded WA_AI_invasions_modifier relation modifiers
 #
 #	Repairs: the pre-Fix-32 permanent naval-invasion attack penalty.
-#	Fix 32 = 76dde84ed (follow-up to 17505d9a9), see events/WA_AI_invasions.txt and
+#	[amphibious-invasion] = 76dde84ed (follow-up to 17505d9a9), see events/WA_AI_invasions.txt and
 #	common/scripted_effects/WA_AI_DIVISION_CREATOR_effects.txt (WA_AI_DIVISION_spawn_invasion).
 #
 #	The bug: WA_AI_DIVISION_spawn_invasion adds `WA_AI_invasions_modifier` (attack_bonus_against = -0.25),
 #	stored INVADER-side (the invader's diplomacy entry toward the target), and schedules WA_AI_invasions.1
-#	to take it off 14 days later. Before Fix 32 that expiry event was fired ON THE TARGET and identified
+#	to take it off 14 days later. Before [amphibious-invasion] that expiry event was fired ON THE TARGET and identified
 #	the invader through FROM - which does not survive a delayed country_event - so its trigger failed
 #	silently and NOTHING was ever removed. Every penalty ever applied in a pre-Fix-32 campaign is still on
 #	the invader, permanently. Observed on campaign 2b607968: GER carrying -25% attack against SOV since
 #	1941, USA/ENG against ITA since Husky, JAP against several Pacific targets.
 #
-#	Why Fix 32 alone cannot heal those saves: the fixed removal path walks the invader's
+#	Why [amphibious-invasion] alone cannot heal those saves: the fixed removal path walks the invader's
 #	WA_AI_invasions_pending_targets array, which is only written at add time by the FIXED code. Pairs
 #	created before the fix have no array entry, so nothing will ever look for them. They need this sweep.
 #
@@ -87,7 +87,7 @@ WA_AI_invasions_migration_1 = {
 	every_country = {
 		# THIS = candidate target. Temp arrays are execution-local, not scope-local, so _mig_scan built
 		# here is visible from the other scopes of this same effect run. (The idiom used to be shown by
-		# `updated_volunteer_targets` in WA_AI_volunteer_effects.txt; Fix 106 deleted that file, so this
+		# `updated_volunteer_targets` in WA_AI_volunteer_effects.txt; [commonwealth-handoff] deleted that file, so this
 		# site is now the reference for it.)
 		add_to_temp_array = { _mig_scan = THIS.id }
 	}

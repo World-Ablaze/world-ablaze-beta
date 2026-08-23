@@ -568,10 +568,10 @@ country_event = {
 	}
 }
 ############################################################################################################
-# Fix 70 (2026-08-14, checklist R31): force the long-range La-5FN into existence.
+# [equipment-selection] (2026-08-14, checklist R31): force the long-range La-5FN into existence.
 #
 # THE PROBLEM THIS SOLVES IS "NEVER CREATED", NOT "CREATED AND NOT SELECTED".
-# Fix 47 added `fighter_mr_7_lr` to common/ai_equipment/SOV_planes.txt - the La-5FN retuned to
+# [equipment-selection] added `fighter_mr_7_lr` to common/ai_equipment/SOV_planes.txt - the La-5FN retuned to
 # 1017 km with `internal_slot_1 = fuel_tanks_medium` and the bomb rack removed - and gated it
 # behind the WA_AI_EQUIPMENT_needs_long_range_air latch. Three campaigns later
 # (bec4d829, 02bd4445, f9321934) the design has never once been instantiated. On f9321934 the
@@ -590,12 +590,12 @@ country_event = {
 # So this creates the variant explicitly, via a scripted `create_equipment_variant` rather
 # than through the `ai_equipment` designer. `fighter_mr_7_lr`'s `target_variant`
 # (match_value 1000) then MATCHES an existing design instead of having to create one, and its
-# Fix 47 priority ladder finally has something to select. The modules below are copied
+# [equipment-selection] priority ladder finally has something to select. The modules below are copied
 # verbatim from that `target_variant` block; if one is ever changed, change both or the match
 # breaks silently.
 #
 # --------------------------------------------------------------------------------------------
-# Fix 79 (2026-08-14, checklist R31): PUT THE TECH GATE BACK. Fix 70 as shipped fired on day ~1
+# [wa-tlm] (2026-08-14, checklist R31): PUT THE TECH GATE BACK. [equipment-selection] as shipped fired on day ~1
 # with `allow_without_tech = yes`, and that token does not only waive the tech for the CREATION
 # - the resulting design is producible. Campaign `be18f9c7` (build d683fb022, 126 saves)
 # measured the consequence: registry id 3207 "Lavochkin La-5FN (long range)" is on the SOV
@@ -613,7 +613,7 @@ country_event = {
 # hedge.
 #
 # WHY THE "CANNOT LOSE THE RACE" ARGUMENT FOR DAY-1 CREATION IS NOT NEEDED - THE SAME CAMPAIGN
-# DISPROVES IT. Fix 70 created the design early because the engine "does not create a second
+# DISPROVES IT. [equipment-selection] created the design early because the engine "does not create a second
 # design on an archetype it already holds one for". `be18f9c7`'s registry holds BOTH ids 3207
 # and 7405 on `SOV_la_5fn_airframe`, and 7405 (short-range, `self_sealing_fuel_tanks_small`) is
 # the LATER id - i.e. the AI designer created its own design on that archetype years after this
@@ -624,7 +624,7 @@ country_event = {
 # unconditional effect.
 #
 # The event still fires from its own `trigger` + `mean_time_to_happen`, i.e. strictly AFTER the
-# tech completes, never in the same instant. That keeps Fix 70's second reason for not using
+# tech completes, never in the same instant. That keeps [equipment-selection]'s second reason for not using
 # `on_research_complete` (which fires for human players too; this event is `is_ai`-gated, so a
 # SOV player's design list is untouched) while removing the first, which no longer applies.
 # Note the LaGG-3 `on_research_complete` site at common/technologies/air_techs_sov.txt:1589
@@ -646,7 +646,7 @@ country_event = {
 
 	fire_only_once = yes
 
-	# Fix 79: BOTH techs below are required, because nothing here waives a module
+	# [wa-tlm] BOTH techs below are required, because nothing here waives a module
 	# tech - `allow_without_tech` never did, and it is gone now.
 	#
 	# SCOPE OF THIS GATE, stated honestly: it covers the airframe and 2 of the
@@ -658,7 +658,7 @@ country_event = {
 	# La-5FN, so this is not a live gap - but on an ahistorical order the effect
 	# can drop a module, the result stops matching fighter_mr_7_lr's
 	# `target_variant`, and `fire_only_once` means there is NO retry. That risk
-	# is strictly lower than Fix 70's (which checked one tech), so it is not a
+	# is strictly lower than [equipment-selection]'s (which checked one tech), so it is not a
 	# regression; do not read this comment as a completeness claim. Widening the
 	# trigger to the full module set is the follow-up if R31's anachronism leg
 	# ever passes while the design leg still finds nothing.
@@ -695,7 +695,7 @@ country_event = {
 			}
 		}
 
-		# WA_TLM (Fix 79, consumer: checklist R31). HONESTY NOTE, read it before scoring:
+		# WA_TLM ([wa-tlm], consumer: checklist R31). HONESTY NOTE, read it before scoring:
 		# create_equipment_variant returns nothing, so this stamps "the event fired and the
 		# effect was INVOKED", NOT "the design exists". That is exactly the discrimination
 		# R31 was missing: stamp 0 + no registry entry = the event never fired (bad trigger);

@@ -3,20 +3,18 @@
 #	Extracted from WA_AI_CONSTRUCTION_PRIORITY_strategies_misc.txt for single responsibility
 ############################################################################################################
 
-### Constants: this file declares none since 2026-08-16 - it reads constant:wa_ai_railway.* (queue
-### size, supply model, scoring costs; common/script_constants/wa_ai_railway.txt) and the PC-wide
+### Constants: this file declares none - it reads constant:wa_ai_railway.* (queue size, supply model,
+### scoring costs; common/script_constants/wa_ai_railway.txt) and the PC-wide
 ### constant:wa_ai_pc.type_id.rail / prio.rail_war / prio.rail_prewar (wa_ai_pc.txt).
-# Fix 77: admission cap on queued type-13 segments, country-wide = constant:wa_ai_railway.routes.queue_full,
-# the SAME key railway_core uses as its recalculation-skip threshold ("a full queue is 12" - it
-# used to be two @ names equal by design). One recalculation used to
-# queue every segment of up to 8 routes at once - campaign be18f9c7 GER 1944.6 queued 80
-# segments in a single pulse, of which at most 5 ever held factories at any moment, and the
-# 12+ queue then locked the skip threshold shut for 6+ months, so route recalculation AND
-# stale-path validation both stopped exactly when the front was moving fastest. The cap keeps the
-# queue at the threshold: it drains below 12 within an interval, so every interval recomputes
-# routes, validates the survivors, and tops back up. Throughput is unchanged - the winner-
-# takes-most allocator never funds more than ~pool/20 segments anyway; segments not admitted
-# this pulse are re-derived from the CURRENT front next pulse instead of rotting in the queue.
+# [pc-queue] admission cap on queued type-13 segments, country-wide =
+# constant:wa_ai_railway.routes.queue_full, the SAME key railway_core uses as its
+# recalculation-skip threshold - they must stay one key. Without the cap one recalculation queues
+# every segment of up to 8 routes at once, which parks the queue above the threshold for months and
+# stops route recalculation AND stale-path validation exactly when the front is moving. Capping at
+# the threshold lets the queue drain below it within an interval, so every interval recomputes,
+# validates and tops back up. Throughput is unchanged - the winner-takes-most allocator never funds
+# more than ~pool/20 segments anyway, and segments not admitted this pulse are re-derived from the
+# CURRENT front next pulse instead of rotting in the queue.
 
 ### Supply-flow model, home-port search, building costs (from 00_buildings.txt, registered
 ### mirrors) and cost estimation: constant:wa_ai_railway.supply.* / .cost.* - see wa_ai_railway.txt.
@@ -395,12 +393,11 @@ WA_AI_PC_railway_state_has_supply_hub = { # THIS = state >>> has_supply_, supply
 WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 	set_temp_variable = { borders_enemy_ = 0 }
 
-	# Fix 24: Check if any of ROOT's owned AND controlled states border the enemy's territory (or enemy's puppets)
-	# Added is_controlled_by check to ensure consistency with frontline detection (which uses controlled states)
-	# This prevents false border detection for states ROOT owns but doesn't control (enemy occupation)
-	# Fix 25: (REVOKED by Fix 27) Originally removed puppet border extension
-	# Fix 27: Re-enabled puppet borders — pathfinder type 2 now traverses puppet provinces (commit 9aef32f41),
-	# and build_railway scripted effects work on any province regardless of controller
+	# [railway-pathfinding] CONTROLLED states, not owned: frontline detection uses controlled states
+	# too, and a state ROOT owns but the enemy occupies is not a border of ours.
+	# Puppet borders are deliberately INCLUDED (below): pathfinder type 2 traverses puppet provinces
+	# and build_railway works on any province regardless of controller. Excluding them was tried and
+	# left subject frontlines (Libya, Egypt, Burma) reading as "we do not border this enemy".
 	every_controlled_state = {
 		limit = {
 			any_neighbor_state = {
@@ -413,7 +410,7 @@ WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 		ROOT = { set_temp_variable = { borders_enemy_ = 1 } }
 	}
 
-	# Fix 27: Also check if ROOT's subjects/puppets border the enemy
+	# [railway-pathfinding] ROOT's subjects/puppets border the enemy on our behalf
 	every_subject_country = {
 		every_controlled_state = {
 			limit = {
@@ -559,11 +556,9 @@ WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, 
 	set_temp_variable = { best_port_state_ = 0 }
 	set_temp_variable = { best_port_supply_ = 0 }
 
-	# Fix 28 searched ROOT's states and then, in a duplicated loop, its subjects'.
-	# Fix 74 folds both into one walk and adds the third population: faction allies that cannot
-	# build their own logistics. Without the ally leg a route TO ally soil is still started from
-	# ROOT's own nearest port - e.g. an ENG route to FRA-held Tunisia would begin at Alexandria
-	# and have to pathfind across Italian Libya, while Bizerte (naval base 5) sits at the target.
+	# [na-corridor] ONE walk over ROOT, its subjects AND faction allies that cannot build their own
+	# logistics. Without the ally leg a route TO ally soil still starts from ROOT's own nearest port
+	# and has to pathfind across the theatre, while the ally's own big port sits at the target.
 	every_country = {
 		limit = { WA_AI_PC_is_logistics_build_partner = yes }
 		every_controlled_state = {
@@ -602,8 +597,8 @@ WA_AI_PC_get_best_port_on_landmass = { # _search_landmass >>> best_port_level_, 
 #	HELPER: Find Best Port Near a Target State (distance-limited)
 #	BFS from target state up to N states, then finds the highest-level controlled port
 #	on the same landmass within that radius. Uses every_controlled_state to include puppets.
-#	Fix 26: Replaces landmass-only search to prevent selecting ports thousands of km away
-#	        (e.g., Singapore for North Africa targets on the Afro-Eurasian mega-landmass)
+#	[railway-pathfinding] the radius is what keeps the port near the target: a landmass-only search
+#	picks ports thousands of km away (Singapore for a North African target on Afro-Eurasia).
 ############################################################################################################
 
 WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_radius >>> best_port_level_, best_port_province_, best_port_state_, best_port_supply_
@@ -624,10 +619,9 @@ WA_AI_PC_get_best_port_near_state = { # _target_state_for_port, _port_search_rad
 	set_temp_variable = { best_port_state_ = 0 }
 	set_temp_variable = { best_port_supply_ = 0 }
 
-	# Fix 28 added a duplicated subject loop here (e.g. Italian Libya's Tripoli port level 5 is
-	# closer to Derna than Eritrea). Fix 74 folds it back into one walk and adds dependent faction
-	# allies, so a receiving port can be the ally port sitting at the target - Bizerte for Tunisia,
-	# Cherbourg for Normandy - instead of ROOT's nearest own port a theatre away.
+	# [na-corridor] ONE walk over ROOT, its subjects and dependent faction allies, so a receiving port
+	# can be a subject's (Tripoli for Derna) or an ally's sitting at the target, instead of ROOT's
+	# nearest own port a theatre away.
 	every_country = {
 		limit = { WA_AI_PC_is_logistics_build_partner = yes }
 		every_controlled_state = {
@@ -862,9 +856,9 @@ WA_AI_PC_coastal_state_is_single_node = { # THIS = state >>> is_single_node_ (1 
 
 ### Analyze overseas supply chain for a target on a different landmass
 ### Finds best ports and calculates bottleneck to determine max useful railway level
-### Fix 26: Receiving port now uses distance-limited search (WA_AI_PC_get_best_port_near_state)
-###         instead of searching entire landmass (which picked Singapore for North Africa)
-WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_, overseas_entry_supply_ (Fix 135)
+### [railway-pathfinding] the receiving port comes from a distance-limited search
+### (WA_AI_PC_get_best_port_near_state); a whole-landmass search picks ports a theatre away.
+WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, _target_state_for_port_search >>> overseas_route_start_, overseas_max_railway_level_, overseas_receiving_port_state_, overseas_home_port_state_, overseas_entry_supply_ ([na-corridor])
 
 	set_temp_variable = { overseas_route_start_ = 0 }
 	set_temp_variable = { overseas_max_railway_level_ = 0 }
@@ -877,9 +871,7 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 	set_temp_variable = { home_port_supply_ = best_port_supply_ }
 	set_temp_variable = { overseas_home_port_state_ = best_port_state_ }
 
-	# Fix 26: Find receiving port near the target state (within 15 states BFS, same landmass)
-	# Previously searched entire landmass, which on landmass 2 (Afro-Eurasia) could pick
-	# Singapore for a North African target
+	# [railway-pathfinding] receiving port near the target state (BFS radius below, same landmass)
 	set_temp_variable = { _target_state_for_port = _target_state_for_port_search }
 	set_temp_variable = { _port_search_radius = 10 }
 	WA_AI_PC_get_best_port_near_state = yes
@@ -897,7 +889,7 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 	set_temp_variable = { _supply_capacity = bottleneck_supply_ }
 	WA_AI_PC_supply_to_railway_level = yes
 	set_temp_variable = { overseas_max_railway_level_ = max_railway_level_ }
-	# Fix 135: publish the ENTRY CAPACITY itself, not only the level it converts to.
+	# [na-corridor] publish the ENTRY CAPACITY itself, not only the level it converts to.
 	# WA_AI_PC_rail_size_route needs supply units to take min(demand, entry); bottleneck_supply_
 	# is a bare chain temp that any later helper may overwrite, so it gets a named output here.
 	set_temp_variable = { overseas_entry_supply_ = bottleneck_supply_ }
@@ -908,13 +900,13 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 ############################################################################################################
 
 WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _project_connect_id, _project_target_level, _project_priority
-	# Optional input: _railway_family_ (temp, Fix 95) - 1 = the segment belongs to a THEATRE CORRIDOR
-	# (WA_AI_PC_railway_corridor_pass): tagged constant:wa_ai_pc.type_id.corridor, budgeted by
-	# constant:wa_ai_railway.corridor.queue_max under Fix 47 scoping. Absent / 0 = the legacy rail
-	# family (type_id rail, budget routes.queue_full) - unchanged for every existing caller.
+	# Optional input: _railway_family_ (temp, [na-corridor]) - 1 = the segment belongs to a THEATRE
+	# CORRIDOR: tagged constant:wa_ai_pc.type_id.corridor, budgeted by
+	# constant:wa_ai_railway.corridor.queue_max under scoped queue_max. Absent / 0 = the rail family
+	# (type_id rail, budget routes.queue_full).
 	# LATCHED AND ZEROED HERE, at the top, before any early return: it is a chain temp, the corridor
-	# sets it before EVERY segment call, and a leaked 1 would otherwise tag the main pass's first
-	# land-war segment as corridor (the exact leak class Fix 47's clear-on-read exists for).
+	# sets it before EVERY segment call, and a leaked 1 tags the main pass's first land-war segment
+	# as corridor.
 	set_temp_variable = { _rail_family_latched_ = _railway_family_ }
 	set_temp_variable = { _railway_family_ = 0 }
 
@@ -942,19 +934,15 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		}
 	}
 
-	# Fix 120 (2026-08-21) - CONNECT BEFORE CONSOLIDATE. Read the RAW map level, before the queued
-	# upgrades are folded in below: the question is "does a railway exist on this connection", not
-	# "has someone asked for one". A corridor segment at 0 is a BREAK in the chain and outranks every
-	# level-raising segment, its own family's and land_war's alike, because the corridor pass emits a
-	# single priority for all its hops and WA_AI_PC_assign_factories sorts by priority alone - at a tie
-	# the bubble sort serves insertion order. Campaign 8c0fea4c 1941.6 is the case: ITA's one funded
-	# railway factory was on 4120->13509 (map level 5) while 1130->10120->7079->5078 (all level 0) held
-	# 0 factories at the same priority 1000, behind 13 European land-war segments.
+	# [na-corridor] CONNECT BEFORE CONSOLIDATE. Read the RAW map level, before the queued upgrades are
+	# folded in below: the question is "does a railway exist on this connection", not "has someone
+	# asked for one". A corridor segment at 0 is a BREAK in the chain and must outrank every
+	# level-raising segment, because the corridor pass emits ONE priority for all its hops and
+	# WA_AI_PC_assign_factories sorts by priority alone - at a tie the bubble sort serves insertion
+	# order, so the rear hops take the factories and the break stays a break.
 	# Corridor family only (_rail_family_latched_ = 1) by decision: land_war derives its routes
-	# dynamically and the same rule there is a global re-ordering for every AI country. Widening it is
-	# a second step, behind a campaign that validates this one.
-	# This does NOT create construction capacity - it re-targets the capacity that was already spent
-	# (the same corridor reached level 5 against a cap of 4 on eight rear hops).
+	# dynamically, so the same rule there is a global re-ordering for every AI country.
+	# This does NOT create construction capacity - it re-targets capacity already being spent.
 	set_temp_variable = { _rail_map_level_ = current_level }
 
 	# Effective level = current level + queued upgrades
@@ -976,18 +964,15 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		limit = {
 			check_variable = { current_level < _project_target_level }
 		}
-		# tlm: r103_corridor_blocked_n - counter, VERIFIED EFFECT: this corridor segment wanted a
+		# tlm r103_corridor_blocked_n - counter, VERIFIED EFFECT: this corridor segment wanted a
 		# level (the check above passed, so it is neither built nor already queued) and the
 		# state-scoped ADMISSION gate refuses it. That refusal is silent in WA_AI_PC_start_project,
-		# and it is how campaign 7c7803a8's second dead hop (7079 <-> 5078) stayed invisible for 28
-		# months: an ally-held province inside an enemy-controlled state, requested and pathfound
-		# every 4 weeks, never queued. Deliberately placed AFTER the level check - before it, every
-		# already-finished hop on a hostile-state end would book a refusal that never happened.
-		# THIS = state, ROOT = builder here (the two corridor / land-war call sites both scope
-		# `var:_state_for_project = { ... }` / `var:_corridor_seg_state_ = { ... }`), which is the
-		# scope WA_AI_PC_state_controller_allows_admission requires - same trigger the executor
-		# itself calls, so probe and gate cannot drift. Corridor family only: the land-war family
-		# has its own diagnostics and R68 is a corridor item. consumer: R68
+		# which is how a hop on an ally-held province inside an enemy-controlled state can be
+		# requested and pathfound for years and never queued. Deliberately placed AFTER the level
+		# check - before it, every already-finished hop on a hostile-state end would book a refusal
+		# that never happened. THIS = state, ROOT = builder (both call sites scope into the state),
+		# the scope WA_AI_PC_state_controller_allows_admission requires - the same trigger the
+		# executor calls, so probe and gate cannot drift. Corridor family only.
 		if = {
 			limit = {
 				check_variable = { _rail_family_latched_ = 1 }
@@ -1000,22 +985,19 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		set_temp_variable = { _project_queue_num = 1 }
 		if = {
 			limit = { check_variable = { _rail_family_latched_ = 1 } }
-			# Fix 95: theatre-corridor segment - own tag, own scoped budget (Fix 47 idiom), so the
-			# corridor neither eats land_war's 12 nor is refused because land_war holds 12.
+			# [na-corridor] theatre-corridor segment - own tag, own scoped budget, so the corridor
+			# neither eats the land-war family's budget nor is refused because that family is full.
 			set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.corridor }
 			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.corridor.queue_max }
 			set_temp_variable = { _project_queue_max_scoped = 1 }
 		}
 		else = {
 			set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
-			# Fix 77: was 0 ("No max per segment") - the one uncapped path into the PC queue.
-			# WA_AI_PC_start_project counts queued type-13 country-wide (unscoped queued_amount_),
-			# so this bounds the WHOLE railway family across every strategy that funnels through
-			# this helper (land war, overseas, prewar). See the constant's header for the measured
-			# case and the threshold relationship.
-			# Fix 95: "country-wide" now means every type-13 EXCEPT the corridor's - the skip gate
-			# in railway_core and this budget both key on WA_AI_PC_type_id = rail since Fix 95, and
-			# every pre-Fix-95 rail project already carries that tag, so nothing changes for them.
+			# [pc-queue] this budget must never be 0: it is the only cap on the railway family, and
+			# WA_AI_PC_start_project counts queued type-13 country-wide, so it bounds land war,
+			# overseas and prewar together. See the constant's header for the threshold relationship.
+			# [na-corridor] "country-wide" means every type-13 EXCEPT the corridor's - the skip gate
+			# in railway_core and this budget both key on WA_AI_PC_type_id = rail.
 			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.routes.queue_full }
 			set_temp_variable = { _project_queue_max_scoped = 1 }
 		}
@@ -1059,29 +1041,18 @@ WA_AI_PC_process_port_upgrades = {
 		var:_port_state = {
 			if = {
 				limit = {
-					# Fix 74: was is_controlled_by = ROOT. naval_base is allied_build = yes and
-					# WA_AI_PC_start_project already accepts allied ground, so the receiving port
-					# of an ally-soil corridor is upgradable - it just had no selector.
-					#
-					# Fix 104 enlarges the population this reaches (any faction ally under the run's
-					# wartime civ floor, not only one that fails the authority test). This site and
-					# the frontier port below set _project_queue_max = 0, i.e. no type budget, so the
-					# widening's exposure is worth stating rather than calling bounded:
-					#   t0, first execution after the widening - the sites are fed by the route pass,
-					#     which is capped at routes.max_total (8) pathfinds per run, so at most 8
-					#     upgrade sites plus the single frontier port are examined. Only the subset
-					#     whose coastal state is newly visible is new.
-					#   t1, +8 weeks (interval.war_weeks, the next execution) - whatever was queued at
-					#     t0 is still queued (a naval base is months of build), and
-					#     WA_AI_PC_start_project's province-duplicate guard refuses the same building
-					#     type on the same province, so the second pass CANNOT re-queue it. No
-					#     accumulation; it adds only genuinely new coastal states.
-					#   t2, +6 months - the population is geographic and shrinking: this site stops at
-					#     naval_base > 8 and the frontier site only fires where there is no port at
-					#     all, so each state leaves the set permanently once served.
-					# The unbounded quantity is therefore the SET of eligible states, which geography
-					# caps, not a per-pass rate. What is still unproven is queue-slot competition
-					# against ROOT's own projects - WA_TLM_r104_ally_fund_n vs wa_tlm_pc_stale_n.
+					# [na-corridor] NOT is_controlled_by = ROOT: naval_base is allied_build = yes and
+					# WA_AI_PC_start_project already accepts allied ground, so the receiving port of
+					# an ally-soil corridor is upgradable - it only lacked a selector.
+					# This site and the frontier port below set _project_queue_max = 0, i.e. NO type
+					# budget, so the exposure is stated rather than called bounded: the sites are fed
+					# by the route pass (capped at routes.max_total pathfinds per run), the
+					# province-duplicate guard in WA_AI_PC_start_project refuses a second project of
+					# the same building type on the same province while the first is queued, and the
+					# eligible set only shrinks (this site stops at naval_base > 8, the frontier site
+					# only fires where there is no port at all). The unbounded quantity is the SET of
+					# eligible states, which geography caps - not a per-pass rate. Queue-slot
+					# competition against ROOT's own projects is unproven, not safe.
 					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 					# Only upgrade if below max useful level (L9 already exceeds L5 railway capacity)
@@ -1158,10 +1129,9 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 		var:_frontier_state_id = {
 			if = {
 				limit = {
-					# Fix 74: was is_controlled_by = ROOT - a partial route that dead-ends on an
-					# ally's coast is exactly the beachhead case a frontier port exists for.
-					# Fix 104 widened who counts as a dependent ally here; the t0/t1/t2 bound for
-					# this site and the port-upgrade one above is written at the upgrade site.
+					# [na-corridor] NOT is_controlled_by = ROOT - a partial route that dead-ends on
+					# an ally's coast is exactly the beachhead case a frontier port exists for.
+					# The bound on this site and the port-upgrade one above is at the upgrade site.
 					WA_AI_PC_can_build_logistics_here = yes
 					is_coastal = yes
 				}
@@ -1223,9 +1193,9 @@ WA_AI_PC_create_frontier_port = { # _frontier_province_id >>> frontier_port_crea
 #	       call this AFTER the pathfind for the route you are levelling, never before)
 #	Output: _max_route_level_ (highest level found on any segment in the route)
 #	Purpose: Find the max level segment in a route to sync all segments to max+1
-#	Fix 29: used to read a `_route_path_array` scalar "copy" of the path (set_temp_variable does not
-#	copy arrays, and the callers assigned it before pathfinding anyway), so it always returned 0 and
-#	every land route targeted level 1 - which existing rail satisfied, so nothing was ever queued.
+#	[railway-landwar] it must read pathfind_prov_path_ DIRECTLY - set_temp_variable does not copy
+#	arrays, so a scalar "copy" of the path returns 0 and every route then targets level 1, which
+#	existing rail already satisfies, so nothing is ever queued.
 ############################################################################################################
 
 WA_AI_PC_get_max_railway_level_on_route = {
@@ -1262,7 +1232,7 @@ WA_AI_PC_get_max_railway_level_on_route = {
 }
 
 ############################################################################################################
-#	HELPER (Fix 135, 2026-08-21): SIZE A RAIL ROUTE - what does the ground on this route need, what can
+#	HELPER [na-corridor]: SIZE A RAIL ROUTE - what does the ground on this route need, what can
 #	our entry capacity inject, and what railway / port level does that imply.
 #	ROOT = THIS = builder country (COUNTRY scope: the presence walk is `every_country` and the
 #	capital test is `capital_scope`). ONE middle layer, TWO callers:
@@ -1272,11 +1242,9 @@ WA_AI_PC_get_max_railway_level_on_route = {
 #
 #	Inputs, all temps set by the caller:
 #	  _rsize_prov_         ARRAY of province ids whose STATES carry the demand. The corridor passes its
-#	                       whole node list. The land-war caller passes the ONE frontline hub province -
-#	                       the demand that sizes a chain is the garrison at its head - and that is also
-#	                       what keeps it affordable: the presence walk below is `every_country` x
-#	                       states, and the land-war caller runs it once PER ROUTE, up to
-#	                       routes.max_total times per execution.
+#	                       whole node list; the land-war caller passes the ONE frontline hub province,
+#	                       because the presence walk below is every_country x states and that caller
+#	                       runs it once PER ROUTE, up to routes.max_total times per execution.
 #	  _rsize_ours_         ARRAY parallel to _rsize_prov_, 1 = this node's port counts as ours.
 #	                       Read in SUM mode only.
 #	  _rsize_entry_mode_   0 = SUM      - add up the naval bases we hold on the route. A corridor is fed
@@ -1301,28 +1269,23 @@ WA_AI_PC_get_max_railway_level_on_route = {
 #	>>> rsize_presence_ (demand proxy), rsize_demand_, rsize_inject_ (-1 = cap not applied),
 #	    rsize_rail_tgt_ (floor..cap), rsize_port_tgt_ (0 = no port case open)
 #
-#	Protects against: a flat hardcoded rail target. The SAME defect was measured on the two families in
-#	turn, which is why they now share a model instead of a convention. Campaign 9d83084c: every corridor
-#	hop at exactly 2 on all 121 saves - the pass was not blocked, it had finished, and 4 + 8x2 = 20
-#	supply was the ceiling by construction (fixed by Fix 107, whose body this is). Campaign 8c0fea4c:
-#	the land-war family at level 5 across Libya from `default_route_level = 5` plus a
-#	`_max_route_level_ + 1` ratchet, against an entry port carrying 25 supply where a level-5 rail
-#	carries 44 (fixed by Fix 135, which is this extraction).
+#	Protects against: a flat hardcoded rail target. Both families shipped one in turn - a ceiling by
+#	construction on one side, a demand-blind ratchet on the other - which is why they now share a
+#	model instead of a convention.
 #	Assumes: the two engine flow ladders, rail 4 + 8xlevel and port 5xlevel
 #	(constant:wa_ai_railway.supply.*, registered mirrors of 05_defines.lua). ACTUAL supply is not
-#	readable from script - nothing in the mod reads it - so this MODELS flow from levels and can never
-#	observe whether it was right. WA_TLM r107 against a campaign map reading is the only validation path.
+#	readable from script, so this MODELS flow from levels and can never observe whether it was right;
+#	WA_TLM r107 against a campaign map reading is the only validation path.
 #	Fact is gone when: either ladder is retuned, or a script trigger for real supply appears.
 #
 #	rsize_presence_ is NOT a division count and must not be read as one. `divisions_in_state` is a
 #	comparison trigger, so no exact per-state count exists in script; the ladder below is the
 #	WA_AI_MILITARY_posture_count_state_divs idiom (posture_effects.txt) with bucket midpoints instead
-#	of its power weights, and WITHOUT its armour doubling (that is a combat-power proxy, not a supply
-#	one). It is COPIED rather than called on purpose: that effect writes _post_accum, a military-system
-#	temp. Known bias, SUPPOSE: it over-reads a DISPERSED army - the same 25 divisions read ~25 in one
-#	state and ~35 across five - because each state pays its own bucket floor. That bias is upward, i.e.
-#	toward overbuilding, which is the permanent direction; constant:wa_ai_railway.corridor.supply_per_division
-#	is the knob that compensates for it and is a placeholder until a campaign calibrates it.
+#	of its power weights, and WITHOUT its armour doubling (a combat-power proxy, not a supply one).
+#	COPIED rather than called on purpose: that effect writes _post_accum, a military-system temp.
+#	Known bias, ASSUMED: it over-reads a DISPERSED army, because each state pays its own bucket floor.
+#	The bias is upward, i.e. toward overbuilding;
+#	constant:wa_ai_railway.corridor.supply_per_division is the knob that compensates for it.
 ############################################################################################################
 
 WA_AI_PC_rail_size_route = {
@@ -1333,9 +1296,8 @@ WA_AI_PC_rail_size_route = {
 	set_temp_variable = { rsize_port_tgt_ = 0 }
 	clear_temp_array = _rz_states_
 
-	### Distinct states of the route's nodes. Deduplicated: two North African corridor nodes share
-	### state 665 (Gabes 7005, Medenine 11957) and two more share 448 and 449 - counting a state twice
-	### would inflate the demand proxy by the exact amount of its own garrison.
+	### Distinct states of the route's nodes. Deduplicated because several corridor nodes share one
+	### state - counting a state twice inflates the demand proxy by its own garrison.
 	for_each_loop = { array = _rsize_prov_ value = _rz_prov_
 		set_temp_variable = { _rz_state_ = global.WA_AI_MAP_province_state_id^_rz_prov_ }
 		if = {
@@ -1394,17 +1356,14 @@ WA_AI_PC_rail_size_route = {
 		### (WA_AI_PC_prov_get_naval_base_level's header records why). Injections ADD across nodes
 		### (LOGISTICS_MODEL section 7), so this is a sum, not a max.
 		###
-		### BUILT levels only - a port project in flight is invisible here, and deliberately so. While
-		### one is building, rsize_inject_ under-states the future capacity, the rail target computed
-		### from min(demand, inject) comes out LOWER, and it rises again when the port completes. That
-		### is the safe error direction: railways cannot be downgraded, so under-sizing is recoverable
-		### and over-sizing is not (LOGISTICS_MODEL section 10 rule 3). The sequencing it produces -
-		### port first, rail catching up - is also the correct one. And it cannot loop: the
+		### BUILT levels only - a port project in flight is invisible here, deliberately. It under-states
+		### future capacity, so the rail target comes out LOWER and rises when the port completes: the
+		### safe error direction, because railways cannot be downgraded (LOGISTICS_MODEL section 10
+		### rule 3), and it sequences port first, rail catching up. It cannot loop - the
 		### province-duplicate guard in WA_AI_PC_start_project admits at most one naval-base project
-		### per province at a time, so the low reading cannot turn into a second port request. The RAIL
-		### side has the opposite convention on purpose (WA_AI_PC_start_railway_project adds
-		### _queued_for_segment to the current level before comparing), because there the risk is
-		### queueing the same segment twice, not sizing it low.
+		### per province at a time. The RAIL side has the opposite convention on purpose
+		### (WA_AI_PC_start_railway_project folds _queued_for_segment in before comparing): there the
+		### risk is queueing the same segment twice, not sizing it low.
 		for_each_loop = { array = _rsize_prov_ index = _rz_inj_i_ value = _rz_inj_prov_
 			if = {
 				limit = { check_variable = { _rsize_ours_^_rz_inj_i_ = 1 } }
@@ -1471,10 +1430,10 @@ WA_AI_PC_rail_size_route = {
 		set_temp_variable = { rsize_rail_tgt_ = _rsize_cap_ }
 	}
 
-	### Port target - only when the entry capacity is what binds (LOGISTICS_MODEL section 11.7). Left at
-	### 0 otherwise, which the corridor hub loop reads as "place a missing port at level 1", i.e. the
-	### pre-Fix-107 behaviour. WHETHER to act on this target is decided by the chain-length arbitration
-	### in railway_core, not here: this effect runs before the routes are pathfound, so it cannot know N.
+	### Port target - only when the entry capacity is what binds (LOGISTICS_MODEL section 11.7). Left
+	### at 0 otherwise, which the corridor hub loop reads as "place a missing port at level 1".
+	### WHETHER to act on this target is decided by the chain-length arbitration in railway_core, not
+	### here: this effect runs before the routes are pathfound, so it cannot know N.
 	if = {
 		limit = {
 			check_variable = { _rz_capped_ = 1 }
@@ -1493,11 +1452,9 @@ WA_AI_PC_rail_size_route = {
 }
 
 ############################################################################################################
-#	HELPER (Fix 107, re-cut by Fix 135): size the theatre corridor. The MODEL moved to
-#	WA_AI_PC_rail_size_route above when the land-war family needed the same one; what is left here is
-#	the corridor's binding of it - which array is the route, which nodes' ports count, which floor/cap.
-#	Contract to WA_AI_PC_railway_STRATEGY_theatre_corridor is unchanged: same five outputs, same names,
-#	same values.
+#	HELPER [na-corridor]: size the theatre corridor. The MODEL lives in WA_AI_PC_rail_size_route
+#	above, shared with the land-war family; this is only the corridor's binding of it - which array
+#	is the route, which nodes' ports count, which floor/cap.
 #	ROOT = THIS = builder country. Runs once per corridor pass, AFTER the node classification loop
 #	(it reads corridor_node_ours_).
 #	Inputs (temp arrays, filled by the caller): corridor_node_prov_, corridor_node_ours_.
@@ -1531,13 +1488,12 @@ WA_AI_PC_corridor_compute_sizing = {
 }
 
 ############################################################################################################
-#	HELPER (Fix 95): queue a theatre-corridor HUB - a supply hub (17) or a naval base (14) - at a
+#	HELPER ([na-corridor]): queue a theatre-corridor HUB - a supply hub (17) or a naval base (14) - at a
 #	named province, tagged type_id corridor under the corridor's scoped budget.
 #	ROOT = builder country (country scope). Inputs (temp): _hub_prov_ (province id),
 #	_hub_kind_ (17 = supply_node, 14 = naval_base), _hub_prio_ (priority band),
-#	_hub_target_level_ (Fix 107, ports only: the level to reach; 1 = the pre-Fix-107 "place if
-#	missing" behaviour. ALWAYS set by the caller from the corridor_hub_target_ array - never a
-#	chain temp left over from the previous hub).
+#	_hub_target_level_ (ports only: the level to reach; 1 = "place if missing". ALWAYS set by the
+#	caller from the corridor_hub_target_ array - never a chain temp left over from the previous hub).
 #	>>> corridor_hub_admitted_ (1 iff WA_AI_PC_start_project grew the queue - the verified effect
 #	    the telemetry counts; "we asked" is not "it was admitted": queue_max, the province-duplicate
 #	    guard and the controller test can all refuse)
@@ -1566,21 +1522,17 @@ WA_AI_PC_corridor_start_hub = {
 					check_variable = { _hub_kind_ = 14 }
 					is_coastal = yes
 				}
-				# Fix 107: a port is RAISED, not merely placed. Before, the test was
-				# `NOT = { WA_AI_PC_prov_has_naval_base = yes }`, so a port that existed at level 1
-				# could never be improved by anyone - campaign 9d83084c measured Medenine/Gabes at
-				# level 1 across all 121 saves and three successive holders, because FRA had placed
-				# it in 1936.4 and the existence test then refused every later request for ever.
-				# _hub_target_level_ = 1 reproduces the old behaviour exactly (0 < 1 only when absent).
-				#
-				# THIS is the only gate on repetition that works. WA_AI_PC_start_project's
-				# _project_target_level check is INERT for building type 14: it reads
+				# [na-corridor] a port is RAISED, not merely placed. A bare existence test
+				# (`NOT = { WA_AI_PC_prov_has_naval_base = yes }`) means a port someone dropped at
+				# level 1 can never be improved by anyone, ever. _hub_target_level_ = 1 reproduces
+				# that behaviour exactly (0 < 1 only when absent).
+				# THIS level test is the only gate on repetition that works: WA_AI_PC_start_project's
+				# _project_target_level check is INERT for building type 14 - it reads
 				# final_building_level_ only for types 1 / 2 / 4 (PRIORITY_core.txt), so a naval base
-				# always reads 0 there and the target test always passes. The second guard is the
-				# province-duplicate test in the same effect, which admits at most one naval-base
-				# project per province at a time - and since one completed project spawns exactly
-				# +1 level, the pair is what makes a multi-level climb one level per pass instead
-				# of a loop.
+				# always reads 0 there and always passes. The second guard is the province-duplicate
+				# test in the same effect (at most one naval-base project per province at a time);
+				# since one completed project spawns exactly +1 level, the pair is what makes a
+				# multi-level climb one level per pass instead of a loop.
 				WA_AI_PC_prov_get_naval_base_level = yes
 				if = {
 					limit = { check_variable = { prov_naval_base_level_ < _hub_target_level_ } }

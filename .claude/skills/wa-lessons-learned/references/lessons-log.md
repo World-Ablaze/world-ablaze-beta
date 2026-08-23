@@ -2222,3 +2222,38 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Detection:** `wa_tlm_r103_corridor_blocked_n` rising while the map shows no progress on a hop whose provinces are all friendly. Then read the `state` column of the `corridor` rows in `savegame.py pc <TAG> --limit 0` and compare it with `savegame.py control <states> <save>` — **the state-controller line, not the per-province one**. A hop whose segment sits in a state the enemy controls is refused no matter who holds the ground.
 - **Second trap, same session:** a province id quoted from an in-game tooltip in a report was **13841**, a digit transposition of **13481** — and 13841 is a real province, in **state 443 Sind, India**. A wrong id that resolves is worse than one that does not. Check every incoming province id against `WA_AI_MAP_state_provinces` before designing on it; two lines of Python answer it.
 - **Evidence:** `savegame.py control 451,663,960,452 ITA_1941_05_23_21.hoi4` (state 452 ENG, 11/3) and `--provinces` (1130/4136/10120/7079/13481/5078 all ITL); `savegame.py pc ITA` corridor rows `10120→7079` and `7079→5078` scoped to 451 and 452; the generated province graph (`WA_AI_MAP_province_connections`), which gives 1130→4136→13481→5078 as a three-hop inland alternative; `documentation/WA_AI_RAILWAY_SYSTEM.md` "The mismatch phase A cannot see".
+
+---
+
+## `subtract_from_variable` on a TEMP operand leaves the temp unchanged — the `_temp_` twin is not optional
+
+- **Symptom:** `WA_AI_LANDING_update_reservations` computed "days since 1936.1.1" as
+  `set_temp_variable = { _resv_today = global.num_days }` followed by
+  `subtract_from_variable = { _resv_today = global.WA_AI_LANDING_epoch }`. MEASURED (console harness
+  `wa_resv.1` leg A, 2026-08-23, 1936.1.1 boot): `epoch = 706640`, `num_days = 706640`, and
+  `today` printed **706640**, not 0 — the subtraction never touched the temp. Every
+  `op_expiry > _resv_today` comparison would then read "expired" and the whole reservation system
+  would have been silently inert, while parsing clean and looking correct in review (two reviewers
+  read the line without flagging it).
+- **Cause:** the non-temp arithmetic effects (`subtract_from_variable`, `add_to_variable`,
+  `multiply_variable`, `divide_variable`) operate on the PERMANENT variable namespace. Given a name
+  that only exists as a temp, they do not resolve it to the temp — the temp keeps its value and the
+  reader sees the unmodified temp. The engine doc (`effects_documentation.md` §subtract_from_variable)
+  does not say this; the `*_temp_variable` twins exist precisely because the namespaces are separate.
+- **Rule:** arithmetic on a temp variable uses the `_temp_` effect form, always
+  (`subtract_from_temp_variable`, `add_to_temp_variable`, …). `set_temp_variable` followed by
+  `subtract_from_variable` on the same name is the broken mixed idiom; grep for it when a computed
+  temp reads impossibly large or exactly equal to its first operand.
+- **Detection that worked:** the harness printed the operands AND the result on one line, so
+  `today = num_days` with a non-zero epoch was self-evident. A probe that prints only the result
+  would have shown a huge number with nothing to compare it against.
+- **Evidence:** `wa_resv.1` leg A log line (`op_n = 30  epoch = 706640  num_days = 706640
+  today = 706640`); fix in `WA_AI_LANDING_effects.txt` (`subtract_from_temp_variable`) and
+  `WA_TEST_resv.txt`, both commented with the measurement.
+- **Bonus sighting, same session:** the verification re-run picked up the edited scripts WITHOUT a
+  game restart (hot reload) and its context header read `I-am-ROOT=0 / I-am-THIS=0` while
+  `always`, `ROOT-scope-usable` and the loc names all read correctly — the "Two call sites, one
+  effect" syndrome, this time from the SAME file that had read clean minutes earlier. New data
+  point for that entry: an in-session script hot-reload is a candidate trigger of the poisoned
+  state (ASSUMED — one sighting). The harness's STOP rule caught it, which is the contract doing
+  its job; variable arithmetic (leg A) read correctly throughout.

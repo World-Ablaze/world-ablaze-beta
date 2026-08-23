@@ -205,6 +205,25 @@ Before you conclude the mod is broken, check the test itself: a same-date invers
 - `last_date = 1946.1.1` and after every fail deadline.
 - No `run_count` / `acceptable_fail_rate` / `loggers` unless justified.
 
+## System → harness routing (owner-run test rule)
+
+A commit that touches a `WA_AI_*` scripted effect/trigger of a system listed here puts its
+subject in `SHIPPED-UNTESTED` (`WORK.md`); only the owner running the harness in the game
+console and pasting the output moves it to `TESTED` (AGENTS.md § Subjects and sessions). A big
+change (> 40 lines, or a signature/scope change of an effect called by an on_action) to a system
+*without* a harness includes writing one first.
+
+| System | Harness file | Console entry |
+| --- | --- | --- |
+| Railway / rail priority construction | `common/scripted_effects/WA_TEST_railway.txt` | suite runs as JAP; checker event `wa_test.100` — recipe in file header |
+| Pathfinding | `WA_TEST_railway.txt` (PF section) | `tag ROM`, `event wa_test.302` |
+| Lend-lease relief | `common/scripted_effects/WA_TEST_lend_lease_relief.txt` | `WA_TEST_LLR_probe_*` effects — recipe in file header |
+| Convoy / arsenal production | `common/scripted_effects/WA_TEST_convoy_arsenal.txt` | `event wa_ca.2` (fires per AI major at war) |
+| Air basing / air actors | `common/scripted_effects/WA_TEST_air_actors.txt` | recipe in file header |
+| Scope isolation (meta: validates harnesses) | `common/scripted_effects/WA_TEST_scope_isolation_effects.txt` | `tag GER`, `event wa_iso.1` / `wa_iso.2` |
+| Spirits / stats parity | `WA_TEST_spirits.txt`, `WA_TEST_stats.txt` + `tests/wa_*_strict_parity.txt` | test bundles — see `tests/` section above |
+| **No harness yet** — priority construction (non-rail), templates/division creator, AIFC, military posture triggers, production strategy, research weights, prospecting, laws/espionage | — | first big change writes the harness (contract v1 below) |
+
 ## The harness contract (v1) — mandatory for every new console harness
 
 A measurement instrument that is not itself validated produces confident nonsense — that class of
@@ -212,12 +231,11 @@ error shipped Fix 118 on a false diagnosis and cost a day on an empty-coalition 
 console harness (a `WA_TEST_*` scripted effect that logs measurements for a human or an agent to
 read) follows this contract. `python tools/check_worklist.py` enforces it mechanically
 (`HARNESS-CONTRACT`): a new `common/scripted_effects/WA_TEST_*.txt` file must carry the marker
-`harness-contract: v1` and the pieces below; existing files are grandfathered until touched by
-QUEUE 21.
+`harness-contract: v1` and the pieces below; existing files are grandfathered until touched.
 
 1. **Own event file, own namespace.** Never home a harness event in `events/wa_events_test.txt` —
-   that file poisoned every country-valued trigger of a byte-identical effect (cause unknown,
-   QUEUE 21). One harness = one `events/wa_test_<name>.txt` with the recipe in its header.
+   that file poisoned every country-valued trigger of a byte-identical effect (cause unknown).
+   One harness = one `events/wa_test_<name>.txt` with the recipe in its header.
 2. **Context header printed FIRST, and the STOP rule.** Copy this block, swap the `_ca_` prefix
    for your harness's own:
 
@@ -249,8 +267,8 @@ QUEUE 21.
 5. **Per-country firing when the effect resolves against ROOT.** An `every_country` walk scores
    every candidate against the FIRING country's alliance; fire one event per country instead
    (the `wa_ca.2` shape).
-6. **The first run's output is pasted** into the owning checklist item or QUEUE row — a harness
-   nobody has run is not a harness, exactly as `PROBE-UNRUN` says for probes.
+6. **The first run's output is pasted** into the owning subject in `WORK.md` — a harness
+   nobody has run is not a harness; it is also what moves the subject out of `SHIPPED-UNTESTED`.
 
 When a harness's country-valued triggers all read false while its value triggers read true, do not
 debug the effect — use the `wa_iso` scope-sanity harness below.
