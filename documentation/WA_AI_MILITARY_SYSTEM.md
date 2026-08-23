@@ -1278,3 +1278,90 @@ Mediterranean Fleet HQ), against **259** for the nearest province of any other M
 not one of the four regions the user named. MEASURED on 1942.10: Allied task forces reached 269 and
 327 with that wall standing, so it is not a blocker today, but it is the first thing to look at if the
 fleet bases at Alexandria and then never sails west. QUEUE row, not a silent edit.
+
+---
+
+## 22. Scripted-target reservation - the calendar's targets are off-limits BEFORE the operation ([scripted-invasion-reservation], 2026-08-23)
+
+Owner request (2026-08-23): while the scripted-invasion system is active, the invader's faction must
+not run ENGINE-planned naval invasions **against the countries the calendar will hit** until the date
+of the LAST scripted invasion against that country - the engine parking a corps for its own Brittany
+landing while the calendar will open Normandy immobilises divisions for nothing. Per COUNTRY, not per
+state - the owner's explicit call over a state-level draft.
+
+Forward-looking twin of the sec.10 freeze: sec.10 suppresses the theatre for 90 days AFTER a scripted
+landing executes; this suppresses the calendar's own targets BEFORE their scheduled dates.
+
+| Piece | File |
+| --- | --- |
+| Calendar data (GENERATED - regenerate, never hand-edit) | `common/scripted_effects/WA_AI_LANDING_reservations_data.txt` via `tools/gen_ai_landing_reservations.py` |
+| Epoch init + monthly updater + stamp | `common/scripted_effects/WA_AI_LANDING_effects.txt` (reservation section) |
+| Switch (control panel) | `common/scripted_triggers/WA_AI_LANDING_triggers.txt`, `WA_AI_LANDING_reservations_enabled` |
+| Consumer (Default layer) | `common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt`, `WA_AI_MILITARY_INV_reserved_scripted_target` |
+| Wiring | `WA_AI_startup_on_actions.txt` (load + epoch), `WA_AI_misc_on_actions.txt` on_monthly (update, after `WA_TLM_tick_clock`) |
+| Probe | `WA_TLM_resv_stamp_n` / `_first_t` / `_last_t` (telemetry doc §5, v30) |
+
+**Mechanism.** The generator reads the two hand-maintained sources - `WA_KDE_AI_effects.txt` (who
+fires which `WA_AI_invasions.N` in which year at which day offset; `#`-commented lines skipped) and
+`events/WA_AI_invasions.txt` (each operation's ANCHOR STATE: the state whose CONTROLLER the event
+reads as its target; three events read OWNER, same anchor either way) - and emits per-invader arrays
+`WA_AI_LANDING_op_anchor` / `WA_AI_LANDING_op_expiry` (expiry = scheduled day since 1936.1.1 + 45
+grace). 75 active operations, 5 invaders (AST 5, ENG 6, GER 4, JAP 30, USA 30) at generation time.
+
+Monthly, each AI invader on the historical difficulty (`WA_AI_DIFFICULTY_is_historical` - the same
+gate the calendar events carry) at war walks its pending ops. Target = CURRENT controller of the
+anchor state - dynamic geography, never a stored tag: a fallen France reserves GER, a Torch against
+an unconquered Vichy reserves VIC, and an ahistorical world reserves whoever actually holds the
+anchor. If the target is at war with the invader, a timed flag
+`WA_AI_LANDING_reserved_for_<TAG>` (lease 50 days > the 31-day pulse gap) is stamped ON THE TARGET
+for the invader and every AI faction member. The lease renews while any op against that target is
+pending and dies by itself within one lease of the last scheduled operation - which is the requested
+"until the date of the last scripted invasion", to a bounded tail: t0 stamp, t+31 re-stamp, t+50
+expiry after the final pulse that still saw a pending op.
+
+The consumer is one Default-layer block, `invasion_unit_request value = -200` with
+`country_trigger = { has_country_flag = WA_AI_LANDING_reserved_for_@FROM }` (country_trigger scope =
+enemy country, FROM = the evaluating country - `documentation.info` section `front_unit_request /
+invasion_unit_request`). Same -200 magnitude and same base assumption as sec.10: ASSUMED it floors
+the request at zero; a deliberate Faction-layer site boost (`WA_AI_MILITARY_ALLIES_dday_prep_INVASION`
++1000 on the Normandy states) still outranks it, which is intended - the scripted operation's own
+staging must survive its own reservation.
+
+**Epoch.** Day arithmetic uses the engine's `global.num_days` (install
+`dynamic_variables_documentation.md`, global scope) minus `global.WA_AI_LANDING_epoch`, calibrated at
+startup to 1936.1.1 (the Blitzkrieg 1939.8.14 bookmark backdates by 1321 days; a third bookmark
+needs its own branch in `WA_AI_LANDING_init_reservations`).
+
+**Stated ASSUMED, and how a campaign falsifies it.** (a) `@FROM` dynamic-flag rendering inside an
+ai_strategy `country_trigger` - vanilla idiom in decisions (`WTT_border_conflict_*_@FROM`), no other
+ai_strategy user in this repo; if inert, saves show `wa_tlm_resv_stamp_n > 0` and the reservation
+flags on targets while the faction still opens engine invasions against them. (b) -200 floors the
+request - inherited from sec.10, still unmeasured. PDXScript fails silently; the probe row in the
+telemetry doc names both.
+
+**Timing residuals, tabulated (AGENTS rule f) - monthly pulse (31d max gap) vs lease 50 vs grace 45:**
+
+| Case | t0 | t1 | t2 | Residual |
+| --- | --- | --- | --- | --- |
+| Nominal | pulse stamps (op pending) | every following pulse re-stamps | last pulse with a pending op: last-scheduled-day + 45 grace | flag dies alone <= 50d after t2 -> reservation ends <= 95d after the last scheduled date |
+| Op fires LATE (preconditions unmet > 45d past schedule) | schedule passes | grace passes, reservation lapses | op still refires weekly and may land later | UNPROTECTED window between t1 and the landing - accepted: post-landing the sec.10 freeze takes over, and the reservation's purpose (do not park divisions in advance) matters before the schedule, not after |
+| Op succeeds EARLY in its window | landing executes | ops against that target all past -> pulses stop stamping | — | suppression lingers <= last-stamp + 50d on a target that may already be half-conquered - harmless: engine invasions of a collapsing enemy resume within the lease |
+| Target changes controller between pulses | stamp on old controller | next pulse (<= 31d) stamps the new controller | old lease expires <= 50d after t0 | <= 50d of stale reservation on the old controller |
+| Country joins the faction mid-war | — | next pulse (<= 31d) stamps its flag | — | <= 31d without protection for the newcomer |
+
+**Scheduled, not fired.** Expiry keys on the calendar's SCHEDULED day, never on whether the KDE event
+actually fired - script cannot see a hidden event's execution short of hooking `spawn_invasion`, and
+the two accepted residuals above (late-firing, early-success) are exactly the cost of that choice.
+
+**Resumed saves.** `on_startup` does NOT re-fire when a savegame is loaded (MEASURED - lessons-log
+entry of that name), so the loader runs once at NEW-GAME creation and everything persists in the
+save thereafter. ACCEPTED consequence: a campaign saved on a build without this system never
+initializes it - inert for that campaign, fingerprint = `wa_tlm_resv_*` absent. No migration path
+on purpose; the mis-dated-epoch scenario (init running mid-campaign) cannot occur for the same
+reason.
+
+**What this supersedes eventually, not yet.** The hand-dated Allied holds
+(`WA_AI_MILITARY_ALLIES_dday_hold`, `_no_italy_invasion_early_INVASION`,
+`_norway_invasion_hold_INVASION`) express the same intent for three specific cases with literal
+dates. They stay untouched - retiring them is its own subject with its own impact analysis, recorded
+in WORK.md, not a side effect of this one.

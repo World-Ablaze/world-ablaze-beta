@@ -139,3 +139,155 @@ WA_AI_LANDING_stamp_freeze_east = {
 		set_variable = { WA_TLM_r44_freeze_last_t = global.WA_TLM_clock }
 	}
 }
+
+############################################################################################################
+#	[scripted-invasion-reservation] TARGET RESERVATION - the calendar's targets are off-limits BEFORE the op
+############################################################################################################
+#	The freeze above suppresses engine invasions AFTER a scripted landing. This system is its
+#	forward-looking twin: while the scripted calendar still owes an operation against a country, the
+#	invader's whole faction stops requesting divisions for engine-planned invasions of that country -
+#	so the engine does not park a corps for its own Brittany landing while the calendar will open
+#	Normandy itself (owner request, 2026-08-23).
+#
+#	PER COUNTRY, NOT PER STATE - the owner's explicit call: the waste being fixed is divisions
+#	immobilised against the target COUNTRY anywhere, not just on the scripted beach.
+#
+#	PIECES
+#	  WA_AI_LANDING_reservations_data.txt   GENERATED calendar mirror: per-invader arrays
+#	                                        op_anchor (state) / op_expiry (day since 1936.1.1)
+#	                                        - regenerate via tools/gen_ai_landing_reservations.py
+#	  this file                             epoch init + monthly updater + stamp (below)
+#	  WA_AI_LANDING_triggers.txt            the switch (WA_AI_LANDING_reservations_enabled)
+#	  WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt   the consumer ai_strategy block
+#	  documentation/WA_AI_MILITARY_SYSTEM.md sec.22        the spec
+#
+#	MECHANISM. Monthly, each AI invader on the historical difficulty walks its pending operations
+#	(expiry day not passed). For each, the reservation target is the CURRENT CONTROLLER of the op's
+#	anchor state - dynamic geography, never a stored tag, so a France that fell to GER reserves GER
+#	and a Torch against an unconquered VIC reserves VIC. If that controller is at war with the
+#	invader, a timed flag WA_AI_LANDING_reserved_for_<member tag> is stamped ON THE TARGET for the
+#	invader and every AI member of its faction. The flag is a LEASE (@WA_AI_LANDING_RESERVATION_
+#	LEASE_DAYS > the monthly pulse) renewed while any op against that target is pending, so it dies
+#	by itself within one lease of the LAST scheduled operation against that country - which is the
+#	requested semantics "until the date of the last scripted invasion". Precision bounds: a new
+#	faction member waits <= 1 pulse for its flag; a target that changes controller keeps the stale
+#	flag <= 1 lease (t0 stamp, t+31 re-stamp on the new controller, t+50 old lease dies).
+############################################################################################################
+
+# Reservation lease, in days. Must exceed the monthly pulse gap (31 days) or reservations flicker
+# between pulses; the excess over 31 is the precision tail after the last scheduled operation.
+@WA_AI_LANDING_RESERVATION_LEASE_DAYS = 50
+
+############################################################################################################
+#	WA_AI_LANDING_init_reservations
+#
+#	SCOPE: any (startup, via random_country).
+#	Loads the generated calendar arrays and calibrates the day epoch:
+#	global.WA_AI_LANDING_epoch = value of global.num_days at 1936.1.1, so that
+#	(global.num_days - epoch) is "days since 1936.1.1" - the unit op_expiry is generated in.
+#
+#	RUNS AT NEW-GAME CREATION ONLY: on_startup does NOT re-fire when a savegame is loaded
+#	(MEASURED - lessons-log "on_startup does not re-fire when a savegame is loaded"). That is
+#	sufficient because the arrays, the epoch variable and the epoch_set flag all persist in the
+#	save. ACCEPTED consequence: a campaign saved on a build WITHOUT this system never initializes
+#	it - op_n stays absent, the monthly gate reads 0, the system is inert for that campaign, and
+#	the absence of wa_tlm_resv_* on such a save is the fingerprint. No migration path on purpose.
+#	The mis-dated-epoch scenario (init running mid-campaign and hitting the Blitzkrieg branch)
+#	cannot occur for the same reason: init never runs on a loaded save.
+#	global.num_days available at startup is ASSUMED (vanilla reads it mid-game only,
+#	00_on_actions.txt:662); if it read 0 here, every op would sit "pending" until the boot test
+#	catches it - epoch and op_expiry are both printable from the console.
+############################################################################################################
+WA_AI_LANDING_init_reservations = {
+	WA_AI_LANDING_load_ops = yes
+	if = {
+		limit = { NOT = { has_global_flag = WA_AI_LANDING_epoch_set } }
+		set_global_flag = WA_AI_LANDING_epoch_set
+		set_variable = { global.WA_AI_LANDING_epoch = global.num_days }
+		# Non-1936 bookmark correction: epoch must be backdated to 1936.1.1. The only other
+		# bookmark is Blitzkrieg 1939.8.14 (common/bookmarks/blitzkrieg.txt) = 1321 days after
+		# 1936.1.1 on the leap-aware calendar; +-1 day of engine leap ambiguity is immaterial
+		# against the 50-day lease. A THIRD bookmark added later needs its own branch here.
+		if = {
+			limit = { date > 1937.1.1 }
+			subtract_from_variable = { global.WA_AI_LANDING_epoch = 1321 }
+		}
+	}
+}
+
+############################################################################################################
+#	WA_AI_LANDING_update_reservations
+#
+#	SCOPE:  ROOT = THIS = an invader country. Caller (WA_AI_misc_on_actions on_monthly) gates on
+#	        is_ai + WA_AI_DIFFICULTY_is_historical + has_war + op_n > 0, so this body runs for at
+#	        most the 5 calendar invaders, monthly, in wartime.
+#	READS:  WA_AI_LANDING_op_anchor / op_expiry / op_n (generated), global.WA_AI_LANDING_epoch.
+#	OUTPUT: reservation flags on every pending target, via WA_AI_LANDING_stamp_reservation.
+############################################################################################################
+WA_AI_LANDING_update_reservations = {
+	set_temp_variable = { _resv_today = global.num_days }
+	# subtract_from_TEMP_variable, not subtract_from_variable: the non-temp form leaves a temp
+	# operand UNCHANGED (MEASURED 2026-08-23, wa_resv.1 leg A: today printed = num_days, epoch
+	# never subtracted - the mixed idiom silently no-ops on the temp).
+	subtract_from_temp_variable = { _resv_today = global.WA_AI_LANDING_epoch }
+	for_each_loop = {
+		array = WA_AI_LANDING_op_anchor
+		value = _resv_anchor
+		index = _resv_i
+		if = {
+			limit = { check_variable = { WA_AI_LANDING_op_expiry^_resv_i > _resv_today } }
+			set_temp_variable = { _resv_target = 0 }
+			var:_resv_anchor = {
+				CONTROLLER = { set_temp_variable = { _resv_target = id } }
+			}
+			if = {
+				limit = {
+					check_variable = { _resv_target > 0 }
+					var:_resv_target = { has_war_with = ROOT }
+				}
+				WA_AI_LANDING_stamp_reservation = yes
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	WA_AI_LANDING_stamp_reservation
+#
+#	SCOPE:  ROOT = THIS = the invader. INPUT: _resv_target - temp, country id at war with ROOT.
+#	OUTPUT: on the target, one timed flag per reserving country: WA_AI_LANDING_reserved_for_<TAG>
+#	        for ROOT and every AI member of ROOT's faction. @PREV renders as the tag of the country
+#	        scope surrounding the target scope (vanilla dynamic-flag idiom, see decisions/JAP.txt
+#	        WTT_border_conflict_*_@FROM). clr + set rather than bare set: re-stamping must restart
+#	        the lease deterministically, same rule as the freeze stamps above.
+#	CONSUMER: WA_AI_MILITARY_INV_reserved_scripted_target reads the flag through @FROM in its
+#	        country_trigger (scope = enemy country, FROM = the evaluating country).
+############################################################################################################
+WA_AI_LANDING_stamp_reservation = {
+	var:_resv_target = {
+		clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
+		set_country_flag = { flag = WA_AI_LANDING_reserved_for_@PREV value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
+	}
+	# tlm: resv_stamp_n / resv_first_t / resv_last_t - consumer: [scripted-invasion-reservation]
+	# verification. Verified effect (doc sec.3.6 rule 1): the flag this counts is written on the
+	# lines above. Second signal for the first campaign: the WA_AI_LANDING_reserved_for_* flags
+	# themselves serialize into the save on the target country.
+	add_to_variable = { WA_TLM_resv_stamp_n = 1 }
+	if = {
+		limit = { check_variable = { WA_TLM_resv_stamp_n = 1 } }
+		set_variable = { WA_TLM_resv_first_t = global.WA_TLM_clock }
+	}
+	set_variable = { WA_TLM_resv_last_t = global.WA_TLM_clock }
+
+	every_other_country = {
+		limit = {
+			exists = yes
+			is_ai = yes
+			is_in_faction_with = ROOT
+		}
+		var:_resv_target = {
+			clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
+			set_country_flag = { flag = WA_AI_LANDING_reserved_for_@PREV value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
+		}
+	}
+}

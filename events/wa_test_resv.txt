@@ -1,0 +1,90 @@
+############################################################################################################
+#	SCRIPTED-INVASION RESERVATION - console harness ([scripted-invasion-reservation]).
+#
+#	Effects: common/scripted_effects/WA_TEST_resv.txt
+#
+#	CONSOLE RECIPE (any save; a fresh 1936 game as USA is the reference case):
+#	    tag USA          (become the invader under test - any calendar invader works for legs B/C,
+#	                      only AST/ENG/GER/JAP/USA have leg A arrays)
+#	    event wa_resv.1  (runs leg A loader/epoch, leg B forced stamp on GER, then fires the
+#	                      target-side leg C report on GER)
+#	  then read logs/game.log, search "RESV TEST". PASS pattern:
+#	    legA: op_n = 30, op[0] anchor 543 expiry 2361 (USA), today = 0 on a 1936.1.1 boot
+#	    legB: pre-stamp 0, post-stamp 1
+#	    legC (TARGET-SIDE, FROM must print USA): literal 1, @FROM 1, @ROOT 0
+#	  Cleanup (optional - flags self-expire in 50 days):
+#	    event wa_resv.9
+#
+#	WHY ITS OWN FILE: the harness contract forbids hosting console harnesses in
+#	events/wa_events_test.txt ("Two call sites, one effect" lesson - a probe whose readings depend
+#	on which file fired it is worthless). Namespace wa_resv is this harness's own.
+#
+#	WHAT A PASS MEANS - AND DOES NOT. legC PASS proves the @FROM dynamic-flag rendering in a trigger
+#	with scope = target / FROM = reserver, i.e. the same SHAPE as the shipped consumer's
+#	country_trigger (WA_AI_MILITARY_INV_reserved_scripted_target). It does NOT prove the ai_strategy
+#	evaluator renders it too - that residual is engine-only and belongs to the campaign probe
+#	(WORK.md, subject scripted-invasion-reservation). legC uses an EVENT to obtain FROM: whether
+#	country_event fired from inside a `GER = { }` scope block carries the ORIGINAL country as FROM is
+#	itself unverified - which is why the target-side report prints FROM and declares the leg VOID
+#	(not failed) if it is not the reserver.
+#
+#	Side effects of a run: real (self-expiring) reservation flags on GER and +1 on ROOT's
+#	wa_tlm_resv_stamp_n - do not score this save's resv telemetry afterwards.
+############################################################################################################
+
+add_namespace = wa_resv
+
+# Main report - fire as the country under test (tag USA, then event wa_resv.1).
+country_event = {
+	id = wa_resv.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		# Target selection: GER, the reference case (D-Day's anchor controller in 1944; any
+		# existing country would do for legs B/C). Change both this block and legC's literal
+		# line in WA_TEST_RESV_target_report to test another target.
+		GER = { set_temp_variable = { _wt_resv_tgt_ = id } }
+		if = {
+			limit = { check_variable = { _wt_resv_tgt_ > 0 } }
+			WA_TEST_RESV_report = yes
+			# Leg C: fire the target-side report ON the target. The report itself prints FROM
+			# and voids the leg if the event host did not carry the reserver in it.
+			var:_wt_resv_tgt_ = {
+				country_event = { id = wa_resv.2 }
+			}
+		}
+		else = {
+			log = "[GetYear].[GetMonth] | RESV TEST | [Root.GetName]: target GER does not exist on this save - pick another target, test aborted before any measurement."
+		}
+	}
+}
+
+# Target-side report (leg C) - fired by wa_resv.1 on the target, never directly.
+country_event = {
+	id = wa_resv.2
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_RESV_target_report = yes
+	}
+}
+
+# Cleanup - fire as the same country that ran wa_resv.1.
+country_event = {
+	id = wa_resv.9
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		GER = { set_temp_variable = { _wt_resv_tgt_ = id } }
+		if = {
+			limit = { check_variable = { _wt_resv_tgt_ > 0 } }
+			WA_TEST_RESV_cleanup = yes
+		}
+	}
+}

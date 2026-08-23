@@ -2,7 +2,7 @@
 #	World Ablaze AI mod - on_actions
 ############################################################################################################
 
-### Fix 75: the railway eligibility constants that used to be redeclared here are gone. The filter
+### [pc-queue] the railway eligibility constants that used to be redeclared here are gone. The filter
 ### block that read them is now the scripted trigger WA_AI_PC_country_can_build_own_logistics
 ### (common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt), which owns its own copies - so this
 ### file no longer participates in the "@ constants are file-scoped, keep the copies in sync"
@@ -70,9 +70,9 @@ on_actions = {
 						NOT = {
 							has_country_flag = WA_AI_construction_timer
 						}
-						# Fix 80 (2026-08-15) added `OR = { <this exclusion is false>  WA_AI_CONSTRUCTION_
+						# [refineries] (2026-08-15) added `OR = { <this exclusion is false>  WA_AI_CONSTRUCTION_
 						# should_pre_build_synth_rubber = yes }` here so the proactive synthetic-rubber lane
-						# hosted in WA_AI_C.10 could be dispatched inside the ENG/USA date exclusion; Fix 84
+						# hosted in WA_AI_C.10 could be dispatched inside the ENG/USA date exclusion; [pc-queue]
 						# (2026-08-16, never committed) widened the same escape to the idle-civ gate above.
 						# The lane was RETIRED 2026-08-16 (its host starved in the vanilla queue and the
 						# USA's proactive synthetic build moved outside WA_AI - see
@@ -134,13 +134,13 @@ on_actions = {
 			# including the whole Maghreb. `has_capitulated` answers "did this government fall", not
 			# "can this country build" - same category error R27 records for surrender_progress.
 			#
-			# Safety already in place for the newly-iterated population: Fix 34's controller test in
+			# Safety already in place for the newly-iterated population: [pc-queue]'s controller test in
 			# WA_AI_PC_assign_factories refuses factories to any project whose target state is
 			# hostile-controlled, so the France-aimed fossils stay frozen rather than burning civ
-			# weeks; the Fix 41 aging lane then revalidates them and cancels what is obsolete, which
+			# weeks; the [pc-queue] aging lane then revalidates them and cancels what is obsolete, which
 			# is how the queue self-cleans. WA_AI_PC_complete_project_by_id applies the same
 			# controller test before spawning anything. `exists = yes` keeps annexed corpses out (the
-			# open question Fix 68 flagged as unverified) at the cost of one cheap trigger.
+			# open question [aifc] flagged as unverified) at the cost of one cheap trigger.
 			if = {
 				limit = {
 					is_ai = yes
@@ -172,9 +172,9 @@ on_actions = {
 					WA_AI_PC_update_project_progress = yes
 
 					### Railway building - with eligibility filters to reduce processing.
-					# Fix 75: the filter block that used to be inlined here now lives in
+					# [pc-queue] the filter block that used to be inlined here now lives in
 					# WA_AI_PC_country_can_build_own_logistics (WA_AI_CONSTRUCTION_triggers.txt), terms
-					# and thresholds unchanged. It is the same judgement Fix 74's ally leg needs, and
+					# and thresholds unchanged. It is the same judgement [na-corridor]'s ally leg needs, and
 					# two hand-maintained copies of it were already listed as a drift risk on R46.
 					if = {
 						limit = { WA_AI_PC_country_can_build_own_logistics = yes }
@@ -192,7 +192,7 @@ on_actions = {
 					}
 				}
 
-				### Offensive posture and lend-lease relief - both still capitulation-gated (Fix 75).
+				### Offensive posture and lend-lease relief - both still capitulation-gated ([pc-queue]).
 				# Posture publishes an "attack now" verdict for front_control blocks and lend-lease
 				# pulls equipment from allies; neither is something a fallen government should be
 				# doing, and unlike PC neither has a controller test protecting it downstream.
@@ -207,7 +207,7 @@ on_actions = {
 
 					### Lend-lease surplus relief - pull an overland transfer from a hoarding ally
 					# ROOT = recipient; no-ops unless ROOT is starving (per archetype, 9 archetypes since
-					# Fix 92, never summed). Policy triggers live in WA_AI_LEND_LEASE_triggers.txt,
+					# [lend-lease-relief], never summed). Policy triggers live in WA_AI_LEND_LEASE_triggers.txt,
 					# numbers in common/script_constants/wa_ai_lend_lease.txt, effect in
 					# WA_AI_lend_lease_effects.txt; donors are required to be AI by the pair trigger and
 					# to have LAND ACCESS (capital-to-capital state A*, pathfind type 3) - sea pairs are
@@ -228,7 +228,7 @@ on_actions = {
 			# selected the week before the capital fell. FRA carried its May-1940 sector (anchor = 34
 			# Wallonie, age = 4) byte-identical through SEVEN samples spanning 1942.6 -> 1946.8 while alive
 			# and controlling 50 states, and surfaced on checklist R39 leg 1 as a 5-division sector holder
-			# that Fix 56's `has_army_size` term could never reach. Annexed tags (DEN, SHA, SIC, PER, BRM
+			# that [aifc]'s `has_army_size` term could never reach. Annexed tags (DEN, SHA, SIC, PER, BRM
 			# on 02bd4445) show the same frozen sectors; whether THAT half is also fixed here depends on
 			# whether on_weekly iterates non-existent countries at all, which is UNVERIFIED - do not claim
 			# it without checking a save. Harmless either way: the tags do not exist and nothing reads them.
@@ -293,7 +293,7 @@ on_actions = {
 				WA_AI_TEMPLATES_calculate_templates = yes
 				WA_AI_RESEARCH_check_for_empty_research_slots = yes
 
-				# Fix 39: maintain the industry-overextension hysteresis flag (reads the
+				# [overextension-brake] maintain the industry-overextension hysteresis flag (reads the
 				# WA_AI_needs_* trackers; consumed by WA_AI_queue_MIC's substitution
 				# cascade and the synth research triggers). Evaluation logic and flag
 				# semantics: WA_AI_update_industry_overextension in WA_AI_misc_effects.txt.
@@ -305,7 +305,21 @@ on_actions = {
 				WA_TLM_tick_clock = yes
 				WA_TLM_monthly_sample = yes
 
-				# Fix 47: latch the ai_equipment design-context gates into timed
+				# [scripted-invasion-reservation] renew the scripted-calendar target reservations.
+				# Runs only for the 5 calendar invaders (op_n is set by the generated loader and by
+				# nothing else), at war, on the historical difficulty - the same gate the calendar
+				# events themselves carry. Lease (50d) > pulse gap (31d), so reservations hold
+				# between pulses. Effects: WA_AI_LANDING_effects.txt.
+				if = {
+					limit = {
+						check_variable = { WA_AI_LANDING_op_n > 0 }
+						has_war = yes
+						WA_AI_DIFFICULTY_is_historical = yes
+					}
+					WA_AI_LANDING_update_reservations = yes
+				}
+
+				# [equipment-selection] latch the ai_equipment design-context gates into timed
 				# country flags (resource headroom, long-range air need, enemy
 				# strategic bombing). Design switches cost XP and reset production
 				# efficiency, so the ai_equipment priority modifiers read the
@@ -316,7 +330,7 @@ on_actions = {
 				# clock value.
 				WA_AI_EQUIPMENT_update_context_flags = yes
 
-				# Fix 115: the convoy arsenal's gate. Recomputed monthly for the only countries
+				# [convoys] the convoy arsenal's gate. Recomputed monthly for the only countries
 				# that can ever open it - an AI major at war above the large-dockyard band - so
 				# the every_country walk inside runs a handful of times, not once per tag. A
 				# country that stops qualifying keeps a stale share, which is harmless: the
@@ -447,8 +461,8 @@ on_actions = {
 	on_state_control_changed = { #ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 		effect = {
 
-			# Fix 81: the engine drops the old controller's construction queue in this state, so the
-			# per-state "built + queued levels" sums (WA_AI_committed_<X>, building_adders; Fix 88 added CIC/MIC/NIC)
+			# [refineries] the engine drops the old controller's construction queue in this state, so the
+			# per-state "built + queued levels" sums (WA_AI_committed_<X>, building_adders; [pc-queue] added CIC/MIC/NIC)
 			# would over-count for the new controller. Dropping the TTL flags makes WA_AI_available_<X>
 			# fall back to the built level and the next WA_AI_add_<X> rebase the sum.
 			# tlm: WA_TLM_sq_ctrl_reset_n (standing, family sq) on the OLD controller - counted only when a
@@ -564,7 +578,7 @@ on_actions = {
 		}
 	}
 
-	### Fix 5 & 19: Clear railway projects when peace is made
+	### [railway-landwar] + [pc-queue] Clear railway projects when peace is made
 	### This prevents outdated railway projects from continuing after frontlines disappear
 	on_peace = {
 		effect = {
@@ -600,7 +614,7 @@ on_actions = {
 						WA_AI_PC_end_project_by_id = yes
 						add_to_temp_variable = { _cancel_count = 1 }
 						# tlm: pc_peace_n - counter, railway projects (type 13) purged by the
-						# Fix 5/19 on_peace sweep. Written after end_project_by_id, so it counts
+						# [railway-landwar] + [pc-queue] on_peace sweep. Written after end_project_by_id, so it counts
 						# removals. Kept apart from pc_stale_n because the two answer different
 						# questions: peace purges are correct behaviour clearing an obsolete
 						# frontline, stale-path cancels are the route selector changing its mind
@@ -615,7 +629,7 @@ on_actions = {
 
 				# Reset interval counter to trigger immediate recalculation
 				set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
-				# Fix 95: the theatre-corridor pass has its own counter; its rails were purged above
+				# [na-corridor] the theatre-corridor pass has its own counter; its rails were purged above
 				# (type 13) and it should re-plan on the next pulse for the same reason.
 				set_variable = { WA_AI_PC_corridor_INTERVAL_counter = 0 }
 
