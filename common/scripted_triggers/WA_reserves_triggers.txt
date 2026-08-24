@@ -274,3 +274,26 @@ WA_reserves_deployment_complete = {
 		has_country_flag = reserves_finished_1
 	}
 }
+
+############################################################################################################
+# EXPEDITIONARY HOLD
+############################################################################################################
+
+# [reserve-quality] COUNTRY scope. Read by ONE caller: the deploy_reserves_infantry ai_will_do
+# (common/decisions/_reserves.txt) - change the behaviour here, not in the decision.
+# Protects: an army fighting only overseas from being diluted by a reserve dump. One deploy spawns
+# 10 divisions at 30 % equipment (WA_reserves_effects.txt), and those 150 battalions draw reinforcement
+# from the same stockpile the divisions already at the front need.
+# Assumes: "no home-area neighbour at war with us AND no VP lost" == no ground threat at home. That fact
+# is gone the day an enemy borders the home area or surrender_progress leaves 0, and the bank unlocks.
+# `has_war = yes` is load-bearing: without it this would also veto the pre-war early_reserve_mobilization
+# path, which is the one case where deploying with no war and no threat is the intended behaviour.
+WA_reserves_is_expeditionary_only = {
+	has_war = yes
+	NOT = { surrender_progress > 0 }
+	NOT = {
+		any_home_area_neighbor_country = {
+			has_war_with = ROOT
+		}
+	}
+}
