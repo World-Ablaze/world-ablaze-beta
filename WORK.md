@@ -171,44 +171,40 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
   once an enemy is on Egyptian soil.
 
-### silo-breadth — TESTED (2026-08-24)
-- Scope: owner request 2026-08-24 (Discord) — "make other buildings use the build-wide system
-  implemented for mils, specifically fuel silos: I queue 20 fuel silos and it queues up 6 in one
-  state and then stops (first state's cap of 6)."
-- Diagnosis (MEASURED): fuel_silo is a shared-slot building with `state_max = 6`
-  (`00_buildings.txt`), but `WA_AI_available_SILO` never got the [refineries]/Fix 81 committed
-  standard — no state-cap test at all — and `WA_AI_queue_SILO` still uses the pre-Fix-88
-  first-fit walk. Exactly the stall the triggers-file header documents: past the cap the top
-  state stays "available" (free_building_slots reports only the shared pool), the engine no-ops
-  every add, the state stays #1 in `WA_AI_shared_slot_scores`, silos stall country-wide.
-- Fix: replicate the CIC/MIC/NIC/REF standard for SILO — `@WA_AI_SILO_STATE_MAX = 6` +
-  committed-sum availability, `WA_AI_queue_depth_ok_SILO`, committed-maintaining
-  `WA_AI_add_SILO` (TLM `sq_adds_by_type^8`, v31), Fix 88 breadth-first walk in
-  `WA_AI_queue_SILO`, `on_state_control_changed` TTL reset extended to SILO, registry mirror
-  for the state cap, console harness `WA_TEST_silo_breadth` (`event wa_silo.1` read-only /
-  `.2` burst).
-- State: shipped + console harness PASSED by the owner 2026-08-24. Reviews: lessons
-  CONCERNS + architecture CONCERNS, all required items applied in-session (TTL reset on
-  control change, closing criterion on built levels, TLM v31 bump + §5 row, caller-gate
-  meta_trigger render measured by harness leg C, header sync in queue_functions). Also
-  removed in passing, on the owner's explicit ask: the born-dead FRA∧ENG exclusion branch
-  in the caller's silo gate (`events/WA_AI_construction.txt`, vacuously false since
-  `bd11fde6b` — removal preserves behaviour).
-- Harness run (owner, 2026-08-24, GER 1936 fresh boot, MEASURED from game.log): header
-  `1 1 1 1 0`, tech 1; legA 30 scored states, top 8 all `avail = 1` (no FAIL line); legC
-  `need 15 / gate 1 / known-true 1 / known-false 0` — the caller's meta_trigger render
-  works; legB 8 picks on 8 DISTINCT states (W. Berlin, E. Berlin, W. Rhineland,
-  E. Rhineland, Hamburg, Moselland, Saarland, N. Brandenburg), all tier 1, k = 10 — the
-  pre-fix behaviour was 8× the top state. RESIDUAL, stated honestly: the save had no state
-  at the silo cap, so "built = 6 reads avail = 0" was not exercised (vacuous on this run);
-  the campaign probe owns it, same committed mechanism as the refineries' campaign-proven
-  cap test.
-- Closed when: the owner's console harness run shows the walk skipping a state at its silo cap
-  and spreading a burst across ≥ 2 states; and a campaign save shows a country with silo need
-  > 6 holding BUILT `fuel_silo` levels in ≥ 2 states (state building levels, not the adds
-  counter — a queued add on a saturated queue is not a build; `wa_tlm_sq_adds_by_type^8` is
-  supporting evidence only).
-- Verification: console harness (owner-run, output pasted here); campaign probe as above.
+### raj-trucks — OPEN (2026-08-24)
+- Scope: owner report 2026-08-24 — the Raj produces no motorized_equipment. MEASURED chain: RAJ is in
+  `WA_AI_CONFIG_DIVISIONS_can_motorize_support`, so its infantry target template is the `_MOT_` variant
+  (`WA_AI_TEMPLATES_infantry.txt` 1002/1005/1006, ~220 motorized_equipment per division per
+  `WA_AI_DIVISION_CREATOR_effects.txt`), but every `*_motorised_infantry` tech was gated on
+  `WA_AI_RESEARCH_needs_mechanized` (USA/ENG/CAN/AST/SAF, or armor+medium/heavy focus, or >100 mil
+  factories) — RAJ satisfies none, so it could never unlock `eng_motorized_equipment_1` and its
+  motorised support companies had no equipment to fill. `WA_AI_RESEARCH_needs_trucks` existed for
+  exactly this and was `always = yes`, i.e. inert inside the AND.
+- State: written in the working tree, **uncommitted, untested**. `WA_AI_RESEARCH_needs_trucks`
+  (`WA_AI_RESEARCH_tanks.txt`) now ORs can_motorize_support / needs_mechanized / use_armor_templates /
+  use_motorized_templates; the 12 `*_motorised_infantry` ai_will_do blocks (`armor.txt` + 11
+  `armor_<tag>.txt`) key on `needs_trucks` alone, which is what `tools/ai_will_do_replacer_armor.py`
+  maps the `motorized_equipment` category to. Strict superset of the old gate: no country loses the
+  tech. Side effect by design: `vehicle_winch`
+  (`electronic_mechanical_engineering.txt`, `NOT = { needs_trucks }`) stops being researched by
+  countries with no truck demand — it was unblockable while the trigger was `always = yes`.
+- Closed when: a campaign save shows RAJ holding a `*_motorised_infantry` tech, a non-zero
+  motorized_equipment production line, and its infantry divisions at full equipment; control =
+  a foot-army minor outside `can_motorize_support` and outside the earned latch still has no truck
+  tech and no truck line (the fix must not become "everyone builds trucks").
+- Amended 2026-08-24 (owner, MEASURED in `05_defines.lua`): a horse army needs trucks too — 500
+  motorized_equipment fully motorize one supply hub (`SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST`) and
+  the engine AI does it unprompted below `NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.95`,
+  every 48h. `needs_trucks` therefore also fires on `WA_AI_CONFIG_is_major_country` or
+  `num_of_military_factories > 10`. Because that widens the tech to small industries, the flat
+  `equipment_production_min_factories_archetype = 10` truck floor is now tiered like the amphibious
+  floors: > 49 mil factories keeps 10 (unchanged for majors), < 50 gets a new 3-factory tier
+  (`WA_AI_PRODUCTION_build_trucks_stockpile_low_small`). Behaviour change to watch: CAN / AST / SAF
+  had the tech and the flat 10 before; they now sit in the 3 tier.
+- Not done here, latent: `WA_AI_TEMPLATES_has_motorized_unlocked` checks only the generic
+  `motorised_infantry`, while every sibling `has_*_unlocked` ORs the national variants — so it is
+  false for every tag-tree country. Harmless today (`use_motorized_divisions = always no`), a trap
+  the day motorised divisions are switched on.
 
 ## PARKED
 
@@ -217,6 +213,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `silo-breadth` | TESTED (console harness owner-PASSED 2026-08-24) | Fuel silos stall at the first state's cap of 6; shipped fix = CIC/MIC/NIC/REF availability standard + breadth-first walk, harness `event wa_silo.1`/`.2` | A campaign save shows a country with silo need > 6 holding BUILT `fuel_silo` levels in >= 2 states, and the harness walk skipping a state at its cap |
 | `lend-lease-relief` | TESTED (owner-validated 2026-08-23) | Overland surplus relief (Fix 92) + USA native offers work; final audit remains | Final audit passes: leg 3 of R7b checked; USA sender restored or the R57 failure explained and accepted |
 | `trade-law` | SHIPPED-UNTESTED (`32c03c550` + revert, 2026-08-19) | Ladder has two reachable rungs (R28); dead flag `WA_AI_trade_law_recently_changed`; recovery path only covers export_focus/free_trade | In-game test of the shipped fix passes; ladder rungs reachable in a campaign |
 | `majors-mechanize` | FAILED (2026-08-17, `9d83084c`) | Majors do not mechanize (R6) | A campaign shows majors' mobile divisions motorized/mechanized on schedule (R6 probe, archive) |
