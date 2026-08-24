@@ -131,18 +131,21 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   it: four entries on `area = north_africa` occupy four DIFFERENT `Target` ids in that window, so
   whether the engine SUMS entries sharing an area is now itself ASSUMED
   (`.claude/skills/wa-diagnosis/SKILL.md` technique 5 rule 3, commit `e68387f2e`).
-- **Second lever shipped 2026-08-24, uncommitted at time of writing — the ENG `north_africa`
-  throttles stand down while Egypt is invaded.** New control-panel trigger
-  `WA_AI_MILITARY_egypt_is_invaded` (ROOT-relative, tag-free, 11 Egyptian states — deliberately
-  wider than the {446,447,453} East-Egypt anchor, because 452 falls first). The two
-  `area = north_africa` entries are split out of `africa_war_1` (`-40`) and `africa_war_3_FRONT`
-  (`-20`) into `WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held` / `_border_held`,
-  each keeping its original gate plus `NOT egypt_is_invaded`; the parents keep `central_africa -50`
-  and their two `front_control` entries. ENG's `north_africa` net becomes conditional: `+25` clear,
-  `+85` invaded (`WA_AI_MILITARY_SYSTEM.md` §16 restated). The `-130` is NOT re-sized — its intent
-  holds at both nets, and the margin over East Africa widens from 5 points to 65 exactly when Egypt
-  is attacked. Removal rather than a `+60` counter-entry is deliberate: a counter only works if the
-  engine sums per area, a removal works under either reading.
+- **Second lever shipped 2026-08-24 - the ENG `north_africa` throttles stand down while Egypt is
+  invaded.** New control-panel trigger `WA_AI_MILITARY_egypt_is_invaded` (ROOT-relative, tag-free,
+  11 Egyptian states - deliberately wider than the {446,447,453} East-Egypt anchor, because 452
+  falls first). The `area = north_africa` `-40` is split out of `africa_war_1` into
+  `WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held`, keeping its original gate plus
+  `NOT egypt_is_invaded`; `africa_war_1` keeps `central_africa -50`. **Owner decision 2026-08-24, the
+  second half of the lever: `WA_AI_MILITARY_ENG_africa_war_3_FRONT` and its `_border_held` split are
+  DELETED outright**, so the `-20` peacetime-onward throttle is gone unconditionally rather than
+  gated - and with the parent go its two `front_control` entries on the ITA / ITL fronts, i.e. ENG's
+  north-African fronts return to engine-default `ordertype = front` handling. That last part is a
+  behaviour change in its own right and is the thing to watch in the next campaign. ENG's
+  `north_africa` net becomes `+45` clear and `+85` invaded (`WA_AI_MILITARY_SYSTEM.md` §16
+  restated); the margin over East Africa's `+20` is 25 points clear, 65 invaded. The `-130` is NOT
+  re-sized - its intent holds at both nets. Removal rather than a `+60` counter-entry is deliberate:
+  a counter only works if the engine sums per area, a removal works under either reading.
 - **Known limit of that lever, recorded before shipping (MEASURED, `plans.py ENG`):** ENG's December
   order-class census is front 26 / buffer 25 / areadef 6 / invasion 6 of 63 — **40 % of the army sits
   in buffer orders across 9 armies**, only ~4 of them in Egypt. A `front_unit_request` does not by

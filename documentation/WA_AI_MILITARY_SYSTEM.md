@@ -781,14 +781,17 @@ delegation of the family: the other three park divisions, this one sends them. E
 (was `-75` until 2026-08-24, see below), netting ENG `+20` against RAJ's `+250` — deliberately below
 ENG's `north_africa` net, so Egypt outbids East Africa while the delegate carries the theatre.
 
-**That `north_africa` net is CONDITIONAL since [commonwealth-handoff] (2026-08-24).** It is `+25` while
-Egypt is clear (Faction `+75`, `africa_war_1` `-40`, `africa_war_3` `-20`,
-`focus_on_land_War_in_north_africa` `+10`) and **`+85` while an enemy stands on Egyptian soil**, when
-the two negatives stand down — they now live in
-`WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held` / `_border_held`, gated on
-`NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }`. The delegation's `-130` is NOT re-sized: its
-intent (Egypt outbids East Africa) holds at both nets — the margin widens from 5 points to 65
-exactly when Egypt is under attack, which is the case the delegation was written for. **Both numbers
+**That `north_africa` net is CONDITIONAL since [commonwealth-handoff] (2026-08-24).** It is `+45` while
+Egypt is clear (Faction `+75`, the `egypt_held` brake `-40`, `focus_on_land_War_in_north_africa` `+10`)
+and **`+85` while an enemy stands on Egyptian soil**, when the brake stands down - it lives in
+`WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held`, gated on
+`NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }`. **`WA_AI_MILITARY_ENG_africa_war_3_FRONT` and its
+`_border_held` split are DELETED** (owner decision 2026-08-24): the `-20` peacetime-onward throttle is
+gone unconditionally, and with the parent go its two `front_control` entries on the ITA / ITL fronts -
+ENG's north-African fronts return to engine-default `ordertype = front` handling, which is a behaviour
+change and not a bookkeeping one. The delegation's `-130` is NOT re-sized: its intent (Egypt outbids
+East Africa) holds at both nets - the margin over East Africa's `+20` is 25 points while Egypt is clear
+and 65 while it is attacked, the case the delegation was written for. **Both numbers
 assume the engine SUMS `front_unit_request` entries sharing an `area`, which is unresolved** — see
 `.claude/skills/wa-diagnosis/SKILL.md` technique 5 rule 3. Any retune of these values waits on that
 question; the throttle split does not, because removing an entry works under either reading.
@@ -804,7 +807,7 @@ both open: (a) **the delegation was OFF in that save** — RAJ (36 divisions, `W
 on major-power collapse data in `WA_AI_MILITARY_posture_triggers.txt`), so no readiness verdict of
 the Commonwealth family armed, while the Faction `+150` still sent 16 RAJ divisions to East Africa
 anyway — the delegate fights unready, only ENG's stand-down waits for paper readiness; (b) cross-AREA
-ordering of `front_unit_request` values (Egypt `+25` beating East Africa `+20`) is ASSUMED engine
+ordering of `front_unit_request` values (Egypt `+45` beating East Africa `+20`) is ASSUMED engine
 behaviour, same status as the §17 magnitude caveat — verification is the campaign probe on
 `commonwealth-handoff` in WORK.md.
 
