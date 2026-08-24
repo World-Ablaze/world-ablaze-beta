@@ -123,7 +123,7 @@ Four rules for using it, each of which is how it gets misread:
    - Otherwise — `area =` / `tag =` / `state =` / `strategic_region =` / `state_trigger` — Target
      holds an **auto handle equal to the entry's load position** among `front_unit_request` +
      `front_control` + `invasion_unit_request` entries only. Other types interleaved in the same file
-     consume no id. One constant base per file reproduces every row (ENG_FRONT 101, archetypes 736,
+     consume no id. One constant base per file reproduces every row (ENG_FRONT 102, archetypes 736,
      ALLIES_FRONT 779). The absolute origin of the counter is **not** reproducible from the folder
      alone — solve the base from two known rows in the same file instead.
    - `Token` is 0 throughout because WA never sets `id` on these entries.
