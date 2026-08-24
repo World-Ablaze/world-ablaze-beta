@@ -2257,3 +2257,27 @@ process caveats (stale process, and the absence of a load-time hook).
   point for that entry: an in-session script hot-reload is a candidate trigger of the poisoned
   state (ASSUMED — one sighting). The harness's STOP rule caught it, which is the contract doing
   its job; variable arithmetic (leg A) read correctly throughout.
+
+### Scope errors logged after a hot reload or a savegame load may be false — reproduce on a cold boot before diagnosing
+
+- **Date:** 2026-08-24 (Discord report by 156, WA toolpack author — peer report, not measured in this repo)
+- **Symptom:** Aigle2 kept getting scope errors in the log after an AI-authored change to 156's
+  toolpack; 156 reverted the change, re-tested the toolpack, and saw no errors ("I have reverted
+  and am testing the tool out, no errors so far") — the errors did not follow the code.
+- **Cause:** per 156: "hot reloading files and also loading save games can cause random scope
+  errors printed to log that aren't real errors" (ASSUMED — second-hand from a modder who has
+  observed it across the standalone toolpack; mechanism unobservable). This corroborates two
+  in-repo sightings: the 08-20 "Two call sites, one effect" poisoned-scope syndrome, and the
+  08-23 bonus sighting where a hot-reloaded harness read `I-am-ROOT=0` from a file that had read
+  clean minutes earlier. Savegame *loading* as a trigger is new information from this report.
+- **Rule:** a scope error in `error.log` observed in a session that hot-reloaded scripts or loaded
+  a savegame is not evidence of a script defect. Before diagnosing, reverting, or shipping a fix
+  on the strength of logged scope errors, reproduce them from a **cold boot into a new game**; only
+  errors that survive that reproduction are real. Symmetrically, a clean log after a hot reload
+  proves nothing either — the 08-23 sighting shows hot reload can also *create* poisoned state.
+- **Detection:** ask how the erroring session was started (fresh launch / reload / save load). The
+  scope self-check header of the harness contract (`who:` / `scope:` lines + known-false control)
+  distinguishes a poisoned session from a real scope bug in scripted effects.
+- **Evidence:** Discord #wa channel, 2026-08-24 (156 ↔ Aigle2 exchange); log entries "Two call
+  sites, one effect" (08-20) and the hot-reload bonus sighting under the temp-arithmetic entry
+  (08-23).

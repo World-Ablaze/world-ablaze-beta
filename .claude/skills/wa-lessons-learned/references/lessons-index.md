@@ -135,3 +135,4 @@ triages from this file first.
 - C 08-19 Check a block's enable against the save before blaming its payload · grep:"silently OFF"
 - B 08-20 Country-valued triggers can all fail per call site; rehome poisoned harnesses · grep:"Two call sites, one effect"
 - A 08-20 front_armor_score id names the ENEMY; an ally's id scores nothing · grep:"ally's id is a silent no-op"
+- D 08-24 Scope errors after hot reload or save load may be false; reproduce cold-boot · grep:"reproduce on a cold boot"
