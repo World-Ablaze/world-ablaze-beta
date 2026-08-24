@@ -380,6 +380,42 @@ WA_AI_add_AA = {
 
 WA_AI_add_SILO = {
 	if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: WA_AI_add_SILO in [This.GetID] [This.GetName]" }
+	# [silo-breadth] maintain WA_AI_committed_SILO = built + queued so WA_AI_available_SILO can enforce the
+	# state cap and WA_AI_queue_depth_ok_ the per-line depth. Counted only when the add can actually land
+	# (same test the queue loops use). Rebase to the built level: unconditional when the TTL flag
+	# lapsed (nothing can still be queued from before), upward clamp only while it is live (levels that
+	# rose outside this adder - focus, PC instant build, the engine's own construction AI).
+	if = { limit = { WA_AI_available_SILO = yes }
+		# tlm: WA_TLM_sq_rebase_down_n (standing, family sq) - the TTL lapsed and the sum was above the built
+		# level: a queue that was cancelled/lost is being forgotten. Verified effect (the set below runs).
+		if = {
+			limit = {
+				NOT = { has_state_flag = WA_AI_committed_SILO_recent }
+				check_variable = { WA_AI_committed_SILO > building_level@fuel_silo }
+			}
+			ROOT = { add_to_variable = { WA_TLM_sq_rebase_down_n = 1 } }
+		}
+		if = {
+			limit = {
+				OR = {
+					NOT = { has_state_flag = WA_AI_committed_SILO_recent }
+					check_variable = { WA_AI_committed_SILO < building_level@fuel_silo }
+				}
+			}
+			set_variable = { WA_AI_committed_SILO = building_level@fuel_silo }
+		}
+		add_to_variable = { WA_AI_committed_SILO = 1 }
+		set_state_flag = { flag = WA_AI_committed_SILO_recent value = 1 days = @WA_AI_QUEUED_REFINERY_TTL_DAYS }
+		# tlm: WA_TLM_sq_adds_n / _adds_by_type^8 / _first_t / _last_t (standing, family sq) - a counted
+		# add = availability passed and add_building_construction issued; script cannot read the engine
+		# queue, so this is the same evidence level as the committed sum itself. Consumers: R49, R53.
+		ROOT = {
+			add_to_variable = { WA_TLM_sq_adds_n = 1 }
+			add_to_variable = { WA_TLM_sq_adds_by_type^8 = 1 }
+			if = { limit = { check_variable = { WA_TLM_sq_first_t = 0 } } set_variable = { WA_TLM_sq_first_t = global.WA_TLM_clock } }
+			set_variable = { WA_TLM_sq_last_t = global.WA_TLM_clock }
+		}
+	}
 	add_building_construction = { type = fuel_silo level = 1 instant_build = no }
 }
 

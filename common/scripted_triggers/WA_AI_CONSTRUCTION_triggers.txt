@@ -27,6 +27,9 @@
 @WA_AI_CIC_STATE_MAX = 45
 @WA_AI_MIC_STATE_MAX = 45
 @WA_AI_NIC_STATE_MAX = 45
+# [silo-breadth] fuel_silo joins the same standard - it shares slots and has the lowest cap of all,
+# so the uncapped test stalled the type country-wide the moment the top-scored state held 6.
+@WA_AI_SILO_STATE_MAX = 6
 
 WA_AI_available_AIR = {
 	ROOT = { has_full_control_of_state = PREV }
@@ -147,6 +150,13 @@ WA_AI_available_REF = {
 }
 
 WA_AI_available_SILO = {
+	# [silo-breadth] built < cap, and committed (= built + queued) < cap while the TTL flag is live (see
+	# header). Hard-coded state sites go through WA_AI_add_SILO.
+	check_variable = { building_level@fuel_silo < @WA_AI_SILO_STATE_MAX }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SILO_recent }
+		check_variable = { WA_AI_committed_SILO < @WA_AI_SILO_STATE_MAX }
+	}
 	free_building_slots = { building = fuel_silo size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
 }
@@ -212,6 +222,9 @@ WA_AI_available_HAR = {
 @WA_AI_QUEUE_DEPTH_HSR = 3
 @WA_AI_QUEUE_DEPTH_AR = 3
 @WA_AI_QUEUE_DEPTH_HAR = 3
+# [silo-breadth] cap 6 with depth 3 = at most two picks per state before tier C; keeps a 20-silo
+# burst spreading over >= 4 states instead of two.
+@WA_AI_QUEUE_DEPTH_SILO = 3
 
 WA_AI_queue_depth_ok_CIC = {
 	set_temp_variable = { _wa_depth_ = WA_AI_committed_CIC }
@@ -282,6 +295,15 @@ WA_AI_queue_depth_ok_HAR = {
 	OR = {
 		NOT = { has_state_flag = WA_AI_committed_HAR_recent }
 		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_HAR }
+	}
+}
+
+WA_AI_queue_depth_ok_SILO = {
+	set_temp_variable = { _wa_depth_ = WA_AI_committed_SILO }
+	subtract_from_temp_variable = { _wa_depth_ = building_level@fuel_silo }
+	OR = {
+		NOT = { has_state_flag = WA_AI_committed_SILO_recent }
+		check_variable = { _wa_depth_ < @WA_AI_QUEUE_DEPTH_SILO }
 	}
 }
 

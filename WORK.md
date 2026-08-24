@@ -121,7 +121,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   behaviour — this probe is its only proof); (b) Egypt holds ≥ 8 Allied divisions with
   front/buffer orders while Italy holds the Libyan border states.
 
-### silo-breadth — OPEN (2026-08-24)
+### silo-breadth — TESTED (2026-08-24)
 - Scope: owner request 2026-08-24 (Discord) — "make other buildings use the build-wide system
   implemented for mils, specifically fuel silos: I queue 20 fuel silos and it queues up 6 in one
   state and then stops (first state's cap of 6)."
@@ -133,8 +133,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   every add, the state stays #1 in `WA_AI_shared_slot_scores`, silos stall country-wide.
 - Fix: replicate the CIC/MIC/NIC/REF standard for SILO — `@WA_AI_SILO_STATE_MAX = 6` +
   committed-sum availability, `WA_AI_queue_depth_ok_SILO`, committed-maintaining
-  `WA_AI_add_SILO` (TLM `sq_adds_by_type^8`), Fix 88 breadth-first walk in `WA_AI_queue_SILO`,
-  registry mirror for the state cap, console harness `WA_TEST_silo_breadth`.
+  `WA_AI_add_SILO` (TLM `sq_adds_by_type^8`, v31), Fix 88 breadth-first walk in
+  `WA_AI_queue_SILO`, `on_state_control_changed` TTL reset extended to SILO, registry mirror
+  for the state cap, console harness `WA_TEST_silo_breadth` (`event wa_silo.1` read-only /
+  `.2` burst).
+- State: shipped + console harness PASSED by the owner 2026-08-24. Reviews: lessons
+  CONCERNS + architecture CONCERNS, all required items applied in-session (TTL reset on
+  control change, closing criterion on built levels, TLM v31 bump + §5 row, caller-gate
+  meta_trigger render measured by harness leg C, header sync in queue_functions). Also
+  removed in passing, on the owner's explicit ask: the born-dead FRA∧ENG exclusion branch
+  in the caller's silo gate (`events/WA_AI_construction.txt`, vacuously false since
+  `bd11fde6b` — removal preserves behaviour).
+- Harness run (owner, 2026-08-24, GER 1936 fresh boot, MEASURED from game.log): header
+  `1 1 1 1 0`, tech 1; legA 30 scored states, top 8 all `avail = 1` (no FAIL line); legC
+  `need 15 / gate 1 / known-true 1 / known-false 0` — the caller's meta_trigger render
+  works; legB 8 picks on 8 DISTINCT states (W. Berlin, E. Berlin, W. Rhineland,
+  E. Rhineland, Hamburg, Moselland, Saarland, N. Brandenburg), all tier 1, k = 10 — the
+  pre-fix behaviour was 8× the top state. RESIDUAL, stated honestly: the save had no state
+  at the silo cap, so "built = 6 reads avail = 0" was not exercised (vacuous on this run);
+  the campaign probe owns it, same committed mechanism as the refineries' campaign-proven
+  cap test.
 - Closed when: the owner's console harness run shows the walk skipping a state at its silo cap
   and spreading a burst across ≥ 2 states; and a campaign save shows a country with silo need
   > 6 holding BUILT `fuel_silo` levels in ≥ 2 states (state building levels, not the adds

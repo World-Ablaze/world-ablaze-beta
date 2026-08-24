@@ -25,9 +25,9 @@
 # (9.15, 12.8 ...): the walk compares `_wa_bf_rank_ < WA_AI_bf_k` with an integer rank, which IS the
 # ceiling - and the WA_TLM_sq_k / _k_max gauges copy it as-is, so read them as ceil(). Score order
 # still decides WHICH K states are candidates; breadth only decides how a burst spreads among them.
-# All eight shared-slot types (CIC/MIC/NIC + the five refineries) carry the [refineries] sum
+# All nine shared-slot types (CIC/MIC/NIC + the five refineries + SILO) carry the [refineries] sum
 # WA_AI_committed_<X> and a depth trigger WA_AI_queue_depth_ok_<X> (WA_AI_CONSTRUCTION_triggers.txt).
-# Not applied to the non-shared queues (RADAR/AIR/AA/SILO/INF): different arrays, small caps.
+# Not applied to the non-shared queues (RADAR/AIR/AA/INF): different arrays, small caps.
 # WA_AI_bf_k, WA_AI_bf_picked_<X> and every _wa_bf_* are TEMP (execution-scoped = one event fire =
 # one burst). The selection loop breaks on its own _wa_bf_break_ and never reads the plain `break` on
 # entry; the plain `break = 1` is still set on every add so the downstream contract (queue_INF
@@ -474,18 +474,30 @@ WA_AI_queue_SILO = {
 			WA_AI_get_shared_slot_scores = yes
 		}
 
-		for_each_scope_loop = { array = WA_AI_shared_slot_scores
-
+		# [silo-breadth] breadth-first placement - one selection walk, four tiers (see WA_AI_bf_consider).
+		WA_AI_queue_breadth_prepare = yes
+		WA_AI_bf_select_begin = yes
+		for_each_scope_loop = { array = WA_AI_shared_slot_scores break = _wa_bf_break_
 			if = {
 				limit = {
 					# is_core_of = ROOT
 					WA_AI_available_SILO = yes
 					WA_AI_available_SHARED = yes
 				}
-
-				WA_AI_add_SILO = yes
-				set_temp_variable = { break = 1 }
+				set_temp_variable = { _wa_bf_depth_ok_ = 0 }
+				if = { limit = { WA_AI_queue_depth_ok_SILO = yes } set_temp_variable = { _wa_bf_depth_ok_ = 1 } }
+				set_temp_variable = { _wa_bf_is_picked_ = 0 }
+				if = { limit = { is_in_array = { array = WA_AI_bf_picked_SILO value = THIS.id } } set_temp_variable = { _wa_bf_is_picked_ = 1 } }
+				WA_AI_bf_consider = yes
 			}
+		}
+		WA_AI_bf_choose = yes
+		if = { limit = { check_variable = { _wa_bf_clear_ = 1 } } clear_temp_array = WA_AI_bf_picked_SILO }
+		if = { limit = { check_variable = { _wa_bf_target_found_ = 1 } }
+			var:_wa_bf_target_ = { WA_AI_add_SILO = yes }
+			add_to_temp_array = { WA_AI_bf_picked_SILO = _wa_bf_target_ }
+			WA_AI_bf_record = yes
+			set_temp_variable = { break = 1 } # downstream contract (queue_INF fallback, MIC-replacement legs)
 		}
 	}
 }
