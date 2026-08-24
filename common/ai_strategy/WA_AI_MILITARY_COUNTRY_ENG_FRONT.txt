@@ -318,6 +318,37 @@ WA_AI_MILITARY_ENG_africa_war_1 = {
 		area = central_africa
 		value = -50 # economy: was -200, then -100; [med-axis-posture] (user decision 2026-08-17): -50 - the "let the RAJ do East Africa" preference stays, but no longer cancels the Faction +150 theatre pull (0edbc955: RAJ 0-5 divisions there, ENG never more than 17)
 	}
+}
+
+
+# [commonwealth-handoff] the north_africa half of africa_war_1, split off so it can stand down while
+# an enemy stands on Egyptian soil. Its gate REQUIRES hostile presence in Africa, so it armed
+# exactly when the African war opened and then suppressed the front that war created.
+# range:   front_unit_request -40. Gate is africa_war_1's, with the inline {446,447,453}x{ENG,UKE}
+#          OR expressed as WA_AI_MILITARY_ENG_holds_east_egypt (identical body), plus the new NOT.
+# policy:  Additive per area; parent keeps central_africa -50, this block is sole writer of the -40.
+#          Removing the entry rather than cancelling it with a positive is deliberate: whether the
+#          engine SUMS entries sharing an area is unresolved, and a removal works under either.
+# assumes: the lift un-latches on Egyptian soil alone, so retaking the last Egyptian state re-arms
+#          the brake with Libya still hostile. Flap cost is bounded BY CONSTRUCTION - the re-armed
+#          state IS the pre-change behaviour (net +25), never worse. t0 invaded: -40/-20 off, net
+#          +85. t1 last state retaken: both on, net +25 = today. t2 452 lost again: off, +85.
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_holds_east_egypt = yes
+		OR = {
+			is_in_faction_with = RAJ
+			RAJ = { is_subject_of = ENG }
+		}
+		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
+		surrender_progress < 0.05
+		NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
@@ -372,6 +403,45 @@ WA_AI_MILITARY_ENG_africa_war_3_FRONT = {
 		ordertype = front
 		execution_type = balanced
 	}
+}
+
+
+# [commonwealth-handoff] the north_africa half of africa_war_3, split off so it can stand down while
+# an enemy stands on Egyptian soil. UNLIKE africa_war_1 this gate carries NO hostile-presence term -
+# control of any of {446,447,453,450,663,451} plus date > 1939.1.1 - so the -20 is a peacetime-onward
+# throttle, not a wartime one. That is why it needs the same lift: nothing in its own gate notices
+# that Egypt is being invaded.
+# range:   front_unit_request -20, gate = africa_war_3's verbatim plus NOT egypt_is_invaded.
+# policy:  Additive per area; sole writer of the -20. Parent keeps its two front_control entries and
+#          they stay unconditional - handing the ITA/ITL fronts back to the engine mid-invasion is
+#          not part of this change.
+# assumes: same un-latch and same bounded flap as the egypt_held twin - read its header.
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_border_held = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		OR = {
+			446 = { is_controlled_by = ENG }
+			447 = { is_controlled_by = ENG }
+			453 = { is_controlled_by = ENG }
+			450 = { is_controlled_by = ENG }
+			663 = { is_controlled_by = ENG }
+			451 = { is_controlled_by = ENG }
+			446 = { is_controlled_by = UKE }
+			447 = { is_controlled_by = UKE }
+			453 = { is_controlled_by = UKE }
+			450 = { is_controlled_by = UKE }
+			663 = { is_controlled_by = UKE }
+			451 = { is_controlled_by = UKE }
+		}
+		surrender_progress < 0.05
+		date > 1939.1.1
+		NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }
+	}
+	abort_when_not_enabled = yes
+
 	ai_strategy = {
 		type = front_unit_request
 		area = north_africa

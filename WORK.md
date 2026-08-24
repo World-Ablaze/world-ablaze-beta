@@ -115,11 +115,61 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: a campaign shows the delegate missions armed and manned (R72's legs), the
   Indian army in East Africa/El Alamein, and no dominion dockyard nailed by an unbuildable
   design.
+- **Campaign `db5029c2` 1940.9–1940.12 scored 2026-08-24 (build `d7e9b91ee`, all fixes live) —
+  probe (a) FAILS all four months, probe (b) passes on its letter while Egypt falls.** MEASURED:
+  state 452 Marsa Matruh (the El-Alamein / Sallum / Sidi-Barrani VP state) falls to Italy in
+  November and holds ZERO Allied divisions in December; Egypt+Libya December = Axis 56 (ITA 38,
+  GER 10, ITL 8) vs Allies 16, with 21 Axis divisions already inside Egyptian states and Cairo
+  contested 13/5. ENG East Africa + Sudan vs Egypt: 24/7, 24/11, 20/12, 21/12. RAJ Egypt 8→8→8→3
+  while RAJ East Africa 5→9→14→14. **Probe (b) is badly written** — it counts divisions without
+  looking at the front held or the force ratio, so it reads PASS (12 ≥ 8) on a collapsing theatre;
+  rewrite it before the next scoring.
+- **The "block never fired" hypothesis is REFUTED.** Owner-run `imgui show ai-strategy` (ENG @
+  1940.11.1, same campaign) lists `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT` under Active
+  strategies, and 28/28 `front_unit_request` rows reconcile to file:line. The `-130` is armed and
+  doing what it says. What survives is the cross-AREA ordering assumption — and a NEW doubt under
+  it: four entries on `area = north_africa` occupy four DIFFERENT `Target` ids in that window, so
+  whether the engine SUMS entries sharing an area is now itself ASSUMED
+  (`.claude/skills/wa-diagnosis/SKILL.md` technique 5 rule 3, commit `e68387f2e`).
+- **Second lever shipped 2026-08-24, uncommitted at time of writing — the ENG `north_africa`
+  throttles stand down while Egypt is invaded.** New control-panel trigger
+  `WA_AI_MILITARY_egypt_is_invaded` (ROOT-relative, tag-free, 11 Egyptian states — deliberately
+  wider than the {446,447,453} East-Egypt anchor, because 452 falls first). The two
+  `area = north_africa` entries are split out of `africa_war_1` (`-40`) and `africa_war_3_FRONT`
+  (`-20`) into `WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held` / `_border_held`,
+  each keeping its original gate plus `NOT egypt_is_invaded`; the parents keep `central_africa -50`
+  and their two `front_control` entries. ENG's `north_africa` net becomes conditional: `+25` clear,
+  `+85` invaded (`WA_AI_MILITARY_SYSTEM.md` §16 restated). The `-130` is NOT re-sized — its intent
+  holds at both nets, and the margin over East Africa widens from 5 points to 65 exactly when Egypt
+  is attacked. Removal rather than a `+60` counter-entry is deliberate: a counter only works if the
+  engine sums per area, a removal works under either reading.
+- **Known limit of that lever, recorded before shipping (MEASURED, `plans.py ENG`):** ENG's December
+  order-class census is front 26 / buffer 25 / areadef 6 / invasion 6 of 63 — **40 % of the army sits
+  in buffer orders across 9 armies**, only ~4 of them in Egypt. A `front_unit_request` does not by
+  itself move a division held in a buffer pool, so this fix removes a real suppression on the
+  Egyptian front request but is NOT established to reach the ~20 buffer-held divisions outside the
+  theatre. The buffer layer is untouched and is the next lever, not this one.
+- Reviews 2026-08-24 on that lever: architecture CONCERNS (5 required items, all applied — canonical
+  block naming per §5 rule 4, §16 arithmetic restated, `military_economy_audit.py` run clean of the
+  new blocks, `range:` wording corrected, `front_control` entries left in the parent) and lessons
+  CONCERNS (6 items — the false "africa_war_3 arms on hostile presence" premise CORRECTED in its
+  header, that gate has no hostile-presence term and its `-20` is a peacetime-onward throttle; the
+  oscillation bound written as a t0/t1/t2 line, flap worst case = the pre-change net `+25`, never
+  worse; the order-class census run and its adverse result recorded above; the 2026-08-17
+  `[med-axis-posture]` decision re-priced `central_africa` only and records no rationale for the
+  `north_africa` negatives, so it is not contradicted).
 - Verification: campaign probes of R70/R72/R73/R84-R95 (archive); no console harness.
   Added 2026-08-24: (a) with the delegation live, ENG divisions in East Africa + Sudan drop
   below its Egypt/north-africa contingent (cross-area ordering +20 < +25 is ASSUMED engine
-  behaviour — this probe is its only proof); (b) Egypt holds ≥ 8 Allied divisions with
-  front/buffer orders while Italy holds the Libyan border states.
+  behaviour — this probe is its only proof) — **FAILED on `db5029c2`, see above**; (b) Egypt holds
+  ≥ 8 Allied divisions with front/buffer orders while Italy holds the Libyan border states —
+  **passes on its letter, rewrite it**. Added for the throttle lever: **F9 boot test owed** (the
+  strategy-DB CTD precedent of 2026-08-09 makes any block add/remove in a country `ai_strategy`
+  file launch-test territory, not parse-check territory); console harness owed for
+  `WA_AI_MILITARY_egypt_is_invaded` (plain country-scope trigger, so unlike
+  `minor-expeditionary-fitness` it CAN be read from the console); and the cheapest confirmation is
+  the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
+  once an enemy is on Egyptian soil.
 
 ### silo-breadth — TESTED (2026-08-24)
 - Scope: owner request 2026-08-24 (Discord) — "make other buildings use the build-wide system

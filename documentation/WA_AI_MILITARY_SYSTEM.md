@@ -779,7 +779,19 @@ controlled ground and home pressure rather than a focus, date or historical fact
 delegation of the family: the other three park divisions, this one sends them. ENG's half is
 `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-130` on the same area while the delegate is live
 (was `-75` until 2026-08-24, see below), netting ENG `+20` against RAJ's `+250` — deliberately below
-ENG's `north_africa` net `+25`, so Egypt outbids East Africa while the delegate carries the theatre.
+ENG's `north_africa` net, so Egypt outbids East Africa while the delegate carries the theatre.
+
+**That `north_africa` net is CONDITIONAL since [commonwealth-handoff] (2026-08-24).** It is `+25` while
+Egypt is clear (Faction `+75`, `africa_war_1` `-40`, `africa_war_3` `-20`,
+`focus_on_land_War_in_north_africa` `+10`) and **`+85` while an enemy stands on Egyptian soil**, when
+the two negatives stand down — they now live in
+`WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held` / `_border_held`, gated on
+`NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }`. The delegation's `-130` is NOT re-sized: its
+intent (Egypt outbids East Africa) holds at both nets — the margin widens from 5 points to 65
+exactly when Egypt is under attack, which is the case the delegation was written for. **Both numbers
+assume the engine SUMS `front_unit_request` entries sharing an `area`, which is unresolved** — see
+`.claude/skills/wa-diagnosis/SKILL.md` technique 5 rule 3. Any retune of these values waits on that
+question; the throttle split does not, because removing an entry works under either reading.
 On regions 17/217 the `central_africa` `-50` of `africa_war_1` also applies (that alias contains
 both), taking ENG to `-30` there under delegation. **The ENG half is the point** — without it the
 delegate only adds divisions to Ethiopia and nothing is freed for Egypt.
