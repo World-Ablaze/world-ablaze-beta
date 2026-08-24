@@ -731,6 +731,18 @@ WA_AI_MILITARY_RAJ_egypt_support_available = {
 	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
 }
 
+# [commonwealth-handoff] force floor for the ADD-force delegate verdicts (El-Alamein reinforcement, East
+# Africa) - NOT army_still_operational, whose collapse-calibrated bars sit above a healthy colonial army
+# while the ungated Faction pull sends the delegate to the theatre anyway. The East-Africa verdict ALSO
+# stands ENG down: min_eq (delegate-calibrated; has_variable reads absent as not-proven) is what keeps a
+# hollow delegate from releasing ENG. Pure stand-down verdicts keep the full brake; consumers keep their div bars.
+WA_AI_MILITARY_delegate_force_floor = {
+	num_of_controlled_states > constant:wa_ai_posture.delegate.min_states
+	has_manpower > constant:wa_ai_posture.delegate.min_mp
+	has_variable = WA_AI_fielded_eq_ratio
+	check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.delegate.min_eq }
+}
+
 # [commonwealth-handoff] (2026-08-21) - REINFORCEMENT verdict, and it is deliberately NOT the handoff verdict above.
 #
 # What was measured. Campaign 8c0fea4c, retest saves: RAJ fields 59 divisions in June 1940, loses its
@@ -756,7 +768,7 @@ WA_AI_MILITARY_RAJ_egypt_reinforcement_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_support = yes
 	is_ai = yes
 	num_divisions > 29
-	WA_AI_MILITARY_army_still_operational = yes
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
 	WA_AI_MILITARY_ENG_el_alamein_destination_available = yes
@@ -881,8 +893,9 @@ WA_AI_MILITARY_pacific_commonwealth_garrison_releasable = {
 	NOT = { WA_AI_MILITARY_home_threatened = yes }
 }
 
-# [commonwealth-handoff] the East-Africa delegate's readiness. Mirrors WA_AI_MILITARY_RAJ_egypt_support_available
-# term for term, plus the two the mission needs of its own: there must be a theatre to fight in,
+# [commonwealth-handoff] the East-Africa delegate's readiness. Same shape as WA_AI_MILITARY_RAJ_egypt_support_available
+# but with the delegate force floor instead of the full operational brake (see the floor's header),
+# plus the two terms the mission needs of its own: there must be a theatre to fight in,
 # and the Pacific must be quiet - an India facing Japan does not campaign in Ethiopia.
 # The division bar is 29 - the Kuwait mission's bar, not the El-Alamein mission's 49. East Africa is
 # the cheaper commitment, and the margin matters: MEASURED, RAJ held 42 / 40 / 44 divisions at
@@ -892,7 +905,7 @@ WA_AI_MILITARY_RAJ_east_africa_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_east_africa = yes
 	is_ai = yes
 	num_divisions > 29
-	WA_AI_MILITARY_army_still_operational = yes
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_east_africa_theatre_contested = yes
 	NOT = { WA_AI_MILITARY_pacific_threat_imminent = yes }

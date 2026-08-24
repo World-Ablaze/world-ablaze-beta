@@ -773,13 +773,43 @@ controlled ground and home pressure rather than a focus, date or historical fact
 | El-Alamein primary guard | SAF `0.25` on Marsa Matruh | see ladder | see ladder | AI SAF-role country, >4 divisions, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no SAF home/border threat |
 | El-Alamein support | RAJ `0.05` on Marsa Matruh | `0.05` if both live | `0.15` if exactly one lives; `0.25` if neither lives | AI RAJ-role country, >49 divisions, operational army, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
 | Kuwait | RAJ `0.05` | `0.02` | `0.08` | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, Kuwait held by ENG's side **and the Gulf approach threatened (Fix 125)**, Ethiopian colonial war finished, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
-| **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+| **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, **delegate force floor** (controlled states + manpower, no 41-division/0.9-equipment brake — 2026-08-24, see below), common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
 
 **Fix 124 — East Africa (2026-08-21, campaign `8c0fea4c`, checklist R85).** The first *offensive*
 delegation of the family: the other three park divisions, this one sends them. ENG's half is
-`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-75` on the same area while the delegate is live,
-netting ENG `+75` against RAJ's `+250`. **The ENG half is the point** — without it the delegate only
-adds divisions to Ethiopia and nothing is freed for Egypt. MEASURED at 1940.10: ENG had **37 of its 66
+`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-130` on the same area while the delegate is live
+(was `-75` until 2026-08-24, see below), netting ENG `+20` against RAJ's `+250` — deliberately below
+ENG's `north_africa` net `+25`, so Egypt outbids East Africa while the delegate carries the theatre.
+On regions 17/217 the `central_africa` `-50` of `africa_war_1` also applies (that alias contains
+both), taking ENG to `-30` there under delegation. **The ENG half is the point** — without it the
+delegate only adds divisions to Ethiopia and nothing is freed for Egypt.
+
+**Deepening to `-130` (2026-08-24, campaign `eefaa9fc`, save 1940.10).** MEASURED: ENG held **40 of
+62 divisions in East Africa + Sudan against 9 Italian**, and **3 in Egypt against 39** (Italy already
+in Marsa Matruh) — at `-75` the East-African net (`+75`) still outbid Egypt (`+25`) 3:1. Two caveats,
+both open: (a) **the delegation was OFF in that save** — RAJ (36 divisions, `WA_AI_fielded_eq_ratio`
+0.6033) fails `WA_AI_MILITARY_army_still_operational` (bars 41 divisions / 0.9 equipment, calibrated
+on major-power collapse data in `WA_AI_MILITARY_posture_triggers.txt`), so no readiness verdict of
+the Commonwealth family armed, while the Faction `+150` still sent 16 RAJ divisions to East Africa
+anyway — the delegate fights unready, only ENG's stand-down waits for paper readiness; (b) cross-AREA
+ordering of `front_unit_request` values (Egypt `+25` beating East Africa `+20`) is ASSUMED engine
+behaviour, same status as the §17 magnitude caveat — verification is the campaign probe on
+`commonwealth-handoff` in WORK.md.
+
+**(a) resolved (2026-08-24, owner decision "plancher léger").** The two ADD-force verdicts —
+`WA_AI_MILITARY_RAJ_east_africa_available` and `WA_AI_MILITARY_RAJ_egypt_reinforcement_available` —
+now read `WA_AI_MILITARY_delegate_force_floor` (controlled states + manpower + equipment
+`constant:wa_ai_posture.delegate.min_eq` = 0.45, calibrated to the delegate population's healthy
+~0.6 baseline rather than major-power collapse; `has_variable` reads absent as not-proven; each
+verdict keeps its own `num_divisions` bar) instead of the full `army_still_operational` brake. The
+`delegate.*` keys are deliberately separate from `alive.*`/`manpower.*` (advisory registry groups)
+so retuning the collapse brake never silently moves the handoff. The three pure STAND-DOWN verdicts
+(El-Alamein support/handoff, Kuwait guard, UK guard) keep the full brake unchanged: a weaker gate
+there makes the guarded ground weaker (Fix 128 warning). The East-Africa verdict is ADD-force for
+RAJ **and** stand-down for ENG in one sentence — the 0.45 equipment term is what keeps a hollow
+delegate (30+ paper divisions, no equipment) from releasing ENG there. With RAJ's measured 1940 army
+(36 divisions, equipment 0.60) both ADD verdicts now arm: RAJ bids `+50` on `north_africa` and ENG's
+`-130` stand-down goes live. MEASURED at 1940.10: ENG had **37 of its 66
 divisions (56 %) in the East-African theatre and 8 in Egypt/Libya**, while RAJ had **24 of 42 (57 %)
 sitting in India**. The pull already reached RAJ (Faction `+150`) and its own `-100` Asia-first
 suppression was not armed — the Indian army was *reserved*, not unasked, which is why Fix 123 is a

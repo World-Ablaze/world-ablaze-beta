@@ -95,19 +95,52 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   guard, El Alamein reinforcement, Pacific home-garrison release, dominion ship designs.
   Absorbs R70, R72, R73, R84–R86, R88–R90, R93, R95 and QUEUE 0l / 14.
 - State: fixes 123–129 / 132 / 134 shipped (`bc90346af`); owner campaign verification in
-  progress (2026-08-23).
+  progress (2026-08-23). 2026-08-24 (campaign `eefaa9fc`, save 1940.10, owner report "Egypt
+  defence ridiculous"): MEASURED ENG 40/62 divisions in East Africa + Sudan vs 9 ITA, 3 in
+  Egypt vs 39 ITA (Marsa Matruh lost). East-Africa delegation deepened −75 → −130
+  (`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`), netting ENG +20 vs Egypt's +25 so
+  Egypt outbids while the delegate lives; reviews: architecture OK, lessons CONCERNS all
+  three addressed (full bid table MEASURED vs the save; RAJ delivers 16 div in-theatre;
+  "never negative" comment corrected). **Open defect found doing it: every Commonwealth
+  readiness verdict embeds `WA_AI_MILITARY_army_still_operational` (bars 41 div / eq 0.9,
+  calibrated on major-power collapse) — RAJ at 36 div / 0.60 fails ALL verdicts, so the
+  deepened stand-down AND RAJ's +50 El-Alamein reinforcement were both OFF in `eefaa9fc`
+  while the unconditional Faction +150 sent 16 unready RAJ divisions to East Africa anyway.
+  Owner decision 2026-08-24 ("plancher léger"): the two ADD-force verdicts (east_africa,
+  egypt_reinforcement) now read `WA_AI_MILITARY_delegate_force_floor` (states + manpower +
+  eq > 0.45 delegate-calibrated, own num_divisions bar kept); the three STAND-DOWN verdicts
+  keep the full brake (Fix 128); the eq term covers the East-Africa verdict's dual role
+  (ADD for RAJ, stand-down for ENG) against a hollow delegate. With RAJ 36 div / eq 0.60
+  both ADD verdicts arm: RAJ +50 on north_africa, ENG −130 live.**
 - Closed when: a campaign shows the delegate missions armed and manned (R72's legs), the
   Indian army in East Africa/El Alamein, and no dominion dockyard nailed by an unbuildable
   design.
 - Verification: campaign probes of R70/R72/R73/R84-R95 (archive); no console harness.
+  Added 2026-08-24: (a) with the delegation live, ENG divisions in East Africa + Sudan drop
+  below its Egypt/north-africa contingent (cross-area ordering +20 < +25 is ASSUMED engine
+  behaviour — this probe is its only proof); (b) Egypt holds ≥ 8 Allied divisions with
+  front/buffer orders while Italy holds the Libyan border states.
 
-### lend-lease-relief — TESTED (2026-08-23)
-- Scope: overland surplus relief per archetype (Fix 92) + USA native lend-lease offers.
-  Absorbs R7b, R57.
-- State: validated by the owner 2026-08-23; a **final audit remains**.
-- Closed when: the final audit passes (leg 3 of R7b checked; USA sender restored or the
-  R57 failure explained and accepted).
-- Verification: console `WA_TEST_lend_lease_relief`; campaign probes of R7b/R57 (archive).
+### silo-breadth — OPEN (2026-08-24)
+- Scope: owner request 2026-08-24 (Discord) — "make other buildings use the build-wide system
+  implemented for mils, specifically fuel silos: I queue 20 fuel silos and it queues up 6 in one
+  state and then stops (first state's cap of 6)."
+- Diagnosis (MEASURED): fuel_silo is a shared-slot building with `state_max = 6`
+  (`00_buildings.txt`), but `WA_AI_available_SILO` never got the [refineries]/Fix 81 committed
+  standard — no state-cap test at all — and `WA_AI_queue_SILO` still uses the pre-Fix-88
+  first-fit walk. Exactly the stall the triggers-file header documents: past the cap the top
+  state stays "available" (free_building_slots reports only the shared pool), the engine no-ops
+  every add, the state stays #1 in `WA_AI_shared_slot_scores`, silos stall country-wide.
+- Fix: replicate the CIC/MIC/NIC/REF standard for SILO — `@WA_AI_SILO_STATE_MAX = 6` +
+  committed-sum availability, `WA_AI_queue_depth_ok_SILO`, committed-maintaining
+  `WA_AI_add_SILO` (TLM `sq_adds_by_type^8`), Fix 88 breadth-first walk in `WA_AI_queue_SILO`,
+  registry mirror for the state cap, console harness `WA_TEST_silo_breadth`.
+- Closed when: the owner's console harness run shows the walk skipping a state at its silo cap
+  and spreading a burst across ≥ 2 states; and a campaign save shows a country with silo need
+  > 6 holding BUILT `fuel_silo` levels in ≥ 2 states (state building levels, not the adds
+  counter — a queued add on a saturated queue is not a build; `wa_tlm_sq_adds_by_type^8` is
+  supporting evidence only).
+- Verification: console harness (owner-run, output pasted here); campaign probe as above.
 
 ## PARKED
 
@@ -116,6 +149,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `lend-lease-relief` | TESTED (owner-validated 2026-08-23) | Overland surplus relief (Fix 92) + USA native offers work; final audit remains | Final audit passes: leg 3 of R7b checked; USA sender restored or the R57 failure explained and accepted |
 | `trade-law` | SHIPPED-UNTESTED (`32c03c550` + revert, 2026-08-19) | Ladder has two reachable rungs (R28); dead flag `WA_AI_trade_law_recently_changed`; recovery path only covers export_focus/free_trade | In-game test of the shipped fix passes; ladder rungs reachable in a campaign |
 | `majors-mechanize` | FAILED (2026-08-17, `9d83084c`) | Majors do not mechanize (R6) | A campaign shows majors' mobile divisions motorized/mechanized on schedule (R6 probe, archive) |
 | `uk-air-basing` | FAILED (2026-08-16) | UK air hosting + throughput failing (R8, R54) | R54's ledger legs pass in a campaign |
