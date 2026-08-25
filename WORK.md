@@ -535,6 +535,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   under either summing reading, and it cannot re-admit unfit minors: `total_commitment_active`
   embeds the same `is_fit_for_expeditionary_front`, so an unfit minor never passes and keeps the
   -90 brake. Commitment ⊇ fitness — the two rulings compose, neither is overturned.
+- Owner observation 2026-08-25 (no save, obs tool + game.log; El Alamein under way, Egypt held):
+  CAN kept its divisions in Canada until Torch. DERIVED cause, second cut: a released division needs
+  a CATCHER (front in reach / buffer / invasion) — RAJ's §16 control showed buffers absorbing the
+  release, but CAN's only catcher (`CAN_uk_guard_available`) carried `num_divisions > 11`, never true
+  on a 4-9 division Canada, so nothing picked its army up until Torch's invasion order did. Fix cut
+  2: the ADD-force verdict drops the count bar for `WA_AI_MILITARY_delegate_force_floor` (quality),
+  while ENG's stand-down wrapper `commonwealth_uk_guard_available` KEEPS `num_divisions > 11`
+  (Fix-128-class ruling: stand-downs keep the full brake) — ENG only thins its home reserve for a
+  sized guard. H1 (release trigger never arming) is NOT yet excluded — the wa_tc.1 run and/or the
+  CAN imgui Active-strategies check is still owed and decides it.
 - Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
   `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run owed. **F9 boot test
   owed** (many `ai_strategy` block adds/removes; 2026-08-09 strategy-DB CTD precedent).
