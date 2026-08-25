@@ -4,7 +4,7 @@
 # [INPUT] [REQUIRED] _num_divisions_spawn - Integer. The number of divisions to spawn. Must be greater than 1 and less than 100
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper, 15 = 20Width tank. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -45,7 +45,7 @@ WA_AI_DIVISION_spawn_divisions = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 14 }
+				check_variable = { _division_template > 15 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
@@ -346,6 +346,29 @@ WA_AI_DIVISION_spawn_divisions = {
 						NOT = { has_tech = tech_maintenance_company }
 					}
 				}
+				AND = {
+					check_variable = { _division_template = 15 }
+					OR = {
+						NOT = { has_design_based_on = infantry_equipment }
+						NOT = { has_design_based_on = heavy_infantry_equipment }
+						NOT = { has_design_based_on = heavy_artillery_equipment }
+						NOT = { has_design_based_on = pack_artillery_equipment }
+						NOT = { has_design_based_on = anti_tank_equipment }
+						NOT = { has_design_based_on = heavy_anti_air_equipment }
+						NOT = { has_design_based_on = support_equipment }
+						NOT = { has_design_based_on = motorized_equipment }
+						NOT = { has_design_based_on = mechanized_equipment }
+						NOT = { has_design_based_on = medium_tank_chassis }
+						NOT = { has_design_based_on = light_tank_chassis }
+						NOT = { has_tech = tech_engineers }
+						NOT = { has_tech = tech_recon }
+						NOT = { has_tech = tech_field_hospital }
+						NOT = { has_tech = tech_logistics_company }
+						NOT = { has_tech = tech_military_police }
+						NOT = { has_tech = tech_signal_company }
+						NOT = { has_tech = tech_maintenance_company }
+					}
+				}
 			}
 		}
 		set_temp_variable = { success = 2 }
@@ -467,7 +490,7 @@ WA_AI_DIVISION_spawn_divisions = {
 # [INPUT] [REQUIRED] _num_divisions_total - The number of total divisions the country needs. The number of divisions spawned will be this number minus the existing number of divisions. Must be greater than 1. If less than the country's current division count, does nothing.
 # [INPUT] [OPTIONAL] _state - Integer. The state in which to spawn the divisions. Defaults to the country's capital.
 # [INPUT] [OPTIONAL] _use_stockpile - Integer Boolean. Whether to use the country's stockpiled equipment to supply the divisions. Must be 0 or 1 (false or true). Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper, 15 = 20Width tank. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.2 (Trained 1)
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 0.1
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.1
@@ -529,7 +552,7 @@ WA_AI_DIVISION_delete_spawned_divisions = {
 
 # Creates a locked template for the spawned unit type
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper. Defaults to 1
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper, 15 = 20Width tank. Defaults to 1
 WA_AI_DIVISION_setup = {
 	# Validate required input parameters
 	set_temp_variable = { success = 1 }
@@ -544,7 +567,7 @@ WA_AI_DIVISION_setup = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 15 }
+				check_variable = { _division_template < 16 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -1341,11 +1364,9 @@ WA_AI_DIVISION_setup = {
 
 							para_artillery_horse_battalion_line = { x = 2 y = 0 }
 							para_artillery_horse_battalion_line = { x = 2 y = 1 }
-							para_artillery_horse_battalion_line = { x = 2 y = 2 }
 
 							para_artillery_horse_battalion_line = { x = 3 y = 0 }
 							para_artillery_horse_battalion_line = { x = 3 y = 1 }
-							para_artillery_horse_battalion_line = { x = 3 y = 2 }
 						}
 						regimental_support = {
 							pack_artillery_horse_company_regimental = { x = 0 y = 0 }
@@ -1367,6 +1388,65 @@ WA_AI_DIVISION_setup = {
 				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
 			}
 		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 15 }
+			}
+			meta_effect = {
+				text = {
+					division_template = {
+						name = "[TEMPLATE_NAME]"
+						is_locked = yes
+
+						regiments = {
+							medium_armor_battalion_line = { x = 0 y = 0 }
+							medium_armor_battalion_line = { x = 0 y = 1 }
+							medium_armor_battalion_line = { x = 0 y = 2 }
+
+							infantry_heavy_mechanized_battalion_line = { x = 1 y = 0 }
+							infantry_heavy_mechanized_battalion_line = { x = 1 y = 1 }
+							infantry_heavy_mechanized_battalion_line = { x = 1 y = 2 }
+							infantry_heavy_mechanized_battalion_line = { x = 1 y = 3 }
+
+							[ARMOUR_TD]battalion_line = { x = 2 y = 0 }
+							[ARMOUR_SPG]battalion_line = { x = 2 y = 1 }
+							[ARMOUR_SPG]battalion_line = { x = 2 y = 2 }
+						}
+						regimental_support = {
+							[ARMOUR_SPG_REGIMENTAL]_company_regimental = { x = 0 y = 0 }
+							[ARMOUR_TD_REGIMENTAL]_company_regimental = { x = 0 y = 1 }
+
+							[ARMOUR_SPG_REGIMENTAL]_company_regimental = { x = 1 y = 0 }
+							[ARMOUR_TD_REGIMENTAL]_company_regimental = { x = 1 y = 1 }
+
+							[ARMOUR_SPG_REGIMENTAL]_company_regimental = { x = 2 y = 0 }
+							[ARMOUR_TD_REGIMENTAL]_company_regimental = { x = 2 y = 1 }
+						}
+						support = {
+							engineer_med_tank_battalion_divisional = { x = 0 y = 0 }
+							maintenance_med_tank_company_divisional = { x = 0 y = 1 }
+							signal_mot_company_divisional = { x = 0 y = 2 }
+							field_hospital_mot_company_divisional = { x = 0 y = 3 }
+							logistics_mot_company_divisional = { x = 0 y = 4 }
+
+							recon_light_tank_company_divisional = { x = 1 y = 0 }
+							military_police_mot_company_divisional = { x = 1 y = 1 }
+							[ARMOUR_SPG_SUPPORT]company_divisional = { x = 1 y = 2 }
+							[ARMOUR_AA_SUPPORT]company_divisional = { x = 1 y = 3 }
+							[ARMOUR_TD_SUPPORT]
+						}
+					}
+				}
+				TEMPLATE_NAME = "[WA_AI_DIVISION_GetSpawnDivisionTemplate]"
+				ARMOUR_SPG = "[WA_AI_DIVISION_GetSpawnDivisionTemplateArmourSPG]"
+				ARMOUR_TD = "[WA_AI_DIVISION_GetSpawnDivisionTemplateArmourTD]"
+				ARMOUR_SPG_SUPPORT = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportArmourSPG]"
+				ARMOUR_TD_SUPPORT = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportArmourTD]"
+				ARMOUR_AA_SUPPORT = "[WA_AI_DIVISION_GetSpawnDivisionTemplateSupportArmourAA]"
+				ARMOUR_SPG_REGIMENTAL = "[WA_AI_DIVISION_GetSpawnDivisionTemplateRegimentalArmourSPG]"
+				ARMOUR_TD_REGIMENTAL = "[WA_AI_DIVISION_GetSpawnDivisionTemplateRegimentalArmourTD]"
+			}
+		}
 	}
 	else_if = {
 		limit = {
@@ -1381,7 +1461,7 @@ WA_AI_DIVISION_setup = {
 
 # Calculates the equipment usage of a single division of the desired template at the specified equipment and manpower start factor, and determines how many can be fielded with current country stockpiles
 # Scope: Country
-# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper. Defaults to 1
+# [INPUT] [REQUIRED] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper, 15 = 20Width tank. Defaults to 1
 # [INPUT] [REQUIRED] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1.
 # [INPUT] [REQUIRED] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1.
 # [INPUT] [OPTIONAL] _force_use_equipment_manpower - Integer Boolean. Whether to calculate the equipment and manpower useage of all requested divisions regardless of availability. Must be 0 or 1 (false or true). Defaults to 0.
@@ -1400,7 +1480,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 		limit = {
 			NOT = {
 				check_variable = { _division_template > 0 }
-				check_variable = { _division_template < 15 }
+				check_variable = { _division_template < 16 }
 			}
 		}
 		set_temp_variable = { success = 0 }
@@ -1460,7 +1540,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { at_eq = 72 }
 			set_temp_variable = { supp_eq = 500 }
 			set_temp_variable = { aa_eq = 12 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			set_temp_variable = { p_art_eq = 18 }
 			add_to_temp_variable = { at_eq = 36 }
 			if = {
@@ -1496,7 +1575,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { supp_eq = 620 }
 			set_temp_variable = { mot_eq = 778 }
 			set_temp_variable = { h_aa_eq = 12 }
-			# regimental_support: 3x pack_artillery_mot_company_regimental + 3x anti_tank_mot_company_regimental
 			set_temp_variable = { p_art_eq = 18 }
 			add_to_temp_variable = { at_eq = 36 }
 			add_to_temp_variable = { mot_eq = 54 }
@@ -1522,7 +1600,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { med_tank_eq = 22 }
 			set_temp_variable = { lght_tank_eq = 15 }
 			set_temp_variable = { h_aa_eq = 12 }
-			# regimental_support: 3x pack_artillery_mot_company_regimental + 3x anti_tank_mot_company_regimental
 			set_temp_variable = { p_art_eq = 18 }
 			add_to_temp_variable = { at_eq = 36 }
 			add_to_temp_variable = { mot_eq = 54 }
@@ -1567,12 +1644,12 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			limit = {
 				check_variable = { _division_template = 4 }
 			}
-			set_temp_variable = { l_inf_eq = 542 }
-			set_temp_variable = { h_inf_eq = 210 }
+			set_temp_variable = { l_inf_eq = 742 }
+			set_temp_variable = { h_inf_eq = 310 }
 			set_temp_variable = { supp_eq = 620 }
 			set_temp_variable = { mot_eq = 195 }
-			set_temp_variable = { mech_eq = 200 }
-			set_temp_variable = { med_tank_eq = 147 }
+			set_temp_variable = { mech_eq = 300 }
+			set_temp_variable = { med_tank_eq = 247 }
 			set_temp_variable = { lght_tank_eq = 15 }
 			set_temp_variable = { h_art_eq = 6 }
 			set_temp_variable = { h_aa_eq = 12 }
@@ -1608,7 +1685,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				add_to_temp_variable = { mot_eq = -12 }
 				add_to_temp_variable = { SPAA_eq = 12 }
 			}
-			# regimental_support: 5x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 5x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			if = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
@@ -1645,9 +1721,8 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { l_inf_eq = 1092 }
 			set_temp_variable = { h_inf_eq = 460 }
 			set_temp_variable = { p_art_eq = 78 }
-			set_temp_variable = { supp_eq = 540 }
+			set_temp_variable = { supp_eq = 990 }
 			set_temp_variable = { mot_eq = 80 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental
 			add_to_temp_variable = { p_art_eq = 18 }
 		}
 		else_if = {
@@ -1660,7 +1735,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { at_eq = 48 }
 			set_temp_variable = { supp_eq = 500 }
 			set_temp_variable = { aa_eq = 12 }
-			# regimental_support: 2x pack_artillery_horse_company_regimental + 2x anti_tank_horse_company_regimental
 			set_temp_variable = { p_art_eq = 12 }
 			add_to_temp_variable = { at_eq = 24 }
 			if = {
@@ -1695,7 +1769,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { at_eq = 72 }
 			set_temp_variable = { supp_eq = 500 }
 			set_temp_variable = { aa_eq = 12 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			add_to_temp_variable = { p_art_eq = 18 }
 			add_to_temp_variable = { at_eq = 36 }
 			if = {
@@ -1727,7 +1800,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { h_inf_eq = 460 }
 			set_temp_variable = { supp_eq = 620 }
 			set_temp_variable = { mot_eq = 195 }
-			set_temp_variable = { med_tank_eq = 97 }
+			set_temp_variable = { med_tank_eq = 172 }
 			set_temp_variable = { amph_eq = 450 }
 			set_temp_variable = { lght_tank_eq = 15 }
 			set_temp_variable = { h_art_eq = 6 }
@@ -1736,8 +1809,8 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_tank_destroyers = yes
 				}
-				add_to_temp_variable = { med_tank_eq = -25 }
-				add_to_temp_variable = { TD_eq = 25 }
+				add_to_temp_variable = { med_tank_eq = -50 }
+				add_to_temp_variable = { TD_eq = 50 }
 				add_to_temp_variable = { TD_eq = 12 }
 			}
 			else_if = {
@@ -1751,10 +1824,10 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
 				}
-				add_to_temp_variable = { med_tank_eq = -50 }
+				add_to_temp_variable = { med_tank_eq = -100 }
 				add_to_temp_variable = { h_art_eq = -6 }
 				add_to_temp_variable = { mot_eq = -6 }
-				add_to_temp_variable = { SPG_eq = 30 }
+				add_to_temp_variable = { SPG_eq = 54 }
 			}
 			if = {
 				limit = {
@@ -1764,7 +1837,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				add_to_temp_variable = { mot_eq = -12 }
 				add_to_temp_variable = { SPAA_eq = 12 }
 			}
-			# regimental_support: 5x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 5x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			if = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
@@ -1797,7 +1869,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { at_eq = 84 }
 			set_temp_variable = { supp_eq = 515 }
 			set_temp_variable = { aa_eq = 12 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			add_to_temp_variable = { p_art_eq = 18 }
 			add_to_temp_variable = { at_eq = 36 }
 			if = {
@@ -1828,9 +1899,8 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { l_inf_eq = 900 }
 			set_temp_variable = { h_inf_eq = 400 }
 			set_temp_variable = { art_eq = 6 }
-			# p_art_eq/at_eq include regimental_support: 2x pack_artillery_horse_company_regimental (+12) + 2x anti_tank_horse_company_regimental (+24)
-			set_temp_variable = { p_art_eq = 36 }
-			set_temp_variable = { at_eq = 72 }
+			set_temp_variable = { p_art_eq = 48 }
+			set_temp_variable = { at_eq = 84 }
 			set_temp_variable = { supp_eq = 515 }
 			set_temp_variable = { aa_eq = 12 }
 			if = {
@@ -1861,7 +1931,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			set_temp_variable = { l_inf_eq = 762 }
 			set_temp_variable = { h_inf_eq = 300 }
 			set_temp_variable = { art_eq = 6 }
-			# p_art_eq/at_eq include regimental_support: 2x pack_artillery_horse_company_regimental (+12) + 2x anti_tank_horse_company_regimental (+24)
 			set_temp_variable = { p_art_eq = 36 }
 			set_temp_variable = { at_eq = 72 }
 			set_temp_variable = { supp_eq = 500 }
@@ -1912,7 +1981,7 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_heavy_at = yes
 				}
-				add_to_temp_variable = { h_at_eq = 12 }
+				set_temp_variable = { h_at_eq = 12 }
 				add_to_temp_variable = { mot_eq = 12 }
 			}
 			if = {
@@ -1932,7 +2001,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				add_to_temp_variable = { mot_eq = -12 }
 				add_to_temp_variable = { SPAA_eq = 12 }
 			}
-			# regimental_support: 3x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 3x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			if = {
 				limit = {
 					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
@@ -1960,11 +2028,76 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 			}
 			set_temp_variable = { l_inf_eq = 792 }
 			set_temp_variable = { h_inf_eq = 310 }
-			set_temp_variable = { p_art_eq = 78 }
-			set_temp_variable = { supp_eq = 390 }
+			set_temp_variable = { p_art_eq = 54 }
+			set_temp_variable = { supp_eq = 840 }
 			set_temp_variable = { mot_eq = 80 }
-			# regimental_support: 2x pack_artillery_horse_company_regimental
 			add_to_temp_variable = { p_art_eq = 12 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { _division_template = 15 }
+			}
+			set_temp_variable = { l_inf_eq = 542 }
+			set_temp_variable = { h_inf_eq = 210 }
+			set_temp_variable = { supp_eq = 620 }
+			set_temp_variable = { mot_eq = 195 }
+			set_temp_variable = { mech_eq = 200 }
+			set_temp_variable = { med_tank_eq = 172 }
+			set_temp_variable = { lght_tank_eq = 15 }
+			set_temp_variable = { h_art_eq = 6 }
+			set_temp_variable = { h_aa_eq = 12 }
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_tank_destroyers = yes
+				}
+				add_to_temp_variable = { med_tank_eq = -25 }
+				add_to_temp_variable = { TD_eq = 25 }
+				add_to_temp_variable = { TD_eq = 12 }
+			}
+			else_if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_heavy_at = yes
+				}
+				set_temp_variable = { h_at_eq = 12 }
+				add_to_temp_variable = { mot_eq = 12 }
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
+				}
+				add_to_temp_variable = { med_tank_eq = -50 }
+				add_to_temp_variable = { h_art_eq = -6 }
+				add_to_temp_variable = { mot_eq = -6 }
+				add_to_temp_variable = { SPG_eq = 30 }
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_self_propelled_aa = yes
+				}
+				add_to_temp_variable = { h_aa_eq = -12 }
+				add_to_temp_variable = { mot_eq = -12 }
+				add_to_temp_variable = { SPAA_eq = 12 }
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun = yes
+				}
+				add_to_temp_variable = { SPG_eq = 18 }
+			}
+			else = {
+				add_to_temp_variable = { p_art_eq = 18 }
+				add_to_temp_variable = { mot_eq = 18 }
+			}
+			if = {
+				limit = {
+					WA_AI_CONFIG_DIVISIONS_use_tank_destroyers = yes
+				}
+				add_to_temp_variable = { TD_eq = 36 }
+			}
+			else = {
+				add_to_temp_variable = { at_eq = 36 }
+				add_to_temp_variable = { mot_eq = 36 }
+			}
 		}
 
 		# Calculate total equipment actually spawned based on % equipped
@@ -2152,7 +2285,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 1 }
 			}
 			set_temp_variable = { tot_mp = 15900 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2172,7 +2304,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 2 }
 			}
 			set_temp_variable = { tot_mp = 18000 }
-			# regimental_support: 3x pack_artillery_mot_company_regimental + 3x anti_tank_mot_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2186,7 +2317,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 3 }
 			}
 			set_temp_variable = { tot_mp = 17700 }
-			# regimental_support: 3x pack_artillery_mot_company_regimental + 3x anti_tank_mot_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2203,7 +2333,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 4 }
 			}
 			set_temp_variable = { tot_mp = 11200 }
-			# regimental_support: 5x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 5x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			add_to_temp_variable = { tot_mp = 3000 }
 			if = {
 				limit = {
@@ -2226,7 +2355,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 6 }
 			}
 			set_temp_variable = { tot_mp = 15400 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 900 }
 		}
 		else_if = {
@@ -2234,7 +2362,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 7 }
 			}
 			set_temp_variable = { tot_mp = 11900 }
-			# regimental_support: 2x pack_artillery_horse_company_regimental + 2x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1200 }
 			if = {
 				limit = {
@@ -2254,7 +2381,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 8 }
 			}
 			set_temp_variable = { tot_mp = 15900 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2274,7 +2400,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 9 }
 			}
 			set_temp_variable = { tot_mp = 16200 }
-			# regimental_support: 5x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 5x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			add_to_temp_variable = { tot_mp = 3000 }
 			if = {
 				limit = {
@@ -2291,7 +2416,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 10 }
 			}
 			set_temp_variable = { tot_mp = 17100 }
-			# regimental_support: 3x pack_artillery_horse_company_regimental + 3x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2311,7 +2435,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 11 }
 			}
 			set_temp_variable = { tot_mp = 13100 }
-			# regimental_support: 2x pack_artillery_horse_company_regimental + 2x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1200 }
 			if = {
 				limit = {
@@ -2331,7 +2454,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 12 }
 			}
 			set_temp_variable = { tot_mp = 11900 }
-			# regimental_support: 2x pack_artillery_horse_company_regimental + 2x anti_tank_horse_company_regimental
 			add_to_temp_variable = { tot_mp = 1200 }
 			if = {
 				limit = {
@@ -2351,7 +2473,6 @@ WA_AI_DIVISION_calculate_equipment_usage = {
 				check_variable = { _division_template = 13 }
 			}
 			set_temp_variable = { tot_mp = 13400 }
-			# regimental_support: 3x [ARMOUR_SPG_REGIMENTAL]_company_regimental + 3x [ARMOUR_TD_REGIMENTAL]_company_regimental
 			add_to_temp_variable = { tot_mp = 1800 }
 			if = {
 				limit = {
@@ -2688,7 +2809,7 @@ WA_AI_DIVISION_remove_stockpiles = {
 # [INPUT] [REQUIRED] _invasion_state_provinces - Array of integer Province IDs. The Province IDs in _invasion_state where the divisions will be spawned.
 # [INPUT] [REQUIRED] _target_country - Country ID. The country the invasion is targeting.
 # [INPUT] [OPTIONAL] _divisions_per_province - Integer. The number of divisions to spawn in each state. Must be between 1 and 10 inclusive. Defaults to 1.
-# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper. Defaults to 1
+# [INPUT] [OPTIONAL] _division_template - Integer. The template of divisions to spawn. 1 = Infantry, 2 = Motorized, 3 = Mechanized, 4 = Armored, 5 = Militia, 6 = Paratrooper, 7 = 20Width Infantry, 8 = Marines, 9 = Amtrac + Tanks, 10 = SNLF, 11 = 20Width SNLF, 12 = 20Width marines, 13 = 20Width amtrac + tanks, 14 = 20Width Paratrooper, 15 = 20Width tank. Defaults to 1
 # [INPUT] [OPTIONAL] _start_experience - Float. The starting experience of the spawned divisions. Must be between 0.1 and 1. Defaults to 0.45 (Regular 1).
 # [INPUT] [OPTIONAL] _start_equipment - Float. The starting equipment of the spawned divisions AND will be taken from the stockpile of the country. Must be between 0.1 and 1. Defaults to 1.
 # [INPUT] [OPTIONAL] _start_manpower - Float. The starting manpower of the spawned divisions. Must be between 0.1 and 1. Defaults to 1.
@@ -2726,7 +2847,7 @@ WA_AI_DIVISION_spawn_invasion = {
 		limit = {
 			OR = {
 				check_variable = { _division_template < 1 }
-				check_variable = { _division_template > 14 }
+				check_variable = { _division_template > 15 }
 			}
 		}
 		set_temp_variable = { _division_template = 1 }
