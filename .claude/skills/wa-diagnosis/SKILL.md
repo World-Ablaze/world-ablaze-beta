@@ -123,9 +123,16 @@ Four rules for using it, each of which is how it gets misread:
    - Otherwise — `area =` / `tag =` / `state =` / `strategic_region =` / `state_trigger` — Target
      holds an **auto handle equal to the entry's load position** among `front_unit_request` +
      `front_control` + `invasion_unit_request` entries only. Other types interleaved in the same file
-     consume no id. One constant base per file reproduces every row (ENG_FRONT 102, archetypes 736,
-     ALLIES_FRONT 779). The absolute origin of the counter is **not** reproducible from the folder
-     alone — solve the base from two known rows in the same file instead.
+     consume no id. One constant base reproduces every row. **The base is BUILD-SPECIFIC and shifts
+     whenever any earlier-loading file gains or loses a counted entry** — the 2026-08-24 deletion of
+     `africa_war_3` (2 `front_control` entries) moved every handle. Recorded values (ENG_FRONT 102,
+     archetypes 736, ALLIES_FRONT 779) are calibration snapshots, NOT constants; a NEP window at
+     1942.2 reconciled **9/9 at a single base of 183 for the whole folder**. **Always re-solve, and
+     do it mechanically:** enumerate the three counted types across `common/ai_strategy/*.txt` in
+     alphabetical load order, then score every candidate base by how many observed (Target, Weighted
+     Value) pairs land on an entry carrying that value. A correct base is unambiguous — 9/9 against a
+     runner-up at 6/9 with value mismatches — and consecutive entries of one block landing on
+     consecutive Targets corroborates it.
    - `Token` is 0 throughout because WA never sets `id` on these entries.
 
    **The consequence is bigger than the decode.** Four entries all targeting `area = north_africa`
