@@ -32,32 +32,32 @@ EQUIPMENT_ARCHETYPE_CACHE: dict[str, str] = {}
 ARCHETYPE_TO_TRIGGER = {
     # Light armor
     "light_tank_chassis": "WA_AI_RESEARCH_needs_light_armor",
-    "light_tank_aa_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
+    "light_spaa_tank_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
     "light_tank_artillery_chassis": "WA_AI_RESEARCH_needs_self_propelled_artillery",
     "light_tank_destroyer_chassis": "WA_AI_RESEARCH_needs_tank_destroyers",
 
     # Medium armor
     "medium_tank_chassis": "WA_AI_RESEARCH_needs_medium_armor",
     "medium_tank_support_chassis": "WA_AI_RESEARCH_needs_medium_armor",
-    "medium_tank_aa_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
+    "medium_spaa_tank_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
     "medium_tank_artillery_chassis": "WA_AI_RESEARCH_needs_self_propelled_artillery",
     "medium_tank_destroyer_chassis": "WA_AI_RESEARCH_needs_tank_destroyers",
 
     # Heavy armor
     "heavy_tank_chassis": "WA_AI_RESEARCH_needs_heavy_armor",
-    "heavy_tank_aa_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
+    "heavy_spaa_tank_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
     "heavy_tank_artillery_chassis": "WA_AI_RESEARCH_needs_self_propelled_artillery",
     "heavy_tank_destroyer_chassis": "WA_AI_RESEARCH_needs_tank_destroyers",
 
     # Super heavy armor
     "super_heavy_tank_chassis": "WA_AI_RESEARCH_needs_heavy_armor",
-    "super_heavy_tank_aa_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
+    "super_heavy_spaa_tank_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
     "super_heavy_tank_artillery_chassis": "WA_AI_RESEARCH_needs_self_propelled_artillery",
     "super_heavy_tank_destroyer_chassis": "WA_AI_RESEARCH_needs_tank_destroyers",
 
     # Modern armor
     "modern_tank_chassis": "WA_AI_RESEARCH_needs_modern_armor",
-    "modern_tank_aa_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
+    "modern_spaa_tank_chassis": "WA_AI_RESEARCH_needs_self_propelled_aa",
     "modern_tank_artillery_chassis": "WA_AI_RESEARCH_needs_self_propelled_artillery",
     "modern_tank_destroyer_chassis": "WA_AI_RESEARCH_needs_tank_destroyers",
 

@@ -649,10 +649,14 @@ WA_AI_MILITARY_ENG_britain_invaded = {
 	}
 }
 
+# [allied-total-commitment] no division floor, quality floor instead: the guard mission is the only
+# catcher a released Canadian division has before a continental foothold exists - a count bar above
+# the real army size parks the whole army at home until an invasion order drafts it (owner-observed:
+# home until Torch). ENG's stand-down reads the wrapper below, which KEEPS the count bar.
 WA_AI_MILITARY_CAN_uk_guard_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
 	is_ai = yes
-	num_divisions > 11
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_ENG_britain_guard_active = yes
 	NOT = { WA_AI_MILITARY_CAN_home_defense_required = yes }
@@ -826,8 +830,14 @@ WA_AI_MILITARY_RAJ_kuwait_guard_available = {
 	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
 }
 
+# [allied-total-commitment] ENG-side STAND-DOWN wrapper: keeps the division-count bar the delegate's
+# own ADD-force verdict dropped (Fix-128-class ruling - a weak gate on a stand-down makes the
+# guarded ground weaker). ENG thins its home reserve only for a guard that is actually sized.
 WA_AI_MILITARY_commonwealth_uk_guard_available = {
-	any_country = { WA_AI_MILITARY_CAN_uk_guard_available = yes }
+	any_country = {
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+		num_divisions > 11
+	}
 }
 
 WA_AI_MILITARY_commonwealth_egypt_guard_available = {
@@ -893,25 +903,45 @@ WA_AI_MILITARY_pacific_threat_imminent = {
 	}
 }
 
-# [commonwealth-handoff] the release verdict. Same shape as the Commonwealth handoff verdicts above - identity
-# in CONFIG, readiness here - so ENG and the delegate read one sentence.
-WA_AI_MILITARY_pacific_commonwealth_garrison_releasable = {
-	WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
+# [allied-total-commitment] "someone can actually reach my home ground." ROOT-relative: read ONLY
+# where ROOT = the country asked about (its own ai_strategy enable), never through an ENG-side
+# any_country lookup (ROOT = enquirer there). "Home" = CORE states + the home area: an enemy on
+# owned-non-core colonial soil does not trip this - colonies are operations ground, by design.
+# Pacific reach is CONFIG classification (not derivable dynamically). Spec: WA_AI_MILITARY_SYSTEM.md §23.
+WA_AI_MILITARY_home_theatre_threatened = {
+	OR = {
+		# collapse metric / defend-core verdict - scope-free, holds on every path
+		WA_AI_MILITARY_home_threatened = yes
+		# an enemy stands on one of our cores
+		any_state = {
+			is_core_of = ROOT
+			CONTROLLER = { has_war_with = ROOT }
+		}
+		# a hostile land border presses the home area
+		any_home_area_neighbor_country = { has_war_with = ROOT }
+		# a Pacific expansionist is at war with us or preparing (wargoal / southward posture)
+		AND = {
+			WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
+			WA_AI_MILITARY_pacific_threat_imminent = yes
+		}
+	}
+}
+
+# [allied-total-commitment] the owner rule: a faction-member minor whose home nobody can reach sends
+# its WHOLE army to the coalition's theatres; when home_theatre_threatened flips, every consumer
+# stands down and minors_home_first's garrison +50 resumes. The fitness term is the ONE definition of
+# "worth sending abroad" shared with the Faction pulls and the lend-lease gate. Consumers, scenario
+# walk and residuals: WA_AI_MILITARY_SYSTEM.md §23.
+WA_AI_MILITARY_total_commitment_active = {
 	is_ai = yes
+	WA_AI_MILITARY_is_minor_country = yes
 	has_war = yes
-	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
-	NOT = { WA_AI_MILITARY_pacific_threat_imminent = yes }
-	# TWO home-safety terms on purpose, and the second is not redundant.
-	# `commonwealth_home_in_danger` is written PREV-relative (`is_core_of = PREV`,
-	# `CONTROLLER = { has_war_with = PREV.PREV }`) because the Commonwealth handoff reads its
-	# verdicts through ENG's `any_country` lookups. This verdict is ALSO read straight from the
-	# dominion's own `enable`, where PREV is not the dominion, so that term may be a no-op on that
-	# path - and this block releases an entire home garrison, which is not a place to find out.
-	# `WA_AI_MILITARY_home_threatened` (`WA_AI_defend_core` / `surrender_progress > 0.05`) is
-	# scope-free and holds on every path. The same PREV question applies to the three pre-existing
-	# handoff verdicts and is not made worse here; it is worth its own diagnosis.
-	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
-	NOT = { WA_AI_MILITARY_home_threatened = yes }
+	OR = {
+		is_in_faction = yes
+		is_subject = yes
+	}
+	WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
+	NOT = { WA_AI_MILITARY_home_theatre_threatened = yes }
 }
 
 # [commonwealth-handoff] the East-Africa delegate's readiness. Same shape as WA_AI_MILITARY_RAJ_egypt_support_available
