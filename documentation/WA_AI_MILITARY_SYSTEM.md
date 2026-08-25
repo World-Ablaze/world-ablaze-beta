@@ -682,7 +682,7 @@ that type, before and after:
 
 | Writer | State | WA region | Theatre BEFORE | Theatre AFTER |
 | --- | --- | --- | --- | --- |
-| `CAN_theatre_boost_europe` | 15 Lower Normandy | 239 Northern France | `middle_east` / `persia` | `western_europe` |
+| `ALLIES_committed_minor_theatre_boost_europe` (ex `CAN_theatre_boost_europe`, generalised by `[allied-total-commitment]`) | 15 Lower Normandy | 239 Northern France | `middle_east` / `persia` | `western_europe` |
 | `JAP_theatre_boost_home` | 533 Tohoku | 377 N. Home Islands | none - inert | `japanese_home_islands` |
 | `SOV_theatre_boost_finland` | 146 Viipurin Karjala | 326 S. Karelia | none - inert | `barbarossa_north` |
 | `USA_theatre_boost_pacific` | 629 Hawaii | 349 Hawaii | none - inert | `central_pacific` / `us_west_coast` |
@@ -773,13 +773,58 @@ controlled ground and home pressure rather than a focus, date or historical fact
 | El-Alamein primary guard | SAF `0.25` on Marsa Matruh | see ladder | see ladder | AI SAF-role country, >4 divisions, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no SAF home/border threat |
 | El-Alamein support | RAJ `0.05` on Marsa Matruh | `0.05` if both live | `0.15` if exactly one lives; `0.25` if neither lives | AI RAJ-role country, >49 divisions, operational army, common war plus access relation, Egyptian line active, Marsa Matruh friendly, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
 | Kuwait | RAJ `0.05` | `0.02` | `0.08` | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, Kuwait held by ENG's side **and the Gulf approach threatened (Fix 125)**, Ethiopian colonial war finished, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
-| **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, operational army, common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
+| **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, **delegate force floor** (controlled states + manpower, no 41-division/0.9-equipment brake — 2026-08-24, see below), common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
 
 **Fix 124 — East Africa (2026-08-21, campaign `8c0fea4c`, checklist R85).** The first *offensive*
 delegation of the family: the other three park divisions, this one sends them. ENG's half is
-`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-75` on the same area while the delegate is live,
-netting ENG `+75` against RAJ's `+250`. **The ENG half is the point** — without it the delegate only
-adds divisions to Ethiopia and nothing is freed for Egypt. MEASURED at 1940.10: ENG had **37 of its 66
+`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-130` on the same area while the delegate is live
+(was `-75` until 2026-08-24, see below), netting ENG `+20` against RAJ's `+250` — deliberately below
+ENG's `north_africa` net, so Egypt outbids East Africa while the delegate carries the theatre.
+
+**That `north_africa` net is CONDITIONAL since [commonwealth-handoff] (2026-08-24).** It is `+45` while
+Egypt is clear (Faction `+75`, the `egypt_held` brake `-40`, `focus_on_land_War_in_north_africa` `+10`)
+and **`+85` while an enemy stands on Egyptian soil**, when the brake stands down - it lives in
+`WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held`, gated on
+`NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }`. **`WA_AI_MILITARY_ENG_africa_war_3_FRONT` and its
+`_border_held` split are DELETED** (owner decision 2026-08-24): the `-20` peacetime-onward throttle is
+gone unconditionally, and with the parent go its two `front_control` entries on the ITA / ITL fronts -
+ENG's north-African fronts return to engine-default `ordertype = front` handling, which is a behaviour
+change and not a bookkeeping one. The delegation's `-130` is NOT re-sized: its intent (Egypt outbids
+East Africa) holds at both nets - the margin over East Africa's `+20` is 25 points while Egypt is clear
+and 65 while it is attacked, the case the delegation was written for. **Both numbers
+assume the engine SUMS `front_unit_request` entries sharing an `area`, which is unresolved** — see
+`.claude/skills/wa-diagnosis/SKILL.md` technique 5 rule 3. Any retune of these values waits on that
+question; the throttle split does not, because removing an entry works under either reading.
+On regions 17/217 the `central_africa` `-50` of `africa_war_1` also applies (that alias contains
+both), taking ENG to `-30` there under delegation. **The ENG half is the point** — without it the
+delegate only adds divisions to Ethiopia and nothing is freed for Egypt.
+
+**Deepening to `-130` (2026-08-24, campaign `eefaa9fc`, save 1940.10).** MEASURED: ENG held **40 of
+62 divisions in East Africa + Sudan against 9 Italian**, and **3 in Egypt against 39** (Italy already
+in Marsa Matruh) — at `-75` the East-African net (`+75`) still outbid Egypt (`+25`) 3:1. Two caveats,
+both open: (a) **the delegation was OFF in that save** — RAJ (36 divisions, `WA_AI_fielded_eq_ratio`
+0.6033) fails `WA_AI_MILITARY_army_still_operational` (bars 41 divisions / 0.9 equipment, calibrated
+on major-power collapse data in `WA_AI_MILITARY_posture_triggers.txt`), so no readiness verdict of
+the Commonwealth family armed, while the Faction `+150` still sent 16 RAJ divisions to East Africa
+anyway — the delegate fights unready, only ENG's stand-down waits for paper readiness; (b) cross-AREA
+ordering of `front_unit_request` values (Egypt `+45` beating East Africa `+20`) is ASSUMED engine
+behaviour, same status as the §17 magnitude caveat — verification is the campaign probe on
+`commonwealth-handoff` in WORK.md.
+
+**(a) resolved (2026-08-24, owner decision "plancher léger").** The two ADD-force verdicts —
+`WA_AI_MILITARY_RAJ_east_africa_available` and `WA_AI_MILITARY_RAJ_egypt_reinforcement_available` —
+now read `WA_AI_MILITARY_delegate_force_floor` (controlled states + manpower + equipment
+`constant:wa_ai_posture.delegate.min_eq` = 0.45, calibrated to the delegate population's healthy
+~0.6 baseline rather than major-power collapse; `has_variable` reads absent as not-proven; each
+verdict keeps its own `num_divisions` bar) instead of the full `army_still_operational` brake. The
+`delegate.*` keys are deliberately separate from `alive.*`/`manpower.*` (advisory registry groups)
+so retuning the collapse brake never silently moves the handoff. The three pure STAND-DOWN verdicts
+(El-Alamein support/handoff, Kuwait guard, UK guard) keep the full brake unchanged: a weaker gate
+there makes the guarded ground weaker (Fix 128 warning). The East-Africa verdict is ADD-force for
+RAJ **and** stand-down for ENG in one sentence — the 0.45 equipment term is what keeps a hollow
+delegate (30+ paper divisions, no equipment) from releasing ENG there. With RAJ's measured 1940 army
+(36 divisions, equipment 0.60) both ADD verdicts now arm: RAJ bids `+50` on `north_africa` and ENG's
+`-130` stand-down goes live. MEASURED at 1940.10: ENG had **37 of its 66
 divisions (56 %) in the East-African theatre and 8 in Egypt/Libya**, while RAJ had **24 of 42 (57 %)
 sitting in India**. The pull already reached RAJ (Faction `+150`) and its own `-100` Asia-first
 suppression was not armed — the Indian army was *reserved*, not unasked, which is why Fix 123 is a
@@ -791,8 +836,14 @@ hard prerequisite and R85 cannot pass while R84 fails.
 `garrison` writer of their own, so MEASURED at 1941.6 they held **17 of 22 (77 %)** and **8 of 11
 (73 %)** of their armies in area-defence orders while Japan was still neutral; RAJ held 17 of 40.
 `WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison` (`WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt`)
-writes `garrison = -5000` plus `+60` on `north_africa` and on the East-Africa alias for AST / NZL /
-RAJ, behind `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`.
+wrote `garrison = -5000` plus `+60` on `north_africa` and on the East-Africa alias for AST / NZL /
+RAJ, behind `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`. **Superseded 2026-08-25 by
+`[allied-total-commitment]` (§23): the release is now the Default-layer
+`WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home` (any committed faction minor, not just the
+Pacific Commonwealth), the `+60` direction pulls live on in
+`WA_AI_MILITARY_ALLIES_committed_minor_join_africa`, and the Pacific term of the old verdict became
+one branch of `WA_AI_MILITARY_home_theatre_threatened`.** The measurements below were taken on the
+per-tag release and carry over: the mechanism (`-5000` over `minors_home_first`'s `+50`) is unchanged.
 
 The switch is **`WA_AI_MILITARY_pacific_threat_imminent`**: a Pacific war is running, a Pacific
 expansionist has a wargoal against us, is justifying one, or has completed a southward focus
@@ -1278,3 +1329,169 @@ Mediterranean Fleet HQ), against **259** for the nearest province of any other M
 not one of the four regions the user named. MEASURED on 1942.10: Allied task forces reached 269 and
 327 with that wall standing, so it is not a blocker today, but it is the first thing to look at if the
 fleet bases at Alexandria and then never sails west. QUEUE row, not a silent edit.
+
+---
+
+## 22. Scripted-target reservation - the calendar's targets are off-limits BEFORE the operation ([scripted-invasion-reservation], 2026-08-23)
+
+Owner request (2026-08-23): while the scripted-invasion system is active, the invader's faction must
+not run ENGINE-planned naval invasions **against the countries the calendar will hit** until the date
+of the LAST scripted invasion against that country - the engine parking a corps for its own Brittany
+landing while the calendar will open Normandy immobilises divisions for nothing. Per COUNTRY, not per
+state - the owner's explicit call over a state-level draft.
+
+Forward-looking twin of the sec.10 freeze: sec.10 suppresses the theatre for 90 days AFTER a scripted
+landing executes; this suppresses the calendar's own targets BEFORE their scheduled dates.
+
+| Piece | File |
+| --- | --- |
+| Calendar data (GENERATED - regenerate, never hand-edit) | `common/scripted_effects/WA_AI_LANDING_reservations_data.txt` via `tools/gen_ai_landing_reservations.py` |
+| Epoch init + monthly updater + stamp | `common/scripted_effects/WA_AI_LANDING_effects.txt` (reservation section) |
+| Switch (control panel) | `common/scripted_triggers/WA_AI_LANDING_triggers.txt`, `WA_AI_LANDING_reservations_enabled` |
+| Consumer (Default layer) | `common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt`, `WA_AI_MILITARY_INV_reserved_scripted_target` |
+| Wiring | `WA_AI_startup_on_actions.txt` (load + epoch), `WA_AI_misc_on_actions.txt` on_monthly (update, after `WA_TLM_tick_clock`) |
+| Probe | `WA_TLM_resv_stamp_n` / `_first_t` / `_last_t` (telemetry doc §5, v30) |
+
+**Mechanism.** The generator reads the two hand-maintained sources - `WA_KDE_AI_effects.txt` (who
+fires which `WA_AI_invasions.N` in which year at which day offset; `#`-commented lines skipped) and
+`events/WA_AI_invasions.txt` (each operation's ANCHOR STATE: the state whose CONTROLLER the event
+reads as its target; three events read OWNER, same anchor either way) - and emits per-invader arrays
+`WA_AI_LANDING_op_anchor` / `WA_AI_LANDING_op_expiry` (expiry = scheduled day since 1936.1.1 + 45
+grace). 75 active operations, 5 invaders (AST 5, ENG 6, GER 4, JAP 30, USA 30) at generation time.
+
+Monthly, each AI invader on the historical difficulty (`WA_AI_DIFFICULTY_is_historical` - the same
+gate the calendar events carry) at war walks its pending ops. Target = CURRENT controller of the
+anchor state - dynamic geography, never a stored tag: a fallen France reserves GER, a Torch against
+an unconquered Vichy reserves VIC, and an ahistorical world reserves whoever actually holds the
+anchor. If the target is at war with the invader, a timed flag
+`WA_AI_LANDING_reserved_for_<TAG>` (lease 50 days > the 31-day pulse gap) is stamped ON THE TARGET
+for the invader and every AI faction member. The lease renews while any op against that target is
+pending and dies by itself within one lease of the last scheduled operation - which is the requested
+"until the date of the last scripted invasion", to a bounded tail: t0 stamp, t+31 re-stamp, t+50
+expiry after the final pulse that still saw a pending op.
+
+The consumer is one Default-layer block, `invasion_unit_request value = -200` with
+`country_trigger = { has_country_flag = WA_AI_LANDING_reserved_for_@FROM }` (country_trigger scope =
+enemy country, FROM = the evaluating country - `documentation.info` section `front_unit_request /
+invasion_unit_request`). Same -200 magnitude and same base assumption as sec.10: ASSUMED it floors
+the request at zero; a deliberate Faction-layer site boost (`WA_AI_MILITARY_ALLIES_dday_prep_INVASION`
++1000 on the Normandy states) still outranks it, which is intended - the scripted operation's own
+staging must survive its own reservation.
+
+**Epoch.** Day arithmetic uses the engine's `global.num_days` (install
+`dynamic_variables_documentation.md`, global scope) minus `global.WA_AI_LANDING_epoch`, calibrated at
+startup to 1936.1.1 (the Blitzkrieg 1939.8.14 bookmark backdates by 1321 days; a third bookmark
+needs its own branch in `WA_AI_LANDING_init_reservations`).
+
+**Stated ASSUMED, and how a campaign falsifies it.** (a) `@FROM` dynamic-flag rendering inside an
+ai_strategy `country_trigger` - vanilla idiom in decisions (`WTT_border_conflict_*_@FROM`), no other
+ai_strategy user in this repo; if inert, saves show `wa_tlm_resv_stamp_n > 0` and the reservation
+flags on targets while the faction still opens engine invasions against them. (b) -200 floors the
+request - inherited from sec.10, still unmeasured. PDXScript fails silently; the probe row in the
+telemetry doc names both.
+
+**Timing residuals, tabulated (AGENTS rule f) - monthly pulse (31d max gap) vs lease 50 vs grace 45:**
+
+| Case | t0 | t1 | t2 | Residual |
+| --- | --- | --- | --- | --- |
+| Nominal | pulse stamps (op pending) | every following pulse re-stamps | last pulse with a pending op: last-scheduled-day + 45 grace | flag dies alone <= 50d after t2 -> reservation ends <= 95d after the last scheduled date |
+| Op fires LATE (preconditions unmet > 45d past schedule) | schedule passes | grace passes, reservation lapses | op still refires weekly and may land later | UNPROTECTED window between t1 and the landing - accepted: post-landing the sec.10 freeze takes over, and the reservation's purpose (do not park divisions in advance) matters before the schedule, not after |
+| Op succeeds EARLY in its window | landing executes | ops against that target all past -> pulses stop stamping | — | suppression lingers <= last-stamp + 50d on a target that may already be half-conquered - harmless: engine invasions of a collapsing enemy resume within the lease |
+| Target changes controller between pulses | stamp on old controller | next pulse (<= 31d) stamps the new controller | old lease expires <= 50d after t0 | <= 50d of stale reservation on the old controller |
+| Country joins the faction mid-war | — | next pulse (<= 31d) stamps its flag | — | <= 31d without protection for the newcomer |
+
+**Scheduled, not fired.** Expiry keys on the calendar's SCHEDULED day, never on whether the KDE event
+actually fired - script cannot see a hidden event's execution short of hooking `spawn_invasion`, and
+the two accepted residuals above (late-firing, early-success) are exactly the cost of that choice.
+
+**Resumed saves.** `on_startup` does NOT re-fire when a savegame is loaded (MEASURED - lessons-log
+entry of that name), so the loader runs once at NEW-GAME creation and everything persists in the
+save thereafter. ACCEPTED consequence: a campaign saved on a build without this system never
+initializes it - inert for that campaign, fingerprint = `wa_tlm_resv_*` absent. No migration path
+on purpose; the mis-dated-epoch scenario (init running mid-campaign) cannot occur for the same
+reason.
+
+**What this supersedes eventually, not yet.** The hand-dated Allied holds
+(`WA_AI_MILITARY_ALLIES_dday_hold`, `_no_italy_invasion_early_INVASION`,
+`_norway_invasion_hold_INVASION`) express the same intent for three specific cases with literal
+dates. They stay untouched - retiring them is its own subject with its own impact analysis, recorded
+in WORK.md, not a side effect of this one.
+
+---
+
+## 23. Allied total commitment - a safe dominion's whole army goes to the war (2026-08-25)
+
+**Owner rule (2026-08-25): a faction-member minor whose home nobody can reach sends 100 % of its
+army to the coalition's theatres.** No home garrison in Canada, South Africa, Australasia or India
+while the war is elsewhere; the garrison comes back the moment somebody can actually reach home
+(for the Pacific Commonwealth, that is Japan entering - or visibly preparing - the war).
+
+### Control panel (`WA_AI_MILITARY_triggers.txt`)
+
+| Trigger | Question it answers |
+| --- | --- |
+| `WA_AI_MILITARY_home_theatre_threatened` | "Can someone actually reach my home ground?" - collapse metric (`home_threatened`), an enemy on a core, a hostile land border on the home area, or (Pacific Commonwealth only, CONFIG classification) `pacific_threat_imminent`. ROOT-relative: read it ONLY from a country's own `enable`, never through an ENG-side `any_country` role lookup. |
+| `WA_AI_MILITARY_total_commitment_active` | The whole rule: AI + minor + at war + in a faction (or a subject) + `is_fit_for_expeditionary_front` + home not threatened. One verdict, every consumer stands down together when it flips. |
+
+### Consumers
+
+| Block | Layer | Payload |
+| --- | --- | --- |
+| `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home` (`DEFAULT_FRONT_archetypes.txt`) | Default | `garrison = -5000` - dominates `minors_home_first`'s `+50` (mechanism MEASURED on RAJ, §16) |
+| `WA_AI_MILITARY_DEFAULT_THEATRE_non_african_avoid_africa` | Default | the `-90` African `area_priority` brake now EXEMPTS committed minors (gate, not a counter-entry - a counter only works if the engine sums per area, which is ASSUMED) |
+| `WA_AI_MILITARY_ALLIES_committed_minor_join_africa` (`FACTION_ALLIES_FRONT.txt`) | Faction | `front_unit_request +60` on `north_africa` and the East-Africa alias - the direction for the released army |
+| `WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe` (`FACTION_ALLIES_THEATRE.txt`) | Faction | `theatre_distribution_demand_increase id = 15 value = 6` once the coalition holds a western foothold - theatre demand, not a front request, is what moves an army across an ocean (campaign 5078fe10) |
+
+The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
++150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
+
+### What it replaced (all deleted 2026-08-25, `[allied-total-commitment]`)
+
+Per-tag releases: `ALLIES_pacific_quiet_release_garrison` (AST/NZL/RAJ), `CAN_FRONT_release_home_garrison`
+(never armed - its `num_divisions > 11` bar sat above Canada's 4-9 division army, MEASURED campaign
+`8f9b5653`: 100 % areadef home garrison in 4 of 5 saves), and the verdict
+`pacific_commonwealth_garrison_releasable`. Kept: `RAJ_core_front_requests`' own `-5000` (the
+OPPOSITE case - garrison stays released while RAJ fronts against Japan at home).
+Legacy deletions in the same pass: `CAN_focus_on_europe` (flag+date gate),
+`CAN_sync_invasions_on_europe` (dated no-ops; the five Phase-5 `country_owns_fc_area_*` triggers it
+owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLIES_allied_minors_make_way`
+(tag-listed, date-gated suppression of the African fronts - the opposite of this rule),
+`SAF_help_in_africa_1_DIPLOMACY`, two zero-payload COMMONWEALTH.txt blocks, four empty country files.
+`AST_defend_home` / `NZL_defend_home` were re-gated from `always = yes` onto `home_theatre_threatened`.
+
+### Behaviour by scenario (the setup-agnostic walk)
+
+| Scenario | Verdict | Result |
+| --- | --- | --- |
+| CAN/AST/NZL/RAJ/SAF at war, home safe, fit | commitment ON | garrison released, Africa areas at net +100, +60 African requests, Europe demand after foothold |
+| Japan enters (or prepares) the war | Pacific Commonwealth (AST/NZL/RAJ) flip to threatened | release OFF in one pass; `minors_home_first +50` and the Japan-war buffer blocks take over; RAJ's own `-5000` keeps its army on the Asian fronts |
+| Enemy lands on a dominion core / hostile border war (any setup) | threatened | same stand-down, no tag involved |
+| NZL/SAF before they build past 6 military factories | not fit | home-bound - the owner's uniform fitness rule, not an oversight |
+| Committed minor of ANY other faction (e.g. an Axis minor at war only with distant enemies) | commitment ON | garrison released; direction pulls are Allies-only, so movement depends on that faction's own pulls - stated, accepted residual |
+
+### Known limits
+
+- The `garrison` type has NO engine documentation; `-5000` = force-off is WA convention, MEASURED
+  only through the §16 cross-section. `imgui show ai-strategy` on a released dominion is the cheap
+  confirmation.
+- Divisions under NO order (the H3 buffer/no-order ceiling of `minor-expeditionary-fitness`) are
+  beyond every lever here; the campaign probe measures whether the released areadef divisions
+  actually convert into front/buffer orders abroad.
+- `home_theatre_threatened` arms on presence/preparation, not on capability projection: a surprise
+  naval invasion by a non-Pacific power (no wargoal visible) is caught only at the
+  enemy-on-a-core term, i.e. after the landing. Bounded by the same `abort_when_not_enabled`
+  stand-down.
+- **Stand-down cadence is ASSUMED, not measured.** How often the engine re-evaluates `ai_strategy`
+  `enable`/`abort` blocks is not documented anywhere WA has read; every "in one pass" above means
+  "at the next engine strategy re-evaluation", whose interval is unknown (believed sub-weekly from
+  how fast gated blocks appear/disappear in `imgui show ai-strategy`, never timed). The worst-case
+  window between the threat flipping and the garrison actually standing back up is that interval
+  plus the engine's own areadef re-staffing time - unquantified; the campaign probe (b) bounds it
+  empirically at 3 months.
+- **The non-Allied population that passes `total_commitment_active`** (minor + at war + faction/subject
+  + >5 mil factories + home safe): historically, Axis Balkan minors in the window where they are at
+  war with distant Allies only (HUN/ROM/BUL before Barbarossa; the SOV border war then flips them to
+  threatened), plus symmetric ahistorical cases. MAN/SIA-class Co-Prosperity minors border their
+  enemies and stay threatened. These release their areadef garrison but receive NO direction pull
+  (the pulls are Allies Faction blocks) - stated, accepted residual; their own faction files own any
+  movement.

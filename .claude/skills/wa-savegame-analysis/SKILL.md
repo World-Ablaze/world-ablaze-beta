@@ -163,7 +163,7 @@ Countries live in `countries={ TAG={ … } }`. Useful depth-2 sections inside a 
 | `variables` | All country variables, **alphabetical**. Arrays as `name^0`, `name^1`, …, `name^num`. |
 | `politics` | `ideas={ space separated list }` (all active ideas incl. hidden WA_AI ones), `timed_idea` blocks with days remaining, `ruling_party`, `political_power`, party popularity. |
 | `flags` | Country flags with value + set-date. |
-| `ai` | Engine AI state incl. active `ai_strategy={ type=… id=… value=… }` entries (numeric type codes). |
+| `ai` | Engine AI state incl. active `ai_strategy={ type=… id=… value=… }` entries (numeric type codes). **No block NAMES here, and no code-to-name map exists** — grepping this section for a WA strategy name returns zero lines and that zero is void by construction, never evidence the block is inert. To learn which blocks are armed, the owner runs `imgui show ai-strategy` in a live game (skill `wa-diagnosis`, technique 5). |
 | `focus` | Focus progress and completed list. |
 | `technology`, `production`, `resources`, `buildings`, `units`, `diplomacy`, `decision_status` | What their names say; `units` is by far the largest (~18k lines). |
 

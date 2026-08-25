@@ -83,14 +83,14 @@ Concretely:
 
 ## Changing an existing system
 
-Existing AI code is load-bearing and misbehaves silently — a regression surfaces as a country playing badly three in-game years later, not as an error at launch. Redundant-looking code usually encodes a case that already broke (the `# Fix NN:` changelog convention). So changes to existing triggers, effects, and strategy blocks carry a burden of proof that new code does not.
+Existing AI code is load-bearing and misbehaves silently — a regression surfaces as a country playing badly three in-game years later, not as an error at launch. Redundant-looking code usually encodes a case that already broke (`# [slug]` markers; historical `# Fix NN:` comments resolve via `documentation/FIX_HISTORY.md`). So changes to existing triggers, effects, and strategy blocks carry a burden of proof that new code does not.
 
 Before modifying anything that already exists:
 
 1. **Enumerate the blast radius.** Grep the trigger/effect/flag/variable name across `common/` and `events/` — every caller, every reader, every file that redeclares a related `@` constant. A trigger with six callers is six behaviours you are changing.
 2. **Identify who reaches it.** Which countries, archetypes, and cadences hit this code path? A change that is right for majors may wreck minors sharing the same Default-layer block.
 3. **Walk both setups through the change.** Trace the historical scenario *and* at least one ahistorical one. A fix tuned on a historical test game can open a gap in divergent games.
-4. **Check the paper trail.** Surrounding `# Fix NN:` comments, `wa-lessons-learned`, and the system's doc in `documentation/` — the case the current code encodes is usually written down somewhere.
+4. **Check the paper trail.** Surrounding `# [slug]` / historical `# Fix NN:` comments, the subject in `WORK.md`, `wa-lessons-learned`, and the system's doc in `documentation/` — the case the current code encodes is usually written down somewhere.
 5. **Prefer additive, gated changes.** A new branch behind a discriminating trigger regresses nothing when the trigger is false; an in-place rewrite of a shared path puts every caller at risk. Reserve rewrites for when the analysis shows the old behaviour is wrong for *all* callers.
 6. **State the regression risk.** Your summary of the change must say what could break and why you believe it won't — "no risk" is a claim to substantiate with the caller list, not a default.
 
@@ -160,7 +160,7 @@ Two things to know before editing:
 - **AI numbers are script constants** — `common/script_constants/wa_ai_pc.txt` / `wa_ai_railway.txt` / `wa_ai_aifc.txt` / `wa_ai_posture.txt`, read as `constant:wa_ai_<system>.<group>.<key>` from every file (the railway control panel, PC bands / budgets / shadow prices, AIFC and posture thresholds). Retune there, full game restart to see it; never add a per-file `@` copy of a shared number. `python tools/check_constants.py` after touching them (skill `wa-constants-registry`).
 - **Puppet territory is not yours.** `every_controlled_state` skips subject states; several fixes here (`Fix 25`/`Fix 27`) exist purely because of that. See `wa-lessons-learned`.
 
-The `# Fix NN:` comments throughout `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` and `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` are a deliberate changelog — a later fix can revoke an earlier one (`Fix 27` revokes `Fix 25`). Read the surrounding Fix comments before "simplifying" logic that looks redundant; it usually encodes a case that broke.
+The historical `# Fix NN:` comments throughout `WA_AI_CONSTRUCTION_PRIORITY_railway_helpers.txt` and `WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt` were a changelog — a later fix can revoke an earlier one (`Fix 27` revokes `Fix 25`); numbers resolve via `documentation/FIX_HISTORY.md` and are being collapsed into `# [slug]` markers. Read the surrounding comments before "simplifying" logic that looks redundant; it usually encodes a case that broke.
 
 ## Map data and pathfinding
 

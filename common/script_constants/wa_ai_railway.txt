@@ -30,11 +30,11 @@ wa_ai_railway = {
 	}
 
 	# Which countries run the railway system - WA_AI_PC_country_can_run_railway_system (triggers file, on_weekly)
-	# and the civ floor inside WA_AI_PC_railway (railway_core). Fix 43 escape hatch = recovery_min_states.
+	# and the civ floor inside WA_AI_PC_railway (railway_core). [aifc] escape hatch = recovery_min_states.
 	eligibility = {
 		min_civs            = 50	# base civ minimum inside the run, peacetime side of the run's own floor
 		                      # was @WA_AI_PC_railway_MIN_CIVS
-		min_civs_war        = 30	# wartime side of the same floor. Fix 104: was min_civs x war_civs_factor
+		min_civs_war        = 30	# wartime side of the same floor. [na-corridor] was min_civs x war_civs_factor
 		                      # (0.6) computed at each call site. It is an absolute now because a scripted
 		                      # TRIGGER cannot multiply, and WA_AI_PC_country_can_fund_own_logistics must
 		                      # read the SAME floor the run applies - a hand-synced second copy is exactly
@@ -51,21 +51,21 @@ wa_ai_railway = {
 		                      # was @WA_AI_PC_railway_MIN_STATES
 		max_surrender       = 0.3	# skip above this surrender progress...
 		                      # was @WA_AI_PC_railway_MAX_SURRENDER
-		recovery_min_states = 20	# ...unless civs > min_civs_peace and states > this (war economy intact, Fix 43)
+		recovery_min_states = 20	# ...unless civs > min_civs_peace and states > this (war economy intact, [aifc])
 		                      # was @WA_AI_PC_railway_RECOVERY_MIN_STATES
 		minor_civ_threshold = 50	# minor nations bypass the state gate above this many civs
 		                      # was @WA_AI_PC_railway_MINOR_CIV_THRESHOLD
 	}
 
 	# Route caps per execution and queue sizing. queue_full is BOTH the recalculation-skip threshold
-	# (railway_core, Fix 29b: live type-13 projects only) AND the Fix 77 admission cap on queued segments
+	# (railway_core, [railway-landwar] live type-13 projects only) AND the [pc-queue] admission cap on queued segments
 	# (railway_helpers) - they were two @ names 'equal BY DESIGN'; one key makes the design structural.
 	routes = {
 		max_total                    = 8	# max routes processed per run
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_TOTAL
 		max_per_enemy                = 4	# max routes per enemy country (enforced by WA_AI_PC_railway_land_frontline_candidate)
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
-		queue_full                   = 12	# 'a full queue is 12' - skip recalculation at/above, and never admit past it (Fix 77)
+		queue_full                   = 12	# 'a full queue is 12' - skip recalculation at/above, and never admit past it ([pc-queue])
 		                               # was @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD, @WA_AI_PC_railway_MAX_QUEUED
 		partial_path_priority_factor = 0.7	# partial paths (dead-ends) get 70% priority
 		                               # was @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR
@@ -73,7 +73,7 @@ wa_ai_railway = {
 		                               # was @WA_AI_PC_railway_THEATRE_SEPARATION_DISTANCE
 	}
 
-	# Fix 95 - THEATRE CORRIDORS (WA_AI_PC_railway_corridor_pass in railway_core, strategy
+	# [na-corridor] - THEATRE CORRIDORS (WA_AI_PC_railway_corridor_pass in railway_core, strategy
 	# WA_AI_PC_railway_STRATEGY_theatre_corridor in railway_strategies, node data in
 	# WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt). A corridor is an ordered list of named
 	# province nodes; whoever holds two consecutive nodes (ROOT / subject / Fix-74 partner soil)
@@ -83,7 +83,7 @@ wa_ai_railway = {
 	# 20-hop route to level 1 took 24 weeks - the pass cadence, not the civ pool, was the bound.
 	corridor = {
 		interval_weeks     = 4	# corridor pass cadence (weeks); the counter ticks on the weekly pulse
-		# Fix 107: rail_level (a flat TARGET of 2) became a floor/cap PAIR around a computed target.
+		# [na-corridor] rail_level (a flat TARGET of 2) became a floor/cap PAIR around a computed target.
 		# Protects against: sizing with no reference to demand. Campaign 9d83084c measured every
 		# corridor hop at exactly 2 on all 121 saves, 1940.12 to 1946.2 - the system was not blocked,
 		# it had finished, and 4 + 8x2 = 20 supply was the ceiling by construction.
@@ -115,7 +115,7 @@ wa_ai_railway = {
 		# Break-even: 100 x N = 2000 -> N = 20.
 		# DEVIATION from LOGISTICS_MODEL section 11.7, recorded: that section derived 10-14 from the ENGINE
 		# price with its -556/level taper (constant:wa_ai_railway.cost.naval_base_per_level). PC is a shadow
-		# system - it never pays the engine price, it pays cost.naval_base FLAT (see that key's header, Fix 72),
+		# system - it never pays the engine price, it pays cost.naval_base FLAT (see that key's header, [pc-queue]),
 		# so the port is dearer than section 11.7 assumed and the break-even moves out.
 		# Protects against: defaulting to one lever. Below 20 the rail is cheaper per point AND ~12x faster
 		# to deliver (800/F days per segment against 10000/F for one port level, and 8 rail segments may be
@@ -124,10 +124,10 @@ wa_ai_railway = {
 		# RE-DERIVE BY HAND, nothing checks it (noted on cost_naval_base in tools/constants_registry.json).
 		port_break_even_segments = 20	# at or above this many provinces on the chain, raise the PORT; below, the RAIL
 		queue_max          = 8	# concurrent corridor projects per builder PER BUILDING TYPE (WA_AI_PC_start_project filters
-		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, Fix 47 scoped
+		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, [equipment-selection] scoped
 		max_routes_per_run = 20	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (21 nodes ->
-		                    	# 20 pairs, North Africa: the western arm Oran..Tunis from Fix 113, plus the inland
-		                    	# junction 13481 between Tobruk and 5078 from Fix 129). NOT a rotating
+		                    	# 20 pairs, North Africa: the western arm Oran..Tunis from [na-corridor], plus the inland
+		                    	# junction 13481 between Tobruk and 5078 from [commonwealth-handoff]). NOT a rotating
 		                    	# window: the pass validates every corridor project against the routes it pathfound, so a
 		                    	# window smaller than the list would cancel the in-progress segments of the routes it
 		                    	# skipped. RAISE THIS WITH ANY NODE YOU ADD - a corridor longer than this number of pairs
@@ -135,7 +135,7 @@ wa_ai_railway = {
 		                    	# Hops are 1-5 provinces (A* cap 100), so this is cheap.
 	}
 
-	# Fix 135 (2026-08-21) - the LAND-WAR / OVERSEAS route family, sized by the same helper as the
+	# [na-corridor] (2026-08-21) - the LAND-WAR / OVERSEAS route family, sized by the same helper as the
 	# corridor (WA_AI_PC_rail_size_route, railway_helpers). Before this it had no sizing at all:
 	# WA_AI_PC_railway_STRATEGY_land_war set a flat `default_route_level = 5` and
 	# WA_AI_PC_railway_land_consider_frontline then recomputed `_max_route_level_ + 1`, a ratchet that
@@ -178,7 +178,7 @@ wa_ai_railway = {
 	}
 
 	# Route SCORING costs (railway_helpers). The base prices are the PC-wide shadow prices
-	# constant:wa_ai_pc.cost.railway / .naval_base (one key for scoring AND charging - Fix 73 made them agree,
+	# constant:wa_ai_pc.cost.railway / .naval_base (one key for scoring AND charging - [pc-queue] made them agree,
 	# 2026-08-16 made them one declaration); only the naval-base per-level taper and the segment estimate
 	# live here. MUST MATCH common/buildings/00_buildings.txt - registered (cost_naval_base_per_level).
 	cost = {

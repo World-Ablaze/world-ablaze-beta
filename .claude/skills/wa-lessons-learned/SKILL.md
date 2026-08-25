@@ -20,7 +20,7 @@ change to an existing system, or an analysis conclusion**, send the decision to 
 
 - the decision itself in 3–10 lines (what changes, where, why), including any claim you are
   making about the residual ("bounded", "rare", "self-heals") and any alternative you rejected;
-- the names involved (system, effects/triggers, buildings, variables, `Fix NN`).
+- the names involved (system, effects/triggers, buildings, variables, subject slug or historical `Fix NN`).
 
 It returns a ≤40-line verdict: the lessons that apply with COMPLIES/CONFLICTS per entry, the
 AGENTS.md (f)/(g) checks (bound-without-timeline, replaced proposal without refutation), the
@@ -38,7 +38,7 @@ are debugging, you still read the entries the reviewer names.
 
 **2. `@` constants are file-scoped, and some are deliberately duplicated.** The railway eligibility five, the PC allocation fraction, the Fix 41 bands, the posture thresholds and the shadow prices all exist in two or more files with `# must match ...` comments — and the comment held nothing: the PC affordability gate sat at 0.35 while the allocator funded at 0.40 (Fix 90). Since 2026-08-16 the shared AI numbers are HOI4 1.18 **script constants** (`common/script_constants/wa_ai_*.txt`, read as `constant:cat.group.key` from any file) — one declaration, nothing to sync; a `@` shared between two WA files is now a checker ERROR. `tools/constants_registry.json` + `python tools/check_constants.py` remain for the cross-format copies (defines, `00_buildings`, savegame.py). Run the checker before committing (skill `wa-constants-registry`; log entry "A 'must match' comment is not a mechanism").
 
-**3. `# Fix NN:` comments are a changelog, and later fixes revoke earlier ones.** `Fix 27` revokes `Fix 25`. Code that looks redundant is usually encoding a case that broke. Read the surrounding Fix comments before removing anything.
+**3. Fix/subject comments are a record, and later fixes revoke earlier ones.** `Fix 27` revokes `Fix 25` (historical numbers resolve via `documentation/FIX_HISTORY.md`; new code carries `# [slug]` markers). Code that looks redundant is usually encoding a case that broke. Read the surrounding comments before removing anything.
 
 **4. Run a diagnostic before implementing a fix.** In this codebase the first hypothesis about an AI misbehaviour is usually wrong — control vs ownership, landmass boundaries, and subject scoping are subtler than they read. Confirm what the AI actually sees before changing what it does.
 
@@ -62,9 +62,8 @@ Append to the end of `references/lessons-log.md` using this shape:
 
 **And add the entry's index line to `references/lessons-index.md` in the same commit** — format
 `- <CLASS> <MM-DD> <rule in <=15 words> · grep:"<verbatim heading fragment>"`, appended at the end.
-A lesson without an index line is invisible to the triage every session runs first. (Never write
-the sequence "Fix &lt;number&gt;" for a number absent from `tools/fix_registry.json` — the
-`FIX-UNREGISTERED` scanner reads these files.)
+A lesson without an index line is invisible to the triage every session runs first. (For pre-2026-08-23 work cite historical `Fix NN` numbers only if they resolve in
+`documentation/FIX_HISTORY.md`; new entries cite the subject slug from `WORK.md`.)
 
 Two things that make an entry worth having:
 

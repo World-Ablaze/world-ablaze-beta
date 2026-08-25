@@ -79,13 +79,13 @@ WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = {
 }
 
 ############################################################################################################
-# Fix 122 (2026-08-21) - the Mediterranean convoy interdiction. Campaign 8c0fea4c: NO Allied
+# [med-axis-posture] (2026-08-21) - the Mediterranean convoy interdiction. Campaign 8c0fea4c: NO Allied
 # `naval_convoy_raid_region` existed on 29 (Strait of Sicily), 269 (Ionian Basin) or 327 (Levantine
 # Basin) anywhere in the mod - the only writers were USA's -1000 and GER's -1000 - and Italy's free
 # convoy pool read 1023 / 1008 / 1004 at 1941.6 / 1942.6 / 1943.6: three years of Libya lifeline
 # without a scratch. These three triggers say WHEN the interdiction is worth running.
 #
-# Same "our side" / "an enemy" idiom as the Fix 99 family below: PREV.PREV from inside
+# Same "our side" / "an enemy" idiom as the [med-axis-posture] family below: PREV.PREV from inside
 # <state> = { CONTROLLER = { } } is the enquiring country. No tag, no date, no side.
 ############################################################################################################
 
@@ -125,7 +125,7 @@ WA_AI_MILITARY_NAVAL_tobruk_held_by_enemy = {
 }
 
 ############################################################################################################
-# Fix 136 (2026-08-21) - the Mediterranean Fleet's base and its sea-control target.
+# [med-axis-posture] (2026-08-21) - the Mediterranean Fleet's base and its sea-control target.
 #
 # Protects: the eastern-Mediterranean strike force has somewhere to live. "Our side holds it" is not
 # enough for a HOME BASE - `strike_force_home_base` parks OUR OWN hulls, so the enquiring country must
@@ -189,7 +189,7 @@ WA_AI_MILITARY_is_southeast_asia_sink_state = {
 	}
 }
 
-# Fix 96: was `date > 1938.1.1` - a calendar standing in for "the 1936 conquest of Ethiopia is over".
+# [med-axis-posture] was `date > 1938.1.1` - a calendar standing in for "the 1936 conquest of Ethiopia is over".
 # Now: no Italy is in its COLONIAL conquest of Ethiopia - i.e. no country that owns/cores Italian soil is
 # at war with ETH while at war with no major (the moment an Italy fights a major, an Ethiopian war is a
 # side-show, whether ETH was never annexed or was restored by the Allies), and a capitulated ETH counts
@@ -345,6 +345,27 @@ WA_AI_MILITARY_ENG_holds_east_egypt = {
 		446 = { is_controlled_by = UKE }
 		447 = { is_controlled_by = UKE }
 		453 = { is_controlled_by = UKE }
+	}
+}
+
+# [commonwealth-handoff] an enemy of ROOT stands on Egyptian soil - the switch that lifts the
+# north_africa suppressions. Deliberately WIDER than the {446,447,453} East-Egypt anchor: 452
+# (Marsa Matruh, the El-Alamein VP state) and the western approach fall first, and anchoring on
+# Cairo/Alexandria/Sinai would only lift the brake after the theatre is already lost.
+# ROOT-relative and tag-free: reads whoever actually controls the ground, in any setup.
+WA_AI_MILITARY_egypt_is_invaded = {
+	OR = {
+		446 = { CONTROLLER = { has_war_with = ROOT } }
+		447 = { CONTROLLER = { has_war_with = ROOT } }
+		452 = { CONTROLLER = { has_war_with = ROOT } }
+		453 = { CONTROLLER = { has_war_with = ROOT } }
+		456 = { CONTROLLER = { has_war_with = ROOT } }
+		457 = { CONTROLLER = { has_war_with = ROOT } }
+		923 = { CONTROLLER = { has_war_with = ROOT } }
+		960 = { CONTROLLER = { has_war_with = ROOT } }
+		1062 = { CONTROLLER = { has_war_with = ROOT } }
+		1091 = { CONTROLLER = { has_war_with = ROOT } }
+		1097 = { CONTROLLER = { has_war_with = ROOT } }
 	}
 }
 
@@ -628,10 +649,14 @@ WA_AI_MILITARY_ENG_britain_invaded = {
 	}
 }
 
+# [allied-total-commitment] no division floor, quality floor instead: the guard mission is the only
+# catcher a released Canadian division has before a continental foothold exists - a count bar above
+# the real army size parks the whole army at home until an invasion order drafts it (owner-observed:
+# home until Torch). ENG's stand-down reads the wrapper below, which KEEPS the count bar.
 WA_AI_MILITARY_CAN_uk_guard_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
 	is_ai = yes
-	num_divisions > 11
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_ENG_britain_guard_active = yes
 	NOT = { WA_AI_MILITARY_CAN_home_defense_required = yes }
@@ -731,7 +756,19 @@ WA_AI_MILITARY_RAJ_egypt_support_available = {
 	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
 }
 
-# Fix 128 (2026-08-21) - REINFORCEMENT verdict, and it is deliberately NOT the handoff verdict above.
+# [commonwealth-handoff] force floor for the ADD-force delegate verdicts (El-Alamein reinforcement, East
+# Africa) - NOT army_still_operational, whose collapse-calibrated bars sit above a healthy colonial army
+# while the ungated Faction pull sends the delegate to the theatre anyway. The East-Africa verdict ALSO
+# stands ENG down: min_eq (delegate-calibrated; has_variable reads absent as not-proven) is what keeps a
+# hollow delegate from releasing ENG. Pure stand-down verdicts keep the full brake; consumers keep their div bars.
+WA_AI_MILITARY_delegate_force_floor = {
+	num_of_controlled_states > constant:wa_ai_posture.delegate.min_states
+	has_manpower > constant:wa_ai_posture.delegate.min_mp
+	has_variable = WA_AI_fielded_eq_ratio
+	check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.delegate.min_eq }
+}
+
+# [commonwealth-handoff] (2026-08-21) - REINFORCEMENT verdict, and it is deliberately NOT the handoff verdict above.
 #
 # What was measured. Campaign 8c0fea4c, retest saves: RAJ fields 59 divisions in June 1940, loses its
 # BEF / Norway contingents with France, and runs at 40 / 40 / 42 at 1941.5.23 / 1941.6.10 / 1941.10.6.
@@ -756,7 +793,7 @@ WA_AI_MILITARY_RAJ_egypt_reinforcement_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_egypt_support = yes
 	is_ai = yes
 	num_divisions > 29
-	WA_AI_MILITARY_army_still_operational = yes
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_ENG_el_alamein_guard_active = yes
 	WA_AI_MILITARY_ENG_el_alamein_destination_available = yes
@@ -774,7 +811,7 @@ WA_AI_MILITARY_ENG_kuwait_guard_active = {
 			}
 		}
 	}
-	# Fix 125 (2026-08-21): a guard needs something to guard against. Without this term the
+	# [commonwealth-handoff] (2026-08-21): a guard needs something to guard against. Without this term the
 	# mission ran for the whole war over ground nobody could reach. It disarms all THREE
 	# consumers together - _defense_of_kuwait_delegated, _defense_of_kuwait_fallback and
 	# WA_AI_MILITARY_RAJ_kuwait_guard_available - which is the intent: there is no mission,
@@ -793,8 +830,14 @@ WA_AI_MILITARY_RAJ_kuwait_guard_available = {
 	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
 }
 
+# [allied-total-commitment] ENG-side STAND-DOWN wrapper: keeps the division-count bar the delegate's
+# own ADD-force verdict dropped (Fix-128-class ruling - a weak gate on a stand-down makes the
+# guarded ground weaker). ENG thins its home reserve only for a guard that is actually sized.
 WA_AI_MILITARY_commonwealth_uk_guard_available = {
-	any_country = { WA_AI_MILITARY_CAN_uk_guard_available = yes }
+	any_country = {
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+		num_divisions > 11
+	}
 }
 
 WA_AI_MILITARY_commonwealth_egypt_guard_available = {
@@ -810,7 +853,7 @@ WA_AI_MILITARY_commonwealth_kuwait_guard_available = {
 }
 
 ############################################################################################################
-# Fix 123 / 124 / 125 (2026-08-21, campaign 8c0fea4c) - the Pacific Commonwealth's home garrison,
+# [commonwealth-handoff] (2026-08-21, campaign 8c0fea4c) - the Pacific Commonwealth's home garrison,
 # the East-Africa delegation, and the Kuwait guard's missing threat test.
 #
 # The measurement all three sit on. At 1941.6, with Japan still neutral:
@@ -860,29 +903,50 @@ WA_AI_MILITARY_pacific_threat_imminent = {
 	}
 }
 
-# Fix 123: the release verdict. Same shape as the Commonwealth handoff verdicts above - identity
-# in CONFIG, readiness here - so ENG and the delegate read one sentence.
-WA_AI_MILITARY_pacific_commonwealth_garrison_releasable = {
-	WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
-	is_ai = yes
-	has_war = yes
-	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
-	NOT = { WA_AI_MILITARY_pacific_threat_imminent = yes }
-	# TWO home-safety terms on purpose, and the second is not redundant.
-	# `commonwealth_home_in_danger` is written PREV-relative (`is_core_of = PREV`,
-	# `CONTROLLER = { has_war_with = PREV.PREV }`) because the Commonwealth handoff reads its
-	# verdicts through ENG's `any_country` lookups. This verdict is ALSO read straight from the
-	# dominion's own `enable`, where PREV is not the dominion, so that term may be a no-op on that
-	# path - and this block releases an entire home garrison, which is not a place to find out.
-	# `WA_AI_MILITARY_home_threatened` (`WA_AI_defend_core` / `surrender_progress > 0.05`) is
-	# scope-free and holds on every path. The same PREV question applies to the three pre-existing
-	# handoff verdicts and is not made worse here; it is worth its own diagnosis.
-	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
-	NOT = { WA_AI_MILITARY_home_threatened = yes }
+# [allied-total-commitment] "someone can actually reach my home ground." ROOT-relative: read ONLY
+# where ROOT = the country asked about (its own ai_strategy enable), never through an ENG-side
+# any_country lookup (ROOT = enquirer there). "Home" = CORE states + the home area: an enemy on
+# owned-non-core colonial soil does not trip this - colonies are operations ground, by design.
+# Pacific reach is CONFIG classification (not derivable dynamically). Spec: WA_AI_MILITARY_SYSTEM.md §23.
+WA_AI_MILITARY_home_theatre_threatened = {
+	OR = {
+		# collapse metric / defend-core verdict - scope-free, holds on every path
+		WA_AI_MILITARY_home_threatened = yes
+		# an enemy stands on one of our cores
+		any_state = {
+			is_core_of = ROOT
+			CONTROLLER = { has_war_with = ROOT }
+		}
+		# a hostile land border presses the home area
+		any_home_area_neighbor_country = { has_war_with = ROOT }
+		# a Pacific expansionist is at war with us or preparing (wargoal / southward posture)
+		AND = {
+			WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
+			WA_AI_MILITARY_pacific_threat_imminent = yes
+		}
+	}
 }
 
-# Fix 124: the East-Africa delegate's readiness. Mirrors WA_AI_MILITARY_RAJ_egypt_support_available
-# term for term, plus the two the mission needs of its own: there must be a theatre to fight in,
+# [allied-total-commitment] the owner rule: a faction-member minor whose home nobody can reach sends
+# its WHOLE army to the coalition's theatres; when home_theatre_threatened flips, every consumer
+# stands down and minors_home_first's garrison +50 resumes. The fitness term is the ONE definition of
+# "worth sending abroad" shared with the Faction pulls and the lend-lease gate. Consumers, scenario
+# walk and residuals: WA_AI_MILITARY_SYSTEM.md §23.
+WA_AI_MILITARY_total_commitment_active = {
+	is_ai = yes
+	WA_AI_MILITARY_is_minor_country = yes
+	has_war = yes
+	OR = {
+		is_in_faction = yes
+		is_subject = yes
+	}
+	WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
+	NOT = { WA_AI_MILITARY_home_theatre_threatened = yes }
+}
+
+# [commonwealth-handoff] the East-Africa delegate's readiness. Same shape as WA_AI_MILITARY_RAJ_egypt_support_available
+# but with the delegate force floor instead of the full operational brake (see the floor's header),
+# plus the two terms the mission needs of its own: there must be a theatre to fight in,
 # and the Pacific must be quiet - an India facing Japan does not campaign in Ethiopia.
 # The division bar is 29 - the Kuwait mission's bar, not the El-Alamein mission's 49. East Africa is
 # the cheaper commitment, and the margin matters: MEASURED, RAJ held 42 / 40 / 44 divisions at
@@ -892,7 +956,7 @@ WA_AI_MILITARY_RAJ_east_africa_available = {
 	WA_AI_CONFIG_MILITARY_is_commonwealth_east_africa = yes
 	is_ai = yes
 	num_divisions > 29
-	WA_AI_MILITARY_army_still_operational = yes
+	WA_AI_MILITARY_delegate_force_floor = yes
 	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
 	WA_AI_MILITARY_east_africa_theatre_contested = yes
 	NOT = { WA_AI_MILITARY_pacific_threat_imminent = yes }
@@ -903,7 +967,7 @@ WA_AI_MILITARY_commonwealth_east_africa_available = {
 	any_country = { WA_AI_MILITARY_RAJ_east_africa_available = yes }
 }
 
-# Fix 125: is anything actually threatening Kuwait. WA_AI_MILITARY_ENG_kuwait_guard_active used to
+# [commonwealth-handoff] is anything actually threatening Kuwait. WA_AI_MILITARY_ENG_kuwait_guard_active used to
 # ask only "is ENG at war" and "do we hold 656", so the guard ran from 1939.9 to the end of the war
 # over an interior allied state - MEASURED 8c0fea4c: ENG kept 1 / 1 / 3 / 4 divisions there at
 # 1940.10 / 1941.6 / 1942.6 / 1943.6 and RAJ never took the delegated mission at all.
@@ -915,12 +979,12 @@ WA_AI_MILITARY_commonwealth_east_africa_available = {
 # Assumes: 291 / 675 / 1041 (Iraq), 413 (Khuzestan) and 292 (Nejd) are the land approach.
 # Gone when: the WA map re-cuts the Gulf states.
 ############################################################################################################
-# Fix 127 (2026-08-21, campaign 8c0fea4c) - the Italian-entry tripwire on the colonial frontiers.
+# [commonwealth-handoff] (2026-08-21, campaign 8c0fea4c) - the Italian-entry tripwire on the colonial frontiers.
 #
 # MEASURED, and it is the whole reason this exists. At the 1940.6 save ENG held **2 divisions in Aden
 # and nothing else** anywhere on the Sudan / Kenya / Somaliland frontier; RAJ held zero, SAF zero.
 # Italy declared war on **1940.6.30**, four weeks later. The Allied East-Africa family is entirely
-# reactive - WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT (Fix 97) needs
+# reactive - WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT ([med-axis-posture]) needs
 # WA_AI_MILITARY_east_africa_theatre_contested, which needs an ENEMY already holding East-African
 # ground, and WA_AI_MILITARY_ENG_el_alamein_guard_active needs an enemy on Libyan ground - so NEITHER
 # frontier can be manned before the declaration. The Axis side has no such gap: ITA's
@@ -940,7 +1004,7 @@ WA_AI_MILITARY_italian_entry_likely = {
 }
 
 # The tripwire is a PRE-WAR measure and releases the moment it stops being one: once the Italian
-# homeland power is at war with us, Fix 97's East-Africa family and the El-Alamein ladder both arm
+# homeland power is at war with us, [med-axis-posture]'s East-Africa family and the El-Alamein ladder both arm
 # on the same tick (Italy owns the AOI, so `east_africa_theatre_contested` is true from day one), and
 # two owners on the same ground is the stacking this file exists to prevent.
 # PREV-relative through WA_AI_MILITARY_is_italian_homeland_power, which is written for `any_country`.
@@ -954,7 +1018,7 @@ WA_AI_MILITARY_italian_entry_still_pending = {
 }
 
 ############################################################################################################
-# Fix 134 (2026-08-21, campaign 8c0fea4c) - the Kuwait guard learns to count what is in front of it.
+# [commonwealth-handoff] (2026-08-21, campaign 8c0fea4c) - the Kuwait guard learns to count what is in front of it.
 #
 # MEASURED. Kuwait 656 (ENG-owned) held **1 RAJ division**, on a front order, at 1941.4.28. On the
 # same day Iraq had **7 divisions** on the approach: Dhi Qar 3, Al Hajara 2, Ninawa 1, Baghdad 1.
@@ -966,15 +1030,15 @@ WA_AI_MILITARY_italian_entry_still_pending = {
 # 0.05 x 45 is 2. It would have been 2 against 7, or against 70.
 #
 # Two terms are added, and they answer two different questions:
-#   _massing   - is there a force on the approach right now (the SIZE question, Fix 134)
+#   _massing   - is there a force on the approach right now (the SIZE question, [commonwealth-handoff])
 #   _imminent  - is somebody preparing to use it (the ARMING question, so the guard is not still
-#                empty on the day war is declared - the reactive half of Fix 125 alone cannot do this)
+#                empty on the day war is declared - the reactive half of [commonwealth-handoff] alone cannot do this)
 # Both are written for `any_country`, i.e. PREV-relative, and both are consumed through fixed-ENG
 # references, which is the invariant the whole Kuwait family is built on (see the section header).
 #
 # Protects: Kuwait and, through it, the Gulf oil approach.
 # Assumes: 291 / 675 / 1041 / 1042 (Iraq), 413 (Khuzestan) and 292 (Nejd) are the land approach -
-#          the same list Fix 125 assumes; and that `divisions_in_state` is COUNTRY scope (measured
+#          the same list [commonwealth-handoff] assumes; and that `divisions_in_state` is COUNTRY scope (measured
 #          usage: WA_AI_MILITARY_COUNTRY_GER_FRONT.txt, `FRA = { divisions_in_state = ... }`).
 # Gone when: the WA map re-cuts the Gulf states.
 #
@@ -997,7 +1061,7 @@ WA_AI_MILITARY_gulf_approach_massing = {
 }
 
 # Somebody who is not on our side holds the land approach AND is either preparing a war against
-# Britain or already standing an army on it. The pre-war half of the threat question: Fix 125's
+# Britain or already standing an army on it. The pre-war half of the threat question: [commonwealth-handoff]'s
 # `has_war_with` limbs can only fire once the shooting has started, and a buffer that begins filling
 # on the day of the declaration arrives after the border state has fallen. Same shape as
 # WA_AI_MILITARY_pacific_threat_imminent, which solves this exact problem on the other ocean.
@@ -1045,7 +1109,7 @@ WA_AI_MILITARY_gulf_approach_massed = {
 
 WA_AI_MILITARY_gulf_approach_threatened = {
 	OR = {
-		# Fix 134: the pre-war limb. Everything below is Fix 125's reactive set, unchanged.
+		# [commonwealth-handoff] the pre-war limb. Everything below is [commonwealth-handoff]'s reactive set, unchanged.
 		WA_AI_MILITARY_gulf_approach_imminent = yes
 		291  = { CONTROLLER = { has_war_with = ENG } }
 		675  = { CONTROLLER = { has_war_with = ENG } }
@@ -1057,7 +1121,7 @@ WA_AI_MILITARY_gulf_approach_threatened = {
 		# inside `any_enemy_country` - and ROOT here is whichever country the ai_strategy is being
 		# evaluated for (ENG on two call paths, RAJ on the third). Fixed ENG keeps the verdict
 		# invariant, which is the rule the whole Kuwait family is built on.
-		# `pacific_war_active`'s SEMANTICS, not the wider `pacific_threat_imminent` of Fix 123: a
+		# `pacific_war_active`'s SEMANTICS, not the wider `pacific_threat_imminent` of [commonwealth-handoff] a
 		# fleet has to be at war to appear in the Gulf, and the user's rule for Kuwait is literally
 		# "Japan not in the war" (2026-08-21) where the rule for the dominions' garrison is the wider
 		# "not about to attack". The wider verdict would have re-armed this guard in 1941.3, ten
@@ -1337,7 +1401,7 @@ WA_AI_MILITARY_otranto_closed_to_our_enemies = {
 }
 
 ############################################################################################################
-# Fix 96 - the Italian homeland, tag-free (campaign 0edbc955: the peninsula fell Oct-Dec 1943 to 7-12
+# [med-axis-posture] - the Italian homeland, tag-free (campaign 0edbc955: the peninsula fell Oct-Dec 1943 to 7-12
 # Allied divisions because every Italy rule keyed on tags - ITA/ITL controller lists, `tag = RIT`,
 # `has_war_with = ITA`, GER's Fall Achse flag - and none of them asked the only question that
 # matters: "who owns this soil, and is an enemy standing on it?").
@@ -1450,7 +1514,7 @@ WA_AI_MILITARY_italy_home_threatened = {
 # A faction ally OR A SUBJECT of the enquired country is an Italy that is at war / threatened at home /
 # invaded. Subjects walked explicitly: the RSI is released as a German SUBJECT
 # (`set_autonomy autonomy_reichskommissariat`, common/decisions/GER.txt) and never joins the faction -
-# `any_allied_country` alone never sees it (Fix 27 lesson, review 2026-08-17). The scripted trigger
+# `any_allied_country` alone never sees it ([railway-pathfinding] lesson, review 2026-08-17). The scripted trigger
 # inside evaluates in the ALLY's / SUBJECT's scope (see the PREV note above). `_at_war` is the flip
 # window: from the day Germany declares on the co-belligerent until a German unit stands on a cored
 # state, nothing geographic distinguishes the case - the coalition must already commit
@@ -1495,7 +1559,7 @@ WA_AI_MILITARY_at_war_with_italian_homeland_power = {
 }
 
 # Our side still holds a Libyan bridgehead port (Tripoli 448, Benghasi 450, Derna 451, Cyrenaica
-# 663): us, or a SUBJECT (Libya is the ITL subject's land, Fix 27 lesson: subjects are not faction
+# 663): us, or a SUBJECT (Libya is the ITL subject's land, [railway-pathfinding] lesson: subjects are not faction
 # members) - or a faction ally, but an ally's port counts ONLY while an enemy still holds the far
 # shore (East Egypt 446/447/453 or Tunisia 458): after ita_armor.897 hands Libya to ENG and Italy to
 # the Allies, ENG's Tripoli must not read as the co-belligerent's bridgehead (review 2026-08-17 - the
@@ -1527,18 +1591,18 @@ WA_AI_MILITARY_libya_bridgehead_held = {
 }
 
 ############################################################################################################
-# Fix 99 (2026-08-17) - the Axis Tunis bridge (campaign 0edbc955: Torch 1942.11.8, Case Anton handed Tunisia
+# [med-axis-posture] (2026-08-17) - the Axis Tunis bridge (campaign 0edbc955: Torch 1942.11.8, Case Anton handed Tunisia
 # 458/1061/665 to GER within days, and NOT ONE German division ever stood on it - GER 252-263 divisions, 0 in
 # Africa in every save Sep 42 - Jun 43; a French division walked into Tunis ~5 weeks later. Cause: no Axis
 # block names 458/1061/665 as a destination, no Axis trigger reads Algeria/Morocco at all (only the AIR
 # contest trigger does), GER's post-Barbarossa net on the 7-region north_africa blob is area +20 /
 # front_unit_request -175, and libya_bridgehead_held has no Tunisian term so a Tunis-only foothold reads
-# "no bridgehead" and arms Italy's -200 abandon). Same method as Fix 96/97: controller geography, no tag,
-# no date, no flag. PREV-relative from the state scope like the Fix 96 family above.
+# "no bridgehead" and arms Italy's -200 abandon). Same method as [med-axis-posture] controller geography, no tag,
+# no date, no flag. PREV-relative from the state scope like the [med-axis-posture] family above.
 #
 # ONE "our side" definition, used by every trigger of this section (review 2026-08-17): the controller is
 # the enquired country, a SUBJECT of it, a faction ally, or anyone at war TOGETHER with it - the last term
-# is what makes a subject of an ALLY count (ITL is ITA's subject and never a faction member: Fix 27 lesson;
+# is what makes a subject of an ALLY count (ITL is ITA's subject and never a faction member: [railway-pathfinding] lesson;
 # for GER, ITL's Tripoli must read as "our side's port" from 1940.6 on).
 ############################################################################################################
 
@@ -1614,14 +1678,14 @@ WA_AI_MILITARY_african_shore_port_held = {
 	}
 }
 
-# Fix 119 (2026-08-20) - the Afrika Korps window: should this Axis country run an armoured expedition
+# [med-axis-posture] (2026-08-20) - the Afrika Korps window: should this Axis country run an armoured expedition
 # toward the East-Egypt anchor? True while: it is allied (faction OR overlord) with the Italian homeland
 # power, its side holds Libyan ground to stage from, an enemy controls East Egypt, no enemy stands on the
 # Western-European mainland (covers BOTH the Battle of France and any D-Day-type landing, dynamically -
 # replaces the legacy "NOT war with FRA OR FRA capitulated" calendar shape), and the home is not
-# threatened. The Libyan arm uses the Fix 99 one-side definition (self / subject / faction ally /
+# threatened. The Libyan arm uses the [med-axis-posture] one-side definition (self / subject / faction ally /
 # has_war_together_with) because libya_bridgehead_held is UNREADABLE from GER's scope: ITL is ITA's
-# subject and never a faction member (Fix 27 lesson), so its own/subject and faction arms both fail for
+# subject and never a faction member ([railway-pathfinding] lesson), so its own/subject and faction arms both fail for
 # Germany. Consume ONLY from the deciding country's own `enable` (Country layer):
 # AIR_theatre_contested_western_europe and home_threatened inside are ROOT-relative and would misread
 # under any_allied_country / country_trigger wrappers. Deliberately NOT here: the "no Soviet war" clause -
@@ -1635,7 +1699,7 @@ WA_AI_MILITARY_afrika_korps_window = {
 	WA_AI_MILITARY_allied_with_italian_homeland_power = yes
 	NOT = { WA_AI_MILITARY_home_threatened = yes }
 	NOT = { WA_AI_MILITARY_AIR_theatre_contested_western_europe = yes }
-	# our side holds Libyan staging ground (Fix 99 one-side definition)
+	# our side holds Libyan staging ground ([med-axis-posture] one-side definition)
 	OR = {
 		448 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
 		450 = { CONTROLLER = { OR = { tag = PREV.PREV is_subject_of = PREV.PREV is_in_faction_with = PREV.PREV has_war_together_with = PREV.PREV } } }
@@ -1650,12 +1714,34 @@ WA_AI_MILITARY_afrika_korps_window = {
 	}
 }
 
+# [med-axis-posture] When Germany's coastal reserve arms. The five atlantik_wall put_unit_buffers pin
+# ~34 % of the army with subtract_fronts_from_need = no, so they must not open while the Afrika Korps
+# expedition is the only live offensive. Historical difficulty: the Barbarossa date. Otherwise the
+# state that date stands for - a Soviet war AND a live western maritime enemy, i.e. a real two-front
+# war. ROOT = GER (Country layer). Ahistorical game with no Soviet war = the wall never arms.
+WA_AI_MILITARY_GER_atlantik_wall_armed = {
+	OR = {
+		AND = {
+			WA_AI_DIFFICULTY_is_historical = yes
+			date > 1941.6.1
+		}
+		AND = {
+			NOT = { WA_AI_DIFFICULTY_is_historical = yes }
+			has_war_with = SOV
+			OR = {
+				has_war_with = ENG
+				has_war_with = FRA
+			}
+		}
+	}
+}
+
 ############################################################################################################
-# Fix 97 (2026-08-17) - East Africa is a theatre (campaign 0edbc955: Italy LOST the 1936 Ethiopian war, ITS
+# [med-axis-posture] (2026-08-17) - East Africa is a theatre (campaign 0edbc955: Italy LOST the 1936 Ethiopian war, ITS
 # never existed, and every East-Africa rule on both sides keyed on `country_exists = ITS` / `tag = ITS` /
 # a date - so the theatre was fought by the engine alone: 39/61 Italian divisions parked in Eritrea in
 # 1940, two 8-division armies inside the Sudan/Kenya out of supply for three years, Allies never above
-# one 4-6 division army per axis, AOI taken only by Italy's final collapse). Same method as Fix 96:
+# one 4-6 division army per axis, AOI taken only by Italy's final collapse). Same method as [med-axis-posture] 
 # controller / owner geography, no tags, no dates. Region ids: 17 Eritrea/Ethiopia/Somalias, 217 Southern
 # Egypt-Sudan, 380 Sudan-South/Darfur, 381 Kenya/Uganda/Tanganyika (WA_AI_MILITARY_east_africa_regions).
 ############################################################################################################
@@ -1737,7 +1823,7 @@ WA_AI_MILITARY_AIR_theatre_state_east_africa = {
 }
 
 ############################################################################################################
-# Fix 132 (2026-08-21, campaign 8c0fea4c) - occupying the AOI is not expelling the colonial power.
+# [commonwealth-handoff] (2026-08-21, campaign 8c0fea4c) - occupying the AOI is not expelling the colonial power.
 #
 # MEASURED, and it is the whole reason this exists. Control of the East-African core, save by save:
 #   1940.6.24  550 ITS/ITS   559 ITS/ITS   271-909-910 ITS
@@ -1803,7 +1889,7 @@ WA_AI_MILITARY_east_africa_side_present = {
 
 # FRONT/THEATRE alias of the contest question (the AIR_ name is historical, not a scope restriction -
 # see WA_AI_MILITARY_italy_theatre_contested).
-# Fix 132: the second limb. Consumers are all Allied-side pulls plus the ENG delegation suppression
+# [commonwealth-handoff] the second limb. Consumers are all Allied-side pulls plus the ENG delegation suppression
 # (grep: ENG_FRONT east_africa_delegated, ALLIES_FRONT contested/exec, ALLIES_THEATRE contested,
 # RAJ_DIPLOMACY kill_ITS, RAJ_east_africa_available, and WA_TLM_core which is write-only), so the
 # widening moves exactly one side's behaviour - by design.
@@ -1832,7 +1918,7 @@ WA_AI_MILITARY_east_africa_enemy_held = {
 }
 
 # The enquired country holds an East-African colony - it, a SUBJECT, or a faction ally owns-or-controls
-# Eritrea 550 or Italian Somaliland 559. PREV-relative (see the Fix 96 note above): reads the country it
+# Eritrea 550 or Italian Somaliland 559. PREV-relative (see the [med-axis-posture] note above): reads the country it
 # is evaluated in, also under any_allied_country. Replaces `country_exists = ITS` on the Axis side - the
 # colony is Italian whether it is administered by ITA directly or by a released ITS.
 WA_AI_MILITARY_holds_east_africa_colony = {
@@ -2685,7 +2771,7 @@ WA_AI_MILITARY_AIR_theatre_state_pacific_islands = {
 @WA_AI_AIR_BOMBER_DEEP_REACH = 700		# ...and to reach Austria / Prussia (the old B-17 range gate)
 @WA_AI_AIR_BOMBER_DEEP_REACH_OFF = 900	# deep-target avoidance fully retired
 #
-# HANDOVER (Fix 71). The four bars above only ever LIFT avoidance. Nothing then pulls the bomber
+# HANDOVER ([commonwealth-handoff]). The four bars above only ever LIFT avoidance. Nothing then pulls the bomber
 # arm ONTO the Reich: with every rung aborted the net on 6/7/8/294/38/296 is exactly 0, and the
 # engine's own front-following terms decide targets instead. Campaign 5078fe10 is the proof - the
 # ladder released fully between 1943.12 and 1944.4 and never re-armed, yet in the 22 months that
@@ -2829,7 +2915,7 @@ WA_AI_MILITARY_AIR_theatre_contested_germany = {
 }
 
 # ---------------------------------------------------------------------------------------------
-# Handover rung (Fix 71) - the positive half of the campaign
+# Handover rung ([commonwealth-handoff]) - the positive half of the campaign
 # ---------------------------------------------------------------------------------------------
 # See the HANDOVER note under the thresholds at the top of this section for why this exists.
 # Consumer: WA_AI_MILITARY_ALLIES_AIR_reich_raid_pull / _reich_deep_raid_pull.
@@ -3227,4 +3313,55 @@ WA_AI_MILITARY_AIR_home_only_arm = {
 
 WA_AI_MILITARY_AIR_home_only_release = {
 	has_deployed_air_force_size = { size > @WA_AI_AIR_HOME_ONLY_RELEASE }
+}
+
+
+############################################################################################################
+# [minor-expeditionary-fitness] Who may hold a front away from home
+############################################################################################################
+# CONTROL PANEL. Both triggers below are read by exactly one block - WA_AI_MILITARY_CAPS_unfit_army_stays_home
+# in WA_AI_MILITARY_DEFAULT_FRONT_caps.txt. Change the behaviour here, never in the strategy block.
+#
+# The problem they solve: HOI4 front allocation has no per-DIVISION lever a script can reach.
+# `front_unit_request` weights a FRONT, not a unit (common/ai_strategy/documentation.info, section
+# `front_unit_request` / `invasion_unit_request`). "No militia expeditionary corps in someone else's
+# theatre" is therefore only expressible as "a country whose army is not worth shipping does not get a
+# front outside its own neighbourhood". That country-level abstraction is the first trigger below.
+
+# COUNTRY scope. "This country's infantry is worth putting on a front that is not its own."
+#
+# ONE term, no exemptions - owner rule, 2026-08-23: five military factories for everybody.
+#
+# The number is deliberately the SAME as WA_AI_TEMPLATES_use_heavy_infantry (WA_AI_TEMPLATES_triggers.txt):
+# below it the template system hands the country target template 1000 - ten light-infantry battalions,
+# no support company, no artillery, no anti-tank (common/ai_templates/WA_AI_TEMPLATES_infantry.txt). A
+# country whose best division is that one is a home-defence army by construction. If the template floor
+# moves, this number moves with it: the two state the same fact about the same country.
+#
+# REJECTED, and recorded so it is not re-added by accident: an `is_subject = yes` escape hatch. MEASURED
+# 2026-08-23 from history/states, New Zealand starts with 2 arms factories and South Africa with 4, both
+# under the floor and both ENG dominions (history/countries/ENG - Britain.txt, set_autonomy blocks). The
+# hatch would have let them fight in North Africa and East Africa - the fronts `commonwealth-handoff`
+# exists to man - and the owner chose the uniform rule over it. The consequence is therefore intended,
+# not an oversight: a dominion stays home until it has built past the floor itself. If a Commonwealth
+# theatre later reads as unmanned, THIS is the first line to suspect.
+WA_AI_MILITARY_is_fit_for_expeditionary_front = {
+	num_of_military_factories > 5
+}
+
+# STATE scope, called from a `front_unit_request` state_trigger ONLY. Inside that trigger the engine
+# gives THIS = the state, FROM = the enemy country, FROM.FROM = us (documentation.info, same section).
+# FROM.FROM has no other in-repo user yet, so an in-game check is owed before this is called proven.
+#
+# "Beyond home reach" = not ours, not our core, and not touching anything of ours. Adjacency rather than
+# continent because the intended reading is "defends close to home": it lets Nepal hold the Indian states
+# on its border and Greece hold Albania, and stops both one hop further out.
+#
+# This IS the escape-hatch rule of documentation/WA_AI_MILITARY_ECONOMY.md section 2.4 - a veto-class
+# value must self-disable on the homeland it would starve. Here the homeland is excluded by the predicate
+# itself, so the veto can never apply to the country's own defence.
+WA_AI_MILITARY_state_is_beyond_home_reach = {
+	NOT = { is_owned_by = FROM.FROM }
+	NOT = { is_core_of = FROM.FROM }
+	NOT = { any_neighbor_state = { is_owned_by = FROM.FROM } }
 }

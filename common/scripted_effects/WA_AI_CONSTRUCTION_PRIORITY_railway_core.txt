@@ -1,31 +1,28 @@
 ############################################################################################################
 #	World Ablaze AI mod - Railway Construction Priority - Core Module
 #	Entry point, dispatcher, and configuration constants
-#	Builds railways from capital to front lines every 3 months
-#	Supports: Land wars, overseas invasions, pre-war preparation
+#	Builds railways from capital to front lines on constant:wa_ai_railway.interval.* (war / peace)
+#	Supports: Land wars, overseas invasions, pre-war preparation, theatre corridors
 ############################################################################################################
 
 ### Railway Building - HIGHEST PRIORITY
 ### Performance-optimized: limits which countries run and caps routes calculated
 ###
-### CONSTANTS CONTROL PANEL -> common/script_constants/wa_ai_railway.txt (since 2026-08-16).
-### The railway numbers - run interval, country eligibility (Fix 43 hatch), route caps, queue size,
-### supply model, scoring costs - are HOI4 script constants read as constant:wa_ai_railway.<group>.<key>
-### from this file, railway_helpers, railway_strategies AND WA_AI_CONSTRUCTION_triggers.txt (the
-### on_weekly eligibility filter and the per-enemy route budget test), so there are no per-file `@`
-### copies to keep in sync any more. Type id and priority bands are PC-wide: constant:wa_ai_pc.type_id.rail
-### (13), constant:wa_ai_pc.prio.rail_war (1000, Fix 41 band compression, was 9999) and
-### constant:wa_ai_pc.prio.rail_prewar (500, was 5000) in wa_ai_pc.txt; the x1.1 high-route multiplier
-### in railway_strategies still applies on top (1000 -> 1100). Full band table: comment above
-### WA_AI_PC_assign_factories (core.txt).
+### CONSTANTS CONTROL PANEL -> common/script_constants/wa_ai_railway.txt.
+### The railway numbers - run interval, country eligibility, route caps, queue size, supply model,
+### scoring costs - are HOI4 script constants read as constant:wa_ai_railway.<group>.<key> from this
+### file, railway_helpers, railway_strategies AND WA_AI_CONSTRUCTION_triggers.txt (the on_weekly
+### eligibility filter and the per-enemy route budget test), so there are no per-file `@` copies to
+### keep in sync. Type id and priority bands are PC-wide: constant:wa_ai_pc.type_id.rail,
+### constant:wa_ai_pc.prio.rail_war / .rail_prewar in wa_ai_pc.txt; the x1.1 high-route multiplier in
+### railway_strategies applies on top. Full band table: comment above WA_AI_PC_assign_factories (core.txt).
 ###
-### Fix 29b / Fix 77 - constant:wa_ai_railway.routes.queue_full (12) is BOTH the recalculation-skip
-### threshold below (counts LIVE type-13 projects only - was: whole queue, any type, so 3 radar/refinery
-### projects suppressed railway queueing forever; observed on USA, pinned at 5 non-rail projects
-### 1942-44 with zero railways ever queued; one route is up to 5 segments, so the old value of 3 was
-### also smaller than a single corridor) AND the Fix 77 admission cap on queued segments in
-### railway_helpers ("a full queue is 12"). They used to be two @ names that had to be changed
-### together (cap < threshold never skips; cap > threshold re-grows past it) - one key now.
+### [pc-queue] constant:wa_ai_railway.routes.queue_full is ONE key doing two jobs and must stay one:
+### the recalculation-skip threshold below (LIVE type-13 projects only) AND the admission cap on
+### queued segments in railway_helpers. As two names they drift - a cap below the threshold never
+### skips, a cap above it re-grows past it. Counting the whole queue rather than rail here suppresses
+### railway queueing for good; and one route is up to 5 segments, so a small value is smaller than a
+### single corridor.
 
 ############################################################################################################
 #	ENTRY POINT
@@ -36,7 +33,7 @@ WA_AI_PC_railway = {
 
 	if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval_counter=[?WA_AI_PC_railway_INTERVAL_counter]" }
 
-	### Fix 95: theatre corridors run on their OWN interval (constant:wa_ai_railway.corridor.interval_weeks),
+	### [na-corridor] theatre corridors run on their OWN interval (constant:wa_ai_railway.corridor.interval_weeks),
 	### before and independently of the main pass below - see WA_AI_PC_railway_corridor_pass.
 	WA_AI_PC_railway_corridor_pass = yes
 
@@ -64,46 +61,39 @@ WA_AI_PC_railway = {
 		set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
-			# Fix 104: the wartime floor is the declared constant min_civs_war, no longer a product
+			# [na-corridor] the wartime floor is the declared constant min_civs_war, no longer a product
 			# computed here - WA_AI_PC_country_can_fund_own_logistics has to read the same floor from
 			# a trigger, and a scripted trigger cannot multiply.
 			set_temp_variable = { _min_civs_required = constant:wa_ai_railway.eligibility.min_civs_war }
 		}
 
-		# Fix 75: `has_capitulated = no` removed. It was the third of three gates on the same word
-		# (weekly block, on_weekly eligibility filter, here), and with the first two gone this one
-		# would have silently reimposed the lockout one level down. Capability decides instead: the
-		# civ-factory floor below, plus WA_AI_PC_country_can_build_own_logistics at the call site.
-		# A capitulated rump still fails those on its own merits - FRA on f9321934 has 21 civs
-		# against a wartime floor of 30 - so this does not hand the railway system to a corpse; it
-		# stops refusing it to a capitulated country whose war economy is genuinely intact.
+		# [pc-queue] `has_capitulated = no` is deliberately ABSENT: it was the third of three gates on
+		# the same word and would silently reimpose the lockout one level down. Capability decides
+		# instead - the civ-factory floor below plus WA_AI_PC_country_can_build_own_logistics at the
+		# call site. A capitulated rump fails those on its own merits, so this does not hand the
+		# railway system to a corpse; it stops refusing it to a country whose war economy is intact.
 		if = {
 			limit = {
 				num_of_civilian_factories > _min_civs_required
 			}
 
-			### Skip recalculation only if the queue already holds enough LIVE railway projects (Fix 29b)
-			# Fix 77: the count excludes projects whose target state is hostile-controlled.
-			# On campaign be18f9c7, 20 GER segments queued onto friendly ground at 1944.6 had
-			# their states flip to SOV/FRA/YUG control by 1944.10 and then sat DEAD in the
-			# queue until the 30-week stall sweep (Fix 34's backstop) cleared them in 1945.2 -
-			# and for those months they held queued_type_num_ >= 12, so this very gate kept
-			# route recalculation AND stale-path validation switched off while the front was
-			# collapsing. Dead weight must not count as a full queue. Once the gate passes,
-			# the validation call below cancels those projects the same run (their provinces
-			# cannot lie on any recomputed path - the pathfinder only walks friendly ground),
-			# so the queue heals within one interval instead of ~31 weeks.
-			# Controller test = the Fix 34 test used by the allocator fill and the completion
+			### Skip recalculation only if the queue already holds enough LIVE railway projects ([railway-landwar])
+			# [pc-queue] the count excludes projects whose target state is hostile-controlled.
+			# Dead weight must not read as a full queue: segments queued onto ground that then
+			# flips sit undone until the 30-week stall sweep, and while they do, this very gate
+			# keeps route recalculation AND stale-path validation switched off - exactly when the
+			# front is moving. Once the gate passes, the validation call below cancels them the
+			# same run (their provinces cannot lie on any recomputed path - the pathfinder only
+			# walks friendly ground), so the queue heals within one interval.
+			# Controller test = the [pc-queue] test used by the allocator fill and the completion
 			# path; a project those paths would refuse to fund or spawn is not "live" here.
 			# The admission cap in WA_AI_PC_start_railway_project still counts ALL type-13
 			# (dead included), so the first pulse after a mass flip validates-and-cancels but
 			# queues nothing new; fresh segments follow on the next interval.
-			# Fix 95: keyed on the STRATEGY TAG (WA_AI_PC_type_id = rail), no longer on the
-			# building type. Theatre-corridor segments are type-13 too but carry type_id
-			# corridor and have their own scoped budget; counting them here would let a full
-			# corridor queue switch the whole land-war pass off (and vice versa). Every rail
-			# project queued by this helper family has carried type_id 13 since Fix 47, so
-			# the count is unchanged for them.
+			# [na-corridor] keyed on the STRATEGY TAG (WA_AI_PC_type_id = rail), not the building
+			# type: corridor segments are type-13 too but carry type_id corridor and have their
+			# own scoped budget, so counting them here would let a full corridor queue switch the
+			# whole land-war pass off, and vice versa.
 			set_temp_variable = { _rail_live_queued_ = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
 				if = {
@@ -231,17 +221,13 @@ WA_AI_PC_railway = {
 							check_variable = { queued_type_num_ > 0 }
 						}
 						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
-						# 0.5 -> 0.6 (2026-08-15). This flag/variable pair is DELIBERATELY SHARED with
-						# WA_AI_build_uk_air_hosting_capacity (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt),
-						# whose own HAZARD comment states the two writers must hold IDENTICAL values or
-						# they alternate on a last-writer-wins 30-day timer. Fix 47 raised the UK-air
-						# writer to 0.6 and this one was left at 0.5, so campaign be18f9c7 ran with the
-						# pair diverged; Fix 77 then opened the skip gate on the live count, which makes
-						# THIS writer run on far more pulses and stamp 0.5 over the UK-air 0.6 during
-						# exactly the window Fix 78 exists to fund. Aligned to 0.6 rather than reverting
-						# the UK-air writer, because 0.6 is the value Fix 47 chose deliberately and the
-						# one checklist R8 probe 4 asserts. Do not diverge these again without giving
-						# each system its own flag.
+						# HAZARD: this flag/variable pair is DELIBERATELY SHARED with
+						# WA_AI_build_uk_air_hosting_capacity (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
+						# The two writers must hold IDENTICAL values or they alternate on a
+						# last-writer-wins 30-day timer, each stamping its own over the other's - and
+						# this writer runs on far more pulses, so it wins during the window the other
+						# one exists to fund. Do not diverge them again without giving each system
+						# its own flag.
 						set_variable = { WA_AI_PC_override_max_factories_factor = 0.6 }
 					}
 
@@ -258,27 +244,25 @@ WA_AI_PC_railway = {
 }
 
 ############################################################################################################
-#	THEATRE CORRIDOR PASS (Fix 95)
+#	THEATRE CORRIDOR PASS ([na-corridor])
 #	ROOT = builder country. Called every weekly pulse from WA_AI_PC_railway (so it inherits the
 #	on_weekly gate: is_ai, exists, WA_AI_PC_country_can_build_own_logistics). Own interval counter,
 #	own scoped project budget (type_id corridor), own stale-path validation. Selection lives in
 #	WA_AI_PC_railway_STRATEGY_theatre_corridor (railway_strategies); node data in
 #	WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt; the hub helper in railway_helpers.
 #
-#	Why a separate pass and not four more routes in the main batch: the main pass runs every
-#	8 weeks at war, one type-13 project is one level on one hop and the province-duplicate guard
-#	admits one project per province per pass, so a 20-hop route to level 1 took 24 weeks - the
-#	cadence, not the civ pool, bounded it (Fix 95 plan §5.1). The main pass's route cap
-#	(routes.max_total) and skip gate (routes.queue_full) also stay untouched by construction.
+#	A separate pass, not four more routes in the main batch: the main pass runs every 8 weeks at war,
+#	one type-13 project is one level on one hop and the province-duplicate guard admits one project
+#	per province per pass, so a 20-hop route to level 1 takes ~24 weeks - the CADENCE bounds it, not
+#	the civ pool. It also leaves the main pass's route cap and skip gate untouched by construction.
 #	Cost: at most corridor.max_routes_per_run pathfinds per pass per eligible builder.
 #
 #	Stale-path validation is pinned to type_id corridor and fed the provinces of THIS pass's
-#	successful paths plus the node provinces of its hubs. It is skipped when routes were requested
-#	and every pathfind failed (a transient hole would otherwise cancel paid-for progress: the
-#	"_valid_provinces EMPTY cancels 100%" hazard recorded on WA_AI_PC_validate_queued_provincial_
-#	projects). Rails queued here are type-13 and are purged at peace with the rest (misc_on_actions
-#	peace purge, building_type 13 - intended); queued depots (17) are NOT purged - a hub in peace is
-#	preparation, not waste, and the pass will not queue a second one at the same province.
+#	successful paths plus the node provinces of its hubs. It is SKIPPED when routes were requested
+#	and every pathfind failed: an empty _valid_provinces cancels 100% of the queue, so a transient
+#	hole would destroy paid-for progress. Rails queued here are type-13 and are purged at peace with
+#	the rest (intended); queued depots (17) are NOT - a hub in peace is preparation, not waste, and
+#	the pass will not queue a second one at the same province.
 ############################################################################################################
 
 WA_AI_PC_railway_corridor_pass = {
@@ -289,9 +273,9 @@ WA_AI_PC_railway_corridor_pass = {
 	else = {
 		set_variable = { WA_AI_PC_corridor_INTERVAL_counter = constant:wa_ai_railway.corridor.interval_weeks }
 
-		### Same industrial floor as the main pass (50 civs, 30 at war) - both sites read the same
-		### two constants, so the two passes cannot drift apart. Fix 104 turned the wartime side into
-		### the declared min_civs_war; WA_AI_PC_country_can_fund_own_logistics reads that same key.
+		### Same industrial floor as the main pass - both sites read the same two constants, so the
+		### two passes cannot drift apart, and WA_AI_PC_country_can_fund_own_logistics reads the
+		### wartime key too.
 		set_temp_variable = { _corridor_min_civs_ = constant:wa_ai_railway.eligibility.min_civs }
 		if = {
 			limit = { has_war = yes }
@@ -312,33 +296,27 @@ WA_AI_PC_railway_corridor_pass = {
 				set_temp_variable = { _corridor_depot_admitted_ = 0 }
 				set_temp_variable = { _corridor_port_admitted_ = 0 }
 				set_temp_variable = { _corridor_port_raised_ = 0 }
-				# Fix 107: total provinces on the chains actually pathfound this pass. It is the N of the
+				# [na-corridor] total provinces on the chains actually pathfound this pass. It is the N of the
 				# port-vs-rail arbitration (LOGISTICS_MODEL section 11.7) - the WHOLE chain, not one hop,
 				# because the chain is in series and a point at the far end costs a level on every link.
 				set_temp_variable = { _corridor_chain_len_ = 0 }
 
 				### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
 				###
-				### Fix 120 part 2 (2026-08-21) - CONNECT PHASE. Part 1 priced a level-0 corridor segment
-				### at constant:wa_ai_pc.prio.rail_connect, which orders FUNDING. That was necessary and
-				### not sufficient: the binding constraint here is ADMISSION, not funding. The pass walks
-				### the node list west to east and admits until corridor.queue_max (8 per building type)
-				### is full, so the rear hops claim the whole budget before the head hops are ever
-				### offered, and a project that is never admitted never gets a price.
-				### MEASURED on campaign 8c0fea4c with part 1 live (saves ITA_1941_05_23_21 /
-				### ITA_1941_06_10_02): all 8 queued railway projects were UPGRADES, priced 1000, on edges
-				### already at map level 2-5, while Derna 7082 -> Tobruk 1130 and Tobruk -> 5078 were BREAK
-				### and absent from the queue; the rear ran at level 5 against a sizing target of 4.
-				###
-				### So the pass now runs in two phases over ONE set of pathfinds:
+				### [na-corridor] CONNECT PHASE. The binding constraint here is ADMISSION, not funding:
+				### the pass walks the node list west to east and admits until corridor.queue_max is
+				### full, so the rear hops claim the whole budget before the head hops are ever
+				### offered, and a project that is never admitted never gets a price. Pricing a level-0
+				### segment into a connect band was tried on its own and left the queue full of
+				### upgrades to already-railed rear edges while the head hops stayed BREAK.
+				### So the pass runs two phases over ONE set of pathfinds:
 				###   phase 0  pathfind every route, collect its segments and each segment's RAW map level
 				###   phase A  admit ONLY segments at map level 0, target level 1 - connect the chain
 				###   phase B  only if phase A admitted nothing: admit the rest at the sizing target
-				### One admission path, not a second strategy (the Fix 77 shape). A segment the controller
-				### gate refuses never counts as admitted, so a permanently blocked hop - Gabes 11957 ->
-				### Tripoli 1149 across Vichy Tunisia, BREAK on every save of that campaign - cannot hold
-				### the corridor's upgrades hostage for ever. That is the failure mode a naive
-				### "no upgrades while any hop is BREAK" rule would have shipped.
+				### One admission path, not a second strategy. A segment the controller gate refuses
+				### never counts as admitted, so a permanently blocked hop (a corridor leg across
+				### neutral ground) cannot hold the corridor's upgrades hostage for ever - the failure
+				### mode a naive "no upgrades while any hop is BREAK" rule would have shipped.
 				clear_temp_array = _cseg_a_
 				clear_temp_array = _cseg_b_
 				clear_temp_array = _cseg_tgt_
@@ -363,7 +341,7 @@ WA_AI_PC_railway_corridor_pass = {
 						if = {
 							limit = { check_variable = { pathfind_prov_success_ = 1 } }
 							add_to_temp_variable = { _corridor_routes_ok_ = 1 }
-							# Fix 107: segments on this route = provinces - 1.
+							# [na-corridor] segments on this route = provinces - 1.
 							add_to_temp_variable = { _corridor_chain_len_ = pathfind_prov_path_^num }
 							subtract_from_temp_variable = { _corridor_chain_len_ = 1 }
 							for_each_loop = { array = pathfind_prov_path_ index = _cp_i_ value = _cp_v_ break = _cp_b_
@@ -451,7 +429,7 @@ WA_AI_PC_railway_corridor_pass = {
 				# skipped by the state-mapping guard would leave a 1 behind for the main pass.
 				set_temp_variable = { _railway_family_ = 0 }
 
-				# Fix 120 part 2: the collection arrays are this pass's working set and nothing
+				# [na-corridor] the collection arrays are this pass's working set and nothing
 				# downstream reads them. Cleared here as well as on entry so they do not travel
 				# with the rest of the weekly effect chain (editing rule 9).
 				clear_temp_array = _cseg_a_
@@ -466,14 +444,14 @@ WA_AI_PC_railway_corridor_pass = {
 					set_temp_variable = { _hub_prov_ = _ch_prov_ }
 					set_temp_variable = { _hub_kind_ = corridor_hub_kind_^_ch_i_ }
 					set_temp_variable = { _hub_prio_ = corridor_hub_prio_^_ch_i_ }
-					# Fix 107: the level this hub should reach, read from its OWN slot of the parallel
+					# [na-corridor] the level this hub should reach, read from its OWN slot of the parallel
 					# array the strategy filled. Never inherited: the loop re-sets it every iteration,
 					# so a port with no computed target cannot pick up the previous port's.
 					set_temp_variable = { _hub_target_level_ = corridor_hub_target_^_ch_i_ }
 					if = { limit = { check_variable = { _hub_target_level_ < 1 } }
 						set_temp_variable = { _hub_target_level_ = 1 }
 					}
-					# Fix 107 - port-vs-rail arbitration (LOGISTICS_MODEL section 11.7). Raising a port
+					# [na-corridor] - port-vs-rail arbitration (LOGISTICS_MODEL section 11.7). Raising a port
 					# buys 5 supply for a flat constant:wa_ai_pc.cost.naval_base; raising the rail buys 8
 					# for constant:wa_ai_pc.cost.railway PER LINK of the chain. Below the break-even the
 					# rail is both cheaper per point and far faster to deliver (8 segments may be in
@@ -496,7 +474,7 @@ WA_AI_PC_railway_corridor_pass = {
 						}
 						else = {
 							add_to_temp_variable = { _corridor_port_admitted_ = 1 }
-							# Fix 107: a RAISE is a port admitted at a target above 1, i.e. one that
+							# [na-corridor] a RAISE is a port admitted at a target above 1, i.e. one that
 							# existed already. Kept apart from _port_admitted_ so the probe can tell
 							# "the new lever fired" from "the old place-if-missing branch fired".
 							if = { limit = { check_variable = { _hub_target_level_ > 1 } }
@@ -506,12 +484,11 @@ WA_AI_PC_railway_corridor_pass = {
 					}
 				}
 
-				# tlm: r95_corridor_* - counters, one per project the corridor pass ADMITTED (queue grew
-				# across WA_AI_PC_start_project - not per request: queue_max, the province-duplicate guard
-				# and the controller test all refuse silently), split rail segments / depots / ports, with
-				# first_t / last_t stamps. "Built" is NOT this counter: read the map (railway connection
-				# level, supply_node / naval_base at the node) - the checklist item's probe does.
-				# consumer: R60
+				# tlm r95_corridor_*: counters, one per project the corridor pass ADMITTED (the queue
+				# grew across WA_AI_PC_start_project - never per request: queue_max, the
+				# province-duplicate guard and the controller test all refuse silently), split rail
+				# segments / depots / ports, with first_t / last_t stamps. "Built" is NOT this counter -
+				# read the map (railway connection level, supply_node / naval_base at the node).
 				if = {
 					limit = {
 						OR = {
@@ -529,21 +506,17 @@ WA_AI_PC_railway_corridor_pass = {
 					set_variable = { WA_TLM_r95_corridor_last_t = global.WA_TLM_clock }
 				}
 
-				# tlm: r103_corridor_* - did splitting PERMISSION from PAYMENT change what this
-				# builder can reach, and did that turn into admitted rail?
-				#   _reach   GAUGE, resampled every pass: hops requestable ONLY because of Fix 103
-				#            (both ends ours, exactly one our charge). Not cumulative - a gauge, because
-				#            "how many hops does the widening currently unlock" is sampled state, and a
-				#            counter here would be a code-path count.
-				#   _orphan  GAUGE, resampled every pass: hops both ends ours and NEITHER our charge.
-				#            After Fix 104 (ally leg tests FUNDING) both ends are then held by partners
-				#            that CAN fund, so each has a foot on the hop and builds it itself - a
-				#            transient reading is normal and means "this hop belongs to someone else".
-				#            The signal is _orphan high WHILE the hop stays unbuilt on the map: the
-				#            owner is not building it either, which is a defect of ITS pass, not of ours.
+				# tlm r103_corridor_*: did splitting PERMISSION from PAYMENT change what this builder
+				# can reach, and did that turn into admitted rail?
+				#   _reach   GAUGE, resampled every pass: hops requestable only because both ends are
+				#            ours and exactly one is our charge. Sampled state, so a gauge - a counter
+				#            here would be a code-path count.
+				#   _orphan  GAUGE: hops both ends ours and NEITHER our charge - both ends are then held
+				#            by partners that CAN fund, so a transient reading is normal and means "this
+				#            hop belongs to someone else". The signal is _orphan high WHILE the hop stays
+				#            unbuilt on the map: a defect of the owner's pass, not of ours.
 				#   _seg_n   counter, VERIFIED EFFECT: rail segments actually admitted (queue grew) on a
 				#            pass the widening contributed to. Never per request.
-				# consumer: R68
 				set_variable = { WA_TLM_r103_corridor_reach = corridor_reach_ }
 				set_variable = { WA_TLM_r103_corridor_orphan = corridor_orphan_ }
 				if = {
@@ -558,26 +531,24 @@ WA_AI_PC_railway_corridor_pass = {
 					set_variable = { WA_TLM_r103_corridor_last_t = global.WA_TLM_clock }
 				}
 
-				# tlm: r107_sizing_* - Fix 107. What did the sizing model SEE and DECIDE this pass?
-				#   _presence  GAUGE, resampled every pass: the demand proxy over our side's divisions
-				#              in the corridor states. NOT a division count - it is a bucket ladder and
-				#              it over-reads a dispersed army (WA_AI_PC_corridor_compute_sizing header).
+				# tlm r107_sizing_* [na-corridor]: what did the sizing model SEE and DECIDE this pass?
+				#   _presence  GAUGE: the demand proxy over our side's divisions in the corridor states.
+				#              NOT a division count - a bucket ladder that over-reads a dispersed army
+				#              (WA_AI_PC_corridor_compute_sizing header).
 				#   _demand    GAUGE: _presence x supply_per_division x target_ratio, in supply points.
 				#   _inject    GAUGE: what our corridor ports can put in, in supply points.
 				#              **-1 = the cap was deliberately NOT applied** (we hold no corridor port,
 				#              or ROOT's capital sits on the corridor and it is fed overland). 0 would
 				#              conflate that with "our ports inject nothing", which is a different fact.
 				#   _rail_tgt  GAUGE: the level every hop was asked for this pass, after floor and cap.
-				#              This is the metric the MAP validates - `rail.py --corridor` reads the
-				#              built minimum, and the two must converge within a few build durations.
-				#              They diverging is the signal: the model asked and nothing was delivered.
+				#              The MAP validates this one - `rail.py --corridor` reads the built minimum
+				#              and the two must converge within a few build durations; diverging is the
+				#              signal that the model asked and nothing was delivered.
 				#   _chain     GAUGE: provinces on the chains pathfound this pass = the N of the
 				#              port-vs-rail arbitration. Not derivable from the four above, and the only
 				#              way to read WHY the port lever did or did not fire.
 				#   _raise_n   counter, VERIFIED EFFECT: ports admitted at a target ABOVE 1, i.e. a real
-				#              raise of an existing port - the thing that was structurally impossible
-				#              before Fix 107. Never per request: it counts only where the queue grew.
-				# consumer: R71
+				#              raise of an existing port. Counts only where the queue grew.
 				set_variable = { WA_TLM_r107_sizing_presence = corridor_presence_ }
 				set_variable = { WA_TLM_r107_sizing_demand = corridor_demand_ }
 				set_variable = { WA_TLM_r107_sizing_inject = corridor_inject_ }
@@ -592,12 +563,12 @@ WA_AI_PC_railway_corridor_pass = {
 				}
 				set_variable = { WA_TLM_r107_sizing_last_t = global.WA_TLM_clock }
 
-				### Stale-path validation, pinned to the corridor tag (Fix 50 shape).
+				### Stale-path validation, pinned to the corridor tag.
 				# Only when the cancel set is COMPLETE: every requested route was pathfound this pass
-				# (a route cap smaller than the list would otherwise cancel the in-progress segments of
-				# the routes it skipped - hence corridor.max_routes_per_run = the whole list) AND at
-				# least one succeeded (or none was requested: the hub-only / nodes-lost case, where the
-				# hub provinces are the valid set and every rail is legitimately stale).
+				# (a route cap smaller than the list cancels the in-progress segments of the routes it
+				# skipped - hence corridor.max_routes_per_run = the whole list) AND at least one
+				# succeeded, or none was requested (the hub-only / nodes-lost case, where the hub
+				# provinces are the valid set and every rail is legitimately stale).
 				if = {
 					limit = {
 						check_variable = { _corridor_routes_done_ = corridor_route_end_^num }
@@ -613,13 +584,11 @@ WA_AI_PC_railway_corridor_pass = {
 					clear_temp_array = _valid_provinces
 				}
 
-				# Fix 50 shape: the last start call above may have been a hub (14/17); put the shared
-				# project temps back on the rail family so nothing downstream reads a hub's type.
+				# The last start call above may have been a hub (14/17); put the shared project temps
+				# back on the rail family so nothing downstream reads a hub's type.
 				# _project_queue_max / _project_priority are deliberately NOT restored: they stay
 				# corridor-valued for the rest of this weekly chain, and every downstream PC caller
-				# (the main pass at the top of WA_AI_PC_railway, every strategy in
-				# WA_AI_priority_construction_strategies) sets its own before start_project - the
-				# Fix 47 header records why inheriting them is never relied upon.
+				# sets its own before start_project - inheriting them is never relied upon.
 				set_temp_variable = { _project_building_type = constant:wa_ai_pc.type_id.rail }
 				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
 
@@ -631,7 +600,7 @@ WA_AI_PC_railway_corridor_pass = {
 	}
 }
 
-### Fix 50: Validate only railway-owned projects, regardless of the last project helper called.
+### Validate only railway-owned projects, regardless of the last project helper called.
 # ROOT = BUILDER, _valid_provinces array (temp)
 WA_AI_PC_railway_validate_queued_projects = {
 	# Frontier-port creation writes _project_type_id = 14 into the shared temp. Pinning the

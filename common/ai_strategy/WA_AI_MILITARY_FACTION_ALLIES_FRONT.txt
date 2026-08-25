@@ -5,7 +5,7 @@
 # Canonical domain: FRONT. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
 
-# Fix 97 (2026-08-17): WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_FRONT (+100 central_africa, gated
+# [med-axis-posture] (2026-08-17): WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_FRONT (+100 central_africa, gated
 # `has_war_with = ITA/GER` + `date < 1943.7.1` + `country_exists = ITS`) DELETED - on campaign 0edbc955 ITS never
 # existed (Italy lost the 1936 Ethiopian war) so the whole Allied East-Africa intent never armed; replaced by
 # the tag-free, date-free WA_AI_MILITARY_ALLIES_east_africa_* family at the end of this file.
@@ -21,6 +21,12 @@ WA_AI_MILITARY_ALLIES_europe_first = {
 		WA_AI_MILITARY_is_allies_member = yes
 		has_war_with = GER
 		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		# [minor-expeditionary-fitness] this block is a pure EXPEDITIONARY pull - the NOT home_threatened
+		# term above means it only ever arms while nothing menaces the member's own ground, so gating it
+		# on fitness removes no home defence. Without it the +150/+75 outbid the -100 CAPS veto that is
+		# the only thing holding an unequipped minor back (MEASURED, NEP 1942.2 imgui: targets 777/778
+		# +150/+75 against target 764 -100).
+		WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -62,7 +68,7 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
-		# Fix 96: was `has_war_with = ITA` - now "at war with an Italy" (any tag: fascist ITA, the RIT
+		# [med-axis-posture] was `has_war_with = ITA` - now "at war with an Italy" (any tag: fascist ITA, the RIT
 		# rump, an ahistorical Italian enemy) and not the co-belligerent case handled by the sibling
 		WA_AI_MILITARY_at_war_with_italian_homeland_power = yes
 		NOT = { WA_AI_MILITARY_ally_italy_at_war = yes }
@@ -104,7 +110,7 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack_after_flip = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
 		NOT = { WA_AI_MILITARY_owns_italy_mainland = yes }
-		# Fix 96: was `ITA = { is_allies_member ∧ has_war_with = GER }` - a hardcoded tag AND a
+		# [med-axis-posture] was `ITA = { is_allies_member ∧ has_war_with = GER }` - a hardcoded tag AND a
 		# hardcoded enemy. Now: an Italy in our faction is at war (its own army holds part of the
 		# peninsula's frontage, or will the day the enemy crosses) - whatever the tags on either side.
 		# `_at_war`, not `_invaded`: the old block fired the day Italy joined, before any German unit
@@ -139,7 +145,7 @@ WA_AI_MILITARY_ALLIES_avoid_italy_overstack_after_flip = {
 #          WIDENING, stated deliberately: an Allied member now also executes against non-German
 #          enemies where the posture says the battles are winnable (ENG vs JAP in Burma, say), which
 #          the tag-scoped version never did. That is the intended generic behaviour, but it IS new.
-#          The name is kept for this step only; Fix 54 stage 2 collapses these three faction pairs
+#          The name is kept for this step only; [offensive-posture] stage 2 collapses these three faction pairs
 #          into one Default-layer pair, at which point the block disappears.
 # range:   n/a (front_control)
 # policy:  Exclusive per front - priority 300; mutually exclusive with the grind block below by
@@ -251,59 +257,8 @@ WA_AI_MILITARY_ALLIES_grind_vs_germany = {
 # Moved from other country files - Multi-nation Allied strategies
 ############################################################################################################
 
-WA_AI_MILITARY_ALLIES_allied_minors_make_way = {
-	allowed = {
-		OR = {
-			tag = SAF
-			tag = AST
-			tag = ETH
-		}
-	}
-	enable = {
-		date > 1943.1.1
-		923 = {
-			CONTROLLER = {
-				OR = {
-					tag = GER
-					WA_AI_MILITARY_is_axis_member = yes
-				}
-			}
-		}
-		has_war_with = GER
-	}
-	abort_when_not_enabled = yes
-
-
-	ai_strategy = {
-		type = front_unit_request
-		strategic_region = 217
-		value = -100 # economy: was -2000
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		strategic_region = 128
-		value = -50
-	}
-
-	ai_strategy = {
-		type = front_unit_request
-		area = central_africa
-		value = -100 # economy: was -2000
-	}
-
-	ai_strategy = {
-		type = front_control
-		strategic_region = 128
-		priority = 100
-		ordertype = front
-		execution_type = rush
-		manual_attack = yes
-		execute_order = no
-	}
-}
-
-
+# [allied-total-commitment] ALLIES_allied_minors_make_way deleted (tag+date-gated suppression of the
+# African fronts - the opposite of the total-commitment rule).
 
 WA_AI_MILITARY_ALLIES_ignore_syria = {
 	allowed = {
@@ -840,7 +795,7 @@ WA_AI_MILITARY_ALLIES_sicily_push_FRONT = {
 				has_full_control_of_state = 156
 			}
 		}
-		# Fix 96: was `has_war_with = ITA` - now "an enemy holds Sicily" (either Sicilian state), so the
+		# [med-axis-posture] was `has_war_with = ITA` - now "an enemy holds Sicily" (either Sicilian state), so the
 		# push survives an Italy that changed tag or side and works against any occupier of the island
 		OR = {
 			115 = { CONTROLLER = { has_war_with = ROOT } }
@@ -990,7 +945,7 @@ WA_AI_MILITARY_ALLIES_italy_cobelligerent_support_FRONT = {
 		WA_AI_CONFIG_MILITARY_is_western_allies_major = yes
 	}
 	enable = {
-		# Fix 96: was `has_war_with = GER` + `is_in_faction_with = ITA` + `date > 1942.1.1` - hardcoded
+		# [med-axis-posture] was `has_war_with = GER` + `is_in_faction_with = ITA` + `date > 1942.1.1` - hardcoded
 		# enemy, hardcoded ally tag, and a calendar. Now: an Italy in our faction has an enemy on its
 		# cored soil - the reason the bloc should stay committed to the peninsula, whatever the tags.
 		WA_AI_MILITARY_is_allies_member = yes
@@ -1717,7 +1672,7 @@ WA_AI_MILITARY_ALLIES_husky_prep_FRONT = {
 
 
 ############################################################################################################
-# Fix 97 (2026-08-17) - the East-African theatre, tag-free (read the header of the WA_AI_MILITARY_east_africa_*
+# [med-axis-posture] (2026-08-17) - the East-African theatre, tag-free (read the header of the WA_AI_MILITARY_east_africa_*
 # triggers in WA_AI_MILITARY_triggers.txt). Two blocks: man the theatre while it is contested, and execute
 # there once the weekly force balance allows it. Audience = every Allies member (the sinks that keep the
 # unfit out - home_threatened, not_safe, weak minor - name WA_AI_MILITARY_east_africa_regions explicitly, so
@@ -1736,6 +1691,11 @@ WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT = {
 		has_war = yes
 		NOT = { WA_AI_MILITARY_home_threatened = yes }
 		WA_AI_MILITARY_east_africa_theatre_contested = yes
+		# [minor-expeditionary-fitness] the theatre's intended manpower is the dominions and the Indian
+		# army, all far above the fitness floor (MEASURED 8f9b5653: RAJ 59-138, AST 47-94, CAN 35-111,
+		# SAF 21-49, NZL 17-34 arms factories), so this term costs the theatre nothing. It removes the
+		# +150 for the members that cannot equip a division, whose divisions arrive hollow.
+		WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -1777,48 +1737,22 @@ WA_AI_MILITARY_ALLIES_east_africa_exec_FRONT = {
 
 
 
-############################################################################################################
-# Fix 123 (2026-08-21, campaign 8c0fea4c) - the Pacific Commonwealth's home garrison is released while
-# nobody can come south. Read the section header of the same name in WA_AI_MILITARY_triggers.txt for the
-# measurement: at 1941.6, with Japan neutral, AST held 17 of 22 divisions and NZL 8 of 11 in ENGINE
-# area-defence orders, against GER 1 of 203 and ITA 4 of 84 - the difference being `garrison = -5000`.
-# The cause is WA_AI_MILITARY_ARCHETYPE_minors_home_first, which gives every minor at war `garrison = +50`.
-############################################################################################################
-
-# purpose: hand the engine's generic area-defence army back to the active theatre while no Pacific
-#          expansionist is at war with us or preparing one. AST + NZL + RAJ.
-# range:   garrison -5000 (WA's force-off convention); front_unit_request +60 on the two African theatres
-# policy:  `garrison` is ADDITIVE (owner ruling 2026-08-21), so -5000 nets -4950 over
-#          minors_home_first's +50. Section 4 of the military doc calls the same thing a
-#          "negative-override convention" - the two readings AGREE that -5000 dominates +50, and
-#          neither is engine text (the engine doc has no `garrison` section, only the bare token).
-#          MEASURED on RAJ, which carries both writers: its area-defence count goes 14/17/16
-#          (no `-5000`) -> 0/3/2 (with it) across 1942.1, while its buffer count RISES 17 -> 21 -> 25.
-#          R84's first fail-tell is the falsifier if either reading is wrong.
+# purpose: [allied-total-commitment] direction for the released army: standing requests on the two
+#          African theatres for every committed Allies minor. Generalises the retired
+#          ALLIES_pacific_quiet_release_garrison (AST/NZL/RAJ only): the garrison release itself is
+#          now the Default archetype block ARCHETYPE_committed_minor_releases_home; this block keeps
+#          only the faction policy (where the released army goes).
+# range:   front_unit_request +60 per theatre - deliberately below the Faction East-Africa +150 so a
+#          contested theatre still outranks the standing request. The requests are the DIRECTION, not
+#          the size: which divisions the engine releases and where it sends them is not a script call.
+# policy:  Additive per area; abort stands the pulls down in one pass when home is threatened
 # domain:  FRONT
-#
-# The two +60 requests are the DIRECTION, not the size: which divisions the engine releases and where
-# it sends them is not a script decision. 60 is deliberately below the Faction East-Africa +150 so the
-# contested theatre still outranks the standing North-African request.
-#
-# Safety: two terms inside WA_AI_MILITARY_pacific_commonwealth_garrison_releasable bound the risk -
-# `pacific_threat_imminent` (war, a wargoal against us, or a committed southward focus) and
-# `commonwealth_home_in_danger` (an enemy on a core, or a home-area neighbour at war). Either one
-# aborts the block, and `abort_when_not_enabled = yes` puts minors_home_first back in one pass.
-WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison = {
-	allowed = {
-		WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes
-	}
+WA_AI_MILITARY_ALLIES_committed_minor_join_africa = {
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes
-		WA_AI_MILITARY_pacific_commonwealth_garrison_releasable = yes
+		WA_AI_MILITARY_total_commitment_active = yes
 	}
 	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = garrison
-		value = -5000
-	}
 
 	ai_strategy = {
 		type = front_unit_request

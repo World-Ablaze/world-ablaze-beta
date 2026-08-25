@@ -5,18 +5,18 @@
 #	Two pathfinders live here:
 #	- State-level A* (WA_AI_PATHFIND_*): used by the supply-line strategies
 #	  (WA_AI_build_supply_line in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt - sole caller).
-#	  Type 1 walks ROOT + subject + faction controlled states (Fix 30).
-#	  Type 3 (Fix 92) walks recipient(ROOT) + donor(var:_llr_donor) + subjects of either +
+#	  Type 1 walks ROOT + subject + faction controlled states ([railway-landwar]).
+#	  Type 3 ([lend-lease-relief]) walks recipient(ROOT) + donor(var:_llr_donor) + subjects of either +
 #	  faction/co-belligerents of ROOT - the lend-lease relief land-access test
 #	  (WA_AI_LEND_LEASE_relief_land_access, WA_AI_lend_lease_effects.txt).
 #	- Province-level A* (WA_AI_PATHFIND_PROV_*): used by the railway system.
 #	  Types 0/1/2 all walk ROOT + allied + subject controlled provinces (since 9aef32f41).
 #
-#	Fix 30 (R9, campaign 66d6b53c): the state-level type-1 neighbor filter was ROOT-only since
+#	[railway-landwar] (R9, campaign 66d6b53c): the state-level type-1 neighbor filter was ROOT-only since
 #	the original supply system (bd11fde6b) and was never included in the 9aef32f41 puppet fix,
 #	which only touched the provincial pathfinder. Both North Africa corridor anchors are
 #	subject-owned (Cairo 446 = UKE, Tripoli 448 = ITL), so the A* died at iteration 1 for
-#	ENG/ITA. Type 1 now matches the provincial traversal semantics. Fix 30 also gave both
+#	ENG/ITA. Type 1 now matches the provincial traversal semantics. [railway-landwar] also gave both
 #	state-level loops explicit break variables: they used the shared `break` temp variable,
 #	which (a) other queue/scoring effects leave set within the same pulse, aborting the A*
 #	instantly, and (b) leaked `break = 1` back to the caller on success, aborting the caller's
@@ -45,7 +45,7 @@ WA_AI_PATHFIND_get_path = { # _pathfind_start, _pathfind_target, _pathfind_type 
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_detailed_logging } } every_state = { set_variable = { WA_AI_debug_value = 0 } } }
 
-	# Fix 30 break hygiene: neutralize `break` pollution left by earlier effects in the same
+	# [railway-landwar] break hygiene: neutralize `break` pollution left by earlier effects in the same
 	# pulse - every default-break loop below (neighbor scan, open-list scan, path reversal)
 	# would otherwise abort before its first iteration. This pathfinder's own loops use
 	# explicit break variables and never set `break` themselves.
@@ -165,7 +165,7 @@ WA_AI_PATHFIND_get_neighbors = {
 	clear_temp_array = neighbors
 
 	# supply line - walks ROOT + subject + faction controlled states.
-	# Fix 30: was `is_controlled_by = ROOT` since the original supply system - never updated
+	# [railway-landwar] was `is_controlled_by = ROOT` since the original supply system - never updated
 	# when the provincial pathfinder gained subject traversal (9aef32f41). With subject-owned
 	# corridor anchors (Cairo 446 = UKE, Tripoli 448 = ITL) the A* died at iteration 1.
 	if = { limit = { check_variable = { _pathfind_type = 1 } }
@@ -186,7 +186,7 @@ WA_AI_PATHFIND_get_neighbors = {
 		}
 	}
 
-	# Fix 92 (lend-lease surplus relief land access, WA_AI_lend_lease_effects.txt): ROOT = the
+	# [lend-lease-relief] (lend-lease surplus relief land access, WA_AI_lend_lease_effects.txt): ROOT = the
 	# RECIPIENT (pull scope), var:_llr_donor = the picked donor. Walks states controlled by the
 	# recipient, the donor, a subject of either, or a faction member / co-belligerent of the
 	# recipient - "an overland truck convoy through friendly ground". Additive: types 0/1/2 are
@@ -305,7 +305,7 @@ WA_AI_PATHFIND_build_path = {
 	clear_temp_array = pathfind_path_
 
 	set_temp_variable = { its2 = 0 }
-	# Fix 30: explicit break variable - the shared `break` leaked to the caller and killed its
+	# [railway-landwar] explicit break variable - the shared `break` leaked to the caller and killed its
 	# subsequent default-break loops (the supply-line path walk never ran even on success).
 	set_temp_variable = { _pf_build_break = 0 }
 	while_loop_effect = { break = _pf_build_break limit = { check_variable = { its2 < 50 } }

@@ -730,7 +730,6 @@ NDefines.NNavy.BASE_SPOTTING_EFFECT_FOR_INITIAL_NAVAL_INVASION_SPOTTING = 10.0		
 NDefines.NNavy.SPOTTING_SPEED_EFFECT_FOR_INITIAL_NAVAL_INVASION_SPOTTING = 0.5		-- same as SPOTTING_SPEED_EFFECT_FOR_INITIAL_CONVOY_SPOTTING, but for naval invasion convoys
 
 NDefines.NNavy.MIN_SPOTTING_PROGRESS = 0.005										-- Minimum spotting progress (in percent) per hourly tick
-NDefines.NNavy.RELATIVE_SURFACE_DETECTION_TO_POSITIONING_FACTOR	= 0.005				-- multiples the surface detection difference between two sides. the side with higher detection will get a bonus of this value
 NDefines.NNavy.NAVY_SPOTTER_DETECTION_FACTOR = 0.05									-- multiplier for task forces' detection value before logistic transform
 NDefines.NNavy.DETECTION_CHANCE_MULT_BASE = 0.05									-- base multiplier value for detection chance. Later the chance is an average between our detection and enemy visibility, mult by surface/sub detection chance in the following defines.
 NDefines.NNavy.DETECTION_CHANCE_MULT_RADAR_BONUS = 0.2								-- detection chance bonus from radars.
@@ -1043,8 +1042,6 @@ NDefines.NAI.MAX_DEPLOYED_ARMY_HQS = 20												-- AI will not deploy more th
 
 NDefines.NAI.BASE_RELUCTANCE = 10 													-- Base reluctance applied to all diplomatic offers
 
-NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 20 							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
-
 NDefines.NAI.DIPLOMACY_LEND_LEASE_MONTHS_TO_CANCEL = 6								-- AI will not cancel a lend lease offer until this time has passed
 NDefines.NAI.LENDLEASE_FRACTION_OF_PRODUCTION = 0.5									-- Base fraction AI would send as lendlease
 NDefines.NAI.LENDLEASE_FRACTION_OF_STOCKPILE = 0.75									-- Base fraction AI would send as lendlease
@@ -1331,16 +1328,16 @@ NDefines.NAI.UNLOCK_SPIRIT_TRUNCATION_SELECT_THRESHOLD = 1.0  						-- Valid bet
 -- minor supports the major it fights under. Fix 106 adds those blocks; see
 -- WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt.
 --
--- Left at their current values deliberately. The sender ratio they test - cumulative casualties over
--- deployed manpower - reads 0.5 to 4.3 for every Allied contingent by 1943.11 and 0.51 / 0.78 for USA
--- and ENG themselves, and casualties are MONOTONIC, so 0.1 / 0.25 may well be a one-way latch that
--- shuts for every belligerent by the third year of a war. That remains a live suspicion, NOT a
--- finding: it is unobservable until a country actually reaches the test, and none has. Revisit only
--- once R70 shows `expeditionary_force_data` present on an Allied minor with `do_not_send_forces=yes`
--- - that reading, and only that reading, makes these numbers the binding constraint.
+-- The pull-back / not-send casualty ratios are set once, in the diplomacy block further down
+-- (0.9 / 0.9, anti-shuffle tuning next to NUM_DAYS_TO_PULL_EXPEDITIONARIES_BACK). The sender ratio
+-- they test - cumulative casualties over deployed manpower - reads 0.5 to 4.3 for every Allied
+-- contingent by 1943.11 and 0.51 / 0.78 for USA and ENG themselves, and casualties are MONOTONIC,
+-- so even 0.9 can be a one-way latch that shuts for a long-war belligerent. That remains a live
+-- suspicion, NOT a finding: it is unobservable until a country actually reaches the test, and none
+-- has. Revisit only once R70 shows `expeditionary_force_data` present on an Allied minor with
+-- `do_not_send_forces=yes` - that reading, and only that reading, makes these numbers the binding
+-- constraint.
 NDefines.NAI.MAX_REQUEST_EXPEDITIONARIES_ARMY_RATIO = 0.5							-- AI will not accept expeditionary requests if its expeditions are above this ratio
-NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.25						-- AI will pull expeditioniries back if its casualties is aboce this ratio compared to their total deployed manpower
-NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.1						-- AI will not send expeditioniries if its casualties is aboce this ratio compared to their total deployed manpower
 
 NDefines.NAI.REFIT_SHIP_RELUCTANCE = 7												-- How often to consider refitting to new equipment variants for ships in the field
 NDefines.NAI.REFIT_SHIP_PERCENTAGE_OF_FORCES = 1.0									-- How big part of the navy that should be considered for refitting
@@ -1359,8 +1356,6 @@ NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted f
 --NDefines.NAI.NUM_SILOS_PER_CIVILIAN_FACTORIES = 0.0025							-- ai will try to build a silo per this ratio of civ factories
 --NDefines.NAI.NUM_SILOS_PER_MILITARY_FACTORIES = 0.024								-- ai will try to build a silo per this ratio of mil factories
 --NDefines.NAI.NUM_SILOS_PER_DOCKYARDS = 0.02										-- ai will try to build a silo per this ratio of dockyards
-
-NDefines.NAI.MAX_THREAT_FOR_FIRST_YEAR_CIVILIAN_MODE = 10 							-- above this threshold, ai will leave first year civilian factory mode which bumps it civilian factory scores while building
 
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_NAVY_TRAINING = 0.2						-- ai will use at most this ratio of affordable fuel for naval training
 NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not train a taskforce if fully trained ships are above this ratio
@@ -1476,7 +1471,7 @@ NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 1.0										-- if resource is being u
 NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.75										-- Country should not send away more units than this as expeditionaries
 NDefines.NAI.NUM_DAYS_TO_PULL_EXPEDITIONARIES_BACK = 3000 --We don't want AI to shuffle
 NDefines.NAI.CASUALTY_RATIO_TO_PULL_EXPEDITIONARIES_BACK = 0.9  --We don't want AI to shuffle
-NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.9	--We don't want AI to shuffle											-- AI will pull expeditioniries back after this many days if its casualties is aboce the ratio compared to their total deployed manpower
+NDefines.NAI.CASUALTY_RATIO_TO_NOT_SEND_EXPEDITIONARIES = 0.9	--We don't want AI to shuffle
 NDefines.NAI.DIPLOMACY_IMPROVE_RELATION_COST_FACTOR = 1000.0						-- Desire to boost relations subtracts the cost multiplied by this
 
 NDefines.NAI.GIVE_STATE_CONTROL_MIN_CONTROLLED = 0									-- AI needs to control more than this number of states before considering giving any away

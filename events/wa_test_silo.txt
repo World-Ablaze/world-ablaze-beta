@@ -1,0 +1,50 @@
+############################################################################################################
+#	FUEL-SILO BREADTH QUEUE - console harness ([silo-breadth]).
+#
+#	Effects: common/scripted_effects/WA_TEST_silo_breadth.txt
+#
+#	CONSOLE RECIPE (throwaway save; a fresh 1936 game as GER is the reference case - many scored
+#	states, fuel_silos researched or researchable):
+#	    tag GER           (become the country under test)
+#	    event wa_silo.1   (legs A + C, READ-ONLY: per-state availability verdicts + caller-gate render)
+#	    event wa_silo.2   (leg B, SIDE-EFFECTFUL: 8 queue calls - queues real silos on ROOT)
+#	  then read logs/game.log, search "SILO TEST". PASS pattern:
+#	    legA: every state with built = 6 reads avail = 0; at least one avail = 1
+#	    legC: known-true = 1, known-false = 0, gate consistent with the printed need
+#	    legB: picks spread over >= 2 distinct states (tier 1-3), never 8x the same state
+#
+#	WHY ITS OWN FILE: the harness contract forbids hosting console harnesses in
+#	events/wa_events_test.txt ("Two call sites, one effect" lesson - a probe whose readings depend
+#	on which file fired it is worthless). Namespace wa_silo is this harness's own.
+#
+#	Side effects: wa_silo.2 queues up to 8 real fuel-silo constructions (script cannot cancel them -
+#	use the construction UI, or discard the save) and increments WA_TLM_sq_adds_n / _adds_by_type^8;
+#	do not score this save's sq telemetry afterwards. wa_silo.1 is read-only (computing the shared
+#	slot scores on demand is the same on-demand compute the real queue does).
+############################################################################################################
+
+add_namespace = wa_silo
+
+# Read-only report (legs A + C) - fire as the country under test.
+country_event = {
+	id = wa_silo.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_SILO_report = yes
+	}
+}
+
+# Burst (leg B, side-effectful) - fire as the same country after wa_silo.1.
+country_event = {
+	id = wa_silo.2
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_SILO_burst = yes
+	}
+}

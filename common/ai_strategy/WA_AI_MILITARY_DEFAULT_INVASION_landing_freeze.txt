@@ -118,3 +118,39 @@ WA_AI_MILITARY_INV_freeze_after_scripted_landing_faction_wide = {
 		country_trigger = { has_war_with = ROOT }
 	}
 }
+
+
+# [scripted-invasion-reservation]
+# purpose: while the scripted-landing calendar still owes an operation against a country, the whole
+#          faction's engine-planned invasions of THAT COUNTRY request no divisions - the engine must
+#          not park a corps for its own Brittany landing while the calendar will open Normandy.
+#          Forward-looking twin of the two freeze blocks above (they act AFTER a landing, this acts
+#          BEFORE the scheduled date). Marker: WA_AI_LANDING_update_reservations (monthly) stamps a
+#          leased flag WA_AI_LANDING_reserved_for_<TAG> on the target for every AI faction member of
+#          the invader; the flag dies by itself one lease after the LAST pending operation against
+#          that target. Spec: documentation/WA_AI_MILITARY_SYSTEM.md sec.22.
+# range:   -200 (floors an invasion order's unit request - ASSUMED, same base assumption as the
+#          freeze blocks; an explicit Faction-layer site boost such as dday_prep's +1000 still wins,
+#          which is intended: a scripted operation's own staging outranks the generic reservation)
+# policy:  Additive per target country
+# domain:  INVASION
+# ENGINE FACT ASSUMED: @FROM renders the evaluating country's tag inside a country_trigger
+# (documentation.info: country_trigger scope = enemy country, FROM = our country; dynamic-flag @
+# rendering is the vanilla WTT_border_conflict idiom). PDXScript fails silently - if the rendering
+# does not happen in this context the trigger never matches and the block is inert, which a campaign
+# will show as WA_TLM_resv_stamp_n > 0 with invasions against reserved targets anyway.
+WA_AI_MILITARY_INV_reserved_scripted_target = {
+	enable = {
+		has_war = yes
+		WA_AI_LANDING_reservations_enabled = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		country_trigger = {
+			has_country_flag = WA_AI_LANDING_reserved_for_@FROM
+		}
+	}
+}

@@ -284,7 +284,7 @@ WA_AI_MILITARY_ENG_bef_in_europe_leave_FRONT = {
 }
 
 
-# Fix 97 (2026-08-17): WA_AI_MILITARY_ENG_africa_war_no_RAJ_FRONT (+20 central_africa when the RAJ is NOT in the
+# [med-axis-posture] (2026-08-17): WA_AI_MILITARY_ENG_africa_war_no_RAJ_FRONT (+20 central_africa when the RAJ is NOT in the
 # faction) DELETED - the Faction WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT (+150) serves ENG in both
 # configurations; keeping this would stack.
 
@@ -316,8 +316,39 @@ WA_AI_MILITARY_ENG_africa_war_1 = {
 	ai_strategy = {
 		type = front_unit_request
 		area = central_africa
-		value = -50 # economy: was -200, then -100; Fix 97 (user decision 2026-08-17): -50 - the "let the RAJ do East Africa" preference stays, but no longer cancels the Faction +150 theatre pull (0edbc955: RAJ 0-5 divisions there, ENG never more than 17)
+		value = -50 # economy: was -200, then -100; [med-axis-posture] (user decision 2026-08-17): -50 - the "let the RAJ do East Africa" preference stays, but no longer cancels the Faction +150 theatre pull (0edbc955: RAJ 0-5 divisions there, ENG never more than 17)
 	}
+}
+
+
+# [commonwealth-handoff] the north_africa half of africa_war_1, split off so it can stand down while
+# an enemy stands on Egyptian soil. Its gate REQUIRES hostile presence in Africa, so it armed
+# exactly when the African war opened and then suppressed the front that war created.
+# range:   front_unit_request -40. Gate is africa_war_1's, with the inline {446,447,453}x{ENG,UKE}
+#          OR expressed as WA_AI_MILITARY_ENG_holds_east_egypt (identical body), plus the new NOT.
+# policy:  Additive per area; parent keeps central_africa -50, this block is sole writer of the -40.
+#          Removing the entry rather than cancelling it with a positive is deliberate: whether the
+#          engine SUMS entries sharing an area is unresolved, and a removal works under either.
+# assumes: the lift un-latches on Egyptian soil alone, so retaking the last Egyptian state re-arms
+#          the brake with Libya still hostile. Flap cost is bounded BY CONSTRUCTION - the re-armed
+#          state IS the pre-change behaviour (net +25), never worse. t0 invaded: -40/-20 off, net
+#          +85. t1 last state retaken: both on, net +25 = today. t2 452 lost again: off, +85.
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_ENG_FRONT_north_africa_brake_egypt_held = {
+	allowed = {
+		tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_holds_east_egypt = yes
+		OR = {
+			is_in_faction_with = RAJ
+			RAJ = { is_subject_of = ENG }
+		}
+		WA_AI_MILITARY_ENG_africa_hostile_presence = yes
+		surrender_progress < 0.05
+		NOT = { WA_AI_MILITARY_egypt_is_invaded = yes }
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
@@ -325,61 +356,6 @@ WA_AI_MILITARY_ENG_africa_war_1 = {
 		value = -40
 	}
 }
-
-
-# Fix 97 review (2026-08-17): WA_AI_MILITARY_ENG_africa_war_2_FRONT DELETED. Its gate had been `OR{450,663,451}
-# AND NOT{450,663,451,...}` (a NOR - X AND NOT X) since the very first authoring (79d64f6ff): the payload was NEVER
-# live in any campaign, and its FRONT value had been flipped to -30 (7619b217a) while dead. Reviving it would
-# have stacked a third +200 north_africa on top of africa_war_3_THEATRE and focus_on_land_War_in_north_africa.
-
-
-
-# Phase 6 split from WA_AI_MILITARY_ENG_africa_war_3 (FRONT domain)
-WA_AI_MILITARY_ENG_africa_war_3_FRONT = {
-
-	allowed = {
-		tag = ENG
-	}
-	enable = {
-		OR = {
-			446 = { is_controlled_by = ENG }
-			447 = { is_controlled_by = ENG }
-			453 = { is_controlled_by = ENG }
-			450 = { is_controlled_by = ENG }
-			663 = { is_controlled_by = ENG }
-			451 = { is_controlled_by = ENG }
-			446 = { is_controlled_by = UKE }
-			447 = { is_controlled_by = UKE }
-			453 = { is_controlled_by = UKE }
-			450 = { is_controlled_by = UKE }
-			663 = { is_controlled_by = UKE }
-			451 = { is_controlled_by = UKE }
-		}
-		surrender_progress < 0.05
-		date > 1939.1.1
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_control
-		tag = ITA
-		ordertype = front
-		execution_type = balanced
-	}
-	ai_strategy = {
-		type = front_control
-		tag = ITL
-		ordertype = front
-		execution_type = balanced
-	}
-	ai_strategy = {
-		type = front_unit_request
-		area = north_africa
-		value = -20
-	}
-}
-
-
 
 WA_AI_MILITARY_ENG_soviets_are_no_threat = {
 	allowed = {
@@ -690,13 +666,17 @@ WA_AI_MILITARY_ENG_tanks_vs_axis_majors_FRONT = {
 }
 
 
-# Fix 124 (2026-08-21, campaign 8c0fea4c) - the British half of the East-Africa delegation.
+# [commonwealth-handoff] the British half of the East-Africa delegation.
 # purpose: take Britain's weight OFF East Africa while the Indian army carries it, so the divisions
 #          land in Egypt instead. Without this half the delegate only ADDS divisions to Ethiopia and
 #          nothing is freed - which is the whole point of the user's report.
-# range:   front_unit_request -75 on the 4-region alias, netting ENG to +75 against the Faction +150
-#          (RAJ nets +250). ENG is never pushed NEGATIVE: it keeps a real share of the theatre, and if
-#          the delegate becomes unavailable this block aborts and ENG is back at the full +150.
+# range:   front_unit_request -130 on the 4-region alias: nets ENG to +20 against the Faction +150,
+#          BELOW north_africa's net +25, so Egypt outbids East Africa while the delegate carries it
+#          (RAJ nets +250). On regions 17/217 the central_africa -50 (africa_war_1) also applies,
+#          so ENG's net there goes to -30 under delegation - accepted, the delegate holds those
+#          regions - and a DEFAULT_FRONT_caps -100 can stack further. Cross-AREA ordering of
+#          front_unit_request values is assumed, not engine-proven: verified only by campaign probe.
+#          If the delegate becomes unavailable this block aborts and ENG is back at the full +150.
 # policy:  Additive per area; gate-exclusive by construction with the RAJ delegate - both read
 #          WA_AI_MILITARY_commonwealth_east_africa_available / _RAJ_east_africa_available, the same verdict
 # domain:  FRONT
@@ -714,6 +694,6 @@ WA_AI_MILITARY_ENG_east_africa_delegated_FRONT = {
 	ai_strategy = {
 		type = front_unit_request
 		area = WA_AI_MILITARY_east_africa_regions
-		value = -75
+		value = -130
 	}
 }

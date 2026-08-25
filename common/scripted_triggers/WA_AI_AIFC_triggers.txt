@@ -72,8 +72,8 @@ WA_AI_AIFC_sector_engine_enabled = {
 #	THIS = COUNTRY
 #
 #	Cheap pre-checks only. Same SHAPE as the railway system's eligibility gate
-#	(WA_AI_PC_country_can_build_own_logistics in WA_AI_CONSTRUCTION_triggers.txt since Fix 75; the
-#	recovery escape hatch came from Fix 29/29b, 3c55b9d17). The numbers are AIFC's own
+#	(WA_AI_PC_country_can_build_own_logistics in WA_AI_CONSTRUCTION_triggers.txt since [pc-queue]; the
+#	recovery escape hatch came from [railway-landwar], 3c55b9d17). The numbers are AIFC's own
 #	(constant:wa_ai_aifc.eligibility.*), a separate control panel by design - the 20-state hatch is
 #	conventionally equal to the railway / posture ones and the registry's advisory group
 #	recovery_min_states_hatch reports if they diverge. Anything expensive belongs inside the effect.
@@ -90,9 +90,9 @@ WA_AI_AIFC_should_select_sector = {
 	# term above this one measures TERRITORY, not capability. num_of_controlled_states > 2 is satisfied
 	# by a Reichskommissariat with nine states and zero divisions - at 1944.9 that is literally what
 	# happened: IPI, RBE, RGR and RNO each held a 2-4 state corridor with an army of ZERO, and 10 of the
-	# 28 sector holders that month could not have executed one. It is the same mistake Fix 43 removed
+	# 28 sector holders that month could not have executed one. It is the same mistake [aifc] removed
 	# from surrender_progress just below (VP loss is not capability), repeated with a different proxy.
-	# has_army_size already appears in that Fix 43 escape hatch, but only as the second arm of an OR,
+	# has_army_size already appears in that [aifc] escape hatch, but only as the second arm of an OR,
 	# where it can never do anything but WIDEN the gate.
 	#
 	# The cost this removes is CPU, not behaviour - checked and confirmed inert: Layer 4 writes only
@@ -100,7 +100,7 @@ WA_AI_AIFC_should_select_sector = {
 	# have; armour steering is separately gated on has_army_size type = armor; AIFC writes no
 	# front_control, invade or unit_request. The real saving is not the wasted sectors, it is that a
 	# country with NO sector re-selects EVERY week (WA_AI_AIFC_core.txt, the "nothing selected yet"
-	# branch), and the Fix 28 expeditionary fallback it then reaches is an UNCAPPED
+	# branch), and the [offensive-posture] expeditionary fallback it then reaches is an UNCAPPED
 	# every_country/every_controlled_state/every_neighbor_state walk over ~800 states. France ran that
 	# walk ~250 consecutive weeks in 02bd4445 and produced nothing; ~32 tags were in that bucket.
 	#
@@ -116,7 +116,7 @@ WA_AI_AIFC_should_select_sector = {
 	# future campaign shows one of them losing a sector it wanted, this constant is the place to relax.
 	has_army_size = { size > constant:wa_ai_aifc.eligibility.min_div }
 
-	# Fix 43: surrender_progress measures VP LOSS, not capability. A big country under invasion crosses
+	# [aifc] surrender_progress measures VP LOSS, not capability. A big country under invasion crosses
 	# 0.35 with its whole army intact, and a country whose capitulation limit is raised by script (SOV via
 	# sov_the_politburo_max_surrender_limit_offset) sits above it INDEFINITELY - so the bare threshold is a
 	# permanent lockout, not a temporary emergency mode. Campaign 911bed3c: SOV lost its sector in 1942.9
@@ -154,7 +154,7 @@ WA_AI_AIFC_has_sector = {
 #
 #	Any one of these is enough to drop into linear-defence mode.
 #
-#	Fix 43 - "we are collapsing" now has a SINGLE WRITER. This trigger used to carry a standalone
+#	[aifc] - "we are collapsing" now has a SINGLE WRITER. This trigger used to carry a standalone
 #	`surrender_progress > 0.2` branch, which published force_concentration_factor = -100 (far below the
 #	engine's -15 hard-off point) on a pure VP-loss metric with no capability term. In campaign 911bed3c
 #	that killed AIFC for the USSR from ~Dec 1941 to the end of the game - through the whole of 1943, when
@@ -199,7 +199,7 @@ WA_AI_AIFC_posture_defensive = {
 #	Used to grant a bonus on top of the doctrine ladder. Deliberately conservative: the ladder alone
 #	should already produce a usable concentration, this is the "we are winning, press it" case.
 #
-#	Fix 43: the "we are winning" test was `surrender_progress < 0.05` - i.e. "we have lost almost no
+#	[aifc] the "we are winning" test was `surrender_progress < 0.05` - i.e. "we have lost almost no
 #	victory points", which excludes every country that has been invaded and pushed back, however
 #	completely it has since recovered. It is now the posture system's own weekly verdict:
 #	WA_AI_MILITARY_posture > 0 means "there is at least one enemy we can beat right now" (level 1

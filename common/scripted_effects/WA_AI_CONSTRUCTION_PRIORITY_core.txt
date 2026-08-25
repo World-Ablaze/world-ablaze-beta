@@ -9,19 +9,15 @@
 
 WA_AI_PC_set_global_variables = {
 
-	### BUILDING CONSTRUCTION COSTS and BUILDING TYPE IDS moved to script constants on 2026-08-16:
-	### constant:wa_ai_pc.cost.* (SOURCE OF TRUTH common/buildings/00_buildings.txt - PC is a SHADOW
-	### construction system that pays that table, then spawns with instant_build; every key is a
-	### registered mirror, `python tools/check_constants.py` reports a re-price) and
-	### constant:wa_ai_pc.type_id.rail / .port. They used to be global.WA_AI_PC_BUILDING_*_COST /
-	### WA_AI_PC_RAIL / WA_AI_PC_NAVAL_BASE variables set here at startup and carried in every save;
-	### a resumed pre-2026-08-16 save still holds those globals, unread. Per-level components live in
-	### WA_AI_PC_get_building_cost below. History worth keeping: rail_way is flat (per_level 0, vanilla
-	### 170/130) and charged once per province connection since Fix 73; conversions read the TARGET
-	### building's base_cost_conversion (8000 / 6800, verified 2026-08-14); naval_base is charged flat
-	### 10000 (Fix 72, was 3000) - exact at level 0, over-charging upgrades because the -556/level taper
-	### needs the port level plumbed in (province building; scoring in railway_helpers models it via
-	### constant:wa_ai_railway.cost.naval_base_per_level).
+	### BUILDING CONSTRUCTION COSTS and BUILDING TYPE IDS are script constants: constant:wa_ai_pc.cost.*
+	### and constant:wa_ai_pc.type_id.rail / .port. SOURCE OF TRUTH is common/buildings/00_buildings.txt -
+	### PC is a SHADOW construction system that pays that table, then spawns with instant_build, so every
+	### key is a registered mirror and `python tools/check_constants.py` reports a re-price. Per-level
+	### components live in WA_AI_PC_get_building_cost below. Known approximations: rail_way is flat
+	### (per_level 0) and charged once per province connection; conversions read the TARGET building's
+	### base_cost_conversion; naval_base is charged flat - exact at level 0, over-charging upgrades
+	### because the per-level taper needs the port level plumbed in (province building; railway_helpers
+	### models it via constant:wa_ai_railway.cost.naval_base_per_level).
 
 	every_country = {
 		### Dynamic queue system (replaces fixed 5-slot array)
@@ -145,7 +141,7 @@ WA_AI_PC_get_building_cost = {
 	else_if = { limit = { check_variable = { _project_building_type = 2 } }
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.air_base }
 		set_temp_variable = { _level_cost = building_level@air_base }
-		# Fix 72: was 250 - air_base.per_level_extra_cost is 300 (00_buildings.txt:86).
+		# mirrors air_base.per_level_extra_cost in 00_buildings.txt
 		multiply_temp_variable = { _level_cost = 300 }
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
@@ -155,8 +151,7 @@ WA_AI_PC_get_building_cost = {
 	else_if = { limit = { check_variable = { _project_building_type = 4 } }
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.radar }
 		set_temp_variable = { _level_cost = building_level@radar_station }
-		# Fix 72: was 500 - radar_station.per_level_extra_cost is 2500 (00_buildings.txt:117).
-		# Largest of the three drifts: a level-5 station was priced 4500 against a real 14500.
+		# mirrors radar_station.per_level_extra_cost in 00_buildings.txt
 		multiply_temp_variable = { _level_cost = 2500 }
 		add_to_temp_variable = { building_cost_ = _level_cost }
 	}
@@ -197,86 +192,63 @@ WA_AI_PC_get_building_cost = {
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.aluminium_smelter }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 13 } }
-		# Fix 73: was a hardcoded `170 + 130 * (1 + existing connection level)`, plus a
-		# meta_effect to read that level. Those are VANILLA's rail_way numbers
-		# (base_cost = 170, per_level_extra_cost = 130) - the block was a faithful copy of the
-		# base game and was never wrong when written. THIS MOD re-priced rail_way to a flat
-		# base_cost = 800, per_level_extra_cost = 0 (1000 -> 800 in 42b53eccb, Oct 2023) and
-		# the AI's shadow table was never updated, so the AI kept buying rail at the base
-		# game's escalating price: 300 for a fresh segment against a real 800.
-		#
-		# One type-13 project spawns exactly one `build_railway level = 1 path = { from to }`
-		# (WA_AI_PC_add_finished_building_by_id), i.e. one level on one province connection,
-		# so the charge is one unit of rail_way.base_cost. NO level term: per_level_extra_cost
-		# is 0 in this mod. If it is ever made non-zero again, reinstate a level term here -
-		# and use `base + per_level * existing` like the air-base and radar branches above, not
-		# the `(1 + existing)` form removed here, which over-counted by one level.
-		#
-		# This is now the same 800 that railway_helpers.txt:25 (constant:wa_ai_pc.cost.railway,
-		# "flat per segment") and WA_AI_PC_estimate_railway_cost already use to SCORE routes,
-		# so route selection and route payment finally agree.
+		# [pc-queue] one type-13 project spawns exactly one `build_railway level = 1 path = { from to }`
+		# (WA_AI_PC_add_finished_building_by_id), i.e. one level on one province connection, so the
+		# charge is one unit of rail_way.base_cost. NO level term: THIS MOD sets rail_way
+		# per_level_extra_cost = 0 (vanilla's 170/130 escalation does not apply here). If it is ever
+		# made non-zero, add a level term of the form `base + per_level * existing`, like the
+		# air-base and radar branches above - NOT `(1 + existing)`, which over-counts by one level.
+		# Same constant WA_AI_PC_estimate_railway_cost uses to SCORE routes, so selection and
+		# payment agree.
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.railway }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 14 } }
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.naval_base }
 	}
 	else_if = { limit = { check_variable = { _project_building_type = 17 } }
-		# Fix 95: supply hub (supply_node), province building. Flat base_cost 10000 (00_buildings.txt);
+		# [na-corridor] supply hub (supply_node), province building. Flat base_cost 10000 (00_buildings.txt);
 		# one project = one hub at _project_province_id, level 1, no upgrades exist for this type.
 		set_temp_variable = { building_cost_ = constant:wa_ai_pc.cost.supply_node }
 	}
 }
 
 ### Allocation base constants: constant:wa_ai_pc.alloc.* in common/script_constants/wa_ai_pc.txt
-### (fraction 0.40 / stable_base_fraction 0.30 / hard_cap_fraction 0.50 / stall_cancel_weeks /
-### min_economy_civs / max_civs_per_project ...). Since 2026-08-16 they are HOI4 script constants,
-### visible from every file, so the affordability gate in WA_AI_CONSTRUCTION_triggers.txt and the
-### debug mirror read the SAME declaration - no more per-file `@` copies to keep in sync. The band
-### table (constant:wa_ai_pc.prio.*), strategy tags (type_id.*) and budgets (qmax.*) live there too.
-### tools/constants_registry.json still tracks the cross-format mirrors (savegame.py, 00_buildings,
+### (fraction / stable_base_fraction / hard_cap_fraction / stall_cancel_weeks / min_economy_civs /
+### max_civs_per_project ...). Script constants, visible from every file, so this file and the
+### triggers file read the SAME declaration - no per-file `@` copies to keep in sync. The band table
+### (prio.*), strategy tags (type_id.*) and budgets (qmax.*) live there too.
+### tools/constants_registry.json tracks the cross-format mirrors (savegame.py, 00_buildings,
 ### 05_defines) - `python tools/check_constants.py`.
 
-### Fix 87 (2026-08-16, campaign af003548, checklist R54): air-basing gets throughput, paid
-### for by a MEASURED set of losers.
-###   P1  a SECOND Fix 78 lane slot while the UK air deficit exceeds constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct
+### [uk-air-basing] air-basing throughput comes from three levers, all paid for out of the same pool:
+###   P1  a SECOND [pc-queue] lane slot while the UK air deficit exceeds constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct
 ###       (WA_AI_PC_air_deficit_pct, published by WA_AI_build_uk_air_hosting_capacity).
-###   P2  (SHIPPED 2026-08-16 AND REMOVED THE SAME DAY - kept here as the record.) Both air-lane
-###       slots could draw HEADROOM beyond the constant:wa_ai_pc.alloc.fraction cut up to the hard cap. The
-###       v17 local probe (fork 1944.7.1 -> 1944.10.3) showed it inverted: it drew 25 civ-weeks
-###       on ENG (civs_avail 2 - pure displacement of the vanilla queue) and 0 on the USA (civs_avail
-###       267), because the USA never reaches its fraction cut (assigned 100 vs base 367 x 0.4) -
-###       it lacks fundable projects, not civs. Removed with its WA_TLM_r54_air_headroom_* probes.
-###   (a) Fix 87b: projects whose target state is ENEMY-controlled no longer count against the
-###       per-type / per-strategy queue budget in WA_AI_PC_start_project. They stay queued and
-###       frozen for recapture (Fix 34), but stop holding a slot: on the v17 probe USA 117 Campania
-###       (RIT) and 785 Picardy (GER) sat at the head of the queue at 350, 0 civs, and blocked new
-###       UK sites - USA PC spend fell 140 -> 100 civs with 267 idle.
-###   (b) Fix 87b: the UK hosting builder's concurrent-project budget widens 3 -> 5 while the
-###       deficit is deep (constant:wa_ai_pc.qmax.uk_air_deep in ..._strategies.txt) - the v17 probe put UK
-###       levels at 106 -> 112 in 3 months on cloud, v16 and v17 alike, byte-identical per state:
-###       throughput = concurrent projects x ~1 level/month, not civs.
-### Who pays, from the af003548 ledger: inside the PC fill, an extra 20-civ air slot displaces
-### ENG's two tail radars + 3 civs of infrastructure (1943.6), ENG's two funded naval bases
-### (1944.6, nothing else is funded), and nothing in 1945 (ENG pool exhausted, civs_avail = 0);
-### USA's tail radar every time.
+###   (a) projects whose target state is ENEMY-controlled do not count against the per-type /
+###       per-strategy queue budget in WA_AI_PC_start_project. They stay queued and frozen for
+###       recapture, but stop holding a slot that would otherwise block new sites.
+###   (b) the UK hosting builder's concurrent-project budget widens while the deficit is deep
+###       (constant:wa_ai_pc.qmax.uk_air_deep in ..._strategies.txt) - throughput is concurrent
+###       projects x ~1 level/month, not civs.
+### REJECTED: letting the air-lane slots draw HEADROOM beyond the constant:wa_ai_pc.alloc.fraction cut
+### up to the hard cap. It inverts - it only draws on a host already at its cut (pure displacement of
+### the vanilla queue) and never on the rich ally, which lacks fundable projects, not civs.
 ### Probes: WA_TLM_r54_air_lane2_grants / _first_t / _last_t (weeks the 2nd slot funded).
 
-### Fix 41: priority bands + anti-starvation overtake lane (campaign 31eaf7e6: prio-9999
-### railway segments replenished every cycle absorbed the whole pool 20-at-a-time; prio-100
-### air bases sat at 0 factories until the week-25 stall sweep cancelled them, the strategies
-### re-queued them, and the cycle repeated - a livelock, never a completion).
+### [pc-queue] priority bands + anti-starvation overtake lane. Without the bands, top-priority
+### railway segments replenished every cycle absorb the whole pool 20-at-a-time while low-band air
+### bases sit at 0 factories until the stall sweep cancels them and the strategies re-queue them -
+### a livelock, never a completion.
 ###
 ### PRIORITY BAND TABLE (every _project_priority in the PC system belongs to one band):
 ###   1000  rail-war        constant:wa_ai_pc.prio.rail_war (railway_core/helpers; x1.1 high-route = 1100 cap)
 ###    500  rail-prewar     constant:wa_ai_pc.prio.rail_prewar (railway_core/helpers/strategies)
-###    350  air-front       Fix 85: theatre air bases (WA_AI_build_theatre_air_bases) in a deficit
+###    350  air-front       [na-corridor] theatre air bases (WA_AI_build_theatre_air_bases) in a deficit
 ###                         theatre where the builder's OWN divisions stand - a beachhead. Above
-###                         air-basing so it leads the Fix 78 lane and the sorted fill ahead of
-###                         uk_air (campaign af003548: two French air bases sat at 0 factories for
-###                         five months behind level-8->12 UK bases in the same band, then aged
-###                         out), below rail-prewar so the Fix 41 rail order is untouched. Same
-###                         WA_AI_PC_air_force_needs_basing_priority gate as 300.
-###    300  air-basing      Fix 47: air bases queued by WA_AI_build_uk_air_hosting_capacity or
+###                         air-basing so it leads the [pc-queue] lane and the sorted fill ahead of
+###                         uk_air (sharing one band, a beachhead base starves behind the UK
+###                         upgrades and ages out), below rail-prewar so the rail order is
+###                         untouched. Same WA_AI_PC_air_force_needs_basing_priority gate as 300.
+###    300  air-basing      [equipment-selection] air bases queued by WA_AI_build_uk_air_hosting_capacity or
 ###                         WA_AI_build_theatre_air_bases *while* the builder (or a faction
 ###                         partner it hosts) fields an air force past
 ###                         WA_AI_PC_air_force_needs_basing_priority. Deliberately ABOVE the
@@ -286,26 +258,22 @@ WA_AI_PC_get_building_cost = {
 ###                         100 on its own once the air force shrinks back under the gate.
 ###    250  strategic       the three shortage-driven refinery families (WA_AI_CONSTRUCTION_queue_functions.txt)
 ###    100  default         everything else (radar, air bases at rest, supply lines, MIC/CIC, ...)
-### The rail bands still outrank everything (relative order unchanged); compression just keeps
-### the numbers in one auditable scale. Starvation itself is fixed by the overtake lane below,
-### NOT by aging priorities upward - a blanket aging boost was rejected because it would fund
-### geographically obsolete projects and bury new projects under aged debt.
+### Starvation is fixed by the overtake lane below, NOT by aging priorities upward - a blanket aging
+### boost was rejected: it funds geographically obsolete projects and buries new ones under aged debt.
 
 ### Dynamic Queue System - Assign factories to projects
 # THIS = country
 # Allocates available factories to projects from the top of the queue
 # Persistent outputs (resynced on every pass): WA_AI_PC_assigned_factories_total,
 # WA_AI_PC_active_projects, WA_AI_PC_active_nonrail_projects, and
-# WA_AI_PC_air_factories_assigned (Fix 38: civs actually assigned to air-base
+# WA_AI_PC_air_factories_assigned ([uk-air-basing] civs actually assigned to air-base
 # [building_type 2] slots this pass; read CROSS-COUNTRY by the allied air-base
 # builder gates in WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
 WA_AI_PC_assign_factories = {
-	# Fix 41: resumed-save migration - idempotent clamp of legacy pre-Fix-41 priorities.
-	# A save queued under the old 9999/5000 scale carries rails at 9999 (or 10998.9 with the
-	# x1.1 high-route multiplier) that would permanently outrank every new 1000-band rail.
-	# Anything above constant:wa_ai_pc.prio.legacy_max (1100, the highest value this build can write)
-	# is by definition legacy and is clamped to the rail-war band. One O(queue) loop, no-op
-	# on every pass after the first, and on fresh campaigns.
+	# [pc-queue] resumed-save migration - idempotent clamp of priorities written under the old
+	# 9999/5000 scale, which would permanently outrank every new 1000-band rail. Anything above
+	# constant:wa_ai_pc.prio.legacy_max (the highest value this build can write) is by definition
+	# legacy and is clamped to the rail-war band. One O(queue) loop, no-op after the first pass.
 	for_each_loop = { array = WA_AI_PC_queue value = _migr_proj_id
 		if = { limit = { check_variable = { WA_AI_PC_priority^_migr_proj_id > constant:wa_ai_pc.prio.legacy_max } }
 			set_variable = { WA_AI_PC_priority^_migr_proj_id = constant:wa_ai_pc.prio.rail_war }
@@ -316,12 +284,12 @@ WA_AI_PC_assign_factories = {
 	set_temp_variable = { available_factories_ = num_of_civilian_factories_available_for_projects }
 	add_to_temp_variable = { available_factories_ = WA_AI_PC_assigned_factories_total }
 
-	# Fix: break the self-referential decay loop. Once the vanilla construction queue absorbs all
-	# civs, num_of_civilian_factories_available_for_projects reads 0 and the recurrence becomes
-	# T(n+1) = 0.35 * T(n) - pure geometric decay to the clamp floor of 1 (observed: GER 100 -> 9
-	# -> 1 over 1943-45, stranding the whole queue). Floor the base at a fraction of TOTAL civilian
-	# factories - a number this system's own output cannot influence. Gated so a genuinely
-	# collapsing economy degrades to the old behaviour instead of reserving factories it can't spare.
+	# Breaks a self-referential decay loop: once the vanilla construction queue absorbs all civs,
+	# num_of_civilian_factories_available_for_projects reads 0, the recurrence becomes
+	# T(n+1) = fraction * T(n), and the pool decays geometrically to the clamp floor of 1, stranding
+	# the whole queue. Floor the base at a fraction of TOTAL civilian factories - a number this
+	# system's own output cannot influence. Gated so a genuinely collapsing economy degrades to the
+	# unfloored behaviour instead of reserving factories it cannot spare.
 	if = {
 		limit = {
 			check_variable = { WA_AI_PC_queue^num > 0 }
@@ -365,14 +333,11 @@ WA_AI_PC_assign_factories = {
 		set_variable = { WA_AI_PC_assigned_factories^_project_id = 0 }
 	}
 	set_temp_variable = { _new_total = 0 }
-	# Fix 38: persistent per-country output - civilian factories assigned to air-base
-	# (building_type 2) projects this pass. Read cross-country ("is the host actually
-	# funding air bases?") by WA_AI_build_uk_air_hosting_capacity and
-	# WA_AI_build_theatre_air_bases, so it must be a real variable, not a temp. An
-	# unset read is 0 = "not funding", which fails open toward the rich ally stepping
-	# in. Rewritten on every pass for every AI country reaching this effect (weekly
-	# on_action, is_ai = yes + has_capitulated = no; also the mid-week completion and
-	# railway recursion paths).
+	# [uk-air-basing] persistent per-country output - civilian factories assigned to air-base
+	# (building_type 2) projects this pass. Read CROSS-COUNTRY ("is the host actually funding air
+	# bases?") by the two air-base builders in ..._strategies.txt, so it must be a real variable,
+	# not a temp. An unset read is 0 = "not funding", which fails open toward the ally stepping in.
+	# Rewritten on every pass for every AI country reaching this effect.
 	set_variable = { WA_AI_PC_air_factories_assigned = 0 }
 
 	# Sort queue by priority (descending - highest priority first)
@@ -433,33 +398,31 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
-	# Fix 41: anti-starvation OVERTAKE LANE - runs BEFORE the winner-takes-most fill.
-	# The single most-starved project (highest WA_AI_PC_stall_weeks, and at least
+	# [pc-queue] anti-starvation OVERTAKE LANE - runs BEFORE the winner-takes-most fill.
+	# The single most-starved project (highest WA_AI_PC_stall_weeks, at least
 	# constant:wa_ai_pc.alloc.aging_lane_weeks of them) is revalidated (WA_AI_PC_project_still_relevant,
-	# WA_AI_CONSTRUCTION_triggers.txt); if still relevant it is served min(20, pool)
-	# factories ahead of the sorted fill. If revalidation FAILS the project is cancelled
-	# on the spot (same machinery as the Fix 34 stall sweep, so all queue bookkeeping
-	# stays coherent) and the next-most-starved candidate is tried, at most
-	# constant:wa_ai_pc.alloc.aging_lane_max_candidates per pass.
+	# WA_AI_CONSTRUCTION_triggers.txt); if still relevant it is served min(20, pool) factories ahead
+	# of the sorted fill. If revalidation FAILS the project is cancelled on the spot (same machinery
+	# as the stall sweep, so queue bookkeeping stays coherent) and the next-most-starved candidate
+	# is tried, at most constant:wa_ai_pc.alloc.aging_lane_max_candidates per pass.
 	#
 	# Invariants:
 	#   - at most ONE project is overtaking at any time, and it diverts at most 20 factories;
 	#   - a served project gets assigned_factories > 0, so the weekly stall maintenance in
 	#     WA_AI_PC_update_project_progress resets its stall_weeks to 0 and it LEAVES the lane
 	#     (the next-most-starved project becomes eligible on a later week);
-	#   - empty pool => the selection block is skipped => empty lane => the Fix 34 stall
-	#     sweep keeps its week-25 backstop role unchanged;
-	#   - candidates must pass the same target-valid / progress / friendly-controller tests
-	#     as the fill: a project frozen on hostile-controlled ground (Fix 34) is NOT lane
-	#     material - it is deliberately left to recapture-or-sweep, not cancelled early.
+	#   - empty pool => the selection block is skipped => empty lane => the stall sweep keeps its
+	#     backstop role unchanged;
+	#   - candidates must pass the same target-valid / progress / friendly-controller tests as the
+	#     fill: a project frozen on hostile-controlled ground is NOT lane material - it is left to
+	#     recapture-or-sweep, not cancelled early.
 	#
 	# Re-entry policy: candidate SELECTION (and its revalidation cost) runs only on the first
-	# assign_factories call of the weekly effect chain - the main weekly pass - latched by the
-	# chain-persistent temp _pc_lane_selected_ (temp variables persist across nested scripted-
-	# effect calls within one execution chain; see WA_AI_PC_get_new_project_ID). The GRANT is
-	# re-applied on every re-entry (cleanup / mid-week completion / stall sweep re-call
-	# assign_factories, which resets all assignments), otherwise the first re-entry would
-	# silently strip the laned project back to 0 factories and void the week.
+	# assign_factories call of the weekly effect chain, latched by the chain-persistent temp
+	# _pc_lane_selected_ (temp variables persist across nested scripted-effect calls within one
+	# execution chain; see WA_AI_PC_get_new_project_ID). The GRANT is re-applied on every re-entry
+	# (cleanup / mid-week completion / stall sweep all re-call assign_factories, which resets all
+	# assignments), otherwise the first re-entry strips the laned project back to 0 and voids the week.
 	if = { limit = { NOT = { check_variable = { _pc_lane_selected_ = 1 } } }
 		set_temp_variable = { _pc_lane_selected_ = 1 }
 		set_temp_variable = { _pc_lane_proj_ = -1 }
@@ -488,8 +451,8 @@ WA_AI_PC_assign_factories = {
 							NOT = { check_variable = { WA_AI_PC_stall_weeks^_lane_scan_ < constant:wa_ai_pc.alloc.aging_lane_weeks } }
 							NOT = { check_variable = { WA_AI_PC_target_state^_lane_scan_ = 0 } }
 							check_variable = { WA_AI_PC_progress^_lane_scan_ > 0 }
-							# same Fix 34 controller test as the fill below - hostile-frozen
-							# projects wait for recapture or the sweep, never the lane
+							# same controller test as the fill below - hostile-frozen projects
+							# wait for recapture or the sweep, never the lane
 							var:WA_AI_PC_target_state^_lane_scan_ = {
 								CONTROLLER = {
 									OR = {
@@ -536,7 +499,7 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
-	# Fix 41: lane GRANT - every pass, so re-entries do not strip the laned project.
+	# [pc-queue] lane GRANT - every pass, so re-entries do not strip the laned project.
 	# Re-checks the project is still live (it may have completed mid-week, which is
 	# exactly what triggers a re-entry). Control cannot flip inside one effect chain,
 	# so the selection-time controller test is not repeated here.
@@ -554,7 +517,7 @@ WA_AI_PC_assign_factories = {
 		set_variable = { WA_AI_PC_assigned_factories^_pc_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
 		subtract_from_temp_variable = { available_factories_ = assign_amount }
-		# Fix 38 accumulator: the laned project counts toward the air share like any other
+		# [uk-air-basing] accumulator: the laned project counts toward the air share like any other
 		if = { limit = { check_variable = { WA_AI_PC_building_type^_pc_lane_proj_ = 2 } }
 			add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
 		}
@@ -570,33 +533,24 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
-	# Fix 78: AIR-BASING RESERVATION LANE - one slot for the air-basing band, ahead of the
-	# rail fill, only while WA_AI_PC_air_basing_reserve is set (30-day flag, refreshed by
+	# [pc-queue] AIR-BASING RESERVATION LANE - one slot for the air-basing band, ahead of the rail
+	# fill, only while WA_AI_PC_air_basing_reserve is set (30-day flag, refreshed by
 	# WA_AI_build_uk_air_hosting_capacity's deficit branch and by nothing else).
-	#
-	# The starvation this exists for, measured on campaign be18f9c7: ENG's band-300 air-base
-	# projects held 0 factories in 20 of 30 sampled months of 1942.1-1944.6 (and its
-	# dbg_started counter froze at 17 for nine straight months), because the sorted fill
-	# spends the whole pool on band-1000 rails and the Fix 41 lane serves ONE project a week
-	# across the entire queue - a starving air project waits ~12+ weeks for its lane turn.
-	# The single month ENG's rail queue was short (1943.5, one rail queued), its air projects
-	# got 53 factories - the pool was never the constraint, the ordering was. Meanwhile the
-	# 3-slot UK budget stayed occupied by the unfunded projects, so no new sites could be
-	# queued either: funding starvation and ordering throughput are the same defect.
-	#
-	# Why not raise the air band above rail instead: the Fix 41 band table deliberately keeps
-	# rail-war above air-basing (the livelock that table fixed must stay fixed). A reservation
-	# of at most ONE 20-civ slot leaves the band order intact for everything else, mirrors the
-	# proven Fix 41 lane machinery (chain-latched selection, per-pass re-grant), and
-	# self-releases within 30 days of the deficit closing.
-	#
-	# Selection: first type-2 project above the strategic band (priority > 250) in the
-	# already-sorted queue = the highest-priority air-basing project. Same liveness and
-	# Fix 34 controller tests as the fill; skips the Fix 41 lane's pick (already served).
+	# The starvation it exists for: the sorted fill spends the whole pool on band-1000 rails, and
+	# the overtake lane above serves ONE project a week across the entire queue, so a band-300 air
+	# project waits 12+ weeks for its turn while its unfunded projects also occupy the strategy's
+	# concurrent-project budget - funding starvation and ordering throughput are one defect.
+	# Why not raise the air band above rail instead: the band table deliberately keeps rail-war on
+	# top (the livelock it fixed must stay fixed). A reservation of at most ONE 20-civ slot leaves
+	# the band order intact for everything else, reuses the overtake lane's machinery (chain-latched
+	# selection, per-pass re-grant), and self-releases within 30 days of the deficit closing.
+	# Selection: first type-2 project above the strategic band (priority > 250) in the already-sorted
+	# queue = the highest-priority air-basing project. Same liveness and controller tests as the
+	# fill; skips the overtake lane's pick (already served).
 	if = { limit = { NOT = { check_variable = { _pc_air_lane_selected_ = 1 } } }
 		set_temp_variable = { _pc_air_lane_selected_ = 1 }
 		set_temp_variable = { _pc_air_lane_proj_ = -1 }
-		# Fix 87 / P1: second slot, only while the published UK air deficit is deep
+		# [uk-air-basing] / P1: second slot, only while the published UK air deficit is deep
 		set_temp_variable = { _pc_air_lane2_proj_ = -1 }
 		set_temp_variable = { _pc_air_lane2_open_ = 0 }
 		if = { limit = { check_variable = { WA_AI_PC_air_deficit_pct > constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct } }
@@ -645,9 +599,9 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
-	# Fix 78: reservation GRANT - every pass, same re-entry contract as the Fix 41 grant
-	# above (a re-entry resets all assignments; without the re-grant the reserved project
-	# would be silently stripped back to 0 and the week voided).
+	# [pc-queue] reservation GRANT - every pass, same re-entry contract as the overtake grant above
+	# (a re-entry resets all assignments; without the re-grant the reserved project is silently
+	# stripped back to 0 and the week voided).
 	if = {
 		limit = {
 			NOT = { check_variable = { _pc_air_lane_proj_ < 0 } }
@@ -662,18 +616,18 @@ WA_AI_PC_assign_factories = {
 		set_variable = { WA_AI_PC_assigned_factories^_pc_air_lane_proj_ = assign_amount }
 		add_to_temp_variable = { _new_total = assign_amount }
 		subtract_from_temp_variable = { available_factories_ = assign_amount }
-		# Fix 38 accumulator: type 2 by construction of the selection above
+		# [uk-air-basing] accumulator: type 2 by construction of the selection above
 		add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
 		# tlm: r8_air_lane_grants / _first_t / _last_t - counter + stamp, ONLY when the
 		# reservation actually assigned >= 1 factory (the set_variable above is the verified
 		# effect); latched so re-entry re-grants of the same weekly grant are not recounted,
-		# same shape as pc_aging_grants - consumer: checklist R8 (Fix 78 leg). Retire with it.
+		# same shape as pc_aging_grants - consumer: checklist R8 (lane leg). Retire with it.
 		if = { limit = { NOT = { check_variable = { _pc_air_lane_counted_ = 1 } } }
 			set_temp_variable = { _pc_air_lane_counted_ = 1 }
 			add_to_variable = { WA_TLM_r8_air_lane_grants = 1 }
 			# _first_t is stamped once (0 = never granted; the clock is >= 1 from 1936.2, so the
-			# init value cannot collide with a real reading). R8 Fix-78 leg asks WHEN the lane
-			# started funding against ENG's 1942.1-1944.6 deficit window, not just how often.
+			# init value cannot collide with a real reading) - R8 asks WHEN the lane started
+			# funding against the deficit window, not just how often.
 			if = { limit = { check_variable = { WA_TLM_r8_air_lane_first_t = 0 } }
 				set_variable = { WA_TLM_r8_air_lane_first_t = global.WA_TLM_clock }
 			}
@@ -684,7 +638,7 @@ WA_AI_PC_assign_factories = {
 		}
 	}
 
-	# Fix 87 / P1: SECOND air-lane grant - same body as the first, for _pc_air_lane2_proj_.
+	# [uk-air-basing] / P1: SECOND air-lane grant - same body as the first, for _pc_air_lane2_proj_.
 	# Only exists while WA_AI_PC_air_deficit_pct > constant:wa_ai_pc.alloc.air_lane_2nd_slot_pct (selection above).
 	if = {
 		limit = {
@@ -717,28 +671,27 @@ WA_AI_PC_assign_factories = {
 	}
 
 	# Assign to projects from top of queue
-	# Fix 41: the laned project (_pc_lane_proj_, -1 when no lane) is excluded - it was
+	# [pc-queue] the laned project (_pc_lane_proj_, -1 when no lane) is excluded - it was
 	# already served above and must not be double-assigned (the set_variable here would
 	# otherwise overwrite its grant and double-count it in _new_total).
-	# Fix 78: the air-reservation project is excluded for the same reason.
+	# [pc-queue] the air-reservation project is excluded for the same reason.
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id break = _assign_break
 		if = {
 			limit = {
 				check_variable = { available_factories_ > 0 }
 				NOT = { check_variable = { _project_id = _pc_lane_proj_ } }
 				NOT = { check_variable = { _project_id = _pc_air_lane_proj_ } }
-				NOT = { check_variable = { _project_id = _pc_air_lane2_proj_ } }	# Fix 87
+				NOT = { check_variable = { _project_id = _pc_air_lane2_proj_ } }	# [uk-air-basing]
 				# Check state is still valid
 				NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } }
 				# Check progress remaining
 				check_variable = { WA_AI_PC_progress^_project_id > 0 }
-				# Fix 34: never feed factories to a project whose target state is hostile-controlled.
-				# WA_AI_PC_complete_project_by_id refuses to spawn the building there anyway, so
-				# every civ-week spent was pure waste (observed: ROM air base in lost state 143,
-				# campaign 2b607968). Progress freezes instead; the stall counter then ages the
-				# project into the sweep below, and a recapture within the window resumes the
-				# build with progress intact. Same controller test as the completion path
-				# (ROOT = builder country in every call chain - weekly on_action and recursion).
+				# [pc-queue] never feed factories to a project whose target state is hostile-controlled:
+				# WA_AI_PC_complete_project_by_id refuses to spawn the building there, so every
+				# civ-week spent is pure waste. Progress freezes instead, the stall counter ages the
+				# project into the sweep below, and a recapture within the window resumes the build
+				# with progress intact. Same controller test as the completion path (ROOT = builder
+				# country in every call chain - weekly on_action and recursion).
 				var:WA_AI_PC_target_state^_project_id = {
 					CONTROLLER = {
 						OR = {
@@ -758,7 +711,7 @@ WA_AI_PC_assign_factories = {
 			set_variable = { WA_AI_PC_assigned_factories^_project_id = assign_amount }
 			add_to_temp_variable = { _new_total = assign_amount }
 			subtract_from_temp_variable = { available_factories_ = assign_amount }
-			# Fix 38: accumulate the air-base share of the assignment (see reset above)
+			# [uk-air-basing] accumulate the air-base share of the assignment (see reset above)
 			if = { limit = { check_variable = { WA_AI_PC_building_type^_project_id = 2 } }
 				add_to_variable = { WA_AI_PC_air_factories_assigned = assign_amount }
 			}
@@ -786,20 +739,15 @@ WA_AI_PC_assign_factories = {
 	# Update total only once at the end, then force single modifier update
 	set_variable = { WA_AI_PC_assigned_factories_total = _new_total }
 
-	# Resync the strategy-gate counter with reality: WA_AI_PC_active_projects is maintained by
-	# +1/-1 bookkeeping with no reconciliation, and a desync (e.g. the debug queue-clear path)
-	# permanently opens or closes every < 5 strategy gate.
+	# Resync the counter with reality: WA_AI_PC_active_projects is maintained by +1/-1 bookkeeping
+	# with no reconciliation, and a desync (e.g. the debug queue-clear path) is permanent.
 	set_variable = { WA_AI_PC_active_projects = WA_AI_PC_queue^num }
 
-	# Fix 29b companion: non-railway count for the strategy gates. Railways queue up to 5
-	# segments per route at top priority; counting them against the < 5 gate permanently
-	# blocked all radar/refinery/supply-line work for any country with a railway corridor
-	# queued (observed on ENG and JAP for most of the campaign).
-	# Fix 30: naval bases (type 14) are queued exclusively by the railway system (port
-	# upgrades, frontier ports) and are excluded for the same reason - an archipelago power
-	# like JAP otherwise holds the < 5 gate permanently shut with port projects.
-	# Fix 95: supply hubs (type 17) are likewise queued only by the railway pass (theatre
-	# corridor depots) and are excluded for the same reason.
+	# [railway-landwar] companion non-railway count, for readers that must not see railway work as
+	# ordinary queue load. Railways queue up to 5 segments per route at top priority; naval bases
+	# (type 14) are queued exclusively by the railway system (port upgrades, frontier ports); and
+	# [na-corridor] supply hubs (type 17) only by the railway pass (theatre corridor depots). All
+	# three are excluded so a country with a corridor queued does not read as fully occupied.
 	# Must stay in sync with the two +1/-1 bookkeeping sites below (start/end project).
 	set_temp_variable = { _nonrail_count = 0 }
 	for_each_loop = { array = WA_AI_PC_queue value = _count_proj_id
@@ -987,16 +935,14 @@ WA_AI_PC_update_project_progress = {
 		}
 	}
 
-	# Stall sweep: a project that ends week after week with 0 assigned factories is being starved
-	# by higher-priority queue entries. Left alone it blocks the queue forever (the < 5 strategy
-	# gate counts it as active). Cancel after constant:wa_ai_pc.alloc.stall_cancel_weeks starved weeks.
-	# Fix 34: gate on factories actually flowing (assigned total > 0), not on queue length > 5.
-	# The old queue gate assumed a short queue drains and the starved project gets its turn -
-	# false when the railway system replenishes prio-9999 segments every cycle (observed: ROM,
-	# queue of 4, two projects starved 17+ weeks, campaign 2b607968). It also allowed 5 starved
-	# nonrail projects to lock every < 5 strategy gate shut with the sweep unable to fire.
-	# Total = 0 (economic collapse / full occupation) still cancels nothing: no project is
-	# being outranked when nobody gets factories, so starvation proves nothing there.
+	# Stall sweep: a project that ends week after week with 0 assigned factories is being starved by
+	# higher-priority queue entries, and left alone it occupies its strategy's budget forever.
+	# Cancel after constant:wa_ai_pc.alloc.stall_cancel_weeks starved weeks.
+	# [pc-queue] the gate is factories actually FLOWING (assigned total > 0), not queue length: a
+	# queue-length gate assumes a short queue drains and the starved project gets its turn, which is
+	# false while the railway system replenishes top-priority segments every cycle.
+	# Total = 0 (economic collapse / full occupation) cancels nothing: no project is being outranked
+	# when nobody gets factories, so starvation proves nothing there.
 	clear_temp_array = _cancel_projects_IDS
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id
 		if = {
@@ -1043,7 +989,7 @@ WA_AI_PC_complete_project_by_id = {
 		set_variable = { WA_AI_PC_project_type = _project_id }
 
 		# Check if this building type can be built in allied territory
-		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway, 14=naval_base, 17=supply_node (Fix 95,
+		# Types: 1=infra, 2=airbase, 3=AA, 4=radar, 13=railway, 14=naval_base, 17=supply_node ([na-corridor],
 		# allied_build = yes in 00_buildings.txt)
 		set_temp_variable = { _can_build_in_allied = 0 }
 		if = {
@@ -1099,13 +1045,10 @@ WA_AI_PC_complete_project_by_id = {
 			}
 			# tlm: pc_refused_n / pc_refused_ctrl_n - counters, one per project that reached
 			# progress <= 0 (fully PAID FOR) and was then denied its building by the two tests
-			# above, after which WA_AI_PC_end_project_by_id discards it anyway. These are the
-			# silent failure the whole system had no fingerprint for: from outside, a refused
-			# project is indistinguishable from one that completed. The _ctrl_n subset repeats
-			# each branch's OWN controller test so the split is exact - a strategic building
-			# refused on allied ground is a slot problem, while a factory-type building on the
-			# same ground is a control problem - and the remainder (_refused_n - _refused_ctrl_n)
-			# is therefore "friendly ground, no free building slot".
+			# above, after which WA_AI_PC_end_project_by_id discards it anyway. From outside, a
+			# refused project is otherwise indistinguishable from one that completed. The _ctrl_n
+			# subset repeats each branch's OWN controller test so the split is exact, and the
+			# remainder (_refused_n - _refused_ctrl_n) is "friendly ground, no free building slot".
 			# Runs only on refusals, so the duplicated trigger costs nothing in the common case.
 			# consumer: standing (the PC termination ledger)
 			else = {
@@ -1147,8 +1090,8 @@ WA_AI_PC_end_project_by_id = {
 	# Remove from queue
 	remove_from_array = { array = WA_AI_PC_queue value = _project_id }
 	subtract_from_variable = { WA_AI_PC_active_projects = 1 }
-	# Fix 30: types 13 AND 14 excluded from the nonrail gate counter (must match the resync
-	# in WA_AI_PC_assign_factories and the increment in WA_AI_PC_start_project); Fix 95 adds 17.
+	# [railway-landwar] types 13 AND 14 excluded from the nonrail gate counter (must match the resync
+	# in WA_AI_PC_assign_factories and the increment in WA_AI_PC_start_project); [na-corridor] adds 17.
 	if = {
 		limit = {
 			NOT = {
@@ -1164,13 +1107,12 @@ WA_AI_PC_end_project_by_id = {
 	# Factory total is recalculated by WA_AI_PC_assign_factories after all completions
 
 	# Remove from state tracking (per-country array stores project IDs)
-	# Fix 46: the builder-agnostic counter added by WA_AI_PC_start_project is decremented in
-	# the same block, through the same var: accessor, so the pair can never desync. Read the
-	# type into a temp FIRST - building_type is cleared a few lines below, and an indexed
-	# variable cannot be resolved from inside the state scope once it is gone. The > 0 guard
-	# makes this idempotent and safe on saves resumed from a pre-Fix-46 build, where in-flight
-	# projects were queued without an increment and would otherwise drive the counter negative
-	# (a negative counter reads as "no project here" and would silently disable the guard).
+	# [uk-air-basing] the builder-agnostic counter added by WA_AI_PC_start_project is decremented
+	# here, through the SAME var: accessor, so the pair can never desync. Read the type into a temp
+	# FIRST - building_type is cleared a few lines below, and an indexed variable cannot be resolved
+	# from inside the state scope once it is gone. The > 0 guard makes this idempotent and safe on
+	# resumed saves whose in-flight projects were queued without an increment, which would otherwise
+	# drive the counter negative (negative reads as "no project here" and disables the guard).
 	set_temp_variable = { _pc_end_btype_ = WA_AI_PC_building_type^_project_id }
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } } }
 		var:WA_AI_PC_target_state^_project_id = {
@@ -1229,27 +1171,18 @@ WA_AI_PC_validate_queued_provincial_projects = {
 			}
 			add_to_temp_array = { _cancel_projects_IDS = _project_id }
 			# tlm: pc_stale_n - counter, one per queued project cancelled because its target
-			# province left the strategy's current valid path set (railway routes, type 13 via
-			# Fix 50). Same verified-effect argument as pc_sweep_n: the WA_AI_PC_cancel_projects
-			# call below ends every id added here.
+			# province left the strategy's current valid path set (railway routes, type 13).
+			# Same verified-effect argument as pc_sweep_n: the WA_AI_PC_cancel_projects call
+			# below ends every id added here. It exists to separate this validator from the
+			# stall sweep as a cause of railway-queue collapse - read pc_stale_n against
+			# pc_sweep_n, never assume either.
 			#
-			# WHY THIS COUNTER EXISTS, stated without prejudging the answer (corrected
-			# 2026-08-15): GER's railway queue fell 80 -> 24 -> 2 across 1944.6-1945.2 on
-			# campaign be18f9c7 and the aging lane did not do it (wa_tlm_pc_aging_reval_cancels
-			# was FROZEN at 64 across the collapse). Two candidates remain and the shipped
-			# comments used to assert BOTH: the 30-week stall sweep (WA_AI_PC_QUEUE_FAIRNESS_
-			# DIAGNOSIS.md §2.1 argues the terminal cohort died there, and rebuts the "stall
-			# pinned at 26" reading as a monthly-sampling artefact) and this stale-path
-			# validator. `pc_sweep_n` and `pc_stale_n` exist precisely to separate them on the
-			# NEXT campaign - do not read either comment as the established cause.
-			#
-			# WATCH ITEM, because Fix 77 widened this path: the skip gate now opens on the
-			# LIVE queue count, so this validator runs on far more pulses, against a queue at
-			# its admission cap. If a pulse recomputes routes that miss the half-built
-			# segments, they are cancelled and their paid-for progress is discarded; and if
-			# every WA_AI_PATHFIND_PROV_get_path fails, `_valid_provinces` is EMPTY and this
-			# block cancels 100% of type-13 projects in one call. A pc_stale_n spike that
-			# tracks a type-13 collapse is that scenario, not evidence about 1944.
+			# WATCH ITEM: the skip gate opens on the LIVE queue count, so this validator runs on
+			# many pulses against a queue at its admission cap. If a pulse recomputes routes that
+			# miss the half-built segments they are cancelled and their paid-for progress is
+			# discarded; and if every WA_AI_PATHFIND_PROV_get_path fails, `_valid_provinces` is
+			# EMPTY and this block cancels 100% of type-13 projects in one call. A pc_stale_n
+			# spike tracking a type-13 collapse is that scenario.
 			# consumer: standing (the PC termination ledger)
 			add_to_variable = { WA_TLM_pc_stale_n = 1 }
 		}
@@ -1274,15 +1207,14 @@ WA_AI_PC_add_finished_building_by_id = {
 
 	# tlm: pc_built_n / pc_built_by_type - counters, one per building this system actually
 	# spawns. THIS = state, ROOT = builder, so both are written on the builder country.
-	# The 1..17 guard is not a formality: it is exactly the range the ladder below covers,
-	# so the counter increments if and only if one of its add_building_construction /
-	# build_railway branches fires. An out-of-range _build_type falls through the whole
-	# ladder silently and must not be counted as a build (honesty rule 1 - verified effect,
-	# never code-path entry). Fix 95 widened 16 -> 17 together with the supply_node branch.
-	# pc_built_by_type is INDEXED by the building type code, which makes "did the air bases
-	# ever actually finish" one read instead of sixteen metrics. Absence of an index means
-	# this country has never completed that type - unambiguous, because the family's
-	# presence witness is the zero-initialised pc_built_n beside it.
+	# The 1..17 guard is not a formality: it is exactly the range the ladder below covers, so the
+	# counter increments if and only if one of its add_building_construction / build_railway
+	# branches fires. An out-of-range _build_type falls through the whole ladder silently and must
+	# not be counted as a build (honesty rule 1 - verified effect, never code-path entry); widen the
+	# guard whenever a branch is added. pc_built_by_type is INDEXED by the building type code, so
+	# "did the air bases ever actually finish" is one read. Absence of an index means this country
+	# never completed that type - unambiguous, because the zero-initialised pc_built_n beside it is
+	# the family's presence witness.
 	# consumer: standing (the PC termination ledger; the success half of it)
 	if = {
 		limit = {
@@ -1384,7 +1316,7 @@ WA_AI_PC_add_finished_building_by_id = {
 		}
 	}
 	else_if = { limit = { check_variable = { _build_type = 17 } }
-		# Fix 95: supply hub (supply_node) at the stored province - same province-keyed idiom as
+		# [na-corridor] supply hub (supply_node) at the stored province - same province-keyed idiom as
 		# the naval-base branch above. Level 1 only: supply_node has a single level.
 		set_temp_variable = { _hub_prov = ROOT.WA_AI_PC_target_province^_project_id }
 
@@ -1407,17 +1339,12 @@ WA_AI_PC_add_finished_building_by_id = {
 }
 
 ### projects
-# (Fix 90: the two constants that used to be declared here - @AI_MAX_FRACTION_OF_FACTORIES_TO_ASSIGN_ON_PROJECTS_TOTAL
-#  0.35 and constant:wa_ai_pc.alloc.max_civs_per_project 20 - were unused in this file and out of step with
-#  constant:wa_ai_pc.alloc.fraction above. They belonged to the pre-2026-01 admission gate WA_AI_PC_can_afford_project,
-#  deleted by Fix 90b the same day (epitaph in WA_AI_CONSTRUCTION_triggers.txt); the fraction lives on there
-#  under the name constant:wa_ai_pc.alloc.fraction, registered in tools/constants_registry.json.)
 
 ### Dynamic Queue System - Start Project
 # THIS = state, PREV = builder country
 # Input: _project_building_type, _project_province_id, _project_connect_id,
 #        _project_priority, _project_queue_num, _project_queue_max, _project_target_level, _project_type_id
-# Optional input: _project_queue_max_scoped (Fix 47) - see the latch immediately below
+# Optional input: _project_queue_max_scoped ([equipment-selection]) - see the latch immediately below
 # Creates projects and adds them to the dynamic queue
 WA_AI_PC_start_project = {
 	# Debug: log entry
@@ -1425,47 +1352,35 @@ WA_AI_PC_start_project = {
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC START_PROJECT ENTRY: type=[?_project_building_type] state=[PREV.GetName] prov=[?_project_province_id]->[?_project_connect_id]"
 	} }
 
-	# Fix 47: OPT-IN queue_max scoping, latched and immediately cleared.
-	#
-	# By default _project_queue_max is a country-wide budget over the BUILDING TYPE
-	# (queued_amount_ below counts every queued project of the same type, whatever
-	# created it). For building type 2 that put two unrelated strategies on one
-	# 3-slot budget: WA_AI_build_uk_air_hosting_capacity and WA_AI_build_theatre_air_bases
-	# compete first-come-first-served, and campaign 911bed3c caught the consequence -
-	# both of ENG's air slots held Pacific theatre projects at 1943.6 (the exact pulse
-	# the UK deficit reopened), and all three USA slots were non-UK at 1945.6. Fix 47's
-	# priority band cannot arbitrate this: UK and theatre air bases now sit in the SAME
-	# band, so only the slot budget decides. Setting _project_queue_max_scoped = 1 makes
-	# queue_max count only projects carrying the caller's own _project_type_id, giving
-	# each strategy an independent budget.
-	#
-	# CLEAR-ON-READ on the opt-in switch only. It is a shared temp that persists across the
-	# whole execution chain, and this codebase has already been bitten by exactly that:
-	# WA_AI_CONSTRUCTION_queue_functions.txt:681-689 records refinery projects inheriting
-	# "3 from the two air strategies, 5 from the railway core, 0 from the railway helpers"
-	# because they set _project_queue_num but not _project_queue_max. Latching the switch and
-	# zeroing the original means the 30 call sites that never set it CANNOT inherit an
-	# opted-in state - unscoped stays structurally the default.
-	#
-	# _project_type_id is deliberately NOT cleared the same way. It is still an input below:
-	# the scoped queue budget compares it at :1194 and the new project persists it at :1281.
-	# Clearing it here would strip the caller's tag before either use, collapsing the independent
-	# type-20/type-21 air budgets back together. Callers that introduce a private tag retire it
-	# caller-side. Fix 50 separately pins railway stale-project validation to type 13, so a port
-	# helper's type-14 tag can no longer redirect that validator.
+	# [equipment-selection] OPT-IN queue_max scoping, latched and immediately cleared.
+	# By default _project_queue_max is a country-wide budget over the BUILDING TYPE (queued_amount_
+	# below counts every queued project of the same type, whatever created it), which puts two
+	# unrelated type-2 strategies on ONE budget competing first-come-first-served - and the priority
+	# band cannot arbitrate, because UK and theatre air bases sit in the same band. Setting
+	# _project_queue_max_scoped = 1 makes queue_max count only projects carrying the caller's own
+	# _project_type_id, giving each strategy an independent budget.
+	# CLEAR-ON-READ on the opt-in switch only: it is a shared temp that persists across the whole
+	# execution chain, and this codebase has already been bitten by exactly that (refinery projects
+	# inheriting a queue_max from the air strategies and the railway core because they set
+	# _project_queue_num but not _project_queue_max - see WA_AI_CONSTRUCTION_queue_functions.txt).
+	# Latching the switch and zeroing the original means the ~30 call sites that never set it CANNOT
+	# inherit an opted-in state; unscoped stays structurally the default.
+	# _project_type_id is deliberately NOT cleared the same way - it is still an input below (the
+	# scoped budget compares it, and the new project persists it). Clearing it here would strip the
+	# caller's tag before either use and collapse the independent air budgets back together. Callers
+	# that introduce a private tag retire it caller-side. Railway stale-project validation is pinned
+	# to type 13 separately, so a port helper's type-14 tag cannot redirect that validator.
 	set_temp_variable = { _qmax_scoped_ = _project_queue_max_scoped }
 	set_temp_variable = { _project_queue_max_scoped = 0 }
 
-	# Validate location is controlled.
-	# Fix 103: the three terms that used to be inline here are now the scripted trigger
-	# WA_AI_PC_state_controller_allows_admission (WA_AI_CONSTRUCTION_triggers.txt) - same terms, same
-	# order, THIS = state and ROOT = builder exactly as before. It was named because two other places
-	# have to agree with it and could only do so by copying it: the corridor's province-scoped
-	# selector (WA_AI_PC_is_corridor_side_holder) and the WA_TLM_r103_corridor_blocked_n probe that
-	# counts the segments THIS gate refuses. A copy kept in sync by a comment is not a mechanism.
-	# Do NOT fold the four validity tests in this file (:494 lane, :627 air lane, :743 fill, :1069
-	# completion) into the same trigger: they deliberately carry a fourth term,
-	# `ROOT = { is_subject_of = PREV }`. selector <= admission <= validity - see the trigger header.
+	# Validate location is controlled: WA_AI_PC_state_controller_allows_admission
+	# (WA_AI_CONSTRUCTION_triggers.txt), THIS = state, ROOT = builder. [na-corridor] named it because
+	# two other places must AGREE with it and could otherwise only copy it - the corridor's
+	# province-scoped selector (WA_AI_PC_is_corridor_side_holder) and the
+	# WA_TLM_r103_corridor_blocked_n probe that counts the segments THIS gate refuses.
+	# Do NOT fold the four validity tests in this file (overtake lane, air lane, fill, completion)
+	# into the same trigger: they deliberately carry a fourth term, `ROOT = { is_subject_of = PREV }`.
+	# selector <= admission <= validity - see the trigger header.
 	if = {
 		limit = { WA_AI_PC_state_controller_allows_admission = yes }
 
@@ -1477,14 +1392,12 @@ WA_AI_PC_start_project = {
 
 			# Get current queued amount for this building type (for queue_max check)
 			# Also check for province-level duplicates (naval bases, supply hubs, etc.)
-			# Fix 37: resolve THIS state's id up front so the loop below can also count
-			# same-type projects targeting THIS state only (_queued_here_). The
-			# target-level test must use the per-state count: the old country-wide
-			# queued_amount_ made 3 queued UK air-base projects read as +3 levels on an
-			# unrelated Pacific candidate state and reject it (campaign 31eaf7e6).
-			# queued_amount_ itself stays country-wide - that is the intended semantic
-			# of the queue_max per-country budget. Same state-id resolution idiom as
-			# the target-state fallback further down.
+			# [uk-air-basing] resolve THIS state's id up front so the loop below can also count
+			# same-type projects targeting THIS state only (_queued_here_). The target-level test
+			# MUST use the per-state count: a country-wide queued_amount_ makes N queued air-base
+			# projects anywhere read as +N levels on an unrelated candidate state and reject it.
+			# queued_amount_ itself stays country-wide - that is the queue_max budget's semantic.
+			# Same state-id resolution idiom as the target-state fallback further down.
 			set_temp_variable = { _level_check_state_ = _project_target_state }
 			if = { limit = { NOT = { check_variable = { _level_check_state_ > 0 } } }
 				PREV = {
@@ -1497,20 +1410,18 @@ WA_AI_PC_start_project = {
 			set_temp_variable = { _province_already_queued = 0 }
 			for_each_loop = { array = WA_AI_PC_queue value = _check_proj_id
 				if = { limit = { check_variable = { WA_AI_PC_building_type^_check_proj_id = _project_building_type } }
-					# Fix 47: queued_amount_ backs the queue_max budget. Unscoped (default) it
-					# stays a country-wide count over the building type - unchanged semantics
-					# for every existing caller. Scoped, it counts only projects tagged with
-					# the caller's own type_id, so two strategies sharing a building type get
-					# independent budgets. _queued_here_ and the province-duplicate test below
-					# are deliberately NOT scoped: those guard against building twice in one
-					# place, which is wrong no matter which strategy queued the other project.
+					# [equipment-selection] queued_amount_ backs the queue_max budget: unscoped it is a
+					# country-wide count over the building type, scoped it counts only projects
+					# tagged with the caller's own type_id. _queued_here_ and the province-duplicate
+					# test below are deliberately NOT scoped - they guard against building twice in
+					# one place, which is wrong whichever strategy queued the other project.
 					if = {
 						limit = {
 							OR = {
 								NOT = { check_variable = { _qmax_scoped_ = 1 } }
 								check_variable = { WA_AI_PC_type_id^_check_proj_id = _project_type_id }
 							}
-							# Fix 87b (a): a project frozen on ENEMY-controlled ground (Fix 34) does
+							# [uk-air-basing] (a): a project frozen on ENEMY-controlled ground does
 							# not hold a budget slot. Same controller test as the fill; state-keyed
 							# projects only (target_state 0 = province project, unchanged).
 							OR = {
@@ -1529,7 +1440,7 @@ WA_AI_PC_start_project = {
 						}
 						add_to_temp_variable = { queued_amount_ = 1 }
 					}
-					# Fix 37: per-state count for the target-level test
+					# [uk-air-basing] per-state count for the target-level test
 					if = { limit = { check_variable = { WA_AI_PC_target_state^_check_proj_id = _level_check_state_ } }
 						add_to_temp_variable = { _queued_here_ = 1 }
 					}
@@ -1566,7 +1477,7 @@ WA_AI_PC_start_project = {
 						set_temp_variable = { final_building_level_ = building_level@radar_station }
 					}
 				}
-				# Fix 37: add only projects already queued FOR THIS STATE to the
+				# [uk-air-basing] add only projects already queued FOR THIS STATE to the
 				# effective level (was queued_amount_, the country-wide type total)
 				add_to_temp_variable = { final_building_level_ = _queued_here_ }
 			}
@@ -1613,16 +1524,14 @@ WA_AI_PC_start_project = {
 				set_variable = { WA_AI_PC_priority^_project_id = _project_priority }
 				set_variable = { WA_AI_PC_type_id^_project_id = _project_type_id }
 
-				# tlm: pc_queued_t - stamp, INDEXED by project id: the clock at which this
-				# slot entered the queue, cleared with the rest of the slot in
+				# tlm: pc_queued_t - stamp, INDEXED by project id: the clock at which this slot
+				# entered the queue, cleared with the rest of the slot in
 				# WA_AI_PC_end_project_by_id. Telemetry rather than system state precisely so
-				# that reading global.WA_TLM_clock here stays legal - a wa_ai_* field fed from
-				# the clock would be gameplay reading telemetry, which the namespace forbids.
-				# It is what makes queue AGE readable at all: nothing else in the queue records
-				# when a project arrived. WA_AI_PC_stall_weeks is not a substitute - it resets
-				# to 0 every time a project is funded for a week, so it measures the current
-				# starvation streak, not time in the queue, and the two diverge exactly on the
-				# projects worth asking about.
+				# reading global.WA_TLM_clock here stays legal - a wa_ai_* field fed from the clock
+				# would be gameplay reading telemetry, which the namespace forbids. It is what makes
+				# queue AGE readable at all. WA_AI_PC_stall_weeks is NOT a substitute: it resets to 0
+				# whenever a project is funded, so it measures the current starvation streak, not
+				# time in the queue.
 				# consumer: standing (queue-age questions; `savegame.py pc` prints age_m)
 				set_variable = { WA_TLM_pc_queued_t^_project_id = global.WA_TLM_clock }
 
@@ -1630,26 +1539,18 @@ WA_AI_PC_start_project = {
 				add_to_array = { WA_AI_PC_queue = _project_id }
 				add_to_variable = { WA_AI_PC_active_projects = 1 }
 
-				# tlm: r104_ally_fund_n / _first_t / _last_t - counter on the VERIFIED effect of
-				# Fix 104: one per LOGISTICS project (building type 13 rail / 14 naval_base /
-				# 17 supply_node - the only types Fix 104's selectors can queue) that entered the
-				# queue on ground held by a faction ally which is neither us nor our subject.
-				# Type-scoped deliberately: air bases, refineries and the rest reach allied ground
-				# through their own rules, and counting them would make the r103_corridor_orphan
-				# comparison below unattributable. It still is not a pure Fix-104 count - the
-				# pre-Fix-104 ally leg and Fix 103's corridor segments write it too - so read it as
-				# "logistics queued on an ally's soil", with the r103 gauge for the attribution.
-				# Before Fix 104 the ally leg was gated on
-				# WA_AI_PC_country_cannot_build_own_logistics, an AUTHORITY test with no civ-factory
-				# term at war, so an ally under the run's own wartime floor read capable and no
-				# partner was allowed onto its soil - FRA on campaign 7c7803a8, 46 controlled states
-				# and 10-19 civ factories, zero funded projects for 15 quarters, ENG and USA locked
-				# out of French-held Algeria the whole time.
+				# tlm: r104_ally_fund_n / _first_t / _last_t - counter on the VERIFIED effect,
+				# [na-corridor]: one per LOGISTICS project (building type 13 rail / 14 naval_base /
+				# 17 supply_node - the only types its selectors can queue) that entered the queue on
+				# ground held by a faction ally which is neither us nor our subject. Type-scoped
+				# deliberately: air bases and refineries reach allied ground by their own rules, and
+				# counting them would make the r103_corridor_orphan comparison unattributable. It is
+				# not a pure count of one change - the older ally leg and the corridor segments both
+				# write it - so read it as "logistics queued on an ally's soil", with the r103 gauge
+				# for attribution: orphan should fall as this rises.
 				# Placed HERE and not in the selectors deliberately: the selectors propose far more
-				# than the admission gate and the type budget accept, and 7c7803a8 is precisely the
-				# campaign where "requested" and "queued" diverged for 28 months (see the sibling
-				# r103_corridor_blocked_n note). Read against WA_TLM_r103_corridor_orphan, which
-				# counts hops legal for us and funded by nobody: orphan should fall as this rises.
+				# than the admission gate and the type budget accept, so "requested" and "queued"
+				# diverge (see the sibling r103_corridor_blocked_n note).
 				# ROOT is the builder in this scope; WA_AI_PC_target_state^_project_id was set above.
 				# consumer: checklist R69
 				if = {
@@ -1674,11 +1575,11 @@ WA_AI_PC_start_project = {
 					}
 					set_variable = { WA_TLM_r104_ally_fund_last_t = global.WA_TLM_clock }
 				}
-				# Keep the non-railway gate counter live between weekly resyncs (strategies run
-				# from a 2-day background event, so waiting for assign_factories would let them
-				# over-queue within a week)
-				# Fix 30: types 13 AND 14 excluded (must match the resync in
-				# WA_AI_PC_assign_factories and the decrement in WA_AI_PC_end_project_by_id); Fix 95 adds 17.
+				# Keep the non-railway counter live between weekly resyncs (strategies run from a
+				# 2-day background event, so waiting for assign_factories lets them over-queue
+				# within a week). [railway-landwar] types 13/14 and [na-corridor] type 17 excluded -
+				# must match the resync in WA_AI_PC_assign_factories and the decrement in
+				# WA_AI_PC_end_project_by_id.
 				if = {
 					limit = {
 						NOT = {
@@ -1697,16 +1598,14 @@ WA_AI_PC_start_project = {
 					add_to_array = { WA_AI_PC_projects_in_state_of_@ROOT = _project_id }
 				}
 
-				# Fix 46: BUILDER-AGNOSTIC per-state, per-building-type project counter.
-				# WA_AI_PC_projects_in_state_of_@ROOT above is keyed by builder, so an allied
-				# builder (any building with allied_build = yes - air_base, infrastructure)
-				# cannot see the host nation's project in the same state, and vice versa.
-				# Campaign 9a4cd657 1944.7: ENG and USA were each funding an air base in
-				# state 126 AND state 860 at the same time, one of the two guaranteed to be
-				# wasted civ-weeks. WA_AI_PC_has_same_type_project_here reads this counter.
-				# Written through var:WA_AI_PC_target_state (NOT PREV) so the increment uses
-				# the identical accessor as the decrement in WA_AI_PC_end_project_by_id -
-				# PREV is a province scope on the railway path and would desync the pair.
+				# [uk-air-basing] BUILDER-AGNOSTIC per-state, per-building-type project counter, read
+				# by WA_AI_PC_has_same_type_project_here. WA_AI_PC_projects_in_state_of_@ROOT above
+				# is keyed by BUILDER, so with allied_build buildings (air_base, infrastructure) an
+				# allied builder cannot see the host's project in the same state and both fund one -
+				# one of the two guaranteed to be wasted civ-weeks.
+				# Written through var:WA_AI_PC_target_state (NOT PREV) so the increment uses the
+				# identical accessor as the decrement in WA_AI_PC_end_project_by_id - PREV is a
+				# province scope on the railway path and would desync the pair.
 				var:WA_AI_PC_target_state^_project_id = {
 					add_to_variable = { WA_AI_PC_state_type_projects^_project_building_type = 1 }
 				}

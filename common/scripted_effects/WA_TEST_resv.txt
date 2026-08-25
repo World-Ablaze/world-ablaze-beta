@@ -1,0 +1,125 @@
+############################################################################################################
+#	WA_TEST - scripted-invasion target reservation ([scripted-invasion-reservation]), console-driven.
+#
+#	Fired by wa_resv.1 / .2 / .9 in events/wa_test_resv.txt. Read the console recipe there.
+#
+#	WHAT THIS PROVES AND WHAT IT CANNOT. Three legs:
+#	  A  loader + epoch: the generated arrays are on ROOT and the day arithmetic is sane.
+#	  B  write side: WA_AI_LANDING_stamp_reservation renders @PREV into a literal-checkable flag.
+#	  C  read side: `has_country_flag = WA_AI_LANDING_reserved_for_@FROM` matches in a TRIGGER
+#	     evaluated with scope = target country and FROM = the reserving country - the same SHAPE the
+#	     shipped ai_strategy country_trigger evaluates (scope = enemy country, FROM = our country).
+#	  ENGINE RESIDUAL, stated honestly: leg C proves the dynamic-flag rendering machinery in a
+#	  trigger context, from an EVENT host. Whether the ai_strategy evaluator itself renders @FROM in
+#	  its country_trigger is not console-reachable; the campaign probe (WORK.md subject) owns it.
+#
+#	SIDE EFFECTS OF A RUN: real reservation flags on the chosen target (self-expiring, lease 50d;
+#	wa_resv.9 clears them early) and ONE increment of WA_TLM_resv_stamp_n per run on ROOT - do not
+#	score this save's resv telemetry after testing on it.
+############################################################################################################
+
+# ROOT = the country under test (the "invader"). _wt_resv_tgt_ = target country id, set by the caller.
+WA_TEST_RESV_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | RESV TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Without these lines a poisoned call site reads every country-valued trigger false while
+	### [Root.GetName] still prints the right name beside it ("Two call sites, one effect" lesson).
+	### The fifth check is a KNOWN-FALSE control: it must read 0.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _rv_e1_ = 0 }
+	set_temp_variable = { _rv_e2_ = 0 }
+	set_temp_variable = { _rv_e3_ = 0 }
+	set_temp_variable = { _rv_e4_ = 0 }
+	set_temp_variable = { _rv_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _rv_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _rv_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _rv_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _rv_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _rv_e5_ = 1 } }
+	log = "  scope : always=[?_rv_e1_|.0]  I-am-ROOT=[?_rv_e2_|.0]  I-am-THIS=[?_rv_e3_|.0]  ROOT-scope-usable=[?_rv_e4_|.0]  control-false=[?_rv_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire from events/wa_test_scope_isolation.txt - tag GER then event wa_iso.3 - before editing this effect.)"
+
+	### LEG A - loader + epoch. op_n absent reads 0: the loader never ran on this campaign
+	### (expected on any save created before this system shipped - that is the designed fingerprint).
+	set_temp_variable = { _rv_today_ = global.num_days }
+	subtract_from_temp_variable = { _rv_today_ = global.WA_AI_LANDING_epoch }
+	log = "  legA  : op_n = [?WA_AI_LANDING_op_n|.0]   epoch = [?global.WA_AI_LANDING_epoch|.0]   num_days = [?global.num_days|.0]   today(since 1936.1.1) = [?_rv_today_|.0]"
+	log = "  legA  : op0 anchor = [?WA_AI_LANDING_op_anchor^0|.0]  expiry = [?WA_AI_LANDING_op_expiry^0|.0]   (USA expects anchor 634 expiry 2455 - Watchtower 1942-08-07 + 45 grace; a 1936.1.1 boot expects today = 0)"
+	if = {
+		limit = { NOT = { check_variable = { WA_AI_LANDING_op_n > 0 } } }
+		log = "  legA  : FAIL on a calendar invader (AST/ENG/GER/JAP/USA) - loader never ran; on any other tag this is the expected 0."
+	}
+
+	### LEG B - forced stamp on the chosen target, then read the flag back by its LITERAL name.
+	### control-false first: the flag must be absent before the stamp or the read-back proves nothing.
+	set_temp_variable = { _rv_b0_ = 0 }
+	set_temp_variable = { _rv_b1_ = 0 }
+	var:_wt_resv_tgt_ = {
+		clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
+		if = { limit = { has_country_flag = WA_AI_LANDING_reserved_for_@PREV } set_temp_variable = { _rv_b0_ = 1 } }
+	}
+	log = "  legB  : pre-stamp flag on [?_wt_resv_tgt_.GetName] = [?_rv_b0_|.0]   (must be 0 - control)"
+	set_temp_variable = { _resv_target = _wt_resv_tgt_ }
+	WA_AI_LANDING_stamp_reservation = yes
+	var:_wt_resv_tgt_ = {
+		if = { limit = { has_country_flag = WA_AI_LANDING_reserved_for_@PREV } set_temp_variable = { _rv_b1_ = 1 } }
+	}
+	log = "  legB  : post-stamp flag on [?_wt_resv_tgt_.GetName] read via @PREV = [?_rv_b1_|.0]   (must be 1; wa_resv.2 re-reads it by LITERAL name from the target side)"
+	log = "  legB  : wa_tlm_resv_stamp_n now [?WA_TLM_resv_stamp_n|.0] - this run added 1; do not score this save's resv telemetry."
+
+	### LEG C is wa_resv.2, fired at the target by the event - see events/wa_test_resv.txt.
+	log = "  legC  : firing the target-side report on [?_wt_resv_tgt_.GetName] - continue reading at 'RESV TEST TARGET-SIDE'."
+}
+
+# ROOT = the TARGET country; FROM must be the reserving country for the leg to be valid.
+# This is the read-side shape the shipped consumer evaluates: scope = target, FROM = reserver.
+WA_TEST_RESV_target_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | RESV TEST TARGET-SIDE | [Root.GetName]"
+
+	### CONTEXT HEADER - harness-contract: v1. Same rules as above; the FROM line is the one that
+	### decides whether leg C is valid at all.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _rv_t1_ = 0 }
+	set_temp_variable = { _rv_t2_ = 0 }
+	set_temp_variable = { _rv_t5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _rv_t1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _rv_t2_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _rv_t5_ = 1 } }
+	log = "  scope : always=[?_rv_t1_|.0]  I-am-ROOT=[?_rv_t2_|.0]  control-false=[?_rv_t5_|.0]   (anything but 1 1 0: STOP, see the main report)"
+	log = "  valid : leg C is only a measurement if FROM above prints the reserving country (the one that ran wa_resv.1). If FROM prints [Root.GetName] or nobody, the event host did not carry FROM - leg VOID, not failed."
+
+	### The three reads. literal = the flag exists at all; @FROM = the shipped consumer's shape;
+	### @ROOT = rendering-specific KNOWN-FALSE (a country is never reserved for itself here).
+	set_temp_variable = { _rv_c1_ = 0 }
+	set_temp_variable = { _rv_c2_ = 0 }
+	set_temp_variable = { _rv_c3_ = 0 }
+	if = { limit = { has_country_flag = WA_AI_LANDING_reserved_for_USA } set_temp_variable = { _rv_c1_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_LANDING_reserved_for_@FROM } set_temp_variable = { _rv_c2_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_LANDING_reserved_for_@ROOT } set_temp_variable = { _rv_c3_ = 1 } }
+	log = "  legC  : literal(reserved_for_USA) = [?_rv_c1_|.0]   @FROM = [?_rv_c2_|.0]   @ROOT control = [?_rv_c3_|.0]"
+	log = "  legC  : PASS = 1 1 0 (with FROM = USA above). 1 0 0 = @FROM rendering FAILED in trigger context -> the shipped consumer is inert, activate the WORK.md fallback (scripted add_ai_strategy invade). 0 ? ? = the stamp never landed, re-read leg B. (literal line assumes the reserver was USA - re-tag the literal if testing another invader.)"
+}
+
+# ROOT = the reserving country that ran wa_resv.1. Clears the test's flags early (they would
+# self-expire with the 50-day lease anyway). Does NOT touch WA_TLM_resv_* - telemetry is write-once
+# history; the run's log line above already tells a reader to discard it.
+WA_TEST_RESV_cleanup = {
+	log = "[GetYear].[GetMonth] | RESV TEST | cleanup by [Root.GetName]: clearing test reservation flags on [?_wt_resv_tgt_.GetName]"
+	var:_wt_resv_tgt_ = {
+		clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
+	}
+	every_other_country = {
+		limit = {
+			exists = yes
+			is_in_faction_with = ROOT
+		}
+		var:_wt_resv_tgt_ = {
+			clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
+		}
+	}
+}
