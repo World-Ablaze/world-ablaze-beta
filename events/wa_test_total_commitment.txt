@@ -1,0 +1,33 @@
+############################################################################################################
+#	ALLIED TOTAL COMMITMENT - console harness ([allied-total-commitment]). READ-ONLY.
+#
+#	Effects: common/scripted_effects/WA_TEST_total_commitment.txt
+#
+#	CONSOLE RECIPE (any save; a 1939+ war save is the informative case):
+#	    tag CAN           (or AST / NZL / RAJ / SAF / any minor under test)
+#	    event wa_tc.1     (READ-ONLY: term walk + composed verdicts + closure)
+#	  then read logs/game.log, search "TC TEST"; `tag` back to your country afterwards.
+#	  Expected: a safe, fit, at-war dominion reads every term 1 with the threat line all 0
+#	  (composed active = 0 on the tag path is the is_ai term - the walk line is the verdict);
+#	  AST/NZL/RAJ after a Japanese wargoal read pacific-threat = 1 and threatened = 1.
+#
+#	WHY ITS OWN FILE: the harness contract forbids hosting console harnesses in
+#	events/wa_events_test.txt ("Two call sites, one effect" lesson - a probe whose readings depend
+#	on which file fired it is worthless). Namespace wa_tc is this harness's own.
+#
+#	Side effects: none - the effect only reads triggers and writes temp variables.
+############################################################################################################
+
+add_namespace = wa_tc
+
+# Read-only report - fire as the country under test.
+country_event = {
+	id = wa_tc.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_TC_report = yes
+	}
+}

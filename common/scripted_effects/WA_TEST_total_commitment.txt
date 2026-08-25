@@ -1,0 +1,104 @@
+############################################################################################################
+#	WA_TEST - allied total commitment ([allied-total-commitment]), console-driven, READ-ONLY.
+#
+#	Fired by wa_tc.1 in events/wa_test_total_commitment.txt. Console recipe:
+#	  tag CAN   (or AST / NZL / RAJ / SAF / any minor)
+#	  event wa_tc.1
+#	  read logs/game.log, lines "TC TEST"; `tag` back to your country afterwards.
+#
+#	WHAT THIS PROVES AND WHAT IT CANNOT. One leg, an independent walk:
+#	  every term of WA_AI_MILITARY_total_commitment_active and every branch of
+#	  WA_AI_MILITARY_home_theatre_threatened is logged separately, then the two composed verdicts are
+#	  read straight from the triggers, then the walk's own AND is compared against the composed
+#	  verdict - a mismatch means a term reads differently inside the trigger than it does here
+#	  (scope drift), and the composed line, not the walk, is what the ai_strategy enable sees.
+#	  ENGINE RESIDUAL, stated honestly: this proves the TRIGGER verdicts in event context only.
+#	  Whether the engine honours `garrison = -5000` for the released country is only visible in
+#	  `imgui show ai-strategy` (Active strategies) and in a campaign save's areadef order census.
+############################################################################################################
+
+# ROOT = THIS = the country under test. Read-only.
+WA_TEST_TC_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | TC TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Without these lines a poisoned call site reads every country-valued trigger false while
+	### [Root.GetName] still prints the right name beside it. The fifth check is a KNOWN-FALSE
+	### control: it must read 0.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _tc_e1_ = 0 }
+	set_temp_variable = { _tc_e2_ = 0 }
+	set_temp_variable = { _tc_e3_ = 0 }
+	set_temp_variable = { _tc_e4_ = 0 }
+	set_temp_variable = { _tc_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _tc_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _tc_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _tc_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _tc_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _tc_e5_ = 1 } }
+	log = "  scope : always=[?_tc_e1_|.0]  I-am-ROOT=[?_tc_e2_|.0]  I-am-THIS=[?_tc_e3_|.0]  ROOT-scope-usable=[?_tc_e4_|.0]  control-false=[?_tc_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire from events/wa_test_scope_isolation.txt - tag GER then event wa_iso.3 - before editing this effect.)"
+
+	### INDEPENDENT WALK - each term of total_commitment_active, logged on its own.
+	set_temp_variable = { _tc_ai_ = 0 }
+	set_temp_variable = { _tc_minor_ = 0 }
+	set_temp_variable = { _tc_war_ = 0 }
+	set_temp_variable = { _tc_coal_ = 0 }
+	set_temp_variable = { _tc_fit_ = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _tc_ai_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_is_minor_country = yes } set_temp_variable = { _tc_minor_ = 1 } }
+	if = { limit = { has_war = yes } set_temp_variable = { _tc_war_ = 1 } }
+	if = { limit = { OR = { is_in_faction = yes is_subject = yes } } set_temp_variable = { _tc_coal_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_is_fit_for_expeditionary_front = yes } set_temp_variable = { _tc_fit_ = 1 } }
+	log = "  terms : is_ai=[?_tc_ai_|.0]  minor=[?_tc_minor_|.0]  at-war=[?_tc_war_|.0]  faction-or-subject=[?_tc_coal_|.0]  fit=[?_tc_fit_|.0] (mil factories = [?num_of_military_factories|.0], floor > 5)"
+	log = "            (is_ai reads 0 while you ARE the country via `tag` - expected on the tag path; the composed verdict below will read 0 for that reason alone. Judge the threat line on its own.)"
+
+	### INDEPENDENT WALK - each branch of home_theatre_threatened.
+	set_temp_variable = { _tc_h1_ = 0 }
+	set_temp_variable = { _tc_h2_ = 0 }
+	set_temp_variable = { _tc_h3_ = 0 }
+	set_temp_variable = { _tc_pc_ = 0 }
+	set_temp_variable = { _tc_pt_ = 0 }
+	if = { limit = { WA_AI_MILITARY_home_threatened = yes } set_temp_variable = { _tc_h1_ = 1 } }
+	if = { limit = { any_state = { is_core_of = ROOT CONTROLLER = { has_war_with = ROOT } } } set_temp_variable = { _tc_h2_ = 1 } }
+	if = { limit = { any_home_area_neighbor_country = { has_war_with = ROOT } } set_temp_variable = { _tc_h3_ = 1 } }
+	if = { limit = { WA_AI_CONFIG_MILITARY_is_pacific_commonwealth = yes } set_temp_variable = { _tc_pc_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_pacific_threat_imminent = yes } set_temp_variable = { _tc_pt_ = 1 } }
+	log = "  threat: collapse=[?_tc_h1_|.0]  enemy-on-core=[?_tc_h2_|.0]  hostile-home-border=[?_tc_h3_|.0]  pacific-cw=[?_tc_pc_|.0]  pacific-threat=[?_tc_pt_|.0]"
+
+	### COMPOSED VERDICTS - read straight from the triggers the ai_strategy enables call.
+	set_temp_variable = { _tc_thr_ = 0 }
+	set_temp_variable = { _tc_act_ = 0 }
+	if = { limit = { WA_AI_MILITARY_home_theatre_threatened = yes } set_temp_variable = { _tc_thr_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_total_commitment_active = yes } set_temp_variable = { _tc_act_ = 1 } }
+	log = "  composed: home_theatre_threatened = [?_tc_thr_|.0]   total_commitment_active = [?_tc_act_|.0]"
+
+	### CLOSURE - recompute both from the walked terms and compare.
+	set_temp_variable = { _tc_thr_walk_ = 0 }
+	if = { limit = { check_variable = { _tc_h1_ = 1 } } set_temp_variable = { _tc_thr_walk_ = 1 } }
+	if = { limit = { check_variable = { _tc_h2_ = 1 } } set_temp_variable = { _tc_thr_walk_ = 1 } }
+	if = { limit = { check_variable = { _tc_h3_ = 1 } } set_temp_variable = { _tc_thr_walk_ = 1 } }
+	if = { limit = { check_variable = { _tc_pc_ = 1 } check_variable = { _tc_pt_ = 1 } } set_temp_variable = { _tc_thr_walk_ = 1 } }
+	set_temp_variable = { _tc_act_walk_ = 0 }
+	if = {
+		limit = {
+			check_variable = { _tc_ai_ = 1 }
+			check_variable = { _tc_minor_ = 1 }
+			check_variable = { _tc_war_ = 1 }
+			check_variable = { _tc_coal_ = 1 }
+			check_variable = { _tc_fit_ = 1 }
+			check_variable = { _tc_thr_walk_ = 0 }
+		}
+		set_temp_variable = { _tc_act_walk_ = 1 }
+	}
+	log = "  closure : walk says threatened = [?_tc_thr_walk_|.0], active = [?_tc_act_walk_|.0]"
+	if = { limit = { NOT = { check_variable = { _tc_thr_ = _tc_thr_walk_ } } }
+		log = "  closure : FAIL - home_theatre_threatened disagrees with its own walked branches (scope drift inside the trigger)."
+	}
+	if = { limit = { NOT = { check_variable = { _tc_act_ = _tc_act_walk_ } } }
+		log = "  closure : FAIL - total_commitment_active disagrees with its own walked terms (scope drift inside the trigger)."
+	}
+	log = "  PASS  = both composed verdicts match their walks; a committed dominion reads active = 1 (walk) with threat line all 0; firing on AST/NZL/RAJ after a JAP wargoal reads pacific-threat = 1 and active = 0."
+}

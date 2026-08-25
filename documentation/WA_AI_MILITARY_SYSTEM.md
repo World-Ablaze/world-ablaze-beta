@@ -682,7 +682,7 @@ that type, before and after:
 
 | Writer | State | WA region | Theatre BEFORE | Theatre AFTER |
 | --- | --- | --- | --- | --- |
-| `CAN_theatre_boost_europe` | 15 Lower Normandy | 239 Northern France | `middle_east` / `persia` | `western_europe` |
+| `ALLIES_committed_minor_theatre_boost_europe` (ex `CAN_theatre_boost_europe`, generalised by `[allied-total-commitment]`) | 15 Lower Normandy | 239 Northern France | `middle_east` / `persia` | `western_europe` |
 | `JAP_theatre_boost_home` | 533 Tohoku | 377 N. Home Islands | none - inert | `japanese_home_islands` |
 | `SOV_theatre_boost_finland` | 146 Viipurin Karjala | 326 S. Karelia | none - inert | `barbarossa_north` |
 | `USA_theatre_boost_pacific` | 629 Hawaii | 349 Hawaii | none - inert | `central_pacific` / `us_west_coast` |
@@ -836,8 +836,14 @@ hard prerequisite and R85 cannot pass while R84 fails.
 `garrison` writer of their own, so MEASURED at 1941.6 they held **17 of 22 (77 %)** and **8 of 11
 (73 %)** of their armies in area-defence orders while Japan was still neutral; RAJ held 17 of 40.
 `WA_AI_MILITARY_ALLIES_pacific_quiet_release_garrison` (`WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt`)
-writes `garrison = -5000` plus `+60` on `north_africa` and on the East-Africa alias for AST / NZL /
-RAJ, behind `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`.
+wrote `garrison = -5000` plus `+60` on `north_africa` and on the East-Africa alias for AST / NZL /
+RAJ, behind `WA_AI_MILITARY_pacific_commonwealth_garrison_releasable`. **Superseded 2026-08-25 by
+`[allied-total-commitment]` (§23): the release is now the Default-layer
+`WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home` (any committed faction minor, not just the
+Pacific Commonwealth), the `+60` direction pulls live on in
+`WA_AI_MILITARY_ALLIES_committed_minor_join_africa`, and the Pacific term of the old verdict became
+one branch of `WA_AI_MILITARY_home_theatre_threatened`.** The measurements below were taken on the
+per-tag release and carry over: the mechanism (`-5000` over `minors_home_first`'s `+50`) is unchanged.
 
 The switch is **`WA_AI_MILITARY_pacific_threat_imminent`**: a Pacific war is running, a Pacific
 expansionist has a wargoal against us, is justifying one, or has completed a southward focus
@@ -1410,3 +1416,82 @@ reason.
 `_norway_invasion_hold_INVASION`) express the same intent for three specific cases with literal
 dates. They stay untouched - retiring them is its own subject with its own impact analysis, recorded
 in WORK.md, not a side effect of this one.
+
+---
+
+## 23. Allied total commitment - a safe dominion's whole army goes to the war (2026-08-25)
+
+**Owner rule (2026-08-25): a faction-member minor whose home nobody can reach sends 100 % of its
+army to the coalition's theatres.** No home garrison in Canada, South Africa, Australasia or India
+while the war is elsewhere; the garrison comes back the moment somebody can actually reach home
+(for the Pacific Commonwealth, that is Japan entering - or visibly preparing - the war).
+
+### Control panel (`WA_AI_MILITARY_triggers.txt`)
+
+| Trigger | Question it answers |
+| --- | --- |
+| `WA_AI_MILITARY_home_theatre_threatened` | "Can someone actually reach my home ground?" - collapse metric (`home_threatened`), an enemy on a core, a hostile land border on the home area, or (Pacific Commonwealth only, CONFIG classification) `pacific_threat_imminent`. ROOT-relative: read it ONLY from a country's own `enable`, never through an ENG-side `any_country` role lookup. |
+| `WA_AI_MILITARY_total_commitment_active` | The whole rule: AI + minor + at war + in a faction (or a subject) + `is_fit_for_expeditionary_front` + home not threatened. One verdict, every consumer stands down together when it flips. |
+
+### Consumers
+
+| Block | Layer | Payload |
+| --- | --- | --- |
+| `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home` (`DEFAULT_FRONT_archetypes.txt`) | Default | `garrison = -5000` - dominates `minors_home_first`'s `+50` (mechanism MEASURED on RAJ, §16) |
+| `WA_AI_MILITARY_DEFAULT_THEATRE_non_african_avoid_africa` | Default | the `-90` African `area_priority` brake now EXEMPTS committed minors (gate, not a counter-entry - a counter only works if the engine sums per area, which is ASSUMED) |
+| `WA_AI_MILITARY_ALLIES_committed_minor_join_africa` (`FACTION_ALLIES_FRONT.txt`) | Faction | `front_unit_request +60` on `north_africa` and the East-Africa alias - the direction for the released army |
+| `WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe` (`FACTION_ALLIES_THEATRE.txt`) | Faction | `theatre_distribution_demand_increase id = 15 value = 6` once the coalition holds a western foothold - theatre demand, not a front request, is what moves an army across an ocean (campaign 5078fe10) |
+
+The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
++150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
+
+### What it replaced (all deleted 2026-08-25, `[allied-total-commitment]`)
+
+Per-tag releases: `ALLIES_pacific_quiet_release_garrison` (AST/NZL/RAJ), `CAN_FRONT_release_home_garrison`
+(never armed - its `num_divisions > 11` bar sat above Canada's 4-9 division army, MEASURED campaign
+`8f9b5653`: 100 % areadef home garrison in 4 of 5 saves), and the verdict
+`pacific_commonwealth_garrison_releasable`. Kept: `RAJ_core_front_requests`' own `-5000` (the
+OPPOSITE case - garrison stays released while RAJ fronts against Japan at home).
+Legacy deletions in the same pass: `CAN_focus_on_europe` (flag+date gate),
+`CAN_sync_invasions_on_europe` (dated no-ops; the five Phase-5 `country_owns_fc_area_*` triggers it
+owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLIES_allied_minors_make_way`
+(tag-listed, date-gated suppression of the African fronts - the opposite of this rule),
+`SAF_help_in_africa_1_DIPLOMACY`, two zero-payload COMMONWEALTH.txt blocks, four empty country files.
+`AST_defend_home` / `NZL_defend_home` were re-gated from `always = yes` onto `home_theatre_threatened`.
+
+### Behaviour by scenario (the setup-agnostic walk)
+
+| Scenario | Verdict | Result |
+| --- | --- | --- |
+| CAN/AST/NZL/RAJ/SAF at war, home safe, fit | commitment ON | garrison released, Africa areas at net +100, +60 African requests, Europe demand after foothold |
+| Japan enters (or prepares) the war | Pacific Commonwealth (AST/NZL/RAJ) flip to threatened | release OFF in one pass; `minors_home_first +50` and the Japan-war buffer blocks take over; RAJ's own `-5000` keeps its army on the Asian fronts |
+| Enemy lands on a dominion core / hostile border war (any setup) | threatened | same stand-down, no tag involved |
+| NZL/SAF before they build past 6 military factories | not fit | home-bound - the owner's uniform fitness rule, not an oversight |
+| Committed minor of ANY other faction (e.g. an Axis minor at war only with distant enemies) | commitment ON | garrison released; direction pulls are Allies-only, so movement depends on that faction's own pulls - stated, accepted residual |
+
+### Known limits
+
+- The `garrison` type has NO engine documentation; `-5000` = force-off is WA convention, MEASURED
+  only through the §16 cross-section. `imgui show ai-strategy` on a released dominion is the cheap
+  confirmation.
+- Divisions under NO order (the H3 buffer/no-order ceiling of `minor-expeditionary-fitness`) are
+  beyond every lever here; the campaign probe measures whether the released areadef divisions
+  actually convert into front/buffer orders abroad.
+- `home_theatre_threatened` arms on presence/preparation, not on capability projection: a surprise
+  naval invasion by a non-Pacific power (no wargoal visible) is caught only at the
+  enemy-on-a-core term, i.e. after the landing. Bounded by the same `abort_when_not_enabled`
+  stand-down.
+- **Stand-down cadence is ASSUMED, not measured.** How often the engine re-evaluates `ai_strategy`
+  `enable`/`abort` blocks is not documented anywhere WA has read; every "in one pass" above means
+  "at the next engine strategy re-evaluation", whose interval is unknown (believed sub-weekly from
+  how fast gated blocks appear/disappear in `imgui show ai-strategy`, never timed). The worst-case
+  window between the threat flipping and the garrison actually standing back up is that interval
+  plus the engine's own areadef re-staffing time - unquantified; the campaign probe (b) bounds it
+  empirically at 3 months.
+- **The non-Allied population that passes `total_commitment_active`** (minor + at war + faction/subject
+  + >5 mil factories + home safe): historically, Axis Balkan minors in the window where they are at
+  war with distant Allies only (HUN/ROM/BUL before Barbarossa; the SOV border war then flips them to
+  threatened), plus symmetric ahistorical cases. MAN/SIA-class Co-Prosperity minors border their
+  enemies and stay threatened. These release their areadef garrison but receive NO direction pull
+  (the pulls are Allies Faction blocks) - stated, accepted residual; their own faction files own any
+  movement.

@@ -498,69 +498,52 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
   once an enemy is on Egyptian soil.
 
-### raj-trucks — CAMPAIGN-OK (2026-08-25)
-- **Campaign `8f9b5653` scored 2026-08-25 — PASSED on all three positive legs AND on the control.**
-  MEASURED: RAJ holds `eng_motorised_infantry` level 1 with `date = 1938.5.29.1` — a real in-campaign
-  research date, not the `1936.1.1.12` start-grant marker — in every sampled save from 1940.6 on, with
-  no `date="1.1.1.1"` in-progress twin anywhere (the false-duplicate gotcha did not fire). Its
-  `eng_motorized_equipment_1` line runs **3 / 9 / 20 / 41 / 29 active factories** at 1940.6 / 1941.6 /
-  1942.6 / 1943.6 / 1944.6 (scoped to `military_lines`, `equipment_variant_index` resolved through the
-  top-level `equipments={}` registry against the 11 `archetype = motorized_equipment` defs, never by
-  variant name). `wa_ai_fielded_eq_ratio` climbs **0.657 -> 0.903 -> 0.994 -> 0.998 -> 0.998 -> 0.999**
-  while the army grows 49 -> 110 divisions: full fill and the truck line coexist.
-- **The control holds — the fix did not become "everyone builds trucks".** MEASURED at 1943.6 and
-  1945.10: NEP (1 arms factory), BHU (1) and AFG (1) carry **no `*_motorised_infantry` tech and no
-  motorized line** at either date; TIB, SAU, VEN, COL and EIR the same. **An unplanned positive control
-  for the new `num_of_military_factories > 10` arm**: ETH has neither tech nor line at 8 arms factories
-  (1943.6), then researches `motorised_infantry` on **1944.10.3** and runs a **3-factory** line at
-  1945.10 with 13 factories — exactly the tier boundary the amendment describes.
-- **The 3-factory tier is visible and so is one possible regression.** MEASURED: CAN, AST and SAF each
-  ran **exactly 3** active truck factories at 1940.6, SAF holding 3 through 1942.6 — the small-industry
-  tier is in force. CAN and AST later scale far past it (CAN 14 -> 16 active, AST 34 -> 0/2 queued) as
-  >10-factory dominions. **But SAF has no motorized line at all at 1945.10 on 49 owned arms
-  factories**, after running the 3-tier for three years. MEASURED as absence; ASSUMED as a possible
-  tier regression, and the one thing in this subject worth a look before it closes.
-- Scoring notes: RAJ itself sits at 120->138 arms factories, so it satisfies the `> 10` arm as well as
-  `can_motorize_support` — this campaign confirms the outcome, not which arm delivered it (DERIVED).
-  Do not read AST / CAN / SAF / ROM tech presence as evidence either way: all four hold
-  `*_motorised_infantry` at `date = 1936.1.1.12`, i.e. **start-granted**. YUG and SIA truck readings are
-  dead-tag artefacts (0 controlled states, fill 0.000) and are not leaks. RAJ's 1945.10 line reads
-  `active 0 / queued 27` while RAJ still runs 120 active mil-line factories — ASSUMED a snapshot taken
-  mid-transfer, not a dead line.
-- **Remaining before CLOSED:** the SAF tier question above. Everything else in the closing criterion is
-  met.- Scope: owner report 2026-08-24 — the Raj produces no motorized_equipment. MEASURED chain: RAJ is in
-  `WA_AI_CONFIG_DIVISIONS_can_motorize_support`, so its infantry target template is the `_MOT_` variant
-  (`WA_AI_TEMPLATES_infantry.txt` 1002/1005/1006, ~220 motorized_equipment per division per
-  `WA_AI_DIVISION_CREATOR_effects.txt`), but every `*_motorised_infantry` tech was gated on
-  `WA_AI_RESEARCH_needs_mechanized` (USA/ENG/CAN/AST/SAF, or armor+medium/heavy focus, or >100 mil
-  factories) — RAJ satisfies none, so it could never unlock `eng_motorized_equipment_1` and its
-  motorised support companies had no equipment to fill. `WA_AI_RESEARCH_needs_trucks` existed for
-  exactly this and was `always = yes`, i.e. inert inside the AND.
-- State: written in the working tree, **committed and live in campaign `8f9b5653`** (see the scoring block below). `WA_AI_RESEARCH_needs_trucks`
-  (`WA_AI_RESEARCH_tanks.txt`) now ORs can_motorize_support / needs_mechanized / use_armor_templates /
-  use_motorized_templates; the 12 `*_motorised_infantry` ai_will_do blocks (`armor.txt` + 11
-  `armor_<tag>.txt`) key on `needs_trucks` alone, which is what `tools/ai_will_do_replacer_armor.py`
-  maps the `motorized_equipment` category to. Strict superset of the old gate: no country loses the
-  tech. Side effect by design: `vehicle_winch`
-  (`electronic_mechanical_engineering.txt`, `NOT = { needs_trucks }`) stops being researched by
-  countries with no truck demand — it was unblockable while the trigger was `always = yes`.
-- Closed when: a campaign save shows RAJ holding a `*_motorised_infantry` tech, a non-zero
-  motorized_equipment production line, and its infantry divisions at full equipment; control =
-  a foot-army minor outside `can_motorize_support` and outside the earned latch still has no truck
-  tech and no truck line (the fix must not become "everyone builds trucks").
-- Amended 2026-08-24 (owner, MEASURED in `05_defines.lua`): a horse army needs trucks too — 500
-  motorized_equipment fully motorize one supply hub (`SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST`) and
-  the engine AI does it unprompted below `NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.95`,
-  every 48h. `needs_trucks` therefore also fires on `WA_AI_CONFIG_is_major_country` or
-  `num_of_military_factories > 10`. Because that widens the tech to small industries, the flat
-  `equipment_production_min_factories_archetype = 10` truck floor is now tiered like the amphibious
-  floors: > 49 mil factories keeps 10 (unchanged for majors), < 50 gets a new 3-factory tier
-  (`WA_AI_PRODUCTION_build_trucks_stockpile_low_small`). Behaviour change to watch: CAN / AST / SAF
-  had the tech and the flat 10 before; they now sit in the 3 tier.
-- Not done here, latent: `WA_AI_TEMPLATES_has_motorized_unlocked` checks only the generic
-  `motorised_infantry`, while every sibling `has_*_unlocked` ORs the national variants — so it is
-  false for every tag-tree country. Harmless today (`use_motorized_divisions = always no`), a trap
-  the day motorised divisions are switched on.
+### allied-total-commitment — SHIPPED-UNTESTED (2026-08-25)
+- Scope: owner request 2026-08-25 ("les dominions alliés envoient 100% de leur armée en opération
+  — pas de garnison au Canada / Afrique du Sud / AST / NZL / RAJ, sauf quand le Japon rejoint la
+  guerre pour les pays concernés") + simplification: legacy strategies out, one generic system.
+  MEASURED symptom behind it (campaign `8f9b5653`): CAN fields 4-9 divisions, order class `areadef`
+  ONLY in 4 of 5 saves — 100 % home garrison, zero front contribution; its old release gate
+  (`CAN_uk_guard_available`, `num_divisions > 11`) could never arm on that army.
+- State: shipped 2026-08-25. Control panel: `WA_AI_MILITARY_home_theatre_threatened` (ROOT-relative;
+  enemy-on-core / hostile home border / collapse / Pacific term = `is_pacific_commonwealth` +
+  `pacific_threat_imminent`) and `WA_AI_MILITARY_total_commitment_active` (AI + minor + at war +
+  faction-or-subject + `is_fit_for_expeditionary_front` + NOT threatened) in
+  `WA_AI_MILITARY_triggers.txt`. Consumers: Default `ARCHETYPE_committed_minor_releases_home`
+  (`garrison -5000`), the African `area_priority -90` brake now exempts committed minors, Faction
+  `ALLIES_committed_minor_join_africa` (+60 x2) and `ALLIES_committed_minor_theatre_boost_europe`
+  (id 15 value 6, ex-CAN block generalised). Replaced/deleted: `ALLIES_pacific_quiet_release_garrison`
+  + its verdict, `CAN_FRONT_release_home_garrison`, `CAN_focus_on_europe`,
+  `CAN_sync_invasions_on_europe` (5 Phase-5 `country_owns_fc_area_*` triggers emptied), both
+  `canada_is_a_special_snowflake` blocks, `ALLIES_allied_minors_make_way`,
+  `SAF_help_in_africa_1_DIPLOMACY`, 2 zero-payload COMMONWEALTH.txt blocks, 4 empty country files,
+  the dead `#commonwealth_abandon_africa_for_now` text in ENG.txt; `AST_defend_home` /
+  `NZL_defend_home` re-gated from `always = yes` onto `home_theatre_threatened`. Spec:
+  `WA_AI_MILITARY_SYSTEM.md` §23 (§16 amended).
+- Known residuals, stated: (i) `garrison -5000` honoured by the engine is WA convention (§16
+  cross-section), `imgui show ai-strategy` on a released dominion is the cheap confirmation;
+  (ii) the H3 no-order/buffer ceiling is out of every lever's reach here; (iii) a committed minor of
+  a NON-Allied faction also releases (generic by design) but gets no direction pull — population
+  named in §23: essentially Axis Balkan minors in their distant-war-only window (HUN/ROM/BUL
+  pre-Barbarossa; the SOV border then flips them to threatened) — their movement stays owned by
+  their own faction files; (iv) a surprise landing by a non-Pacific power is caught only once an
+  enemy stands on a core; (v) stand-down cadence = the engine's strategy re-evaluation interval,
+  ASSUMED sub-weekly, never timed (§23).
+- Prior-ruling check (AGENTS.md 3(g)): `6b1210fe7` `[minor-expeditionary-fitness]` ruled "gate the
+  Allies pulls, not the brake" — about DEEPENING a `front_unit_request` brake past the E2 -100
+  saturation. This session gates the `area_priority` brake's ENABLE per-country instead, which works
+  under either summing reading, and it cannot re-admit unfit minors: `total_commitment_active`
+  embeds the same `is_fit_for_expeditionary_front`, so an unfit minor never passes and keeps the
+  -90 brake. Commitment ⊇ fitness — the two rulings compose, neither is overturned.
+- Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
+  `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run owed. **F9 boot test
+  owed** (many `ai_strategy` block adds/removes; 2026-08-09 strategy-DB CTD precedent).
+- Closed when: a campaign shows (a) CAN with the majority of its divisions under front/buffer orders
+  OUTSIDE North America while its home is safe (vs 100 % areadef in `8f9b5653`); (b) AST/NZL/RAJ
+  areadef home counts ~0 while the Pacific is quiet AND re-garrisoned within 3 months of
+  `pacific_threat_imminent` turning true; (c) dominion divisions present on the African fronts once
+  each passes the 6-factory fitness floor; control (d) a non-faction minor at war keeps its home
+  garrison (the release must not become “everyone abandons home”).
 
 ## PARKED
 
@@ -569,6 +552,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `raj-trucks` | CAMPAIGN-OK (2026-08-25, campaign `8f9b5653`: all three positive legs + the control PASSED) | SAF runs the 3-factory truck tier 1940-42 then has NO motorized line at 1945.10 on 49 arms factories (possible tier regression; MEASURED as absence) | The SAF tier question is answered (regression fixed, or explained and accepted); every other criterion already met — full record: git log `[raj-trucks]` + this file's history |
 | `silo-breadth` | TESTED (console harness owner-PASSED 2026-08-24) | Fuel silos stall at the first state's cap of 6; shipped fix = CIC/MIC/NIC/REF availability standard + breadth-first walk, harness `event wa_silo.1`/`.2` | A campaign save shows a country with silo need > 6 holding BUILT `fuel_silo` levels in >= 2 states, and the harness walk skipping a state at its cap |
 | `lend-lease-relief` | TESTED (owner-validated 2026-08-23) | Overland surplus relief (Fix 92) + USA native offers work; final audit remains | Final audit passes: leg 3 of R7b checked; USA sender restored or the R57 failure explained and accepted |
 | `trade-law` | SHIPPED-UNTESTED (`32c03c550` + revert, 2026-08-19) | Ladder has two reachable rungs (R28); dead flag `WA_AI_trade_law_recently_changed`; recovery path only covers export_focus/free_trade | In-game test of the shipped fix passes; ladder rungs reachable in a campaign |
