@@ -545,6 +545,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (Fix-128-class ruling: stand-downs keep the full brake) — ENG only thins its home reserve for a
   sized guard. H1 (release trigger never arming) is NOT yet excluded — the wa_tc.1 run and/or the
   CAN imgui Active-strategies check is still owed and decides it.
+- Owner rulings 2026-08-25, recorded so no future session "fixes" them: (1) `CAN_war_measures_act`
+  (`common/national_focus/canada.txt:1989`) deletes 13/13 of Canada's starting divisions at war
+  start with no counterpart, and the AI plan rushes it — MEASURED, root cause of CAN's 4-9 division
+  army — **owner: leave it as is** (BY DESIGN; do not propose reverting). (2) Console harness run
+  1942.2.9 on the resumed campaign, pasted in chat: header `1 1 1 1 0`, terms all 1 (67 mil
+  factories), threat `0 0 0 / pacific-cw=0 pacific-threat=1`, **`total_commitment_active = 1`,
+  closure PASS** — the trigger side of the release is PROVEN on CAN; what remains ASSUMED is only
+  the engine honouring `garrison -5000` (imgui Active-strategies check still the cheap confirm).
 - Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
   `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run owed. **F9 boot test
   owed** (many `ai_strategy` block adds/removes; 2026-08-09 strategy-DB CTD precedent).
