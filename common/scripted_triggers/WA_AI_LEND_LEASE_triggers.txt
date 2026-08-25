@@ -311,6 +311,10 @@ WA_AI_lend_lease = {
 
 		has_war = yes NOT = { has_war_with = ROOT }
 
+		# [minor-expeditionary-fitness] the other recipient path - vanilla-style targeting, THIS is the
+		# candidate target. Gated identically to the WA relief pull so the two cannot disagree.
+		WA_AI_LEND_LEASE_recipient_is_worth_equipping = yes
+
 		set_temp_variable = { t1 = THIS.id }
 
 		# (a WA_AI_receives_support_@<target> escape-hatch flag used to sit in this OR; it was
@@ -802,6 +806,30 @@ WA_AI_LEND_LEASE_convoy_pair_is_valid = {
 		has_country_flag = WA_AI_lend_lease_from_@PREV
 	}
 }
+# THIS = candidate recipient / target. Answers "is equipment sent here going to be used".
+# TRUE either because the country can equip a real infantry division (same threshold as the front
+# brake, read from it so the number has ONE definition), or because it is defending its own ground -
+# an invaded country's divisions fight whatever its factory count, and refusing it rifles is how a
+# minor is starved out of its own homeland.
+# [minor-expeditionary-fitness] owner rule 2026-08-25, hatch added the same day on owner reversal.
+# The two terms are deliberately the SAME predicates the Faction pulls use, which makes the aid and
+# the front brake move together: while home is safe the pulls are fitness-gated and so is the aid;
+# the moment home is threatened the pulls switch OFF (the country stays home) and the aid switches
+# ON. One event governs both, so they can never disagree about where an unfit army should be.
+# home_threatened carries six tag branches (EGY/MAL/UKE in ENG's faction, ROM/HUN/FIN vs SOV); all
+# six sit above the factory floor, so that branch can never be the term that decides this trigger.
+# Residual, unbounded and stated: home_threatened needs surrender_progress > 0.05, so aid resumes
+# only once the invader has actually taken ground - there is a lag between the first enemy division
+# on home soil and the hatch opening. Narrowing it means a new "enemy holds one of my states"
+# predicate, which cannot reuse ROOT/PREV here (ROOT is the DONOR on the TARGET path and the
+# RECIPIENT on the relief path).
+WA_AI_LEND_LEASE_recipient_is_worth_equipping = {
+	OR = {
+		WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
+		WA_AI_MILITARY_home_threatened = yes
+	}
+}
+
 # THIS = candidate recipient. Any archetype short - the cheap pre-gate of the weekly pull
 # (the pull itself re-tests per archetype in the donor's scope).
 WA_AI_LEND_LEASE_is_starving_any = {
@@ -887,6 +915,11 @@ WA_AI_LEND_LEASE_donor_can_serve = {
 WA_AI_LEND_LEASE_relief_pair_is_valid = {
 	NOT = { tag = PREV }
 	has_capitulated = no
+	# [minor-expeditionary-fitness] THIS is the candidate RECIPIENT here - an unfit army that is not
+	# defending its own ground is not worth equipping. Placed on the pair rather than on
+	# is_starving_any so the telemetry still counts the country as starving; only the pairing is
+	# refused, which keeps WA_TLM_llr_starving_n honest about who was short.
+	WA_AI_LEND_LEASE_recipient_is_worth_equipping = yes
 	PREV = {
 		is_ai = yes
 		has_capitulated = no
