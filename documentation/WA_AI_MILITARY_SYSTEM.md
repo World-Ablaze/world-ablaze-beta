@@ -556,7 +556,8 @@ airfields after the campaign is won. `WA_AI_MILITARY_ethiopian_war_finished` gat
 and Italy's `protect_periphery` blocks and answers a different question - has the colonial WAR ended,
 not has the colonial POWER been expelled.
 
-**Consumers, all Allied-side** (grep, 2026-08-21): `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`,
+**Consumers, all Allied-side** (grep, 2026-08-21; the `ENG_east_africa_delegated_FRONT` entry became
+the exemption term inside the contested block on 2026-08-25):
 `WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` / `_exec_FRONT`,
 `WA_AI_MILITARY_ALLIES_east_africa_contested_THEATRE`, `WA_AI_MILITARY_RAJ_kill_ITS_DIPLOMACY`,
 `WA_AI_MILITARY_RAJ_east_africa_available`, and `WA_TLM_core` (write-only). The widening therefore moves
@@ -776,10 +777,17 @@ controlled ground and home pressure rather than a focus, date or historical fact
 | **East Africa (Fix 124, 2026-08-21)** — an OFFENSIVE mission, the first of the family | RAJ `front_unit_request +100` on `WA_AI_MILITARY_east_africa_regions`, on top of the Faction `+150` | — | ENG returns to the Faction `+150` when the delegate is unavailable | AI RAJ-role country, >29 divisions, **delegate force floor** (controlled states + manpower, no 41-division/0.9-equipment brake — 2026-08-24, see below), common war plus access relation, the East-African theatre contested, **the Pacific quiet (`NOT pacific_threat_imminent`)**, no enemy on a RAJ core and no home-area neighbour at war with RAJ |
 
 **Fix 124 — East Africa (2026-08-21, campaign `8c0fea4c`, checklist R85).** The first *offensive*
-delegation of the family: the other three park divisions, this one sends them. ENG's half is
-`WA_AI_MILITARY_ENG_east_africa_delegated_FRONT`, `-130` on the same area while the delegate is live
-(was `-75` until 2026-08-24, see below), netting ENG `+20` against RAJ's `+250` — deliberately below
-ENG's `north_africa` net, so Egypt outbids East Africa while the delegate carries the theatre.
+delegation of the family: the other three park divisions, this one sends them. **ENG's half was
+rewritten on 2026-08-25**: the counter-bid `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT` (`-75`,
+then `-130` from 2026-08-24) is DELETED — `-130` saturated at `-100` per rule E2, leaving ENG at a
+net `+50` on East Africa, **above a quiet Egypt's `+45`**, which is the arithmetic that lost Egypt
+in the pre-Torch window of the `15176ce6` baseline (EA+Sudan 13→18 ENG divisions vs Egypt 7→4 at
+the fall, 1940.8-9). The stand-down is now an **exemption term inside the Faction `+150` itself**
+(`WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT`): while
+`WA_AI_MILITARY_commonwealth_east_africa_available` holds, the British mission owner is not pulled
+at all — net **0** against RAJ's `+250`, correct under EITHER cross-area summing reading (a removal
+needs no summing assumption; the counter-bid did). The fallback survives: delegate unavailable →
+the term reads true again and ENG returns to the full `+150`.
 
 **That `north_africa` net is CONDITIONAL since [commonwealth-handoff] (2026-08-24).** It is `+45` while
 Egypt is clear (Faction `+75`, the `egypt_held` brake `-40`, `focus_on_land_War_in_north_africa` `+10`)
