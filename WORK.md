@@ -529,9 +529,28 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   now joined by the SS24 probe: zero RAJ/dominion divisions in metropolitan France and zero
   Commonwealth divisions on FRA-owned North-African states while FRA still holds the idea
   (historical difficulty); BEF deploys once it is gone; post-fall behaviour unchanged.
+- **Scope extended 2026-08-27 (owner rule): `CAN_war_measures_act` gets its counterpart — 10
+  reserve divisions on completion, AI-only (`is_ai = yes`; a human Canada rebuilds its army
+  itself).** This AMENDS the 2026-08-25 ruling above: the militia deletion stays BY DESIGN for
+  everyone, but for the AI it is no longer "no counterpart". Shipped: `WA_reserves_grant_and_deploy_batch`
+  (`WA_reserves_effects.txt`) = +1 batch to the bank then `WA_reserves_deploy_batch` (manpower
+  charge skipped below a 150k pool, mirroring `WA_reserves_can_deploy`; spawn debits the bank —
+  net 0, a recruited bank is untouched). The decision `deploy_reserves_infantry` now calls the same
+  shared effect (no duplicated literals; 10/150000 are file-scoped in `WA_reserves_effects.txt`).
+  `WA_reserves_create_template` also recreates on a missing template, healing the latent
+  unlock→rename→redeploy malformed-create_unit path for every country. [reserve-quality]
+  covering sentence (AGENTS.md 3(g), the gate comment is the recorded objection): the dilution
+  objection is covered because the same reward disbands 13 militia returning their equipment and
+  manpower, and the recurring decision path stays closed for expeditionary-only countries.
+  Accepted residuals: (i) in-flight campaigns where the focus already completed never receive the
+  batch — no migration; (ii) `WA_reserves_spawn_generic`'s else-branch can charge without spawning
+  when CAN controls neither its capital nor a qualifying core state (country effectively overrun).
+  Probe: next campaign, CAN division count ≥ 10 within a month of `CAN_war_measures_act`
+  completing (savegame `division_template` count vs focus completion date).
 - Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
   `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run pasted 2026-08-25.
-  F9 boot test OK 2026-08-27.
+  F9 boot test OK 2026-08-27. The CAN reserve-batch reward is untested in-game: F9 boot test owed
+  for the 2026-08-27 batch.
 - Closed when: a campaign shows (a) CAN with the majority of its divisions under front/buffer orders
   OUTSIDE North America while its home is safe (vs 100 % areadef in `8f9b5653`); (b) AST/NZL/RAJ
   areadef home counts ~0 while the Pacific is quiet AND re-garrisoned within 3 months of

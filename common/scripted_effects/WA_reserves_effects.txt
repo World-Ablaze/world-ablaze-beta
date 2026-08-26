@@ -17,9 +17,14 @@
 # Main effect to create reserve template for a country
 # Should be called when reserves are first recruited or deployed
 WA_reserves_create_template = {
+	# Also recreate when the named template is gone: an unlocked (finish_recruitment) template can
+	# be renamed, and a later deploy would otherwise create_unit against a missing name.
 	if = {
 		limit = {
-			NOT = { has_country_flag = WA_reserves_template_created }
+			OR = {
+				NOT = { has_country_flag = WA_reserves_template_created }
+				NOT = { has_template = "Reserve Divisíon" }
+			}
 		}
 		# Determine template type based on country configuration
 		if = {
@@ -199,6 +204,25 @@ WA_reserves_spawn_divisions = {
 
 	# Decrease reserves counter
 	add_to_variable = { ROOT.reserves = -10 }
+}
+
+# Deploys one reserve batch: pays the manpower price, then spawns (which debits the bank).
+# The charge is skipped when the pool cannot cover it - the decision path pre-checks
+# has_manpower (WA_reserves_can_deploy), a one-shot reward path may not.
+WA_reserves_deploy_batch = {
+	if = {
+		limit = { has_manpower > 149999 }
+		add_manpower = -150000
+	}
+	WA_reserves_spawn_divisions = yes
+}
+
+# [allied-total-commitment] One-shot grant for rewards outside the recruit->deploy decision
+# loop: credits one batch then deploys it, netting the bank to 0 so a recruited bank is
+# untouched and an empty bank never goes negative.
+WA_reserves_grant_and_deploy_batch = {
+	add_to_variable = { ROOT.reserves = 10 }
+	WA_reserves_deploy_batch = yes
 }
 
 # Generic spawning - spawns in capital or random controlled state
