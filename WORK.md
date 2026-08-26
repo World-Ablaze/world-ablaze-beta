@@ -457,107 +457,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
   once an enemy is on Egyptian soil.
 
-### allied-total-commitment — TESTED (2026-08-27)
-- Scope: owner request 2026-08-25 ("les dominions alliés envoient 100% de leur armée en opération
-  — pas de garnison au Canada / Afrique du Sud / AST / NZL / RAJ, sauf quand le Japon rejoint la
-  guerre pour les pays concernés") + simplification: legacy strategies out, one generic system.
-  MEASURED symptom behind it (campaign `8f9b5653`): CAN fields 4-9 divisions, order class `areadef`
-  ONLY in 4 of 5 saves — 100 % home garrison, zero front contribution; its old release gate
-  (`CAN_uk_guard_available`, `num_divisions > 11`) could never arm on that army.
-- State: shipped 2026-08-25. Control panel: `WA_AI_MILITARY_home_theatre_threatened` (ROOT-relative;
-  enemy-on-core / hostile home border / collapse / Pacific term = `is_pacific_commonwealth` +
-  `pacific_threat_imminent`) and `WA_AI_MILITARY_total_commitment_active` (AI + minor + at war +
-  faction-or-subject + `is_fit_for_expeditionary_front` + NOT threatened) in
-  `WA_AI_MILITARY_triggers.txt`. Consumers: Default `ARCHETYPE_committed_minor_releases_home`
-  (`garrison -5000`), the African `area_priority -90` brake now exempts committed minors, Faction
-  `ALLIES_committed_minor_join_africa` (+60 x2) and `ALLIES_committed_minor_theatre_boost_europe`
-  (id 15 value 6, ex-CAN block generalised). Replaced/deleted: `ALLIES_pacific_quiet_release_garrison`
-  + its verdict, `CAN_FRONT_release_home_garrison`, `CAN_focus_on_europe`,
-  `CAN_sync_invasions_on_europe` (5 Phase-5 `country_owns_fc_area_*` triggers emptied), both
-  `canada_is_a_special_snowflake` blocks, `ALLIES_allied_minors_make_way`,
-  `SAF_help_in_africa_1_DIPLOMACY`, 2 zero-payload COMMONWEALTH.txt blocks, 4 empty country files,
-  the dead `#commonwealth_abandon_africa_for_now` text in ENG.txt; `AST_defend_home` /
-  `NZL_defend_home` re-gated from `always = yes` onto `home_theatre_threatened`. Spec:
-  `WA_AI_MILITARY_SYSTEM.md` §23 (§16 amended).
-- Known residuals, stated: (i) `garrison -5000` honoured by the engine is WA convention (§16
-  cross-section), `imgui show ai-strategy` on a released dominion is the cheap confirmation;
-  (ii) the H3 no-order/buffer ceiling is out of every lever's reach here; (iii) a committed minor of
-  a NON-Allied faction also releases (generic by design) but gets no direction pull — population
-  named in §23: essentially Axis Balkan minors in their distant-war-only window (HUN/ROM/BUL
-  pre-Barbarossa; the SOV border then flips them to threatened) — their movement stays owned by
-  their own faction files; (iv) a surprise landing by a non-Pacific power is caught only once an
-  enemy stands on a core; (v) stand-down cadence = the engine's strategy re-evaluation interval,
-  ASSUMED sub-weekly, never timed (§23).
-- Prior-ruling check (AGENTS.md 3(g)): `6b1210fe7` `[minor-expeditionary-fitness]` ruled "gate the
-  Allies pulls, not the brake" — about DEEPENING a `front_unit_request` brake past the E2 -100
-  saturation. This session gates the `area_priority` brake's ENABLE per-country instead, which works
-  under either summing reading, and it cannot re-admit unfit minors: `total_commitment_active`
-  embeds the same `is_fit_for_expeditionary_front`, so an unfit minor never passes and keeps the
-  -90 brake. Commitment ⊇ fitness — the two rulings compose, neither is overturned.
-- Owner observation 2026-08-25 (no save, obs tool + game.log; El Alamein under way, Egypt held):
-  CAN kept its divisions in Canada until Torch. DERIVED cause, second cut: a released division needs
-  a CATCHER (front in reach / buffer / invasion) — RAJ's §16 control showed buffers absorbing the
-  release, but CAN's only catcher (`CAN_uk_guard_available`) carried `num_divisions > 11`, never true
-  on a 4-9 division Canada, so nothing picked its army up until Torch's invasion order did. Fix cut
-  2: the ADD-force verdict drops the count bar for `WA_AI_MILITARY_delegate_force_floor` (quality),
-  while ENG's stand-down wrapper `commonwealth_uk_guard_available` KEEPS `num_divisions > 11`
-  (Fix-128-class ruling: stand-downs keep the full brake) — ENG only thins its home reserve for a
-  sized guard. H1 (release trigger never arming) is NOT yet excluded — the wa_tc.1 run and/or the
-  CAN imgui Active-strategies check is still owed and decides it.
-- Owner rulings 2026-08-25, recorded so no future session "fixes" them: (1) `CAN_war_measures_act`
-  (`common/national_focus/canada.txt:1989`) deletes 13/13 of Canada's starting divisions at war
-  start with no counterpart, and the AI plan rushes it — MEASURED, root cause of CAN's 4-9 division
-  army — **owner: leave it as is** (BY DESIGN; do not propose reverting). (2) Console harness run
-  1942.2.9 on the resumed campaign, pasted in chat: header `1 1 1 1 0`, terms all 1 (67 mil
-  factories), threat `0 0 0 / pacific-cw=0 pacific-threat=1`, **`total_commitment_active = 1`,
-  closure PASS** — the trigger side of the release is PROVEN on CAN; what remains ASSUMED is only
-  the engine honouring `garrison -5000` (imgui Active-strategies check still the cheap confirm).
-- **Scope extended 2026-08-27 `[bulwark-guest-gate]` (owner rule: on historical difficulty the
-  Commonwealth waits for FRA to shed `disjointed_government` before deploying on French soil):** new
-  control-panel trigger `WA_AI_MILITARY_western_bulwark_accepts_guests` (historical axis =
-  `WA_AI_DIFFICULTY_is_historical`, owner's explicit choice over `is_historical_focus_on`; opens on
-  fall_of_france / capitulation / bulwark out of faction / non-historical). In the `enable` of this
-  subject's two pumps (`committed_minor_theatre_boost_europe` - whose `has_western_foothold` counted
-  FRENCH states and armed the Normandy demand from 1936 - and the new `join_north_africa`, split from
-  `join_africa` because the area contains French Morocco/Algeria/Tunisia), plus `ALLIES_europe_first`
-  (SE-Asia sink split out, ungated) and the ENG BEF pair. `doesnt_have_disjointed_government` now
-  covers the 4th variant `_bloc_path` (was missing - also touches its decision/focus readers, by
-  design). Spec doc SS24. Gate fails OPEN in every non-historical or FRA-less setup (principle 1).
-- **State moved to TESTED 2026-08-27:** the wa_tc.1 console harness was run and pasted 2026-08-25
-  (closure PASS, recorded above) and the owner's **F9 boot test passed 2026-08-27** with the full
-  batch live - both owed items are delivered. Campaign legs (a)-(d) remain the closing criteria,
-  now joined by the SS24 probe: zero RAJ/dominion divisions in metropolitan France and zero
-  Commonwealth divisions on FRA-owned North-African states while FRA still holds the idea
-  (historical difficulty); BEF deploys once it is gone; post-fall behaviour unchanged.
-- **Scope extended 2026-08-27 (owner rule): `CAN_war_measures_act` gets its counterpart — 10
-  reserve divisions on completion, AI-only (`is_ai = yes`; a human Canada rebuilds its army
-  itself).** This AMENDS the 2026-08-25 ruling above: the militia deletion stays BY DESIGN for
-  everyone, but for the AI it is no longer "no counterpart". Shipped: `WA_reserves_grant_and_deploy_batch`
-  (`WA_reserves_effects.txt`) = +1 batch to the bank then `WA_reserves_deploy_batch` (manpower
-  charge skipped below a 150k pool, mirroring `WA_reserves_can_deploy`; spawn debits the bank —
-  net 0, a recruited bank is untouched). The decision `deploy_reserves_infantry` now calls the same
-  shared effect (no duplicated literals; 10/150000 are file-scoped in `WA_reserves_effects.txt`).
-  `WA_reserves_create_template` also recreates on a missing template, healing the latent
-  unlock→rename→redeploy malformed-create_unit path for every country. [reserve-quality]
-  covering sentence (AGENTS.md 3(g), the gate comment is the recorded objection): the dilution
-  objection is covered because the same reward disbands 13 militia returning their equipment and
-  manpower, and the recurring decision path stays closed for expeditionary-only countries.
-  Accepted residuals: (i) in-flight campaigns where the focus already completed never receive the
-  batch — no migration; (ii) `WA_reserves_spawn_generic`'s else-branch can charge without spawning
-  when CAN controls neither its capital nor a qualifying core state (country effectively overrun).
-  Probe: next campaign, CAN division count ≥ 10 within a month of `CAN_war_measures_act`
-  completing (savegame `division_template` count vs focus completion date).
-- Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
-  `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run pasted 2026-08-25.
-  F9 boot test OK 2026-08-27. The CAN reserve-batch reward is untested in-game: F9 boot test owed
-  for the 2026-08-27 batch.
-- Closed when: a campaign shows (a) CAN with the majority of its divisions under front/buffer orders
-  OUTSIDE North America while its home is safe (vs 100 % areadef in `8f9b5653`); (b) AST/NZL/RAJ
-  areadef home counts ~0 while the Pacific is quiet AND re-garrisoned within 3 months of
-  `pacific_threat_imminent` turning true; (c) dominion divisions present on the African fronts once
-  each passes the 6-factory fitness floor; control (d) a non-faction minor at war keeps its home
-  garrison (the release must not become “everyone abandons home”).
-
 ### fra-battle-of-france — OPEN (2026-08-27)
 - Scope: owner feedback 2026-08-27 (feedback_save - ironman, so the ~20-division figure is the
   owner's report, not a save measurement): France garrisons North Africa / Corsica during the
@@ -579,6 +478,53 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   while an Italian homeland power is an enemy, (c) no regression of the Maginot/fall_rot arithmetic
   (north_france/france nets unchanged).
 
+### rk-no-divisions — OPEN (2026-08-27)
+- Scope: owner rule 2026-08-27: a Reichskommissariat builds (trains) NO division, of any role.
+  Divisions granted by script are out of scope — the RCZ ger_armor.999 bootstrap (6 spawned
+  garrison divisions, recorded design) and the Military Police `load_oob` template files stay.
+- State: shipped 2026-08-27. (i) New archetype `WA_AI_CONFIG_is_reichskommissariat`
+  (`WA_AI_CONFIG.txt`) = `has_autonomy_state = autonomy_reichskommissariat` — dynamic, covers all
+  creation paths MEASURED this session (GER decisions 39 tags, ITA decisions 8 tags, ENG dominion
+  conversions, toolpack) with no tag list. The reichsprotectorate autonomy (RCZ) deliberately does
+  not pass; RCZ enters only if the GER decision later moves it to RK autonomy. **ITS (Italian East
+  Africa) exempt by owner order 2026-08-27** (mid-session): script never gives ITS the RK autonomy
+  (MEASURED: only `autonomy_collaboration_government`, ITA.txt establish_ITS), but the autonomy
+  ladder can slide a fascist ITA subject into it, and ITS's Ascari divisions are a fed design
+  (ITA sends equipment + `add_units_to_division_template`). Exception encoded as
+  `NOT = { original_tag = ITS }` inside the CONFIG trigger (the one file where tags are legal).
+  (ii) New block
+  `WA_AI_PRODUCTION_DEFAULT_reichskommissariat_builds_no_divisions`
+  (`WA_AI_PRODUCTION_DEFAULT_army_composition.txt`): `build_army infantry -500` (USA
+  disarmed-nation precedent) + `role_ratio -1000` on every WA template role except the removed
+  garrison role (infantry, cavalry, suppression, motorized, mechanized, armor, light/medium/
+  heavy/modern_armor, marines, mountaineers). Legacy tag-list blocks
+  (`GER_reichskomissariats_dont_build_divisions` -1 war-gated, `ENG_puppets_...`,
+  `FRA_puppets_...`) kept untouched — additive change, they cover pre-RK windows.
+- Why the old brake failed (MEASURED): `GER_reichskomissariats_dont_build_divisions` is value -1
+  (vs USA's -500), war-gated (`enable = { has_war = yes }` — nothing at peace), infantry-id only
+  (the Military Police templates are cavalry-role), and a tag list that misses ITA's 8 RK tags and
+  ENG's dominion conversions. Meanwhile released RK tags inherit overlord templates and
+  `WA_AI_PRODUCTION_build_army_base` asserts `role_ratio infantry = 100` for everyone.
+- ASSUMED, stated: engine stacking of same-id entries across ai_strategy blocks; `role_ratio` base
+  100 + value with a negative net reading as zero want (supported by the campaign-9be92c89 note in
+  the same file: negative infantry want stopped USA training entirely). The engine may
+  DECOMMISSION existing RK divisions of zero-want roles (garrison-role lesson, SOV Strelkovaya) —
+  accepted, the owner rule wants them at none; the block comment says so instead of claiming
+  "granted divisions stay".
+- Reviews 2026-08-27: architecture CONCERNS + lessons CONCERNS — both on the same point (the
+  "granted divisions stay" claim was ASSUMED against the decommission mechanism): claim relabelled
+  and accepted as above. Lessons item 2 (12 role-id strings, one bad token silently voids the
+  block — F9 + error.log id check) folded into Verification; lessons item 3 (ENG/FRA colonial
+  blocks share `build_army id = infantry` with RK-eligible tags): both negative, summing cannot
+  flip sign, recorded ASSUMED.
+- Verification: F9 boot test owed (ai_strategy block add = launch-test territory, 2026-08-09 CTD
+  precedent) INCLUDING error.log check that none of the 12 `role_ratio`/`build_army` id tokens is
+  rejected; owner `imgui show ai-strategy` on an RK tag (e.g. RUK after conversion) listing the
+  new block under Active strategies is the cheap confirmation.
+- Closed when: a campaign save shows every country holding `autonomy_reichskommissariat` (ITS
+  excepted) with zero divisions in training and a division count that only ever falls or holds
+  (scripted grants aside); control: ITS still fields/trains its colonial divisions.
+
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
@@ -586,6 +532,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `allied-total-commitment` | TESTED, parked 2026-08-27 for the next campaign (WIP limit; F9 boot test for the 2026-08-27 CAN reserve-batch reward still OWED) | CAN 4-9 div, 100% areadef home garrison (`8f9b5653`); release trigger PROVEN on CAN (wa_tc.1 harness 1942.2, closure PASS); `garrison -5000` engine honour still ASSUMED | Campaign legs: (a) CAN majority front/buffer outside North America while home safe; (b) AST/NZL/RAJ areadef ~0 while Pacific quiet AND re-garrisoned within 3 months of `pacific_threat_imminent`; (c) dominions on African fronts once past the 6-factory floor; (d) control: a non-faction minor at war keeps its home garrison; plus SS24 bulwark-guest probe (zero Commonwealth div on FRA soil while FRA holds `disjointed_government`, historical difficulty). Full record: git log of this file + [allied-total-commitment] commits |
 | `scripted-invasion-reservation` | OPEN, parked 2026-08-27 (owner order; console harness legs A-C PASSED 2026-08-23, leg (b) NOT CHECKED on `8f9b5653` - the Allied AI never wanted a French landing, so the mechanism never ran) | Halab 1944.6: USA order 252 holds 9 divisions on a GER-held, GER-flagged reserved target - H1 (@FROM inert in ai_strategy context) vs H2 (-200 outbid on a pre-existing order) undecidable from the save | A campaign in which the Allied AI wants a reserved beach shows no engine invasion order against it; or an ai_strategy-context harness leg proves @FROM renders. Full record: git log of this file + [scripted-invasion-reservation] commits |
 | `uk-truck-supply` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: ENG truck deficit every game, Africa supply fulfillment < 50%. MEASURED in code: demand multiplied (hub cost 60->500, motorize ratio 0.95, buffer 1.2) while ENG (36 arms factories) sat on the 3-factory tier with a 1000-stock cutoff | A campaign shows ENG on the 6-factory tier with motorized stock >= 1500 sustained at war, and Africa hub motorization no longer truck-starved. Shipped: stock bar 1500 = lend-lease starve (registry truck_stock_starve_floor), 30-49-factory tier at 6, min_wanted_supply_trucks 2000/1000 (vanilla precedent SIA). Successor of the raj-trucks SAF-tier residual |
 | `suppression-templates` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: countries burn army XP designing 4x-light-cav garrison templates, field them to the FRONT, and the template (no MP) is also the state-garrison pick. MEASURED in code: role prio 1000 (~37% of XP draws), reinforce_prio 1, use_suppression_templates = always yes | A campaign shows minors' army XP not spent on suppression templates while neutral, and no suppression-template divisions under front orders. Shipped: trigger gated (war OR non-core control) + LATCH on the existing flag (no mid-campaign decommission flip), role prio 50, reinforce_prio 0, dead build_army_cavalry pair deleted. Engine garrison scoring untouched |
