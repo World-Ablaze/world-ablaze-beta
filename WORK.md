@@ -438,6 +438,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   OK 2026-08-27 (owner).** Verification (SS26 probe): RAJ divisions physically standing in 656/659 -
   INCLUDING while JAP is neutral, the window where RAJ's areadef park competes hardest - with ENG at
   its 0.02 floors; ENG back at 0.075 on Aden when RAJ is unavailable.
+  **Amended 2026-08-27 (owner order after review of the bars):** the three RAJ Gulf verdicts
+  (Kuwait mission, standing watch, Aden) read `WA_AI_MILITARY_delegate_force_floor` instead of
+  `army_still_operational` - the latter's 41-division / eq-0.9 collapse bars sit above a healthy
+  reserve-quality Indian army (MEASURED `8f9b5653`: RAJ 30 divisions at 1941.6) and would have kept
+  all three missions permanently disarmed. `num_divisions > 29` kept as the count bar (known
+  reduced margin post-`ed109de9d`, no hysteresis - flap exposure already recorded above).
 - Verification: campaign probes of R70/R72/R73/R84-R95 (archive); no console harness.
   Added 2026-08-24: (a) with the delegation live, ENG divisions in East Africa + Sudan drop
   below its Egypt/north-africa contingent (cross-area ordering +20 < +25 is ASSUMED engine

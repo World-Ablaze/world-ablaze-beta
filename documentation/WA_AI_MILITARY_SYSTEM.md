@@ -1565,6 +1565,11 @@ ENG fallback). Owner rule: RAJ garrisons Kuwait and Aden to relieve British divi
   watch is continuous), delegate verdict `RAJ_aden_guard_available` (Kuwait-shaped) + wrapper
   `commonwealth_aden_guard_available`; RAJ writer `COUNTRY_RAJ_THEATRE_guard_aden` (0.04, order
   9210); ENG pair `defense_of_aden_delegated` (0.02, order 18) / `_fallback` (0.075, order 19).
+- All three RAJ verdicts (Kuwait mission, standing watch, Aden) read `delegate_force_floor`, NOT
+  `army_still_operational`: the latter's collapse-calibrated bars (41 divisions, eq 0.9) sit above a
+  healthy reserve-quality colonial army (RAJ measured ~30 divisions in 1941 on `8f9b5653`) and would
+  keep the missions permanently disarmed. Owner order 2026-08-27; same ruling as the East-Africa
+  dual verdict - the floor's eq 0.45 term still keeps a hollow delegate from releasing ENG.
 - Probe: with RAJ available - INCLUDING while JAP is still neutral, the window where RAJ's engine
   areadef park competes hardest - saves show RAJ divisions physically standing in 656/659 and ENG's
   contingent there at or below its 0.02 floors; with RAJ dead/unavailable, ENG back at 0.075 on Aden.
