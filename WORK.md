@@ -350,6 +350,32 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   campaign probe as above.
 
 ### commonwealth-handoff — OPEN (2026-08-23)
+- **Lever shipped 2026-08-25 (owner order): the -130 counter-bid is replaced by an EXEMPTION.**
+  `WA_AI_MILITARY_ENG_east_africa_delegated_FRONT` DELETED (it saturated at -100 per E2 — the repo's
+  one E2 violation, now purged — and still left ENG at net +50 on East Africa, above a quiet Egypt's
+  +45; MEASURED on baseline `15176ce6`: EA+Sudan 13→18 ENG divisions vs Egypt 7→4 while Egypt fell,
+  1940.8-11, to ITL alone). The stand-down is now a NOT-term inside the Faction +150
+  (`ALLIES_east_africa_contested_FRONT`): mission owner + `commonwealth_east_africa_available` → not
+  pulled at all (net 0 vs RAJ +250), correct under either cross-area summing reading; delegate
+  unavailable → ENG back at the full +150 (the old block's fallback objection, kept, not refuted).
+  Doc §16 rewritten. Reviews: architecture OK; lessons CONCERNS, 3 items applied here.
+  **Flap exposure, stated (lessons item 2):** every availability term is a single threshold
+  (`num_divisions > 29`, pacific quiet, theatre contested) with `abort_when_not_enabled`, so the
+  month RAJ dips to 29 and back, ENG's +150 re-arms then re-exempts. Worst case of the flap = the
+  PRE-fix behaviour (full +150), never worse; the bar was set at 29 precisely for margin (RAJ
+  measured 40-44 across 1941) — same single-threshold shape as the old -130, unchanged by this
+  lever. No hysteresis band added; if a campaign shows monthly flapping, that is the lever.
+  **Known gap, named (lessons item 1 rationale): `num_divisions > 29` counts RAJ's TOTAL army** — a
+  RAJ fully committed to the Burma wall still reads "available" while East Africa sits empty and
+  ENG stays exempted. The pacific-quiet term covers the Japan case; the non-Japan variant of an
+  absent delegate is uncovered and is what probe (a2) below watches.
+- Verification, rewritten per the lessons review (divisions in the save, never the trigger reading
+  true): (a1) while the exemption is live (delegate available), **RAJ divisions physically standing
+  in the East-Africa states (regions 17/217/380/381) >= 8** and ENG's EA+Sudan contingent below its
+  Egypt contingent; (a2) if RAJ's in-theatre count reads < 4 while `num_divisions > 29`, the
+  total-vs-in-theatre conflation above is the live failure — reopen with that measurement; (a3)
+  ENG on regions 17/217 under delegation: net -50 (africa_war_1 alone), zero ENG divisions there
+  acceptable ONLY with RAJ present in the same regions.
 - **Finding 2026-08-25 that bears directly on why probe (a) failed: the `-130` is an E2 violation and
   the engine cannot be seeing -130.** MEASURED: `tools/military_economy_audit.py` reports exactly one
   `E2-front_unit_request-range` violation in the whole repo —

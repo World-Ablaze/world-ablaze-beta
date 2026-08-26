@@ -1,3 +1,11 @@
+> **CORRECTION D'IDENTITE (2026-08-25, apres publication)** : les saves mensuelles analysees ici
+> portent `game_unique_id = 15176ce6` (seed 1435616227, mods `world-ablaze-beta`, build cloud
+> inconnu) - ce n'est PAS la campagne `8f9b5653` de WORK.md malgre le nom de ce fichier (verifie
+> par `savegame.py meta` sur les deux jeux de saves ; seul `CAN_1942_02_08_01.hoi4` porte
+> `8f9b5653`, et il contredit le scoring WORK.md sur le controle du Caire - timeline branchee,
+> ASSUMED). Les mesures de ce fichier restent valides comme baseline pre-[allied-total-commitment],
+> mais toute comparaison croisee avec les verdicts `8f9b5653` de WORK.md est interdite.
+
 # Allied home-garrison baseline — campaign "8f9b5653" monthly saves (pre-[allied-total-commitment])
 
 Baseline census of Allied divisions sitting in home garrison, scored against the gates of the NEW
