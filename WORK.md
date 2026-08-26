@@ -33,91 +33,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > that.
 
 
-### scripted-invasion-reservation — OPEN (2026-08-23)
-- **Campaign `8f9b5653` scored 2026-08-25 — legs (a) and (c) PASSED, leg (b) is NOT CHECKED, not a
-  pass, and the subject does NOT close on this evidence.** Leg (a) MEASURED: `wa_tlm_resv_stamp_n`
-  USA 135 (1942.6) -> 461 -> **724** (1944.6), ENG 80 -> 129 -> **159**, both families fresh
-  (`_last_t` = the save's own month) with `resv_first_t` USA 1942.1 / ENG 1940.7; 31
-  `WA_AI_LANDING_reserved_for_*` flags live on GER at 1942.6 / 1943.6 / 1944.1 / 1944.6 and on ITA
-  through 1944.1. The 31 tags are the Allied faction roster, which is what
-  `WA_AI_LANDING_stamp_reservation` is written to do (ROOT plus every AI faction peer) — checked at
-  the write site before being called an anomaly. Leg (c) MEASURED: flags absent on GER from 1944.12,
-  on ITA from 1944.6, on JAP from 1945.10, each inside one 50-day lease of its own last scheduled op;
-  no leak on any target. The late `FROZEN` annotation on both invaders (USA last sample 1945.4, ENG
-  1945.6) is calendar exhaustion — `Victor V` expiry day 3434 and `Dracula` 3452 — not a dead path.
-- **Leg (b) passes on its letter and proves nothing.** MEASURED: zero type-3 (naval invasion) orders
-  against any metropolitan French state across nine saves 1942.6-1944.6; every ENG/USA type-3 order in
-  that window targets Gabon, Kuwait, Dhi Qar or Halab. Invasion-class staging never collapsed (ENG 1-5,
-  USA 4-9). But the Allied AI never wanted a French landing in the first place, so **the mechanism
-  under test did not run** — by the `wa-campaign-checklist` rule that is NOT CHECKED. No engine type-3
-  order ever targeted states 15 or 1016 either, so the "dday_prep's own staging survives" clause is
-  vacuously satisfied: there was never a competing order for the +1000 to outrank.
-- **The one discriminating datum reads AGAINST the mechanism, inconclusively.** MEASURED: at 1944.6
-  `control 677` gives GER 11 of 11 provinces in Halab, GER carries `WA_AI_LANDING_reserved_for_USA`
-  (`set=1944.6.1.1`), and USA order instance **252 holds 9 divisions aimed at Halab** — still 9 at
-  1944.7, 1944.8 and 1944.9 while GER holds the ground and stays flagged. That is verbatim the
-  falsification signature the consumer block's own header names. DERIVED, and deliberately not
-  upgraded: it is equally consistent with (i) `@FROM` failing to render in an `ai_strategy`
-  `country_trigger`, and (ii) `invasion_unit_request -200` having no lever over an order created 16
-  months earlier and already staffed (`creation_date` never refreshes; order 252 predates GER's
-  control of its target by a year). **This campaign cannot separate them.** Both switches were live —
-  `WA_AI_LANDING_reservations_enabled` = `always yes`, `WA_AI_LANDING_freeze_is_faction_wide` =
-  `always no` — so the pass is not an artifact of a disabled block.
-- **What would settle it**, and what this subject now waits on: a console harness leg exercising the
-  predicate in `ai_strategy` context rather than trigger context (the 2026-08-23 harness proved
-  trigger context only), or a campaign in which the Allied AI actually wants a reserved beach.
-- Probe defect found while scoring, fix before reusing: **`plans.py --fronts` filters on
-  `FRONT_TYPES = ("1","2")` and cannot emit a type-3 naval-invasion row at all.** The obvious command
-  returns zero type-3 orders on every save, which reads exactly like "no invasion orders anywhere" and
-  would have passed leg (b) for the wrong reason. Type-3 rows were obtained by importing `plans.py` and
-  patching `FRONT_TYPES` before calling `main()`. Second defect: the reservation flag is re-issued by
-  the monthly pulse (`clr` + `set … days = 50`), so its set-date is **always the save's own month, day
-  1, hour 1** — a last-refresh stamp, never a first-reservation date.- Scope: owner request 2026-08-23 — while the scripted-invasion calendar is active, the invader's
-  faction must not run engine-planned naval invasions against the calendar's target COUNTRIES until
-  the date of the last scripted invasion against each (no corps parked for a Brittany landing while
-  the calendar will open Normandy). Per country, per owner's explicit call over a state-level draft.
-- State: written in the working tree, **committed and live in campaign `8f9b5653`** (see the scoring block below). Generator
-  `tools/gen_ai_landing_reservations.py` (75/75 active calendar ops covered) → generated
-  `WA_AI_LANDING_reservations_data.txt`; updater/stamp in `WA_AI_LANDING_effects.txt`; switch
-  `WA_AI_LANDING_reservations_enabled`; consumer `WA_AI_MILITARY_INV_reserved_scripted_target`
-  (`invasion_unit_request -200`, `country_trigger` flag `WA_AI_LANDING_reserved_for_@FROM`);
-  spec `documentation/WA_AI_MILITARY_SYSTEM.md` §22; telemetry `WA_TLM_resv_*` (v30).
-- Open engine questions (both stated in the consumer block): (a) `@FROM` dynamic-flag rendering
-  inside an ai_strategy `country_trigger` has no other user in this repo — if inert, the block
-  never matches, silently; (b) `-200` flooring the unit request is the same unmeasured assumption
-  §10 carries. Fallback if (a) fails: scripted `add_ai_strategy type = invade` emission (AIFC
-  armor-reconcile idiom), accepted-accumulation caveat and all.
-- Closed when: a campaign shows (a) `wa_tlm_resv_stamp_n > 0` on the calendar invaders at war and
-  the `WA_AI_LANDING_reserved_for_*` flags on their pending targets, (b) no engine-planned Allied
-  invasion order against GER-held France before 1944.6 while dday_prep's own staging survives, and
-  (c) reservations absent after each target's last scheduled op (+ one 50-day lease).
-- Reviews 2026-08-23: wa-lessons CONCERNS + wa-architecture CONCERNS, both addressed in-session —
-  the false "on_startup re-fires on save load" comment corrected (lessons-log MEASURED: it does
-  not; pre-fix saves stay inert BY DESIGN, fingerprint = `wa_tlm_resv_*` absent), the rule-f
-  t0/t1/t2 residual table added to §22 (late-firing op unprotected past schedule+45; early success
-  lingers ≤ last-stamp+50), TLM §5 wording fixed (counter is per pending op, not per pair).
-- Verification: owner boot start OK 2026-08-23 (game launches, files parse — proves syntax only,
-  not behaviour). Console harness written 2026-08-23: `tag USA` → `event wa_resv.1` → read
-  logs/game.log "RESV TEST" (legs: A loader/epoch, B forced stamp + literal read-back, C @FROM
-  read in trigger context with scope=target/FROM=reserver; PASS = legC `1 1 0` with FROM=USA);
-  `event wa_resv.9` cleans up. Owner ran it 2026-08-23: **legC PASSED** — MEASURED console output:
-  FROM = United States of America, `literal 1 / @FROM 1 / @ROOT-control 0` → the @FROM dynamic-flag
-  rendering works in trigger context with the consumer's exact shape, and the event-FROM
-  assumption held. legB PASSED (pre 0 / post 1). legA: arrays CORRECT (`op_n = 30`, op0 634/2455 =
-  Watchtower+45 — the harness's "expected 543/2361" note was wrong, that is ENG's row; fixed), but
-  it caught a REAL bug: `today = num_days`, epoch never subtracted — `subtract_from_variable` on a
-  temp operand silently no-ops (lessons-log entry added). Fixed to `subtract_from_temp_variable`
-  in the shipped updater + harness; re-run 2026-08-23 confirmed **`today = 0`** and op0 634/2455.
-  Caveat on that second run: its context header read `I-am-ROOT=0 / I-am-THIS=0` with
-  ROOT-scope-usable=1 — the "Two call sites, one effect" syndrome — ASSUMED caused by hot-reloading
-  scripts mid-session (the fix was live without a reboot); run 1's clean-header PASS of legs B/C
-  stands, legA's arithmetic is variable-only and accepted. Fresh-boot run 2026-08-23: header clean
-  (`1 1 1 1 0` / `1 1 0`), legA `today = 0` + op0 634/2455, legB 0->1, legC `1 1 0` with FROM=USA —
-  **console harness fully PASSED on the shipped code; chapter closed** (and the clean fresh boot
-  supports the hot-reload reading of the poisoned run). legC's
-  residual (does the ai_strategy evaluator itself render @FROM) is engine-only → campaign probe:
-  the -200 entry in the save's `ai=` block + no engine invasion orders against reserved targets.
-
 ### minor-expeditionary-fitness — SHIPPED-UNTESTED (2026-08-25)
 - **FIX SHIPPED 2026-08-25, and it is NOT the one that was asked for — the value stays at -100.**
   Owner asked to deepen the brake. **That change cannot work and would have been reverted by a
@@ -511,6 +426,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   worse; the order-class census run and its adverse result recorded above; the 2026-08-17
   `[med-axis-posture]` decision re-priced `central_africa` only and records no rationale for the
   `north_africa` negatives, so it is not contradicted).
+- **Scope extended 2026-08-27 `[raj-gulf-garrisons]` (owner feedback, feedback_save - ironman, not measurable):**
+  RAJ garrisons the Gulf so British divisions do not. (i) Kuwait STANDING watch - RAJ 0.02 on 656
+  whenever ENG is at war (`RAJ_kuwait_standing_watch_available`), exclusive with the threat-gated
+  mission, whose "a guard needs something to guard against" term is KEPT, not refuted. (ii) Aden
+  converted from a flat ENG 0.075 buffer (protect_home order 6) to a delegated mission on the Kuwait
+  pattern: RAJ 0.04 (order 9210), ENG floor 0.02 (order 18) / fallback 0.075 (order 19), verdicts
+  `ENG_aden_guard_active` / `RAJ_aden_guard_available` / `commonwealth_aden_guard_available`. Spec
+  doc SS26. All new buffers `subtract_fronts_from_need = no`. Reviews 2026-08-27: architecture
+  CONCERNS + lessons CONCERNS, all required items applied (see the batch commit). **F9 boot test
+  OK 2026-08-27 (owner).** Verification (SS26 probe): RAJ divisions physically standing in 656/659 -
+  INCLUDING while JAP is neutral, the window where RAJ's areadef park competes hardest - with ENG at
+  its 0.02 floors; ENG back at 0.075 on Aden when RAJ is unavailable.
 - Verification: campaign probes of R70/R72/R73/R84-R95 (archive); no console harness.
   Added 2026-08-24: (a) with the delegation live, ENG divisions in East Africa + Sudan drop
   below its Egypt/north-africa contingent (cross-area ordering +20 < +25 is ASSUMED engine
@@ -524,7 +451,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
   once an enemy is on Egyptian soil.
 
-### allied-total-commitment — SHIPPED-UNTESTED (2026-08-25)
+### allied-total-commitment — TESTED (2026-08-27)
 - Scope: owner request 2026-08-25 ("les dominions alliés envoient 100% de leur armée en opération
   — pas de garnison au Canada / Afrique du Sud / AST / NZL / RAJ, sauf quand le Japon rejoint la
   guerre pour les pays concernés") + simplification: legacy strategies out, one generic system.
@@ -579,15 +506,53 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   factories), threat `0 0 0 / pacific-cw=0 pacific-threat=1`, **`total_commitment_active = 1`,
   closure PASS** — the trigger side of the release is PROVEN on CAN; what remains ASSUMED is only
   the engine honouring `garrison -5000` (imgui Active-strategies check still the cheap confirm).
+- **Scope extended 2026-08-27 `[bulwark-guest-gate]` (owner rule: on historical difficulty the
+  Commonwealth waits for FRA to shed `disjointed_government` before deploying on French soil):** new
+  control-panel trigger `WA_AI_MILITARY_western_bulwark_accepts_guests` (historical axis =
+  `WA_AI_DIFFICULTY_is_historical`, owner's explicit choice over `is_historical_focus_on`; opens on
+  fall_of_france / capitulation / bulwark out of faction / non-historical). In the `enable` of this
+  subject's two pumps (`committed_minor_theatre_boost_europe` - whose `has_western_foothold` counted
+  FRENCH states and armed the Normandy demand from 1936 - and the new `join_north_africa`, split from
+  `join_africa` because the area contains French Morocco/Algeria/Tunisia), plus `ALLIES_europe_first`
+  (SE-Asia sink split out, ungated) and the ENG BEF pair. `doesnt_have_disjointed_government` now
+  covers the 4th variant `_bloc_path` (was missing - also touches its decision/focus readers, by
+  design). Spec doc SS24. Gate fails OPEN in every non-historical or FRA-less setup (principle 1).
+- **State moved to TESTED 2026-08-27:** the wa_tc.1 console harness was run and pasted 2026-08-25
+  (closure PASS, recorded above) and the owner's **F9 boot test passed 2026-08-27** with the full
+  batch live - both owed items are delivered. Campaign legs (a)-(d) remain the closing criteria,
+  now joined by the SS24 probe: zero RAJ/dominion divisions in metropolitan France and zero
+  Commonwealth divisions on FRA-owned North-African states while FRA still holds the idea
+  (historical difficulty); BEF deploys once it is gone; post-fall behaviour unchanged.
 - Verification: console harness `event wa_tc.1` (`WA_TEST_total_commitment.txt` /
-  `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run owed. **F9 boot test
-  owed** (many `ai_strategy` block adds/removes; 2026-08-09 strategy-DB CTD precedent).
+  `events/wa_test_total_commitment.txt`, read-only, contract v1) — owner run pasted 2026-08-25.
+  F9 boot test OK 2026-08-27.
 - Closed when: a campaign shows (a) CAN with the majority of its divisions under front/buffer orders
   OUTSIDE North America while its home is safe (vs 100 % areadef in `8f9b5653`); (b) AST/NZL/RAJ
   areadef home counts ~0 while the Pacific is quiet AND re-garrisoned within 3 months of
   `pacific_threat_imminent` turning true; (c) dominion divisions present on the African fronts once
   each passes the 6-factory fitness floor; control (d) a non-faction minor at war keeps its home
   garrison (the release must not become “everyone abandons home”).
+
+### fra-battle-of-france — OPEN (2026-08-27)
+- Scope: owner feedback 2026-08-27 (feedback_save - ironman, so the ~20-division figure is the
+  owner's report, not a save measurement): France garrisons North Africa / Corsica during the
+  Battle of France while the Italian border sits open. One intended behaviour: while the metropole
+  is invaded, the empire stops absorbing the army and the Alpine border is held.
+- State: shipped 2026-08-27. (i) `FRA_homeland_invaded_recall_colonials_THEATRE` - `area_priority
+  -90` on north_africa / mediterranean (Corsica sits in region 373 of that area) / middle_east,
+  gated `home_threatened` + at war + not capitulated. (ii) Alpine pair `FRA_alpine_front_FRONT`
+  (+100 south_france) / `_THEATRE` (+100), gated GEOGRAPHICALLY on `any_enemy_country =
+  is_italian_homeland_power` (lessons ruling: never `has_war_with = ITA`, the armistice flip renames
+  the tag). (iii) `FRA_defense_of_the_colonies_FRONT` re-armed from the economy-pass zeros to the
+  -5000 release convention (audit E7), gated `home_threatened`; the all-zero no-op
+  `FRA_ignore_garrisons_until_invasion_start` deleted. Spec doc SS25. Reviews 2026-08-27:
+  architecture CONCERNS + lessons CONCERNS, required items applied. F9 boot test OK 2026-08-27.
+- ASSUMED, stated: `garrison -5000` release semantics are WA convention, never engine-measured; the
+  colonial channel of the reported 20 divisions is inferred from code, not from the (ironman) save.
+- Closed when: a Battle-of-France save (non-ironman) shows (a) FRA North-Africa + Corsica division
+  count falling once `surrender_progress > 0.05`, (b) >= 2 FRA divisions on the south_france fronts
+  while an Italian homeland power is an enemy, (c) no regression of the Maginot/fall_rot arithmetic
+  (north_france/france nets unchanged).
 
 ## PARKED
 
@@ -596,6 +561,9 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `scripted-invasion-reservation` | OPEN, parked 2026-08-27 (owner order; console harness legs A-C PASSED 2026-08-23, leg (b) NOT CHECKED on `8f9b5653` - the Allied AI never wanted a French landing, so the mechanism never ran) | Halab 1944.6: USA order 252 holds 9 divisions on a GER-held, GER-flagged reserved target - H1 (@FROM inert in ai_strategy context) vs H2 (-200 outbid on a pre-existing order) undecidable from the save | A campaign in which the Allied AI wants a reserved beach shows no engine invasion order against it; or an ai_strategy-context harness leg proves @FROM renders. Full record: git log of this file + [scripted-invasion-reservation] commits |
+| `uk-truck-supply` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: ENG truck deficit every game, Africa supply fulfillment < 50%. MEASURED in code: demand multiplied (hub cost 60->500, motorize ratio 0.95, buffer 1.2) while ENG (36 arms factories) sat on the 3-factory tier with a 1000-stock cutoff | A campaign shows ENG on the 6-factory tier with motorized stock >= 1500 sustained at war, and Africa hub motorization no longer truck-starved. Shipped: stock bar 1500 = lend-lease starve (registry truck_stock_starve_floor), 30-49-factory tier at 6, min_wanted_supply_trucks 2000/1000 (vanilla precedent SIA). Successor of the raj-trucks SAF-tier residual |
+| `suppression-templates` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: countries burn army XP designing 4x-light-cav garrison templates, field them to the FRONT, and the template (no MP) is also the state-garrison pick. MEASURED in code: role prio 1000 (~37% of XP draws), reinforce_prio 1, use_suppression_templates = always yes | A campaign shows minors' army XP not spent on suppression templates while neutral, and no suppression-template divisions under front orders. Shipped: trigger gated (war OR non-core control) + LATCH on the existing flag (no mid-campaign decommission flip), role prio 50, reinforce_prio 0, dead build_army_cavalry pair deleted. Engine garrison scoring untouched |
 | `raj-trucks` | CAMPAIGN-OK (2026-08-25, campaign `8f9b5653`: all three positive legs + the control PASSED) | SAF runs the 3-factory truck tier 1940-42 then has NO motorized line at 1945.10 on 49 arms factories (possible tier regression; MEASURED as absence) | The SAF tier question is answered (regression fixed, or explained and accepted); every other criterion already met — full record: git log `[raj-trucks]` + this file's history |
 | `silo-breadth` | TESTED (console harness owner-PASSED 2026-08-24) | Fuel silos stall at the first state's cap of 6; shipped fix = CIC/MIC/NIC/REF availability standard + breadth-first walk, harness `event wa_silo.1`/`.2` | A campaign save shows a country with silo need > 6 holding BUILT `fuel_silo` levels in >= 2 states, and the harness walk skipping a state at its cap |
 | `lend-lease-relief` | TESTED (owner-validated 2026-08-23) | Overland surplus relief (Fix 92) + USA native offers work; final audit remains | Final audit passes: leg 3 of R7b checked; USA sender restored or the R57 failure explained and accepted |

@@ -109,22 +109,50 @@ WA_AI_PRODUCTION_build_trucks = {
 # [raj-trucks] the truck floor is tiered by industry, like the amphibious floors. A flat
 # min-10-factories is most of a 12-factory MIC, and trucks are now researched by horse armies too
 # (supply-hub motorization). 500 trucks = one fully motorized hub
-# (NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST) - that is what the small tier buys.
+# (NDefines.NSupply.SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST).
+# [uk-truck-supply] the stock bar is 1500 = wa_ai_lend_lease.motorized.starve (registry-linked):
+# the floor must not switch off while the country still counts as truck-starving. The old 1000
+# cutoff bought two motorized hubs and died, which is the ENG "supply fulfillment < 50% in Africa"
+# symptom. Three industry tiers: <30 factories = 3, 30-49 = 6, >49 = 10 (ENG starts at 36 and sat
+# on the 3-factory tier).
 WA_AI_PRODUCTION_build_trucks_stockpile_low = {
 	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < 1000 }
+	has_equipment = { motorized_equipment < 1500 } # registry: truck_stock_starve_floor
 	num_of_military_factories > 49
 }
 
 WA_AI_PRODUCTION_build_trucks_stockpile_very_low = {
 	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < 500 }
+	has_equipment = { motorized_equipment < 750 }
 	num_of_military_factories > 49
+}
+
+WA_AI_PRODUCTION_build_trucks_stockpile_low_medium = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < 1500 } # registry: truck_stock_starve_floor
+	num_of_military_factories > 29
+	num_of_military_factories < 50
 }
 
 WA_AI_PRODUCTION_build_trucks_stockpile_low_small = {
 	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < 1000 }
+	has_equipment = { motorized_equipment < 1500 } # registry: truck_stock_starve_floor
+	num_of_military_factories < 30
+}
+
+# [uk-truck-supply] the engine-side buffer floor: min_wanted_supply_trucks feeds the AI's own
+# wanted-trucks computation (the lever DEFAULT_SUPPLY_TRUCK_BUFFER_RATIO multiplies), which the
+# min-factories floors above cannot reach. Tiered on the same industry bars.
+WA_AI_PRODUCTION_wants_truck_buffer_large = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_war = yes
+	num_of_military_factories > 49
+}
+
+WA_AI_PRODUCTION_wants_truck_buffer_medium = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_war = yes
+	num_of_military_factories > 29
 	num_of_military_factories < 50
 }
 

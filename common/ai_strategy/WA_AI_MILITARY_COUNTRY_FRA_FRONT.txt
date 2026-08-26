@@ -10,29 +10,6 @@
 # Phase 2 split: FRONT domain blocks.
 # Phase 2 split: FRONT domain blocks.
 
-WA_AI_MILITARY_FRA_ignore_garrisons_until_invasion_start = {
-	allowed = {
-		tag = FRA
-	}
-	enable = {
-		NOT = { has_war_with = ENG }
-		num_divisions < 100
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = garrison
-		id = "FRA"
-		value = 0 # economy: was -200
-	}
-
-	ai_strategy = {
-		type = garrison
-		value = 0 # economy: was -200
-	}
-}
-
-
 # Phase 6 split from WA_AI_MILITARY_FRA_pre_fall_rot (FRONT domain)
 WA_AI_MILITARY_FRA_pre_fall_rot_FRONT = {
 
@@ -164,6 +141,34 @@ WA_AI_MILITARY_FRA_fall_rot = {
 }
 
 
+# purpose: [fra-battle-of-france] the Alpine border guard: while France fights an Italian homeland
+#          power and still stands, the south_france fronts get a positive request. Without it
+#          fall_rot's -50 leaves the Italian border at net -50. +100 nets +50 during fall_rot
+#          (with protect_the_homeland's +50 -> +100 total), a guard-sized weight that never
+#          outbids the +400 on the German axis. Geographic gate, not `tag = ITA`: an "Italy" is
+#          whoever owns and cores Italian soil, and the armistice flip renames the tag.
+# range:   +100 (percent factor, within E2 [-100, +200])
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_FRA_alpine_front_FRONT = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		any_enemy_country = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		has_capitulated = no
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+
+		area = south_france
+		value = 100
+	}
+}
+
+
 
 WA_AI_MILITARY_FRA_dont_put_half_your_army_on_congo = {
 	allowed = {
@@ -195,83 +200,90 @@ WA_AI_MILITARY_FRA_dont_put_half_your_army_on_congo = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_FRA_defense_of_the_colonies (FRONT domain)
+# purpose: [fra-battle-of-france] the colonial-garrison brake, re-armed from the economy pass's
+#          blanket 0 (was an unconditional -200) and GATED: it only bites while the metropole is
+#          actually threatened, so peacetime and phoney-war colonial policing are untouched, and the
+#          moment France is being overrun the empire stops absorbing divisions.
+# range:   -5000 per garrison id (the repo's negative-garrison release convention, doc section 4/16;
+#          the pre-economy value was -200, aligned to the convention on re-arming)
+# policy:  Additive
+# domain:  FRONT
 WA_AI_MILITARY_FRA_defense_of_the_colonies_FRONT = {
 
 	allowed = {
 		original_tag = FRA
 	}
 	enable = {
-		always = yes
+		has_capitulated = no
+		has_war = yes
+		WA_AI_MILITARY_home_threatened = yes
 	}
-	abort = {
-		always = no
-	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = garrison
 		id = "UKE"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "UKT"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "UKN"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "UKM"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "UKO"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "UKW"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRC"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRW"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRJ"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRO"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRI"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRV"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 	ai_strategy = {
 		type = garrison
 		id = "FRP"
-		value = 0 # economy: was -200
+		value = -5000
 	}
 }
 

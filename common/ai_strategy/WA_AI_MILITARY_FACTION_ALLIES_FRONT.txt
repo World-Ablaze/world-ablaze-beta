@@ -27,6 +27,10 @@ WA_AI_MILITARY_ALLIES_europe_first = {
 		# the only thing holding an unequipped minor back (MEASURED, NEP 1942.2 imgui: targets 777/778
 		# +150/+75 against target 764 -100).
 		WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
+		# [bulwark-guest-gate] the `tag = GER` key is an ENEMY key, so pre-fall it lands on the fronts in
+		# metropolitan France; the pull waits until the bulwark accepts guests. The SE-Asia sink kept
+		# running through the wait lives in WA_AI_MILITARY_ALLIES_southeast_asia_sink below.
+		WA_AI_MILITARY_western_bulwark_accepts_guests = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -41,6 +45,21 @@ WA_AI_MILITARY_ALLIES_europe_first = {
 		area = north_africa
 		value = 75
 	}
+}
+
+# purpose: [bulwark-guest-gate] the SE-Asia suppression half of the old europe_first block, split out
+#          so the guest gate cannot stand the sink down while members wait at home.
+# range:   -100 (E2 floor)
+# policy:  Additive
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_southeast_asia_sink = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		has_war_with = GER
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
+		WA_AI_MILITARY_is_fit_for_expeditionary_front = yes
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
@@ -1767,13 +1786,29 @@ WA_AI_MILITARY_ALLIES_committed_minor_join_africa = {
 
 	ai_strategy = {
 		type = front_unit_request
-		area = north_africa
+		area = WA_AI_MILITARY_east_africa_regions
 		value = 60
 	}
+}
+
+# purpose: [bulwark-guest-gate] the north_africa half of the standing request, split out because the
+#          north_africa ai_area contains FRENCH Morocco/Algeria/Tunisia (ai_areas/default.txt) - the
+#          pull waits for the guest gate so committed minors do not line up on French colonial soil
+#          while the bulwark still refuses guests. East Africa (British/Italian ground) is unaffected.
+# range:   front_unit_request +60, same as the east_africa half
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_ALLIES_committed_minor_join_north_africa = {
+	enable = {
+		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_MILITARY_total_commitment_active = yes
+		WA_AI_MILITARY_western_bulwark_accepts_guests = yes
+	}
+	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = front_unit_request
-		area = WA_AI_MILITARY_east_africa_regions
+		area = north_africa
 		value = 60
 	}
 }

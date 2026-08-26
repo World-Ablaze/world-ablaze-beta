@@ -830,6 +830,61 @@ WA_AI_MILITARY_RAJ_kuwait_guard_available = {
 	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
 }
 
+# [raj-gulf-garrisons] the STANDING watch: a token Indian presence on Kuwait whenever ENG is at war
+# at all, so the Gulf is not held by British divisions the main fronts need.
+# Deliberately exclusive with the threat-driven mission above - kuwait_guard_active embeds
+# gulf_approach_threatened ("a guard needs something to guard against", kept, not refuted): the
+# moment the approach is threatened, the sized mission tiers take over and this watch stands down.
+WA_AI_MILITARY_RAJ_kuwait_standing_watch_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_gulf_guard = yes
+	is_ai = yes
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	ENG = { has_war = yes }
+	656 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+	WA_AI_MILITARY_ethiopian_war_finished = yes
+	WA_AI_MILITARY_army_still_operational = yes
+	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
+	NOT = { WA_AI_MILITARY_ENG_kuwait_guard_active = yes }
+}
+
+# [raj-gulf-garrisons] the Aden mission, same shape as Kuwait's: active while ENG is at war and the
+# state is in friendly hands. No threat term - Aden overlooks the Red Sea convoy route and is
+# garrisoned continuously today (ENG protect_home 0.075), so the mission itself is continuous; only
+# WHO holds it is delegated.
+WA_AI_MILITARY_ENG_aden_guard_active = {
+	ENG = { has_war = yes }
+	659 = {
+		CONTROLLER = {
+			OR = {
+				WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes
+				is_in_faction_with = ENG
+				is_subject_of = ENG
+			}
+		}
+	}
+}
+
+# [raj-gulf-garrisons] Aden was administered from British India - the Indian army is the natural
+# delegate. Same availability shape as the Kuwait mission verdict.
+WA_AI_MILITARY_RAJ_aden_guard_available = {
+	WA_AI_CONFIG_MILITARY_is_commonwealth_gulf_guard = yes
+	is_ai = yes
+	num_divisions > 29
+	WA_AI_MILITARY_commonwealth_fights_with_eng = yes
+	WA_AI_MILITARY_ENG_aden_guard_active = yes
+	WA_AI_MILITARY_ethiopian_war_finished = yes
+	WA_AI_MILITARY_army_still_operational = yes
+	NOT = { WA_AI_MILITARY_commonwealth_home_in_danger = yes }
+}
+
 # [allied-total-commitment] ENG-side STAND-DOWN wrapper: keeps the division-count bar the delegate's
 # own ADD-force verdict dropped (Fix-128-class ruling - a weak gate on a stand-down makes the
 # guarded ground weaker). ENG thins its home reserve only for a guard that is actually sized.
@@ -850,6 +905,10 @@ WA_AI_MILITARY_commonwealth_egypt_support_available = {
 
 WA_AI_MILITARY_commonwealth_kuwait_guard_available = {
 	any_country = { WA_AI_MILITARY_RAJ_kuwait_guard_available = yes }
+}
+
+WA_AI_MILITARY_commonwealth_aden_guard_available = {
+	any_country = { WA_AI_MILITARY_RAJ_aden_guard_available = yes }
 }
 
 ############################################################################################################
@@ -3364,4 +3423,36 @@ WA_AI_MILITARY_state_is_beyond_home_reach = {
 	NOT = { is_owned_by = FROM.FROM }
 	NOT = { is_core_of = FROM.FROM }
 	NOT = { any_neighbor_state = { is_owned_by = FROM.FROM } }
+}
+
+
+############################################################################################################
+# [bulwark-guest-gate] When may Allied armies stand on the western bulwark's soil
+############################################################################################################
+# CONTROL PANEL. Read by the Faction pumps that push Allied members toward French ground
+# (WA_AI_MILITARY_ALLIES_europe_first, WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe,
+# WA_AI_MILITARY_ALLIES_committed_minor_join_north_africa) and by the ENG BEF pair
+# (WA_AI_MILITARY_ENG_bef_in_europe_FRONT/_THEATRE). Change the behaviour here, never in the blocks.
+
+# COUNTRY scope (ROOT = the Allied member asking "may I deploy onto the bulwark's ground?").
+# Owner rule: on the historical AI difficulty, Commonwealth deployment onto French
+# territory waits until France has shed its disjointed government (all idea variants). Assumes the
+# bulwark archetype is CONFIG-classified and the disjointed family is fully covered by
+# doesnt_have_disjointed_government (FRA_scripted_triggers.txt). A bulwark that is dead, capitulated,
+# fallen (fall_of_france) or outside the asker's faction no longer refuses anyone, so the gate can
+# never starve the post-fall western front. Non-historical difficulty never waits.
+WA_AI_MILITARY_western_bulwark_accepts_guests = {
+	OR = {
+		NOT = { WA_AI_DIFFICULTY_is_historical = yes }
+		has_global_flag = fall_of_france
+		NOT = {
+			any_country = {
+				WA_AI_CONFIG_MILITARY_is_western_european_bulwark = yes
+				exists = yes
+				has_capitulated = no
+				is_in_faction_with = ROOT
+				NOT = { doesnt_have_disjointed_government = yes }
+			}
+		}
+	}
 }

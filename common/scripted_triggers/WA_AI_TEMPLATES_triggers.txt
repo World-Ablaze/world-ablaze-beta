@@ -29,8 +29,19 @@ WA_AI_TEMPLATES_use_heavy_infantry = {
 	num_of_military_factories > 5
 }
 
+# [suppression-templates] occupation garrisons are only worth designing when there is (or can soon
+# be) something to occupy: at war, or holding non-core ground - `always = yes` had every neutral
+# minor spending its army XP on a cavalry garrison template it fielded to the front instead.
 WA_AI_TEMPLATES_use_suppression_templates = {
-	always = yes
+	OR = {
+		has_war = yes
+		any_controlled_state = {
+			NOT = { is_core_of = ROOT }
+		}
+		# latch: once the target was assigned, keep it - clearing the flag mid-campaign re-runs
+		# the engine's template decommission pass over whatever holds the role (lessons log).
+		has_country_flag = WA_SUPPRESSION_TEMPLATE
+	}
 }
 
 WA_AI_TEMPLATES_use_marines = {

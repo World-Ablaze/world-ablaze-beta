@@ -1447,8 +1447,8 @@ while the war is elsewhere; the garrison comes back the moment somebody can actu
 | --- | --- | --- |
 | `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home` (`DEFAULT_FRONT_archetypes.txt`) | Default | `garrison = -5000` - dominates `minors_home_first`'s `+50` (mechanism MEASURED on RAJ, §16) |
 | `WA_AI_MILITARY_DEFAULT_THEATRE_non_african_avoid_africa` | Default | the `-90` African `area_priority` brake now EXEMPTS committed minors (gate, not a counter-entry - a counter only works if the engine sums per area, which is ASSUMED) |
-| `WA_AI_MILITARY_ALLIES_committed_minor_join_africa` (`FACTION_ALLIES_FRONT.txt`) | Faction | `front_unit_request +60` on `north_africa` and the East-Africa alias - the direction for the released army |
-| `WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe` (`FACTION_ALLIES_THEATRE.txt`) | Faction | `theatre_distribution_demand_increase id = 15 value = 6` once the coalition holds a western foothold - theatre demand, not a front request, is what moves an army across an ocean (campaign 5078fe10) |
+| `WA_AI_MILITARY_ALLIES_committed_minor_join_africa` (`FACTION_ALLIES_FRONT.txt`) | Faction | `front_unit_request +60` on the East-Africa alias - the direction for the released army. The `north_africa` +60 lives in the sibling `..._join_north_africa`, gated by the §24 guest gate (the area contains French Morocco/Algeria/Tunisia) |
+| `WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe` (`FACTION_ALLIES_THEATRE.txt`) | Faction | `theatre_distribution_demand_increase id = 15 value = 6` once the coalition holds a western foothold - theatre demand, not a front request, is what moves an army across an ocean (campaign 5078fe10). Also gated by the §24 guest gate: the foothold test counts FRENCH-controlled states while FRA is an ally, so without the gate the demand is armed from 1936 |
 
 The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
 +150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
@@ -1503,3 +1503,68 @@ owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLI
   enemies and stay threatened. These release their areadef garrison but receive NO direction pull
   (the pulls are Allies Faction blocks) - stated, accepted residual; their own faction files own any
   movement.
+
+## 24. The bulwark guest gate - no Commonwealth army on French soil before France is ready ([bulwark-guest-gate], 2026-08-27)
+
+Owner rule (feedback save, Battle of France): on the **historical AI difficulty**, Commonwealth
+deployment onto FRENCH territory (metropole AND French North Africa) waits until France has shed its
+`FRA_disjointed_government*` idea family. Symptoms it removes: RAJ piling divisions into a standing
+France, and ~14 Commonwealth divisions lined up on the French side of North Africa before the fall.
+
+- Control panel: `WA_AI_MILITARY_western_bulwark_accepts_guests` (`WA_AI_MILITARY_triggers.txt`).
+  Open when ANY of: not `WA_AI_DIFFICULTY_is_historical` (the difficulty axis, owner's explicit
+  choice over `is_historical_focus_on`); `fall_of_france` global flag; no living, non-capitulated,
+  in-faction bulwark (`WA_AI_CONFIG_MILITARY_is_western_european_bulwark`) still holding a
+  disjointed-government idea (`doesnt_have_disjointed_government`, FRA_scripted_triggers.txt - now
+  covers all FOUR variants incl. `_bloc_path`).
+- Consumers (gate in `enable`, never a counter-bid - the RAJ -100 was already E2-saturated at a net
+  +50): `ALLIES_europe_first` (its SE-Asia sink split out to `ALLIES_southeast_asia_sink`, NOT
+  gated), `ALLIES_committed_minor_theatre_boost_europe`, `ALLIES_committed_minor_join_north_africa`
+  (split from `join_africa`; the East-Africa +60 is not gated), and the ENG BEF pair
+  `ENG_bef_in_europe_FRONT`/`_THEATRE`.
+- Residual, stated: while the gate is closed, the whole `europe_first` block is down, so its
+  `north_africa +75` does not reach EGYPT either; the Egypt cover in that window is the anglo-major
+  `ALLIES_war_against_ITA_north_africa_THEATRE` +100 and `ALLIES_theatre_boost_north_africa` (id
+  447), both untouched. Ahistorical difficulty: gate always open, behaviour unchanged.
+- Probe: pre-fall saves show zero RAJ/dominion divisions in metropolitan France and zero
+  Commonwealth divisions on FRA-owned North-African states while FRA still holds the idea; the BEF
+  deploys only after the idea is gone; post-fall behaviour identical to pre-gate campaigns.
+
+## 25. France fights the Battle of France, not the empire ([fra-battle-of-france], 2026-08-27)
+
+Owner report: ~20 FRA divisions in North Africa / Corsica during the Battle of France, Italian
+border wide open. Three levers, all Country-layer FRA, all gated on dynamic state:
+
+- `WA_AI_MILITARY_FRA_homeland_invaded_recall_colonials_THEATRE`: `area_priority -90` on
+  `north_africa`, `mediterranean` (Corsica sits in region 373 of that area) and `middle_east` while
+  `WA_AI_MILITARY_home_threatened` (defend_core or surrender_progress > 0.05) and at war.
+- `WA_AI_MILITARY_FRA_alpine_front_FRONT`/`_THEATRE`: `front_unit_request +100` and `area_priority
+  +100` on `south_france` while an enemy is an Italian homeland power (geographic gate, armistice-flip
+  safe - never `tag = ITA`) and FRA is not capitulated - the Armee des Alpes.
+- `WA_AI_MILITARY_FRA_defense_of_the_colonies_FRONT` re-armed: the economy pass had zeroed its 13
+  colonial `garrison` entries (no-op); they are back at the -5000 negative-garrison release
+  convention (§4/§16; the pre-economy value was -200) and GATED on `home_threatened`, so
+  peacetime/phoney-war colonial policing is untouched. The all-zero
+  `FRA_ignore_garrisons_until_invasion_start` no-op block was deleted.
+- Probe: a Battle-of-France save shows FRA North-Africa+Corsica division count falling once
+  surrender_progress > 0.05, and >= 2 FRA divisions on the south_france fronts while an Italian
+  homeland power is an enemy.
+
+## 26. Gulf garrisons are Indian - the Kuwait standing watch and the Aden delegation ([raj-gulf-garrisons], 2026-08-27)
+
+Extends the §16 delegated-mission family (identity CONFIG trigger + availability verdict + exclusive
+ENG fallback). Owner rule: RAJ garrisons Kuwait and Aden to relieve British divisions.
+
+- Kuwait: the threat-gated mission (§16) is UNCHANGED ("a guard needs something to guard against" -
+  kept, not refuted). New STANDING watch on top: `RAJ_kuwait_standing_watch_available` (same
+  availability terms, no division-count bar, `ENG at war`, explicitly `NOT ENG_kuwait_guard_active`)
+  drives `COUNTRY_RAJ_THEATRE_kuwait_standing_watch` (`put_unit_buffers` 656 ratio 0.02, order 9209).
+  The moment the Gulf approach is threatened the sized mission tiers take over.
+- Aden: was a flat ENG buffer (0.075, order 6 inside `ENG_protect_home_THEATRE`). Now a delegated
+  mission: `ENG_aden_guard_active` (at war + 659 in friendly hands, no threat term - the Red Sea
+  watch is continuous), delegate verdict `RAJ_aden_guard_available` (Kuwait-shaped) + wrapper
+  `commonwealth_aden_guard_available`; RAJ writer `COUNTRY_RAJ_THEATRE_guard_aden` (0.04, order
+  9210); ENG pair `defense_of_aden_delegated` (0.02, order 18) / `_fallback` (0.075, order 19).
+- Probe: with RAJ available - INCLUDING while JAP is still neutral, the window where RAJ's engine
+  areadef park competes hardest - saves show RAJ divisions physically standing in 656/659 and ENG's
+  contingent there at or below its 0.02 floors; with RAJ dead/unavailable, ENG back at 0.075 on Aden.

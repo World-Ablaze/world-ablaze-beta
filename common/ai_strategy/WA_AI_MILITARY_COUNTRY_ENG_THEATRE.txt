@@ -122,21 +122,11 @@ WA_AI_MILITARY_ENG_bef_in_europe_THEATRE = {
 		is_in_faction_with = FRA
 		FRA = { surrender_progress < 0.15 }
 		surrender_progress < 0.01
+		# [bulwark-guest-gate] the BEF too waits, on historical difficulty, for France to shed its
+		# disjointed government before deploying onto French soil.
+		WA_AI_MILITARY_western_bulwark_accepts_guests = yes
 	}
 	abort_when_not_enabled = yes
-
-	#Germany
-	#	ai_strategy = {
-	#		type = front_unit_request
-	#		strategic_region = 6
-	#		value = -1000
-	#	}
-	#
-	#	ai_strategy = {
-	#		type = front_unit_request
-	#		strategic_region = 5
-	#		value = -1000
-	#	}
 
 	#South France/italy
 
@@ -389,22 +379,9 @@ WA_AI_MILITARY_ENG_protect_home_THEATRE = {
 
 		subtract_invasions_from_need = no
 	}
-	ai_strategy = {
-		type = put_unit_buffers
-
-		order_id = 6
-
-		# middle_east
-		states = {
-			659
-		}
-
-		ratio = 0.075
-
-		area = middle_east
-
-		subtract_invasions_from_need = no
-	}
+	# [raj-gulf-garrisons] the Aden buffer (order 6, state 659, 0.075) moved out of this block into
+	# the delegated/fallback pair WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_aden_* below, so the
+	# Indian army can carry it.
 	ai_strategy = {
 		type = put_unit_buffers
 
@@ -871,6 +848,59 @@ WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_kuwait_fallback_reinforced = {
 		states = { 656 }
 		ratio = 0.20
 		subtract_fronts_from_need = no # pool: same rationale as the watch tier above
+		subtract_invasions_from_need = no
+	}
+}
+
+
+# purpose: [raj-gulf-garrisons] keep a small British Aden floor while the Indian army carries the
+#          guard (WA_AI_MILITARY_COUNTRY_RAJ_THEATRE_guard_aden).
+# range:   put_unit_buffers ratio 0.02
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_aden_fallback
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_aden_delegated = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_aden_guard_active = yes
+		WA_AI_MILITARY_commonwealth_aden_guard_available = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 18
+		states = { 659 }
+		ratio = 0.02
+		area = middle_east
+		subtract_fronts_from_need = no # pool: dedicated floor that must survive unrelated front demand
+		subtract_invasions_from_need = no
+	}
+}
+
+# purpose: [raj-gulf-garrisons] restore the full British Aden guard (the 0.075 that used to live in
+#          WA_AI_MILITARY_ENG_protect_home_THEATRE order 6) whenever no delegate can take the mission.
+# range:   put_unit_buffers ratio 0.075
+# policy:  Additive per order; gate-exclusive with WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_aden_delegated
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_ENG_THEATRE_defense_of_aden_fallback = {
+	allowed = {
+		original_tag = ENG
+	}
+	enable = {
+		WA_AI_MILITARY_ENG_aden_guard_active = yes
+		NOT = { WA_AI_MILITARY_commonwealth_aden_guard_available = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 19
+		states = { 659 }
+		ratio = 0.075
+		area = middle_east
+		subtract_fronts_from_need = no # pool: full fallback must survive unrelated front demand
 		subtract_invasions_from_need = no
 	}
 }

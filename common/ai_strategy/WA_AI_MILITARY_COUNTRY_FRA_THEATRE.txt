@@ -252,6 +252,53 @@ WA_AI_MILITARY_FRA_area_tilt_THEATRE = {
 	ai_strategy = { type = area_priority id = australia_new_zealand value = -150 }
 }
 
+# purpose: [fra-battle-of-france] while the metropole is actually being invaded, the colonial
+#          theatres stop competing with it: North Africa (Morocco/Algeria/Tunisia), the
+#          mediterranean area (CORSICA sits in region 373, ai_areas/default.txt) and the Levant all
+#          drop below baseline so the ~20 divisions parked there come home. Gate is the generic
+#          home_threatened (defend_core or surrender_progress > 0.05), never a date or a flag.
+# range:   -90 per area (same magnitude as the Default non_african_avoid_africa brake); nets vs the
+#          100 baseline + area tilt: north_africa -40, mediterranean +10, middle_east -80
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_FRA_homeland_invaded_recall_colonials_THEATRE = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		has_capitulated = no
+		has_war = yes
+		WA_AI_MILITARY_home_threatened = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = area_priority id = north_africa value = -90 }
+	ai_strategy = { type = area_priority id = mediterranean value = -90 }
+	ai_strategy = { type = area_priority id = middle_east value = -90 }
+}
+
+
+# purpose: [fra-battle-of-france] the Alpine front exists: while France fights an Italian homeland power and still
+#          stands, the south_france area (region 20, the French side of the Alps) gets a positive
+#          theatre weight instead of riding the bare 100 baseline - the Armee des Alpes holds the
+#          border. Geographic gate (Italian homeland power), not `tag = ITA` - armistice-flip safe.
+# range:   +100 (net 200, still far below france's 1510 - a border guard, not a schwerpunkt)
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_FRA_alpine_front_THEATRE = {
+	allowed = {
+		original_tag = FRA
+	}
+	enable = {
+		any_enemy_country = { WA_AI_MILITARY_is_italian_homeland_power = yes }
+		has_capitulated = no
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = area_priority id = south_france value = 100 }
+}
+
+
 # purpose: nothing goes to sub-Saharan Africa while Germany prepares to attack west (relocated Phase 7c from legacy FRA.txt FRA_protect_the_homeland)
 # range:   -500 per area (saturated legacy value, E1 worklist)
 # policy:  Additive per area
