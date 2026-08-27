@@ -324,8 +324,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   region lists — anglo fleets do NOT newly operate in 168 Adriatic / 42 Biscay / 202 Aegean
   while those walls' conditions hold (a fleet parked there post-change = the halving was
   load-bearing, re-raise the wall).
-- **NEW F9 BOOT OWED (this batch is CTD-class again: blocks deleted across USA+ENG files,
-  5 new FACTION blocks, 1 new DEFAULT block) — owner: cold launch before the next campaign.**
+- **F9 boot PASSED on the promotion batch too (owner, 2026-08-27)** — discharges the second
+  CTD-class debt (USA+ENG deletions, 5 new FACTION blocks, 1 DEFAULT block, the latch
+  migration). The build is campaign-ready; owner is weighing the two-state merge-bar
+  alternative and the remaining deferred promotions.
 - Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
   (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
   enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
