@@ -445,7 +445,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+### aifc-traction — TESTED (2026-08-27)
+- **Owner console run pasted 2026-08-27 (`wa_aifc.1 ENG`, save 1945.7.5) — the merge-bar build
+  is live and correct, subject back to TESTED.** Scope header `1 1 1 1 0` (valid measurement);
+  elig all green, shipped trigger 1. Key lines: native candidates Western Desert pad=1 /
+  Cairo pad=1 / Libyan Desert pad=0 → all anchor-eligible=0 (floor); `exp-gate(native-maxpad
+  <=2)=1` — the capability gate OPENED and the ally walk RAN; **`ally-states-with-5+div=0`**
+  (new bar printed and enforced: no allied state holds 5+ ENG divisions) → zero merged
+  candidates → **NO sector**. That is the shipped design working end-to-end: no decorative
+  desert pointer (the old L3 pathology), Layer 4 inert, engine default targeting — AND it is
+  the dead-band instance flagged at ship time, now live: ENG at 23 divisions spread 3-4/state
+  gets no schwerpunkt at all. The two-state alternative (2 ally states at 3+ ROOT divisions)
+  remains the ready lever if the owner wants dispersed liberators served; unshipped.
 - **Lever 2 SHIPPED 2026-08-27 (owner order "lever 2 AIFC").** §1b merge admission bar
   (`WA_AI_AIFC_helpers.txt`): `divisions_in_state > 2` → `> @AIFC_PAD_T2` (5+ own divisions
   — the ally state must BY ITSELF be a band-2 launching pad). Kills the Gabès ferry-stop
