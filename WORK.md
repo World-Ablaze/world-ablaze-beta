@@ -278,18 +278,61 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   at-sea climb 19→46 %. Engine boundary ASSUMED: arbitration of differing ratios on a
   shared order_id; whether an all-enemy-held states list poisons its pool; per-area
   front_unit_request aggregation. Owner imgui (USA, 1944-shape) names the armed variants.
-  **Step B lever menu (owner decision, nothing shipped): (1) split the order_ids in
-  USA_THEATRE (single-line, no magnitude change, matches the ITALY/ENG rule — most likely
-  ENG/USA-gap closer); (2) cut the Pacific pool (1.92 → realistic, or drop the nine
-  subtract_fronts_from_need = no); (3) enter/exit hysteresis on the britain buffer (no
-  Allied ground block has a pair today); (4) one-ocean-at-a-time exclusion gate; (5) retire
-  or condition unit_clumping_fix_3. 1 and 5 are single-line and reversible; 2 and 4 are
-  material and must not ship in the same commit as each other.**
+  **Step B lever menu: (1) split the order_ids; (2) cut the Pacific pool (1.92 →
+  realistic, or drop the nine subtract_fronts_from_need = no); (3) enter/exit hysteresis on
+  the britain buffer; (4) one-ocean-at-a-time exclusion gate; (5) retire
+  unit_clumping_fix_3. 2 and 4 are material and must not ship in the same commit as each
+  other.**
+- **Levers 1 + 5 SHIPPED 2026-08-27 (owner order "applique les levers 1 et 5 USA").**
+  (1) `USA_THEATRE.txt`: usa_east buffer (oh_shit) order_id 1 → 9103, philippines 1 → 9104;
+  the four britain variants stay on id 1 (same states/ratio, scenario-exclusive enables =
+  one logical buffer). **Causal claim DOWNGRADED per lessons review**: the log MEASURED that
+  a shared order_id produces SEPARATE order instances (ENG had two live id=1 orders), so
+  "distinct ids cured ENG" is refuted — the split is hygiene per the REGION_ITALY rule, and
+  the live unmeasured suspect for the shuttle is the ARBITRATION of summed ratios > 1.0
+  (britain 0.5 + usa_east 1.0 + philippines 0.25, Pacific pool 1.92) — unchanged by this
+  ship; lever 2 is the ready follow-up if the shuttle persists. (5) `unit_clumping_fix_3`
+  DELETED whole (legacy-gates rule; own comment demanded campaign evidence; single
+  definition, no other reader; siblings _2/_2_south_italy READ and left — _2 is also
+  always-on but on region 161/23 + state 633, not the diagnosed front — noted for a later
+  revisit). Honest path for north_africa now: engine default + the un-suppressed
+  ALLIES_FRONT +75/+10 bids. Reviews: architecture OK (core:200 weaker-on-purpose sentence
+  added; pre-existing observation: order_id 9101 already spans central_pacific AND
+  central_america — same undefined pattern, candidate for this subject later) + lessons
+  CONCERNS (all applied: causal downgrade above; **F9 boot test OWED before the next
+  campaign — the CTD lesson treats ai_strategy BLOCK DELETIONS as launch-test-requiring**).
+  Verification (fingerprint, per lessons — not "cured by split"): next campaign, USA's
+  put_unit_buffers order instances are STABLE PER OCEAN across consecutive saves (plans.py
+  --armies: buffer army membership not flipping between atlantic and pacific states
+  month-over-month), buffer-at-sea share in non-invasion months ≤ GER's band, and probe (i)
+  USA in-transit range compared save-for-save against this campaign's 7-64 %.
 - Closed when: (a) ENG+USA transit share drops vs the pre-fix baseline at matched dates, (b) no
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — TESTED (2026-08-27)
+### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+- **Lever 2 SHIPPED 2026-08-27 (owner order "lever 2 AIFC").** §1b merge admission bar
+  (`WA_AI_AIFC_helpers.txt`): `divisions_in_state > 2` → `> @AIFC_PAD_T2` (5+ own divisions
+  — the ally state must BY ITSELF be a band-2 launching pad). Kills the Gabès ferry-stop
+  admission (4 div). Validity mirror (core:200) kept at > 2 DELIBERATELY — keep-while-valid
+  hysteresis, now commented at the site ("do not raise to match"); architecture confirms
+  weaker-validity is the safe direction (churn only comes from validity stricter than
+  admission). Harness copy re-typed to > 4 + labels 3+→5+ (contract rule 4).
+  **Dead-band population, enumerated and OWNER-FLAGGED (lessons item 3): the new bar also
+  excludes every measured 3-4-division-per-state expeditionary case** — BUL-Gabès
+  (intended), ENG 1944.7 France/Algeria (3-div states — no behaviour change, those
+  candidates lost the scoring anyway), and **USA 1944.7 (Loire 4 / Paris 3 / Centre 3 /
+  Picardy 3 — the campaign's one clean L3d success: under the new bar that corridor would
+  NOT form; a dispersed liberation army spread 3-4/state now falls back to native-only →
+  usually no sector → Layer 4 inert, the documented safe path). Accepted reading: the merge
+  now serves only CONCENTRATED invasion armies; if the owner wants dispersed liberators
+  served, the bar needs a two-state alternative (e.g. 2 ally states at 3+) instead of a
+  lower single-state bar (> 3 would re-admit Gabès at 4).** Reviews: architecture OK,
+  lessons CONCERNS (all applied; no flap table owed — the bar only REMOVES candidates,
+  worst case = today's native-only selection). Checkers: constants 0 err, worklist 0 err.
+  Owner console run owed (moves back to TESTED): `event wa_aifc.1 ENG` (fork 1944.6.20+) —
+  expected `ally-states-with-5+div` printed and no merged candidate from a < 5-division
+  state; F9 boot covers the effect edit.
 - **Owner console run 1944.7.14 post-full-restart (`wa_aifc.1 ENG`) — gate constant loaded and
   computing, subject back to TESTED.** Pasted evidence: `native-maxpad=3
   exp-gate(native-maxpad<=2)=0` — the bar prints 2 (constant resolved; the 1944.7.7 run had
