@@ -64,6 +64,21 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > (DERIVED):** recruiting a batch needs > 200k manpower AND > 15k equipment stock
 > (`WA_reserves_meets_recruitment_threshold`), out of reach of a < 5-MIL country, so a banked
 > create_unit dump past the 5-division cap has no realistic population.
+> **[reserve-quality] v2 shipped 2026-08-27 (owner rulings, USA fork save 1944.6.20):** the flat
+> division bar replaced by a capability gate — the bank exists to bootstrap a small army into a
+> training snowball (USA/CAN); it stays shut when materiel is the limiting factor: MIL tiers
+> (≤24 MILs closes above 20 div, ≤49 above 40, ≤99 above 80, 100+ never size-vetoed) OR new
+> `WA_AI_CONFIG_is_reserve_materiel_limited` (ENG — owner chose "ENG reste fermé" over pure
+> capability: its MILs build air/sea, no land stocks at war entry). Calibration MEASURED at war
+> entries (24933fb9): RAJ 1939.10 22 MIL/50 div → closed; CAN 15/14 → open (snowball case); ENG
+> 134/31 → closed by archetype; GER 243/107 → open (veto moot, home neighbour at war); USA 1942.1
+> 340/7 → open; RAJ 1942.1 91/48 → open (industry grew into its army). Stock gating measured and
+> REJECTED: RAJ holds 53k infantry eq at entry (licences) while CAN holds 11.6k yet must open —
+> stock separates neither pair. Trigger symptom: USA fork 1944.6.20 `reserves=30` frozen at 59
+> divisions — vetoed by the flat bar (owner commit 40b656379 lowering 29→20 tightened the veto
+> further and strands 10 even in the drain case; superseded by the tiers). Probes: USA drains to
+> 0 next campaign; ENG bank (40 at 1944.6) never drains while its war is overseas-only; a ≤24-MIL
+> country at 40+ divisions never drains.
 > **Second half (106→47 gap beyond the bank) — INCOMPLETE, build delta CLEARED.** MEASURED sweep
 > of `ed109de9d..2f16ec583`: zero `force_build_armies`/`ai_wanted_divisions_factor` changes; the
 > defines dedup (`fc1e82a7f`) changed no effective value (all removed lines were already-dead

@@ -2346,3 +2346,28 @@ process caveats (stale process, and the absence of a load-time hook).
   the `[raj-gulf-garrisons]` SS26 FAILED verdict on `24933fb9`; the verdicts live in
   `common/scripted_triggers/WA_AI_MILITARY_triggers.txt` (`commonwealth_east_africa_available`,
   the three RAJ Gulf verdicts).
+
+### A reserve-capability gate reads industry, not stockpile - and ENG closes by owner ruling
+
+- **Date:** 2026-08-27 (campaign `24933fb9` war-entry saves; `[reserve-quality]` v2)
+- **Symptom:** the reserve-bank veto needed a "can this country equip a reserve dump" term; both
+  obvious candidates looked measurable - current infantry-equipment stockpile, or a flat
+  division bar - and both were wrong.
+- **Cause:** stockpile does not discriminate: RAJ holds 53k infantry equipment at its 1939.10
+  war entry (licensed production) yet cannot sustain 10 more consumers on 22 MILs, while CAN
+  holds only 11.6k yet must deploy (the snowball-bootstrap case, owner ruling). The flat
+  division bar conflates USA (340 MILs, must deploy at any army size) with RAJ (22 MILs, 50
+  divisions). MIL-count tiers separate every measured pair except ENG - 134 MILs but its land
+  output is committed to air/sea (owner-reported empty land stocks at war entry), which no
+  save-measurable proxy separates from USA.
+- **Rule:** gate equipment capability on a production-scale proxy (MIL tiers), never on current
+  stockpile - stock is inflated by licences/lend-lease and starved by commitments in ways that
+  invert the verdict. Where the proxy fails for one tag (ENG), the carve-out is an owner ruling
+  recorded as a CONFIG archetype (`WA_AI_CONFIG_is_reserve_materiel_limited`) with the rejected
+  pure-capability alternative recorded here so it is not re-proposed. ASSUMED: whether
+  `num_of_military_factories` counts occupied MILs (install doc says only "check amount of
+  military factories"); benign direction - captured MILs do produce.
+- **Evidence:** WORK.md `[reserve-quality]` v2 calibration table (`24933fb9`: RAJ 22 MIL/50 div,
+  CAN 15/14, ENG 134/31, USA 340/7; stocks RAJ 53k vs CAN 11.6k);
+  `common/scripted_triggers/WA_reserves_triggers.txt` (tier OR),
+  `common/scripted_triggers/WA_AI_CONFIG.txt` (`is_reserve_materiel_limited`).

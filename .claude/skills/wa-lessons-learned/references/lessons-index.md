@@ -139,3 +139,4 @@ triages from this file first.
 - A 08-27 Filter impassable states from rail paths; build edge-by-edge, whole path fails silently · grep:"refuses railways in"
 - A 08-27 Negative garrison never empties existing areadef; catcher buffer moves, same-target entries sum · grep:"does NOT empty existing area-defence"
 - F 08-27 Delegate availability measured in-theatre, never by total num_divisions · grep:"bar on TOTAL"
+- F 08-27 Equipment-capability gates read MIL tiers, never stockpile; ENG closes by tag ruling · grep:"reads industry, not stockpile"

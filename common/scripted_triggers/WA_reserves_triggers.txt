@@ -280,18 +280,34 @@ WA_reserves_deployment_complete = {
 ############################################################################################################
 
 # [reserve-quality] COUNTRY scope; single reader: deploy_reserves_infantry ai_will_do
-# (common/decisions/_reserves.txt) - change the behaviour here. Protects an overseas-only army
-# from a 30%-equipment reserve dump. Assumes no-home-neighbour-at-war + no VP lost == no ground
-# threat; either flipping unlocks the bank. Load-bearing: has_war (else the pre-war
-# early_reserve_mobilization path is vetoed too) and num_divisions > 29 (under 30 the reserves
-# ARE the army; 29 is independent of the RAJ delegate bar - same value, tune separately).
+# (common/decisions/_reserves.txt) - change the behaviour here. The bank exists to bootstrap
+# a small army into a training snowball where industry can equip it; it stays shut when
+# materiel is the limiting factor (MIL tiers, or the archetype). Load-bearing: has_war
+# (else the pre-war early_reserve_mobilization path is vetoed too).
 WA_reserves_is_expeditionary_only = {
 	has_war = yes
-	num_divisions > 20
 	NOT = { surrender_progress > 0 }
 	NOT = {
 		any_home_area_neighbor_country = {
 			has_war_with = ROOT
+		}
+	}
+	OR = {
+		# land-equipment output committed to air/sea - a dump would field empty rifles
+		WA_AI_CONFIG_is_reserve_materiel_limited = yes
+		# capability tiers: below the tier's MIL count, an army past the listed size is
+		# already more than industry equips; 100+ MILs is never size-vetoed
+		AND = {
+			NOT = { num_of_military_factories > 24 }
+			num_divisions > 20
+		}
+		AND = {
+			NOT = { num_of_military_factories > 49 }
+			num_divisions > 40
+		}
+		AND = {
+			NOT = { num_of_military_factories > 99 }
+			num_divisions > 80
 		}
 	}
 }
