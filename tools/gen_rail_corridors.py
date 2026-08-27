@@ -53,6 +53,10 @@ CORRIDORS = [
     ("casablanca_cairo", [7069, 1145, 11969, 1149, 11954, 4076, 7011], "na_full"),
     # Miami -> Washington -> New York -> Boston -> Halifax (eastern seaboard)
     ("miami_halifax", [1843, 3957, 3878, 6732, 7361], "path"),
+    # San Francisco -> Salt Lake City -> Omaha -> Chicago -> Washington (transcontinental,
+    # owner request 2026-08-27). Waypoints pin the historical Overland Route so hop-minimising
+    # BFS does not wander through the huge Rockies/Great Basin provinces.
+    ("sanfrancisco_washington", [9671, 4865, 12586, 9450, 3957], "path"),
 ]
 
 NORTH_AFRICA_REGIONS = None  # parsed from common/ai_areas/default.txt
@@ -348,7 +352,7 @@ def main() -> int:
     h.append("#   cd tools && python gen_rail_corridors.py")
     h.append("# [rail-corridors] console harness for the strategic rail corridor cheat.")
     h.append("# Recipe: events/wa_test_rail_corridors.txt (event wa_test_rail.1 = report;")
-    h.append("# wa_test_rail.11-18 = force-build corridor 1-8). harness-contract: v1 (wa-testing SKILL).")
+    h.append("# wa_test_rail.11-19 = force-build corridor 1-9). harness-contract: v1 (wa-testing SKILL).")
     h.append("")
     h.append("WA_TEST_rail_corridors_report = {")
     h.append('\tlog = "=== RAIL CORRIDOR TEST [GetDateText] ==="')

@@ -13,6 +13,7 @@
 #   6. baghdad_cairo: 18 provinces, 8 gate states (path)
 #   7. casablanca_cairo: 62 provinces, 32 gate states (na_full)
 #   8. miami_halifax: 43 provinces, 18 gate states (path)
+#   9. sanfrancisco_washington: 41 provinces, 16 gate states (path)
 
 @WA_RAIL_CORRIDOR_LEVEL = 5  # engine MAX_RAILWAY_LEVEL (base 00_defines.lua:4263)
 
@@ -2523,6 +2524,459 @@ WA_AI_RAIL_CORRIDOR_build_8 = {
 	if = { limit = { NOT = { has_railway_connection = { start_province = 1843 target_province = 7361 } } }
 		set_global_flag = WA_rail_corridor_8_incomplete
 		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 8 (miami_halifax) INCOMPLETE after build - see REFUSED edges above"
+	}
+}
+
+# corridor 9: sanfrancisco_washington - anchors [9671, 4865, 12586, 9450, 3957] - gate path, 16 states
+# Sets _rc_ok = 0 unless every gate state is same-side with the anchor
+# (= controller of the first endpoint's state). Order: endpoint A, endpoint B,
+# then the rest - two reads kill the walk when the ends are not even allied.
+WA_AI_RAIL_CORRIDOR_gate_9 = {
+	set_temp_variable = { _rc_ok = 1 }
+	set_temp_variable = { _rc_anchor = 0 }
+	808 = { CONTROLLER = { set_temp_variable = { _rc_anchor = THIS.id } } }
+	# an unset anchor must fail the gate, never reach a var: compare as garbage
+	if = { limit = { check_variable = { _rc_anchor = 0 } } set_temp_variable = { _rc_ok = 0 } }
+	if = {
+		limit = {
+			NOT = {
+				AND = {
+					808 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					361 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					807 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					379 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					380 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					381 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					390 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					384 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					392 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					395 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					820 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					396 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					825 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					824 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					360 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+					827 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes }
+				}
+			}
+		}
+		set_temp_variable = { _rc_ok = 0 }
+	}
+}
+
+# Built EDGE BY EDGE (path = { a b }), the only build_railway form this repo has
+# proven in campaigns (PC core uses it for every railway project). A 30-province
+# path list no-opped silently on the 2026-08-27 owner test (corridor 1: built flag
+# set, zero track on the map) while shorter-legged corridors built - per-edge builds
+# salvage every good edge, log each refused one, and keep the PC mirror honest:
+# the mirror (readers: PC railway_helpers/_core, WA_AI_pathfinding_effects) is
+# stamped ONLY for an edge that passed can_build_railway and was actually built.
+WA_AI_RAIL_CORRIDOR_build_9 = {
+	if = { limit = { can_build_railway = { path = { 9671 3677 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9671 3677 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9671 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^3677 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9671^3677 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3677^9671 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9671 3677 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9671-3677 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 3677 6699 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 3677 6699 } }
+		set_variable = { global.WA_AI_PC_railway_connections^3677 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^6699 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3677^6699 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6699^3677 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 3677 6699 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 3677-6699 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 6699 710 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 6699 710 } }
+		set_variable = { global.WA_AI_PC_railway_connections^6699 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^710 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6699^710 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_710^6699 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 6699 710 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 6699-710 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 710 11698 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 710 11698 } }
+		set_variable = { global.WA_AI_PC_railway_connections^710 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^11698 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_710^11698 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11698^710 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 710 11698 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 710-11698 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 11698 10422 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 11698 10422 } }
+		set_variable = { global.WA_AI_PC_railway_connections^11698 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^10422 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11698^10422 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10422^11698 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 11698 10422 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 11698-10422 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 10422 4736 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 10422 4736 } }
+		set_variable = { global.WA_AI_PC_railway_connections^10422 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^4736 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10422^4736 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4736^10422 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 10422 4736 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 10422-4736 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 4736 1862 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 4736 1862 } }
+		set_variable = { global.WA_AI_PC_railway_connections^4736 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^1862 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4736^1862 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_1862^4736 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 4736 1862 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 4736-1862 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 1862 7756 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 1862 7756 } }
+		set_variable = { global.WA_AI_PC_railway_connections^1862 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7756 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_1862^7756 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7756^1862 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 1862 7756 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 1862-7756 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7756 10651 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7756 10651 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7756 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^10651 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7756^10651 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10651^7756 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7756 10651 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7756-10651 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 10651 4865 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 10651 4865 } }
+		set_variable = { global.WA_AI_PC_railway_connections^10651 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^4865 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10651^4865 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4865^10651 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 10651 4865 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 10651-4865 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 4865 7888 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 4865 7888 } }
+		set_variable = { global.WA_AI_PC_railway_connections^4865 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7888 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4865^7888 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7888^4865 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 4865 7888 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 4865-7888 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7888 7688 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7888 7688 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7888 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7688 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7888^7688 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7688^7888 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7888 7688 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7888-7688 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7688 10711 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7688 10711 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7688 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^10711 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7688^10711 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10711^7688 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7688 10711 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7688-10711 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 10711 4794 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 10711 4794 } }
+		set_variable = { global.WA_AI_PC_railway_connections^10711 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^4794 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10711^4794 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4794^10711 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 10711 4794 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 10711-4794 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 4794 7745 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 4794 7745 } }
+		set_variable = { global.WA_AI_PC_railway_connections^4794 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7745 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_4794^7745 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7745^4794 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 4794 7745 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 4794-7745 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7745 7840 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7745 7840 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7745 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7840 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7745^7840 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7840^7745 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7745 7840 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7745-7840 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7840 12516 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7840 12516 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7840 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^12516 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7840^12516 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12516^7840 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7840 12516 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7840-12516 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 12516 7852 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 12516 7852 } }
+		set_variable = { global.WA_AI_PC_railway_connections^12516 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7852 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12516^7852 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7852^12516 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 12516 7852 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 12516-7852 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7852 12586 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7852 12586 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7852 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^12586 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7852^12586 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12586^7852 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7852 12586 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7852-12586 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 12586 9892 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 12586 9892 } }
+		set_variable = { global.WA_AI_PC_railway_connections^12586 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9892 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12586^9892 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9892^12586 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 12586 9892 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 12586-9892 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9892 1770 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9892 1770 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9892 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^1770 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9892^1770 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_1770^9892 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9892 1770 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9892-1770 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 1770 12418 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 1770 12418 } }
+		set_variable = { global.WA_AI_PC_railway_connections^1770 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^12418 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_1770^12418 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12418^1770 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 1770 12418 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 1770-12418 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 12418 7306 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 12418 7306 } }
+		set_variable = { global.WA_AI_PC_railway_connections^12418 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^7306 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12418^7306 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7306^12418 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 12418 7306 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 12418-7306 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 7306 10478 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 7306 10478 } }
+		set_variable = { global.WA_AI_PC_railway_connections^7306 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^10478 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_7306^10478 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10478^7306 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 7306 10478 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 7306-10478 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 10478 11589 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 10478 11589 } }
+		set_variable = { global.WA_AI_PC_railway_connections^10478 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^11589 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_10478^11589 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11589^10478 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 10478 11589 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 10478-11589 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 11589 12312 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 11589 12312 } }
+		set_variable = { global.WA_AI_PC_railway_connections^11589 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^12312 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11589^12312 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12312^11589 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 11589 12312 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 11589-12312 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 12312 9450 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 12312 9450 } }
+		set_variable = { global.WA_AI_PC_railway_connections^12312 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9450 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_12312^9450 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9450^12312 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 12312 9450 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 12312-9450 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9450 6713 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9450 6713 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9450 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^6713 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9450^6713 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6713^9450 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9450 6713 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9450-6713 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 6713 9654 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 6713 9654 } }
+		set_variable = { global.WA_AI_PC_railway_connections^6713 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9654 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6713^9654 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9654^6713 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 6713 9654 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 6713-9654 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9654 11637 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9654 11637 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9654 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^11637 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9654^11637 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11637^9654 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9654 11637 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9654-11637 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 11637 689 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 11637 689 } }
+		set_variable = { global.WA_AI_PC_railway_connections^11637 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^689 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_11637^689 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_689^11637 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 11637 689 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 11637-689 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 689 3685 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 689 3685 } }
+		set_variable = { global.WA_AI_PC_railway_connections^689 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^3685 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_689^3685 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3685^689 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 689 3685 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 689-3685 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 3685 9825 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 3685 9825 } }
+		set_variable = { global.WA_AI_PC_railway_connections^3685 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9825 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3685^9825 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9825^3685 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 3685 9825 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 3685-9825 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9825 6874 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9825 6874 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9825 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^6874 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9825^6874 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6874^9825 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9825 6874 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9825-6874 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 6874 9808 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 6874 9808 } }
+		set_variable = { global.WA_AI_PC_railway_connections^6874 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9808 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6874^9808 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9808^6874 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 6874 9808 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 6874-9808 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9808 3802 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9808 3802 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9808 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^3802 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9808^3802 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3802^9808 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9808 3802 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9808-3802 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 3802 9923 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 3802 9923 } }
+		set_variable = { global.WA_AI_PC_railway_connections^3802 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^9923 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3802^9923 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9923^3802 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 3802 9923 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 3802-9923 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 9923 6823 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 9923 6823 } }
+		set_variable = { global.WA_AI_PC_railway_connections^9923 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^6823 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_9923^6823 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6823^9923 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 9923 6823 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 9923-6823 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 6823 6929 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 6823 6929 } }
+		set_variable = { global.WA_AI_PC_railway_connections^6823 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^6929 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6823^6929 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6929^6823 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 6823 6929 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 6823-6929 REFUSED by can_build_railway and not already railed"
+	}
+	if = { limit = { can_build_railway = { path = { 6929 3957 } } }
+		build_railway = { level = @WA_RAIL_CORRIDOR_LEVEL path = { 6929 3957 } }
+		set_variable = { global.WA_AI_PC_railway_connections^6929 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connections^3957 = 1 }
+		set_variable = { global.WA_AI_PC_railway_connection_level_6929^3957 = @WA_RAIL_CORRIDOR_LEVEL }
+		set_variable = { global.WA_AI_PC_railway_connection_level_3957^6929 = @WA_RAIL_CORRIDOR_LEVEL }
+	}
+	else_if = { limit = { NOT = { has_railway_connection = { path = { 6929 3957 } } } }
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 edge 6929-3957 REFUSED by can_build_railway and not already railed"
+	}
+	# endpoint-to-endpoint post-check: a corridor that did not come out connected
+	# latches an _incomplete flag (save-visible) instead of failing silently.
+	if = { limit = { NOT = { has_railway_connection = { start_province = 9671 target_province = 3957 } } }
+		set_global_flag = WA_rail_corridor_9_incomplete
+		log = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor 9 (sanfrancisco_washington) INCOMPLETE after build - see REFUSED edges above"
 	}
 }
 

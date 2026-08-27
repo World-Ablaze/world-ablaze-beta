@@ -173,6 +173,23 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > that.
 
 
+### rail-corridors — SHIPPED-UNTESTED (2026-08-27, reopened)
+- Scope: owner request 2026-08-27: add a 9th strategic corridor, San Francisco - Washington,
+  level 5 (same free AI pathfinding cheat as corridors 1-8; subject was CLOSED 2026-08-27 and
+  reopens only for this extension).
+- State: SHIPPED — generator `tools/gen_rail_corridors.py` corridor 9
+  (`sanfrancisco_washington`, anchors 9671 SF → 4865 Salt Lake City → 12586 Omaha → 9450
+  Chicago → 3957 Washington; waypoints pin the Overland Route), data + harness regenerated
+  (41 provinces, 40 edges, 16 gate states — all US: SF/Nevada/Utah/Wyoming/S.Dakota/Nebraska/
+  Iowa/Illinois/Chicago/Indiana/Ohio/Erie/W.Penn/W.Virginia/Maryland), dispatch corridor-9
+  block + `_rc_built_n = 9` retirement count in `WA_AI_RAIL_CORRIDOR_effects.txt`, force-build
+  event `wa_test_rail.19`. `check_constants.py` + `check_worklist.py` exit 0, no BOM.
+- Verification: owner console run — `event wa_test_rail.1` (report shows corridor 9 gate
+  verdicts) then `event wa_test_rail.19` on a throwaway save; supply mapmode shows one
+  continuous level-5 line SF→Washington, no `REFUSED` edge in game.log. Campaign probe folded
+  into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
+- Closed when: the owner pastes the console-harness output here and the mapmode check passes.
+
 ### analysis-tooling — SHIPPED-UNTESTED (2026-08-27)
 - Scope: owner request 2026-08-27 ("d'abord les deux sujets open + la méta") — the three
   measurement defects the `1ac7e4ea` scoring exposed: (i) `wa_tlm_comp_armor/mech` band floor
