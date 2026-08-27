@@ -40,8 +40,11 @@ from pathlib import Path
 CORRIDORS = [
     # Dakar -> Bamako -> Niamey -> N'Djamena -> Khartoum -> Djibouti (Sahel line)
     ("dakar_djibouti", [4948, 4927, 2056, 2081, 12806, 8124], "path"),
-    # Pretoria -> Salisbury -> Dodoma -> Kampala -> Khartoum (east-African line)
-    ("pretoria_khartoum", [13606, 10929, 12911, 12989, 12806], "path"),
+    # Pretoria -> Salisbury -> Lusaka -> Dodoma -> Kampala -> Khartoum (Cape-to-Cairo).
+    # Lusaka pins the Zambia-Tanganyika border crossing: without it BFS cuts through
+    # Portuguese Mozambique (Tete/Nampula), making the gate depend on Portugal's side
+    # (owner test 2026-08-27: corridor never armed because of exactly that).
+    ("pretoria_khartoum", [13606, 10929, 14146, 12911, 12989, 12806], "path"),
     ("prayagraj_karachi", [7938, 3456], "path"),     # Prayagraj -> Karachi
     ("karachi_fars", [3456, 10797], "path"),         # Karachi -> prov 10797 (Fars)
     ("kuwait_baghdad", [8085, 2097], "path"),        # Kuwait City -> Baghdad

@@ -495,9 +495,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   it); (iii) leg concatenation joins on the shared anchor only, no global dedup; duplicate edges
   deduped at emission. DERIVED: the original whole-path no-op is the same cause — one impassable
   edge in the list rejected the entire 30-province call.
-- Verification owed: owner re-runs `event wa_test_rail.11` on the throwaway save — expected: the
-  full southern-Sahel line appears, zero REFUSED lines, no `_incomplete` flag on a fresh run.
-  Then the campaign probe below.
+- **Owner test #5 (2026-08-27): corridors OK except Pretoria-Khartoum — not a build failure, a
+  gate design flaw.** The BFS route crossed Portuguese Mozambique (Tete 1102 / Nampula 1103,
+  MEASURED blocked-by-Portuguese-Africa in both harness runs), so the corridor's gate depended
+  on PORTUGAL's alignment. Rerouted with a Lusaka waypoint (prov 14146) onto the all-British
+  Cape-to-Cairo line: Rhodesia-Zambia-Muchinga-Malawi-Tanganyika-Uganda-South Sudan-Kurdufan.
+  Regenerated; gate should now arm on the test save (SAF anchor, Commonwealth-held throughout).
+- Verification owed: owner re-runs `event wa_test_rail.12` (or one monthly tick) on the throwaway
+  save — expected: Pretoria-Khartoum line appears, zero REFUSED lines, no `_incomplete`. Then the
+  campaign probe below.
 - Closed when: a campaign save shows (a) at least one corridor's global flag
   (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
   only set while the corridor's gate states were same-side at some prior month, and (c) no
