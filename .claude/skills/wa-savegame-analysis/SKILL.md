@@ -81,11 +81,14 @@ all. Verified on `af003548` 1944.7: 7 of the 11 UK hosting states sit at exactly
 nominal while reading 86–98 % in planes. Consumers: R8, R15, R52 — any "is there room on
 these airfields" question.
 
-Fourth companion: `plans.py TAG[,TAG…]|ALL <save>… [--armies] [--fronts] [--divisions] [--where] [--oob] [--templates] [--limit N]` —
+Fourth companion: `plans.py TAG[,TAG…]|ALL <save>… [--armies] [--fronts] [--invasions] [--divisions] [--where] [--oob] [--templates] [--limit N]` —
 **AI battle plans: who holds an order, of what kind, and where every division sits.** Default is a
 per-save census (divisions per order class: `front` / `invasion` / `buffer` / `areadef` / `NO_ORDER`);
 `--fronts` lists every type-1/2 order with its `instance_id`, `creation_date` and `path` resolved to
-state names; `--divisions` gives org / strength / recent-combat share per class; `--armies` maps each
+state names; **`--invasions` lists every type-3 order with its TARGET** (`path={}` provinces → states),
+`invasion_source`, staging states of the scheduled divisions and `convoys=N/M` — but a landing's
+order is CONSUMED within weeks of execution, so absence in monthly saves is not absence of landings
+(the `1ac7e4ea` Torch landings left no surviving type-3 order in any save); `--divisions` gives org / strength / recent-combat share per class; `--armies` maps each
 army to the order it is covered by; **`--where` buckets divisions per STATE and splits each state by
 order class** — the "is this front actually manned" view, and the one every agent used to rebuild by
 hand (it needs a province→state join the save does not carry). ~2 s for all 66 countries of a 109 MB

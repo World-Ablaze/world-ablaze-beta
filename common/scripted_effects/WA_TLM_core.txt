@@ -54,7 +54,7 @@
 #	v29 r114_thair_near_n / _far_n   which phase of the theatre air ladder won the start
 #	v31 sq_adds_by_type^8            fuel silos joined the shared-slot standard ([silo-breadth])
 #	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
-@WA_TLM_VERSION = 32
+@WA_TLM_VERSION = 33
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -636,7 +636,8 @@ WA_TLM_sample_pc = {
 #	existed; divisions reference templates by numeric id only). Scope: country, is_ai gated by the
 #	caller.
 #	Script has no numeric divisions-by-type getter, so armor/mech counts are BANDED: an ascending
-#	has_army_size threshold ladder stores the highest floor passed. has_army_size counts divisions by
+#	has_army_size threshold ladder stores the highest floor passed - a LOWER BOUND, exact for
+#	rungs 1-5 and coarser above; never read it as a count. has_army_size counts divisions by
 #	dominant type = "fielded share" in R6's sense (type = infantry/motorized precedent:
 #	common/decisions/GER_factions.txt). Boot check: if armor/mechanized were invalid type tokens the
 #	ladder would read 0 on countries with known tanks - do not score R6 off a reading that fails it.
@@ -654,8 +655,14 @@ WA_TLM_sample_composition = {
 	# R6 scores GER/SOV, and the archetype covers every candidate.
 	if = { limit = { WA_AI_CONFIG_is_major_country = yes }
 
-		# tlm: comp_armor - banded gauge - consumer: R6 (standing)
+		# tlm: comp_armor - banded gauge, LOWER BOUND - consumer: R6 (standing)
+		# [analysis-tooling] exact rungs 1-4: below them the band floors to 0 and a
+		# small armour arm reads as absent.
 		set_temp_variable = { _tlm_armor_ = 0 }
+		if = { limit = { has_army_size = { size > 0 type = armor } } set_temp_variable = { _tlm_armor_ = 1 } }
+		if = { limit = { has_army_size = { size > 1 type = armor } } set_temp_variable = { _tlm_armor_ = 2 } }
+		if = { limit = { has_army_size = { size > 2 type = armor } } set_temp_variable = { _tlm_armor_ = 3 } }
+		if = { limit = { has_army_size = { size > 3 type = armor } } set_temp_variable = { _tlm_armor_ = 4 } }
 		if = { limit = { has_army_size = { size > 4 type = armor } } set_temp_variable = { _tlm_armor_ = 5 } }
 		if = { limit = { has_army_size = { size > 9 type = armor } } set_temp_variable = { _tlm_armor_ = 10 } }
 		if = { limit = { has_army_size = { size > 14 type = armor } } set_temp_variable = { _tlm_armor_ = 15 } }
@@ -670,8 +677,12 @@ WA_TLM_sample_composition = {
 		if = { limit = { has_army_size = { size > 319 type = armor } } set_temp_variable = { _tlm_armor_ = 320 } }
 		set_variable = { WA_TLM_comp_armor = _tlm_armor_ }
 
-		# tlm: comp_mech - banded gauge - consumer: R6 (standing)
+		# tlm: comp_mech - banded gauge, LOWER BOUND - consumer: R6 (standing)
 		set_temp_variable = { _tlm_mech_ = 0 }
+		if = { limit = { has_army_size = { size > 0 type = mechanized } } set_temp_variable = { _tlm_mech_ = 1 } }
+		if = { limit = { has_army_size = { size > 1 type = mechanized } } set_temp_variable = { _tlm_mech_ = 2 } }
+		if = { limit = { has_army_size = { size > 2 type = mechanized } } set_temp_variable = { _tlm_mech_ = 3 } }
+		if = { limit = { has_army_size = { size > 3 type = mechanized } } set_temp_variable = { _tlm_mech_ = 4 } }
 		if = { limit = { has_army_size = { size > 4 type = mechanized } } set_temp_variable = { _tlm_mech_ = 5 } }
 		if = { limit = { has_army_size = { size > 9 type = mechanized } } set_temp_variable = { _tlm_mech_ = 10 } }
 		if = { limit = { has_army_size = { size > 14 type = mechanized } } set_temp_variable = { _tlm_mech_ = 15 } }
@@ -686,7 +697,8 @@ WA_TLM_sample_composition = {
 		if = { limit = { has_army_size = { size > 319 type = mechanized } } set_temp_variable = { _tlm_mech_ = 320 } }
 		set_variable = { WA_TLM_comp_mech = _tlm_mech_ }
 
-		# tlm: comp_armor_mech_pct - derived gauge, 100 * (armor + mech) / total - consumer: R6 (standing)
+		# tlm: comp_armor_mech_pct - derived gauge, 100 * (armor + mech BANDS) / total - LOWER
+		# BOUND, exact only while both arms are <= 5 divisions - consumer: R6 (standing)
 		set_temp_variable = { _tlm_am_ = _tlm_armor_ }
 		add_to_temp_variable = { _tlm_am_ = _tlm_mech_ }
 		multiply_temp_variable = { _tlm_am_ = 100 }

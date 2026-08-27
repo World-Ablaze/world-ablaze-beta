@@ -173,6 +173,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > that.
 
 
+### analysis-tooling — SHIPPED-UNTESTED (2026-08-27)
+- Scope: owner request 2026-08-27 ("d'abord les deux sujets open + la méta") — the three
+  measurement defects the `1ac7e4ea` scoring exposed: (i) `wa_tlm_comp_armor/mech` band floor
+  (any armour arm < 5 divisions read 0 → false "zero armour" verdict on ENG), (ii) `aifc.py`
+  printing a dead tag's frozen sector as live churn (SHA read as the R1 pathology for 13 saves),
+  (iii) `plans.py` unable to name a type-3 invasion order's target (blocked
+  scripted-invasion-reservation leg (b) and mis-shaped the foothold-deadlock candidate).
+- State: (i) SHIPPED — exact rungs 1-4 added to both ladders (`WA_TLM_core.txt`), comments +
+  doc registry now say LOWER BOUND (exact ≤ 5, coarser above), `@WA_TLM_VERSION` 32 → 33;
+  cost 8 trigger evals per major per monthly sample. (ii) SHIPPED and validated on a real save
+  — `aifc.py` flags `[DEAD TAG]` on a country block with no `units` section (MEASURED: SHA
+  1944.1 prints the banner, GER unaffected, exit 0); trend footer amended. (iii) SHIPPED and
+  validated — MEASURED: a type-3 `order_instance` carries its target as `path={}` (province
+  list, p2s-resolvable) plus `invasion_source` and `convoys=N/M`; `plans.py ENG,USA --invasions
+  1942.10_Oct.hoi4` prints both orders with `TARGET Madagascar (provinces 5222)`, staging and
+  source resolved; empty case explicit ("0 naval-invasion order(s)"); pathless case says "NO
+  target recorded"; default census and `--fronts` unchanged; `ALL` sweep clean on ~70 tags.
+  Retro-correction this surfaces: the 1942.9-10 invasion orders read earlier as "Torch orders"
+  were MADAGASCAR orders (both ENG and USA) — Torch's landings left no surviving type-3 order
+  in any monthly save; the falsified-deadlock conclusion is unaffected (outcome evidence).
+  Reviews 2026-08-27: architecture CONCERNS (2 items — code-site campaign hash stripped, doc
+  version cell for the pct row: both applied).
+- Verification: (i) is a `WA_TLM_*` write-site change — F9 boot owed (next launch covers it);
+  campaign probe: first v33 campaign, a major with 1-4 armour divisions reads `comp_armor`
+  = that count (ENG-shape control), and `tlm` never reports comp_* as FROZEN on live majors.
+  (ii)/(iii) are analysis-side tools: validated by the pasted real-save outputs in this entry.
+- Closed when: v33 campaign probe (i) passes, and `plans.py --invasions` output on a save with
+  a live invasion order names its target states (pasted here).
+
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
