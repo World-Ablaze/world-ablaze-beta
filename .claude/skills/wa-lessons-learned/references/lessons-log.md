@@ -2149,7 +2149,7 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Cause:** neither. (a) The Adriatic garrisons were **not WA's at all** - they were engine-generated area-defence orders (`order_instance` type 5 with `area_defense_settings = 100`; WA's own scripted buffers carry `102`). The engine was free to make them because `WA_AI_MILITARY_ITA_war_against_ENG_FRONT`, which carries Italy's only `garrison = -5000`, had been **disabled since 1941.2.7**: its gate was `NOT = { has_war_with = ETH }`, carried verbatim from the pre-convention import, and Ethiopia was liberated in Feb 1941 and stayed at war as a co-belligerent. Two sibling blocks split from the same original (`_DIPLOMACY` `force_defend_ally_borders`, NAVAL `strategic_air_importance` over the Italian war theatre) died with it. (b) Provence *was* in a WA `states` list - the order existed and held six divisions - but the list mixed three coastal states with six landlocked ones at a flat ratio, and the engine spread one division per state into the interior, leaving the only landable state empty.
 - **Rule:** before concluding anything about an `ai_strategy` payload, establish that the block is **enabled at the date you are measuring**. Two cheap checks settle it: read the `enable` chain against the save (`relations`, `control`, `flags`) rather than against the historical script, and split the save's orders by `area_defense_settings` so an engine order is never read as a scripted one. A gate that names a *country* (`has_war_with = ETH`) as a proxy for an *era* ("the colonial war is over") inverts permanently the first time that country comes back into the war - the mod already had the era trigger (`WA_AI_MILITARY_ethiopian_war_finished`) and five sibling blocks were using it.
 - **Detection:** an `ai_strategy` family whose effect is absent from every save after some date, with no code change at that date. Grep the family's gate for a tag-named proxy; `git log -S` it - a clause with no recoverable reason and a modern trigger covering the same question is the shape.
-- **What this entry does NOT claim:** that `garrison = -5000` removes engine area-defence orders. That is WA convention, undocumented by the engine, and the save measured here only shows what happens when the block is OFF. Checklist R74 leg 1 is the first measurement of the ON case - do not quote a magnitude for it until that scores.
+- **What this entry does NOT claim:** that `garrison = -5000` removes engine area-defence orders. That is WA convention, undocumented by the engine, and the save measured here only shows what happens when the block is OFF. Checklist R74 leg 1 is the first measurement of the ON case - do not quote a magnitude for it until that scores. **Answered 2026-08-27:** the ON case is now MEASURED — see "A negative `garrison` does NOT empty existing area-defence orders" (end of log): the value reaches the engine, summed at -4950, and existing areadef orders keep their divisions.
 - **Evidence:** `plans.py ITA 1943.8_Aug.hoi4 --oob/--where/--armies` (16 of 106 divisions in five `ads=100` orders; Army 6 = 6 divisions over five inland French states, Provence 0); `savegame.py relations 1943.8_Aug.hoi4 --tag ITA` (`ETH … since 1941.2.7.1 recorded in ETH's block ONLY`); `savegame.py control 21,20,22,735` (Provence/Rhone/Languedoc = GER); `git show 79d64f6ff:common/ai_strategy/ITA.txt` for the original gate.
 
 
@@ -2197,7 +2197,7 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Symptom:** with Japan still neutral, **AST held 17 of 22 divisions (77 %) and NZL 8 of 11 (73 %) in engine area-defence orders** at 1941.6, and Britain fought the East-African campaign alone — 37 of ENG's 66 divisions (56 %) in the theatre at 1940.10 against 8 in Egypt, while RAJ had 24 of 42 sitting in India. The obvious reading is "the pull toward Africa is missing".
 - **Cause:** the pull was **not** missing. `WA_AI_MILITARY_ALLIES_east_africa_contested_FRONT` (+150) already reached RAJ and RAJ's own `-100` Asia-first suppression was not armed (it needs a war with PER/SOV/JAP). What was missing was an army to answer it: `WA_AI_MILITARY_ARCHETYPE_minors_home_first` (`WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt`) gives **every minor at war `garrison = +50`** — *more* engine area defence, not less — and AST and NZL have no `garrison` writer of their own at all. RAJ escapes it only through `WA_AI_MILITARY_RAJ_core_front_requests`, whose gate is `has_war_with = JAP`, and it additionally parks 0.25 of its army in a `subtract_fronts_from_need = no` reserve precisely while Japan is neutral.
 - **Rule:** when divisions do not arrive somewhere, count the order classes before adding a pull. `plans.py <TAG>` splits front / buffer / areadef / NO_ORDER in one line; an army that is 70–80 % `areadef` is not being under-asked, it is being held. And check `minors_home_first` first — it matches every dominion, every neutral-ish Allied minor and (once its army passes 1M men) not ENG, so it is the widest-reaching FRONT block in the mod.
-- **Bonus, and it answers a question the docs left open:** RAJ is a natural control for **what `garrison = -5000` actually does**, which `documentation/WA_AI_MILITARY_SYSTEM.md` §16 called an untested convention and R74 leg 1 was written for. Its area-defence divisions read **14 / 17 / 16** at 1940.10 / 1941.6 / 1941.12 (no `-5000`) and **0 / 3 / 2** at 1942.3 / 1942.6 / 1943.6 (the JAP war arms it), while its BUFFER count *rose* 17 → 21 → 25 — so the engine did not merely move the guards onto the new fronts. **DERIVED**, rival explanation named (the switch coincides with Japan's entry); the cross-section closes it without the date — on the single 1941.6 save GER reads 1 of 203 and ITA 4 of 84, both carrying `-5000`, against AST's 77 % and NZL's 73 %, neither of which does.
+- **Bonus, and it answers a question the docs left open:** RAJ is a natural control for **what `garrison = -5000` actually does**, which `documentation/WA_AI_MILITARY_SYSTEM.md` §16 called an untested convention and R74 leg 1 was written for. Its area-defence divisions read **14 / 17 / 16** at 1940.10 / 1941.6 / 1941.12 (no `-5000`) and **0 / 3 / 2** at 1942.3 / 1942.6 / 1943.6 (the JAP war arms it), while its BUFFER count *rose* 17 → 21 → 25 — so the engine did not merely move the guards onto the new fronts. **DERIVED**, rival explanation named (the switch coincides with Japan's entry); the cross-section closes it without the date — on the single 1941.6 save GER reads 1 of 203 and ITA 4 of 84, both carrying `-5000`, against AST's 77 % and NZL's 73 %, neither of which does. **Refined 2026-08-27:** the direct CAN imgui measurement ("A negative `garrison` does NOT empty existing area-defence orders", end of log) shows `-5000` does not evacuate existing areadef orders — the rival explanation was the right one (the Japan-war fronts pulled RAJ's divisions); this cross-section stands as correlation (fewer areadef where `-5000` is armed early), not as evacuation.
 - **Detection:** `plans.py <TAG> <saves>` order-class census, read as a *share* of the army rather than a count, plus `grep "type = garrison"` across `common/ai_strategy/` to find who writes one at all — thirteen files do, and the dominions are not among them.
 - **Evidence:** `plans.py AST,NZL,RAJ,ITA,GER,ENG 1941.6_Jun.hoi4`; `plans.py RAJ` over 1940.10 → 1943.6; `plans.py ENG,RAJ 1940.10_Oct.hoi4 --where`; `common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_archetypes.txt:104-115`.
 
@@ -2291,3 +2291,58 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** Discord #wa channel, 2026-08-24 (156 ↔ Aigle2 exchange); log entries "Two call
   sites, one effect" (08-20) and the hot-reload bonus sighting under the temp-arithmetic entry
   (08-23).
+
+### A negative `garrison` does NOT empty existing area-defence orders — and same-type/same-target entries sum
+
+- **Date:** 2026-08-27 (`[allied-total-commitment]`, owner `imgui show ai-strategy` on CAN, campaign `24933fb9` resumed)
+- **Symptom:** CAN's `garrison = -5000` release was proven armed and correctly gated (harness
+  `wa_tc.1`, closure PASS 1942.2), yet CAN still held ~100 % of its home divisions in engine
+  area-defence orders (1943.6) — the two usual explanations, "block silently OFF" and "wrong
+  payload", were both already excluded.
+- **Cause (MEASURED, the first ON-case reading this convention ever had):** the imgui strategy
+  window shows CAN's garrison tree as **ONE summed row, Weighted Value -4950** (-5000 release
+  + 50 `minors_home_first`) — armed and held. The value reaches the engine, and existing engine
+  areadef orders still keep their divisions: a negative `garrison` *prevents/suppresses*, it does
+  not *evacuate*. The proven mover is a `put_unit_buffers` catcher order (the Scotland division,
+  1942.3, via `defend_britain`). The same read is the first direct proof that **same-TYPE /
+  same-TARGET `ai_strategy` entries SUM** into one weighted value; the cross-AREA / cross-target
+  variant of the summing question remains ASSUMED.
+- **Rule:** to empty a mainland, do not deepen the negative `garrison` — pair it with a catcher
+  (buffer) that gives the released divisions somewhere to go; a bigger negative moves nothing
+  that already sits inside an engine areadef order. And when two blocks write the same type at
+  the same target, budget their *sum*, because the engine nets them into one row.
+- **Supersedes/answers:** the "does NOT claim" clause of "An `ai_strategy` block that is silently
+  OFF…" (2026-08-19) — this is the ON-case measurement it demanded; and it refines the RAJ
+  DERIVED bonus of "`garrison = +50` is the default…" (2026-08-21): RAJ's areadef drop at
+  Japan's entry is explained by the new fronts pulling divisions, not by `-5000` evacuating them.
+- **Evidence:** `documentation/WA_AI_MILITARY_SYSTEM.md` §24 "Known limits" (the imgui reading);
+  WORK.md `allied-total-commitment` (parked row); `common/ai_strategy/WA_AI_MILITARY_COUNTRY_CAN_THEATRE.txt`
+  (`..._empty_mainland` catcher, commit `8e4a44ef9`).
+
+### A delegate-availability bar on TOTAL `num_divisions` reads "available" exactly when the delegate is fully committed elsewhere
+
+- **Date:** 2026-08-27 (campaign `24933fb9`; `[commonwealth-handoff]` probe a2 + `[raj-gulf-garrisons]` SS26)
+- **Symptom:** two delegated-mission systems shipped with availability verdicts of the shape
+  "delegate `num_divisions > 29`" (+ force floor). Both failed the same way on the same
+  campaign: at 1943.6 RAJ reads "available" at **76 total divisions while 34 stand on the Burma
+  wall and 3 in East Africa** — ENG stays exempted and back-fills 14 divisions itself (the
+  handoff inverts); and the Gulf guards (Kuwait 656 / Aden 659) are RAJ-empty from 1942 on while
+  ENG stands both at its 0.02 floor.
+- **Cause:** `num_divisions` counts the whole army wherever it stands, so the verdict conflates
+  "the delegate has an army" with "the delegate can man THIS theatre". The first second war
+  (Japan) consumes the army and every delegation keyed on the total stays armed over an empty
+  theatre. The conflation was even written down as a known gap at ship time (2026-08-25) — it
+  still shipped as the only bar, and became the campaign's measured failure mode in two systems
+  at once.
+- **Rule:** an availability verdict for a delegated mission must be falsifiable by the THEATRE,
+  not by the army: measure in-theatre presence (divisions physically standing in the mission's
+  regions) or at minimum subtract fronts already engaged elsewhere. Until a trigger can do that
+  cheaply, every delegation ships with the probe "delegate in-theatre count < N while the
+  availability trigger reads true" so the conflation is caught on the first campaign — probe a2
+  is what turned this from a footnote into a measurement.
+- **Detection:** `plans.py <delegate> <saves> --where` — total division count healthy, mission
+  regions at 0-3, the delegating country's own divisions back in the theatre it delegated.
+- **Evidence:** WORK.md `commonwealth-handoff` (probe a2, `plans.py ENG,RAJ --where` 1943.6) and
+  the `[raj-gulf-garrisons]` SS26 FAILED verdict on `24933fb9`; the verdicts live in
+  `common/scripted_triggers/WA_AI_MILITARY_triggers.txt` (`commonwealth_east_africa_available`,
+  the three RAJ Gulf verdicts).
