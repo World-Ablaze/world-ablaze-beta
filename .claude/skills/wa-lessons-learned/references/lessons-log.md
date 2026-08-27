@@ -2371,3 +2371,36 @@ process caveats (stale process, and the absence of a load-time hook).
   CAN 15/14, ENG 134/31, USA 340/7; stocks RAJ 53k vs CAN 11.6k);
   `common/scripted_triggers/WA_reserves_triggers.txt` (tier OR),
   `common/scripted_triggers/WA_AI_CONFIG.txt` (`is_reserve_materiel_limited`).
+
+### A nameless create_corps_commander creates an orphan - and its caller loops forever
+
+- **Date:** 2026-08-28 (campaign `0767987f`, all 4 sampled saves; `[recruit-loop]`)
+- **Symptom:** owner-observed: ARG's AI spends 10 command power in a loop. Save: CP pinned
+  under 13 for 9 years, 117 identical skill-1 corps commanders in the character DB that no
+  in-game view ever showed.
+- **Cause:** `create_corps_commander = { skill = 1 }` with no `name` creates the character in
+  `character_manager` (auto token `TAG_` with EMPTY suffix) but never registers it in the
+  country's characters list - so `every_army_leader` never counts it. The caller
+  (`WA_AI_recruit_general`, 2-day event) gates on that count staying `< 3`, so every country
+  whose official roster holds < 3 non-marshal generals re-fired the creation forever: 10 394
+  orphan characters across 106 countries (> 55% of the save's character DB), each looper's CP
+  income burned at the 10-CP min clamp. Zero exceptions over 74 measured cells on
+  "official < 3 => growing orphans + pinned CP". Every vanilla and Expert AI use of
+  `create_corps_commander`/`create_field_marshal` passes `name` (+ gfx); the bare form had
+  never worked and nothing ever said so.
+- **Rule:** never call `create_corps_commander`/`create_field_marshal` without a `name`; prefer
+  `generate_character` (documented "create + recruit", random name from the country's own lists
+  when omitted, install effects_documentation.md:4441) with a unique per-creation `token_base`.
+  And any scripted creation whose caller gates on a COUNT must carry a registration watchdog
+  (expected-count verify on the next firing, refund on failure, two-strike latch with a
+  growth-since-latch exit) - a silent creation failure otherwise converts the gate into an
+  infinite loop. Oracle note: character EXISTENCE is the wrong success check - the orphans
+  exist; count what the gate reads.
+- **Detection:** save-side: `character_manager` blocks with empty-suffix auto tokens absent
+  from every country's characters list, count growing monthly. Console: `event wa_test_rl.2
+  <TAG>` prints the general-count delta around one real recruit pass.
+- **Evidence:** WORK.md `recruit-loop`;
+  `common/scripted_effects/WA_AI_leader_recruitment_effects.txt` (watchdog + generate_character);
+  harness `common/scripted_effects/WA_TEST_recruit_loop.txt`. Engine boundary, ASSUMED: why
+  registration fails for the nameless form, and why XSM/YUN loop despite an official count >= 3
+  (warlord/united-front reading).
