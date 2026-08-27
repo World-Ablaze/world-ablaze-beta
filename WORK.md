@@ -393,8 +393,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   both reviewers CONCERNS, no CONFLICT, amendments applied): 4 new files in
   `common/ai_navy` give USA and CAN destroyer convoy-escort templates + matching fleets
   (`<TAG>_ConvoyEscort_DD_1` min 4 / optimal 10 DD, factor 4 < generic frigate 5), active
-  only below 100 owned frigates (`has_navy_size = { size > 99 unit = frigate }` - the
-  threshold is registry-held, group `ai_navy_dd_escort_frigate_threshold`). Root cause the
+  only below 100 owned frigates. Owner follow-up 2026-08-27 applied: the threshold is a
+  single scripted trigger `WA_AI_NAVY_frigate_mass_reached`
+  (`common/scripted_triggers/WA_AI_NAVY_triggers.txt`, new system trigger file - CONFIG
+  stays classification-only) read by both country files; the interim registry group was
+  removed with the duplication. Root cause the
   files fix: the generic escort template is frigate-only (DD variant commented out by
   d3aaa5d0f on the recorded assumption "escort_fleet_6 covers it" - MEASURED false on
   `1ac7e4ea` for DD-heavy navies: their screens cannot form escort task forces at all).
@@ -404,9 +407,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   AST/NZL/RAJ/SAF lose 0-13 off-corridor; JAP/GER/ITA sit on the raider side and their
   transit losses were never a measured symptom - if a later campaign shows one of them in
   this class, it enters as its own file under a new admission. ASSUMED, both recorded in
-  the file comments: (i) whether ai_navy `allowed` re-evaluates in play (vanilla/EAI use
-  only static tags there; owner console check with `imgui show ai_navy` OWED - fallback if
-  static: drop the threshold term, factor 4 < 5 remains as soft handover); (ii)
+  the file comments: (i) whether ai_navy `allowed` re-evaluates in play AND resolves
+  scripted triggers (vanilla/EAI use only static tags there; owner console check with
+  `imgui show ai_navy` OWED, and F9 error.log catches an unknown-token failure - fallback
+  if static or unresolved: drop the threshold term, factor 4 < 5 remains as soft
+  handover); (ii)
   `has_navy_size` counting of under-repair/reserve hulls is undocumented (oracle read,
   install triggers_documentation.md section has_navy_size names type/archetype/unit but
   not fleet-state scope) - near the 100 mark either reading is acceptable. Alternative
