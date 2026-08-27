@@ -182,9 +182,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   age 4wk = forced re-selection next tick, onto an Egypt pad-3 anchor vs ITA (the main-enemy
   rule picks ITA at max pad 3 with or without the merge this week). **Open-arm end-to-end proof
   still riding**: the run arm (weak native → merged candidate in a STORED sector) is proven at
-  the instrument level (harness walk) but not yet in a shipped selection — cheapest console
-  proof is `wa_aifc.1 ITA` (native maxpad ~2 → gate 1) followed by a re-selection anchoring
-  Batna, else the next campaign's (L3b) probe carries it.
+  the instrument level (harness walk) but not yet in a shipped selection. `wa_aifc.1 ITA`
+  1944.7.14 (owner): native-maxpad **5** (Cairo — the fork's Egyptian battle massed ITA
+  divisions too) → gate closed CORRECTLY; no tag in this fork still combines a weak native
+  front with real ally-soil mass (USA has neither), so the open arm's end-to-end proof rides
+  on the next campaign — probe (L3d): a country whose native max pad reads <= 2 while holding
+  3+ divisions on ally soil shows expeditionary states in its STORED corridor (aifc.py). Both
+  stored sectors re-select next tick at age 4 onto their max-pad anchors (ENG → Egypt vs ITA,
+  ITA → Cairo vs ENG) — the Egyptian front becomes schwerpunkt vs schwerpunkt, the intended
+  shape of the system.
 - **Expeditionary gate fix SHIPPED 2026-08-27 (owner order).** The 1b gate is now
   CAPABILITY-based: new `constant:wa_ai_aifc.selection.exp_gate_pad = 2`; a prepass computes the
   best NATIVE pad and the ally walk runs unless some native pad clears the bar (strict >, i.e.
