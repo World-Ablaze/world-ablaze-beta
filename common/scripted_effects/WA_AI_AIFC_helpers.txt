@@ -40,6 +40,15 @@
 ### Constants: constant:wa_ai_aifc.sector.max_states (corridor cap - every entry costs on each Layer 4
 ### is_in_array lookup) lives in common/script_constants/wa_ai_aifc.txt since 2026-08-16.
 
+# [aifc-traction] launching-pad band thresholds - ROOT divisions in ONE adjacent friendly state:
+# above T3 = 3 bands, above T2 = 2, above T1 = 1, summed per candidate. Single declaration read by
+# the 1b prepass AND the 1c pad walk (a re-typed copy is how two sites drift). File-scoped on
+# purpose: only this file computes pads - the harness (WA_TEST_aifc.txt) re-types them DELIBERATELY
+# as an independent instrument (harness contract rule 4).
+@AIFC_PAD_T3 = 9
+@AIFC_PAD_T2 = 4
+@AIFC_PAD_T1 = 0
+
 ############################################################################################################
 #	Select one sector for ROOT
 #	ROOT = country scope
@@ -74,19 +83,26 @@ WA_AI_AIFC_select_sector = {
 	}
 
 	############################################################
-	# 1b. Expeditionary fallback - no native land contact
+	# 1b. Expeditionary merge - the native front has no real army
 	############################################################
 	# [offensive-posture] every_controlled_state cannot see allied-controlled soil, so an expeditionary power
 	# fighting entirely from a faction member's territory (USA in liberated France) never found an
 	# anchor and never got a sector. Same scope trap as railway [railway-pathfinding] (puppets/controllers).
 	# Fallback: enemy states in contact with faction-member or subject-relation territory where ROOT
-	# itself has a meaningful ground presence. Gated on the native scan coming up empty so the extra
-	# state walk is only ever paid by countries that need it.
+	# itself has a meaningful ground presence.
 
-	# Gate relaxed from "no native candidate at all" to "fewer than 3": campaign 5709c8b9 showed a
-	# single token native contact (one captured island) suppressing the fallback entirely, leaving an
-	# expeditionary power's real army - fighting from allied soil on another continent - sector-less
-	# or anchored on the irrelevant native candidate.
+	# [aifc-traction] the gate is CAPABILITY-based: the walk runs unless some native candidate's pad
+	# clears constant:wa_ai_aifc.selection.exp_gate_pad. It protects the FIX-56 concern (the
+	# every_country ally walk is the expensive part of selection) and assumes a native pad >= 3
+	# proves an army worth anchoring on natively. Its count-based predecessor (`< 3` candidates,
+	# itself relaxed from `= 0` after campaign 5709c8b9's token-island case) still starved ENG
+	# through FIVE token desert contacts while its real army stood on allied Tunisia and post-D-Day
+	# Normandy (fork 1944.6.20, wa_aifc harness) - candidates are counted, armies are weighed. An
+	# empty native set reads best pad 0, so the old empty/token cases stay covered. Cost honestly
+	# stated: a country passing eligibility (12+ div, at war) whose native pads are all weak pays
+	# the ally walk EVERY week - bounded by its allies' controlled-state count, and it is exactly
+	# the country the merge exists for; countries with a real native front (measured GER/SOV/JAP/
+	# CHI/PRC pads 6-9) skip it.
 
 	# FIX 65 (2026-08-14, campaign f9321934): the ally filter used to carry `has_capitulated = no`,
 	# which is the one country in the faction whose soil an expeditionary army is MOST likely to be
@@ -117,8 +133,50 @@ WA_AI_AIFC_select_sector = {
 	#
 	# NOT a fix for any front. AIFC issues no attack orders and Layers 1-2 are not sector-gated, so
 	# this restores a scripted AXIS, not concentration itself. Do not expect front movement from it.
+
+	# Prepass: best NATIVE pad, same @AIFC_PAD_* thresholds as the 1c walk. Native sets are small
+	# (5-20 states); 1c recomputes pads for the merged set - the price of keeping 1c single-pass.
+	set_temp_variable = { _aifc_native_best_pad = 0 }
+	for_each_loop = { array = _aifc_cand value = _aifc_gc
+
+		set_temp_variable = { _aifc_gpad = 0 }
+		var:_aifc_gc = {
+			every_neighbor_state = {
+				limit = {
+					OR = {
+						is_controlled_by = ROOT
+						CONTROLLER = {
+							OR = {
+								is_in_faction_with = ROOT
+								is_subject_of = ROOT
+								ROOT = { is_subject_of = PREV }
+							}
+						}
+					}
+				}
+				if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T3 } } }
+					add_to_temp_variable = { _aifc_gpad = 3 }
+				}
+				else_if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T2 } } }
+					add_to_temp_variable = { _aifc_gpad = 2 }
+				}
+				else_if = {
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T1 } } }
+					add_to_temp_variable = { _aifc_gpad = 1 }
+				}
+			}
+		}
+
+		if = {
+			limit = { check_variable = { _aifc_gpad > _aifc_native_best_pad } }
+			set_temp_variable = { _aifc_native_best_pad = _aifc_gpad }
+		}
+	}
+
 	if = {
-		limit = { check_variable = { _aifc_cand^num < 3 } }
+		limit = { NOT = { check_variable = { _aifc_native_best_pad > constant:wa_ai_aifc.selection.exp_gate_pad } } }
 
 		every_country = {
 			limit = {
@@ -191,15 +249,15 @@ WA_AI_AIFC_select_sector = {
 				}
 
 				if = {
-					limit = { ROOT = { divisions_in_state = { state = PREV size > 9 } } }
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T3 } } }
 					add_to_temp_variable = { _aifc_pad = 3 }
 				}
 				else_if = {
-					limit = { ROOT = { divisions_in_state = { state = PREV size > 4 } } }
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T2 } } }
 					add_to_temp_variable = { _aifc_pad = 2 }
 				}
 				else_if = {
-					limit = { ROOT = { divisions_in_state = { state = PREV size > 0 } } }
+					limit = { ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T1 } } }
 					add_to_temp_variable = { _aifc_pad = 1 }
 				}
 			}
@@ -230,7 +288,7 @@ WA_AI_AIFC_select_sector = {
 	# inert and the engine falls back to its own target scoring, which the core header documents as
 	# the safe path. The old "_aifc_main_enemy = 0 -> score everything rather than selecting
 	# nothing" fallback arm was REMOVED with the floor (not left dead): main_enemy = 0 means every
-	# pad is 0, which the floor rejects anyway. Assumes the 0/4/9 pad banding of section 1c.
+	# pad is 0, which the floor rejects anyway. Assumes the @AIFC_PAD_* banding of section 1c.
 
 	set_temp_variable = { _aifc_best_id = 0 }
 	set_temp_variable = { _aifc_best_score = -9999 }

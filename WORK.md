@@ -170,7 +170,30 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — TESTED (2026-08-27)
+### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+- **Expeditionary gate fix SHIPPED 2026-08-27 (owner order).** The 1b gate is now
+  CAPABILITY-based: new `constant:wa_ai_aifc.selection.exp_gate_pad = 2`; a prepass computes the
+  best NATIVE pad and the ally walk runs unless some native pad clears the bar (strict >, i.e.
+  skips at pad >= 3). The count arm (`< 3`) deleted whole — empty native set reads best pad 0, so
+  the 5709c8b9 token-island and empty cases stay covered. Pad band thresholds declared ONCE as
+  file-scoped `@AIFC_PAD_T1/T2/T3` read by both the prepass and the 1c walk (must-match by
+  mechanism, not comment); harness re-types them deliberately (independent instrument, contract
+  rule 4) and now prints the NEW gate (`native-maxpad` vs bar). Docs synced: FRONT_aifc.txt
+  system header, 1b comment rewritten (cost sentence honest: an eligible country with only weak
+  native pads pays the ally walk weekly — bounded by its allies' controlled-state count, and it
+  is exactly the country the merge exists for; a small-army faction minor below 12 divisions
+  never reaches selection at all — the FIX-56 eligibility gate is upstream). Validity mirror
+  needs no change (core:191-201 expeditionary arm ungated — FIX-65 lockstep holds).
+  Reviews 2026-08-27: architecture CONCERNS (4 items: header sync, @ bands, cost sentence,
+  checkers — all applied) + lessons CONCERNS (5 items: prepass init `= 0` present, minor-class
+  cost stated here, @ bands, rule-10 gate header sentence in the constant + 1b comment,
+  check_constants — all applied). Flap statement (structural, no timeline owed per lessons):
+  the gate only ADDS candidates; worst case of a native pad wobbling across the bar is today's
+  native-only selection, never worse.
+- **Owner console run owed (moves this back to TESTED): re-run `event wa_aifc.1 ENG` on the
+  fork.** Expected: `exp-gate(native-maxpad<=2)=1` and, after the next weekly tick, a stored
+  sector anchored on Tunisia or a Normandy state vs GER — the shipped selection finally seeing
+  the merged candidates. F9 boot: the game loading this build with the harness firing covers it.
 - **Owner harness run 2026-08-27 (`event wa_aifc.2`, save 1944.4, all scope headers `1 1 1 1 0`)
   — L2 diagnosis COMPLETE, floor SAVE-PROVEN live, F9 boot OK (the build loaded and the new
   constant resolved in-game).** Key pasted lines:

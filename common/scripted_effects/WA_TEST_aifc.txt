@@ -168,16 +168,19 @@ WA_TEST_AIFC_report = {
 		}
 	}
 	set_temp_variable = { _aifct_n_native = _aifct_n }
+	set_temp_variable = { _aifct_native_maxpad = _aifct_max_pad }
 
 	############################################################
 	# C. Expeditionary pass (helpers section 1b) - run UNCONDITIONALLY here, with the
-	#    shipped gate (native < 3) reported beside it, so the ally-soil presence is
-	#    visible even when the shipped code would have skipped the walk.
+	#    shipped gate (capability-based since [aifc-traction]: walk runs unless a native
+	#    pad clears selection.exp_gate_pad) reported beside it, so the ally-soil
+	#    presence is visible even when the shipped code would have skipped the walk.
 	############################################################
 
+	set_temp_variable = { _aifct_gate_bar = constant:wa_ai_aifc.selection.exp_gate_pad }
 	set_temp_variable = { _aifct_exp_gate = 0 }
 	if = {
-		limit = { check_variable = { _aifct_n_native < 3 } }
+		limit = { NOT = { check_variable = { _aifct_native_maxpad > constant:wa_ai_aifc.selection.exp_gate_pad } } }
 		set_temp_variable = { _aifct_exp_gate = 1 }
 	}
 	set_temp_variable = { _aifct_pad_src = 0 }
@@ -223,7 +226,7 @@ WA_TEST_AIFC_report = {
 		log = "  stored: NO sector on [Root.GetName] (weekly tick last wrote nothing, or cleared)"
 	}
 
-	log = "  sum   : cand_native=[?_aifct_n_native|.0]  cand_total=[?_aifct_n|.0]  exp-gate(native<3)=[?_aifct_exp_gate|.0]  ally-states-with-3+div=[?_aifct_pad_src|.0]  anchor-eligible(pad>floor)=[?_aifct_ok|.0]  max_pad=[?_aifct_max_pad|.0]"
+	log = "  sum   : cand_native=[?_aifct_n_native|.0]  native-maxpad=[?_aifct_native_maxpad|.0]  cand_total=[?_aifct_n|.0]  exp-gate(native-maxpad<=[?_aifct_gate_bar|.0])=[?_aifct_exp_gate|.0]  ally-states-with-3+div=[?_aifct_pad_src|.0]  anchor-eligible(pad>floor)=[?_aifct_ok|.0]  max_pad=[?_aifct_max_pad|.0]"
 	if = {
 		limit = { check_variable = { _aifct_max_pad > 0 } }
 		var:_aifct_main = {
