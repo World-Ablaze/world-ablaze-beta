@@ -197,18 +197,16 @@ WA_AI_TEMPLATES_use_medium_spg_medium_armor = {
 # the only enabled ai_template is WA_infantry_fallback whose ROLE-level upgrade_prio is 0, and
 # its 1936 templates never change again - measured on 320 of 334 countries in campaign 2f8cbd51.
 #
-# The country-tree entries are exactly the focuses that grant infantry_modernization_spirit, whose
-# hidden modifier sets unit_infantry_*_horse_battalion_line_design_cost_factor = -1.0: the line
-# battalions of the target template cost no army XP. That is the "free template design" this
-# trigger is named after - do not add a country focus here without checking it grants that spirit.
-#
-# The shared-tree entries below deliberately do NOT grant it: they hand the country a target
-# template it pays for out of its own XP. Granting the spirit from a shared tree was the rejected
-# alternative - it would buff every human player on that tree, which is a gameplay decision rather
-# than an AI fix.
+# [templates-admission] admission gate into the AI template system. Gate on the hidden TECH each
+# country-tree design focus sets, never the paired spirit (strippable by
+# WA_AI_TEMPLATES_remove_wrong_army_spirits) and never a focus list (misses trees, e.g. RAJ).
+# Shared-tree entries grant NO free-design spirit on purpose (it would buff human players).
+# The deadline flag admits countries whose design focus is unreachable - they pay full XP.
 WA_AI_TEMPLATES_has_infantry_focus_completed = {
 	OR = {
 		has_idea = GER_okw # RCZ garrison country (ger_armor.999) - no focus tree, joins the template system via the OKW idea
+
+		has_tech = infantry_modernization_tech # set by the free-design focus of every country tree
 
 		# Shared / generic focus trees - target template only, no free-design spirit.
 		has_completed_focus = army_effort # generic.txt - 49 countries had it in campaign 2f8cbd51
@@ -216,54 +214,19 @@ WA_AI_TEMPLATES_has_infantry_focus_completed = {
 		has_completed_focus = NORDIC_nordic_army # nordic_shared.txt - joint tree, never reached in that campaign
 		has_completed_focus = BALTIC_arm_the_nation # baltic_shared.txt - same, kept so the path exists off the historical rails
 
-		has_completed_focus = AST_darwin_mobile_force
-		has_completed_focus = BUL_evaluate_the_state_of_army
-		has_completed_focus = CAN_the_canadian_army
-		has_completed_focus = PRC_central_military_commission
-		has_completed_focus = CHI_reorganization_of_the_army
-		has_completed_focus = FIN_expand_the_finnish_defence_forces
-		has_completed_focus = FRA_new_military_bureau
-		has_completed_focus = GER_oberkommando_des_heeres
-		has_completed_focus = GRE_expand_our_infantry
-		has_completed_focus = HUN_gyorshadtest
-		has_completed_focus = IRQ_reform_infantry_tactics
-		has_completed_focus = ITA_infantry_modernization
-		has_completed_focus = JAP_reorganize_the_military
-		has_completed_focus = NZL_modernization_efforts
-		has_completed_focus = POL_army_modernisation
-		has_completed_focus = ROM_reactivate_the_armed_forces
-		has_completed_focus = SAF_military_modernization
-		has_completed_focus = SOV_reserve_armies_administration
-		has_completed_focus = ENG_modernize_the_royal_army
-		has_completed_focus = USA_arkansas_maneuvers
+		has_country_flag = WA_AI_TEMPLATES_design_deadline_passed
 	}
 }
 
+# [templates-admission] same gate for the mobile/armor half: the hidden tech every country-tree
+# tank focus sets (the paired spirit is strippable, the tech is not). The deadline flag also
+# admits generic-tree countries, which the old list excluded entirely; the armor templates stay
+# gated by the chassis-tech unlock triggers below.
 WA_AI_TEMPLATES_has_tank_focus_completed = {
 	OR = {
-		has_completed_focus = AST_first_armoured_division
-		has_completed_focus = BUL_form_a_pure_armoured_corps
-		has_completed_focus = CAN_first_armoured_division
-		has_completed_focus = PRC_introduction_of_armoured_units
-		has_completed_focus = CHI_first_armoured_division
-		has_completed_focus = FIN_first_armorued_division
-		has_completed_focus = FRA_new_military_bureau
-		has_completed_focus = GER_achtung_panzer
-		has_completed_focus = GRE_build_up_mobile_forces
-		has_completed_focus = HUN_form_an_armoured_division
-		has_completed_focus = RAJ_indian_tank_brigades
-		has_completed_focus = IRQ_first_mechanized_brigade
-		has_completed_focus = ITA_army_mechanization
-		has_completed_focus = JAP_new_armoured_divisions
-		has_completed_focus = NZL_modernization_efforts
-		has_completed_focus = POL_modernising_the_cavalry
-		has_completed_focus = ROM_first_armoured_division
-		has_completed_focus = SAF_first_armoured_brigade
-		has_completed_focus = SOV_reserve_armies_administration
-		has_completed_focus = SOV_reserve_armies_administration
-		has_completed_focus = SWE_rapid_response_force
-		has_completed_focus = ENG_royal_tank_corps
-		has_completed_focus = USA_louisiana_maneuvers
+		has_tech = mobile_warfare_drive_tech # set by the tank/mobile focus of every country tree
+
+		has_country_flag = WA_AI_TEMPLATES_design_deadline_passed
 	}
 }
 

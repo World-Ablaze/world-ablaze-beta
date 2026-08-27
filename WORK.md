@@ -190,123 +190,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
 - Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
-### usa-military-refactor — SHIPPED-UNTESTED (2026-08-27)
-- Scope: owner request 2026-08-27 ("refactorise les fichiers WA_AI_MILITARY_COUNTRY_USA_* —
-  noms avec conventions, triggers dynamiques ouverts à l'ahistorique, éviter les dates en dur,
-  standardiser constantes/ratios; garde l'anti-shuffling à l'esprit; supprime les stratégies
-  situationnelles type hold_okinawa").
-- Shipped, all four COUNTRY_USA files rewritten + control panel + one CONFIG fix:
-  (1) every block renamed `WA_AI_MILITARY_COUNTRY_USA_<DOMAIN>_<descriptor>` (doc §5 rule 4)
-  with purpose/range/policy/domain headers; the two genuine always-ons carry `# always-on:`
-  (abandon_turkey, ignore_south_america — the latter was `date > 1936.1.1` in disguise).
-  (2) All 12 hard dates removed: new control-panel triggers
-  `WA_AI_MILITARY_USA_pacific_offensive_ready` (phase flip; europe_first/pacific_offensive and
-  dont_invade_japan_yet/pacific_offensive are exact NOT-mirrors) and
-  `WA_AI_MILITARY_has_minimum_expeditionary_army` (num_divisions > 29 + home safe — owns the
-  29/30 band, 6 sites; deathtrap brake is its NOT-mirror). Torch-done gate = metropolitan
-  foothold, invade-Japan-execute = pacific_ready + (JAP surrender_progress > 0.02 OR Philippine
-  foothold). ASSUMED, stated in the trigger header: the arms cross once and stay; if a campaign
-  shows flapping, latch on a country flag (the flap surface is a JAP-only-war USA near 50 div).
-  (3) Dedup with the halvings ACCEPTED IN WRITING (lessons CONFLICT items 1-2, resolved by git
-  archaeology 79d64f6ff): bad_torpedos_suck was born `date < 1943.9` (torpedo era, calendar-only
-  reason) and SUMMED with europe_first while both armed — twin deleted, one suppression at the
-  economy band, rationale at each survivor's header; torch preparation/landing pairs (byte-
-  identical payloads, both armed from 1942.11) merged — post-landing doubling deliberately
-  halved; the FRONT merge LOSES the 2-month careful-prepare-only window (stated; engine
-  invasion-prep timer is the remaining staging delay).
-  (4) Anti-shuffling: buffer_pacific shares resized per state (was an aggregate demanding ~107
-  of a 56-division army), and ONE order_id PER ENTRY (9105-9119) — the engine doc gives same-id
-  entries one SHARED ratio, so the old ten-ratios-on-9101 was undefined; order_id never
-  serialises, split = ASSUMED hygiene (REGION_ITALY rule). Britain buffer variants stay a
-  single logical buffer on id 1.
-  (5) `hold_okinawa` DELETED (owner order — a JAP-war block suppressing the RIT front was a
-  situational tag-payload hack; the theatre-distributor damping owns the anti-pull intent).
-  Remaining tag payloads are target enumerations (invade books, balkan minors), not hacks.
-  (6) The 8-tag Allies suicide-invasion brake re-homed to FACTION_ALLIES_INVASION on the
-  `is_western_invasion_pool` archetype, membership term dropped (audience preserved). Fixed the
-  archetype's pre-existing typo `AUS` (landlocked Austria) → `AST` (Australia): 8 reader blocks
-  had EXCLUDED Australia from the Allied invasion pool — audience change to verify next
-  campaign (AST gains, Austria loses).
-- Reviews 2026-08-27: architecture CONCERNS (5 — bar promoted to named trigger; buffer comments
-  rewritten to the share-one-ratio model + per-entry ids; torch header states the careful-window
-  loss; audience narrowing dropped; faction-block name kept on the FILE's own convention
-  (ALLIES_<desc>_INVASION, its siblings' style) against the reviewer's variant) + lessons
-  CONFLICT (all required items applied: archaeology done, halvings folded-or-justified, per-
-  sector buffer rationale, war-facing term added to both bars, F9 obligation recorded).
-- **NAVAL leg shipped 2026-08-27 (owner order "fais pareil sur WA_AI_NAVAL_COUNTRY_USA.txt").**
-  Same pattern: legacy_USA_ noise stripped (18 blocks renamed, all cross-references updated —
-  PHASE5 mirror comment, FACTION_ALLIES incl. one stale "known residual" corrected to RESOLVED,
-  ENG file, system doc); 8 hard dates → the two triggers + state gates (threat > 0.50 for the
-  pre-war Pacific posture; strike bases on peacetime-or-JAP-war; death-trap walls released by
-  the phase trigger, held-while-weak ruled INTENDED caution with the enemy-state arms as the
-  state-side release, stated at the site); bad_torpedos naval twin (strict SUBSET, 19 shared
-  regions summing 4000) deleted — same accepted-halving ruling; torch pair merged into
-  `torch_corridor` with the [atlantic-naval] Biscay audit RE-WALKED for the new state-keyed
-  windows (−2000 still outvoted wherever the GER-war walls co-fire; the ITA-only-war no-wall
-  corner is pre-existing and unchanged). **Phase flip now LATCHED one-way** (lessons item):
-  `WA_AI_MILITARY_update_usa_phase_latch` on the monthly pulse sets
-  `WA_AI_USA_pacific_offensive_latched` once the live conditions hold at a tick; the public
-  trigger reads flag-OR-live — worst residual flap = one flip-back inside the first month.
-  Reviews (NAVAL round): architecture OK (2 wording notes applied: the shared-regions list is
-  SW-Pacific too, not just Indian-Ocean — ASSUMED the old 1943.6-1944.8 wall gap was date
-  residue, campaign probe = USN presence in regions 84/88 during a Solomons-type war; the
-  Europe-only-war strike-base handoff goes to the Faction western anchorage) + lessons
-  CONCERNS (all 4 required applied: enemy-state release stated, latch implemented, audit
-  re-walked, PHASE5-mirrored enable diff-verified byte-untouched).
-- **F9 boot PASSED (owner, 2026-08-27) on the refactor build** — discharged the land+naval
-  CTD-class debt, the comp-gauge v33 change and the AIFC merge-bar effect edit.
-- **Factorisation batch SHIPPED 2026-08-27 (owner order "tout" on the promotion survey;
-  survey table delivered as a file the same day).** Five commits: (1) RETIRED 7
-  faction-duplicated USA blocks — the Adriatic was summing +8000 and Biscay +6000 on USA's
-  own duplicate walls; strategic-bombing china/asia self-doubling folded into the japan twin;
-  double RIT entry trimmed. NOT retired, stated at site: north_africa_focus (faction twin
-  carries a hard date + ITA/ITL controller list — the Case-Anton corner would be uncovered),
-  no_balkan_hops (faction twin is minors-only), unit_clumping_fix (state-vs-region precision
-  unverified). (2) Phase trigger GENERALIZED (`WA_AI_MILITARY_pacific_offensive_ready`, USA_
-  prefix dropped; latch widened to anglo majors). (3) PROMOTED with same-commit country-copy
-  deletion: NAVAL aegean_hostile_coast + western_pacific_trap (25 regions — replaces the USA
-  pair AND trims 25 entries of ENG's 68-region war-GER blanket; ENG is now phase-released
-  where it was walled all war) + the uninvaded-ally-waters courtesy trio + St. Lawrence →
-  DEFAULT; THEATRE britain_invaded_priority (ENG_all_in's britain pair trimmed); FRONT
-  liberate_britain; INVASION britain_first_no_side_shows + pacific_side_shows_wait (ENG twin
-  trimmed of the 5 shared targets). (4) INS ownership USA arm made conditional (sfhb
-  pattern) so the faction deathtrap guard re-arms after the phase flip. (5) **Biscay
-  correction**: the dedup turned the historically-inert Torch −2000 on region 42 LIVE
-  (net 0 = the Bay would have opened, a design change nobody decided) — removed to preserve
-  observed behaviour; **Biscay DECIDED 2026-08-27 (owner): the wall
-  stays - Torch does not open the Bay; settled at the site**. Deferred with reasons (survey file): defend_britain
-  DIPLOMACY (coupled to commonwealth-handoff's CAN guard), commit_to_europe partial,
-  reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
-  full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
-  ENG-refactor chantier), sicily sign conflict (design accounts for it via the bridge +50).
-- Reviews on the batch 2026-08-27: architecture CONCERNS (2 — provenance stripped from the 10
-  new headers per rule 7; the pre-rename latch flag is now MIGRATED in the latch effect, so a
-  resumed save keeps its latch) + lessons CONCERNS (3 — (i) archaeology done: at the authoring
-  commit 79d64f6ff region 168 was already written 3× and 42 5× across independently-named
-  blocks with no comment claiming a stacked total — the sums were ACCRETION, not calibration,
-  so the single faction wall at the type's band is the honest form; (ii) the new F9 line below
-  is that item; (iii) the courtesy trio's tag-anchored gates now carry their ASSUMED-FACT
-  sentences at the site — UKO holds Malaya, ENG/NZL hold 636/726, CHI/PRC are the two Chinas).
-  Latch flap bound restated at real cadences (engine-eval flips possible only inside the first
-  month, zero after the latch). Pre-registered campaign probe for the halvings: `navy --fleets`
-  region lists — anglo fleets do NOT newly operate in 168 Adriatic / 42 Biscay / 202 Aegean
-  while those walls' conditions hold (a fleet parked there post-change = the halving was
-  load-bearing, re-raise the wall).
-- **F9 boot PASSED on the promotion batch too (owner, 2026-08-27)** — discharges the second
-  CTD-class debt (USA+ENG deletions, 5 new FACTION blocks, 1 DEFAULT block, the latch
-  migration). The build is campaign-ready; owner is weighing the two-state merge-bar
-  alternative and the remaining deferred promotions.
-- Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
-  (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
-  enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
-  Pacific flip happens (europe_first suppressions absent in a save where USA > 99 div or GER
-  dead, invade-JAP book flipped); (c) r-flap watch: the phase pairs do not oscillate across
-  consecutive monthly saves (same discriminator as the (i) transit probe); (d) AST appears in
-  Allied invasion-pool behaviours (norway/D-Day staging blocks reachable); (e) USA buffer order
-  instances stable per ocean (shared probe with allied-division-stability).
-- Closed when: F9 passes AND probes (a)-(c) pass in the next campaign, or a regression traces
-  to a specific removed date/merge and is fixed under this slug.
-
 ### can-transit-attrition — OPEN (2026-08-27)
 - Scope: owner admission 2026-08-27 (candidate validated the same day, owner mechanism
   CONFIRMED against the first verdict). Intended behaviour: what Canada builds REACHES the
@@ -560,6 +443,56 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (trigger edit).
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
+
+### templates-admission — OPEN (2026-08-27)
+- Scope: owner request 2026-08-27 ("no country should be locked from this"): admission into the
+  AI template system (`WA_AI_TEMPLATES_has_infantry/tank_focus_completed`) must have no gap on
+  any path. Found while answering why RAJ fields only "Reserve Divisíon" in 1944.
+- Symptom, MEASURED in script (not save): the infantry gate listed 20 country focuses; 21 trees
+  grant the free-design spirit — RAJ (`RAJ_revise_indian_defence_plans`, india.txt:3540) was the
+  missing one, so RAJ never designed a normal infantry template. Same class of gap for any
+  country whose design focus is unreachable ahistorically; the tank gate additionally excluded
+  every generic-tree country outright.
+- Shipped 2026-08-27: (a) both gates now key on the hidden techs the design focuses set
+  (`infantry_modernization_tech` / `mobile_warfare_drive_tech` — durable; the paired spirits are
+  strippable by `WA_AI_TEMPLATES_remove_wrong_army_spirits`, verified 21/22-tree pairing exact);
+  (b) one-way deadline latch `WA_AI_TEMPLATES_design_deadline_passed` (monthly, AI only: date >
+  1941.1.1, or at war and date > 1939.6.1 — owner-approved dates) admits countries whose focus
+  never comes, at full XP cost. Shared-tree entries (`army_effort` &c.) unchanged. Timing for
+  the 20 previously-listed countries is identical (tech set by the same focus).
+- Latch-flip walkthrough (lessons requirement — the flag-set is a SECOND deciding window: when
+  `WA_INFANTRY_TEMPLATE` first sets, the enabled ai_template target changes and the engine
+  re-runs its role/decommission pass; this window already opens today at every focus completion,
+  the latch extends it to the never-focused cohort and synchronizes part of it at 1941.1.1):
+  - Peace cohort (e.g. SPA, no design focus, no war): t0 = first monthly pulse after 1941.1.1
+    (≤ 31 d) sets the deadline flag, same pulse runs calculate (latch ordered before it);
+    if a T1 doctrine is picked without required spirits, calculate blocks one tick while
+    `ensure_correct_spirits` repairs — worst t0 slip = +1 month. t1 = same tick,
+    `WA_INFANTRY_TEMPLATE` set, FALLBACK target disabled, value target enabled. t2 = engine's
+    next template-designer pass (cadence unobservable, ASSUMED days): role rescored, losing
+    template copies decommissioned (recruitment frozen, live divisions untouched — ASSUMED per
+    ITA_1936_land_nsb_ai.txt header semantics); conversion toward the new target crawls at full
+    XP. In peace, nothing recruits meanwhile — residual = cosmetic template churn.
+  - War cohort (country at war, > 1939.6.1): t0 = first monthly pulse after war entry — the flip
+    lands AT mobilization by construction. t1 same tick; t2 = one engine pass during active
+    recruitment: the recruitable infantry template can change identity mid-mobilization, and the
+    division-creator `has_template` re-create ladder (lessons) is exposed for one window.
+    Bounded to ONE transition per country per campaign (flag and techs are both one-way; no
+    flicker), but the per-country cost of that single window is engine-side, ASSUMED, and is
+    exactly what probe (iii) watches.
+- ASSUMED, stated: engine role-reassignment/decommission semantics and cadence
+  (ITA_1936_land_nsb_ai.txt header is the best written source); which template the engine then
+  trains is its arbitration, not observable in script.
+- Verification (campaign probe, next scored run): (i) by 1942.1 every AI country with ≥ 10
+  divisions has country flag `WA_INFANTRY_TEMPLATE` set (save-visible flag; extractor:
+  savegame.py flags) — RAJ explicitly named; (ii) RAJ 1944 division census: majority of line
+  divisions on a designed infantry template, "Reserve Divisíon" no longer the plurality type;
+  (iii) latch-window health on TWO deadline-admitted countries (one war-cohort, one peace/
+  generic-tree with armor techs): division count does not drop across the admission month, and
+  the template census does not ladder-churn (same template id set across 3 consecutive monthly
+  saves after admission — the RS column-deadlock lesson has never been exercised by this
+  population).
+- Closed when: both probes pass on one scored campaign.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
@@ -1018,6 +951,127 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+### usa-military-refactor — PARKED (2026-08-27)
+- Parked 2026-08-27 (WIP limit, owner choice; templates-admission enters). State at parking:
+  SHIPPED-UNTESTED debt fully discharged (F9 boot PASSED twice), awaiting campaign probes
+  (a)-(e) only. Reopen when the next scored campaign lands.
+- Scope: owner request 2026-08-27 ("refactorise les fichiers WA_AI_MILITARY_COUNTRY_USA_* —
+  noms avec conventions, triggers dynamiques ouverts à l'ahistorique, éviter les dates en dur,
+  standardiser constantes/ratios; garde l'anti-shuffling à l'esprit; supprime les stratégies
+  situationnelles type hold_okinawa").
+- Shipped, all four COUNTRY_USA files rewritten + control panel + one CONFIG fix:
+  (1) every block renamed `WA_AI_MILITARY_COUNTRY_USA_<DOMAIN>_<descriptor>` (doc §5 rule 4)
+  with purpose/range/policy/domain headers; the two genuine always-ons carry `# always-on:`
+  (abandon_turkey, ignore_south_america — the latter was `date > 1936.1.1` in disguise).
+  (2) All 12 hard dates removed: new control-panel triggers
+  `WA_AI_MILITARY_USA_pacific_offensive_ready` (phase flip; europe_first/pacific_offensive and
+  dont_invade_japan_yet/pacific_offensive are exact NOT-mirrors) and
+  `WA_AI_MILITARY_has_minimum_expeditionary_army` (num_divisions > 29 + home safe — owns the
+  29/30 band, 6 sites; deathtrap brake is its NOT-mirror). Torch-done gate = metropolitan
+  foothold, invade-Japan-execute = pacific_ready + (JAP surrender_progress > 0.02 OR Philippine
+  foothold). ASSUMED, stated in the trigger header: the arms cross once and stay; if a campaign
+  shows flapping, latch on a country flag (the flap surface is a JAP-only-war USA near 50 div).
+  (3) Dedup with the halvings ACCEPTED IN WRITING (lessons CONFLICT items 1-2, resolved by git
+  archaeology 79d64f6ff): bad_torpedos_suck was born `date < 1943.9` (torpedo era, calendar-only
+  reason) and SUMMED with europe_first while both armed — twin deleted, one suppression at the
+  economy band, rationale at each survivor's header; torch preparation/landing pairs (byte-
+  identical payloads, both armed from 1942.11) merged — post-landing doubling deliberately
+  halved; the FRONT merge LOSES the 2-month careful-prepare-only window (stated; engine
+  invasion-prep timer is the remaining staging delay).
+  (4) Anti-shuffling: buffer_pacific shares resized per state (was an aggregate demanding ~107
+  of a 56-division army), and ONE order_id PER ENTRY (9105-9119) — the engine doc gives same-id
+  entries one SHARED ratio, so the old ten-ratios-on-9101 was undefined; order_id never
+  serialises, split = ASSUMED hygiene (REGION_ITALY rule). Britain buffer variants stay a
+  single logical buffer on id 1.
+  (5) `hold_okinawa` DELETED (owner order — a JAP-war block suppressing the RIT front was a
+  situational tag-payload hack; the theatre-distributor damping owns the anti-pull intent).
+  Remaining tag payloads are target enumerations (invade books, balkan minors), not hacks.
+  (6) The 8-tag Allies suicide-invasion brake re-homed to FACTION_ALLIES_INVASION on the
+  `is_western_invasion_pool` archetype, membership term dropped (audience preserved). Fixed the
+  archetype's pre-existing typo `AUS` (landlocked Austria) → `AST` (Australia): 8 reader blocks
+  had EXCLUDED Australia from the Allied invasion pool — audience change to verify next
+  campaign (AST gains, Austria loses).
+- Reviews 2026-08-27: architecture CONCERNS (5 — bar promoted to named trigger; buffer comments
+  rewritten to the share-one-ratio model + per-entry ids; torch header states the careful-window
+  loss; audience narrowing dropped; faction-block name kept on the FILE's own convention
+  (ALLIES_<desc>_INVASION, its siblings' style) against the reviewer's variant) + lessons
+  CONFLICT (all required items applied: archaeology done, halvings folded-or-justified, per-
+  sector buffer rationale, war-facing term added to both bars, F9 obligation recorded).
+- **NAVAL leg shipped 2026-08-27 (owner order "fais pareil sur WA_AI_NAVAL_COUNTRY_USA.txt").**
+  Same pattern: legacy_USA_ noise stripped (18 blocks renamed, all cross-references updated —
+  PHASE5 mirror comment, FACTION_ALLIES incl. one stale "known residual" corrected to RESOLVED,
+  ENG file, system doc); 8 hard dates → the two triggers + state gates (threat > 0.50 for the
+  pre-war Pacific posture; strike bases on peacetime-or-JAP-war; death-trap walls released by
+  the phase trigger, held-while-weak ruled INTENDED caution with the enemy-state arms as the
+  state-side release, stated at the site); bad_torpedos naval twin (strict SUBSET, 19 shared
+  regions summing 4000) deleted — same accepted-halving ruling; torch pair merged into
+  `torch_corridor` with the [atlantic-naval] Biscay audit RE-WALKED for the new state-keyed
+  windows (−2000 still outvoted wherever the GER-war walls co-fire; the ITA-only-war no-wall
+  corner is pre-existing and unchanged). **Phase flip now LATCHED one-way** (lessons item):
+  `WA_AI_MILITARY_update_usa_phase_latch` on the monthly pulse sets
+  `WA_AI_USA_pacific_offensive_latched` once the live conditions hold at a tick; the public
+  trigger reads flag-OR-live — worst residual flap = one flip-back inside the first month.
+  Reviews (NAVAL round): architecture OK (2 wording notes applied: the shared-regions list is
+  SW-Pacific too, not just Indian-Ocean — ASSUMED the old 1943.6-1944.8 wall gap was date
+  residue, campaign probe = USN presence in regions 84/88 during a Solomons-type war; the
+  Europe-only-war strike-base handoff goes to the Faction western anchorage) + lessons
+  CONCERNS (all 4 required applied: enemy-state release stated, latch implemented, audit
+  re-walked, PHASE5-mirrored enable diff-verified byte-untouched).
+- **F9 boot PASSED (owner, 2026-08-27) on the refactor build** — discharged the land+naval
+  CTD-class debt, the comp-gauge v33 change and the AIFC merge-bar effect edit.
+- **Factorisation batch SHIPPED 2026-08-27 (owner order "tout" on the promotion survey;
+  survey table delivered as a file the same day).** Five commits: (1) RETIRED 7
+  faction-duplicated USA blocks — the Adriatic was summing +8000 and Biscay +6000 on USA's
+  own duplicate walls; strategic-bombing china/asia self-doubling folded into the japan twin;
+  double RIT entry trimmed. NOT retired, stated at site: north_africa_focus (faction twin
+  carries a hard date + ITA/ITL controller list — the Case-Anton corner would be uncovered),
+  no_balkan_hops (faction twin is minors-only), unit_clumping_fix (state-vs-region precision
+  unverified). (2) Phase trigger GENERALIZED (`WA_AI_MILITARY_pacific_offensive_ready`, USA_
+  prefix dropped; latch widened to anglo majors). (3) PROMOTED with same-commit country-copy
+  deletion: NAVAL aegean_hostile_coast + western_pacific_trap (25 regions — replaces the USA
+  pair AND trims 25 entries of ENG's 68-region war-GER blanket; ENG is now phase-released
+  where it was walled all war) + the uninvaded-ally-waters courtesy trio + St. Lawrence →
+  DEFAULT; THEATRE britain_invaded_priority (ENG_all_in's britain pair trimmed); FRONT
+  liberate_britain; INVASION britain_first_no_side_shows + pacific_side_shows_wait (ENG twin
+  trimmed of the 5 shared targets). (4) INS ownership USA arm made conditional (sfhb
+  pattern) so the faction deathtrap guard re-arms after the phase flip. (5) **Biscay
+  correction**: the dedup turned the historically-inert Torch −2000 on region 42 LIVE
+  (net 0 = the Bay would have opened, a design change nobody decided) — removed to preserve
+  observed behaviour; **Biscay DECIDED 2026-08-27 (owner): the wall
+  stays - Torch does not open the Bay; settled at the site**. Deferred with reasons (survey file): defend_britain
+  DIPLOMACY (coupled to commonwealth-handoff's CAN guard), commit_to_europe partial,
+  reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
+  full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
+  ENG-refactor chantier), sicily sign conflict (design accounts for it via the bridge +50).
+- Reviews on the batch 2026-08-27: architecture CONCERNS (2 — provenance stripped from the 10
+  new headers per rule 7; the pre-rename latch flag is now MIGRATED in the latch effect, so a
+  resumed save keeps its latch) + lessons CONCERNS (3 — (i) archaeology done: at the authoring
+  commit 79d64f6ff region 168 was already written 3× and 42 5× across independently-named
+  blocks with no comment claiming a stacked total — the sums were ACCRETION, not calibration,
+  so the single faction wall at the type's band is the honest form; (ii) the new F9 line below
+  is that item; (iii) the courtesy trio's tag-anchored gates now carry their ASSUMED-FACT
+  sentences at the site — UKO holds Malaya, ENG/NZL hold 636/726, CHI/PRC are the two Chinas).
+  Latch flap bound restated at real cadences (engine-eval flips possible only inside the first
+  month, zero after the latch). Pre-registered campaign probe for the halvings: `navy --fleets`
+  region lists — anglo fleets do NOT newly operate in 168 Adriatic / 42 Biscay / 202 Aegean
+  while those walls' conditions hold (a fleet parked there post-change = the halving was
+  load-bearing, re-raise the wall).
+- **F9 boot PASSED on the promotion batch too (owner, 2026-08-27)** — discharges the second
+  CTD-class debt (USA+ENG deletions, 5 new FACTION blocks, 1 DEFAULT block, the latch
+  migration). The build is campaign-ready; owner is weighing the two-state merge-bar
+  alternative and the remaining deferred promotions.
+- Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
+  (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
+  enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
+  Pacific flip happens (europe_first suppressions absent in a save where USA > 99 div or GER
+  dead, invade-JAP book flipped); (c) r-flap watch: the phase pairs do not oscillate across
+  consecutive monthly saves (same discriminator as the (i) transit probe); (d) AST appears in
+  Allied invasion-pool behaviours (norway/D-Day staging blocks reachable); (e) USA buffer order
+  instances stable per ocean (shared probe with allied-division-stability).
+- Closed when: F9 passes AND probes (a)-(c) pass in the next campaign, or a regression traces
+  to a specific removed date/merge and is fixed under this slug.
+
 
 > **Campaign `1ac7e4ea` PARKED-probe results (2026-08-27, all MEASURED unless noted):**
 > `rk-no-divisions` **PASSED again** (7 RK tags with no `units` section at 1943.6+1945.6, ALB flat
