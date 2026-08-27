@@ -492,7 +492,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the template census does not ladder-churn (same template id set across 3 consecutive monthly
   saves after admission — the RS column-deadlock lesson has never been exercised by this
   population).
-- Closed when: both probes pass on one scored campaign.
+- Owner ruling 2026-08-28: NO console harness for this subject — campaign probes only ("attendre
+  prochain test"). The harness-rule borderline (~40 lines, harness-less system) is settled by
+  this line.
+- Closed when: probes (i)-(iii) pass on one scored campaign.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
