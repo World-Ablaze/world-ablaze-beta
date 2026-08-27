@@ -389,6 +389,36 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   threatened homeland re-opens Hudson), abort_when_not_enabled. Caveat carried from the
   archive: a positive avoid is a DETERRENT weight, not a ban. F9 boot test OWED (defines +
   new strategy file).
+- State add (C3, owner order + validation 2026-08-27 "je valide avec seuil, implémente";
+  both reviewers CONCERNS, no CONFLICT, amendments applied): 4 new files in
+  `common/ai_navy` give USA and CAN destroyer convoy-escort templates + matching fleets
+  (`<TAG>_ConvoyEscort_DD_1` min 4 / optimal 10 DD, factor 4 < generic frigate 5), active
+  only below 100 owned frigates (`has_navy_size = { size > 99 unit = frigate }` - the
+  threshold is registry-held, group `ai_navy_dd_escort_frigate_threshold`). Root cause the
+  files fix: the generic escort template is frigate-only (DD variant commented out by
+  d3aaa5d0f on the recorded assumption "escort_fleet_6 covers it" - MEASURED false on
+  `1ac7e4ea` for DD-heavy navies: their screens cannot form escort task forces at all).
+  Population statement (lessons requirement): the affected class is frigate-poor DD-heavy
+  navies bleeding on convoy routes; MEASURED members are USA and CAN (91 at-sea division
+  losses between them); ENG is frigate-equipped (its frigates score ~90% of GER sub kills),
+  AST/NZL/RAJ/SAF lose 0-13 off-corridor; JAP/GER/ITA sit on the raider side and their
+  transit losses were never a measured symptom - if a later campaign shows one of them in
+  this class, it enters as its own file under a new admission. ASSUMED, both recorded in
+  the file comments: (i) whether ai_navy `allowed` re-evaluates in play (vanilla/EAI use
+  only static tags there; owner console check with `imgui show ai_navy` OWED - fallback if
+  static: drop the threshold term, factor 4 < 5 remains as soft handover); (ii)
+  `has_navy_size` counting of under-repair/reserve hulls is undocumented (oracle read,
+  install triggers_documentation.md section has_navy_size names type/archetype/unit but
+  not fleet-state scope) - near the 100 mark either reading is acceptable. Alternative
+  considered and deferred: an archetype gate ("DD-heavy AND frigate-poor" composition
+  trigger) instead of original_tag - deferred because trigger support in ai_navy `allowed`
+  beyond static tags is exactly the unattested question, and the owner specified USA/CAN.
+  Verification (mechanism probe g): escort task forces containing destroyers exist for
+  USA/CAN in a war save while their frigate count < 100 (read fleet composition + mission
+  from the save via `navy TAG --fleets`; template presence proves nothing - formation is
+  the claim), and after any save shows >= 100 frigates, no NEW DD escort task force
+  appears. F9 boot test OWED for the ai_navy files (replace_path folder, no Python checker
+  covers them - error.log is the only detector).
 - Verification (probes with this campaign's method): (a) survival - in the next campaign,
   >= 10 of the divisions CAN deploys after 1941 are still in the OOB 6 months after
   deployment (vs ~1 of 16 on `1ac7e4ea`); (b) standing army - CAN holds >= 8 deployed
