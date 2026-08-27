@@ -21,6 +21,40 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 ## OPEN
 
+> **Campaign `1ac7e4ea` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 120 monthly saves
+> 1936.2-1946.1, unbranched, build = HEAD `cd234cc51` — DERIVED from commit 13:49:54 / first save
+> 13:52, MEASURED by `wa_tlm_version = 32` first and last save + live `wa_tlm_llr_recv_*` arrays).
+> F1-F4/F7 PASSED near-historical (war 1939.9.13, France 1940.6.23, Barbarossa exact 1941.6.22.13,
+> Pearl Harbor 1941.12.4, Franco 1939.7.24). **F5 FAILED — stalemate, not collapse**: GER 51/53 own
+> states, 307 divisions in monotone GROWTH, holds Paris (liberated 1944.6.19, re-lost by 1946.1);
+> East a stalled grind (only Kiev fell, 1942.7.29); West HALF-alive — Torch 1942.10.1, D-Day
+> 1944.6.9 on schedule, Normandy front manned (USA AG5 49 div, created 1944.6.13), North Africa
+> French ground at 1945.6 (32/36 provinces) — but no Rhine crossing, ever. **The
+> allied-invasion-foothold-deadlock candidate is FALSIFIED as a cause on this run**: France was
+> never fully occupied (FRA keeps 12-19 metropolitan states all war → continuous land front, no
+> landing needed), and the zero-type-3 census reproduces on a HEALTHY western arc — invasion
+> orders live < 1 month (Torch orders present 1942.9-10, gone 1942.12; D-Day consumed inside
+> 1944.6) so a monthly type-3 census cannot discriminate deadlock from health. If re-proposed, the
+> candidate needs an OUTCOME metric (far-shore provinces over time), not an order count.
+> **[reserve-quality] v2 verdicts**: conversion **PASS** twice (USA bank −20 → deployed +19 in
+> Dec 1941; RAJ −30 → +37 at 1942.1-3), tier veto **PASS** on its real cell (RAJ 1939.10: 22 MIL /
+> 30 div / bank 30 held; ≤24-MIL-at-40+-div cell empty this run), timing **FAIL** (USA's residual
+> 10 banked frozen 1942.1→~1942.7 at 345-493 MILs — the veto is FALSE there; suspect upstream
+> `WA_reserves_can_deploy` bars, e.g. `has_manpower > 150499`, not the tier rule — SAF 10 banked /
+> 34 MIL / 4 div and AST/NZL never banking point the same way), ENG leg **FAIL** (bank 40 → 0 over
+> 1945.2.1-5 with the British Isles INTACT — MEASURED zero home provinces lost; DERIVED suspect:
+> IRQ at war with ENG since 1945.1.14 tripping `any_home_area_neighbor_country`, i.e. the Middle
+> East counts as "home area"; console/live check needed, not save-decidable). **NEW ALARM,
+> candidate subject: the ENG release spawned 4 batches = 40 divisions on 1945.2.1-5 and ONE
+> survives to 1945.3** (deployed 20 → 19, one `Reserve Divisíon` in the field; the bank debit at
+> `WA_reserves_effects.txt:206` is unconditional even when `create_unit` fails). Second candidate
+> CONFIRMED live and sharpened: **CAN never rebuilds** — 1-2 divisions 1942-1945 on 37→100 arms
+> factories (worse than `24933fb9`'s 2-4); the snowball the bank was built for did not happen
+> (its one-shot batch 1939.10 was consumed by 1941 and `reserves_deployment_complete_flag` closes
+> the program forever). Third candidate: **ENG fields ZERO armour and ZERO mech the entire
+> campaign** (`armor_mech_pct_hist` 0 in 37/39 samples, live stamps) while declining 43 → 19
+> divisions — see F8. None admitted (WIP limit; owner decision).
+
 > **Campaign `24933fb9` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 118 monthly saves
 > 1936.2-1945.11, unbranched, build = HEAD `2f16ec583` — DERIVED from push 03:46 / run 04:05, and
 > MEASURED by two fingerprints: CAN's 10 `Reserve Divisíon` deployed 1939.11 (`eb7338da4`) and ITA's
@@ -138,9 +172,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `lendlease.py <save> --tag <recipient>` shows the pair row. Campaign probe: first v32 campaign,
   per-recipient `llr_recv_amount` totals reconcile with the donor-side `llr_sent_amount` deltas
   (global closure, donor vs recipient side).
+- **Campaign `1ac7e4ea` (first v32, 2026-08-27): campaign probe PASSED.** MEASURED — recipient
+  matrix populated (475 pair rows at 1942.6 → 739 at 1946.1, 65 donors, ids decoded); global
+  closure holds: send-counts equal byte-exact on 5/5 saves, amounts equal to 2 units in 1.31M
+  (residual = GER alone, 3.2e-6, 1-2 units on 321 sends — cosmetic but a real write-site
+  asymmetry). Convoy row 10 carried on both sides. Findings the tool surfaced: `path_refused` =
+  84 % of donor selections (3 244 of 3 874 — by-design-or-defect is a WORK question); dead legs
+  visible only in deltas (RCZ→ITA frozen at 48 934 since 1944.6, GER→ITA collapses to 5
+  units/7mo); RCZ is the campaign's #2 donor (138k units — sanity question); vanilla mirror gaps
+  are frozen one-time offsets (18/151 rows, lockstep after), ASSUMED relation-reset mechanism.
 - Closed when: the harness output is pasted here AND a v32 campaign shows the recipient matrix
   populated with donor/recipient closure holding — the full donor→receiver→materiel→channel
-  picture readable from one tool call.
+  picture readable from one tool call. (Campaign half MET on `1ac7e4ea`; harness half still owed.)
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
@@ -181,6 +224,19 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (ii) starvation probe: manning of fronts/invasion orders CREATED after the change (new
   beachheads, new war fronts) — a front born unmanned while idle divisions sit in a quiet
   theatre fails this subject even if (i) improves.
+- **Campaign `1ac7e4ea` (first post-defines, 2026-08-27): probe (i) SPLIT — ENG PASS, USA FAIL.**
+  MEASURED (8 war saves, closure 24/24 vs `army`): ENG in-transit 0-22 % vs baseline 13-45 %
+  (ceiling 45→22, 5/8 saves below the old floor; at-sea 0-5 % — never > 1 division afloat; rear
+  churn 20 %, into the GER band); USA 7-64 % with 1944.7 ABOVE the pre-fix ceiling 55 % — at-sea
+  alone 21-53 % over 4 consecutive samples incl. **46 % at 1944.4 with no invasion order in the
+  save**, rear churn 75 % (19/28 rear divisions at sea across the pair). GER control valid on
+  at-sea only (0-3 %); the hostile-ground bracket is VOID for a contiguous power losing ground
+  from 1944.10 (its front stands on flipped provinces). Trap re-confirmed: raw churn ENG 62 % /
+  USA 64 % / GER 28 % — does not discriminate. **Probe (ii) FAIL, soft**: no order born at 0 div
+  and the campaign's sole type-3 order (Madagascar 1942) was manned, but 4 post-1942 fronts held
+  at 1-2 divisions with idle pools elsewhere — worst 1945.6: ENG Gabès/Batna front 2 div while
+  USA idles 35/56, TWO of them in Batna on the starved front's own path. The defines took on ENG
+  and did not take on USA; USA's at-sea shuttle is Step B's sharpest case.
 - Closed when: (a) ENG+USA transit share drops vs the pre-fix baseline at matched dates, (b) no
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
@@ -402,6 +458,28 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   for the L3 floor: (L3b) a country with no pad >= 2 anywhere holds NO sector (aifc.py: sector
   absent, not decorative), and (L3c) r67 `retire_n` does not climb post-floor (flap watch — the
   K=2 grace window is the ready lever if it does).
+- **Campaign `1ac7e4ea` (first post-floor + post-gate, 2026-08-27): L2 PASS, L3d PASS; L1/L3/L3b
+  FAIL; L3c FAIL localised. R1 weekly churn ABSENT from every live tag (age never pinned at 1;
+  GER anchors held 2 quarters each).** MEASURED (aifc.py, 13 quarterly + 12 bimonthly saves):
+  **L2 PASS** — USA sector 1944 Q3+Q4 (458 Tunisia / 18 Champagne) and 1945 Q3→1946 Q1; the
+  quarterly grid ALIASES it (bimonthly sweep required; USA still sector-less 10/18 months incl.
+  1945.1-1945.7). **L3d PASS** — USA 1944.7 corridor = 6 FRA/BEL-owned states while USA controls
+  zero European states: only the §1b expeditionary walk can have produced it; junior partners
+  carry the leader's corridor byte-for-byte (ROM/HUN≡GER, MAN≡JAP, AST/RAJ≡ENG). **L1 FAIL** —
+  3 of 4 GER/SOV fresh selections put < 18 % of non-garrison divisions in+adjacent (generous
+  name-adjacency); corridor province gain ≤ 0 in 4 of 5 six-month windows. **L3 FAIL** — ENG 32
+  months byte-identical Western Desert corridor at 0/71 provinces held (the exact shape the
+  floor shipped to kill; also GXC 42mo, MEN 42mo, JAP 30mo, ITA 30mo at 0 %). **L3b FAIL** —
+  BUL 1945.7 holds ITA's 8-state Algerian corridor while its only NA foothold is Gabès at 4
+  divisions (band 1): a live floor bypass to diagnose. **L3c FAIL (ENG/USA only)** — retire_n
+  ENG 0→14, USA 5→14 monotone, type-83 ledger 10-13× distinct pairs (737/70, 799/61); GER/SOV/
+  JAP/ITA flat — co-occurs with their sector on/off flicker; not weekly, but unbounded ledger
+  bloat with no compaction. **Key negative on the new gate**: ENG 1944.7 native best pad = 2 =
+  NOT > exp_gate_pad, so the ally walk RAN and the merged French/Algerian candidates LOST the
+  score to the defender-side-weighted desert (+20 desert +40 thin +20 non-core vs pad ~5-10) —
+  the residual L3 lever is the scorer's defender-side terms / an own-mass corridor term, not the
+  gate. Dead-tag trap for the tooling: SHA shows age=1 in all 13 saves but is annihilated
+  pre-1940 (frozen variables) — aifc.py needs a liveness annotation or its own footer misleads.
 - Closed when: each leg carries a six-box diagnosis naming the script line or documented engine
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
@@ -410,6 +488,40 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+> **Campaign `1ac7e4ea` PARKED-probe results (2026-08-27, all MEASURED unless noted):**
+> `rk-no-divisions` **PASSED again** (7 RK tags with no `units` section at 1943.6+1945.6, ALB flat
+> at 3). `silo-breadth` campaign leg **PASSED** → CAMPAIGN-OK (see row). `uk-truck-supply` stock
+> leg **PASSED** wide (ENG own-built motorized 12.6k/9.4k/11.1k at 1942-44.6 vs bar 1500); Africa
+> hub leg NOT CHECKED — not save-visible, needs a WA_TLM gauge at the hub-motorization site.
+> `prospecting-coop-solvency` **PARTIAL PASS** — coal counter 36→55 with solvent importers
+> (HUN 200 imports, ITA 1200-1467); iron/alu counters flat while ITA/BUL/ROM sit at 0 iron
+> imports (shape matches) — but attribution is STRUCTURALLY blocked: the gate is OR-over-members
+> and `num_of_civilian_factories_available_for_projects` is not serialised; note ROM lost ALL
+> imports 1944.6→1945.6 while needs=3 (only starved-buyer candidate, cause not save-separable).
+> `aoi-border-garrison` (a) PASS 60-70 % border, (b) PASS, (d) PASS, (e) PASS (flat 10 div while
+> Suez ENG-held); (f) VOID — the colony FELL ~1940.12-1941.3 (ETH free from 1941.3, ITS
+> annihilated), i.e. holds ~7-9 months vs **37 in `24933fb9` — a colony-survival regression
+> signal to watch**; leg (c)'s ids 217/380/381 are WRONG in this file (Stalingrad/Utah/Wyoming) —
+> intent PASS (ITS only ever in its 5 border/coast states); re-derive interior ids at reopen.
+> `minor-expeditionary-fitness` (a) **FAIL on NEP** (2 of 5 divisions on Nahr/Sinai fronts
+> 1941.6-1941.9 at 1 MIL — ~4 500 km out; BHU clean), (b) first half FAIL (same NEP), deploy-cap
+> half PASS (NEP flattens ≤ 5), ETH control PASS-with-caveat (crosses the 5-MIL bar mid-growth),
+> (c) PASS. `allied-total-commitment` headline **FAIL confounded** — CAN 4/4 divisions home
+> 1941.6, 1/1 1942.6, but CAN fields 1-2 divisions on 37→100 MILs (the force-generation collapse
+> upstream owns the reading, not the garrison rule); continental-feed leg PASS (Bourgogne +
+> Trøndelag fronts 1940.6, Algiers buffer 1943.6); (b) PASS (AST/NZL/RAJ re-garrisoned < 3 months
+> after JAP DoW 1941.12.8); (c) PASS for AST/RAJ/SAF; (d) UNSCOREABLE (no factionless belligerent
+> exists — Allies have 21 members by 1941.6); **SS24 bulwark FAIL** — RAJ 4 divisions on
+> metropolitan FRA soil (Bourgogne/Isère/Alpes) + CAN 1 at 1940.6 while `FRA_disjointed_government_3`
+> active, before fall_of_france. `scripted-invasion-reservation` leg (b) still NOT MEASURABLE —
+> landings happened (Torch orders 1942.9-10, D-Day consumed < 1 month) but `plans.py` cannot
+> print a type-3 order's TARGET (tooling gap: a `--invasions` view would close it).
+> `aifc-closure-eth` **FAIL — persists**: same +250 vs −150 on all 6 observable saves
+> (1943.7→1946.1, 30 months); mechanism DERIVED — a stale 1940.1 +400 boost never negated,
+> surfacing when ETH re-enters the book; GENERAL leak, not ETH-specific: ITA/UKT and ENG/FRS
+> carry identical stale +400s hidden under the dead-tag RESIDUAL label, and residual counts grow
+> monotonically (GER 2→12) — no reconcile ever retires an entry.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
@@ -424,7 +536,7 @@ OPEN with a session of its own.
 | `uk-truck-supply` | SHIPPED 2026-08-27, boot OK. **Campaign `24933fb9` PASSED on the stock leg**: ENG motorized stock 8k-19.6k in every war save (5-13x the 1500 floor), the deficit pathology absent. Criterion correction: ENG is on the >49-factory band from ~1937 (117-330 arms factories), never the 30-49 tier the criterion names; the live lever is `min_wanted_supply_trucks = 2000`. Africa hub-motorization leg NOT CHECKED. Probe defect: the `var` probe is void — both levers are trigger literals/ai_strategy, probe with `stock.py --all --match motorized` + `buildings --match arms_factory` | Owner: ENG truck deficit every game, Africa supply fulfillment < 50%. MEASURED in code: demand multiplied (hub cost 60->500, motorize ratio 0.95, buffer 1.2) while ENG (36 arms factories) sat on the 3-factory tier with a 1000-stock cutoff | A campaign shows ENG on the 6-factory tier with motorized stock >= 1500 sustained at war, and Africa hub motorization no longer truck-starved. Shipped: stock bar 1500 = lend-lease starve (registry truck_stock_starve_floor), 30-49-factory tier at 6, min_wanted_supply_trucks 2000/1000 (vanilla precedent SIA). Successor of the raj-trucks SAF-tier residual |
 | `suppression-templates` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: countries burn army XP designing 4x-light-cav garrison templates, field them to the FRONT, and the template (no MP) is also the state-garrison pick. MEASURED in code: role prio 1000 (~37% of XP draws), reinforce_prio 1, use_suppression_templates = always yes | A campaign shows minors' army XP not spent on suppression templates while neutral, and no suppression-template divisions under front orders. Shipped: trigger gated (war OR non-core control) + LATCH on the existing flag (no mid-campaign decommission flip), role prio 50, reinforce_prio 0, dead build_army_cavalry pair deleted. Engine garrison scoring untouched |
 | `raj-trucks` | CAMPAIGN-OK (2026-08-25, campaign `8f9b5653`: all three positive legs + the control PASSED) | SAF runs the 3-factory truck tier 1940-42 then has NO motorized line at 1945.10 on 49 arms factories (possible tier regression; MEASURED as absence) | The SAF tier question is answered (regression fixed, or explained and accepted); every other criterion already met — full record: git log `[raj-trucks]` + this file's history |
-| `silo-breadth` | TESTED (console harness owner-PASSED 2026-08-24) | Fuel silos stall at the first state's cap of 6; shipped fix = CIC/MIC/NIC/REF availability standard + breadth-first walk, harness `event wa_silo.1`/`.2` | A campaign save shows a country with silo need > 6 holding BUILT `fuel_silo` levels in >= 2 states, and the harness walk skipping a state at its cap |
+| `silo-breadth` | **CAMPAIGN-OK (2026-08-27, `1ac7e4ea`)** — harness owner-PASSED 2026-08-24, campaign leg PASSED: GER 28 / ENG 19 / JAP 13 / USA 13 / SOV 12 built silo levels vs per-state cap 6 → ≥ 2 states mechanically (SOV grew 7→12, no first-state stall) against the scripted need of 17 | Fuel silos stall at the first state's cap of 6; shipped fix = CIC/MIC/NIC/REF availability standard + breadth-first walk, harness `event wa_silo.1`/`.2` | Both halves met — a campaign save shows silo need > 6 built in >= 2 states (`1ac7e4ea`), and the harness walk skipped a state at its cap (2026-08-24) |
 | `lend-lease-relief` | TESTED (owner-validated 2026-08-23) | Overland surplus relief (Fix 92) + USA native offers work; final audit remains | Final audit passes: leg 3 of R7b checked; USA sender restored or the R57 failure explained and accepted |
 | `trade-law` | SHIPPED-UNTESTED (`32c03c550` + revert, 2026-08-19) | Ladder has two reachable rungs (R28); dead flag `WA_AI_trade_law_recently_changed`; recovery path only covers export_focus/free_trade | In-game test of the shipped fix passes; ladder rungs reachable in a campaign |
 | `majors-mechanize` | FAILED (2026-08-17, `9d83084c`) | Majors do not mechanize (R6) | A campaign shows majors' mobile divisions motorized/mechanized on schedule (R6 probe, archive) |
