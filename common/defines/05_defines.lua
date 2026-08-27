@@ -1406,6 +1406,14 @@ NDefines.NAI.ORDER_ASSIGNMENT_DISTANCE_FACTOR = 100.0								-- When the AI assi
 --NDefines.NAI.RELUCTANCE_TO_CHANGE_FRONT_FACTOR = 0.9								-- Factor for how reluctant the AI is to change a units order group.
 --NDefines.NAI.REVISITED_PROV_PENALTY_FACTOR = 1.8									-- When the AI picks units for a front, it tries to spread out a bit which units it grabs.
 
+-- [allied-division-stability] theatre-distributor damping: how often a division already holding a
+-- front gets pulled to another one. The engine's own comment on MAX_PERCENT_UNMET names it the
+-- shuffle control (0 = a front never poaches). 0 stays forbidden here so new fronts can still
+-- recruit; assumes vanilla 1.19.2 defaults 0.5 / 0.25 / 0.5.
+NDefines.NAITheatre.AI_THEATRE_DISTRIBUTION_MAX_PERCENT_UNMET_DEMAND_PER_FRONT = 0.2	-- vanilla 0.5: share of its unmet demand a front may take from lower-priority fronts
+NDefines.NAITheatre.AI_THEATRE_DISTRIBUTION_SAME_THEATRE_SCORE_MODIFIER = 0.5			-- vanilla 0.25: higher = units more likely to stay within their current theatre
+NDefines.NAI.REASSIGN_TO_ANOTHER_FRONT_FACTOR = 0.3									-- vanilla 0.5: <1 = reluctant to reassign a unit to another front
+
 NDefines.NAI.FRONT_EVAL_UNIT_ACCURACY = 0.95										-- scale how stupid ai will act on fronts. 0 is potato
 NDefines.NAI.EXTRA_NAVY_INTEL_FOR_CONVOY_RAIDING = 1.0                   			-- this amount of intel is added to navy intel while ai is assigning convoy raiding mission
 NDefines.NAI.GARRISON_FRACTION = 0.0												-- How large part of a front should always be holding the line rather than advancing at the enemy (economy E8: vanilla restored, was 0.05)

@@ -388,6 +388,49 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
   lever is Allied theatre sizing, outside this subject.
 
+### allied-division-stability — OPEN (2026-08-27)
+- Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
+  (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
+  transit FREQUENCY. Step A (this ship) = engine theatre-distributor damping, defines only.
+  Step B (hysteresis pass on the script oscillators: `home_threatened`, `total_commitment`,
+  USA britain buffer, handoff ladders, AIFC dwell) is a separate owner decision, not shipped.
+- Symptom (owner-reported, not yet measured in a save). Analysis 2026-08-27 (session scratchpad
+  `allied-division-stability-analysis.md`; three-agent sweep): MEASURED — the engine's own comment
+  on `NAITheatre.AI_THEATRE_DISTRIBUTION_MAX_PERCENT_UNMET_DEMAND_PER_FRONT` (vanilla 0.5) names
+  it the unit-shuffle control ("0 means once a front gets hold of a unit it stays there forever");
+  neither WA nor Expert AI 5.0 overrides it or any NAITheatre key. MEASURED — no Allied ground
+  block (`front_unit_request`/`area_priority`/`put_unit_buffers`/`garrison`) has an enter/exit
+  hysteresis pair; top oscillators ranked in the analysis file.
+- State: shipped 2026-08-27, `05_defines.lua`: `AI_THEATRE_DISTRIBUTION_MAX_PERCENT_UNMET_DEMAND_PER_FRONT`
+  0.5→0.2, `AI_THEATRE_DISTRIBUTION_SAME_THEATRE_SCORE_MODIFIER` 0.25→0.5,
+  `NAI.REASSIGN_TO_ANOTHER_FRONT_FACTOR` 0.5→0.3. `FRONT_MIN_PATH_TO_REDEPLOY = 3` deliberately
+  untouched (separate decision — it trades walking for rail transit, which the rail corridors
+  serve). Change is global (all nations): a levelling, not an Allied buff.
+- ASSUMED, stated: the SEMANTICS of all three defines rest on their engine comments alone
+  (lessons ruling: author prose is not a spec) — direction plausible, magnitude unknown, neither
+  save-measured; that the Allies benefit most because their fronts span theatres while Axis
+  fronts are contiguous; the engine strategy re-evaluation cadence (still untimed). MEASURED:
+  vanilla baselines 0.5 / 0.25 / 0.5 verified against the install's `00_defines.lua`
+  (:4436/:4433/:3055, 1.19.2) this session; no prior WA or Expert AI override of any of them.
+- Verification: F9 boot test owed (defines change). Campaign probes, BOTH required:
+  (i) transit share = fraction of ENG+USA divisions whose theatre/state changed between
+  consecutive monthly saves (order-disappearance signature per lessons; exclude divisions located
+  on enemy-controlled ground; GER as contiguous-front control), compared to the PRE-fix baseline
+  MEASURED 2026-08-27 on `24933fb9` (8 saves, per-save counts closed against `savegame.py army`
+  exactly): in-transit snapshot (at-sea + hostile-ground / deployed) ENG 13-45%, USA 14-55%,
+  GER 0-1% at every save; ENG 1944 worst case 9 divisions in transit across 4 consecutive saves.
+  Trap, MEASURED: raw month-over-month state-change does NOT discriminate (GER front-combat churn
+  26-67%) — score the SNAPSHOT and rear-class churn (GER buffer 2-19% vs ENG/USA areadef
+  25-100%), never raw movement. Hostile-ground is an upper-bound bracket (22 ENG front divisions
+  sat 4 months on ITA-held Cairo provinces — stamping vs stuck combat unresolved in a save).
+  Extractor: plans.scan + savegame.py division iterators (rebuildable from this description);
+  (ii) starvation probe: manning of fronts/invasion orders CREATED after the change (new
+  beachheads, new war fronts) — a front born unmanned while idle divisions sit in a quiet
+  theatre fails this subject even if (i) improves.
+- Closed when: (a) ENG+USA transit share drops vs the pre-fix baseline at matched dates, (b) no
+  starvation regression — no active front under-manned while idle divisions sit in a quiet
+  theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
+
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
