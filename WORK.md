@@ -388,128 +388,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
   lever is Allied theatre sizing, outside this subject.
 
-### rail-corridors — SHIPPED-UNTESTED (2026-08-27)
-- Scope: owner request 2026-08-27 ("éviter que les IA passent trop de temps en transit maritime").
-  A declared CHEAT, no gameplay-economy intent: once every state along a land corridor is held by
-  one side (faction + subjects), a level-5 railway is spawned instantly and free between the
-  endpoint cities so strategic redeployment prefers land over convoys. 8 corridors:
-  Dakar-Djibouti (Sahel), Pretoria-Khartoum (east-African line), Prayagraj-Karachi, Karachi-Fars
-  (prov 10797), Kuwait-Baghdad, Baghdad-Cairo, Casablanca-Cairo (gated on ALL of North Africa,
-  owner rule), Miami-Halifax (eastern seaboard).
-- State: shipped 2026-08-27. Dispatch `WA_AI_RAIL_CORRIDOR_monthly_tick`
-  (`WA_AI_RAIL_CORRIDOR_effects.txt`, once-per-month global claim via timed flag, retired for good
-  once all 8 built), same-side predicate (`WA_AI_RAIL_CORRIDOR_triggers.txt`), GENERATED gates +
-  builds (`WA_AI_RAIL_CORRIDOR_data.txt`, tool `tools/gen_rail_corridors.py` — BFS on the
-  WA_AI_MAP land adjacency with waypoint anchors; plain BFS was measured cutting through the deep
-  Sahara, hence the waypoints), harness `WA_TEST_rail_corridors.txt` +
-  `events/wa_test_rail_corridors.txt` (report `wa_test_rail.1`, force-builds `.11`-`.18`).
-  Monthly call added in `WA_AI_misc_on_actions.txt`.
-- Reviews 2026-08-27: lessons CONFLICT + architecture CONCERNS, both resolved in-session. (i) PC
-  railway interaction: the cheat now builds along the generator's EXPLICIT province path
-  (`path = { ... }`, `fallback = yes`) and stamps the same edges into the PC shadow bookkeeping
-  (`WA_AI_PC_railway_connections^p`, `WA_AI_PC_railway_connection_level_a^b` — readers:
-  railway_helpers/core, pathfinding), so priority-construction sees the cheat track instead of
-  buying it again; the native `has_railway_level` "done" gate (railway_strategies) is the second
-  mitigation. Residual, stated: if the engine rejects a path list, `fallback = yes` re-paths
-  between the endpoints and the mirror can OVERSTATE up to that one corridor (suppresses PC rail
-  spend there, never wastes it). (ii) `_rc_anchor` is entry-initialised to 0 with a no-controller
-  guard in every gate and in the harness duplicate. (iii) registry group `engine_max_railway_level`
-  ties the generated `@WA_RAIL_CORRIDOR_LEVEL = 5` to the generator's emission (engine side:
-  `NDefines.NSupply.MAX_RAILWAY_LEVEL = 5`, install `00_defines.lua:4263`, not rebound by
-  `05_defines.lua`).
-- Found on the way past, FIXED 2026-08-27 (spawned task, same slug): the shared
-  `tools/map_generators/province_connections.py` ADDED `impassable` rows of `map/adjacencies.csv`
-  to the land graph instead of removing them (MEASURED: 7643-8014 and 1506-7558, both "East
-  Coast" impassable, present as connections). Fix: impassable rows now REMOVE the bmp-scanned
-  adjacency; typeless rows (land bridges) still added; sea rows still ignored. Regenerated
-  `WA_AI_MAP_province_connections.txt` (MEASURED: 650 deletions, 0 additions = 325 impassable
-  pairs × 2 directions, both named pairs gone) and its dependent `WA_AI_MAP_landmass_data.txt`
-  (248 → 252 landmasses: Americas split 1606 → 1205+401 provinces at the impassable Darién
-  row, New Guinea split 70 → 56+14 along the spine, Tibet 6-prov and Qilan 5-prov ridge-wall
-  chains isolated; counts reconcile, Eurasia −11 = 6+5). Consumers checked: no script compares
-  a landmass id to a literal except `= 0` (no-data guard, railway_core:647), so the id shift
-  past 13 is safe; `gen_rail_corridors.py` keeps its local strip as defense (comment updated);
-  `gen_ai_faction_theaters.py` measures the bmp directly, unaffected. `check_constants.py` 0
-  errors, regenerated files BOM-free. ASSUMED (engine): impassable adjacencies fully forbid
-  land movement between the pair — the wiki-documented purpose, not verified in-game this
-  session; the corridors harness run will exercise the pathing either way.
-- ASSUMED, stated: (i) `build_railway` over an existing line RAISES it and clamps at
-  MAX_RAILWAY_LEVEL 5 instead of stacking or laying a parallel line — unobservable in script, the
-  force-build events are the visual check; (ii) trigger-AND short-circuits left to right (cost
-  claim only, not correctness); (iii) a rejected explicit path falls back per the engine doc's
-  fallback chain — never observed, covered by the same force-build check.
-- **Harness run #1 (owner, 2026-08-27, save 1945.7.1, fired as BHU observer) — header says STOP,
-  shipped gate looks right anyway.** MEASURED: scope line read `1 0 0 1 0` (`I-am-ROOT=0`,
-  `I-am-THIS=0` with THIS=ROOT=Bhutan) — the "Two call sites, one effect" poison signature, HERE
-  DESPITE THE DEDICATED EVENT FILE (new data point for that lessons entry: own file + console-fired
-  as the observer tag is not sufficient protection). Per contract every per-state BLOCKED line is
-  VOID — and visibly so: the independent inline walk printed BLOCKED even on states controlled by
-  the anchor itself (state 366 "by United States of America", anchor USA), while the identical
-  mechanism inside the shipped scripted trigger worked. DERIVED, all 8 shipped `_rc_ok` verdicts
-  are consistent with the save's 1945 alignments: 1 for fully-Allied corridors (1 FFR+UK+ETH,
-  3 RAJ-only, 4 RAJ+UK, 8 USA+CAN), 0 where a third party holds the route (2 Portuguese Africa,
-  5 SOV in Baghdad, 6/7 Axis). No visible false verdict; corridors 1/3/4/8 would build on the next
-  monthly tick of that save — intended. NOT promoted to TESTED: the header rule stands.
-- **Harness run #2 (owner, 2026-08-27, same save, after `tag FRA`) — PASS, subject to TESTED.**
-  MEASURED: header `1 1 1 1 0`; the independent inline walk agrees with the shipped gate on all
-  8 corridors — gates 1/3/4/8 read 1 with ZERO blocking states (FFR+UK+ETH Sahel, RAJ India,
-  RAJ+UK Persia, USA+CAN seaboard), gates 2/5/6/7 read 0 with exactly the expected blockers
-  (Portuguese Africa on 1102/1103, SOV in Baghdad, Axis + Saudi + Spanish on the Levant/NA
-  routes). No disagreement between the inline predicate and the shipped scripted trigger.
-  The run-#1/run-#2 contrast (observer tag poisons inline country compares, nested trigger clean)
-  is recorded as an addendum to the "Two call sites, one effect" lessons entry. F9: the 1945.7.1
-  load that produced both runs is a successful boot with all five new files parsed.
-- **Owner test #3 (2026-08-27, save `SAF_1945_08_05_23`, one monthly tick ran at 1945.8.1) — the
-  GATES work, the whole-path BUILD form does not; rebuilt per-edge, state back to
-  SHIPPED-UNTESTED.** MEASURED (savegame): flags 1/3/4/8 set at 1945.8.1.1 (2/5/6/7 correctly
-  absent — matches harness run #2 exactly); `rail.py` reads corridors 3/4/8 railed **level 5
-  end-to-end** (12/9/42 hops) — the ASSUMED upgrade-in-place behaviour is therefore observed on
-  the US seaboard's pre-existing rails — but **corridor 1 has ZERO new track** (anchors
-  4927/2056/2081 carry no rail_way entry at all) despite its built flag. The owner's "no rails
-  as SAF" is exactly corridors 1 (silent build failure) and 2 (gate legitimately blocked by
-  Portuguese Africa). DERIVED: `build_railway` with the 30-province `path` list no-opped as a
-  whole while three same-form corridors built — cause not isolated (candidate: one engine-invalid
-  edge, e.g. a diagonal-pixel bmp adjacency, rejecting the entire list); stateless-province
-  hypothesis MEASURED dead (all 8 paths fully state-mapped).
-- Fix shipped same day: builds are now PER EDGE (`path = { a b }`, the only form PC core has
-  proven in campaigns), each edge guarded by `can_build_railway` (triggers_documentation.md:1884)
-  with the PC mirror stamped ONLY on a built edge (closes the poisoned-mirror residue: the SAF
-  save had `wa_ai_pc_railway_connections^4927 = 1` over bare ground); a refused-and-unrailed edge
-  logs itself; an endpoint `has_railway_connection` post-check latches a save-visible
-  `WA_rail_corridor_<i>_incomplete` flag instead of failing silently. Harness report now prints
-  the endpoint connection per corridor.
-- **Owner test #4 (2026-08-27, save `SAF_1945_08_09_02`, screenshot + save analysed) — per-edge
-  build works as designed, and it isolated the real cause: IMPASSABLE STATES.** MEASURED:
-  corridor 1 built 17 of 29 edges at level 5 and skipped 12; `WA_rail_corridor_1_incomplete`
-  latched beside `_built` (1945.8.8.5) exactly as designed. The 12 refused edges form 3 gaps
-  whose zero-rail provinces all lie in states 786/515/775/767 (Mauritanian Desert, Southern
-  Sahara, B.E.T., North Darfur) — **all `impassable = yes` in history/states; the engine refuses
-  railways there** while building every passable neighbour to 5. Bonus find: pair 4927-7930 was
-  not a direct edge — the generator's global dedup across legs had broken consecutive adjacency
-  (the engine railed it anyway via 2 hops).
-- Fixes shipped same day (generator, regenerated): (i) provinces of impassable states removed
-  from the BFS graph — corridor 1 now runs the southern Sahel (Senegal-Mali-Niger-Sokoto-
-  Cameroon-Chad-South Darfur-Kurdufan-Khartoum), corridor 7 the coast via Marsa Matruh instead
-  of the Western Desert, and a generator assert refuses any path touching an impassable state;
-  (ii) impassable NA states dropped from the 100%-NA gate (unconquerable ground would deadlock
-  it); (iii) leg concatenation joins on the shared anchor only, no global dedup; duplicate edges
-  deduped at emission. DERIVED: the original whole-path no-op is the same cause — one impassable
-  edge in the list rejected the entire 30-province call.
-- **Owner test #5 (2026-08-27): corridors OK except Pretoria-Khartoum — not a build failure, a
-  gate design flaw.** The BFS route crossed Portuguese Mozambique (Tete 1102 / Nampula 1103,
-  MEASURED blocked-by-Portuguese-Africa in both harness runs), so the corridor's gate depended
-  on PORTUGAL's alignment. Rerouted with a Lusaka waypoint (prov 14146) onto the all-British
-  Cape-to-Cairo line: Rhodesia-Zambia-Muchinga-Malawi-Tanganyika-Uganda-South Sudan-Kurdufan.
-  Regenerated; gate should now arm on the test save (SAF anchor, Commonwealth-held throughout).
-- Verification owed: owner re-runs `event wa_test_rail.12` (or one monthly tick) on the throwaway
-  save — expected: Pretoria-Khartoum line appears, zero REFUSED lines, no `_incomplete`. Then the
-  campaign probe below.
-- Closed when: a campaign save shows (a) at least one corridor's global flag
-  (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
-  only set while the corridor's gate states were same-side at some prior month, and (c) no
-  corridor built while its corridor was split between factions (control: flags all absent in an
-  early-1936 save).
-
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
@@ -547,6 +425,7 @@ OPEN with a session of its own.
 
 | Date | Subject | Note |
 | --- | --- | --- |
+| 2026-08-27 | `rail-corridors` | Strategic corridor railways (AI pathfinding cheat): 8 faction-gated land corridors get free level-5 rail so redeployment stays off the sea. Per-edge builds, impassable states routed around, PC mirror synced, `wa_test_rail` harness. Human validation: tested and functional in-game (owner, 2026-08-27). Campaign probe folded into F-checks: `WA_rail_corridor_*_built` flags + level-5 track. |
 | 2026-08-23 | `na-corridor` | NA corridor logistics (rail/depots/ports/theatre air bases, Fix 95–135). Human validation: tested and functional. Absorbed R9, R13, R52, R60, R68, R69, R71, R77, R78, R81, R91, R96, QUEUE 0q/0r/0m/0i. |
 | 2026-08-23 | `med-axis-posture` | Axis Mediterranean posture (Afrika Korps, Tunis, Italy, Ethiopia, Med fleet, convoy interdiction; Fix 96–137). Human validation: tested and functional. Absorbed R17, R61, R63, R64, R74–R76, R80, R82, R83, R92, R94, R97, QUEUE 0t/0h/0f/0g/0. |
 | 2026-08-23 | 14 R-items retired on PASS | R10, R19, R31, R38, R39, R40, R42, R44, R45, R49, R50, R56, R66 (folded), + R53 dropped (probe tool never existed). Details: archive. |
