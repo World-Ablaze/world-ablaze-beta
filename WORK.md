@@ -644,7 +644,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
   lever is Allied theatre sizing, outside this subject.
 
-### rail-corridors — SHIPPED-UNTESTED (2026-08-27)
+### rail-corridors — TESTED (2026-08-27)
 - Scope: owner request 2026-08-27 ("éviter que les IA passent trop de temps en transit maritime").
   A declared CHEAT, no gameplay-economy intent: once every state along a land corridor is held by
   one side (faction + subjects), a level-5 railway is spawned instantly and free between the
@@ -706,12 +706,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   3 RAJ-only, 4 RAJ+UK, 8 USA+CAN), 0 where a third party holds the route (2 Portuguese Africa,
   5 SOV in Baghdad, 6/7 Axis). No visible false verdict; corridors 1/3/4/8 would build on the next
   monthly tick of that save — intended. NOT promoted to TESTED: the header rule stands.
-- Verification still owed: (a) clean re-fire — console `tag FRA` (any real country) then
-  `event wa_test_rail.1`; header must read `1 1 1 1 0`, output pasted here (falls back to the
-  `wa_iso.3` route if the header still fails); (b) one force-build (`event wa_test_rail.11`) on a
-  throwaway save with the supply mapmode open: existing rails upgraded not duplicated, level caps
-  at 5. F9 boot test: the 1945.7.1 load that produced run #1 IS a successful boot with all five
-  new files parsed (report printed end to end) — F9 considered covered by it.
+- **Harness run #2 (owner, 2026-08-27, same save, after `tag FRA`) — PASS, subject to TESTED.**
+  MEASURED: header `1 1 1 1 0`; the independent inline walk agrees with the shipped gate on all
+  8 corridors — gates 1/3/4/8 read 1 with ZERO blocking states (FFR+UK+ETH Sahel, RAJ India,
+  RAJ+UK Persia, USA+CAN seaboard), gates 2/5/6/7 read 0 with exactly the expected blockers
+  (Portuguese Africa on 1102/1103, SOV in Baghdad, Axis + Saudi + Spanish on the Levant/NA
+  routes). No disagreement between the inline predicate and the shipped scripted trigger.
+  The run-#1/run-#2 contrast (observer tag poisons inline country compares, nested trigger clean)
+  is recorded as an addendum to the "Two call sites, one effect" lessons entry. F9: the 1945.7.1
+  load that produced both runs is a successful boot with all five new files parsed.
+- Still owed before CAMPAIGN-OK: one force-build (`event wa_test_rail.11`) on a throwaway save
+  with the supply mapmode open — verifies the ASSUMED clamp/upgrade (existing rails raised, no
+  parallel duplicate, level caps at 5); then the campaign probe below.
 - Closed when: a campaign save shows (a) at least one corridor's global flag
   (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
   only set while the corridor's gate states were same-side at some prior month, and (c) no
