@@ -64,6 +64,20 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > (DERIVED):** recruiting a batch needs > 200k manpower AND > 15k equipment stock
 > (`WA_reserves_meets_recruitment_threshold`), out of reach of a < 5-MIL country, so a banked
 > create_unit dump past the 5-division cap has no realistic population.
+> **Second half (106→47 gap beyond the bank) — INCOMPLETE, build delta CLEARED.** MEASURED sweep
+> of `ed109de9d..2f16ec583`: zero `force_build_armies`/`ai_wanted_divisions_factor` changes; the
+> defines dedup (`fc1e82a7f`) changed no effective value (all removed lines were already-dead
+> earlier duplicates); template-flag renumber orphan-free; the PRODUCTION/pp commits carry no
+> training lever reaching USA/CAN-but-not-GER. Top structural candidate (PRE-existing, not a
+> regression): the `role_ratio` residual stack in `WA_AI_PRODUCTION_DEFAULT_army_composition.txt`
+> — the two USA-only subtractor blocks (expeditionary_mechanization -30, infantry_floor) sit on
+> the deepest stack, and the file's own comment records USA's infantry want going NEGATIVE and
+> training stopping (campaign 9be92c89); the in-range cavalry deletion returned +5 near that
+> cliff. Deciding read (owner console): `tag USA` / `tag CAN` / control `tag GER` →
+> `imgui show ai-strategy`, the **role_ratio per-type tree** — USA infantry row at/below -100
+> with armour rows positive confirms; positive infantry row refutes and moves the ladder to the
+> truck floors. Live rival, unexcluded: campaign variance (USA at 4 in 1942.6 is six months
+> after entry; `8f9b5653`'s 106 was a 1944.6 reading on the same veto).
 
 > **Campaign `8f9b5653` scored 2026-08-25** (cloud, `dlcs=257535`, BHU observer, 117 monthly saves
 > 1936.2-1945.10, unbranched, build = HEAD `ed109de9d` by a 4-minute commit->run gap,
