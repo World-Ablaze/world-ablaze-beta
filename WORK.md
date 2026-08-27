@@ -190,7 +190,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
 - Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
-### analysis-tooling — SHIPPED-UNTESTED (2026-08-27)
+### analysis-tooling — TESTED (2026-08-27)
+- F9 boot PASSED (owner, 2026-08-27) — the v33 comp-gauge rungs loaded in-game; the two
+  analysis-side tools were already validated on real saves. Remaining: the v33 campaign
+  probe ((i) in Verification below).
 - Scope: owner request 2026-08-27 ("d'abord les deux sujets open + la méta") — the three
   measurement defects the `1ac7e4ea` scoring exposed: (i) `wa_tlm_comp_armor/mech` band floor
   (any armour arm < 5 divisions read 0 → false "zero armour" verdict on ENG), (ii) `aifc.py`
@@ -282,9 +285,34 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Europe-only-war strike-base handoff goes to the Faction western anchorage) + lessons
   CONCERNS (all 4 required applied: enemy-state release stated, latch implemented, audit
   re-walked, PHASE5-mirrored enable diff-verified byte-untouched).
-- **F9 BOOT TEST OWED AND BLOCKING (CTD-class: whole ai_strategy blocks deleted/merged/renamed
-  across the land AND naval files, plus a new on_monthly effect) — owner: cold launch, watch
-  crashes/ + error.log, before the next campaign.**
+- **F9 boot PASSED (owner, 2026-08-27) on the refactor build** — discharged the land+naval
+  CTD-class debt, the comp-gauge v33 change and the AIFC merge-bar effect edit.
+- **Factorisation batch SHIPPED 2026-08-27 (owner order "tout" on the promotion survey;
+  survey table delivered as a file the same day).** Five commits: (1) RETIRED 7
+  faction-duplicated USA blocks — the Adriatic was summing +8000 and Biscay +6000 on USA's
+  own duplicate walls; strategic-bombing china/asia self-doubling folded into the japan twin;
+  double RIT entry trimmed. NOT retired, stated at site: north_africa_focus (faction twin
+  carries a hard date + ITA/ITL controller list — the Case-Anton corner would be uncovered),
+  no_balkan_hops (faction twin is minors-only), unit_clumping_fix (state-vs-region precision
+  unverified). (2) Phase trigger GENERALIZED (`WA_AI_MILITARY_pacific_offensive_ready`, USA_
+  prefix dropped; latch widened to anglo majors). (3) PROMOTED with same-commit country-copy
+  deletion: NAVAL aegean_hostile_coast + western_pacific_trap (25 regions — replaces the USA
+  pair AND trims 25 entries of ENG's 68-region war-GER blanket; ENG is now phase-released
+  where it was walled all war) + the uninvaded-ally-waters courtesy trio + St. Lawrence →
+  DEFAULT; THEATRE britain_invaded_priority (ENG_all_in's britain pair trimmed); FRONT
+  liberate_britain; INVASION britain_first_no_side_shows + pacific_side_shows_wait (ENG twin
+  trimmed of the 5 shared targets). (4) INS ownership USA arm made conditional (sfhb
+  pattern) so the faction deathtrap guard re-arms after the phase flip. (5) **Biscay
+  correction**: the dedup turned the historically-inert Torch −2000 on region 42 LIVE
+  (net 0 = the Bay would have opened, a design change nobody decided) — removed to preserve
+  observed behaviour; **"should Torch open the Bay" is now an explicit one-line owner
+  decision stated at the site**. Deferred with reasons (survey file): defend_britain
+  DIPLOMACY (coupled to commonwealth-handoff's CAN guard), commit_to_europe partial,
+  reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
+  full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
+  ENG-refactor chantier), sicily sign conflict (design accounts for it via the bridge +50).
+- **NEW F9 BOOT OWED (this batch is CTD-class again: blocks deleted across USA+ENG files,
+  5 new FACTION blocks, 1 new DEFAULT block) — owner: cold launch before the next campaign.**
 - Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
   (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
   enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
