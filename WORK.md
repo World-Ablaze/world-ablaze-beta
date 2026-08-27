@@ -287,6 +287,23 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Verification: console harness owed for the country-scope trigger (the state_trigger's FROM.FROM
   scope exists only inside the engine's front call and cannot be reproduced from the console);
   campaign probe as above.
+- **Scope extended 2026-08-27 (owner rule): a country with FEWER than 5 military factories does not
+  BUILD more than 5 divisions.** Shipped: merged with [rk-no-divisions] into the single block
+  `WA_AI_PRODUCTION_DEFAULT_trains_no_divisions` (`WA_AI_PRODUCTION_DEFAULT_army_composition.txt`);
+  WHO is suppressed lives in the scripted trigger `WA_AI_PRODUCTION_trains_no_divisions`
+  (`scripted_triggers/WA_AI_PRODUCTION_army_composition.txt`) — RK, OR `num_of_military_factories
+  < 5` + `num_divisions > 4` + `has_civil_war = no` (SCW d5d88061d precedent). Payload = the
+  13-line suppression (build_army -500, role_ratio -1000 all land roles).
+  Deliberately a DIFFERENT band from the fitness floor (`> 5` at `WA_AI_MILITARY_triggers.txt`):
+  exactly-5 = unfit abroad but uncapped at home. Overshoot bound and decommission cycle cost in
+  the block header (t0/t1, ASSUMED terms named). Reviews: lessons CONCERNS — 3 items applied
+  (bound table, cycle-cost sentence, probe below); architecture review re-run owed (first run
+  lost to a process exit). **F9 boot test OWED** (new ai_strategy block).
+  Verification (cap probe): next campaign, every no-civil-war country at < 5 MILs shows deployed
+  divisions <= 8 (5 + conveyor bound 3) sustained after 6 months at war — NEP (1 MIL, read 10-16
+  divisions on `8f9b5653`/`24933fb9`) is the known-positive that must flatten; control: a minor
+  at >= 5 MILs (ETH-class, 8) still grows past 5. Enable-evaluates-true check: NEP's trajectory
+  IS the check (no strategy names in saves); the imgui fallback is `tag NEP` Active strategies.
 - **Campaign `24933fb9` scored 2026-08-27 — leg (a) FAILED, but materially improved.** MEASURED
   (`plans.py NEP --where`, closure test passed 10/6/12 = army deployed): 1941.6 **6 of 10 NEP
   divisions in Egypt/Libya** (Cyrenaica 4 front, Derna 1 front, Alexandria 1 NO_ORDER); 1943.6

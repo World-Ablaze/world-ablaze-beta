@@ -178,18 +178,29 @@ WA_AI_PRODUCTION_DEFAULT_army_expansion_override = {
 }
 
 ############################################################################################################
-# REICHSKOMMISSARIAT SUPPRESSION
+# NO-NEW-DIVISIONS SUPPRESSION
 ############################################################################################################
 
+# Shared payload for every owner rule that forbids training divisions; WHO is suppressed lives in
+# WA_AI_PRODUCTION_trains_no_divisions (scripted_triggers/WA_AI_PRODUCTION_army_composition.txt).
+# role_ratio is base 100 + value (documentation.info, UNIT RATIOS / ALL BUT AIR); -1000 keeps the
+# want at zero through every additive modifier above. cavalry covers the Military Police
+# templates; garrison role is gone (see SUPPORT MODIFIERS above).
 # [rk-no-divisions] A Reichskommissariat trains NO divisions of any role (owner rule 2026-08-27):
 # its manpower and MIC belong to the overlord, so anything it trains burns overlord equipment.
 # The engine may also DECOMMISSION existing RK divisions of zero-want roles (recorded mechanism,
 # see WA_AI_TEMPLATES_garrison.txt header) - acceptable here, the owner rule wants them at none.
-# role_ratio is base 100 + value (documentation.info, UNIT RATIOS / ALL BUT AIR); -1000 keeps the
-# want at zero through every additive modifier above. cavalry covers the Military Police
-# templates; garrison role is gone (see SUPPORT MODIFIERS above). ITS never passes the trigger.
-WA_AI_PRODUCTION_DEFAULT_reichskommissariat_builds_no_divisions = {
-	enable = { WA_AI_CONFIG_is_reichskommissariat = yes }
+# [minor-expeditionary-fitness] A country under 5 military factories does not BUILD past 5
+# divisions (owner rule, no exemptions incl. a crippled country under invasion): it cannot equip
+# them. A cap, not a zero - disarmed under the cap. Overshoot bound = the training queue at the
+# moment deployed crosses 4: t0 arm with Q queued (a <5-MIL conveyor holds ~1-3), t1 those Q
+# deploy (ASSUMED: -500/-1000 stop new queuing, do not cancel queued), terminal <= 5+Q, flat
+# after. Accepted cycle cost, in writing: if the engine decommissions zero-want-role divisions
+# (WA_AI_TEMPLATES_garrison.txt header, ASSUMED for deployed units), the count can saw between
+# 4 and 5+Q, burning training time and equipment each pass - if a campaign shows that sawtooth,
+# the lever is a flag-latched hysteresis, not a deeper value.
+WA_AI_PRODUCTION_DEFAULT_trains_no_divisions = {
+	enable = { WA_AI_PRODUCTION_trains_no_divisions = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = build_army id = infantry value = -500 }
