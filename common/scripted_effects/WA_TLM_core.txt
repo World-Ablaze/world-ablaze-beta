@@ -53,7 +53,8 @@
 #	v28 llr_convoy_*                 llr maritime path; sent_n / _amount grown 10 -> 11 slots
 #	v29 r114_thair_near_n / _far_n   which phase of the theatre air ladder won the start
 #	v31 sq_adds_by_type^8            fuel silos joined the shared-slot standard ([silo-breadth])
-@WA_TLM_VERSION = 31
+#	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
+@WA_TLM_VERSION = 32
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -215,6 +216,10 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_llr_last_t } } set_variable = { WA_TLM_llr_last_t = 0 } }
 	if = { limit = { check_variable = { WA_TLM_llr_sent_n^num < 11 } } resize_array = { array = WA_TLM_llr_sent_n size = 11 value = 0 } }
 	if = { limit = { check_variable = { WA_TLM_llr_sent_amount^num < 11 } } resize_array = { array = WA_TLM_llr_sent_amount size = 11 value = 0 } }
+	# llr_recv_donor / _n / _amount (v32): pair-keyed parallel arrays, appended at the verified
+	# send only - deliberately NOT initialised here. Absent = this country never received a
+	# verified relief send; a zero-length placeholder would erase that reading. The zero-init'd
+	# llr_starving_n / llr_first_t beside it witness the family's presence on the build.
 
 	# theatre air bases on a ground-committed theatre ([na-corridor], consumer: checklist R52; write
 	# site is the verified start in WA_AI_build_theatre_air_bases,

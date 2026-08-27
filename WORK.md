@@ -563,32 +563,41 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the owner's `imgui show ai-strategy` window showing both brake blocks LEAVE Active strategies
   once an enemy is on Egyptian soil.
 
-### fra-battle-of-france — OPEN (2026-08-27)
-- Scope: owner feedback 2026-08-27 (feedback_save - ironman, so the ~20-division figure is the
-  owner's report, not a save measurement): France garrisons North Africa / Corsica during the
-  Battle of France while the Italian border sits open. One intended behaviour: while the metropole
-  is invaded, the empire stops absorbing the army and the Alpine border is held.
-- State: shipped 2026-08-27. (i) `FRA_homeland_invaded_recall_colonials_THEATRE` - `area_priority
-  -90` on north_africa / mediterranean (Corsica sits in region 373 of that area) / middle_east,
-  gated `home_threatened` + at war + not capitulated. (ii) Alpine pair `FRA_alpine_front_FRONT`
-  (+100 south_france) / `_THEATRE` (+100), gated GEOGRAPHICALLY on `any_enemy_country =
-  is_italian_homeland_power` (lessons ruling: never `has_war_with = ITA`, the armistice flip renames
-  the tag). (iii) `FRA_defense_of_the_colonies_FRONT` re-armed from the economy-pass zeros to the
-  -5000 release convention (audit E7), gated `home_threatened`; the all-zero no-op
-  `FRA_ignore_garrisons_until_invasion_start` deleted. Spec doc SS25. Reviews 2026-08-27:
-  architecture CONCERNS + lessons CONCERNS, required items applied. F9 boot test OK 2026-08-27.
-- ASSUMED, stated: `garrison -5000` release semantics are WA convention, never engine-measured; the
-  colonial channel of the reported 20 divisions is inferred from code, not from the (ironman) save.
-- Closed when: a Battle-of-France save (non-ironman) shows (a) FRA North-Africa + Corsica division
-  count falling once `surrender_progress > 0.05`, (b) >= 2 FRA divisions on the south_france fronts
-  while an Italian homeland power is an enemy, (c) no regression of the Maginot/fall_rot arithmetic
-  (north_france/france nets unchanged).
-- **Campaign `24933fb9` scored 2026-08-27 — NOT CHECKED: the probe is unscoreable at monthly
-  cadence.** MEASURED blockers: `surrender_progress` is not serialised (0 hits in FRA's block), and
-  the gate window falls between saves — ITA declares 1940.6.11, FRA has no `units` section at
-  1940.7.1, the 1940.6.1 save predates the Italian war by 10 days. Recorded anyway: FRA held only
-  **3** divisions in NA+Corsica out of 121 (the ~20-division symptom did not reproduce this run —
-  near-vacuous, F2 fell historically). Scoring needs a mid-June save or the console harness.
+### lend-lease-observability — SHIPPED-UNTESTED (2026-08-27)
+- Scope: owner request 2026-08-27 ("un outil spécial lend-lease : image complète des donneurs,
+  receveurs, matériels envoyés, voie vanille (maritime) ou scriptée (terrestre)"). Two halves:
+  a savegame extraction tool, and the telemetry closing the one hole a save cannot answer — the
+  scripted channel's donor→recipient split (llr_sent_* is donor-side only, no receiver dimension).
+- State: shipped 2026-08-27 (this session; slot freed by parking `fra-battle-of-france`, owner
+  choice). (i) `lendlease.py` (`.claude/skills/wa-savegame-analysis/scripts/`) — three tables it
+  never conflates: VANILLA per-pair cumulative IC/fuel ledger (`lend_lease_to_allies_history`,
+  giver rows, receiver mirror reconciled, live `lend_lease={first=}` relations + start dates,
+  `recently_leased_ic`), SCRIPTED donor per-archetype (`llr_sent_*`, rows 1–9 overland + 10
+  convoy), SCRIPTED recipient pair matrix (`llr_recv_*`, v32+, donor ids scope-decoded; pre-v32
+  saves say "not recoverable" instead of guessing), plus counters and decoded
+  `wa_ai_lend_lease_targets`. Multi-save = date-ordered `d/save` deltas (cumulative → flow).
+  MEASURED on `24933fb9`: 114 vanilla pairs at 1944.6, CAN→SOV +6 506 IC over 1944.6→7, decode
+  yields clean 3-letter tags (validates the country-ref encoding on a real save). (ii) WA_TLM v32
+  `WA_TLM_llr_recv_donor/_n/_amount` parallel pair arrays on the RECIPIENT, written in
+  `WA_AI_LEND_LEASE_relief_record`'s verified-send branch (all legs incl. convoy row 10); break
+  hygiene + `_llr_pair_idx` init; deliberately no zero-init (absence = never received;
+  witnesses `llr_starving_n`/`llr_first_t` named at the init site). Doc §6e row added.
+- Reviews 2026-08-27: architecture CONCERNS (2 items — `lendlease.py` had to exist: written;
+  witness clause: applied) + lessons CONCERNS (4 items — break hygiene: applied; slot-temp init:
+  already present; save-side decode: verified on a real save via `wa_ai_lend_lease_targets`;
+  SHIPPED-UNTESTED process: this heading).
+- Known limits, stated: the VANILLA channel's per-equipment split is not serialised by the engine
+  (unrecoverable from any save); convoy losses en route invisible; `llr_recv_amount` sums units
+  across archetypes (magnitude — the per-archetype split stays donor-side); recipient arrays
+  freeze on annihilation / civil-war tag flips (write-only telemetry, decoded save-side).
+- Verification: owner console harness — `event wa_test.301` on a donor with a starving recipient
+  (existing LLR harness; `relief_record` now also appends the recv arrays), save, then
+  `lendlease.py <save> --tag <recipient>` shows the pair row. Campaign probe: first v32 campaign,
+  per-recipient `llr_recv_amount` totals reconcile with the donor-side `llr_sent_amount` deltas
+  (global closure, donor vs recipient side).
+- Closed when: the harness output is pasted here AND a v32 campaign shows the recipient matrix
+  populated with donor/recipient closure holding — the full donor→receiver→materiel→channel
+  picture readable from one tool call.
 
 ### aoi-border-garrison — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: at Italy's war entry the AOI garrison must hold the colony's
@@ -635,6 +644,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
   lever is Allied theatre sizing, outside this subject.
 
+### rail-corridors — SHIPPED-UNTESTED (2026-08-27)
+- Scope: owner request 2026-08-27 ("éviter que les IA passent trop de temps en transit maritime").
+  A declared CHEAT, no gameplay-economy intent: once every state along a land corridor is held by
+  one side (faction + subjects), a level-5 railway is spawned instantly and free between the
+  endpoint cities so strategic redeployment prefers land over convoys. 8 corridors:
+  Dakar-Djibouti (Sahel), Pretoria-Khartoum (east-African line), Prayagraj-Karachi, Karachi-Fars
+  (prov 10797), Kuwait-Baghdad, Baghdad-Cairo, Casablanca-Cairo (gated on ALL of North Africa,
+  owner rule), Miami-Halifax (eastern seaboard).
+- State: shipped 2026-08-27. Dispatch `WA_AI_RAIL_CORRIDOR_monthly_tick`
+  (`WA_AI_RAIL_CORRIDOR_effects.txt`, once-per-month global claim via timed flag, retired for good
+  once all 8 built), same-side predicate (`WA_AI_RAIL_CORRIDOR_triggers.txt`), GENERATED gates +
+  builds (`WA_AI_RAIL_CORRIDOR_data.txt`, tool `tools/gen_rail_corridors.py` — BFS on the
+  WA_AI_MAP land adjacency with waypoint anchors; plain BFS was measured cutting through the deep
+  Sahara, hence the waypoints), harness `WA_TEST_rail_corridors.txt` +
+  `events/wa_test_rail_corridors.txt` (report `wa_test_rail.1`, force-builds `.11`-`.18`).
+  Monthly call added in `WA_AI_misc_on_actions.txt`.
+- ASSUMED, stated: (i) `build_railway` over an existing line RAISES it and clamps at
+  MAX_RAILWAY_LEVEL 5 instead of stacking or laying a parallel line — unobservable in script, the
+  force-build events are the visual check; (ii) the engine's build path between two anchors matches
+  the generator's BFS chain only approximately — a deviation can lay track through a state the gate
+  never checked (bounded by the waypoint spacing); (iii) trigger-AND short-circuits left to right.
+- Verification: owner console run owed — `event wa_test_rail.1` (report pasted here), then one
+  force-build (`event wa_test_rail.11`) on a throwaway save with the supply mapmode open: existing
+  rails upgraded not duplicated, level caps at 5. F9 boot test owed (new on_action call + 2 new
+  scripted_effects files + 1 trigger file + 1 event file).
+- Closed when: a campaign save shows (a) at least one corridor's global flag
+  (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
+  only set while the corridor's gate states were same-side at some prior month, and (c) no
+  corridor built while its corridor was split between factions (control: flags all absent in an
+  early-1936 save).
+
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
@@ -642,8 +682,9 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `fra-battle-of-france` | OPEN, fix shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `lend-lease-observability`). Shipped: `FRA_homeland_invaded_recall_colonials_THEATRE` (area_priority -90 NA/med/middle_east, gated `home_threatened`), Alpine pair `FRA_alpine_front_FRONT`/`_THEATRE` (+100 south_france, gated `any_enemy_country = is_italian_homeland_power`), `FRA_defense_of_the_colonies_FRONT` re-armed to -5000 release, no-op `FRA_ignore_garrisons_until_invasion_start` deleted; spec SS25; reviews applied; F9 boot OK. Campaign `24933fb9` NOT CHECKED — `surrender_progress` not serialised and the gate window falls between monthly saves (ITA declares 1940.6.11, FRA dead by 1940.7.1); symptom near-vacuous this run (FRA 3/121 div in NA+Corsica). ASSUMED stated: garrison -5000 release semantics; colonial channel of the ~20 div | Owner report (ironman `feedback_save`, so owner figure not save-MEASURED): FRA garrisons North Africa/Corsica (~20 div) during the Battle of France while the Italian border sits open | A non-ironman Battle-of-France save (mid-June, or the console harness) shows (a) FRA NA+Corsica division count falling once `surrender_progress > 0.05`, (b) >= 2 FRA divisions on the south_france fronts while an Italian homeland power is an enemy, (c) Maginot/fall_rot nets unchanged |
 | `rk-no-divisions` | SHIPPED 2026-08-27 (`1652af012`), parked (WIP limit). **Campaign `24933fb9` PASSED**: 7 of 8 `autonomy_reichskommissariat` tags (RBA/RBE/RGR/RHO/RNO/RPO/RSE) at ZERO divisions on every save, ALB flat at its 3 scripted starters, no count ever rises; ITS-control leg vacuous (ITS never released). F9 boot + error.log id check still OWED | Old brake value -1, war-gated, infantry-id only, tag list missing ITA's 8 RK tags and ENG conversions — RK tags train divisions (MEASURED in code) | F9 boot + error.log id check pass; a campaign shows every `autonomy_reichskommissariat` country (ITS excepted) with zero divisions in training and a non-rising division count (scripted grants aside); control: ITS still fields/trains its colonial divisions. Full record: git log `[rk-no-divisions]` + this file's history |
-| `allied-total-commitment` | TESTED, parked 2026-08-27 (WIP limit; F9 boot test for the CAN reserve-batch reward still OWED). Campaign `24933fb9`: the batch FIRED and DEPLOYED (MEASURED: 10 `Reserve Divisíon` at 1939.11) but was consumed on a front by 1942 and CAN never rebuilds (2-4 div 1941-44 on 104 arms factories — separate defect, candidate subject); leg (a) still FAIL through 1943 (100% home areadef at 1943.6), half the army abroad by 1945.6. Amended same day (owner orders, two rounds): (1) the one-shot closes the reserve program after its batch — `WA_reserves_unlock_template` + `reserves_deployment_complete_flag` applied directly (NOT a bank flush; owner refused deploying more) so the template becomes modifiable; (2) a READY batch (bank >= 10) is spent like a normal activation — the +10 grant fires only on an empty/short bank, so no residual bank remains when the country had recruited its own. Fresh campaigns only (a save past the focus keeps its locked template). Reviews: architecture OK, lessons CONCERNS — retroactivity stated here, no `break` writes in the deploy path (MEASURED), refill impossible pre-unlock (`WA_reserves_can_recruit` needs `has_war = no`, the focus needs `has_war = yes`) | CAN 4-9 div, 100% areadef home garrison (`8f9b5653`); release trigger PROVEN on CAN (wa_tc.1 harness 1942.2, closure PASS); `garrison -5000` engine honour still ASSUMED | Campaign legs: (a) CAN majority front/buffer outside North America while home safe; (b) AST/NZL/RAJ areadef ~0 while Pacific quiet AND re-garrisoned within 3 months of `pacific_threat_imminent`; (c) dominions on African fronts once past the 6-factory floor; (d) control: a non-faction minor at war keeps its home garrison; plus SS24 bulwark-guest probe (zero Commonwealth div on FRA soil while FRA holds `disjointed_government`, historical difficulty). Full record: git log of this file + [allied-total-commitment] commits |
+| `allied-total-commitment` | TESTED, parked 2026-08-27 (WIP limit; F9 boot test for the CAN reserve-batch reward still OWED). Campaign `24933fb9`: the batch FIRED and DEPLOYED (MEASURED: 10 `Reserve Divisíon` at 1939.11) but was consumed on a front by 1942 and CAN never rebuilds (2-4 div 1941-44 on 104 arms factories — separate defect, candidate subject); leg (a) still FAIL through 1943 (100% home areadef at 1943.6), half the army abroad by 1945.6. Amended same day (owner orders, two rounds): (1) the one-shot closes the reserve program after its batch — `WA_reserves_unlock_template` + `reserves_deployment_complete_flag` applied directly (NOT a bank flush; owner refused deploying more) so the template becomes modifiable; (2) a READY batch (bank >= 10) is spent like a normal activation — the +10 grant fires only on an empty/short bank, so no residual bank remains when the country had recruited its own. Fresh campaigns only (a save past the focus keeps its locked template). Reviews: architecture OK, lessons CONCERNS — retroactivity stated here, no `break` writes in the deploy path (MEASURED), refill impossible pre-unlock (`WA_reserves_can_recruit` needs `has_war = no`, the focus needs `has_war = yes`) | CAN 4-9 div, 100% areadef home garrison (`8f9b5653`); release trigger PROVEN on CAN (wa_tc.1 harness 1942.2, closure PASS). **Owner imgui 2026-08-27 (MEASURED): CAN garrison tree = ONE summed entry, Weighted Value -4950 (-5000 release + 50 minors_home_first) — armed, held, and SUMMED (first direct proof same-type/same-target entries sum) — yet the home engine areadef divisions do not move: a negative `garrison` does NOT empty existing engine area-defense orders; the buffer is the proven mover (Scotland div, 1942.3).** Shipped same day (owner order "zéro division au mainland"): `protect_home_floor` gated off under `total_commitment_active` (threatened +200 tier keeps its own gate), new `CAN_THEATRE_total_commitment_empty_mainland` buffer ratio 0.75 (sums with defend_britain 0.25 to 1.0, per-order summing ASSUMED) on the britain states, `subtract_fronts_from_need` so front divisions stay abroad. Reviews: architecture CONCERNS (SS23 consumer rows + summing relabelled) + lessons CONCERNS (all applied: 0.75 re-sized as its own order — the ratio-pool arithmetic is lessons-REFUTED, each block is a separate order and >1.0 arbitration UNKNOWN; buffer→continental-front feed labelled ASSUMED, USA unit_buffer_for_europe pattern; no new ai_area alias, area=britain reused, cap-72 item void). **Landing-residual t0/t1/t2, stated:** t0 enemy lands on a Canadian core → `home_theatre_threatened` trips at the enemy-on-core term; t1 next engine strategy re-evaluation (ASSUMED sub-weekly, SS23 cadence limit) — commitment flips off, buffer disarms, threatened +200 arms; t2 transatlantic return crossing ~2-4 weeks; worst case ~3-5 weeks of thin mainland, and front-engaged divisions in Europe return slower still — ACCEPTED, it is the owner's zero-mainland order. defend_britain 0.25 armed for CAN is MEASURED (the 1942.3 Lanark order, states byte-equal); both-blocks-together is only observable next campaign. F9 boot owed. Probe: next campaign, zero CAN divisions in Canadian states while committed and home safe (vs 2-3 in `24933fb9`), AND CAN divisions appearing on continental fronts (tests the buffer feed) | Campaign legs: (a) CAN majority front/buffer outside North America while home safe; (b) AST/NZL/RAJ areadef ~0 while Pacific quiet AND re-garrisoned within 3 months of `pacific_threat_imminent`; (c) dominions on African fronts once past the 6-factory floor; (d) control: a non-faction minor at war keeps its home garrison; plus SS24 bulwark-guest probe (zero Commonwealth div on FRA soil while FRA holds `disjointed_government`, historical difficulty). Full record: git log of this file + [allied-total-commitment] commits |
 | `scripted-invasion-reservation` | OPEN, parked 2026-08-27 (owner order; console harness legs A-C PASSED 2026-08-23, leg (b) NOT CHECKED on `8f9b5653` - the Allied AI never wanted a French landing, so the mechanism never ran) | Halab 1944.6: USA order 252 holds 9 divisions on a GER-held, GER-flagged reserved target - H1 (@FROM inert in ai_strategy context) vs H2 (-200 outbid on a pre-existing order) undecidable from the save | A campaign in which the Allied AI wants a reserved beach shows no engine invasion order against it; or an ai_strategy-context harness leg proves @FROM renders. Full record: git log of this file + [scripted-invasion-reservation] commits |
 | `uk-truck-supply` | SHIPPED 2026-08-27, boot OK. **Campaign `24933fb9` PASSED on the stock leg**: ENG motorized stock 8k-19.6k in every war save (5-13x the 1500 floor), the deficit pathology absent. Criterion correction: ENG is on the >49-factory band from ~1937 (117-330 arms factories), never the 30-49 tier the criterion names; the live lever is `min_wanted_supply_trucks = 2000`. Africa hub-motorization leg NOT CHECKED. Probe defect: the `var` probe is void — both levers are trigger literals/ai_strategy, probe with `stock.py --all --match motorized` + `buildings --match arms_factory` | Owner: ENG truck deficit every game, Africa supply fulfillment < 50%. MEASURED in code: demand multiplied (hub cost 60->500, motorize ratio 0.95, buffer 1.2) while ENG (36 arms factories) sat on the 3-factory tier with a 1000-stock cutoff | A campaign shows ENG on the 6-factory tier with motorized stock >= 1500 sustained at war, and Africa hub motorization no longer truck-starved. Shipped: stock bar 1500 = lend-lease starve (registry truck_stock_starve_floor), 30-49-factory tier at 6, min_wanted_supply_trucks 2000/1000 (vanilla precedent SIA). Successor of the raj-trucks SAF-tier residual |
 | `suppression-templates` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: countries burn army XP designing 4x-light-cav garrison templates, field them to the FRONT, and the template (no MP) is also the state-garrison pick. MEASURED in code: role prio 1000 (~37% of XP draws), reinforce_prio 1, use_suppression_templates = always yes | A campaign shows minors' army XP not spent on suppression templates while neutral, and no suppression-template divisions under front orders. Shipped: trigger gated (war OR non-core control) + LATCH on the existing flag (no mid-campaign decommission flip), role prio 50, reinforce_prio 0, dead build_army_cavalry pair deleted. Engine garrison scoring untouched |

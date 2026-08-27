@@ -626,7 +626,7 @@ Standing, not probes, under §3.8 criteria 2 and 3: every AI country runs this q
 campaign, and the R49/R53 local scorings (2026-08-15/16) each required a bespoke general_lines
 join to answer "how deep / how wide did it place".
 
-## 6e. Lend-lease surplus relief (standing, v18; maritime extension v28)
+## 6e. Lend-lease surplus relief (standing, v18; maritime extension v28; pair matrix v32)
 
 `WA_AI_LEND_LEASE_request_surplus_relief` (`WA_AI_lend_lease_effects.txt`, weekly, ROOT =
 recipient) pulls an overland `send_equipment` from ONE donor per week for the nine land-equipment
@@ -646,6 +646,7 @@ refused, or which leg fired. Standing under §3.8 criterion 3 (every AI country 
 | `WA_TLM_llr_sent_n^idx` / `WA_TLM_llr_sent_amount^idx` | per-archetype counter + amount, on the DONOR, arrays sized 11 | `WA_AI_LEND_LEASE_relief_record` after the `send_equipment`, ONLY when the recipient's free stock re-read rose above the pre-send read (idx = constants row: 1 infantry, 2 heavy_infantry, 3 support, 4 artillery, 5 heavy_artillery, 6 anti_tank, 7 anti_air, 8 motorized, 9 train, 10 convoy; 0 unused) | R7b / R56 — which leg moved and how much; read with `savegame.py var TAG "^wa_tlm_llr_sent"` (indexed arrays, not ring buffers — the `tlm` renderer would misread them) | v18; idx 10 v28 |
 | `WA_TLM_llr_send_failed_n` | counter, on the DONOR | same site, the ELSE branch: the recipient's free stock did not rise across the meta_effect send | R7b / R56 — must read 0; > 0 means the rendered `send_equipment` failed silently (see the meta_effect lesson) | v18 |
 | `WA_TLM_llr_first_t` / `_last_t` | stamps, on BOTH sides | same site | R7b — timing; `_first_t` written under a `= 0` guard | v18 |
+| `WA_TLM_llr_recv_donor` / `WA_TLM_llr_recv_n` / `WA_TLM_llr_recv_amount` | pair-keyed parallel arrays, on the RECIPIENT (donor country-id / verified sends / cumulative units) | `WA_AI_LEND_LEASE_relief_record`, same verified-send gate as `llr_sent_*`; the donor id is appended on first receive from that donor, then the parallel slots accumulate | the donor→recipient matrix of the scripted channel, both land legs and convoy row 10; units are summed across archetypes (heterogeneous — a magnitude, cross-read against the donor's `llr_sent_amount^idx` for the per-archetype split). Deliberately NOT zero-initialised: absent = never received (the zero-init'd `llr_starving_n` / `llr_first_t` beside it witness that the family exists on the build). Donor ids are engine scope-encoded (`round(v*1e5) − 2^30` = tag as 3 little-endian ASCII bytes); read with `lendlease.py` (decodes them) rather than raw `var TAG "^wa_tlm_llr_recv"` | v32 |
 
 ## 7. Adding a metric — checklist for authors
 

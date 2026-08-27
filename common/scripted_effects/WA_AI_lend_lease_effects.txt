@@ -159,9 +159,10 @@ WA_AI_clear_lend_lease_targets = { # THIS = SENDER
 # TRUE), while amount and target are rendered from variables (the exact form the boot test proved).
 # Do not "factor" further.
 #
-# Telemetry (WA_TLM v18; convoy extension v28): llr_starving_n / llr_donor_selected_n /
-# llr_path_refused_n on the RECIPIENT, plus llr_convoy_starving_n / _donor_selected_n,
-# llr_sent_n^idx / llr_sent_amount^idx on the DONOR (idx = row order of the constants file),
+# Telemetry (WA_TLM v18; convoy extension v28; pair matrix v32): llr_starving_n /
+# llr_donor_selected_n / llr_path_refused_n on the RECIPIENT, plus llr_convoy_starving_n /
+# _donor_selected_n, llr_sent_n^idx / llr_sent_amount^idx on the DONOR (idx = row order of the
+# constants file), llr_recv_donor / _n / _amount pair arrays on the RECIPIENT,
 # llr_first_t / llr_last_t on both - counted on the verified send only, never on entry.
 WA_AI_LEND_LEASE_request_surplus_relief = {
 	if = {
@@ -304,9 +305,32 @@ WA_AI_LEND_LEASE_relief_record = {
 	add_to_variable = { WA_TLM_llr_sent_amount^_llr_arch_idx = _llr_amount }
 	if = { limit = { check_variable = { WA_TLM_llr_first_t = 0 } } set_variable = { WA_TLM_llr_first_t = global.WA_TLM_clock } }
 	set_variable = { WA_TLM_llr_last_t = global.WA_TLM_clock }
+	# tlm: llr_recv_donor / llr_recv_n / llr_recv_amount - [lend-lease-observability] the pair
+	# matrix on the RECIPIENT: parallel arrays (donor country-id / verified sends / units, all
+	# archetypes incl. convoy row 10 summed), appended on the verified send only, same gate as
+	# llr_sent_*. Assumes the shared temp pool across the ROOT hop (probe wa_test.301: 4242) and
+	# the country-id array encoding WA_AI_lend_lease_targets already uses.
+	set_temp_variable = { _llr_donor_id = THIS.id }
 	ROOT = {
 		if = { limit = { check_variable = { WA_TLM_llr_first_t = 0 } } set_variable = { WA_TLM_llr_first_t = global.WA_TLM_clock } }
 		set_variable = { WA_TLM_llr_last_t = global.WA_TLM_clock }
+		set_temp_variable = { _llr_pair_idx = -1 }
+		# break hygiene: a leaked break = 1 from an earlier effect aborts a default-break loop
+		set_temp_variable = { break = 0 }
+		for_each_loop = { array = WA_TLM_llr_recv_donor
+			if = { limit = { check_variable = { v = _llr_donor_id } }
+				set_temp_variable = { _llr_pair_idx = i }
+			}
+		}
+		if = { limit = { check_variable = { _llr_pair_idx < 0 } }
+			add_to_array = { array = WA_TLM_llr_recv_donor value = _llr_donor_id }
+			add_to_array = { array = WA_TLM_llr_recv_n value = 0 }
+			add_to_array = { array = WA_TLM_llr_recv_amount value = 0 }
+			set_temp_variable = { _llr_pair_idx = WA_TLM_llr_recv_donor^num }
+			subtract_from_temp_variable = { _llr_pair_idx = 1 }
+		}
+		add_to_variable = { WA_TLM_llr_recv_n^_llr_pair_idx = 1 }
+		add_to_variable = { WA_TLM_llr_recv_amount^_llr_pair_idx = _llr_amount }
 	}
 	if = { limit = { ROOT = { has_country_flag = WA_AI_logging } } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | LEND-LEASE: surplus relief archetype [?_llr_arch_idx] x [?_llr_amount] received from [This.GetName]" }
 	}
