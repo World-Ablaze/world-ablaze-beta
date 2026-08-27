@@ -217,13 +217,16 @@ WA_reserves_deploy_batch = {
 	WA_reserves_spawn_divisions = yes
 }
 
-# [allied-total-commitment] One-shot grant for rewards outside the recruit->deploy decision
-# loop: credits one batch, deploys it, then CLOSES the reserve program on the spot (owner
-# rule: the wave must finish deploying so the template can be modified) - the unlock +
-# complete flag mirror finish_recruitment_of_reserves, which would otherwise never arm for
-# an expeditionary-only country whose residual bank cannot drain (deploy decision factor-0).
+# [allied-total-commitment] One-shot reward outside the recruit->deploy decision loop: a
+# READY batch (bank >= 10) is spent like a normal activation, the grant tops up only an
+# empty/short bank; then the program CLOSES on the spot (owner rule: the wave must finish
+# deploying so the template can be modified) - the unlock + complete flag mirror
+# finish_recruitment_of_reserves, which never arms for an expeditionary-only country.
 WA_reserves_grant_and_deploy_batch = {
-	add_to_variable = { ROOT.reserves = 10 }
+	if = {
+		limit = { NOT = { check_variable = { ROOT.reserves > 9 } } }
+		add_to_variable = { ROOT.reserves = 10 }
+	}
 	WA_reserves_deploy_batch = yes
 	WA_reserves_unlock_template = yes
 	set_country_flag = reserves_deployment_complete_flag
