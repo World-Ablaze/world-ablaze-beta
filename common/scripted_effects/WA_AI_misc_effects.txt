@@ -949,6 +949,14 @@ WA_AI_check_resource_needs = {
 # trigger holds bounds the flap to at most one flip-back. Cleared by nothing - a fresh
 # campaign starts unlatched. Consumer: WA_AI_MILITARY_pacific_offensive_ready.
 WA_AI_MILITARY_update_pacific_phase_latch = {
+	# migrate the pre-rename flag so a resumed save keeps its latch (without this, a
+	# renamed-flag save starts un-latched and may flap once more until _live re-holds
+	# at a monthly tick - that one extra flip is the whole exposure).
+	if = {
+		limit = { has_country_flag = WA_AI_USA_pacific_offensive_latched }
+		set_country_flag = WA_AI_pacific_offensive_latched
+		clr_country_flag = WA_AI_USA_pacific_offensive_latched
+	}
 	if = {
 		limit = {
 			WA_AI_CONFIG_MILITARY_is_anglo_major = yes

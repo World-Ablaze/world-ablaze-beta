@@ -311,6 +311,19 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
   full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
   ENG-refactor chantier), sicily sign conflict (design accounts for it via the bridge +50).
+- Reviews on the batch 2026-08-27: architecture CONCERNS (2 — provenance stripped from the 10
+  new headers per rule 7; the pre-rename latch flag is now MIGRATED in the latch effect, so a
+  resumed save keeps its latch) + lessons CONCERNS (3 — (i) archaeology done: at the authoring
+  commit 79d64f6ff region 168 was already written 3× and 42 5× across independently-named
+  blocks with no comment claiming a stacked total — the sums were ACCRETION, not calibration,
+  so the single faction wall at the type's band is the honest form; (ii) the new F9 line below
+  is that item; (iii) the courtesy trio's tag-anchored gates now carry their ASSUMED-FACT
+  sentences at the site — UKO holds Malaya, ENG/NZL hold 636/726, CHI/PRC are the two Chinas).
+  Latch flap bound restated at real cadences (engine-eval flips possible only inside the first
+  month, zero after the latch). Pre-registered campaign probe for the halvings: `navy --fleets`
+  region lists — anglo fleets do NOT newly operate in 168 Adriatic / 42 Biscay / 202 Aegean
+  while those walls' conditions hold (a fleet parked there post-change = the halving was
+  load-bearing, re-raise the wall).
 - **NEW F9 BOOT OWED (this batch is CTD-class again: blocks deleted across USA+ENG files,
   5 new FACTION blocks, 1 new DEFAULT block) — owner: cold launch before the next campaign.**
 - Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
