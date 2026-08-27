@@ -1,0 +1,87 @@
+############################################################################################################
+# WA TEST - theorist-hiring safety net console harness. harness-contract: v1 (wa-testing SKILL).
+# Recipe: events/wa_test_theorist_hire.txt header. Output: logs/game.log under "THEORIST NET".
+# Country scope (ROOT = the reported country; fire the event PER COUNTRY, never loop every_country).
+############################################################################################################
+
+# Report: prints each gate term of WA_AI_ADVISOR_should_hire_army_theorist as an INDEPENDENT walk
+# (own limits, never the shipped trigger) and then the shipped trigger's own verdict last -
+# a disagreement localises the fault to one side.
+WA_TEST_TH_report = {
+	log = "=== THEORIST NET [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _th_e1_ = 0 }
+	set_temp_variable = { _th_e2_ = 0 }
+	set_temp_variable = { _th_e3_ = 0 }
+	set_temp_variable = { _th_e4_ = 0 }
+	set_temp_variable = { _th_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _th_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _th_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _th_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _th_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _th_e5_ = 1 } }
+	log = "  scope : always=[?_th_e1_|.0]  I-am-ROOT=[?_th_e2_|.0]  I-am-THIS=[?_th_e3_|.0]  ROOT-scope-usable=[?_th_e4_|.0]  control-false=[?_th_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### Independent walk - each gate term measured on its own
+	set_temp_variable = { _th_is_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _th_is_ai = 1 } }
+	set_temp_variable = { _th_capit = 0 }
+	if = { limit = { has_capitulated = yes } set_temp_variable = { _th_capit = 1 } }
+	set_temp_variable = { _th_date_ok = 0 }
+	if = { limit = { date > 1938.1.1 } set_temp_variable = { _th_date_ok = 1 } }
+	set_temp_variable = { _th_pp_ok = 0 }
+	# 200 mirrors @WA_AI_ADVISOR_pp_floor (WA_AI_ADVISOR_triggers.txt) - independent-walk duplicate
+	# on purpose (harness contract 4); update BOTH if the floor moves
+	if = { limit = { has_political_power > 200 } set_temp_variable = { _th_pp_ok = 1 } }
+	set_temp_variable = { _th_slot_empty = 0 }
+	if = {
+		limit = {
+			amount_taken_ideas = {
+				amount < 1
+				slots = { army_theorist }
+			}
+		}
+		set_temp_variable = { _th_slot_empty = 1 }
+	}
+	set_temp_variable = { _th_candidates = 0 }
+	every_character = {
+		limit = {
+			has_advisor_role = army_theorist
+			is_hired_as_advisor = no
+		}
+		add_to_temp_variable = { _th_candidates = 1 }
+	}
+	log = "  gates : is_ai=[?_th_is_ai|.0] capitulated=[?_th_capit|.0] date>1938=[?_th_date_ok|.0] pp>200=[?_th_pp_ok|.0] (pp=[?political_power|.0]) slot_empty=[?_th_slot_empty|.0] candidates=[?_th_candidates|.0]"
+
+	### Shipped trigger's own verdict, for comparison with the walk above
+	set_temp_variable = { _th_verdict = 0 }
+	if = {
+		limit = { WA_AI_ADVISOR_should_hire_army_theorist = yes }
+		set_temp_variable = { _th_verdict = 1 }
+	}
+	log = "  net   : should_hire=[?_th_verdict|.0]  (walk says [?_th_is_ai|.0][?_th_date_ok|.0][?_th_pp_ok|.0][?_th_slot_empty|.0] with candidates>[?_th_candidates|.0] and capitulated=[?_th_capit|.0] - disagreement = fault in trigger or walk, stop and compare)"
+}
+
+# Execute: runs the REAL shipped effect once (exercise, not measurement), then reports the
+# slot state so the hire is visible in one firing. The country must still be AI (observer
+# game: fire per tag, do not tag into it - tagging makes it the player and is_ai goes false).
+WA_TEST_TH_execute = {
+	log = "=== THEORIST NET EXECUTE [This.GetName] [GetDateText] ==="
+	# PP printed BEFORE and AFTER: settles whether activate = yes also charges the role cost
+	# (after = before - 100 expected; before - 200 = engine double-charges, lower the constant)
+	log = "  pre   : pp=[?political_power|.0]"
+	WA_AI_ADVISOR_hire_army_theorist = yes
+	set_temp_variable = { _th_after = 0 }
+	if = {
+		limit = {
+			amount_taken_ideas = {
+				amount > 0
+				slots = { army_theorist }
+			}
+		}
+		set_temp_variable = { _th_after = 1 }
+	}
+	log = "  post  : army_theorist_hired=[?_th_after|.0]  pp=[?political_power|.0]"
+}

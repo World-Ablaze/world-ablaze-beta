@@ -1,0 +1,52 @@
+############################################################################################################
+# WA AI Advisor effects - scripted advisor safety net.
+# Country scope (ROOT = the country), called from the monthly AI pulse.
+# Behavioural switches live in WA_AI_ADVISOR_triggers.txt, not here.
+############################################################################################################
+
+# [theorist-hiring] single source for the hire cost: rendered as a NUMBER into the meta text
+# (meta renders numeric variables; an @ inside meta text is unvalidated) and negated into the
+# manual PP charge (variable form is in-repo proven: NOR_scripted_effects.txt:190).
+@WA_AI_ADVISOR_pp_cost = 100
+
+# [theorist-hiring] replaces the candidate's unhired role and hires the replacement - generic
+# activation of an EXISTING role is impossible (activate_advisor needs the per-character token),
+# and the remove prevents two same-slot roles on one character. Standard trait on purpose: the
+# authored role sat unhired for 2+ years and military_theorist carries the army XP trickle.
+# Re-fire after a fired/dead theorist re-adds the same token - add_advisor_role on an existing
+# token updates the role (ASSUMED). PP charged manually; whether activate = yes also charges is
+# ASSUMED - the harness prints PP before/after to settle it (double charge = lower the constant).
+WA_AI_ADVISOR_hire_army_theorist = {
+	if = {
+		limit = {
+			WA_AI_ADVISOR_should_hire_army_theorist = yes
+		}
+		set_temp_variable = { _adv_cost = @WA_AI_ADVISOR_pp_cost }
+		random_character = {
+			limit = {
+				has_advisor_role = army_theorist
+				is_hired_as_advisor = no
+			}
+			remove_advisor_role = { slot = army_theorist }
+			meta_effect = {
+				text = {
+					add_advisor_role = {
+						advisor = {
+							slot = army_theorist
+							idea_token = WA_AI_army_theorist_[TAG]
+							ledger = army
+							cost = [COST]
+							allowed = { always = yes }
+							traits = { military_theorist }
+						}
+						activate = yes
+					}
+				}
+				TAG = "[ROOT.GetTag]"
+				COST = "[?_adv_cost|.0]"
+			}
+		}
+		multiply_temp_variable = { _adv_cost = -1 }
+		add_political_power = _adv_cost
+	}
+}
