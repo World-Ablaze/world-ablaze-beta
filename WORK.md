@@ -190,6 +190,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   now reads GER (Tunisia pad 3 > desert pad 2), so the next re-selection moves its schwerpunkt
   off the 24-month desert pointer onto the front where its divisions stand — the L3 unpinning,
   observable in-game. Full log in the session transcript; `wa_aifc.1 <TAG>` re-runs any tag.
+- **Fork run 1944.4 → 1944.5.30 on the floor build (owner, `wa_aifc.2`, 2026-08-27) — the floor's
+  live behaviour over ~2 re-selection cycles, MEASURED:**
+  (i) **ITA UNPINNED**: anchor moved 456 Upper Egypt (pad 1, now floor-blocked) → 676 Ninawa
+  (pad 2, eligible) vs ENG — the floor visibly moved an anchor off a pad-1 state.
+  (ii) **ENG mid-unpin**: stored sector still 552 Western Desert vs ITA (age 2wk, a ~May-16
+  decision) while TODAY's landscape reads desert pad 1 = floor-blocked, sole eligible = Tunisia
+  pad 3, main enemy GER. Prediction, testable in ~2-3 game-weeks (age > 4 forces re-selection):
+  the desert anchor cannot survive it — re-run `wa_aifc.1 ENG` then; if 552 persists past
+  mid-June with pad 1, that is a floor bypass to diagnose. ASSUMED: whether the May-16 selection
+  saw desert pad ≥ 2 (legitimate) — pads move with divisions, not decidable from this log.
+  (iii) **GER/SOV/CHI stable AND on-mass**: anchors 193/203/593 unchanged across cycles, each on
+  its max-pad candidate (9/9/9) — re-selection now converges instead of hopping.
+  (iv) **The residual L1 churn shape, isolated**: JAP sector vs PRC while its max pad reads CHI;
+  PRC hopped 936 Henan/JAP → 746/Mengjiang (age 1wk) — hopping continues exactly where several
+  enemies hold NEAR-EQUAL pads (6-7). DERIVED: L1's remaining lever is not mass-awareness (done)
+  but INCUMBENCY — the current anchor has no defender's bonus, so a 1-band pad wobble flips the
+  main enemy. That is the "AIFC dwell" hysteresis `allied-division-stability` Step B names;
+  design decision (margin size, keep-while-valid vs score bonus) is the owner's, not shipped.
+  (v) USA unchanged (0 candidates, 0 ally states with 3+ of its 44 divisions) — consistent with
+  the L2 no-fix ruling; FRA control still correctly gated.
 - Scope: owner request 2026-08-27 ("diagnostic masse qui ne suit pas + USA + ENG bloqué dans le
   désert"), from the AIFC passivity measurement (campaign `24933fb9`, quarterly sweep
   1939.9→1945.10, 3 extraction passes; full tables in the session scratchpad
