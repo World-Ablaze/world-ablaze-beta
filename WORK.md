@@ -45,16 +45,46 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > 34 MIL / 4 div and AST/NZL never banking point the same way), ENG leg **FAIL** (bank 40 → 0 over
 > 1945.2.1-5 with the British Isles INTACT — MEASURED zero home provinces lost; DERIVED suspect:
 > IRQ at war with ENG since 1945.1.14 tripping `any_home_area_neighbor_country`, i.e. the Middle
-> East counts as "home area"; console/live check needed, not save-decidable). **NEW ALARM,
-> candidate subject: the ENG release spawned 4 batches = 40 divisions on 1945.2.1-5 and ONE
-> survives to 1945.3** (deployed 20 → 19, one `Reserve Divisíon` in the field; the bank debit at
-> `WA_reserves_effects.txt:206` is unconditional even when `create_unit` fails). Second candidate
-> CONFIRMED live and sharpened: **CAN never rebuilds** — 1-2 divisions 1942-1945 on 37→100 arms
-> factories (worse than `24933fb9`'s 2-4); the snowball the bank was built for did not happen
-> (its one-shot batch 1939.10 was consumed by 1941 and `reserves_deployment_complete_flag` closes
-> the program forever). Third candidate: **ENG fields ZERO armour and ZERO mech the entire
-> campaign** (`armor_mech_pct_hist` 0 in 37/39 samples, live stamps) while declining 43 → 19
-> divisions — see F8. None admitted (WIP limit; owner decision).
+> East counts as "home area"; console/live check needed, not save-decidable).
+> **Candidate validation pass 2026-08-27 (owner doubt, three subagents, six-boxed each):**
+> **(1) eng-reserve-wave — REAL, re-stated.** MEASURED: the release dumped 4 batches = 40
+> unequipped divisions (create_unit 0.3 eq / 0.3 xp) into London over 1945.2.1-5
+> (`days_remove = 1`, no throttle) and **ZERO survive to 1945.3** — the "1 survivor" first
+> reported was pre-existing div 107628 (byte-identical strength both saves); killing closure:
+> `post_mortem` records +41 in the month vs +1/0 in adjacent months, and 20 + 40 − 41 = 19
+> exact. The `:206` unconditional-debit suspicion is KILLED as the cause (spawn fired; the
+> hazard stays latent). Mechanism: the ENG brake `WA_reserves_is_expeditionary_only`
+> (`WA_reserves_triggers.txt:287-292`) is defeated by its own AND-preconditions exactly when
+> ENG is losing — IRQ at war 1945.1.14 (home-neighbour term) or `surrender_progress > 0` (22
+> states lost); which term = not save-decidable, one console read settles it. Where the 40
+> died (Tunisia front vs sea transit) is the engine boundary, ASSUMED.
+> **(2) can-no-army-demand — REAL, causal clause corrected.** The symptom holds (1-2 div on
+> 100 MILs; closure exact on all 4 cells) and every material binder is KILLED: not lent (0
+> `expeditionary_owner="CAN"`, positive control works), not training-stuck (queue asks for 1),
+> not manpower (`all_adults_serve`, need fully met), not equipment (**153 332 own-built rifles
+> hoarded** ≈ 150 divisions' worth), not the template (byte-identical to AST's). Design intent
+> KILLED by the controls: SAF/NZL, equally safe, run 0.14-0.15 div/MIL vs CAN 0.02. But the
+> gap is NOT "upstream of the garrison/commitment rules" — it IS them: CAN's only always-on
+> army mission is `put_unit_buffers ratio = 0.25` (`WA_AI_MILITARY_COUNTRY_CAN_THEATRE.txt:44`
+> — engine doc: a FRACTION of the existing army, self-satisfying at any size, cannot size an
+> army), and the `total_commitment` gate (`CAN_FRONT.txt:103`, the owner's own zéro-mainland
+> order) removed the last absolute `front_unit_request` (+10 home floor) — empty request set →
+> the engine builds to nothing. CAN is the one dominion with no live front to feed requests
+> (RAJ Burma, AST Pacific). Meanwhile CAN industry is NOT idle: top vanilla lend-lease pair of
+> the campaign (CAN→SOV 206 656 IC) — it functions as the Allied arsenal. The INTERACTION of
+> the two rules, not either alone, is the defect. Engine boundary ASSUMED: how request-sets
+> convert to wanted-division counts; owner imgui on CAN decides.
+> **(3) eng-zero-armour — KILLED, TELEMETRY-ARTIFACT, do not admit.** Ground truth
+> (`plans.py --templates`, 4 dates): ENG held 3-5 armour + 1 mech divisions CONTINUOUSLY, on
+> front orders, 72 factories on tank chassis at 1943.6, ~2 340 own-built hulls in stock.
+> `wa_tlm_comp_armor/mech`'s lowest band is `size > 4` (`WA_TLM_core.txt:659/:675`) so the
+> gauge floors to 0 below 5 divisions; the hist "spikes" are the band crossing exactly 5
+> (5/34 = 14.7059, 5/43 = 11.6 — both reconcile to printed precision). Meta-defect recorded
+> in F8: the comp gauges are unusable below ~5 armour divisions (band index over real count) —
+> a WA_TLM fix is its own candidate (meta, owner request required). The real residue folds
+> into F8's ENG attrition 43 → 19 (active losses at the last save, `num_armies_for_training`
+> 24.5 vs 19 tell). Candidates (1) and (2) admissible; none admitted this session (WIP limit;
+> owner decision).
 
 > **Campaign `24933fb9` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 118 monthly saves
 > 1936.2-1945.11, unbranched, build = HEAD `2f16ec583` — DERIVED from push 03:46 / run 04:05, and
