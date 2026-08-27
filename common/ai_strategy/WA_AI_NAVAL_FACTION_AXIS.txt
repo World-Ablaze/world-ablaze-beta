@@ -28,3 +28,34 @@ WA_AI_NAVAL_FACTION_AXIS_deep_atlantic_avoidance = {
 	ai_strategy = { type = naval_avoid_region id = 61 value = 1000 } # Cap Verde Plain
 	ai_strategy = { type = naval_avoid_region id = 62 value = 1000 } # Gulf of Guinea
 }
+
+
+# purpose: [aoi-border-garrison] while the AOI is cut off (Suez hostile) the owner-defender neither
+#          reinforces nor evacuates the colony by sea: the whole lane to East Africa is closed to its
+#          navy and - ASSUMED, the type's effect on division naval transfers is undocumented and
+#          unverified - to its unit convoys. The avoid works both ways, which is what stops a mainland
+#          pull-back as much as a mainland pull-in. Capital term: an African-capital owner (ITS) keeps
+#          its own home waters. Region ids resolved via regions.py against WA's map (never vanilla's).
+# range:   0 to +1000
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_AXIS_east_africa_cut_off_sea_lane = {
+	enable = {
+		# side term (architecture review): only the Italian-homeland side is "cut off" by a hostile Suez;
+		# an Allied conqueror of the AOI must never inherit an avoid on its own Indian-Ocean lanes
+		OR = {
+			WA_AI_MILITARY_is_italian_homeland_power = yes
+			WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+		}
+		WA_AI_MILITARY_owns_east_africa_colony = yes
+		WA_AI_MILITARY_east_africa_sea_route_hostile = yes
+		capital_scope = { NOT = { is_on_continent = africa } }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 100 value = 1000 } # Red Sea
+	ai_strategy = { type = naval_avoid_region id = 323 value = 1000 } # Gulf of Suez
+	ai_strategy = { type = naval_avoid_region id = 308 value = 1000 } # Gulf of Aden
+	ai_strategy = { type = naval_avoid_region id = 104 value = 1000 } # Arabian Sea
+	ai_strategy = { type = naval_avoid_region id = 60 value = 1000 } # West Indian Ocean
+}

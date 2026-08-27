@@ -599,6 +599,38 @@ behaviour falls back to today's, minus nothing. Verification owned by the `aoi-b
 in WORK.md (owner `imgui show ai-strategy` on ITA/ITS + campaign probe; §12's R62 telemetry was retired
 - re-instrument before scoring).
 
+---
+
+**[aoi-border-garrison] second leg (2026-08-27, owner report on the exemption's hole) - the colony is
+prepositioned, then fights CUT OFF.**
+
+The exemption above removed every negative on region 17 for the owner, so once at war the border front
+requested units from the global pool and the engine shipped them from Europe past the Allied navy
+(owner report; ITA in the AOI grew 9 → 11–23 across `24933fb9`). The engine never refuses such a
+route on naval superiority alone: `MAX_ALLOWED_NAVAL_DANGER = 80` while complete enemy superiority
+contributes at most `TRANSFER_DANGER_HOSTILE_SHIPS = 50` (install `00_defines.lua:2684-2685`), and WA's
+own `05_defines.lua` makes transit 4× less punished (`NAVAL_TRANSFER_DAMAGE_REDUCTION` 0.0625) and
+4.5× faster (`NAVAL_TRANSFER_BASE_SPEED` 27).
+
+Three pieces, all keyed on the new control-panel trigger
+`WA_AI_MILITARY_east_africa_sea_route_hostile` (at war + an enemy controls Suez 923; releases when our
+side takes the canal):
+
+| Piece | Change |
+| --- | --- |
+| `ITA_east_africa_garrison_THEATRE` | ratio 0.10 → **0.20** (owner order): ~2× the prepositioned colonial army, filled in peacetime while the seas are open. ITA non-yielding buffer budget rises to 0.69, inside the E4c 0.75 cap |
+| `AXIS_abandon_east_africa_owner_cut_off_THEATRE` (new) | the owner-defender's own −200 on `colony_regions` {17}, armed only while cut off — kills the theatre-level pull that shipped divisions in. Exclusive with `_colony_THEATRE` by construction (owns vs NOT owns); capital-outside-Africa term keeps ITS exempt; deliberately not under the family gate (cut-off is a physical fact) — but both new blocks DO carry the family gate's Italian-homeland-side OR-term (architecture review): the cut-off premise only holds for the Mediterranean-homeland side, and an Allied conqueror of the AOI must never inherit the brake or the Indian-Ocean avoid |
+| `WA_AI_NAVAL_FACTION_AXIS_east_africa_cut_off_sea_lane` (new) | `naval_avoid_region` +1000 on Red Sea 100 / Gulf of Suez 323 / Gulf of Aden 308 / Arabian Sea 104 / West Indian Ocean 60, same gate — closes the lane in BOTH directions, which is also what stops the residual "pull the extras back to the mainland" risk of the −200 |
+
+Positive control for the evacuation fear: in `15176ce6` the −200/−100 brakes were armed on 17 and the
+9 buffered divisions never left the AOI - `put_unit_buffers` pins its ratio regardless of
+`area_priority`. ASSUMED, stated: whether `naval_avoid_region` gates division naval TRANSFERS (and not
+only fleet missions) is undocumented - the EAI comment ("prevents generic strategies from selecting
+this as an invasion target") suggests it reaches beyond missions, unverified; and whether −200 alone
+(FRONT exempt) still lets the border front be manned from the local buffer has never been observed
+with the front forming (in `15176ce6` both brakes were on and no front formed; in `24933fb9` neither
+was). Both are the campaign probe's job.
+
 ## 13. The 1936 Ethiopian war - AI Italy attacks the mission's states, on every aggressive rule (Fix 98, 2026-08-17)
 
 Campaign `0edbc955`: Italy lost the war by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success =
