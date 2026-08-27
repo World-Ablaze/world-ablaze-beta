@@ -470,11 +470,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     kills collapse to 29-75 in 1945 (peak 468 in 1944.10); GER sub losses >= 388 (327 to
     frigates, 80 to destroyers - the DD escorts kill).
   - Next lever (PROPOSED ONLY, owner decision): the admiral-less reserve-fleet depot is
-    now the named binding constraint for (e)/(g)-CAN - candidate mechanisms to
-    investigate: admiral recruitment cadence/CP, reserve-fleet drainage into mission
-    fleets, or a scripted navy-reorganisation pass. Second: western-corridor escort
+    now the named binding constraint for (e)/(g)-CAN. Second: western-corridor escort
     presence (f) is untouched by everything shipped so far - engine escort objectives
     never reach 55/50/247.
+- **Depot six-box (2026-08-27, "why do new hulls stockpile in reserve", `0767987f`
+  saves 1943.6/1943.9/1944.6/1945.6, CAN/ENG/USA; details scratchpad
+  `depot-fleet-anatomy-0767987f.md`):**
+  1. Symptom: new hulls pool in leaderless, region-less fleets; escort capacity stops
+     growing (CAN stops escorting entirely after 1943.9).
+  2. Measurement (MEASURED): the depot is the engine's DEPLOYMENT ENTRY POINT - 115/116
+     newly produced ships across the 3 tags first appear in it. Drain out of it: ENG 1/131
+     ships over 9 months then 0/20 sampled, CAN 0, USA a trickle (21/120). TWO species of
+     leaderless fleet: the reserve DEPOT (single raw task force, mission 8, parked in a
+     port, never a named template) and ORPHAN POOLS (multi-TF, mission 0, named escort
+     compositions = dissolved former active fleets).
+  3. Mod state (MEASURED): NOT admiral supply - every tag holds >= 3 UNASSIGNED admirals
+     in every cell (incl. skill 6-7: Nimitz, Halsey, Cunningham idle) while depots sit
+     leaderless; assigned == led fleets 12/12 cells. NOT command power (CP 7-127 in all
+     but one cell). NOT fuel (USA 100% at its own escort collapse). Control: leaderless
+     fleets CAN hold missions (ENG escort fleets, 40 frigates, no admiral) - the depot
+     lacks mission+region, not a hard admiral prerequisite.
+  4. Mod decision: NONE EXISTS - no WA code writes fleets, missions or admiral assignment
+     (whole-repo check; the only WA touch is the benign `ai_admiral` XP trait,
+     `z_WA_ai_fixes.txt:438`). The mechanism is 100% engine.
+  5. Script line: none can exist for the core mechanism - MEASURED against the install's
+     effects_documentation.md: script has create_navy_leader / every_navy_leader /
+     transfer_navy and NO effect to create a fleet, assign a leader to a fleet, move
+     ships between fleets, or set a mission. The reachable mod levers are all INDIRECT:
+     defines that raise mission demand so the engine itself pulls from the depot.
+  6. Engine boundary (ASSUMED): why the engine leaves available admirals unassigned; what
+     triggered the 1943.9-1944.6 fleet-dissolution wave (CAN's two led escort fleets were
+     dissolved INTO Fleet 6 - that dissolution, not intake starvation, is what ended CAN
+     escorting; USA's orphan pool re-drained 98 ships into led escort fleets by 1945.6,
+     CAN's never did); mission id 9 (unknown to the mission map). An owner run with
+     `imgui show ai_navy` during the dissolution window is the only direct view.
+  - Rival named and killed: "admiral shortage" (H-A) and "fuel" (H-B) both dead by
+    measurement above; H-C (deployment sink with a near-closed engine drain valve) stands.
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
