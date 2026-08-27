@@ -911,3 +911,158 @@ WA_AI_NAVAL_FACTION_ALLIES_med_narrows_sea_control = {
 	ai_strategy = { type = naval_avoid_region id = 269  value = -1000 }
 	ai_strategy = { type = naval_avoid_region id = 29   value = -1000 }
 }
+
+# purpose: wall the Aegean while its coast is not held by our side - Axis-air-covered narrows
+#          are a trap for any visiting Allied navy, not American doctrine (promoted 2026-08-27
+#          from the USA smart_axis_coast_aegean block; generic controller form per the
+#          german_bight precedent). Doubling note: war_against_ITA_north_africa also writes
+#          202 for anglo majors during an Italian war - the two sum to +4000 there, stated
+#          rather than hidden.
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_aegean_hostile_coast = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		NOT = {
+			47 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 202 value = 2000 } # Aegean
+}
+
+
+# purpose: the western/SW-Pacific trap wall for the anglo majors while the Pacific offensive
+#          is not ready - one coalition owner for the 25 regions the ENG war-GER blanket and
+#          the USA europe_first/smart_pacific pair each walled separately (promoted
+#          2026-08-27; the country copies are deleted/trimmed in the same commit). Released
+#          by WA_AI_MILITARY_pacific_offensive_ready (one-way monthly latch).
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_western_pacific_trap = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+	}
+	enable = {
+		NOT = { WA_AI_MILITARY_pacific_offensive_ready = yes }
+		OR = {
+			has_war_with = GER
+			has_war_with = JAP
+			threat > 0.50
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 177 value = 2000 } # W N Pacific
+	ai_strategy = { type = naval_avoid_region id = 88 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 96 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 84 value = 2000 } # Bismarck Sea
+	ai_strategy = { type = naval_avoid_region id = 82 value = 2000 } # Gulf of Carpentaria
+	ai_strategy = { type = naval_avoid_region id = 99 value = 2000 } # East Indian Ocean
+	ai_strategy = { type = naval_avoid_region id = 79 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 81 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 83 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 93 value = 2000 } # Banda Sea
+	ai_strategy = { type = naval_avoid_region id = 73 value = 2000 } # Gulf of Thailand
+	ai_strategy = { type = naval_avoid_region id = 91 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 92 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 98 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 232 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 171 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 114 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 176 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 95 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 221 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 222 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 32 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 113 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 111 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 306 value = 2000 }
+}
+
+
+# purpose: stay out of an allied Malaya/Borneo that is NOT invaded - coalition courtesy, one
+#          owner (promoted 2026-08-27 from the USA copy; the ENG blanket entry trimmed in the
+#          same commit)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_uninvaded_malaya_borneo = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		639 = { is_controlled_by = UKO }
+		725 = { is_controlled_by = UKO }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = naval_avoid_region id = 227 value = 2000 }
+}
+
+
+# purpose: stay out of the Tasman Sea while Australia/New Zealand hold their own waters
+#          (promoted 2026-08-27; the USA copy carried literal `USA = {}` abort scopes,
+#          rewritten as ROOT)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_uninvaded_australia_new_zealand = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		OR = {
+			636 = { is_controlled_by = ENG }
+			726 = { is_controlled_by = NZL }
+		}
+	}
+	abort = {
+		OR = {
+			has_war_with = ENG
+			has_war_with = NZL
+			636 = { CONTROLLER = { has_war_with = ROOT } }
+			726 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+	}
+
+	ai_strategy = { type = naval_avoid_region id = 178 value = 2000 }
+}
+
+
+# purpose: while at peace with both Chinas, stay out of their coastal waters - do not tip a
+#          war you are neutral in by parking a fleet in it (promoted 2026-08-27)
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_FACTION_ALLIES_neutral_china_seas = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
+	}
+	enable = {
+		NOT = { has_war_with = CHI }
+		NOT = { has_war_with = PRC }
+	}
+	abort = {
+		OR = {
+			has_war_with = CHI
+			has_war_with = PRC
+		}
+	}
+
+	ai_strategy = { type = naval_avoid_region id = 77 value = 2000 }
+	ai_strategy = { type = naval_avoid_region id = 76 value = 2000 }
+}
