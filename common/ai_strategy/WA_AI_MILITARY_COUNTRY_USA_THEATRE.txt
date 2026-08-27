@@ -3,16 +3,21 @@
 ############################################################################################################
 # Phase 6 split: every ai_strategy in this file has type ∈ { area_priority, put_unit_buffers, spare_unit_factor, theatre_distribution_demand_increase }.
 # Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+# [usa-refactor] naming convention WA_AI_MILITARY_COUNTRY_USA_THEATRE_<descriptor>; hard dates
+# replaced by dynamic gates (phase trigger WA_AI_MILITARY_USA_pacific_offensive_ready in
+# WA_AI_MILITARY_triggers.txt); buffer shares resized per state and split one order_id per entry.
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_help_with_sealion (THEATRE domain)
-WA_AI_MILITARY_USA_help_with_sealion_THEATRE = {
+# purpose: pull the US army toward Britain while an enemy stands on British soil
+# range:   +200
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_reinforce_britain_invaded = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date < 1945.1.1
 		is_in_faction_with = ENG
 		OR = {
 			121 = { CONTROLLER = { has_war_with = ROOT } }
@@ -42,8 +47,13 @@ WA_AI_MILITARY_USA_help_with_sealion_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_preparation (THEATRE domain)
-WA_AI_MILITARY_USA_operation_torch_preparation_THEATRE = {
+# purpose: prioritise North Africa while an enemy holds the Maghreb and the US army can open a
+#          secondary front (replaces the two 1942.9/1942.11 date-gated torch blocks - identical
+#          payloads, merged so the additive value no longer doubles after the landing)
+# range:   +200
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_north_africa_focus = {
 
 	allowed = {
 		tag = USA
@@ -54,7 +64,7 @@ WA_AI_MILITARY_USA_operation_torch_preparation_THEATRE = {
 			has_war_with = ITA
 		}
 		is_in_faction_with = ENG
-		date > 1942.9.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { CONTROLLER = { has_war_with = ROOT } }
@@ -77,49 +87,22 @@ WA_AI_MILITARY_USA_operation_torch_preparation_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_landing (THEATRE domain)
-WA_AI_MILITARY_USA_operation_torch_landing_THEATRE = {
-
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		OR = {
-			has_war_with = GER
-			has_war_with = ITA
-		}
-		is_in_faction_with = ENG
-		date > 1942.11.1
-		ENG = { surrender_progress < 0.2 }
-		OR = {
-			458 = { CONTROLLER = { has_war_with = ROOT } }
-			665 = { CONTROLLER = { has_war_with = ROOT } }
-			460 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } }
-			461 = { CONTROLLER = { has_war_with = ROOT } }
-			1055 = { CONTROLLER = { has_war_with = ROOT } }
-			462 = { CONTROLLER = { has_war_with = ROOT } }
-			1056 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = area_priority
-		id = north_africa
-		value = 200 # economy: was 1000
-	}
-}
-
-
-# Phase 6 split from WA_AI_MILITARY_USA_europe_first (THEATRE domain)
-WA_AI_MILITARY_USA_europe_first_THEATRE = {
+# purpose: while the Pacific offensive is not ready, keep the far-Pacific theatres deprioritised
+#          (Europe first). Mirror of _pacific_offensive below - the two enables flip on the same
+#          trigger with no gap and no overlap. The deleted bad_torpedos_suck twin (born gated
+#          `date < 1943.9`, the torpedo-crisis era - a calendar-only reason) SUMMED with this
+#          block while both armed; that stack is deliberately not preserved: one suppression at
+#          the economy band, the second reason being inexpressible without a date.
+# range:   -200
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_europe_first = {
 
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1943.6.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		OR = {
 			has_war_with = JAP
 			threat > 0.70
@@ -142,21 +125,19 @@ WA_AI_MILITARY_USA_europe_first_THEATRE = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese (THEATRE domain)
-WA_AI_MILITARY_USA_fight_the_japanese_THEATRE = {
+# purpose: once the Pacific offensive is ready, weight the central Pacific up and the south down
+#          (replaces the 1944.8 hard date with the phase trigger)
+# range:   -200 to +200
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_pacific_offensive = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.8.1
-		NOT = {
-			AND = {
-				date > 1944.3.1
-				date < 1944.8.1
-			}
-		}
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -177,43 +158,22 @@ WA_AI_MILITARY_USA_fight_the_japanese_THEATRE = {
 	}
 }
 
-
-# Phase 6 split from WA_AI_MILITARY_USA_bad_torpedos_suck (THEATRE domain)
-WA_AI_MILITARY_USA_bad_torpedos_suck_THEATRE = {
-
-	allowed = {
-		original_tag = USA
-	}
-	enable = {
-		date < 1943.6.1
-		OR = {
-			has_war_with = JAP
-			threat > 0.70
-			is_in_faction_with = ENG
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = area_priority
-		id = oceania
-		value = -200 # economy: was -2000
-	}
-	ai_strategy = {
-		type = area_priority
-		id = australia_new_zealand
-		value = -200 # economy: was -2000
-	}
-}
-
 ############################################################################################################
 # WA Military V2 - USA Country Overlay
 ############################################################################################################
 # Phase 2 split: THEATRE domain blocks.
-# Phase 2 split: THEATRE domain blocks.
 
-WA_AI_MILITARY_USA_buffer_pacific = {
+# purpose: garrison the Pacific island line while Japan is a threat. Each island group holds
+#          its own SMALL share of the army (a base garrison, not a field army) - ratios are
+#          per-state need, resized down because the previous shares asked for more divisions
+#          than the whole army held and the unmet demand churned units between oceans. One
+#          order_id per ENTRY: the engine doc gives same-id entries one SHARED ratio, so
+#          differing ratios on a shared id are undefined; order_id never serialises, so the
+#          split's effect on engine arbitration is ASSUMED hygiene (REGION_ITALY rule).
+# range:   ratio 0.03 - 0.15 per state
+# policy:  put_unit_buffers, one order_id per entry
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_pacific = {
 	allowed = { tag = USA }
 	enable = {
 		has_war = yes
@@ -224,14 +184,14 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9106
 		states = {
 			863
 			646
 			648
 			645
 		}
-		ratio = 0.25 # economy: was 0.5
+		ratio = 0.1 # pool resize: was 0.25
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -239,9 +199,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9107
 		states = { 526 }
-		ratio = 0.25 # economy: was 0.5
+		ratio = 0.05 # pool resize: was 0.25
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -249,9 +209,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9108
 		states = { 629 }
-		ratio = 0.25 # economy: was 1
+		ratio = 0.15 # pool resize: was 0.25
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -259,9 +219,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9109
 		states = { 630 }
-		ratio = 0.15
+		ratio = 0.05 # pool resize: was 0.15
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -269,9 +229,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9110
 		states = { 631 }
-		ratio = 0.2
+		ratio = 0.05 # pool resize: was 0.2
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -279,9 +239,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9111
 		states = { 632 }
-		ratio = 0.2
+		ratio = 0.05 # pool resize: was 0.2
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -289,9 +249,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9112
 		states = { 638 }
-		ratio = 0.2
+		ratio = 0.05 # pool resize: was 0.2
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = yes
@@ -299,9 +259,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9113
 		states = { 633 }
-		ratio = 0.1
+		ratio = 0.03 # pool resize: was 0.1
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -309,9 +269,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9114
 		states = { 684 }
-		ratio = 0.12
+		ratio = 0.03 # pool resize: was 0.12
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -319,9 +279,9 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9115
 		states = { 647 }
-		ratio = 0.1
+		ratio = 0.03 # pool resize: was 0.1
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -329,17 +289,21 @@ WA_AI_MILITARY_USA_buffer_pacific = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9101
+		order_id = 9105
 		states = { 685 }
-		ratio = 0.1
+		ratio = 0.05 # pool resize: was 0.1; own order_id - central_america is a different buffer area
 		area = central_america
 		subtract_invasions_from_need = no
 	}
 }
 
 
-
-WA_AI_MILITARY_USA_buffer_pacific_low_army = {
+# purpose: with a small army under Pacific threat, hold only the core islands (skeleton line).
+#          Same per-state sizing and one-order_id-per-entry rule as _buffer_pacific.
+# range:   ratio 0.05 - 0.25 per state
+# policy:  put_unit_buffers, one order_id per entry
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_pacific_low_army = {
 	allowed = { tag = USA }
 	enable = {
 		has_war = yes
@@ -352,9 +316,9 @@ WA_AI_MILITARY_USA_buffer_pacific_low_army = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9102
+		order_id = 9116
 		states = { 629 }
-		ratio = 0.5 # siege: skeleton army holds the core islands only (was 0.75)
+		ratio = 0.25 # pool resize: was 0.5 - skeleton army holds the core islands only
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -362,9 +326,9 @@ WA_AI_MILITARY_USA_buffer_pacific_low_army = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9102
+		order_id = 9117
 		states = { 630 }
-		ratio = 0.15
+		ratio = 0.05 # pool resize: was 0.15
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -372,9 +336,9 @@ WA_AI_MILITARY_USA_buffer_pacific_low_army = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9102
+		order_id = 9118
 		states = { 631 }
-		ratio = 0.25
+		ratio = 0.1 # pool resize: was 0.25
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -382,9 +346,9 @@ WA_AI_MILITARY_USA_buffer_pacific_low_army = {
 
 	ai_strategy = {
 		type = put_unit_buffers
-		order_id = 9102
+		order_id = 9119
 		states = { 632 }
-		ratio = 0.2
+		ratio = 0.1 # pool resize: was 0.2
 		area = central_pacific
 		subtract_invasions_from_need = no
 		subtract_fronts_from_need = no # pool: dedicated reserve that must not yield to front demand (economy E4; lessons-log put_unit_buffers entry)
@@ -392,12 +356,17 @@ WA_AI_MILITARY_USA_buffer_pacific_low_army = {
 }
 
 
-
-WA_AI_MILITARY_USA_theatre_boost_pacific = {
+# purpose: raise the engine theatre distributor's demand for the Hawaii theatre while the
+#          Pacific is high-risk (scripted demand floor under the buffer above)
+# range:   +6
+# policy:  theatre_distribution_demand_increase
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_pacific_demand_boost = {
 	allowed = { tag = USA }
 	enable = {
 		has_war = yes
 		WA_AI_CONFIG_MILITARY_pacific_high_risk = yes
+		NOT = { WA_AI_MILITARY_home_threatened = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -409,8 +378,13 @@ WA_AI_MILITARY_USA_theatre_boost_pacific = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help = {
+# purpose: stage the US army in south England while Europe is enemy-held, Britain is safe and
+#          Germany is NOT fighting the Soviets (the east is quiet, so the west needs the mass)
+# range:   ratio 0.5
+# policy:  put_unit_buffers; the four _buffer_britain_* variants share order_id 1 deliberately -
+#          same states, same ratio, scenario-exclusive enables = one logical buffer
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_britain_east_quiet = {
 	allowed = {
 		tag = USA
 	}
@@ -442,7 +416,7 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help = {
 		OR = {
 			AND = {
 				is_in_faction_with = ENG
-				date > 1942.1.1
+				has_war = yes
 				NOT = {
 					GER = {
 						has_war_with = SOV
@@ -499,8 +473,12 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help_but_japan_defeated = {
+# purpose: same Britain staging buffer for the variant where Japan is already defeated
+# range:   ratio 0.5
+# policy:  put_unit_buffers; shares order_id 1 with the other _buffer_britain_* variants (one
+#          logical buffer, scenario-exclusive enables)
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_britain_japan_defeated = {
 	allowed = {
 		tag = USA
 	}
@@ -532,7 +510,7 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help_but_japan_defeated = {
 		OR = {
 			AND = {
 				is_in_faction_with = ENG
-				date > 1942.1.1
+				has_war = yes
 				NOT = {
 					GER = {
 						has_war_with = SOV
@@ -590,8 +568,12 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_pls_help_but_japan_defeated = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_buffer_for_europe_defensive = {
+# purpose: Britain staging buffer while the invasion posture is defensive
+# range:   ratio 0.5
+# policy:  put_unit_buffers; shares order_id 1 with the other _buffer_britain_* variants (one
+#          logical buffer, scenario-exclusive enables)
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_britain_defensive = {
 	allowed = {
 		tag = USA
 	}
@@ -624,7 +606,6 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_defensive = {
 				860 = { CONTROLLER = { has_war_with = ROOT } }
 			}
 		}
-		date > 1941.1.1
 		is_in_faction_with = ENG
 		any_enemy_country = {
 			is_major = yes
@@ -669,23 +650,30 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_defensive = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_buffer_for_europe_aggressive = {
+# purpose: Britain staging buffer while the invasion posture is aggressive (pre-liberation)
+# range:   ratio 0.5
+# policy:  put_unit_buffers; shares order_id 1 with the other _buffer_britain_* variants (one
+#          logical buffer, scenario-exclusive enables)
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_britain_aggressive = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		6 = { CONTROLLER = { has_war_with = ROOT } }
-		29 = { CONTROLLER = { has_war_with = ROOT } }
-		785 = { CONTROLLER = { has_war_with = ROOT } }
-		15 = { CONTROLLER = { has_war_with = ROOT } }
-		14 = { CONTROLLER = { has_war_with = ROOT } }
-		30 = { CONTROLLER = { has_war_with = ROOT } }
-		23 = { CONTROLLER = { has_war_with = ROOT } }
-		19 = { CONTROLLER = { has_war_with = ROOT } }
 		NOT = {
 			OR = {
-				121 = { CONTROLLER = { has_war_with = ROOT } }
+				6 = { CONTROLLER = { has_war_with = ROOT } }
+				29 = { CONTROLLER = { has_war_with = ROOT } }
+				785 = { CONTROLLER = { has_war_with = ROOT } }
+				15 = { CONTROLLER = { has_war_with = ROOT } }
+				14 = { CONTROLLER = { has_war_with = ROOT } }
+				30 = { CONTROLLER = { has_war_with = ROOT } }
+				23 = { CONTROLLER = { has_war_with = ROOT } }
+				19 = { CONTROLLER = { has_war_with = ROOT } }
+			}
+		}
+		NOT = {
+			OR = {
 				122 = { CONTROLLER = { has_war_with = ROOT } }
 				123 = { CONTROLLER = { has_war_with = ROOT } }
 				125 = { CONTROLLER = { has_war_with = ROOT } }
@@ -695,14 +683,11 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_aggressive = {
 				130 = { CONTROLLER = { has_war_with = ROOT } }
 				131 = { CONTROLLER = { has_war_with = ROOT } }
 				132 = { CONTROLLER = { has_war_with = ROOT } }
-				133 = { CONTROLLER = { has_war_with = ROOT } }
-				136 = { CONTROLLER = { has_war_with = ROOT } }
 				857 = { CONTROLLER = { has_war_with = ROOT } }
 				859 = { CONTROLLER = { has_war_with = ROOT } }
 				860 = { CONTROLLER = { has_war_with = ROOT } }
 			}
 		}
-		date > 1941.1.1
 		is_in_faction_with = ENG
 		any_enemy_country = {
 			is_major = yes
@@ -748,8 +733,12 @@ WA_AI_MILITARY_USA_unit_buffer_for_europe_aggressive = {
 }
 
 
-
-WA_AI_MILITARY_USA_oh_shit = {
+# purpose: continental last stand - mass the army on the eastern seaboard when Germany dominates
+#          the Atlantic approaches (Iceland + Britain German-held) and no other war competes
+# range:   ratio 1.0 (deliberate: a last stand commits the whole army)
+# policy:  put_unit_buffers, own order_id (the [allied-division-stability] one-id-per-area rule)
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_home_coast_last_stand = {
 	allowed = {
 		tag = USA
 	}
@@ -798,7 +787,6 @@ WA_AI_MILITARY_USA_oh_shit = {
 			}
 		}
 		NOT = { has_war_with = JAP }
-		date > 1943.6.1
 	}
 
 	abort_when_not_enabled = yes
@@ -841,8 +829,11 @@ WA_AI_MILITARY_USA_oh_shit = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_home_land_is_safe (THEATRE domain)
-WA_AI_MILITARY_USA_home_land_is_safe_THEATRE = {
+# purpose: with the homeland safe, deprioritise every home-continent theatre
+# range:   -200
+# policy:  Additive per area
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_home_land_is_safe = {
 
 	allowed = {
 		original_tag = USA
@@ -882,14 +873,19 @@ WA_AI_MILITARY_USA_home_land_is_safe_THEATRE = {
 }
 
 
-
-WA_AI_MILITARY_USA_protect_the_philippines = {
+# purpose: hold a garrison on the Philippines once at war with Japan (formerly gated
+#          date > 1944.1 - the garrison is wanted whenever the islands are reachable and
+#          contested, in any timeline)
+# range:   ratio 0.25
+# policy:  put_unit_buffers, own order_id (was shared with the britain buffer - undefined)
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_philippines = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.1.1
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -921,7 +917,7 @@ WA_AI_MILITARY_USA_protect_the_philippines = {
 # range:   -500 to +80 (E1 worklist below -200)
 # policy:  Additive per area
 # domain:  THEATRE
-WA_AI_MILITARY_USA_pacific_islands_THEATRE = {
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_pacific_islands = {
 	allowed = {
 		tag = USA
 	}
@@ -959,7 +955,7 @@ WA_AI_MILITARY_USA_pacific_islands_THEATRE = {
 # domain:  THEATRE
 # WARNING: coupled to the allied strategic bombing campaign (commit 439c4106d). Do not clamp
 #          these values in the Phase 8 pass without re-testing the air campaign.
-WA_AI_MILITARY_USA_strategic_bombing_focus_THEATRE = {
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_strategic_bombing_europe = {
 	allowed = {
 		tag = USA
 	}
@@ -1059,7 +1055,7 @@ WA_AI_MILITARY_USA_strategic_bombing_focus_THEATRE = {
 # domain:  THEATRE
 # WARNING: coupled to the allied strategic bombing campaign (commit 439c4106d). Do not clamp
 #          these values in the Phase 8 pass without re-testing the air campaign.
-WA_AI_MILITARY_USA_strategic_bombing_japan_THEATRE = {
+WA_AI_MILITARY_COUNTRY_USA_THEATRE_strategic_bombing_japan = {
 	allowed = {
 		tag = USA
 	}

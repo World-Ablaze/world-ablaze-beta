@@ -3,14 +3,16 @@
 ############################################################################################################
 # Phase 6 split: every ai_strategy in this file has type ∈ { antagonize, conquer, contain, declare_war, diplo_action_acceptance, diplo_action_desire, dont_defend_ally_borders, force_defend_ally_borders, ignore, ignore_claim, protect }.
 # Canonical domain: DIPLOMACY. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+# [usa-refactor] naming convention WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_<descriptor>; hard dates
+# replaced by dynamic gates.
 
-############################################################################################################
-# WA Military V2 - USA Country Overlay
-############################################################################################################
-# Phase 2 split: DIPLOMACY domain blocks.
-# Phase 2 split: DIPLOMACY domain blocks.
 
-WA_AI_MILITARY_USA_dont_defend_the_raj = {
+# purpose: stop defending the Raj's borders once it is collapsing or its sea line is cut (the
+#          _defend_the_raj twin covers the viable window - keep the two conditions complementary)
+# range:   +1000
+# policy:  dont_defend_ally_borders per ally
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_abandon_the_raj = {
 	allowed = {
 		tag = USA
 	}
@@ -56,13 +58,16 @@ WA_AI_MILITARY_USA_dont_defend_the_raj = {
 }
 
 
-
-WA_AI_MILITARY_USA_gang_up_GER_with_ENG = {
+# purpose: commit to the European and African fronts whenever the anti-German war is on
+#          (formerly also gated date > 1940.6.6 - the war condition is the real gate)
+# range:   +50 to +100
+# policy:  force_defend_ally_borders per area
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_commit_to_europe = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1940.6.6
 		OR = {
 			has_war_with = GER
 			ENG = { has_war_with = GER }
@@ -123,8 +128,12 @@ WA_AI_MILITARY_USA_gang_up_GER_with_ENG = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_war_against_ITA (DIPLOMACY domain)
-WA_AI_MILITARY_USA_war_against_ITA_DIPLOMACY = {
+# purpose: while Italy holds East Africa or the Maghreb is contested, mark Italy for conquest
+#          and containment and stand by France
+# range:   +100 to +2000
+# policy:  conquer/contain/protect per target
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_war_against_ITA = {
 
 	allowed = {
 		tag = USA
@@ -177,8 +186,13 @@ WA_AI_MILITARY_USA_war_against_ITA_DIPLOMACY = {
 }
 
 
-
-WA_AI_MILITARY_USA_abandon_turkey = {
+# purpose: never garrison the Turkish border for an ally
+# range:   +500
+# policy:  dont_defend_ally_borders per area
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_abandon_turkey = {
+	# always-on: static defensive bias - a US commitment on the Turkish land border is never
+	# wanted, in any timeline; there is no dynamic condition to key on.
 	allowed = {
 		original_tag = USA
 	}
@@ -194,14 +208,13 @@ WA_AI_MILITARY_USA_abandon_turkey = {
 	}
 }
 
-############################################################################################################
-# WA Military V2 - USA Country Overlay
-############################################################################################################
-# Phase 2 split: FRONT domain blocks.
 
-# Phase 2 split: FRONT domain blocks.
-# Phase 6 split from WA_AI_MILITARY_USA_avoid_balkans_until_sov_war (DIPLOMACY domain)
-WA_AI_MILITARY_USA_avoid_balkans_until_sov_war_DIPLOMACY = {
+# purpose: stay out of the Balkans while the Soviets are not in the war (twin of the FRONT
+#          suppression)
+# range:   +1000
+# policy:  dont_defend_ally_borders per ally
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_avoid_balkans_until_sov_war = {
 
 	allowed = { tag = USA }
 	enable = {
@@ -218,8 +231,11 @@ WA_AI_MILITARY_USA_avoid_balkans_until_sov_war_DIPLOMACY = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_defend_the_raj (DIPLOMACY domain)
-WA_AI_MILITARY_USA_defend_the_raj_DIPLOMACY = {
+# purpose: defend the Raj's borders while it wobbles but its sea line of communication holds
+# range:   +100
+# policy:  force_defend_ally_borders per ally
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_defend_the_raj = {
 
 	allowed = {
 		tag = USA
@@ -264,20 +280,18 @@ WA_AI_MILITARY_USA_defend_the_raj_DIPLOMACY = {
 	}
 }
 
-############################################################################################################
-# WA Military V2 - USA Country Overlay
-############################################################################################################
-# Phase 2 split: INVASION domain blocks.
 
-# Phase 2 split: INVASION domain blocks.
-# Phase 6 split from WA_AI_MILITARY_USA_help_with_sealion (DIPLOMACY domain)
-WA_AI_MILITARY_USA_help_with_sealion_DIPLOMACY = {
+# purpose: while an enemy stands on British soil, defend Britain and England hard (formerly
+#          also capped date < 1945.1)
+# range:   +1000
+# policy:  force_defend_ally_borders per area/ally
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_defend_britain_invaded = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date < 1945.1.1
 		is_in_faction_with = ENG
 		OR = {
 			121 = { CONTROLLER = { has_war_with = ROOT } }
@@ -312,8 +326,13 @@ WA_AI_MILITARY_USA_help_with_sealion_DIPLOMACY = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_preparation (DIPLOMACY domain)
-WA_AI_MILITARY_USA_operation_torch_preparation_DIPLOMACY = {
+# purpose: mark Vichy for conquest while Torch is on (replaces the two 1942.9/1942.11
+#          date-gated blocks; both armed together from 1942.11 so their values summed -
+#          the merge deliberately halves that back to the single-block magnitude)
+# range:   +200
+# policy:  conquer per target
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_torch_conquer_vichy = {
 
 	allowed = {
 		tag = USA
@@ -324,7 +343,7 @@ WA_AI_MILITARY_USA_operation_torch_preparation_DIPLOMACY = {
 			has_war_with = ITA
 		}
 		is_in_faction_with = ENG
-		date > 1942.9.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { CONTROLLER = { has_war_with = ROOT } }
@@ -347,54 +366,20 @@ WA_AI_MILITARY_USA_operation_torch_preparation_DIPLOMACY = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_landing (DIPLOMACY domain)
-WA_AI_MILITARY_USA_operation_torch_landing_DIPLOMACY = {
-
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		OR = {
-			has_war_with = GER
-			has_war_with = ITA
-		}
-		is_in_faction_with = ENG
-		date > 1942.11.1
-		ENG = { surrender_progress < 0.2 }
-		OR = {
-			458 = { CONTROLLER = { has_war_with = ROOT } }
-			665 = { CONTROLLER = { has_war_with = ROOT } }
-			460 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } }
-			461 = { CONTROLLER = { has_war_with = ROOT } }
-			1055 = { CONTROLLER = { has_war_with = ROOT } }
-			462 = { CONTROLLER = { has_war_with = ROOT } }
-			1056 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = conquer
-		id = "VIC"
-		value = 200
-	}
-}
-
-############################################################################################################
-# WA Military V2 - USA Country Overlay
-############################################################################################################
-# Phase 2 split: NAVAL domain blocks.
-
-# Phase 2 split: NAVAL domain blocks.
-# Phase 6 split from WA_AI_MILITARY_USA_europe_first (DIPLOMACY domain)
-WA_AI_MILITARY_USA_europe_first_DIPLOMACY = {
+# purpose: while the Pacific offensive is not ready, do not garrison the Dutch East Indies or
+#          Australia for their owners (Europe first; mirror of _pacific_offensive below).
+#          The deleted bad_torpedos_suck twin summed with this block; the stack is
+#          deliberately not preserved - see the THEATRE twin's header.
+# range:   +1000
+# policy:  dont_defend_ally_borders per ally
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_europe_first = {
 
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1943.6.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		OR = {
 			has_war_with = JAP
 			threat > 0.70
@@ -417,21 +402,19 @@ WA_AI_MILITARY_USA_europe_first_DIPLOMACY = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese (DIPLOMACY domain)
-WA_AI_MILITARY_USA_fight_the_japanese_DIPLOMACY = {
+# purpose: once the Pacific offensive is ready, mark Japan for conquest and stand by the
+#          Philippines (formerly the 1944.8 hard date)
+# range:   +100 to +500
+# policy:  conquer / force_defend_ally_borders per target
+# domain:  DIPLOMACY
+WA_AI_MILITARY_COUNTRY_USA_DIPLOMACY_pacific_offensive = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.8.1
-		NOT = {
-			AND = {
-				date > 1944.3.1
-				date < 1944.8.1
-			}
-		}
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -445,35 +428,5 @@ WA_AI_MILITARY_USA_fight_the_japanese_DIPLOMACY = {
 		type = force_defend_ally_borders
 		id = "PHI"
 		value = 100
-	}
-}
-
-
-# Phase 6 split from WA_AI_MILITARY_USA_bad_torpedos_suck (DIPLOMACY domain)
-WA_AI_MILITARY_USA_bad_torpedos_suck_DIPLOMACY = {
-
-	allowed = {
-		original_tag = USA
-	}
-	enable = {
-		date < 1943.6.1
-		OR = {
-			has_war_with = JAP
-			threat > 0.70
-			is_in_faction_with = ENG
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "INS"
-		value = 1000
-	}
-	ai_strategy = {
-		type = dont_defend_ally_borders
-		id = "AST"
-		value = 1000
 	}
 }

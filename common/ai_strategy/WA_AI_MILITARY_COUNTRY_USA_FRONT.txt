@@ -3,6 +3,8 @@
 ############################################################################################################
 # Phase 6 split: every ai_strategy in this file has type ∈ { force_concentration_front_factor, force_concentration_target_weight, front_armor_score, front_control, front_unit_request, garrison }.
 # Canonical domain: FRONT. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+# [usa-refactor] naming convention WA_AI_MILITARY_COUNTRY_USA_FRONT_<descriptor>; hard dates
+# replaced by dynamic gates (phase trigger WA_AI_MILITARY_USA_pacific_offensive_ready).
 
 
 # purpose: keep US armour out of the Pacific island war while the European war is on. Island
@@ -10,10 +12,10 @@
 #          shipped east is one missing from the schwerpunkt vs Germany. Complements the faction-layer
 #          WA_AI_MILITARY_ALLIES_armor_to_european_front (+500 GER / +100 ITA); USA-only because
 #          ENG/RAJ legitimately run armour against Japan in Burma.
-# range:   -300
+# range:   -150
 # policy:  Additive per enemy front
 # domain:  FRONT
-WA_AI_MILITARY_USA_armor_europe_first = {
+WA_AI_MILITARY_COUNTRY_USA_FRONT_armor_europe_first = {
 	allowed = { tag = USA }
 	enable = {
 		has_war_with = JAP
@@ -29,8 +31,12 @@ WA_AI_MILITARY_USA_armor_europe_first = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_avoid_balkans_until_sov_war (FRONT domain)
-WA_AI_MILITARY_USA_avoid_balkans_until_sov_war_FRONT = {
+# purpose: stay out of the Balkans while the Soviets are not in the war (no eastern anvil - a
+#          Balkan front alone is a sink)
+# range:   -100
+# policy:  Additive per region/front
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_avoid_balkans_until_sov_war = {
 
 	allowed = { tag = USA }
 	enable = {
@@ -72,8 +78,12 @@ WA_AI_MILITARY_USA_avoid_balkans_until_sov_war_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_defend_the_raj (FRONT domain)
-WA_AI_MILITARY_USA_defend_the_raj_FRONT = {
+# purpose: ease off the Asian mainland while the Raj is wobbling but not collapsing and its sea
+#          line of communication holds (the DIPLOMACY twin carries the defend order)
+# range:   -50
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_defend_the_raj = {
 
 	allowed = {
 		tag = USA
@@ -119,34 +129,12 @@ WA_AI_MILITARY_USA_defend_the_raj_FRONT = {
 }
 
 
-
-WA_AI_MILITARY_USA_dont_pull_units_from_okinawa = {
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		has_war_with = JAP
-		AND = {
-			USA = {
-				divisions_in_state = { state = 526 size > 1 }
-			}
-			NOT = {
-				has_full_control_of_state = 526
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_unit_request
-		tag = RIT
-		value = -15
-	}
-}
-
-
-
-WA_AI_MILITARY_USA_help_with_sealion_2 = {
+# purpose: liberate the British Isles after a successful Sealion (uk_evacuated) - man the
+#          British fronts hard (formerly also gated date > 1944.1; the flag is the real gate)
+# range:   +200
+# policy:  Additive per region
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_liberate_britain = {
 	allowed = {
 		tag = USA
 	}
@@ -167,7 +155,6 @@ WA_AI_MILITARY_USA_help_with_sealion_2 = {
 			860 = { CONTROLLER = { has_war_with = ROOT } }
 		}
 		has_global_flag = uk_evacuated
-		date > 1944.1.1
 	}
 
 	abort_when_not_enabled = yes
@@ -188,8 +175,12 @@ WA_AI_MILITARY_USA_help_with_sealion_2 = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_clumping_fix = {
+# purpose: unit-clumping fix around Gibraltar - do not stack on state 290 while the strait's
+#          African shore is friendly and Spain is not an enemy
+# range:   -100
+# policy:  Additive per state
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_unit_clumping_fix = {
 	allowed = {
 		tag = USA
 	}
@@ -216,8 +207,11 @@ WA_AI_MILITARY_USA_unit_clumping_fix = {
 }
 
 
-
-WA_AI_MILITARY_USA_defend_hawaii = {
+# purpose: hold Hawaii whenever it is contested - man and execute its front
+# range:   +100
+# policy:  front_unit_request Additive; front_control Exclusive per state
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_defend_hawaii = {
 	allowed = {
 		tag = USA
 	}
@@ -244,8 +238,12 @@ WA_AI_MILITARY_USA_defend_hawaii = {
 }
 
 
-
-WA_AI_MILITARY_USA_small_island_push = {
+# purpose: always push the small-island fronts once at war with Japan (island fights are won by
+#          executing, not by waiting)
+# range:   n/a (front_control)
+# policy:  Exclusive per state
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_small_island_push = {
 	allowed = {
 		tag = USA
 	}
@@ -306,8 +304,12 @@ WA_AI_MILITARY_USA_small_island_push = {
 }
 
 
-
-WA_AI_MILITARY_USA_unit_clumping_fix_2 = {
+# purpose: unit-clumping fix - standing suppressions on region 161/state 100, region 23 and
+#          state 633
+# range:   -65 to -100
+# policy:  Additive per region/state
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_unit_clumping_fix_2 = {
 	# always-on: encodes a unit-clumping fix; kept always-on for Phase 8 parity - revisit with campaign evidence.
 	allowed = {
 		tag = USA
@@ -348,7 +350,7 @@ WA_AI_MILITARY_USA_unit_clumping_fix_2 = {
 # -25 on region 238 while it was fighting there. Outside the window the -35 applies exactly as
 # before, preserving the clumping fix. See WA_AI_MILITARY_ALLIES_hold_sicily_bridge_FRONT/_THEATRE -
 # all four enable conditions must stay identical.
-WA_AI_MILITARY_USA_unit_clumping_fix_2_south_italy = {
+WA_AI_MILITARY_COUNTRY_USA_FRONT_unit_clumping_fix_2_south_italy = {
 	allowed = {
 		tag = USA
 	}
@@ -383,14 +385,18 @@ WA_AI_MILITARY_USA_unit_clumping_fix_2_south_italy = {
 }
 
 
-
-WA_AI_MILITARY_USA_allies_phillipines_push = {
+# purpose: push the Philippine fronts once the army can sustain a Pacific counter-offensive
+#          (formerly gated date > 1943.1)
+# range:   +50
+# policy:  front_control Exclusive per state; front_unit_request Additive
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_philippines_push = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1943.1.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -415,8 +421,12 @@ WA_AI_MILITARY_USA_allies_phillipines_push = {
 }
 
 
-
-WA_AI_MILITARY_USA_sicily_push = {
+# purpose: keep region 238 lean while Sicily is enemy-held, EXCEPT during the hold-Sicily
+#          bridge window (see the comment in the enable)
+# range:   -50
+# policy:  Additive per region
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_sicily_push = {
 	allowed = {
 		tag = USA
 	}
@@ -480,8 +490,11 @@ WA_AI_MILITARY_USA_sicily_push = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_home_land_defense (FRONT domain)
-WA_AI_MILITARY_USA_home_land_defense_FRONT = {
+# purpose: with the homeland invaded, man and execute the continental home fronts
+# range:   +200
+# policy:  front_unit_request Additive; front_control Exclusive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_home_land_defense = {
 
 	allowed = {
 		original_tag = USA
@@ -528,15 +541,31 @@ WA_AI_MILITARY_USA_home_land_defense_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese_2 (FRONT domain)
-WA_AI_MILITARY_USA_fight_the_japanese_2_FRONT = {
+# purpose: execute the invasion of the Japanese home islands once the Pacific offensive is
+#          ready AND Japan is cracking or a Philippine foothold is regained (formerly
+#          date > 1944.12)
+# range:   n/a (front_control)
+# policy:  Exclusive per enemy
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_invade_japan_execute = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.12.1
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
+		OR = {
+			JAP = { surrender_progress > 0.02 }
+			627 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
 		NOT = {
 			surrender_progress > 0
 		}
@@ -552,8 +581,11 @@ WA_AI_MILITARY_USA_fight_the_japanese_2_FRONT = {
 }
 
 
-
-WA_AI_MILITARY_USA_mexico_isnt_invading_you = {
+# purpose: with no threat on the southern land border, keep the home-southwest fronts lean
+# range:   -100
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_home_quiet_south = {
 	allowed = {
 		tag = USA
 	}
@@ -593,8 +625,11 @@ WA_AI_MILITARY_USA_mexico_isnt_invading_you = {
 }
 
 
-
-WA_AI_MILITARY_USA_canada_isnt_invading_you = {
+# purpose: with no threat on the northern land border, keep the Canada-facing fronts lean
+# range:   -100
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_home_quiet_north = {
 	allowed = {
 		tag = USA
 	}
@@ -624,13 +659,18 @@ WA_AI_MILITARY_USA_canada_isnt_invading_you = {
 }
 
 
-
-WA_AI_MILITARY_USA_no_really = {
+# purpose: never mass on the South American direction
+# range:   -100
+# policy:  Additive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_ignore_south_america = {
+	# always-on: static defensive bias - no dynamic condition makes a South American front a
+	# US priority, and the previous `date > 1936.1.1` gate was always-on in disguise.
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1936.1.1
+		always = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -643,8 +683,12 @@ WA_AI_MILITARY_USA_no_really = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_war_against_ITA_2 (FRONT domain)
-WA_AI_MILITARY_USA_war_against_ITA_2_FRONT = {
+# purpose: while the desert war is on and Egypt/Libya are friendly but the Maghreb is quiet,
+#          release the home garrison pressure (garrison 0 override)
+# range:   0
+# policy:  garrison (negative-override convention)
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_war_against_ITA_2 = {
 
 	allowed = {
 		tag = USA
@@ -663,10 +707,6 @@ WA_AI_MILITARY_USA_war_against_ITA_2_FRONT = {
 			}
 		}
 		has_war_with = ITA
-		OR = {
-			is_historical_focus_on = no
-			date > 1943.7.1
-		}
 		OR = {
 			451 = {
 				CONTROLLER = {
@@ -765,8 +805,16 @@ WA_AI_MILITARY_USA_war_against_ITA_2_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_preparation (FRONT domain)
-WA_AI_MILITARY_USA_operation_torch_preparation_FRONT = {
+# purpose: create and execute the Torch invasion order on Morocco (461) while an enemy holds the
+#          Maghreb and the army can mount an expedition. Replaces the two 1942.9/1942.11
+#          date-gated blocks. STATED LOSS: the old pair had a two-month careful-prepare-only
+#          window (1942.9-1942.11) before execute armed; merged, the order executes as soon as
+#          the block arms - the engine's own invasion-preparation timer is the only staging
+#          delay left.
+# range:   n/a (front_control, priority 100)
+# policy:  Exclusive per state
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_torch_invasion_execute = {
 
 	allowed = {
 		tag = USA
@@ -777,44 +825,7 @@ WA_AI_MILITARY_USA_operation_torch_preparation_FRONT = {
 			has_war_with = ITA
 		}
 		is_in_faction_with = ENG
-		date > 1942.9.1
-		ENG = { surrender_progress < 0.2 }
-		OR = {
-			458 = { CONTROLLER = { has_war_with = ROOT } }
-			665 = { CONTROLLER = { has_war_with = ROOT } }
-			460 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } }
-			461 = { CONTROLLER = { has_war_with = ROOT } }
-			1055 = { CONTROLLER = { has_war_with = ROOT } }
-			462 = { CONTROLLER = { has_war_with = ROOT } }
-			1056 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_control
-		priority = 100
-		state = 461
-		ordertype = invasion
-		execution_type = careful
-	}
-}
-
-
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_landing (FRONT domain)
-WA_AI_MILITARY_USA_operation_torch_landing_FRONT = {
-
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		OR = {
-			has_war_with = GER
-			has_war_with = ITA
-		}
-		is_in_faction_with = ENG
-		date > 1942.11.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { CONTROLLER = { has_war_with = ROOT } }
@@ -840,14 +851,18 @@ WA_AI_MILITARY_USA_operation_torch_landing_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_invade_the_axis_REN (FRONT domain)
-WA_AI_MILITARY_USA_invade_the_axis_REN_FRONT = {
+# purpose: once the Normandy exile beachhead exists (REN alive, Normandy or Brittany still
+#          Axis-held), execute invasion orders staged from Britain (formerly also
+#          date > 1944.3 - REN's existence is the real gate)
+# range:   n/a (front_control)
+# policy:  Exclusive per area
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_reinforce_normandy_beachhead = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1944.3.1
 		has_war_with = GER
 		country_exists = REN
 		OR = {
@@ -871,21 +886,19 @@ WA_AI_MILITARY_USA_invade_the_axis_REN_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese (FRONT domain)
-WA_AI_MILITARY_USA_fight_the_japanese_FRONT = {
+# purpose: once the Pacific offensive is ready, lift the garrison suppression so the island
+#          war can be manned (mirror of the dont_invade phase)
+# range:   0
+# policy:  garrison (negative-override convention)
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_pacific_offensive_garrisons = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.8.1
-		NOT = {
-			AND = {
-				date > 1944.3.1
-				date < 1944.8.1
-			}
-		}
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -902,8 +915,11 @@ WA_AI_MILITARY_USA_fight_the_japanese_FRONT = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_home_land_is_safe (FRONT domain)
-WA_AI_MILITARY_USA_home_land_is_safe_FRONT = {
+# purpose: with the homeland safe, force home-area garrisons off entirely
+# range:   -5000 (force-off convention)
+# policy:  garrison (negative-override convention)
+# domain:  FRONT
+WA_AI_MILITARY_COUNTRY_USA_FRONT_home_land_is_safe = {
 
 	allowed = {
 		original_tag = USA

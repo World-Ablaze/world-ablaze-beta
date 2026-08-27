@@ -219,6 +219,62 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: v33 campaign probe (i) passes, and `plans.py --invasions` output on a save with
   a live invasion order names its target states (pasted here).
 
+### usa-military-refactor — SHIPPED-UNTESTED (2026-08-27)
+- Scope: owner request 2026-08-27 ("refactorise les fichiers WA_AI_MILITARY_COUNTRY_USA_* —
+  noms avec conventions, triggers dynamiques ouverts à l'ahistorique, éviter les dates en dur,
+  standardiser constantes/ratios; garde l'anti-shuffling à l'esprit; supprime les stratégies
+  situationnelles type hold_okinawa").
+- Shipped, all four COUNTRY_USA files rewritten + control panel + one CONFIG fix:
+  (1) every block renamed `WA_AI_MILITARY_COUNTRY_USA_<DOMAIN>_<descriptor>` (doc §5 rule 4)
+  with purpose/range/policy/domain headers; the two genuine always-ons carry `# always-on:`
+  (abandon_turkey, ignore_south_america — the latter was `date > 1936.1.1` in disguise).
+  (2) All 12 hard dates removed: new control-panel triggers
+  `WA_AI_MILITARY_USA_pacific_offensive_ready` (phase flip; europe_first/pacific_offensive and
+  dont_invade_japan_yet/pacific_offensive are exact NOT-mirrors) and
+  `WA_AI_MILITARY_has_minimum_expeditionary_army` (num_divisions > 29 + home safe — owns the
+  29/30 band, 6 sites; deathtrap brake is its NOT-mirror). Torch-done gate = metropolitan
+  foothold, invade-Japan-execute = pacific_ready + (JAP surrender_progress > 0.02 OR Philippine
+  foothold). ASSUMED, stated in the trigger header: the arms cross once and stay; if a campaign
+  shows flapping, latch on a country flag (the flap surface is a JAP-only-war USA near 50 div).
+  (3) Dedup with the halvings ACCEPTED IN WRITING (lessons CONFLICT items 1-2, resolved by git
+  archaeology 79d64f6ff): bad_torpedos_suck was born `date < 1943.9` (torpedo era, calendar-only
+  reason) and SUMMED with europe_first while both armed — twin deleted, one suppression at the
+  economy band, rationale at each survivor's header; torch preparation/landing pairs (byte-
+  identical payloads, both armed from 1942.11) merged — post-landing doubling deliberately
+  halved; the FRONT merge LOSES the 2-month careful-prepare-only window (stated; engine
+  invasion-prep timer is the remaining staging delay).
+  (4) Anti-shuffling: buffer_pacific shares resized per state (was an aggregate demanding ~107
+  of a 56-division army), and ONE order_id PER ENTRY (9105-9119) — the engine doc gives same-id
+  entries one SHARED ratio, so the old ten-ratios-on-9101 was undefined; order_id never
+  serialises, split = ASSUMED hygiene (REGION_ITALY rule). Britain buffer variants stay a
+  single logical buffer on id 1.
+  (5) `hold_okinawa` DELETED (owner order — a JAP-war block suppressing the RIT front was a
+  situational tag-payload hack; the theatre-distributor damping owns the anti-pull intent).
+  Remaining tag payloads are target enumerations (invade books, balkan minors), not hacks.
+  (6) The 8-tag Allies suicide-invasion brake re-homed to FACTION_ALLIES_INVASION on the
+  `is_western_invasion_pool` archetype, membership term dropped (audience preserved). Fixed the
+  archetype's pre-existing typo `AUS` (landlocked Austria) → `AST` (Australia): 8 reader blocks
+  had EXCLUDED Australia from the Allied invasion pool — audience change to verify next
+  campaign (AST gains, Austria loses).
+- Reviews 2026-08-27: architecture CONCERNS (5 — bar promoted to named trigger; buffer comments
+  rewritten to the share-one-ratio model + per-entry ids; torch header states the careful-window
+  loss; audience narrowing dropped; faction-block name kept on the FILE's own convention
+  (ALLIES_<desc>_INVASION, its siblings' style) against the reviewer's variant) + lessons
+  CONFLICT (all required items applied: archaeology done, halvings folded-or-justified, per-
+  sector buffer rationale, war-facing term added to both bars, F9 obligation recorded).
+- **F9 BOOT TEST OWED AND BLOCKING (CTD-class: whole ai_strategy blocks deleted/merged/renamed)
+  — owner: cold launch, watch crashes/ + error.log, before the next campaign.**
+- Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
+  (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
+  enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
+  Pacific flip happens (europe_first suppressions absent in a save where USA > 99 div or GER
+  dead, invade-JAP book flipped); (c) r-flap watch: the phase pairs do not oscillate across
+  consecutive monthly saves (same discriminator as the (i) transit probe); (d) AST appears in
+  Allied invasion-pool behaviours (norway/D-Day staging blocks reachable); (e) USA buffer order
+  instances stable per ocean (shared probe with allied-division-stability).
+- Closed when: F9 passes AND probes (a)-(c) pass in the next campaign, or a regression traces
+  to a specific removed date/merge and is fixed under this slug.
+
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts

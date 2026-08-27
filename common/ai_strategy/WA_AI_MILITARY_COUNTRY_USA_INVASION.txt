@@ -3,10 +3,17 @@
 ############################################################################################################
 # Phase 6 split: every ai_strategy in this file has type ∈ { invade, invasion_unit_request, naval_invasion_focus }.
 # Canonical domain: INVASION. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+# [usa-refactor] naming convention WA_AI_MILITARY_COUNTRY_USA_INVASION_<descriptor>; hard dates
+# replaced by dynamic gates. The multi-tag Allies suicide-invasion brake moved to
+# WA_AI_MILITARY_FACTION_ALLIES_INVASION.txt (it was never USA-specific).
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_home_land_defense (INVASION domain)
-WA_AI_MILITARY_USA_home_land_defense_INVASION = {
+# purpose: with the homeland invaded, forbid overseas adventures against the exile tags and
+#          Germany
+# range:   -2000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_home_land_defense = {
 
 	allowed = {
 		original_tag = USA
@@ -35,15 +42,31 @@ WA_AI_MILITARY_USA_home_land_defense_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese_2 (INVASION domain)
-WA_AI_MILITARY_USA_fight_the_japanese_2_INVASION = {
+# purpose: feed the invasion of the Japanese home islands once the Pacific offensive is ready
+#          and Japan is cracking or a Philippine foothold is regained (formerly date > 1944.12;
+#          mirror of COUNTRY_USA_FRONT_invade_japan_execute - keep the two enables identical)
+# range:   +1000
+# policy:  invasion_unit_request, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_invade_japan_units = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.12.1
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
+		OR = {
+			JAP = { surrender_progress > 0.02 }
+			627 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
 		NOT = {
 			surrender_progress > 0
 		}
@@ -58,14 +81,18 @@ WA_AI_MILITARY_USA_fight_the_japanese_2_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_help_with_sealion (INVASION domain)
-WA_AI_MILITARY_USA_help_with_sealion_INVASION = {
+# purpose: while an enemy stands on British soil, no side-show invasions of the European Axis -
+#          Britain first (formerly also capped date < 1945.1; the enemy-on-British-soil
+#          condition is the real gate)
+# range:   -2000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_no_side_shows_while_britain_invaded = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date < 1945.1.1
 		is_in_faction_with = ENG
 		OR = {
 			121 = { CONTROLLER = { has_war_with = ROOT } }
@@ -105,8 +132,13 @@ WA_AI_MILITARY_USA_help_with_sealion_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_war_against_ITA_2 (INVASION domain)
-WA_AI_MILITARY_USA_war_against_ITA_2_INVASION = {
+# purpose: while the desert war is being won overland (Egypt/Libya friendly, Maghreb quiet), no
+#          Balkan invasion hops (formerly also gated on is_historical/date > 1943.7 - the
+#          state-control terms below carry the sequencing in any timeline)
+# range:   -2000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_no_balkan_hops_during_desert_war = {
 
 	allowed = {
 		tag = USA
@@ -125,10 +157,6 @@ WA_AI_MILITARY_USA_war_against_ITA_2_INVASION = {
 			}
 		}
 		has_war_with = ITA
-		OR = {
-			is_historical_focus_on = no
-			date > 1943.7.1
-		}
 		OR = {
 			451 = {
 				CONTROLLER = {
@@ -232,8 +260,15 @@ WA_AI_MILITARY_USA_war_against_ITA_2_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_preparation (INVASION domain)
-WA_AI_MILITARY_USA_operation_torch_preparation_INVASION = {
+# purpose: the Torch target book - invade Vichy Morocco/French West Africa, never the Atlantic
+#          islands, and steer the landing units onto Morocco (461) rather than Tunisia/Algeria.
+#          Replaces the two 1942.9/1942.11 date-gated blocks (identical payloads; both armed
+#          together from 1942.11, so their additive values summed - the merge deliberately
+#          HALVES the post-landing pressure back to the single-block magnitude)
+# range:   -5000 to +4000 (saturated legacy values, E1 worklist)
+# policy:  invade + invasion_unit_request, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_torch_targets = {
 
 	allowed = {
 		tag = USA
@@ -244,7 +279,7 @@ WA_AI_MILITARY_USA_operation_torch_preparation_INVASION = {
 			has_war_with = ITA
 		}
 		is_in_faction_with = ENG
-		date > 1942.9.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { CONTROLLER = { has_war_with = ROOT } }
@@ -302,84 +337,18 @@ WA_AI_MILITARY_USA_operation_torch_preparation_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_landing (INVASION domain)
-WA_AI_MILITARY_USA_operation_torch_landing_INVASION = {
+# purpose: once the Normandy exile beachhead exists, invade toward it and stop wasting hulls on
+#          the Balkans and the Reichskommissariats (formerly also date > 1944.3 - REN's
+#          existence is the real gate)
+# range:   -2000 to +500
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_reinforce_normandy_beachhead = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		OR = {
-			has_war_with = GER
-			has_war_with = ITA
-		}
-		is_in_faction_with = ENG
-		date > 1942.11.1
-		ENG = { surrender_progress < 0.2 }
-		OR = {
-			458 = { CONTROLLER = { has_war_with = ROOT } }
-			665 = { CONTROLLER = { has_war_with = ROOT } }
-			460 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } }
-			461 = { CONTROLLER = { has_war_with = ROOT } }
-			1055 = { CONTROLLER = { has_war_with = ROOT } }
-			462 = { CONTROLLER = { has_war_with = ROOT } }
-			1056 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "VIC"
-		value = 4000
-	}
-	ai_strategy = {
-		type = invade
-		id = "FRM"
-		value = 4000
-	}
-	ai_strategy = {
-		type = invade
-		id = "FRN"
-		value = -4000
-	}
-	ai_strategy = {
-		type = invade
-		id = "FRT"
-		value = -4000
-	}
-	ai_strategy = {
-		type = invade
-		id = "RGR"
-		value = -4000
-	}
-	ai_strategy = {
-		type = invasion_unit_request
-		state = 458
-		value = -5000
-	}
-	ai_strategy = {
-		type = invasion_unit_request
-		state = 460
-		value = -5000
-	}
-	ai_strategy = {
-		type = invasion_unit_request
-		state = 461
-		value = 2000
-	}
-}
-
-
-# Phase 6 split from WA_AI_MILITARY_USA_invade_the_axis_REN (INVASION domain)
-WA_AI_MILITARY_USA_invade_the_axis_REN_INVASION = {
-
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		date > 1944.3.1
 		has_war_with = GER
 		country_exists = REN
 		OR = {
@@ -475,14 +444,20 @@ WA_AI_MILITARY_USA_invade_the_axis_REN_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_europe_first (INVASION domain)
-WA_AI_MILITARY_USA_europe_first_INVASION = {
+# purpose: while the Pacific offensive is not ready, no invasions of the far-Pacific puppets
+#          (Europe first; mirror of _pacific_offensive below). The deleted bad_torpedos_suck
+#          twin (calendar-gated) summed with this block; the stack is deliberately not
+#          preserved - see the THEATRE twin's header.
+# range:   -2000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_europe_first = {
 
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1943.6.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		OR = {
 			has_war_with = JAP
 			threat > 0.70
@@ -520,21 +495,19 @@ WA_AI_MILITARY_USA_europe_first_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese (INVASION domain)
-WA_AI_MILITARY_USA_fight_the_japanese_INVASION = {
+# purpose: once the Pacific offensive is ready, the invasion book flips - Japan and the
+#          Philippines up, the mainland side-shows down (formerly the 1944.8 hard date)
+# range:   -2000 to +4000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_pacific_offensive = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.8.1
-		NOT = {
-			AND = {
-				date > 1944.3.1
-				date < 1944.8.1
-			}
-		}
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -592,75 +565,23 @@ WA_AI_MILITARY_USA_fight_the_japanese_INVASION = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_bad_torpedos_suck (INVASION domain)
-WA_AI_MILITARY_USA_bad_torpedos_suck_INVASION = {
-
+# purpose: with a small army, no early invasions of major-held or Commonwealth shores - the
+#          deathtrap brake (formerly historical-only and date < 1942.6; capability-gated so an
+#          ahistorical small USA is protected too)
+# range:   -2000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_avoid_early_deathtraps = {
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1943.6.1
-		OR = {
-			has_war_with = JAP
-			threat > 0.70
-			is_in_faction_with = ENG
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "SIA"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "IPP"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "IPM"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "IPI"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "IPS"
-		value = -2000
-	}
-}
-
-# Migrated from common/ai_strategy/USA.txt:2990-3104 (INVASION domain)
-
-WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_avoid_early_deathtraps = {
-	allowed = {
-		original_tag = USA
-		is_historical_focus_on = yes
-	}
-	enable = {
-		date < 1942.6.1
+		NOT = { WA_AI_MILITARY_has_minimum_expeditionary_army = yes }
 		GER = {
 			has_war_with = ENG
 		}
 	}
 	abort_when_not_enabled = yes
-
-
-
-
-
-
-
-
-
-
-
 
 	ai_strategy = {
 		type = invade
@@ -700,15 +621,19 @@ WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_avoid_early_deathtraps = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3439-3490 (INVASION domain)
-
-WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_dont_invade_japan = {
+# purpose: while the Pacific offensive is not ready, do not invade the Japanese sphere at all -
+#          exact mirror of _pacific_offensive (formerly date < 1944.8; the two enables flip on
+#          the same trigger with no gap and no overlap)
+# range:   -4000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_dont_invade_japan_yet = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date < 1944.8.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -756,9 +681,13 @@ WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_dont_invade_japan = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3696-3734 (INVASION domain)
-
-WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_operation_torch_disable = {
+# purpose: once the Allied side holds the Maghreb, stop invading Vichy - the follow-up war is
+#          fought overland (formerly capped date < 1944.4.20; now lifts when the Allies hold a
+#          metropolitan-France foothold and the mainland campaign begins)
+# range:   -1000
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_torch_done_no_vichy = {
 	allowed = {
 		tag = USA
 	}
@@ -772,7 +701,12 @@ WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_operation_torch_disable = {
 			VIC = { exists = no }
 		}
 		is_in_faction_with = ENG
-		date < 1944.4.20
+		NOT = {
+			OR = {
+				15 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
+				21 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
+			}
+		}
 		NOT = { ENG = { surrender_progress > 0.2 } }
 		OR = {
 			458 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
@@ -794,9 +728,11 @@ WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_operation_torch_disable = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3923-3940 (INVASION domain)
-
-WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_invade_the_axis_RUK = {
+# purpose: retake Iceland when at war with its holder and Greenland's airfield is ours
+# range:   +500
+# policy:  invade, Additive per target
+# domain:  INVASION
+WA_AI_MILITARY_COUNTRY_USA_INVASION_retake_iceland = {
 	allowed = {
 		tag = USA
 	}
@@ -812,53 +748,5 @@ WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_USA_invade_the_axis_RUK = {
 		type = invade
 		id = "ICE"
 		value = 500
-	}
-}
-
-
-# Migrated from common/ai_strategy/USA.txt:4020-4063 (INVASION domain)
-
-WA_AI_MILITARY_COUNTRY_USA_INVASION_legacy_Allies_no_suicide_invasions_if_eng_defeated = {
-	allowed = {
-		OR = {
-			tag = USA
-			tag = ENG
-			tag = CAN
-			tag = FRA
-			tag = AST
-			tag = NZL
-			tag = SAF
-			tag = RAJ
-		}
-	}
-	enable = {
-		has_war_with = GER
-		126	= {
-			CONTROLLER = {
-				OR = {
-					has_war_with = ROOT
-					tag = GER
-					is_subject_of = GER
-					is_in_faction_with = GER
-				}
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = invade
-		id = "RSP"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "RPT"
-		value = -2000
-	}
-	ai_strategy = {
-		type = invade
-		id = "RFR"
-		value = -2000
 	}
 }

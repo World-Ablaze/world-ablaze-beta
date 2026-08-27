@@ -298,6 +298,33 @@ WA_AI_MILITARY_can_open_secondary_fronts = {
 	}
 }
 
+# [usa-refactor] the minimum army for a deliberate overseas landing operation (Torch-class);
+# home must be safe - a 30-division army pinned on its own coast is not available. Owns the
+# 29/30 band the USA files read; the deathtrap brake is its exact NOT-mirror.
+WA_AI_MILITARY_has_minimum_expeditionary_army = {
+	num_divisions > 29
+	NOT = { WA_AI_MILITARY_home_threatened = yes }
+}
+
+# [usa-refactor] USA's Europe-first/Pacific-offensive phase flip; replaces the 1943.6/1944.8
+# hard dates so an ahistorical USA still gets both behaviours. Assumes the arms cross their
+# bars once and stay (armies rarely shrink back through 100); if a campaign shows this trigger
+# flapping, latch it on a country flag.
+WA_AI_MILITARY_USA_pacific_offensive_ready = {
+	OR = {
+		JAP = { surrender_progress > 0.01 }
+		AND = {
+			WA_AI_MILITARY_can_open_secondary_fronts = yes
+			NOT = { WA_AI_MILITARY_home_threatened = yes }
+			OR = {
+				NOT = { has_war_with = GER }
+				GER = { has_capitulated = yes }
+				num_divisions > 99
+			}
+		}
+	}
+}
+
 # Shared conditions for all SOV Stalin Line buffer rules.
 # Each rule adds its own has_full_control_of_state check.
 WA_AI_MILITARY_SOV_stalin_line_base = {
