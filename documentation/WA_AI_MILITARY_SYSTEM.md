@@ -119,7 +119,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 ### Notes on the policy column
 
 - **Additive** means the engine combines values from multiple `ai_strategy` blocks (typically by sum, sometimes by max). Layers may safely contribute to the same key. Tuning differences between layers are by design.
-- **Exclusive** means the WA system enforces single-layer ownership for a given key (target, area, ally, region, mode). The engine may still technically allow multiple writers, but stacking writers produces unpredictable behaviour. The Phase 5 mutual-exclusion triggers that enforce this **shipped in `d149a204b`** and live in `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt`; §6 is their contract and inventory.
+- **Exclusive** means the WA system enforces single-layer ownership for a given key (target, area, ally, region, mode). The engine may still technically allow multiple writers, but stacking writers produces unpredictable behaviour. The Phase 5 mutual-exclusion triggers that enforce this **shipped in `d149a204b`** and live in `common/scripted_triggers/WA_AI_MILITARY_ownership_triggers.txt`; §6 is their contract and inventory.
 - `naval_avoid_region` **is signed, and a negative value is an attraction, not a weaker avoidance.** Reading only the region id will mislead you. Corrected 2026-08-14 (Fix 63): the range column previously read "0 to +500", which no file in the mod has ever respected. Measured across the 402 entries actually in `common/ai_strategy/`, the values in use are `2000` (326 entries), `1000` (29), `100` (23), `-1000` (18), `200` (3), `-2000` (2) and `-10000` (1). The working convention is therefore:
 
   | Value | Meaning |
@@ -163,7 +163,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 ## 6. Mutual exclusion for Exclusive types - two mechanisms, and which one owns what
 
 **Shipped, not planned.** The scripted ownership triggers this section used to defer to "Phase 5"
-live in `common/scripted_triggers/WA_AI_MILITARY_PHASE5_ownership_triggers.txt` since `d149a204b`:
+live in `common/scripted_triggers/WA_AI_MILITARY_ownership_triggers.txt` since `d149a204b`:
 **49 slugs, all 49 read by at least one `ai_strategy` block, zero orphans** (measured 2026-08-19).
 
 There are two mechanisms in play, and they are not interchangeable.
@@ -267,7 +267,7 @@ Additive types are never gated by these triggers. The slug inventory as shipped:
 A slug encodes **ownership, not intention**: add a tag to a trigger only when a Country-layer block
 actually writes that (type, key). The file's own header carries that rule.
 
-Region-layer writers of an Exclusive key follow the Faction rule (they gate on `NOT = { WA_AI_MILITARY_country_owns_<key> = yes }`); precedence is Country > Faction = Region > Default, and a Faction and a Region block must not write the same key with different intent (Fix 96: `WA_AI_MILITARY_REGION_ITALY_homeland_invaded_exec_FRONT` writes `front_control area = italy / south_italy` for the Italian owner, `WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT` writes a country-keyed `front_control` for the owner's enemies - disjoint audiences by construction; slug `WA_AI_MILITARY_country_owns_fc_area_italy`).
+Region-layer writers of an Exclusive key follow the Faction rule (they gate on `NOT = { WA_AI_MILITARY_country_owns_<key> = yes }`); precedence is Country > Faction = Region > Default, and a Faction and a Region block must not write the same key with different intent (Fix 96: `WA_AI_MILITARY_REGION_ITALY_homeland_invaded_exec_FRONT` writes `front_control area = italy / south_italy` for the Italian owner, `WA_AI_MILITARY_AXIS_hold_italy_after_defection_FRONT` writes a country-keyed `front_control` for the owner's enemies - disjoint audiences by construction; slug `WA_AI_MILITARY_country_owns_front_control_area_italy`).
 
 ---
 
@@ -1530,7 +1530,7 @@ Per-tag releases: `ALLIES_pacific_quiet_release_garrison` (AST/NZL/RAJ), `CAN_FR
 `pacific_commonwealth_garrison_releasable`. Kept: `RAJ_core_front_requests`' own `-5000` (the
 OPPOSITE case - garrison stays released while RAJ fronts against Japan at home).
 Legacy deletions in the same pass: `CAN_focus_on_europe` (flag+date gate),
-`CAN_sync_invasions_on_europe` (dated no-ops; the five Phase-5 `country_owns_fc_area_*` triggers it
+`CAN_sync_invasions_on_europe` (dated no-ops; the five `country_owns_front_control_area_*` ownership triggers it
 owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLIES_allied_minors_make_way`
 (tag-listed, date-gated suppression of the African fronts - the opposite of this rule),
 `SAF_help_in_africa_1_DIPLOMACY`, two zero-payload COMMONWEALTH.txt blocks, four empty country files.
