@@ -430,21 +430,27 @@ def _blank_country():
 
 
 def scan(path, tags=None, want_divisions=False, want_templates=False):
-    """One streaming pass. -> ({tag: {'armies', 'groups', 'divisions'}}, {template id: rec})
+    """One streaming pass.
+    -> ({tag: {'armies', 'groups', 'divisions'}}, {template id: rec}, in-game date or None)
 
     `tags` None means every country. Only `theatres` (and `units`, when asked) are read
     inside the countries block; `division_templates={}` is a TOP-LEVEL block that comes
     BEFORE it, so asking for templates costs the same single pass, not a second one.
+    The `date=` header sits a few lines in and rides along for free.
     """
-    out, templates = {}, {}
+    out, templates, date = {}, {}, None
     with sg.open_save(sg.resolve(path)) as fh:
         for line in fh:
             if line.startswith("countries={"):
                 break
+            if date is None:
+                m = re.match(r'^date="?(\d+(?:\.\d+)*)', line)
+                if m:
+                    date = m.group(1)
             if want_templates and line.startswith("division_templates={"):
                 templates = _read_templates(fh)
         else:
-            return out, templates
+            return out, templates, date
         depth, tag, section, sdepth = 1, None, None, 0
         buf, kind, base, bdepth = None, None, 0, 0
         div_id, div, ddepth = None, {}, None
@@ -530,7 +536,7 @@ def scan(path, tags=None, want_divisions=False, want_templates=False):
             depth += line.count("{") - line.count("}")
             if depth <= 0:
                 break
-    return out, templates
+    return out, templates, date
 
 
 def classify(country):
@@ -627,9 +633,18 @@ def report_fronts(tag, save, country, limit):
     print("    * = army-group order (covers its child armies)")
 
 
-def report_divisions(tag, save, country):
+def save_year(date, path):
+    """Campaign year for 'fought this year'. The save's own `date=` header is the
+    source; the filename prefix serves only names that start with the year
+    (1944.6_Jun.hoi4 yes, GER_1945_07_01_01.hoi4 no - its prefix is the tag)."""
+    if date:
+        return date.split(".")[0]
+    head = os.path.basename(path)[:4]
+    return head if head.isdigit() else None
+
+
+def report_divisions(tag, save, country, year):
     cls = classify(country)
-    year = save[:4]
     agg = collections.defaultdict(lambda: collections.defaultdict(list))
     for aid, a in country["armies"].items():
         c = cls[aid][0]
@@ -640,7 +655,8 @@ def report_divisions(tag, save, country):
             for key in ("organisation", "strength"):
                 if key in d:
                     agg[c][key].append(d[key])
-            agg[c]["recent"].append(1 if d.get("lc", "1.1.1.1").split(".")[0] >= year else 0)
+            agg[c]["recent"].append(
+                1 if year and d.get("lc", "1.1.1.1").split(".")[0] >= year else 0)
     print("%s  %s" % (tag, save))
     print("    %-10s %-5s %-8s %-9s %s" % ("class", "n", "org", "strength", "fought this year"))
     for c in _sorted_classes(agg):
@@ -648,9 +664,9 @@ def report_divisions(tag, save, country):
         if not a["strength"]:
             continue
         mean = lambda k: sum(a[k]) / len(a[k])  # noqa: E731
-        print("    %-10s %-5d %-8.1f %-9.1f %.0f%%"
-              % (c, len(a["strength"]), mean("organisation"), mean("strength"),
-                 100 * mean("recent")))
+        recent = "%.0f%%" % (100 * mean("recent")) if year else "? (no date header)"
+        print("    %-10s %-5d %-8.1f %-9.1f %s"
+              % (c, len(a["strength"]), mean("organisation"), mean("strength"), recent))
 
 
 def report_where(tag, save, country, limit):
@@ -836,8 +852,8 @@ def main(argv):
     want_tmpl = "--oob" in flags or "--templates" in flags
     want_div = want_tmpl or "--divisions" in flags or "--where" in flags
     for save in files:
-        data, templates = scan(save, tags, want_divisions=want_div,
-                               want_templates=want_tmpl)
+        data, templates, date = scan(save, tags, want_divisions=want_div,
+                                     want_templates=want_tmpl)
         if not data:
             print("%s: no matching country" % save)
             continue
@@ -868,7 +884,7 @@ def main(argv):
             elif "--where" in flags:
                 report_where(tag, save, country, limit)
             elif want_div:
-                report_divisions(tag, save, country)
+                report_divisions(tag, save, country, save_year(date, save))
             else:
                 report_census(tag, save, country)
             print()
