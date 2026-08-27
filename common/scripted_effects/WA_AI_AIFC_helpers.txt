@@ -121,7 +121,7 @@ WA_AI_AIFC_select_sector = {
 	# clear_sector, every week, for the entire Western campaign.
 	#
 	# The term was never load-bearing. The real guard is the divisions_in_state test below: ROOT must
-	# have >2 of its OWN divisions standing on that ground, which excludes a capitulated ally's
+	# have > @AIFC_PAD_T2 of its OWN divisions standing on that ground, which excludes a capitulated ally's
 	# territory we are not actually on. `exists = yes` replaces it to keep dead tags out of the walk -
 	# that is the check the old term was reaching for. The launching-pad measurement in section 1c
 	# below was written in the SAME commit as this block (4ffb8e442, [offensive-posture]) and already omits the
@@ -191,8 +191,12 @@ WA_AI_AIFC_select_sector = {
 
 			every_controlled_state = {
 				limit = {
-					# ROOT has boots on this allied ground - at least 3 of its own divisions.
-					ROOT = { divisions_in_state = { state = PREV size > 2 } }
+					# [aifc-traction] the ally state must BY ITSELF be a band-2 launching pad
+					# (> @AIFC_PAD_T2 of ROOT's own divisions): at "> 2" a 4-division ferry
+					# stop qualified and won a sector its owner left the next month. The
+					# validity mirror (core, expeditionary arm) keeps its weaker any-neighbor
+					# bar on purpose - keep-while-valid hysteresis.
+					ROOT = { divisions_in_state = { state = PREV size > @AIFC_PAD_T2 } }
 				}
 
 				every_neighbor_state = {
