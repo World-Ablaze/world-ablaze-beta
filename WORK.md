@@ -444,57 +444,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
-### theorist-hiring — SHIPPED-UNTESTED (2026-08-28)
-- Scope: owner order 2026-08-27/28 ("ça doit être corrigé", staged: theorists first, then ARG).
-  Intended behaviour: every AI country ends up with a hired army theorist (the trait carries the
-  army XP trickle the template system needs - install `ai_templates/_documentation.md:45`: the
-  engine spends army XP to upgrade toward target templates).
-- Symptom, MEASURED (campaign 0767987f, 118 saves): (a) 257 advisors across 94 character files
-  declared the removed `theorist` slot - unhirable dead content (GER/ENG/SOV had no army theorist
-  for this reason); (b) a stable class of ~19 countries (ARG, VEN, COL, ECU, PAR, CUB, PAN, NIC,
-  IRE...) NEVER hires any advisor in 10 years - ARG at the 2000 PP cap, candidates visible and
-  hirable in the owner's live UI check (2026-08-28), zero hires; hirers all hire in 1936.2-1937.10
-  (POR 1940.9). No static discriminator between the classes (slots, ai_will_do, traits + trait
-  ai_will_do, ideology, elections, PP, war status all fail to split); engine advisor-desire layer,
-  ASSUMED near-threshold scoring, undecidable without a second campaign (memory:
-  advisor-hiring-two-classes).
-- Shipped: (1) `6ee54b596` - slot revival: 257 `slot = theorist` -> army/navy/air_theorist by
-  ledger (SPR council -> army_theorist; SWE Beurling cryptologist -> intelligence_minister), the
-  role-strip helpers extended to the new slots, the AUS austromarxism theorist-cost variable wired
-  to the three per-slot cost factors, 16 fully-commented ex-scientist advisor blocks deleted.
-  (2) safety net (this commit): `WA_AI_ADVISOR_hire_army_theorist` on the monthly AI pulse -
-  gates in `WA_AI_ADVISOR_triggers.txt` (AI, not capitulated, date > 1938.1.1 so natural hires
-  go first, PP > 200, army_theorist slot empty, an unhired candidate exists); the effect replaces
-  the candidate's role with a standardized one (military_theorist, cost 100) via character-scope
-  `add_advisor_role activate = yes` (generic activation is impossible - activate_advisor needs
-  the per-character token) and charges 100 PP manually. Self-disables once the slot is filled.
-- Reviews 2026-08-28: architecture CONCERNS + lessons CONCERNS, no CONFLICT; all required items
-  applied: (1) the two 100s collapsed onto ONE @ constant, rendered as a number into the meta
-  text (`COST = "[?_adv_cost|.0]"` - meta renders numeric variables; an @ inside meta text was
-  the unvalidated risk) and negated into the manual charge via a temp variable
-  (`add_political_power = <var>` is in-repo proven, NOR_scripted_effects.txt:190); (2) code-site
-  headers stripped of campaign IDs/measured windows (rule 7), history lives here; (3) harness
-  prints PP BEFORE and AFTER the hire - settles the ASSUMED double-charge question (activate
-  charging the role cost on top of the manual -100); (4) recipe gains a known-false control
-  country (`event wa_test_th.1 USA` must read should_hire=0); (5) recruited-candidates concern
-  answered, MEASURED: history/countries/ARG recruits every character incl. the theorist, and the
-  0767987f save shows 19 advisor-capable characters in ARG's roster - the class's candidates
-  exist in-game (the owner's live UI check shows them hirable); (6) harness pp-floor literal 200
-  carries the mirror comment. remove-then-add justified at the site: prevents two same-slot
-  roles; plain activate is impossible without the per-character token.
-- ASSUMED, stated: whether scripted activation charges the role cost (harness PP pair settles
-  it; if double, lower the constant); add_advisor_role on an existing token updates rather than
-  duplicates (re-fire path). Residual known gaps: countries with NO army_theorist candidate at
-  all (COL) stay uncovered; navy/air theorists and chiefs not in scope this ship.
-- Verification: console harness `event wa_test_th.1 ARG` (gate report; scope line must read
-  1 1 1 1 0), `event wa_test_th.1 USA` (known-false control: should_hire=0), then
-  `event wa_test_th.2 ARG` (executes the real effect; post line shows army_theorist_hired=1 and
-  the pre/post PP pair shows -100, not -200). Campaign probe: next scored run, ARG and >= 5 more
-  of the 2026-08-28 non-hirer class have an army_theorist hired by 1939.1 (extractor:
-  appointed_advisors scan, wa-savegame-analysis session 2026-08-28); GER/ENG/SOV army theorists
-  hired (slot-revival probe); MEX/ARG army XP > 50 by 1941.
-- Closed when: the owner pastes the harness output here and the campaign probe passes once.
-
 ### recruit-loop — SHIPPED-UNTESTED (2026-08-28)
 - Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
   boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
@@ -1013,6 +962,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+### theorist-hiring — PARKED (2026-08-28)
+- Parked 2026-08-28 (net removed on owner ruling, nothing actionable until the next scored
+  campaign; same waiting-state logic as templates-admission). Reopen when it lands.
+- Scope: owner order 2026-08-27/28, REDUCED 2026-08-28: the scripted safety net (force-hire an
+  army theorist for the engine's non-hirer class) was shipped `a5ade407a` then REMOVED the same
+  day on owner ruling — the `recruit-loop` fix unlocked ARG's advisor hiring, so the advisor-less
+  class was downstream of the CP/orphan loop, not an engine-desire mystery (the earlier
+  decorrelation held only on 0767987f's pre-fix saves). What remains under this slug is the slot
+  revival, commit `6ee54b596`: 257 dead `slot = theorist` advisors converted to
+  army/navy/air_theorist (majors included: GER 2, ENG 3, JAP 3, SOV 2, USA 2 — why GER/ENG/SOV
+  had no army theorist), role-strip helpers extended, AUS theorist-cost variable wired, 16
+  commented ex-scientist blocks deleted.
+- Verification (campaign probes only — characters-file change, no WA_AI harness system): next
+  scored run, (i) GER/ENG/SOV have an army_theorist hired (appointed_advisors scan,
+  wa-savegame-analysis session 2026-08-28); (ii) ARG and >= 5 more of the former non-hirer class
+  (VEN, COL, ECU, PAR, CUB, PAN, NIC, IRE...) hire an army_theorist by 1940.1 — this doubles as
+  the confirmation probe for the recruit-loop unlock; (iii) MEX/ARG army XP > 50 by 1941
+  (theorist trickle feeding template upgrades).
+- Closed when: probes (i)-(iii) pass on one scored campaign.
 
 ### templates-admission — PARKED (2026-08-28)
 - Parked 2026-08-28 (WIP limit, owner choice; theorist-hiring enters). State at parking: shipped,
