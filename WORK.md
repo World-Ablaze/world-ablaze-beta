@@ -495,6 +495,67 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   hired (slot-revival probe); MEX/ARG army XP > 50 by 1941.
 - Closed when: the owner pastes the harness output here and the campaign probe passes once.
 
+### recruit-loop — SHIPPED-UNTESTED (2026-08-28)
+- Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
+  boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
+  (5th subject in OPEN is an explicit owner override of the WIP limit; the checker's WIP-LIMIT
+  ERROR is accepted until a subject closes). Intended behaviour: scripted leader recruitment
+  recruits generals that actually exist, at the engine-mirrored CP cost, and stops when the
+  target count is met.
+- Symptom, MEASURED (campaign 0767987f, saves 1937.1/1940.1/1943.1/1945.10): every scripted
+  `create_corps_commander = { skill = 1 }` creation lands ORPHANED in character_manager -
+  present in the DB (token `TAG_` with empty suffix, generic portrait, skill 1/1/1/1), never in
+  the country's characters list, invisible to `every_army_leader`. The count gate `< 3`
+  therefore never closes: any country whose official roster holds < 3 non-marshal generals
+  recruits forever at the 10-CP min clamp. 0 exceptions over 74 cells (37 tags x 2 saves) on
+  "official < 3 => growing orphans + CP pinned < 13". ARG: 117 orphans, CP 0-11 for 9 years,
+  ~1170 CP burned. Global: 10 394 orphans across 106 countries (> 55% of the save's character
+  DB). Reverse direction has 2 exceptions: XSM/YUN loop despite official >= 3 (warlord/united
+  front reading, engine boundary, ASSUMED). Explicitly decorrelated from the advisor mystery:
+  CHL/PRU/URG/COS/GUA/HON loop identically AND hire advisors fine.
+- Root cause, DERIVED: nameless `create_corps_commander`/`create_field_marshal` - every vanilla
+  and Expert AI usage passes `name` (+ gfx); the empty-suffix tokens are the nameless-creation
+  signature. Engine registration mechanics ASSUMED (not save-observable).
+- Shipped 2026-08-28, `WA_AI_leader_recruitment_effects.txt`: (1) both creations replaced by
+  `generate_character` - documented "create + recruit" (install effects_documentation.md:4441),
+  random name from the country's own lists when omitted, unique token per creation
+  (`WA_AI_gen_<TAG>_<seq>` via meta_effect + per-country sequence variable); (2) registration
+  watchdog: after each creation a pending flag + expected count verify on the NEXT firing
+  (2-day event) that the counter grew; two consecutive unregistered creations latch scripted
+  recruitment off for that country (one-way flag) - the second strike absorbs the
+  general-died-inside-the-window false positive; the gate also refuses to stack a second
+  creation while one is pending (max rate one per ~2 firings). Same pattern on the marshal
+  branch (its own flags/expected). Promotion branch untouched.
+- Reviews 2026-08-28: architecture OK + lessons CONCERNS, no unresolved CONFLICT; amendments
+  applied: (1) failed verify REFUNDS the exact debited cost (stored at debit) - the watchdog's
+  strikes now cost 0 CP net; (2) the broken latch gained an exit: cleared when the official
+  count grows ABOVE its value at latch time (growth-since-latch, not a threshold - a threshold
+  would re-arm every pulse for a ratio-branch looper like XSM/YUN and re-flood orphans);
+  (3) count oracle kept over a token-existence check ON PURPOSE - orphans EXIST in the
+  character DB, so has_character would read success on the very failure mode this watchdog
+  hunts; death interference is absorbed by the two-strike rule + refund + exit, reasoning at
+  the code site; (4) variable-absence safety: the verify block only runs under the pending
+  flag, set in the same pass that sets the expected count - the invariant is stated at the
+  site. Watchdog timeline (t-table): t0 creation + debit + pending; t0+2d verify -> success
+  (fail_n=0) or strike 1 + refund; t0+4d second creation; t0+6d strike 2 -> latch, net CP
+  cost 0, max 2 orphans per country per latch cycle. SEQ render: `[?var|.0]` prints integers;
+  behaviour at seq >= 1000 (thousands separator) is ASSUMED-safe and unreachable in practice
+  (max ~2 creations per latch cycle, dozens for healthy countries).
+- ASSUMED, stated: generate_character supports unit-leader role blocks ("whatever you would put
+  when writing character" - doc wording, not an example); same-tick visibility of a fresh
+  leader in every_army_leader (the harness's delta-0 branch says re-check next day, and the
+  watchdog only judges on the next firing).
+- Verification: console harness `event wa_test_rl.1 ARG` (counts + watchdog state; scope line
+  1 1 1 1 0), `event wa_test_rl.2 ARG` (one real recruit; delta +1 = registration fixed),
+  control `event wa_test_rl.1 TUR` (>= 3 generals, gate closed, no recruit). Campaign probe:
+  next scored run - (i) orphan corps-commander count (empty-suffix tokens in character_manager
+  outside country lists) stops growing campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG
+  CP accumulates (> 50 at some 1939+ save vs pinned < 13); (iii) ARG official non-marshal
+  generals >= 3 by 1938; (iv) no country carries WA_AI_recruit_general_broken unless its
+  official count genuinely cannot grow (flag census, expect ~0 with XSM/YUN the watched
+  exceptions).
+- Closed when: the owner pastes the harness output here and campaign probes (i)-(iii) pass once.
+
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts

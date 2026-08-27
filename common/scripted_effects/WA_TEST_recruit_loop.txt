@@ -1,0 +1,67 @@
+############################################################################################################
+# WA TEST - scripted leader recruitment (recruit-loop) console harness. harness-contract: v1 (wa-testing SKILL).
+# Recipe: events/wa_test_recruit_loop.txt header. Output: logs/game.log under "RECRUIT LOOP".
+# Country scope (ROOT = the reported country; fire the event PER COUNTRY, never loop every_country).
+############################################################################################################
+
+# Report: independent walk of the recruit gate - own counts, never the shipped effect's temps.
+WA_TEST_RL_report = {
+	log = "=== RECRUIT LOOP [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _rl_e1_ = 0 }
+	set_temp_variable = { _rl_e2_ = 0 }
+	set_temp_variable = { _rl_e3_ = 0 }
+	set_temp_variable = { _rl_e4_ = 0 }
+	set_temp_variable = { _rl_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _rl_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _rl_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _rl_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _rl_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _rl_e5_ = 1 } }
+	log = "  scope : always=[?_rl_e1_|.0]  I-am-ROOT=[?_rl_e2_|.0]  I-am-THIS=[?_rl_e3_|.0]  ROOT-scope-usable=[?_rl_e4_|.0]  control-false=[?_rl_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### Independent walk
+	set_temp_variable = { _rl_gen = 0 }
+	every_army_leader = {
+		limit = { NOT = { is_field_marshal = yes } }
+		add_to_temp_variable = { _rl_gen = 1 }
+	}
+	set_temp_variable = { _rl_fm = 0 }
+	every_army_leader = {
+		limit = { is_field_marshal = yes }
+		add_to_temp_variable = { _rl_fm = 1 }
+	}
+	set_temp_variable = { _rl_under3 = 0 }
+	if = { limit = { check_variable = { _rl_gen < 3 } } set_temp_variable = { _rl_under3 = 1 } }
+	set_temp_variable = { _rl_pend = 0 }
+	if = { limit = { has_country_flag = WA_AI_recruit_general_pending } set_temp_variable = { _rl_pend = 1 } }
+	set_temp_variable = { _rl_broken = 0 }
+	if = { limit = { has_country_flag = WA_AI_recruit_general_broken } set_temp_variable = { _rl_broken = 1 } }
+	log = "  count : generals=[?_rl_gen|.0] marshals=[?_rl_fm|.0] divisions=[?num_divisions|.0] cp=[?command_power|.1]"
+	log = "  state : under3=[?_rl_under3|.0] pending=[?_rl_pend|.0] broken=[?_rl_broken|.0] fail_n=[?WA_AI_recruit_general_fail_n|.0] expected=[?WA_AI_expected_generals|.0] seq=[?WA_AI_gen_seq|.0]"
+}
+
+# Execute: one real recruit pass (exercise, not measurement), then recount in the SAME tick.
+# delta=+1 -> generate_character registers immediately, the loop bug is dead.
+# delta=0  -> re-fire wa_test_rl.1 after unpausing 1-2 days before concluding: same-tick
+#             visibility of a fresh leader in every_army_leader is not established. If the
+#             next-day count still has not grown, the registration bug persists and the
+#             watchdog will latch this country off after its second attempt.
+WA_TEST_RL_execute = {
+	log = "=== RECRUIT LOOP EXECUTE [This.GetName] [GetDateText] ==="
+	set_temp_variable = { _rl_before = 0 }
+	every_army_leader = {
+		limit = { NOT = { is_field_marshal = yes } }
+		add_to_temp_variable = { _rl_before = 1 }
+	}
+	log = "  pre   : generals=[?_rl_before|.0] cp=[?command_power|.1]"
+	WA_AI_recruit_general = yes
+	set_temp_variable = { _rl_after = 0 }
+	every_army_leader = {
+		limit = { NOT = { is_field_marshal = yes } }
+		add_to_temp_variable = { _rl_after = 1 }
+	}
+	log = "  post  : generals=[?_rl_after|.0] cp=[?command_power|.1] (delta +1 = fixed; 0 = recheck next day via wa_test_rl.1)"
+}
