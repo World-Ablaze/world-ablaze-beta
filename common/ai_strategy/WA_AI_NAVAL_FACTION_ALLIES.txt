@@ -141,10 +141,9 @@ WA_AI_NAVAL_FACTION_ALLIES_azores_fallen = {
 	}
 	enable = {
 		WA_AI_MILITARY_is_allies_member = yes # anyone in allies
-		# [atlantic-naval] no tag exclusion here, and this file carries no `tag =` gating term of any kind:
-		# the south corridor PULLS every corridor user toward 112 at -1000 without checking who holds the
-		# islands, so excluding a navy from this deterrent would draw exactly that navy into a hostile
-		# Azores with nothing pushing back.
+		# [atlantic-naval] no tag exclusion: the deterrent must cover every Allied navy - the
+		# Azores sit on routes all of them sail, and excluding one would leave exactly that
+		# navy with nothing pushing back while the enemy holds the islands.
 		698 = { CONTROLLER = { has_war_with = ROOT } }
 	}
 	abort_when_not_enabled = yes
@@ -154,9 +153,10 @@ WA_AI_NAVAL_FACTION_ALLIES_azores_fallen = {
 		id = 47
 		value = 2000
 	}
-	# [atlantic-naval] 2000, not 1000: the south corridor writes -1000 on 112, so at the old value the
-	# two summed to exactly ZERO and the deterrent vanished completely the moment the Azores fell
-	# instead of being reduced. At 2000 the net is +1000 - the same reading the sibling 47 entry has.
+	# 112 = Azores (map file 237-Azores declares id 112; the filename prefix is the loc key,
+	# not the id - see the region-id entry in wa-lessons-learned). The corridor no longer
+	# rates 112, so this no longer nets against a pull; it stacks on off_corridor_avoidance's
+	# +300 for a fallen-Azores total of +2300.
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 112
@@ -302,9 +302,8 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	ai_strategy = { type = naval_dominance id = 247 value = 80 } # Labrador Basin
 	# [atlantic-naval] no `id = 36` (Greenland): checked against map/definition.csv, all 8 of its
 	# provinces are type `land`, so the region can carry no naval dominance and the entry was inert. The
-	# waters it was reaching for are already in this list - 44 and 244 to the east, 50 and 247 to the west.
+	# waters it was reaching for are already in this list - 44 to the east, 50 and 247 to the west.
 	ai_strategy = { type = naval_dominance id = 243 value = 80 } # Icelandic Basin
-	ai_strategy = { type = naval_dominance id = 244 value = 80 } # Greenland Iceland Rise
 	ai_strategy = { type = naval_dominance id = 44 value = 80 }  # Denmark Strait
 
 	# [atlantic-naval] the PULL half of the pair. A negative naval_avoid_region is an attraction in this
@@ -314,15 +313,16 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_north_corridor = {
 	# ONTO the corridor, so the only naval_avoid_region values a corridor region ever saw were legacy
 	# Country-layer walls pointing the other way. -1000 mirrors that +1000 so the plan reads as one
 	# symmetric pair rather than two unrelated magnitudes: the AIFC "every boost paired with a
-	# suppression" rule applied in reverse. It does NOT by itself beat the legacy walls (244 nets +3000
-	# for the USA until those are retired) - this value is sized for the world after that pass, not
+	# suppression" rule applied in reverse. It does NOT by itself beat the legacy walls - this value is sized for the world after that pass, not
 	# against it.
 	ai_strategy = { type = naval_avoid_region id = 43 value = -1000 }  # Western Approaches
 	ai_strategy = { type = naval_avoid_region id = 55 value = -1000 }  # Newfoundland Sea
 	ai_strategy = { type = naval_avoid_region id = 50 value = -1000 }  # Labrador Sea
 	ai_strategy = { type = naval_avoid_region id = 247 value = -1000 } # Labrador Basin
 	ai_strategy = { type = naval_avoid_region id = 243 value = -1000 } # Icelandic Basin
-	ai_strategy = { type = naval_avoid_region id = 244 value = -1000 } # Greenland Iceland Rise
+	# [can-transit-attrition] 44 keeps its dominance above, so it keeps its pull: an unpaired
+	# dominance is the half-pair this block's own comment warns about. Delete BOTH lines to
+	# retire Denmark Strait from the corridor.
 	ai_strategy = { type = naval_avoid_region id = 44 value = -1000 }  # Denmark Strait
 }
 
@@ -366,18 +366,6 @@ WA_AI_NAVAL_FACTION_ALLIES_convoy_escort_threshold = {
 # policy:  Additive per region
 # domain:  NAVAL
 #
-# [atlantic-naval] the Azores term is `id = 112`, NOT 237. Strategic region ids and their
-# STRATEGICREGION_<n> localisation keys line up for 381 of the map's 383 regions; this pair is the
-# exception:
-#   map/strategicregions/237-Azores Region.txt     declares  id = 112
-#   map/strategicregions/112-Far South Pacific.txt  declares  id = 237
-# so the filename prefix is the loc key, not the id. Written as 237 the corridor plan put a
-# south-Atlantic dominance term in the far South Pacific and left the real Azores with no dominance
-# at all. The legacy files had it right: ENG's strike_force_home_base id = 112 and this file's own
-# azores_fallen avoid on 112 both target the Azores.
-# Residual RESOLVED: the two USA Country-layer 112 strays (torch corridor and
-# invade_the_axis_avoid_regions_france) were dropped in the 2026-08-14 audit - the USN no longer
-# carries an avoid wall on the region it rates for dominance.
 WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 	allowed = {
 		WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = yes
@@ -391,7 +379,6 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 
 	ai_strategy = { type = naval_dominance id = 54 value = 70 }  # Eastern Seaboard
 	ai_strategy = { type = naval_dominance id = 57 value = 70 }  # Sargasso Sea
-	ai_strategy = { type = naval_dominance id = 112 value = 70 } # Azores Region ([atlantic-naval] was 237 = Far South Pacific)
 	ai_strategy = { type = naval_dominance id = 47 value = 70 }  # Iberian Coast
 	ai_strategy = { type = naval_dominance id = 48 value = 70 }  # African Coast
 	ai_strategy = { type = naval_dominance id = 61 value = 70 }  # Cap Verde Plain
@@ -405,13 +392,8 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_south_corridor = {
 	#  - 47 and 48 are also written by spanish_waters_unsafe at +2000, but that block requires
 	#    WA_AI_MILITARY_axis_controls_spain_or_morocco while this one requires its negation, so the two
 	#    can never be live at once.
-	#  - 112 is written by azores_fallen when the Azores are hostile, and this block does NOT check
-	#    Azores control, so both can be live together. Net +1000: a corridor we still consider ours but
-	#    do not sail into while the enemy holds the islands. That netting is why azores_fallen's 112
-	#    term is 2000 and not 1000 - at 1000 it would cancel to exactly zero.
 	ai_strategy = { type = naval_avoid_region id = 54 value = -1000 }  # Eastern Seaboard
 	ai_strategy = { type = naval_avoid_region id = 57 value = -1000 }  # Sargasso Sea
-	ai_strategy = { type = naval_avoid_region id = 112 value = -1000 } # Azores Region
 	ai_strategy = { type = naval_avoid_region id = 47 value = -1000 }  # Iberian Coast
 	ai_strategy = { type = naval_avoid_region id = 48 value = -1000 }  # African Coast
 	ai_strategy = { type = naval_avoid_region id = 61 value = -1000 }  # Cap Verde Plain
@@ -443,6 +425,9 @@ WA_AI_NAVAL_FACTION_ALLIES_atlantic_off_corridor_avoidance = {
 	ai_strategy = { type = naval_avoid_region id = 66 value = 1000 }  # South Central Atlantic
 	ai_strategy = { type = naval_avoid_region id = 256 value = 1000 } # South Atlantic Gap
 	ai_strategy = { type = naval_avoid_region id = 358 value = 1000 } # South Atlantic Plateau
+	ai_strategy = { type = naval_avoid_region id = 245 value = 300 }  # Norwegian Basin
+	ai_strategy = { type = naval_avoid_region id = 244 value = 300 }  # Greenland Iceland Rise
+	ai_strategy = { type = naval_avoid_region id = 112 value = 300 }  # Azores (id 112, NOT 237 - see wa-lessons-learned region-id entry)
 }
 
 # purpose: close the unsafe southern corridor when Axis controls Iberia or Morocco
