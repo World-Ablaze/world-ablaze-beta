@@ -1241,7 +1241,7 @@ for as long as Malta or Tunis is Allied-held, and **327** (Levantine Basin) whil
 **The pre-fix state is a repo measurement, and it is the strongest half of the evidence.** A census of
 every `ai_strategy` in `common/ai_strategy/WA_AI_NAVAL_*.txt` finds **no Allied
 `naval_convoy_raid_region` on 29, 269 or 327 at all**. The only writers on those three regions are
-`WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy` at **-1000** and
+`WA_AI_NAVAL_COUNTRY_USA_convoy_raid_strategy` (ex legacy_USA_) at **-1000** and
 `WA_AI_NAVAL_COUNTRY_GER_legacy_GER_dont_convoy_raid_too_far_away` at -1000. ENG's only positive raid
 regions are 16, 18 and 365 - all home waters, all gated on Britain being invaded. The campaign
 consequence: Italy's free convoy pool read **1023 / 1008 / 1004** at 1941.6 / 1942.6 / 1943.6, a 1.9 %

@@ -262,8 +262,29 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (ALLIES_<desc>_INVASION, its siblings' style) against the reviewer's variant) + lessons
   CONFLICT (all required items applied: archaeology done, halvings folded-or-justified, per-
   sector buffer rationale, war-facing term added to both bars, F9 obligation recorded).
-- **F9 BOOT TEST OWED AND BLOCKING (CTD-class: whole ai_strategy blocks deleted/merged/renamed)
-  — owner: cold launch, watch crashes/ + error.log, before the next campaign.**
+- **NAVAL leg shipped 2026-08-27 (owner order "fais pareil sur WA_AI_NAVAL_COUNTRY_USA.txt").**
+  Same pattern: legacy_USA_ noise stripped (18 blocks renamed, all cross-references updated —
+  PHASE5 mirror comment, FACTION_ALLIES incl. one stale "known residual" corrected to RESOLVED,
+  ENG file, system doc); 8 hard dates → the two triggers + state gates (threat > 0.50 for the
+  pre-war Pacific posture; strike bases on peacetime-or-JAP-war; death-trap walls released by
+  the phase trigger, held-while-weak ruled INTENDED caution with the enemy-state arms as the
+  state-side release, stated at the site); bad_torpedos naval twin (strict SUBSET, 19 shared
+  regions summing 4000) deleted — same accepted-halving ruling; torch pair merged into
+  `torch_corridor` with the [atlantic-naval] Biscay audit RE-WALKED for the new state-keyed
+  windows (−2000 still outvoted wherever the GER-war walls co-fire; the ITA-only-war no-wall
+  corner is pre-existing and unchanged). **Phase flip now LATCHED one-way** (lessons item):
+  `WA_AI_MILITARY_update_usa_phase_latch` on the monthly pulse sets
+  `WA_AI_USA_pacific_offensive_latched` once the live conditions hold at a tick; the public
+  trigger reads flag-OR-live — worst residual flap = one flip-back inside the first month.
+  Reviews (NAVAL round): architecture OK (2 wording notes applied: the shared-regions list is
+  SW-Pacific too, not just Indian-Ocean — ASSUMED the old 1943.6-1944.8 wall gap was date
+  residue, campaign probe = USN presence in regions 84/88 during a Solomons-type war; the
+  Europe-only-war strike-base handoff goes to the Faction western anchorage) + lessons
+  CONCERNS (all 4 required applied: enemy-state release stated, latch implemented, audit
+  re-walked, PHASE5-mirrored enable diff-verified byte-untouched).
+- **F9 BOOT TEST OWED AND BLOCKING (CTD-class: whole ai_strategy blocks deleted/merged/renamed
+  across the land AND naval files, plus a new on_monthly effect) — owner: cold launch, watch
+  crashes/ + error.log, before the next campaign.**
 - Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
   (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
   enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the

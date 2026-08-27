@@ -1,11 +1,21 @@
 ############################################################################################################
 # WA AI Naval - COUNTRY_USA
 ############################################################################################################
-# Phase 6 split: every ai_strategy in this file has type ∈ { naval_avoid_region, strategic_air_importance, strike_force_home_base }.
+# Phase 6 split: every ai_strategy in this file has type ∈ { naval_avoid_region, naval_convoy_raid_region, strategic_air_importance, strike_force_home_base }.
 # Canonical domain: NAVAL. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+# [usa-refactor] legacy_USA_ name noise stripped; hard dates replaced by the same dynamic gates
+# as the land files (WA_AI_MILITARY_USA_pacific_offensive_ready /
+# WA_AI_MILITARY_has_minimum_expeditionary_army); the bad_torpedos naval twin (a strict SUBSET
+# of europe_first's region list, summing to 4000 on 19 shared regions while both armed) deleted
+# with the halving accepted - same ruling as the land twins.
+# naval_avoid_region is SIGNED: positive = wall, negative = attraction (doc §4).
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_war_against_ITA (NAVAL domain)
+# purpose: wall the Adriatic while the Italian war is fought in Africa (the Adriatic is
+#          Regia-Marina water under land-based air)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
 WA_AI_NAVAL_COUNTRY_USA_war_against_ITA = {
 
 	allowed = {
@@ -44,7 +54,12 @@ WA_AI_NAVAL_COUNTRY_USA_war_against_ITA = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_war_against_ITA_2 (NAVAL domain)
+# purpose: keep the Adriatic wall up while the desert war is won overland (Egypt/Libya
+#          friendly, Maghreb quiet; formerly also gated on is_historical/date > 1943.7 - the
+#          state-control terms carry the sequencing in any timeline)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
 WA_AI_NAVAL_COUNTRY_USA_war_against_ITA_2 = {
 
 	allowed = {
@@ -64,10 +79,6 @@ WA_AI_NAVAL_COUNTRY_USA_war_against_ITA_2 = {
 			}
 		}
 		has_war_with = ITA
-		OR = {
-			is_historical_focus_on = no
-			date > 1943.7.1
-		}
 		OR = {
 			451 = {
 				CONTROLLER = {
@@ -166,43 +177,33 @@ WA_AI_NAVAL_COUNTRY_USA_war_against_ITA_2 = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_preparation (NAVAL domain)
-#
-# [atlantic-naval] (2026-08-14) - AUDITED, DELIBERATELY NOT CHANGED. Read this before
+# [atlantic-naval] (2026-08-14) - AUDITED, DELIBERATELY NOT CHANGED IN INTENT. Read this before
 # "fixing" the Bay of Biscay, because the obvious repair is the wrong one.
 #
-# Six blocks write region 42, and the two Torch blocks are the only negatives.
-# `naval_avoid_region` is Additive, so the USA's net per window is:
-#     1941.12-1942.8  war with GER, no Torch yet ................ +6000
-#     1942.9          Torch preparation live .................... +4000
-#     1942.11         both Torch blocks live ..................... +2000
-#     mixed NA control (torch_disable also live, transient) ...... +4000
-#     after Torch succeeds ....................................... +8000
-#     after France is liberated (all writers abort) ............... 0
-# The other five are USA_legacy_USA_dont_waste_ships_here (+2000),
-# USA_legacy_USA_operation_torch_disable (+2000),
-# USA_legacy_USA_invade_the_axis_avoid_regions_france (+2000) and
-# WA_AI_NAVAL_FACTION_ALLIES_enemy_holds_french_atlantic_coast (+2000).
+# Six blocks wrote region 42; the Torch pair carried the only negatives, and being Additive the
+# negatives were OUTVOTED in every window in which they could fire (walls +6000 vs -2000/-4000).
+# The "#open" intent below has therefore NEVER taken effect. Consequences, still standing:
+#  - Deleting the -2000 would be behaviour-neutral but is a design decision (does Torch open
+#    the Bay?) reserved to the user - kept.
+#  - Geography argues the walls are right: the Bay of Biscay lies off the Britain/US -> Morocco
+#    route and was U-boat transit water under Luftwaffe cover. If the Torch route ever needs
+#    opening, the walls should YIELD during the operation, not be shouted over.
+# [usa-refactor] the two date-staggered Torch blocks (1942.9 prep -2000 / 1942.11 landing
+# -2000 + three flank walls) are MERGED - being both armed from 1942.11, their negatives summed
+# to -4000; one block now carries -2000 + the flank walls. Still outvoted, so behaviour-neutral;
+# the audit's net-per-window table shrinks accordingly (the -4000 window no longer exists).
+# Windows re-walked after the date->state regate: wherever this block fires at war with GER,
+# the +2000 walls (dont_waste_ships_here, invade_the_axis_..._france, FACTION coast block) are
+# state-gated on the same German-held coast and co-fire, so the -2000 stays outvoted; the one
+# corner with no wall (war with ITA only, GER absent) is PRE-EXISTING - the old enable had the
+# same GER/ITA OR - and unchanged by this refactor.
 #
-# So the "#open" intent below has NEVER taken effect: the Torch pair is outvoted
-# in every window in which it can fire. Three consequences worth stating:
-#  - The planned Phase 4 repair - making torch_disable and torch_landing mutually
-#    exclusive - was dropped once this table was computed. It moves the transient
-#    window from +4000 to +2000, i.e. from "avoid" to "avoid", and would have left
-#    a comment claiming a contradiction was resolved when nothing observable
-#    changed. Those two blocks are in any case near-exclusive already by their own
-#    state tests (disable wants North African states friendly, landing wants them
-#    hostile); only a partially-taken North Africa overlaps them.
-#  - Deleting the two -2000 lines would also be behaviour-neutral, and is the
-#    tempting cleanup. Not done, because it is a design decision and not hygiene:
-#    it settles whether Torch should open the Bay, and that is the user's call.
-#  - Geography argues the walls are right and the Torch negatives are the
-#    misconception: the Bay of Biscay lies between Brittany and northern Spain,
-#    off the route from either Britain or the US to Morocco, and it was German
-#    U-boat transit water under Luftwaffe cover. If the Torch route ever does need
-#    opening, the correct implementation is for the walls to YIELD during the
-#    operation, not for a negative to be shouted over them.
-WA_AI_NAVAL_COUNTRY_USA_operation_torch_preparation = {
+# purpose: Torch corridor book - nominally open the Bay of Biscay (inert, see audit) and wall
+#          the Balearic/Ionian flanks and the Norwegian Trench while the landing is on
+# range:   -2000 (inert attraction) to +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_torch_corridor = {
 
 	allowed = {
 		tag = USA
@@ -213,7 +214,7 @@ WA_AI_NAVAL_COUNTRY_USA_operation_torch_preparation = {
 			has_war_with = ITA
 		}
 		is_in_faction_with = ENG
-		date > 1942.9.1
+		WA_AI_MILITARY_has_minimum_expeditionary_army = yes
 		ENG = { surrender_progress < 0.2 }
 		OR = {
 			458 = { CONTROLLER = { has_war_with = ROOT } }
@@ -231,42 +232,7 @@ WA_AI_NAVAL_COUNTRY_USA_operation_torch_preparation = {
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 42 #Bay of Biscay
-		value = -2000 #open
-	}
-}
-
-
-# Phase 6 split from WA_AI_MILITARY_USA_operation_torch_landing (NAVAL domain)
-WA_AI_NAVAL_COUNTRY_USA_operation_torch_landing = {
-
-	allowed = {
-		tag = USA
-	}
-	enable = {
-		OR = {
-			has_war_with = GER
-			has_war_with = ITA
-		}
-		is_in_faction_with = ENG
-		date > 1942.11.1
-		ENG = { surrender_progress < 0.2 }
-		OR = {
-			458 = { CONTROLLER = { has_war_with = ROOT } }
-			665 = { CONTROLLER = { has_war_with = ROOT } }
-			460 = { CONTROLLER = { has_war_with = ROOT } }
-			459 = { CONTROLLER = { has_war_with = ROOT } }
-			461 = { CONTROLLER = { has_war_with = ROOT } }
-			1055 = { CONTROLLER = { has_war_with = ROOT } }
-			462 = { CONTROLLER = { has_war_with = ROOT } }
-			1056 = { CONTROLLER = { has_war_with = ROOT } }
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 42 #Bay of Biscay
-		value = -2000
+		value = -2000 #open - inert, outvoted by the walls; see the audit above
 	}
 	ai_strategy = {
 		type = naval_avoid_region
@@ -280,14 +246,9 @@ WA_AI_NAVAL_COUNTRY_USA_operation_torch_landing = {
 		id = 218 #Ionian Sea
 		value = 2000
 	}
-	# [atlantic-naval] (2026-08-14, checklist R36): dropped `id = 112` (Azores Region). This
-	# is the residual [atlantic-naval] flagged when it moved the Faction Azores dominance onto
-	# the correct id. The block is Operation Torch - a North African landing - and
-	# the Azores sit 1500 km out into the Atlantic, west of Portugal; the same stray
-	# also appeared in invade_the_axis_avoid_regions_france below. With the south
-	# corridor now rating 112 at dominance 70 and pull -1000, the two strays put the
-	# USN at +3000 net on the one mid-Atlantic island group the escort plan depends
-	# on. Same class of defect as the 244 stray in smart_pacific_fleet.
+	# [atlantic-naval] (2026-08-14, checklist R36): dropped `id = 112` (Azores Region) - a
+	# stray 1500 km west of the Torch route; the south corridor owns 112 (dominance 70,
+	# pull -1000). Same class of defect as the 244 stray in smart_pacific_fleet.
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 173 #Norwegian Trench
@@ -296,14 +257,20 @@ WA_AI_NAVAL_COUNTRY_USA_operation_torch_landing = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_europe_first (NAVAL domain)
+# purpose: while the Pacific offensive is not ready, wall the far-Pacific and Indian-Ocean
+#          waters (Europe first). The deleted bad_torpedos_suck naval twin was a strict SUBSET
+#          of this region list summing to 4000 on 19 shared regions while both armed - stack
+#          deliberately not preserved, one wall at the type's band (see the land twins).
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
 WA_AI_NAVAL_COUNTRY_USA_europe_first = {
 
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1943.6.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		OR = {
 			has_war_with = JAP
 			threat > 0.70
@@ -421,21 +388,24 @@ WA_AI_NAVAL_COUNTRY_USA_europe_first = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_fight_the_japanese (NAVAL domain)
-WA_AI_NAVAL_COUNTRY_USA_fight_the_japanese = {
+# purpose: once the Pacific offensive is ready, keep the USN out of the Indian-Ocean, Malacca
+#          and SW-Pacific rear waters (13 regions shared with europe_first, incl. 84/88) - the
+#          offensive runs through the central Pacific. Formerly gated date > 1944.8; the old
+#          date pair left a 1943.6-1944.8 GAP with no wall at all - the mirror flip closes it
+#          (walls continuous across the phase change, the anti-shuffling direction). ASSUMED
+#          the gap was date residue, not a designed roaming window - campaign probe: USN
+#          presence in 84/88 during a Solomons-type war.
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_pacific_offensive = {
 
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		has_war_with = JAP
-		date > 1944.8.1
-		NOT = {
-			AND = {
-				date > 1944.3.1
-				date < 1944.8.1
-			}
-		}
+		WA_AI_MILITARY_USA_pacific_offensive_ready = yes
 	}
 
 	abort_when_not_enabled = yes
@@ -512,125 +482,12 @@ WA_AI_NAVAL_COUNTRY_USA_fight_the_japanese = {
 }
 
 
-# Phase 6 split from WA_AI_MILITARY_USA_bad_torpedos_suck (NAVAL domain)
-WA_AI_NAVAL_COUNTRY_USA_bad_torpedos_suck = {
-
-	allowed = {
-		original_tag = USA
-	}
-	enable = {
-		date < 1943.6.1
-		OR = {
-			has_war_with = JAP
-			threat > 0.70
-			is_in_faction_with = ENG
-		}
-	}
-
-	abort_when_not_enabled = yes
-
-	# [atlantic-naval] (2026-08-14): removed duplicate entries for 84 Bismarck Sea and
-	# 88 Bering Sea - same Additive doubling as in fight_the_japanese above.
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 177 #W N Pacific
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 88
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 96
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 79
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 84 #Bismark Sea
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 82 #Gulf of carpentaria
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 60 #W Indian Ocean
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 85 #SW Indian Ocean
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 99 #East Indian Ocean
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 81
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 83
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 93
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 72
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 73
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 71
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 101
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 91
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 92
-		value = 2000
-	}
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 98
-		value = 2000
-	}
-}
-
-# Migrated from common/ai_strategy/USA.txt:2236-2346 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy = {
+# purpose: keep US convoy raiders off the Mediterranean chokepoints and the Bay (the escorts
+#          own those waters) and send them to the Japanese supply lanes instead
+# range:   -1000 (keep out) to +1000 (raid here)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_convoy_raid_strategy = {
 	allowed = {
 		tag = USA
 	}
@@ -743,19 +600,23 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_convoy_raid_strategy = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2570-2659 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_pacific_fleet = {
+# purpose: keep the peacetime/early-war Pacific fleet out of the western trap waters until the
+#          offensive is ready (formerly `date > 1941.5.1` in and `date < 1945.1.1` out - now
+#          armed by threat/war and released by the phase trigger, so the walls drop exactly
+#          when the invasion fleets need those waters)
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_smart_pacific_fleet = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
 		OR = {
 			has_war_with = JAP
-			threat > 0.70
-			date > 1941.5.1
+			threat > 0.50
 		}
-		date < 1945.1.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		NOT = {
 			386 = { CONTROLLER = { has_war_with = ROOT } }
 		}
@@ -830,19 +691,16 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_pacific_fleet = {
 	}
 
 	# [atlantic-naval] (2026-08-14, checklist R36): dropped `id = 244` (Greenland Iceland
-	# Rise). R36 has carried this as a named "known residual" since [atlantic-naval] a
-	# north-Atlantic region sitting in a block whose every other entry is Pacific
-	# (113, 111, 306, 232, 171, 114, 176, 95, 221, 222, 32), enabled from `date >
-	# 1941.5.1` to 1945.1.1 - i.e. across almost the whole Atlantic campaign. With
-	# the Faction layer rating 244 at dominance 80 and pull -1000, this left the
-	# USA leg of the north corridor at 7 regions of 8. Nothing else in the block
-	# changes; this is the stray id, not a retune of the Pacific fleet.
+	# Rise) - a north-Atlantic stray in an all-Pacific block that left the USA leg of the
+	# north corridor at 7 regions of 8. Nothing else changes; the stray id, not a retune.
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2661-2683 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_dont_waste_ships_here = {
+# purpose: while an enemy holds the western-European coast, no ships in the Bay of Biscay
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_dont_waste_ships_here = {
 	allowed = {
 		tag = USA
 	}
@@ -867,14 +725,17 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_dont_waste_ships_here = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2715-2775 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_atlantic_fleet = {
+# purpose: keep the USN out of the St. Lawrence river (a Country-layer trap the DEFAULT layer
+#          does not cover; formerly also gated `date > 1939.1.1` - the wall is wanted in any
+#          year)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_smart_atlantic_fleet = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1939.1.1
 		NOT = {
 			468 = { CONTROLLER = { has_war_with = ROOT } }
 		}
@@ -906,14 +767,16 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_atlantic_fleet = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2777-2801 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_central_america_fleet = {
+# purpose: keep the fleet out of the Gulf of Panama's far side while Central America is quiet
+#          (formerly also gated `date > 1939.1.1`)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_smart_central_america_fleet = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1939.1.1
 		NOT = {
 			814 = { CONTROLLER = { has_war_with = ROOT } }
 		}
@@ -935,23 +798,23 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_central_america_fleet = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2803-2828 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_axis_coast_adriatic = {
+# purpose: wall the Adriatic while its coast is not friendly (formerly `date > 1939.1.1` plus
+#          a `date < 1942.3.1` always-avoid leg - the control test is the real gate in any
+#          timeline)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_smart_axis_coast_adriatic = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1939.1.1
-		OR = {
-			NOT = {
-				156 = {
-					CONTROLLER = {
-						is_in_faction_with = USA
-					}
+		NOT = {
+			156 = {
+				CONTROLLER = {
+					is_in_faction_with = USA
 				}
 			}
-			date < 1942.3.1
 		}
 	}
 
@@ -965,23 +828,21 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_axis_coast_adriatic = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2830-2855 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_axis_coast_aegean = {
+# purpose: wall the Aegean while its coast is not friendly (same recut as the Adriatic twin)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_smart_axis_coast_aegean = {
 	allowed = {
 		tag = USA
 	}
 	enable = {
-		date > 1939.1.1
-		OR = {
-			NOT = {
-				47 = {
-					CONTROLLER = {
-						is_in_faction_with = USA
-					}
+		NOT = {
+			47 = {
+				CONTROLLER = {
+					is_in_faction_with = USA
 				}
 			}
-			date < 1942.3.1
 		}
 	}
 
@@ -995,19 +856,12 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_smart_axis_coast_aegean = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:2857-2883 (NAVAL domain)
-
-# [atlantic-naval] (2026-08-14, checklist R36): WA_AI_NAVAL_COUNTRY_USA_legacy_USA_german_bight PROMOTED to
-# WA_AI_NAVAL_FACTION_ALLIES_german_bight and removed here. Same payload as the ENG block of the same name. This version's extra
-# `date > 1939.1.1` and `OR = { ... date < 1942.3.1 }` were not carried over:
-# before March 1942 the ownership test on state 803 Hamburg already returns the
-# same answer in every timeline where the block can fire, so the date branch was
-# redundant rather than load-bearing.
-
-
-# Migrated from common/ai_strategy/USA.txt:2885-2912 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_stop_china_from_falling_seazone = {
+# purpose: while at peace with both Chinas, stay out of their coastal waters (do not tip the
+#          Sino-Japanese war by parking a fleet in it)
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_stop_china_from_falling_seazone = {
 	allowed = {
 		tag = USA
 	}
@@ -1037,16 +891,21 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_stop_china_from_falling_seazone = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3106-3137 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_democracy_on_JAP = {
+# purpose: home-base the strike forces on the Pacific anchorages while at peace or at war with
+#          Japan (formerly `date < 1944.1.1` kept them Pacific pre-war; peacetime is the
+#          dynamic equivalent - in a Europe-only war these disarm and the Faction western
+#          anchorage (atlantic_home_base_western) or protect_eastern_waters takes over)
+# range:   n/a (strike_force_home_base)
+# policy:  Exclusive per region (PHASE5 ownership)
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_pacific_strike_bases = {
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
 		OR = {
 			has_war_with = JAP
-			date < 1944.1.1
+			has_war = no
 		}
 	}
 	abort_when_not_enabled = yes
@@ -1073,9 +932,13 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_democracy_on_JAP = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3139-3181 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_protect_eastern_Waters = {
+# purpose: home-base the strike forces on the Atlantic seaboard when the Atlantic is the live
+#          naval war (mirrored by WA_AI_MILITARY_USA_protect_eastern_waters_active in
+#          WA_AI_MILITARY_PHASE5_ownership_triggers.txt - edit both in the same commit)
+# range:   n/a (strike_force_home_base)
+# policy:  Exclusive per region (PHASE5 ownership slugs sfhb_55/sfhb_54)
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_protect_eastern_waters = {
 	allowed = {
 		original_tag = USA
 	}
@@ -1120,9 +983,11 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_protect_eastern_Waters = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3492-3526 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_philippines_is_a_death_trap = {
+# purpose: avoid Philippine waters while the islands are enemy-held
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_philippines_is_a_death_trap = {
 	allowed = {
 		original_tag = USA
 	}
@@ -1159,15 +1024,21 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_philippines_is_a_death_trap = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3528-3556 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_home_islands_are_a_death_trap = {
+# purpose: avoid the Japanese home waters until the offensive is ready to enter them
+#          (formerly `date < 1945.9.1`; the phase trigger releases the walls exactly when the
+#          invade-Japan book arms). A USA that never reaches the trigger's capability arms
+#          keeps these walls up - INTENDED caution, not a lock: the trigger's enemy-state
+#          arms (JAP crumbling, GER dead/no GER war) are the state-side release.
+# range:   +2000 (walls)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_home_islands_are_a_death_trap = {
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1945.9.1
 		has_war_with = JAP
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 	}
 
 	abort_when_not_enabled = yes
@@ -1192,14 +1063,17 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_home_islands_are_a_death_trap = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3558-3581 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_okinawa_is_a_death_trap = {
+# purpose: avoid Okinawan waters while Japan holds the island in strength and the offensive is
+#          not ready (formerly `date < 1944.12.1`)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_okinawa_is_a_death_trap = {
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1944.12.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		526 = {
 			CONTROLLER = {
 				has_war_with = USA
@@ -1220,14 +1094,17 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_okinawa_is_a_death_trap = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3583-3603 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_iwo_jima_is_a_death_trap = {
+# purpose: avoid Iwo Jima's waters while the enemy holds it and the offensive is not ready
+#          (formerly `date < 1944.1.1`)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_iwo_jima_is_a_death_trap = {
 	allowed = {
 		original_tag = USA
 	}
 	enable = {
-		date < 1944.1.1
+		NOT = { WA_AI_MILITARY_USA_pacific_offensive_ready = yes }
 		645 = {
 			CONTROLLER = {
 				has_war_with = USA
@@ -1245,9 +1122,11 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_iwo_jima_is_a_death_trap = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3605-3620 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_avoid_these_areas_if_they_arnt_invaded_malaya_borneo = {
+# purpose: stay out of Malaya/Borneo waters while the Commonwealth holds them uninvaded
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_avoid_uninvaded_malaya_borneo = {
 	allowed = {
 		tag = USA
 	}
@@ -1265,9 +1144,11 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_avoid_these_areas_if_they_arnt_invaded_malaya
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3639-3663 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_avoid_these_areas_if_they_arnt_invaded_australia_new_zealand = {
+# purpose: stay out of the Tasman Sea while Australia/New Zealand hold their own waters
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_avoid_uninvaded_australia_new_zealand = {
 	allowed = {
 		tag = USA
 	}
@@ -1302,9 +1183,13 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_avoid_these_areas_if_they_arnt_invaded_austra
 # gated on WA_AI_CONFIG_MILITARY_is_anglo_major.
 
 
-# Migrated from common/ai_strategy/USA.txt:3696-3734 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_operation_torch_disable = {
+# purpose: once the Allied side holds the Maghreb and no metropolitan-France foothold exists
+#          yet, re-wall the Bay of Biscay (Torch is over, the Bay is U-boat water again;
+#          formerly `date < 1944.4.20` - the foothold gate matches the land twin)
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_torch_done_biscay_wall = {
 	allowed = {
 		tag = USA
 	}
@@ -1318,7 +1203,12 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_operation_torch_disable = {
 			VIC = { exists = no }
 		}
 		is_in_faction_with = ENG
-		date < 1944.4.20
+		NOT = {
+			OR = {
+				15 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
+				21 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
+			}
+		}
 		NOT = { ENG = { surrender_progress > 0.2 } }
 		OR = {
 			458 = { CONTROLLER = { OR = { tag = ROOT is_in_faction_with = ROOT } } }
@@ -1335,13 +1225,16 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_operation_torch_disable = {
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 42 #Bay of Biscay
-		value = 2000 #open
+		value = 2000 #wall
 	}
 }
 
-# Migrated from common/ai_strategy/USA.txt:3942-3965 (NAVAL domain)
 
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_germany = {
+# purpose: avoid the Norwegian Trench while Germany holds the Bight coast
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_invade_the_axis_avoid_regions_germany = {
 	allowed = {
 		tag = USA
 	}
@@ -1367,9 +1260,11 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_germany = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3967-3995 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_france = {
+# purpose: avoid the Bay of Biscay while Germany holds the French Atlantic coast
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_invade_the_axis_avoid_regions_france = {
 	allowed = {
 		tag = USA
 	}
@@ -1393,7 +1288,7 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_france = {
 	}
 
 	# [atlantic-naval] (2026-08-14, checklist R36): dropped `id = 112` (Azores Region) - the
-	# second of the two Azores strays, see operation_torch_landing above. This block
+	# second of the two Azores strays, see the torch corridor block above. This block
 	# is about staying out of the German-held French Atlantic coast; the Azores are
 	# neutral Portuguese islands 1500 km west of it and the enable never mentions
 	# them. It fires on `has_war_with = GER` alone, so on the historical path it was
@@ -1401,9 +1296,11 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_france = {
 }
 
 
-# Migrated from common/ai_strategy/USA.txt:3997-4018 (NAVAL domain)
-
-WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_norway = {
+# purpose: avoid the Voring Plateau while Germany occupies a capitulated Norway
+# range:   +2000 (wall)
+# policy:  Additive per region
+# domain:  NAVAL
+WA_AI_NAVAL_COUNTRY_USA_invade_the_axis_avoid_regions_norway = {
 	allowed = {
 		tag = USA
 	}
@@ -1425,4 +1322,3 @@ WA_AI_NAVAL_COUNTRY_USA_legacy_USA_invade_the_axis_avoid_regions_norway = {
 		value = 2000
 	}
 }
- 
