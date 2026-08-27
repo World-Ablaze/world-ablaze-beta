@@ -293,9 +293,9 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_version` | init stamp | startup / lazy | build fingerprint (all probes) | v1 |
 | `WA_TLM_hist_t` | ring axis | quarterly, majors | all `_hist` series | v1 |
 | `WA_TLM_comp_div_total` | gauge | monthly, all AI | R6, F8 | v1 |
-| `WA_TLM_comp_armor` | gauge (banded) | monthly, majors | R6 | v1 |
-| `WA_TLM_comp_mech` | gauge (banded) | monthly, majors | R6 | v1 |
-| `WA_TLM_comp_armor_mech_pct` | gauge (derived) | monthly, majors | R6 | v1 |
+| `WA_TLM_comp_armor` | gauge (banded, LOWER BOUND — exact rungs 1-5, coarser above; never a count) | monthly, majors | R6 | v1 (rungs 1-4 added v33) |
+| `WA_TLM_comp_mech` | gauge (banded, LOWER BOUND — exact rungs 1-5, coarser above; never a count) | monthly, majors | R6 | v1 (rungs 1-4 added v33) |
+| `WA_TLM_comp_armor_mech_pct` | gauge (derived, band/count — a lower bound; exact only while both arms ≤ 5) | monthly, majors | R6 | v1 (granularity changed v33) |
 | `WA_TLM_comp_last_t` | stamp | monthly, all AI (written with the family's widest gauge — a stamp inside a narrower gate breaks the absence contract for the excluded countries) | R6 absence contract | v1 |
 | `WA_TLM_comp_armor_mech_pct_hist` | ring | quarterly, majors | R6 trend | v1 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |

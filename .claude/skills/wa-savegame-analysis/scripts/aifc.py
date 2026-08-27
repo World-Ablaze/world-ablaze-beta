@@ -112,6 +112,7 @@ def scan_save(fh, want):
                 order.append(cur)
                 capture = want is None or cur in want
                 varz, ledger, section = {}, [], None
+                alive = False
             depth += delta
             if depth <= 0:
                 break
@@ -122,6 +123,11 @@ def scan_save(fh, want):
                 m = SEC_RE.match(line)
                 if m and delta > 0:
                     section = (m.group(1), depth + delta)
+                    # liveness: an annihilated tag keeps its whole country block
+                    # with frozen variables but loses `units` (savegame skill,
+                    # dead-tag gotcha) - SHA read as R1 churn for 13 saves.
+                    if m.group(1) == "units":
+                        alive = True
             elif section is not None:
                 name, base = section
                 if name == "variables":
@@ -156,7 +162,7 @@ def scan_save(fh, want):
         depth += delta
         if depth <= 1:
             if capture and (varz or ledger):
-                data[cur] = (varz, ledger)
+                data[cur] = (varz, ledger, alive)
             cur, section, acc, capture = None, None, None, False
             if depth <= 0:
                 break
@@ -182,8 +188,11 @@ def fmt_states(ids, names=True):
     return ", ".join(sname(int(i)) if names else str(int(i)) for i in ids)
 
 
-def report(tag, varz, ledger, order, date, show_ledger, limit, trend):
-    print(f"\n=== {date}  {tag} ===")
+def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True):
+    print(f"\n=== {date}  {tag} ==={'' if alive else '  [DEAD TAG]'}")
+    if not alive:
+        print("  !! no `units` section - annihilated tag, every value below FROZE at")
+        print("     its last live save; age/sector here is not a live selection.")
     states = arr(varz, "wa_ai_aifc_sector_states")
     anchor = varz.get("wa_ai_aifc_sector_anchor")
     age = varz.get("wa_ai_aifc_sector_age")
@@ -328,7 +337,7 @@ def main(argv):
         found = [t for t in (sorted(data) if want is None else tags) if t in data]
         quiet = []
         for t in found:
-            varz, ledger = data[t]
+            varz, ledger, alive = data[t]
             # ALL mode: a tag whose only AIFC trace is the r67 lapse counters has
             # never held a sector or an armour entry - one census line, not a block.
             if want is None and not ledger \
@@ -336,7 +345,8 @@ def main(argv):
                                               "wa_ai_aifc_armor_")) for k in varz):
                 quiet.append(t)
                 continue
-            report(t, varz, ledger, order, date, show_ledger, limit, trend)
+            report(t, varz, ledger, order, date, show_ledger, limit, trend,
+                   alive=alive)
         if quiet:
             print(f"\n  ({len(quiet)} more tags carry only r67 lapse counters - "
                   f"never held a sector: {' '.join(quiet[:20])}"
@@ -349,7 +359,8 @@ def main(argv):
 
     if len(files) > 1 and trend:
         print("\n# trend (date-ordered). age pinned at 1 in EVERY save = weekly")
-        print("#   re-selection pathology (the historical R1 bug shape).")
+        print("#   re-selection pathology (the historical R1 bug shape) - but only")
+        print("#   on a LIVE tag; a [DEAD TAG] block above froze, not churns.")
         print(f"{'date':<12}{'tag':<5}{'anchor':>7}{'enemy':>6}{'age':>5}"
               f"{'corr':>5}{'ledger':>7}{'supp':>5}")
         for d, t, a, e, ag, c, led, sp in trend:

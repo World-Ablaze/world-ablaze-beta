@@ -40,7 +40,11 @@ Order types attested in a full 1944 save (all countries, 567 order_instance bloc
 
     1  front line      has `path`, `order_children`
     2  front advance   root carries `sorted_pairs`, `root_front`, `enemy_controller_area`
-    3  naval invasion  has `invasion_source`, `convoys`
+    3  naval invasion  has `invasion_source`, `convoys` - and its `path={}` is the TARGET
+       province list, `invasion_source=` the staging province (measured on 1ac7e4ea
+       1942.10: ENG/USA both carry path 5222 = Madagascar, invasion_source 13018 =
+       Mauritius, plus `convoys={ convoys=N total=N }` and one `scheduled_member=` per
+       assigned division). --invasions resolves both ends to state names.
     5  area defence    has `states`, `area_defense_settings`:
                          102 = a scripted `put_unit_buffers` garrison (WA ai_strategy)
                          100 = an engine-generated area-defence order
@@ -63,18 +67,20 @@ renamed every battalion and collapsed mountain, marine, paratrooper and militia 
 battalion keys themselves are always printed beside the family, because they are the ground
 truth the family summarises.
 
-usage: plans.py TAG[,TAG...] FILE... [--armies] [--fronts] [--divisions] [--where]
-                [--oob] [--templates] [--limit N]
+usage: plans.py TAG[,TAG...] FILE... [--armies] [--fronts] [--invasions] [--divisions]
+                [--where] [--oob] [--templates] [--limit N]
        plans.py ALL FILE... [--limit N]
   (no flag)    per-save census: armies, army groups, divisions per order class
   --armies     one row per army: class, parent army group, division count
   --fronts     every front order (type 1/2) with instance id, creation date, path -> states
+  --invasions  every naval-invasion order (type 3): covered army, divisions, staging
+               (invasion_source + where the divisions sit), TARGET path -> states
   --divisions  org / strength / recent-combat share per order class
   --where      divisions per STATE, split by order class - where they are and what they do
   --oob        ORDER OF BATTLE: per army - its order, its template mix, its states
   --templates  per TEMPLATE census: what the country actually fields, and under which order
-  --limit N    cap rows in --armies / --fronts / --where / --oob / --templates
-               (default 40, 0 = unlimited)
+  --limit N    cap rows in --armies / --fronts / --invasions / --where / --oob /
+               --templates (default 40, 0 = unlimited)
 """
 import io, os, re, sys, collections
 
@@ -390,6 +396,10 @@ def _orders(lines):
             iid = re.search(r"instance_id=(\d+)", body)
             pth = re.search(r"path=\{([^}]*)\}", body)
             sts = re.search(r"states=\{([^}]*)\}", body)
+            src = re.search(r"^\s*invasion_source=(\d+)", body, re.M)
+            cnv = re.search(r"convoys=\{\s*convoys=(\d+)\s*total=(\d+)", body)
+            sched = set(int(x) for x in
+                        re.findall(r"scheduled_member=\{ id=(\d+)", body))
             out.append({
                 "type": ty.group(1) if ty else "?",
                 "ads": ads.group(1) if ads else None,
@@ -397,8 +407,11 @@ def _orders(lines):
                 "iid": iid.group(1) if iid else "?",
                 "path": pth.group(1).strip() if pth else "",
                 "states": sts.group(1).strip() if sts else "",
+                "src": int(src.group(1)) if src else None,
+                "convoys": "%s/%s" % cnv.groups() if cnv else None,
                 "can_execute": "can_execute=1" in body,
-                "sched": len(set(re.findall(r"scheduled_member=\{ id=(\d+)", body))),
+                "sched": len(sched),
+                "sched_ids": sched,
             })
             i = j + 1
             continue
@@ -571,6 +584,24 @@ def front_orders(country):
     return out
 
 
+def invasion_orders(country):
+    """[(owner_name, is_group, covered division ids, order)] for every type-3 order."""
+    out = []
+    for g in country["groups"]:
+        for o in g["orders"]:
+            if o["type"] == "3":
+                members = set()
+                for ref in g["refs"]:
+                    if ref in country["armies"]:
+                        members |= country["armies"][ref]["members"]
+                out.append((g["name"], True, members, o))
+    for a in country["armies"].values():
+        for o in a["orders"]:
+            if o["type"] == "3":
+                out.append((a["name"], False, set(a["members"]), o))
+    return out
+
+
 # ---------------------------------------------------------------- reports
 
 
@@ -631,6 +662,63 @@ def report_fronts(tag, save, country, limit):
         print("    ... %d more front orders (raise --limit, 0 = all)"
               % (len(fronts) - limit))
     print("    * = army-group order (covers its child armies)")
+
+
+def report_invasions(tag, save, country, limit):
+    """Every type-3 (naval invasion) order, both ends resolved to state names.
+
+    TARGET is the order's own `path={}` (province list) and staging is
+    `invasion_source=` - see the type table in this file's header. Staging is printed
+    twice on purpose: the order's invasion_source, and the states the scheduled
+    divisions actually sit in - they can differ while the force converges. An order
+    with no target/path field SAYS SO instead of printing nothing: that negative is a
+    finding, not a formatting gap.
+    """
+    invs = invasion_orders(country)
+    print("%s  %s   %d naval-invasion (type 3) order(s)" % (tag, save, len(invs)))
+    if not invs:
+        return
+    names, p2s = state_names(), province_state()
+    for name, is_group, members, o in (invs if not limit else invs[:limit]):
+        # scheduled_member is the division set assigned to the invasion; the covering
+        # army's member list is the fallback when the order schedules nobody.
+        div_ids = o["sched_ids"] or members
+        print("    %-16s instance=%-6s created=%-13s divisions=%-3d convoys=%s"
+              % (("*" if is_group else " ") + name[:15], o["iid"],
+                 o["cd"].strip('"'), len(div_ids), o["convoys"] or "-"))
+        if o["src"] is not None:
+            st = p2s.get(o["src"])
+            label = names.get(st, "state %d" % st) if st is not None \
+                else "(sea/unmapped province)"
+            print("        source     province %d -> %s" % (o["src"], label))
+        else:
+            print("        source     NO invasion_source field in this order")
+        per_s = collections.Counter()
+        for uid in div_ids:
+            d = country["divisions"].get(uid)
+            loc = d.get("location") if d else None
+            st = p2s.get(int(loc)) if loc else None
+            per_s[names.get(st, "state %d" % st) if st is not None
+                  else "(not deployed)"] += 1
+        print("        staging    %s" % _top(per_s, 6))
+        toks = [int(t) for t in o["path"].split() if t.isdigit()]
+        if not toks:
+            print("        TARGET     NO target recorded - this order carries no "
+                  "path={} province list")
+            continue
+        seen, parts = set(), []
+        for pid in toks:
+            st = p2s.get(pid)
+            label = names.get(st, "state %d" % st) if st is not None \
+                else "province %d (sea/unmapped)" % pid
+            if label not in seen:
+                seen.add(label)
+                parts.append(label)
+        print("        TARGET     %s  (provinces %s)"
+              % (", ".join(parts), " ".join(str(t) for t in toks)))
+    if limit and len(invs) > limit:
+        print("    ... %d more invasion orders (raise --limit, 0 = all)"
+              % (len(invs) - limit))
 
 
 def save_year(date, path):
@@ -848,9 +936,11 @@ def main(argv):
     tag_arg, files = args[0], args[1:]
     tags = None if tag_arg.upper() == "ALL" else set(tag_arg.upper().split(","))
     # --where needs the same units-section pass as --divisions (it reads `location=`);
+    # --invasions reads it too (staging = the scheduled divisions' locations);
     # --oob and --templates need that pass AND the top-level division_templates block.
     want_tmpl = "--oob" in flags or "--templates" in flags
-    want_div = want_tmpl or "--divisions" in flags or "--where" in flags
+    want_div = (want_tmpl or "--divisions" in flags or "--where" in flags
+                or "--invasions" in flags)
     for save in files:
         data, templates, date = scan(save, tags, want_divisions=want_div,
                                      want_templates=want_tmpl)
@@ -881,6 +971,8 @@ def main(argv):
                 report_armies(tag, save, country, limit)
             elif "--fronts" in flags:
                 report_fronts(tag, save, country, limit)
+            elif "--invasions" in flags:
+                report_invasions(tag, save, country, limit)
             elif "--where" in flags:
                 report_where(tag, save, country, limit)
             elif want_div:

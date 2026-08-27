@@ -45,16 +45,48 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > 34 MIL / 4 div and AST/NZL never banking point the same way), ENG leg **FAIL** (bank 40 → 0 over
 > 1945.2.1-5 with the British Isles INTACT — MEASURED zero home provinces lost; DERIVED suspect:
 > IRQ at war with ENG since 1945.1.14 tripping `any_home_area_neighbor_country`, i.e. the Middle
-> East counts as "home area"; console/live check needed, not save-decidable). **NEW ALARM,
-> candidate subject: the ENG release spawned 4 batches = 40 divisions on 1945.2.1-5 and ONE
-> survives to 1945.3** (deployed 20 → 19, one `Reserve Divisíon` in the field; the bank debit at
-> `WA_reserves_effects.txt:206` is unconditional even when `create_unit` fails). Second candidate
-> CONFIRMED live and sharpened: **CAN never rebuilds** — 1-2 divisions 1942-1945 on 37→100 arms
-> factories (worse than `24933fb9`'s 2-4); the snowball the bank was built for did not happen
-> (its one-shot batch 1939.10 was consumed by 1941 and `reserves_deployment_complete_flag` closes
-> the program forever). Third candidate: **ENG fields ZERO armour and ZERO mech the entire
-> campaign** (`armor_mech_pct_hist` 0 in 37/39 samples, live stamps) while declining 43 → 19
-> divisions — see F8. None admitted (WIP limit; owner decision).
+> East counts as "home area"; console/live check needed, not save-decidable).
+> **Candidate validation pass 2026-08-27 (owner doubt, three subagents, six-boxed each):**
+> **(1) eng-reserve-wave — REAL, re-stated.** MEASURED: the release dumped 4 batches = 40
+> unequipped divisions (create_unit 0.3 eq / 0.3 xp) into London over 1945.2.1-5
+> (`days_remove = 1`, no throttle) and **ZERO survive to 1945.3** — the "1 survivor" first
+> reported was pre-existing div 107628 (byte-identical strength both saves); killing closure:
+> `post_mortem` records +41 in the month vs +1/0 in adjacent months, and 20 + 40 − 41 = 19
+> exact. The `:206` unconditional-debit suspicion is KILLED as the cause (spawn fired; the
+> hazard stays latent). Mechanism: the ENG brake `WA_reserves_is_expeditionary_only`
+> (`WA_reserves_triggers.txt:287-292`) is defeated by its own AND-preconditions exactly when
+> ENG is losing — IRQ at war 1945.1.14 (home-neighbour term) or `surrender_progress > 0` (22
+> states lost); which term = not save-decidable, one console read settles it. Where the 40
+> died (Tunisia front vs sea transit) is the engine boundary, ASSUMED.
+> **(2) can-transit-attrition — REAL; the OWNER's mechanism CONFIRMED, the first verdict's
+> "empty request set" REFUTED by his objection.** Owner: "CAN construit, mais perd ses divs à
+> cause du convoy raiding" — tested on the 61-monthly-save conveyor-reset series (the
+> discriminator snapshots cannot give): CAN builds CONTINUOUSLY — **16 divisions deployed
+> 1941-1946, training queue occupied 59/61 months** (~3.1/year, one at a time, ~5 months and
+> ~18.5k manpower each) — and **≈15 leave the OOB (±5)**. Not lent (0 `expeditionary_owner`,
+> whole-file scan), and essentially NEVER in land combat (`last_combat_date` null in 47/61
+> months, 3 episodes in 10 years): deaths cluster the month AFTER a high at-sea reading on
+> transatlantic runs (1943.8: 4/4 divisions embarked, one sea province → 1943.9: 3 lost;
+> destinations Dorset/Sussex/Algiers/Gabès), `efficiency_due_to_lost_convoys` 0.875-0.93 on
+> live routes. "Sunk in transit" is DERIVED (a country's own convoy/at-sea division losses
+> are not serialised; failed-invasion residual for the minority under front orders). The
+> first verdict's snapshot read one-at-a-time building as an idle queue — its residue that
+> STANDS: the build rate is also LOW in absolute (1-2 conveyors, never a backlog; ~3/year on
+> 100 MILs while 153k own rifles bank and CAN→SOV runs 206k IC) — CAN builds slowly AND
+> loses what it builds; both levers are real. Method note for future probes:
+> `division_names_tracker`/`post_mortem` is a freed-NAME pool (consumed on reuse, count can
+> FALL), never a cumulative death ledger — the conveyor-reset series is the valid counter.
+> **(3) eng-zero-armour — KILLED, TELEMETRY-ARTIFACT, do not admit.** Ground truth
+> (`plans.py --templates`, 4 dates): ENG held 3-5 armour + 1 mech divisions CONTINUOUSLY, on
+> front orders, 72 factories on tank chassis at 1943.6, ~2 340 own-built hulls in stock.
+> `wa_tlm_comp_armor/mech`'s lowest band is `size > 4` (`WA_TLM_core.txt:659/:675`) so the
+> gauge floors to 0 below 5 divisions; the hist "spikes" are the band crossing exactly 5
+> (5/34 = 14.7059, 5/43 = 11.6 — both reconcile to printed precision). Meta-defect recorded
+> in F8: the comp gauges are unusable below ~5 armour divisions (band index over real count) —
+> a WA_TLM fix is its own candidate (meta, owner request required). The real residue folds
+> into F8's ENG attrition 43 → 19 (active losses at the last save, `num_armies_for_training`
+> 24.5 vs 19 tell). Candidates (1) and (2) admissible; none admitted this session (WIP limit;
+> owner decision).
 
 > **Campaign `24933fb9` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 118 monthly saves
 > 1936.2-1945.11, unbranched, build = HEAD `2f16ec583` — DERIVED from push 03:46 / run 04:05, and
@@ -141,6 +173,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > that.
 
 
+### analysis-tooling — SHIPPED-UNTESTED (2026-08-27)
+- Scope: owner request 2026-08-27 ("d'abord les deux sujets open + la méta") — the three
+  measurement defects the `1ac7e4ea` scoring exposed: (i) `wa_tlm_comp_armor/mech` band floor
+  (any armour arm < 5 divisions read 0 → false "zero armour" verdict on ENG), (ii) `aifc.py`
+  printing a dead tag's frozen sector as live churn (SHA read as the R1 pathology for 13 saves),
+  (iii) `plans.py` unable to name a type-3 invasion order's target (blocked
+  scripted-invasion-reservation leg (b) and mis-shaped the foothold-deadlock candidate).
+- State: (i) SHIPPED — exact rungs 1-4 added to both ladders (`WA_TLM_core.txt`), comments +
+  doc registry now say LOWER BOUND (exact ≤ 5, coarser above), `@WA_TLM_VERSION` 32 → 33;
+  cost 8 trigger evals per major per monthly sample. (ii) SHIPPED and validated on a real save
+  — `aifc.py` flags `[DEAD TAG]` on a country block with no `units` section (MEASURED: SHA
+  1944.1 prints the banner, GER unaffected, exit 0); trend footer amended. (iii) SHIPPED and
+  validated — MEASURED: a type-3 `order_instance` carries its target as `path={}` (province
+  list, p2s-resolvable) plus `invasion_source` and `convoys=N/M`; `plans.py ENG,USA --invasions
+  1942.10_Oct.hoi4` prints both orders with `TARGET Madagascar (provinces 5222)`, staging and
+  source resolved; empty case explicit ("0 naval-invasion order(s)"); pathless case says "NO
+  target recorded"; default census and `--fronts` unchanged; `ALL` sweep clean on ~70 tags.
+  Retro-correction this surfaces: the 1942.9-10 invasion orders read earlier as "Torch orders"
+  were MADAGASCAR orders (both ENG and USA) — Torch's landings left no surviving type-3 order
+  in any monthly save; the falsified-deadlock conclusion is unaffected (outcome evidence).
+  Reviews 2026-08-27: architecture CONCERNS (2 items — code-site campaign hash stripped, doc
+  version cell for the pct row: both applied).
+- Verification: (i) is a `WA_TLM_*` write-site change — F9 boot owed (next launch covers it);
+  campaign probe: first v33 campaign, a major with 1-4 armour divisions reads `comp_armor`
+  = that count (ENG-shape control), and `tlm` never reports comp_* as FROZEN on live majors.
+  (ii)/(iii) are analysis-side tools: validated by the pasted real-save outputs in this entry.
+- Closed when: v33 campaign probe (i) passes, and `plans.py --invasions` output on a save with
+  a live invasion order names its target states (pasted here).
+
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
@@ -193,6 +254,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   at 1-2 divisions with idle pools elsewhere — worst 1945.6: ENG Gabès/Batna front 2 div while
   USA idles 35/56, TWO of them in Batna on the starved front's own path. The defines took on ENG
   and did not take on USA; USA's at-sea shuttle is Step B's sharpest case.
+- **USA-shuttle diagnosis COMPLETE 2026-08-27 (six-boxed).** MEASURED: at 1944.4 the 26
+  at-sea divisions are 10 buffer + 13 front + 3 areadef, ZERO invasion class; 8/8 tracked
+  division ids changed ARMY between every consecutive save-pair, routes Meknes→N.Texas,
+  Constantine→Arkansas, Panama→Hawaii (westward) vs N.America→Essex (eastward) — the wrong
+  ocean for Normandy, rival "D-Day staging" killed (positive control: 1944.7 buffer-at-sea
+  = 1 while 29 front-class cross for the real landing). Org of shuttling ids frozen at 7-15
+  for 3 months vs 153 once parked — the shuttle costs the entire recovery curve. Trigger
+  inputs byte-identical across 1944.3-5 (control table unchanged): a STANDING demand the army
+  cannot satisfy, not a toggling trigger. Mod decision (DERIVED trigger-walks): TWO scripted,
+  simultaneously-armed, antipodal, permanently-unmet buffer pools —
+  `unit_buffer_for_europe_aggressive` (`USA_THEATRE.txt:725-747`, britain ratio 0.5 = 28
+  demanded, 7 delivered) vs `buffer_pacific` (`USA_THEATRE.txt:216-338`, ELEVEN entries on
+  ONE order_id 9101, ratios summing **1.92** = 107 divisions demanded of a 56-division army,
+  9 of them `subtract_fronts_from_need = no`) + `theatre_boost_pacific` demand raise (:396).
+  Aggravators: `order_id = 1` shared by three blocks over three antipodal areas
+  (britain 0.5 / usa_east 1.0 / philippines 0.25 — engine behaviour for differing ratios on
+  one id UNDEFINED; `REGION_ITALY_THEATRE.txt:25` states the one-id-per-buffer rule and
+  ENG_THEATRE follows it with 17 distinct ids, USA_THEATRE does not — **that asymmetry is
+  why the defines took on ENG and not USA**); `unit_clumping_fix_3` (`USA_FRONT.txt:385`,
+  `always = yes`, −25 on north_africa = USA's only live front, own comment asks for
+  campaign-evidence revisit); the dday_prep window's four negatives exactly spans the
+  at-sea climb 19→46 %. Engine boundary ASSUMED: arbitration of differing ratios on a
+  shared order_id; whether an all-enemy-held states list poisons its pool; per-area
+  front_unit_request aggregation. Owner imgui (USA, 1944-shape) names the armed variants.
+  **Step B lever menu (owner decision, nothing shipped): (1) split the order_ids in
+  USA_THEATRE (single-line, no magnitude change, matches the ITALY/ENG rule — most likely
+  ENG/USA-gap closer); (2) cut the Pacific pool (1.92 → realistic, or drop the nine
+  subtract_fronts_from_need = no); (3) enter/exit hysteresis on the britain buffer (no
+  Allied ground block has a pair today); (4) one-ocean-at-a-time exclusion gate; (5) retire
+  or condition unit_clumping_fix_3. 1 and 5 are single-line and reversible; 2 and 4 are
+  material and must not ship in the same commit as each other.**
 - Closed when: (a) ENG+USA transit share drops vs the pre-fix baseline at matched dates, (b) no
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
@@ -435,7 +527,33 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   score to the defender-side-weighted desert (+20 desert +40 thin +20 non-core vs pad ~5-10) —
   the residual L3 lever is the scorer's defender-side terms / an own-mass corridor term, not the
   gate. Dead-tag trap for the tooling: SHA shows age=1 in all 13 saves but is annihilated
-  pre-1940 (frozen variables) — aifc.py needs a liveness annotation or its own footer misleads.
+  pre-1940 (frozen variables) — aifc.py needs a liveness annotation or its own footer misleads
+  (shipped under `analysis-tooling` same day).
+- **L3b diagnosis COMPLETE 2026-08-27 — NOT a bypass; the floor ran and PASSED on its
+  calibration.** Six-boxed, all three hypotheses REFUTED with killing measurements: no
+  copy path exists (`sector_states` written only inside `select_sector`, helpers:351/386;
+  HUN anchored 224 while GER anchored 205 same save — same faction, different answers; BUL age
+  2wk ≠ ITA 4wk), not stale (BUL held NO sector in the 5 surrounding monthly samples — the
+  corridor lived ONE sample and the validity mirror killed it the month BUL left Gabès), pad
+  counts ROOT divisions only (helpers:195/:252-260; the 2→4→0 Gabès natural experiment).
+  MEASURED mechanism: Gabès (665, neighbour of 514) held 4 BUL divisions in the selection
+  week = pad band 1, plus a second occupied state or a 5th division mid-ferry → band sum 2 >
+  `min_pad = 1` — a ferry stop qualified as a launching pad. Byte-identical junior corridors
+  are EXPECTED without copying: identical anchor ⇒ identical corridor (deterministic
+  neighbour walk, helpers:370-402), and §1b derives a junior's whole candidate set from the
+  leader's territory. WORK.md correction: the validity mirror is NOT only
+  "enemy-held + adjacent" — core:200 carries `divisions_in_state > 2` on the expeditionary
+  branch (weaker than selection: any-neighbour, not band sum — a pad-2 sector survives at
+  pad 1; real asymmetry, not this cause). Candidate levers (owner decision, nothing shipped):
+  (1) `min_pad` 1→2 (wide blast radius — decides whether small belligerents keep sectors),
+  (2) merge admission bar helpers:195 `> 2` raised (narrower — stops transient ferries at the
+  source; FIX-65 liberator reach is the trade-off), (3) re-band pads (widest, moves
+  exp_gate_pad too), (4) mirror the floor into validity core:191-201 (independent, fixes the
+  asymmetry), (5) K=2 retirement grace at helpers:728 for the L3c ledger growth (section 0
+  :670-679 already computes the lapse state; K unsizeable from saves — needs the harness;
+  no compaction is possible, entries retire only by exact negation, ENG's 737-entry ledger
+  is arithmetically correct and inert, its LENGTH is the only cost). Recommended: measure
+  lever 2's blast radius across the campaign's junior partners before choosing 1 vs 2.
 - Closed when: each leg carries a six-box diagnosis naming the script line or documented engine
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
