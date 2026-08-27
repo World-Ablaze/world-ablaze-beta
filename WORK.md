@@ -439,6 +439,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Sea 55 / Labrador Sea 50 / Labrador Basin 247) at 2 consecutive sampled saves - fleet
   relocation alone does not create escort missions there (escort objectives are
   own-danger-driven), so (f) measures missions, not just position.
+- **Campaign `0767987f` (first post-fix, 2026-08-27, 117 saves 1936.2-1945.10, build
+  fingerprint MEASURED: `USA/CAN_ConvoyEscort_DD_1` serialised in-save; closure 14/14 vs
+  `army`): coalition improves, CAN itself still fails.** Cross-campaign caveat: one run vs
+  one run, different seed, ends 1945.10 vs 1946.1 - directions, not significance.
+  - (a) FAIL: 7 post-1941 CAN deployments survive >= 6 months (bar 10); all 5 sub-6-month
+    deaths died AT SEA (2 in their deployment month).
+  - (b) FAIL, marginal: max 7 deployed from 1943 (bar 8); holds 5-7 through 1943-45 vs 1-2
+    baseline.
+  - (c) PARTIAL: 7 full-wipe months but ALL <= 1941.12; zero in 1942-45 (baseline had them
+    through 1943). As written FAIL, post-1942 clean.
+  - (d) PASS: CAN->SOV 195 853 IC cumulative at 1945.6, relief convoys still flowing.
+  - (e) FAIL: active fleets DID shrink to the 17-40 median band (mechanism took) but
+    admiral-less reserve fleets still grow - ENG Fleet 4 at 121-146 (bar: none > 40), CAN
+    79-83% screens idle late-war (bar < 30%). DERIVED: `NAVY_PREFERED_MAX_SIZE` governs
+    active-fleet merging, not the new-hull depot; the binding constraint has MOVED to
+    admiral assignment / reserve-fleet drainage.
+  - (f) PARTIAL: Hudson eliminated (no CAN fleet in 166/246 on any sampled save; CAN
+    escorted 243/43 in 1943) - but the western corridor (55/50/247) still carries zero
+    Allied escort/patrol while GER raids 247 all campaign.
+  - (g) PARTIAL: formation PROVEN - USA 9-13 DD-escort TFs (90-158 hulls, 1944.6 dip to 1),
+    CAN 1-2 TFs in 1943; `allowed` resolves the scripted trigger and the dynamic term in
+    play (TFs formed below 100 frigates). Threshold cutoff untested (USA peaks 79 frigates,
+    CAN 49). CAN stops escorting after 1943.9: its new hulls pool in admiral-less "Fleet 6"
+    (20->90 ships) - same mechanism as (e).
+  - Coalition deltas (baseline -> this run, DERIVED): total at-sea losses 129 -> 104; USA
+    71 -> 42 with net growth +90 -> +264; ENG 11 -> 5; CAN 20 -> 13 but net still -9 on 12
+    built; RAJ 13 -> 25 and AST 8 -> 12 (worse, off-corridor routes). Escort-vs-raider:
+    261-339 active Allied escort hulls (baseline 60-100) vs GER raid 50-117; GER monthly
+    kills collapse to 29-75 in 1945 (peak 468 in 1944.10); GER sub losses >= 388 (327 to
+    frigates, 80 to destroyers - the DD escorts kill).
+  - Next lever (PROPOSED ONLY, owner decision): the admiral-less reserve-fleet depot is
+    now the named binding constraint for (e)/(g)-CAN - candidate mechanisms to
+    investigate: admiral recruitment cadence/CP, reserve-fleet drainage into mission
+    fleets, or a scripted navy-reorganisation pass. Second: western-corridor escort
+    presence (f) is untouched by everything shipped so far - engine escort objectives
+    never reach 55/50/247.
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
