@@ -216,9 +216,9 @@ Current division config triggers:
 - `WA_AI_CONFIG_DIVISIONS_use_anti_tank_brigades`
 - `WA_AI_CONFIG_DIVISIONS_use_anti_air_brigades`
 - `WA_AI_CONFIG_DIVISIONS_use_rocket_artillery`
-- `WA_AI_CONFIG_DIVISIONS_use_tank_destroyers`
-- `WA_AI_CONFIG_DIVISIONS_use_self_propelled_gun`
-- `WA_AI_CONFIG_DIVISIONS_use_self_propelled_aa`
+- `WA_AI_CONFIG_DIVISIONS_use_medium_tank_destroyers`
+- `WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_gun`
+- `WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_aa`
 
 ### Template Use Triggers
 
@@ -249,7 +249,7 @@ Current unlock trigger groups:
 
 - Base chassis and equipment: `WA_AI_TEMPLATES_has_light_armor_unlocked`, `WA_AI_TEMPLATES_has_medium_armor_unlocked`, `WA_AI_TEMPLATES_has_heavy_armor_unlocked`, `WA_AI_TEMPLATES_has_modern_armor_unlocked`, `WA_AI_TEMPLATES_has_mechanized_unlocked`, `WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked`.
 - Ground support equipment: `WA_AI_TEMPLATES_has_heavy_at_unlocked`, `WA_AI_TEMPLATES_has_heavy_aa_unlocked`.
-- Mechanized variants: `WA_AI_TEMPLATES_has_mechanized_at_unlocked`, `WA_AI_TEMPLATES_has_mechanized_aa_unlocked`.
+- Mechanized variants: `WA_AI_TEMPLATES_has_mechanized_at_unlocked`, `WA_AI_TEMPLATES_has_mechanized_spaa_unlocked`.
 - Tank destroyers: `WA_AI_TEMPLATES_has_light_td_unlocked`, `WA_AI_TEMPLATES_has_medium_td_unlocked`, `WA_AI_TEMPLATES_has_heavy_td_unlocked`, `WA_AI_TEMPLATES_has_modern_td_unlocked`.
 - Self-propelled artillery: `WA_AI_TEMPLATES_has_light_spg_unlocked`, `WA_AI_TEMPLATES_has_medium_spg_unlocked`, `WA_AI_TEMPLATES_has_heavy_spg_unlocked`, `WA_AI_TEMPLATES_has_modern_spg_unlocked`.
 - Self-propelled anti-air: `WA_AI_TEMPLATES_has_light_spaa_unlocked`, `WA_AI_TEMPLATES_has_medium_spaa_unlocked`, `WA_AI_TEMPLATES_has_modern_spaa_unlocked`.
@@ -267,7 +267,7 @@ Land-template-relevant research triggers:
 
 - Infantry and artillery: `WA_AI_RESEARCH_needs_infantry_weapons`, `WA_AI_RESEARCH_needs_line_artillery`, `WA_AI_RESEARCH_needs_pack_artillery`, `WA_AI_RESEARCH_needs_heavy_artillery`, `WA_AI_RESEARCH_needs_anti_tank`, `WA_AI_RESEARCH_needs_anti_air`, `WA_AI_RESEARCH_needs_rocket_artillery`, `WA_AI_RESEARCH_needs_marines`, `WA_AI_RESEARCH_needs_mountaineers`, `WA_AI_RESEARCH_needs_paratroopers`.
 - Support: `WA_AI_RESEARCH_needs_support`, `WA_AI_RESEARCH_needs_engineer_company`, `WA_AI_RESEARCH_needs_recon_company`, `WA_AI_RESEARCH_needs_military_police`, `WA_AI_RESEARCH_needs_maintenance_company`, `WA_AI_RESEARCH_needs_field_hospitals`, `WA_AI_RESEARCH_needs_logistics_company`, `WA_AI_RESEARCH_needs_signal_company`, `WA_AI_RESEARCH_needs_camo`.
-- Tanks and mobile: `WA_AI_RESEARCH_needs_light_armor`, `WA_AI_RESEARCH_needs_medium_armor`, `WA_AI_RESEARCH_needs_heavy_armor`, `WA_AI_RESEARCH_needs_modern_armor`, `WA_AI_RESEARCH_needs_trucks`, `WA_AI_RESEARCH_needs_mechanized`, `WA_AI_RESEARCH_needs_tank_destroyers`, `WA_AI_RESEARCH_needs_self_propelled_artillery`, `WA_AI_RESEARCH_needs_self_propelled_aa`, `WA_AI_RESEARCH_needs_armored_cars`.
+- Tanks and mobile: `WA_AI_RESEARCH_needs_light_armor`, `WA_AI_RESEARCH_needs_medium_armor`, `WA_AI_RESEARCH_needs_heavy_armor`, `WA_AI_RESEARCH_needs_modern_armor`, `WA_AI_RESEARCH_needs_trucks`, `WA_AI_RESEARCH_needs_mechanized`, `WA_AI_RESEARCH_needs_light_tank_destroyers`, `WA_AI_RESEARCH_needs_light_assault`, `WA_AI_RESEARCH_needs_light_infantry_support`, `WA_AI_RESEARCH_needs_light_self_propelled_guns`, `WA_AI_RESEARCH_needs_light_self_propelled_aa`, `WA_AI_RESEARCH_needs_medium_tank_destroyers`, `WA_AI_RESEARCH_needs_medium_assault`, `WA_AI_RESEARCH_needs_medium_infantry_support`, `WA_AI_RESEARCH_needs_medium_self_propelled_guns`, `WA_AI_RESEARCH_needs_medium_self_propelled_aa`, `WA_AI_RESEARCH_needs_heavy_tank_destroyers`, `WA_AI_RESEARCH_needs_heavy_assault`, `WA_AI_RESEARCH_needs_heavy_infantry_support`, `WA_AI_RESEARCH_needs_heavy_self_propelled_guns`, `WA_AI_RESEARCH_needs_heavy_self_propelled_aa`, `WA_AI_RESEARCH_needs_modern_tank_destroyers`, `WA_AI_RESEARCH_needs_modern_assault`, `WA_AI_RESEARCH_needs_modern_infantry_support`, `WA_AI_RESEARCH_needs_modern_self_propelled_guns`, `WA_AI_RESEARCH_needs_modern_self_propelled_aa`, `WA_AI_RESEARCH_needs_armored_cars`.
 
 The monthly on-action also calls `WA_AI_RESEARCH_check_for_empty_research_slots`, which sets `WA_AI_unused_research_slots` and `WA_AI_unused_research_slots_extended`. Existing generated `ai_will_do` blocks use those flags to relax date penalties when the AI has idle slots.
 
