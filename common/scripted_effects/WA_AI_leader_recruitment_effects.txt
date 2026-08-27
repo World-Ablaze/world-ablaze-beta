@@ -17,6 +17,43 @@ WA_AI_recruit_general = {
 
 	divide_temp_variable = { WA_AI_divisions_to_generals_ratio = WA_AI_general_count }
 
+	# [recruit-loop] registration watchdog: a creation this counter never sees would re-fire the
+	# recruit forever (the count gate cannot close), burning the CP income and flooding the save
+	# with orphan characters. Oracle = the count the gate itself reads (character EXISTENCE is the
+	# wrong oracle - orphans exist in the DB); a net leader loss inside one 2-day verify window can
+	# fake a failure, which is why one strike refunds and only two consecutive strikes latch.
+	# The pending flag guarantees WA_AI_expected_generals was set in the same pass.
+	if = {
+		limit = { has_country_flag = WA_AI_recruit_general_pending }
+		if = {
+			limit = { check_variable = { WA_AI_general_count < WA_AI_expected_generals } }
+			add_to_variable = { WA_AI_recruit_general_fail_n = 1 }
+			add_command_power = WA_AI_last_general_cost
+			if = {
+				limit = { check_variable = { WA_AI_recruit_general_fail_n > 1 } }
+				set_country_flag = WA_AI_recruit_general_broken
+				set_variable = { WA_AI_broken_at_generals = WA_AI_general_count }
+				if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: general creation does not register - latched off" }
+			}
+		}
+		else = {
+			set_variable = { WA_AI_recruit_general_fail_n = 0 }
+		}
+		clr_country_flag = WA_AI_recruit_general_pending
+	}
+	# [recruit-loop] latch exit: the roster growing ABOVE its count at latch time (focus/event
+	# generals) proves registration can move again - give the script another chance; a still-broken
+	# registration re-latches after two refunded strikes. Growth-since-latch, not a threshold: a
+	# threshold exit would re-arm every pulse for a ratio-branch looper whose count never moves.
+	if = {
+		limit = {
+			has_country_flag = WA_AI_recruit_general_broken
+			check_variable = { WA_AI_general_count > WA_AI_broken_at_generals }
+		}
+		clr_country_flag = WA_AI_recruit_general_broken
+		set_variable = { WA_AI_recruit_general_fail_n = 0 }
+	}
+
 	### cost of recruiting a new general
 
 	set_temp_variable = { WA_AI_recruit_cost = 0 }
@@ -36,6 +73,8 @@ WA_AI_recruit_general = {
 
 	if = {
 		limit = {
+			NOT = { has_country_flag = WA_AI_recruit_general_broken }
+			NOT = { has_country_flag = WA_AI_recruit_general_pending }
 			OR = {
 				check_variable = { WA_AI_divisions_to_generals_ratio > 18 }
 				check_variable = { WA_AI_general_count < 3 } # get at least 3
@@ -43,12 +82,32 @@ WA_AI_recruit_general = {
 			NOT = { check_variable = { command_power < WA_AI_recruit_cost } }
 		}
 
+		# remembered so a failed registration refunds exactly what was debited
+		set_variable = { WA_AI_last_general_cost = WA_AI_recruit_cost }
 		multiply_temp_variable = { WA_AI_recruit_cost = -1 }
 		add_command_power = WA_AI_recruit_cost
 
-		create_corps_commander = {
-			skill = 1
+		# [recruit-loop] generate_character = documented "create + recruit" (random name from the
+		# country's own lists when omitted); the bare create_corps_commander it replaces left every
+		# creation as an unregistered orphan invisible to every_army_leader. Token must be unique
+		# per creation, hence the per-country sequence in the meta.
+		add_to_variable = { WA_AI_gen_seq = 1 }
+		meta_effect = {
+			text = {
+				generate_character = {
+					token_base = WA_AI_gen_[TAG]_[SEQ]
+					corps_commander = {
+						skill = 1
+					}
+				}
+			}
+			TAG = "[ROOT.GetTag]"
+			SEQ = "[?WA_AI_gen_seq|.0]"
 		}
+
+		set_variable = { WA_AI_expected_generals = WA_AI_general_count }
+		add_to_variable = { WA_AI_expected_generals = 1 }
+		set_country_flag = WA_AI_recruit_general_pending
 
 		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: general" }
 	}
@@ -68,6 +127,35 @@ WA_AI_recruit_marshal = {
 	}
 
 	divide_temp_variable = { WA_AI_generals_needed = WA_AI_marshal_count }
+
+	# [recruit-loop] same registration watchdog as WA_AI_recruit_general - see the comments there
+	if = {
+		limit = { has_country_flag = WA_AI_recruit_marshal_pending }
+		if = {
+			limit = { check_variable = { WA_AI_marshal_count < WA_AI_expected_marshals } }
+			add_to_variable = { WA_AI_recruit_marshal_fail_n = 1 }
+			add_command_power = WA_AI_last_marshal_cost
+			if = {
+				limit = { check_variable = { WA_AI_recruit_marshal_fail_n > 1 } }
+				set_country_flag = WA_AI_recruit_marshal_broken
+				set_variable = { WA_AI_broken_at_marshals = WA_AI_marshal_count }
+				if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: marshal creation does not register - latched off" }
+			}
+		}
+		else = {
+			set_variable = { WA_AI_recruit_marshal_fail_n = 0 }
+		}
+		clr_country_flag = WA_AI_recruit_marshal_pending
+	}
+	# [recruit-loop] latch exit (growth-since-latch) - see WA_AI_recruit_general
+	if = {
+		limit = {
+			has_country_flag = WA_AI_recruit_marshal_broken
+			check_variable = { WA_AI_marshal_count > WA_AI_broken_at_marshals }
+		}
+		clr_country_flag = WA_AI_recruit_marshal_broken
+		set_variable = { WA_AI_recruit_marshal_fail_n = 0 }
+	}
 
 	### Check if a new marshal is needed
 
@@ -97,15 +185,34 @@ WA_AI_recruit_marshal = {
 
 		if = { # recruit a new marshal
 			limit = {
+				NOT = { has_country_flag = WA_AI_recruit_marshal_broken }
+				NOT = { has_country_flag = WA_AI_recruit_marshal_pending }
 				NOT = { check_variable = { command_power < WA_AI_marshal_total_cost } }
 			}
 
+			# remembered so a failed registration refunds exactly what was debited
+			set_variable = { WA_AI_last_marshal_cost = WA_AI_marshal_total_cost }
 			multiply_temp_variable = { WA_AI_marshal_total_cost = -1 }
 			add_command_power = WA_AI_marshal_total_cost
 
-			create_field_marshal = {
-				skill = 1
+			# [recruit-loop] generate_character - see WA_AI_recruit_general
+			add_to_variable = { WA_AI_gen_seq = 1 }
+			meta_effect = {
+				text = {
+					generate_character = {
+						token_base = WA_AI_gen_[TAG]_[SEQ]
+						field_marshal = {
+							skill = 1
+						}
+					}
+				}
+				TAG = "[ROOT.GetTag]"
+				SEQ = "[?WA_AI_gen_seq|.0]"
 			}
+
+			set_variable = { WA_AI_expected_marshals = WA_AI_marshal_count }
+			add_to_variable = { WA_AI_expected_marshals = 1 }
+			set_country_flag = WA_AI_recruit_marshal_pending
 
 			if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: marshal" }
 		}
