@@ -254,6 +254,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   at 1-2 divisions with idle pools elsewhere — worst 1945.6: ENG Gabès/Batna front 2 div while
   USA idles 35/56, TWO of them in Batna on the starved front's own path. The defines took on ENG
   and did not take on USA; USA's at-sea shuttle is Step B's sharpest case.
+- **USA-shuttle diagnosis COMPLETE 2026-08-27 (six-boxed).** MEASURED: at 1944.4 the 26
+  at-sea divisions are 10 buffer + 13 front + 3 areadef, ZERO invasion class; 8/8 tracked
+  division ids changed ARMY between every consecutive save-pair, routes Meknes→N.Texas,
+  Constantine→Arkansas, Panama→Hawaii (westward) vs N.America→Essex (eastward) — the wrong
+  ocean for Normandy, rival "D-Day staging" killed (positive control: 1944.7 buffer-at-sea
+  = 1 while 29 front-class cross for the real landing). Org of shuttling ids frozen at 7-15
+  for 3 months vs 153 once parked — the shuttle costs the entire recovery curve. Trigger
+  inputs byte-identical across 1944.3-5 (control table unchanged): a STANDING demand the army
+  cannot satisfy, not a toggling trigger. Mod decision (DERIVED trigger-walks): TWO scripted,
+  simultaneously-armed, antipodal, permanently-unmet buffer pools —
+  `unit_buffer_for_europe_aggressive` (`USA_THEATRE.txt:725-747`, britain ratio 0.5 = 28
+  demanded, 7 delivered) vs `buffer_pacific` (`USA_THEATRE.txt:216-338`, ELEVEN entries on
+  ONE order_id 9101, ratios summing **1.92** = 107 divisions demanded of a 56-division army,
+  9 of them `subtract_fronts_from_need = no`) + `theatre_boost_pacific` demand raise (:396).
+  Aggravators: `order_id = 1` shared by three blocks over three antipodal areas
+  (britain 0.5 / usa_east 1.0 / philippines 0.25 — engine behaviour for differing ratios on
+  one id UNDEFINED; `REGION_ITALY_THEATRE.txt:25` states the one-id-per-buffer rule and
+  ENG_THEATRE follows it with 17 distinct ids, USA_THEATRE does not — **that asymmetry is
+  why the defines took on ENG and not USA**); `unit_clumping_fix_3` (`USA_FRONT.txt:385`,
+  `always = yes`, −25 on north_africa = USA's only live front, own comment asks for
+  campaign-evidence revisit); the dday_prep window's four negatives exactly spans the
+  at-sea climb 19→46 %. Engine boundary ASSUMED: arbitration of differing ratios on a
+  shared order_id; whether an all-enemy-held states list poisons its pool; per-area
+  front_unit_request aggregation. Owner imgui (USA, 1944-shape) names the armed variants.
+  **Step B lever menu (owner decision, nothing shipped): (1) split the order_ids in
+  USA_THEATRE (single-line, no magnitude change, matches the ITALY/ENG rule — most likely
+  ENG/USA-gap closer); (2) cut the Pacific pool (1.92 → realistic, or drop the nine
+  subtract_fronts_from_need = no); (3) enter/exit hysteresis on the britain buffer (no
+  Allied ground block has a pair today); (4) one-ocean-at-a-time exclusion gate; (5) retire
+  or condition unit_clumping_fix_3. 1 and 5 are single-line and reversible; 2 and 4 are
+  material and must not ship in the same commit as each other.**
 - Closed when: (a) ENG+USA transit share drops vs the pre-fix baseline at matched dates, (b) no
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
@@ -496,7 +527,33 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   score to the defender-side-weighted desert (+20 desert +40 thin +20 non-core vs pad ~5-10) —
   the residual L3 lever is the scorer's defender-side terms / an own-mass corridor term, not the
   gate. Dead-tag trap for the tooling: SHA shows age=1 in all 13 saves but is annihilated
-  pre-1940 (frozen variables) — aifc.py needs a liveness annotation or its own footer misleads.
+  pre-1940 (frozen variables) — aifc.py needs a liveness annotation or its own footer misleads
+  (shipped under `analysis-tooling` same day).
+- **L3b diagnosis COMPLETE 2026-08-27 — NOT a bypass; the floor ran and PASSED on its
+  calibration.** Six-boxed, all three hypotheses REFUTED with killing measurements: no
+  copy path exists (`sector_states` written only inside `select_sector`, helpers:351/386;
+  HUN anchored 224 while GER anchored 205 same save — same faction, different answers; BUL age
+  2wk ≠ ITA 4wk), not stale (BUL held NO sector in the 5 surrounding monthly samples — the
+  corridor lived ONE sample and the validity mirror killed it the month BUL left Gabès), pad
+  counts ROOT divisions only (helpers:195/:252-260; the 2→4→0 Gabès natural experiment).
+  MEASURED mechanism: Gabès (665, neighbour of 514) held 4 BUL divisions in the selection
+  week = pad band 1, plus a second occupied state or a 5th division mid-ferry → band sum 2 >
+  `min_pad = 1` — a ferry stop qualified as a launching pad. Byte-identical junior corridors
+  are EXPECTED without copying: identical anchor ⇒ identical corridor (deterministic
+  neighbour walk, helpers:370-402), and §1b derives a junior's whole candidate set from the
+  leader's territory. WORK.md correction: the validity mirror is NOT only
+  "enemy-held + adjacent" — core:200 carries `divisions_in_state > 2` on the expeditionary
+  branch (weaker than selection: any-neighbour, not band sum — a pad-2 sector survives at
+  pad 1; real asymmetry, not this cause). Candidate levers (owner decision, nothing shipped):
+  (1) `min_pad` 1→2 (wide blast radius — decides whether small belligerents keep sectors),
+  (2) merge admission bar helpers:195 `> 2` raised (narrower — stops transient ferries at the
+  source; FIX-65 liberator reach is the trade-off), (3) re-band pads (widest, moves
+  exp_gate_pad too), (4) mirror the floor into validity core:191-201 (independent, fixes the
+  asymmetry), (5) K=2 retirement grace at helpers:728 for the L3c ledger growth (section 0
+  :670-679 already computes the lapse state; K unsizeable from saves — needs the harness;
+  no compaction is possible, entries retire only by exact negation, ENG's 737-entry ledger
+  is arithmetically correct and inert, its LENGTH is the only cost). Recommended: measure
+  lever 2's blast radius across the campaign's junior partners before choosing 1 vs 2.
 - Closed when: each leg carries a six-box diagnosis naming the script line or documented engine
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
