@@ -170,7 +170,21 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+### aifc-traction — TESTED (2026-08-27)
+- **Owner console run 1944.7.14 post-full-restart (`wa_aifc.1 ENG`) — gate constant loaded and
+  computing, subject back to TESTED.** Pasted evidence: `native-maxpad=3
+  exp-gate(native-maxpad<=2)=0` — the bar prints 2 (constant resolved; the 1944.7.7 run had
+  caught it at 0 after a console `reload`, which reloads effects but NOT script_constants —
+  the constants-file header's full-restart rule, now demonstrated in an instrument reading).
+  The closed arm is CORRECT here, not a failure of the expectation written earlier: the fork's
+  war moved — ENG now holds pad-3 native candidates in Egypt (Qattara/Beheira/Dakahlia/Suez),
+  a real native front, so skipping the ally walk is the design working. Stored sector 680
+  age 4wk = forced re-selection next tick, onto an Egypt pad-3 anchor vs ITA (the main-enemy
+  rule picks ITA at max pad 3 with or without the merge this week). **Open-arm end-to-end proof
+  still riding**: the run arm (weak native → merged candidate in a STORED sector) is proven at
+  the instrument level (harness walk) but not yet in a shipped selection — cheapest console
+  proof is `wa_aifc.1 ITA` (native maxpad ~2 → gate 1) followed by a re-selection anchoring
+  Batna, else the next campaign's (L3b) probe carries it.
 - **Expeditionary gate fix SHIPPED 2026-08-27 (owner order).** The 1b gate is now
   CAPABILITY-based: new `constant:wa_ai_aifc.selection.exp_gate_pad = 2`; a prepass computes the
   best NATIVE pad and the ally walk runs unless some native pad clears the bar (strict >, i.e.
