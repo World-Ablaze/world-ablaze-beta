@@ -85,18 +85,26 @@ def scan_province_adjacencies(
     return adjacencies
 
 
-def parse_special_adjacencies(path: Path, logger) -> List[Tuple[int, int]]:
+def parse_special_adjacencies(
+    path: Path, logger
+) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
     """
-    Parse adjacencies.csv for special connections (straits, canals).
+    Parse adjacencies.csv for special connections and blocks.
+
+    "sea" rows are strait/canal crossings for naval logic (ignored here);
+    "impassable" rows BLOCK a bmp-derived adjacency in the engine; typeless
+    rows are extra land crossings the bmp scan cannot see.
 
     Args:
         path: Path to adjacencies.csv file.
         logger: Logger instance.
 
     Returns:
-        List of (province_a, province_b) tuples for special adjacencies.
+        (added, blocked) lists of (province_a, province_b) tuples:
+        `added` connections to insert, `blocked` connections to remove.
     """
-    special: List[Tuple[int, int]] = []
+    added: List[Tuple[int, int]] = []
+    blocked: List[Tuple[int, int]] = []
 
     with open(path, "r", encoding="utf-8-sig") as f:
         reader = csv.reader(f, delimiter=";")
@@ -108,14 +116,20 @@ def parse_special_adjacencies(path: Path, logger) -> List[Tuple[int, int]]:
                 to_prov = int(row[1])
                 adj_type = row[2].strip().lower() if len(row) > 2 else ""
 
-                # Include non-sea adjacencies
-                if adj_type != "sea":
-                    special.append((from_prov, to_prov))
+                if from_prov < 0 or to_prov < 0:
+                    continue  # -1;-1 terminator row
+                if adj_type == "impassable":
+                    blocked.append((from_prov, to_prov))
+                elif adj_type != "sea":
+                    added.append((from_prov, to_prov))
             except (ValueError, IndexError):
                 continue
 
-    logger.info(f"Parsed {len(special)} special adjacencies from adjacencies.csv")
-    return special
+    logger.info(
+        f"Parsed {len(added)} added and {len(blocked)} blocked adjacencies "
+        "from adjacencies.csv"
+    )
+    return added, blocked
 
 
 def filter_land_adjacencies(
@@ -191,11 +205,20 @@ class ProvinceConnectionsGenerator(BaseMapGenerator):
 
         adjacencies_path = map_dir / "adjacencies.csv"
         if self.include_special and adjacencies_path.exists():
-            self.log_step("Adding special adjacencies...")
-            special = parse_special_adjacencies(adjacencies_path, self.logger)
-            for prov_a, prov_b in special:
+            self.log_step("Applying special adjacencies...")
+            added, blocked = parse_special_adjacencies(adjacencies_path, self.logger)
+            for prov_a, prov_b in added:
                 adjacencies[prov_a].add(prov_b)
                 adjacencies[prov_b].add(prov_a)
+            # [rail-corridors] impassable rows are engine-side adjacency BLOCKS:
+            # the bmp scan sees these provinces touching, the engine forbids the
+            # crossing, so they must leave the land graph or pathfinding routes
+            # armies through the Himalayas.
+            for prov_a, prov_b in blocked:
+                if prov_a in adjacencies:
+                    adjacencies[prov_a].discard(prov_b)
+                if prov_b in adjacencies:
+                    adjacencies[prov_b].discard(prov_a)
 
         if self.land_only:
             self.log_step("Filtering to land provinces only...")
