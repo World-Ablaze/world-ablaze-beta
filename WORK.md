@@ -210,6 +210,25 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   design decision (margin size, keep-while-valid vs score bonus) is the owner's, not shipped.
   (v) USA unchanged (0 candidates, 0 ally states with 3+ of its 44 divisions) — consistent with
   the L2 no-fix ruling; FRA control still correctly gated.
+- **Fork reading 1944.6.20 (owner, `wa_aifc.1 ENG`) — desert prediction VALIDATED, and the
+  re-selection exposes the residual L3 defect: the expeditionary gate starves ENG of its real
+  candidates.** MEASURED: stored sector re-selected ~June 13 to anchor 680 Deir-az-Zur (pad 2)
+  vs ITA — the 552 desert anchor is dead as predicted (pad 1 < floor). But the harness's
+  unconditional walk shows the real landscape: Tunisia pad 3 (GER) and FIVE post-D-Day French
+  states with ENG divisions (Centre/Ile-de-France pad 2 eligible), ally-states-with-3+div = 5.
+  **Six-box**: the shipped selection saw NONE of them — `cand_native = 5 ≥ 3` closes the
+  expeditionary gate (`WA_AI_AIFC_helpers.txt:119`, `_aifc_cand^num < 3`), so the walk that
+  would add Tunisia and Normandy never ran; among the 5 native Middle-East candidates the best
+  floor-eligible pad is Deir-az-Zur 2 → main enemy ITA, anchor Syria — a WEEK AFTER D-Day.
+  Same failure shape the gate's own comment records (token native contact suppressing the
+  fallback; relaxed from "0" to "< 3" — 5 token contacts still starve it). Engine boundary:
+  none — pure script gate. **Candidate lever (owner decision): make the gate capability-based,
+  not count-based — run the expeditionary merge when the best NATIVE pad is weak (e.g. no
+  native candidate above min_pad + 1), so ENG (best native 2) merges Tunisia/Normandy while
+  GER/SOV (native pads 9) keep skipping the walk (the FIX-56 CPU concern stays covered).**
+  Harness note: its `main enemy` line is computed over ALL candidates (walk unconditional)
+  while the shipped selection sees native-only when the gate closes — that display divergence
+  is exactly the instrument doing its job, but read it knowingly.
 - Scope: owner request 2026-08-27 ("diagnostic masse qui ne suit pas + USA + ENG bloqué dans le
   désert"), from the AIFC passivity measurement (campaign `24933fb9`, quarterly sweep
   1939.9→1945.10, 3 extraction passes; full tables in the session scratchpad
