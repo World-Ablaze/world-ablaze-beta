@@ -58,22 +58,24 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > ENG is losing — IRQ at war 1945.1.14 (home-neighbour term) or `surrender_progress > 0` (22
 > states lost); which term = not save-decidable, one console read settles it. Where the 40
 > died (Tunisia front vs sea transit) is the engine boundary, ASSUMED.
-> **(2) can-no-army-demand — REAL, causal clause corrected.** The symptom holds (1-2 div on
-> 100 MILs; closure exact on all 4 cells) and every material binder is KILLED: not lent (0
-> `expeditionary_owner="CAN"`, positive control works), not training-stuck (queue asks for 1),
-> not manpower (`all_adults_serve`, need fully met), not equipment (**153 332 own-built rifles
-> hoarded** ≈ 150 divisions' worth), not the template (byte-identical to AST's). Design intent
-> KILLED by the controls: SAF/NZL, equally safe, run 0.14-0.15 div/MIL vs CAN 0.02. But the
-> gap is NOT "upstream of the garrison/commitment rules" — it IS them: CAN's only always-on
-> army mission is `put_unit_buffers ratio = 0.25` (`WA_AI_MILITARY_COUNTRY_CAN_THEATRE.txt:44`
-> — engine doc: a FRACTION of the existing army, self-satisfying at any size, cannot size an
-> army), and the `total_commitment` gate (`CAN_FRONT.txt:103`, the owner's own zéro-mainland
-> order) removed the last absolute `front_unit_request` (+10 home floor) — empty request set →
-> the engine builds to nothing. CAN is the one dominion with no live front to feed requests
-> (RAJ Burma, AST Pacific). Meanwhile CAN industry is NOT idle: top vanilla lend-lease pair of
-> the campaign (CAN→SOV 206 656 IC) — it functions as the Allied arsenal. The INTERACTION of
-> the two rules, not either alone, is the defect. Engine boundary ASSUMED: how request-sets
-> convert to wanted-division counts; owner imgui on CAN decides.
+> **(2) can-transit-attrition — REAL; the OWNER's mechanism CONFIRMED, the first verdict's
+> "empty request set" REFUTED by his objection.** Owner: "CAN construit, mais perd ses divs à
+> cause du convoy raiding" — tested on the 61-monthly-save conveyor-reset series (the
+> discriminator snapshots cannot give): CAN builds CONTINUOUSLY — **16 divisions deployed
+> 1941-1946, training queue occupied 59/61 months** (~3.1/year, one at a time, ~5 months and
+> ~18.5k manpower each) — and **≈15 leave the OOB (±5)**. Not lent (0 `expeditionary_owner`,
+> whole-file scan), and essentially NEVER in land combat (`last_combat_date` null in 47/61
+> months, 3 episodes in 10 years): deaths cluster the month AFTER a high at-sea reading on
+> transatlantic runs (1943.8: 4/4 divisions embarked, one sea province → 1943.9: 3 lost;
+> destinations Dorset/Sussex/Algiers/Gabès), `efficiency_due_to_lost_convoys` 0.875-0.93 on
+> live routes. "Sunk in transit" is DERIVED (a country's own convoy/at-sea division losses
+> are not serialised; failed-invasion residual for the minority under front orders). The
+> first verdict's snapshot read one-at-a-time building as an idle queue — its residue that
+> STANDS: the build rate is also LOW in absolute (1-2 conveyors, never a backlog; ~3/year on
+> 100 MILs while 153k own rifles bank and CAN→SOV runs 206k IC) — CAN builds slowly AND
+> loses what it builds; both levers are real. Method note for future probes:
+> `division_names_tracker`/`post_mortem` is a freed-NAME pool (consumed on reuse, count can
+> FALL), never a cumulative death ledger — the conveyor-reset series is the valid counter.
 > **(3) eng-zero-armour — KILLED, TELEMETRY-ARTIFACT, do not admit.** Ground truth
 > (`plans.py --templates`, 4 dates): ENG held 3-5 armour + 1 mech divisions CONTINUOUSLY, on
 > front orders, 72 factories on tank chassis at 1943.6, ~2 340 own-built hulls in stock.
