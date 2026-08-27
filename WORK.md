@@ -538,6 +538,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   - Interaction with the shipped DD-escort fix: the lock caps hull QUALITY, not frigate
     existence (Egret/frigate_5 stays buildable - CAN holds 49). The ASW-relevant classes
     (Black Swan on) are exactly the locked ones.
+- State add (L-a, owner order 2026-08-27 "étends needs_radar à
+  WA_AI_CONFIG_focus_on_escorts"; architecture OK, lessons CONCERNS - all three required
+  items resolved): `WA_AI_RESEARCH_needs_radar` gains `WA_AI_CONFIG_focus_on_escorts`
+  as third OR term (`WA_AI_RESEARCH_electronics.txt:22`) - the six-box's "major OR
+  strategic-bombing" description above is the PRE-fix state. Resolved items, all
+  MEASURED: (1) design layer admits the dominions - `ENG_destroyers`/`ENG_escorts`
+  `available_for` AST/CAN/NZL/RAJ/SAF (`ENG_naval.txt:41-52`, `[commonwealth-handoff]`),
+  role variants enable on `has_tech = eng_frigate_6`+, so TECH+DESIGN+ROLE line up once
+  radar unlocks; (2) the gift's dominion exclusion is deliberate by its own commit
+  (`d69a92b94` "Integrated puppets get radar and AA tech from master") and stays
+  untouched - the fix widens the honest research path instead; (3) accepted explicitly:
+  the term also admits generic-tree Allied minors (BEL/GRE/NOR/...), for whom radar
+  enables no hull - a research-slot dilution taken knowingly (radar cost 2.5+1.25 on
+  factor 5). Residual, stated: an escort navy OUTSIDE the Allies stays radar-locked
+  (is_escort_navy is faction-gated) - no worse than pre-fix. Regeneration-safe: the
+  ai_will_do replacers re-emit the trigger NAME, never its definition. Verification
+  (probe h): next campaign, >= 3 of the 5 dominions own radio_detection AND
+  decimetric_radar by 1942.1, and >= 1 dominion's best eng_frigate tech > 5 or best
+  eng_destroyer tech > 6 by 1944.1 (vs frozen 5/6 on `0767987f`). F9 boot test owed
+  (trigger edit).
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
