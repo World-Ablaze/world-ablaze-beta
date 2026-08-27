@@ -478,9 +478,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   logs itself; an endpoint `has_railway_connection` post-check latches a save-visible
   `WA_rail_corridor_<i>_incomplete` flag instead of failing silently. Harness report now prints
   the endpoint connection per corridor.
-- Verification owed: owner re-runs `event wa_test_rail.11` (corridor 1) on the same throwaway
-  save — expected: Sahel track appears, or the log names the exact REFUSED edges; paste the log
-  lines here. Then the campaign probe below.
+- **Owner test #4 (2026-08-27, save `SAF_1945_08_09_02`, screenshot + save analysed) — per-edge
+  build works as designed, and it isolated the real cause: IMPASSABLE STATES.** MEASURED:
+  corridor 1 built 17 of 29 edges at level 5 and skipped 12; `WA_rail_corridor_1_incomplete`
+  latched beside `_built` (1945.8.8.5) exactly as designed. The 12 refused edges form 3 gaps
+  whose zero-rail provinces all lie in states 786/515/775/767 (Mauritanian Desert, Southern
+  Sahara, B.E.T., North Darfur) — **all `impassable = yes` in history/states; the engine refuses
+  railways there** while building every passable neighbour to 5. Bonus find: pair 4927-7930 was
+  not a direct edge — the generator's global dedup across legs had broken consecutive adjacency
+  (the engine railed it anyway via 2 hops).
+- Fixes shipped same day (generator, regenerated): (i) provinces of impassable states removed
+  from the BFS graph — corridor 1 now runs the southern Sahel (Senegal-Mali-Niger-Sokoto-
+  Cameroon-Chad-South Darfur-Kurdufan-Khartoum), corridor 7 the coast via Marsa Matruh instead
+  of the Western Desert, and a generator assert refuses any path touching an impassable state;
+  (ii) impassable NA states dropped from the 100%-NA gate (unconquerable ground would deadlock
+  it); (iii) leg concatenation joins on the shared anchor only, no global dedup; duplicate edges
+  deduped at emission. DERIVED: the original whole-path no-op is the same cause — one impassable
+  edge in the list rejected the entire 30-province call.
+- Verification owed: owner re-runs `event wa_test_rail.11` on the throwaway save — expected: the
+  full southern-Sahel line appears, zero REFUSED lines, no `_incomplete` flag on a fresh run.
+  Then the campaign probe below.
 - Closed when: a campaign save shows (a) at least one corridor's global flag
   (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
   only set while the corridor's gate states were same-side at some prior month, and (c) no

@@ -126,6 +126,26 @@ def parse_special_pairs(path: Path):
     return impassable, other
 
 
+def parse_impassable_states(states_dir: Path) -> set:
+    """State ids marked `impassable = yes` in history/states.
+
+    The engine refuses railways in impassable states (owner test 2026-08-27: every
+    edge of corridor 1 touching a province of 786/515/775/767 was rejected by
+    can_build_railway while all passable neighbours built to level 5), so their
+    provinces must never appear in a corridor path or a gate list.
+    """
+    impassable = set()
+    rx_id = re.compile(r"^(\d+)-")
+    for f in states_dir.glob("*.txt"):
+        m = rx_id.match(f.name)
+        if not m:
+            continue
+        text = f.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"impassable\s*=\s*yes", text):
+            impassable.add(int(m.group(1)))
+    return impassable
+
+
 def bfs_path(adj: dict, start: int, goal: int) -> list:
     if start == goal:
         return [start]
@@ -173,6 +193,14 @@ def main() -> int:
             adj[b].discard(a)
     na_regions = set(parse_north_africa_regions(root / "common" / "ai_areas" / "default.txt"))
     na_provs = parse_region_provinces(root / "map" / "strategicregions", na_regions)
+    impassable_states = parse_impassable_states(root / "history" / "states")
+    # drop every province of an impassable state from the graph: the engine refuses
+    # railways there, and the huge desert provinces are exactly what hop-minimising
+    # BFS otherwise routes through
+    for p in [p for p, s in prov_state.items() if s in impassable_states]:
+        adj.pop(p, None)
+        for ns in adj.values():
+            ns.discard(p)
 
     # A state belongs to North Africa when at least half of its provinces sit in
     # the north_africa strategic regions (states can straddle a region border).
@@ -187,16 +215,24 @@ def main() -> int:
     corridors = []
     summary = []
     for idx, (slug, anchors, gate_mode) in enumerate(CORRIDORS, start=1):
+        # concatenate legs dropping only the duplicated joint anchor - NEVER a global
+        # dedup: dropping a revisited province broke consecutive adjacency and emitted
+        # a non-edge pair (4927-7930, owner test 2026-08-27)
         path_provs = []
         for a, b in zip(anchors, anchors[1:]):
             seg = bfs_path(adj, a, b)
             if not seg:
-                raise SystemExit(f"no land path {a} -> {b} for corridor {slug}")
-            path_provs.extend(seg)
-        path_provs = ordered_unique(path_provs)
+                raise SystemExit(f"no passable land path {a} -> {b} for corridor {slug}")
+            path_provs.extend(seg if not path_provs else seg[1:])
+        bad = [p for p in path_provs if prov_state.get(p) in impassable_states]
+        if bad:
+            raise SystemExit(f"corridor {slug}: path crosses impassable-state provinces {bad}")
         gate_states = ordered_unique(prov_state[p] for p in path_provs if p in prov_state)
         if gate_mode == "na_full":
-            extra = [s for s in na_states if s not in gate_states]
+            # impassable NA states (Algerian/Libyan/Western Desert) are excluded: they
+            # are not conquerable ground and would deadlock the 100%-NA gate
+            extra = [s for s in na_states
+                     if s not in gate_states and s not in impassable_states]
             gate_states = gate_states + extra
 
         # cheap short-circuit: evaluate the far endpoint's state second, so a
@@ -263,8 +299,15 @@ def main() -> int:
         lines.append(f"# salvage every good edge, log each refused one, and keep the PC mirror honest:")
         lines.append(f"# the mirror (readers: PC railway_helpers/_core, WA_AI_pathfinding_effects) is")
         lines.append(f"# stamped ONLY for an edge that passed can_build_railway and was actually built.")
-        lines.append(f"WA_AI_RAIL_CORRIDOR_build_{idx} = {{")
+        seen_edges = set()
+        edge_list = []
         for a, b in zip(path_provs, path_provs[1:]):
+            k = (min(a, b), max(a, b))
+            if k not in seen_edges:
+                seen_edges.add(k)
+                edge_list.append((a, b))
+        lines.append(f"WA_AI_RAIL_CORRIDOR_build_{idx} = {{")
+        for a, b in edge_list:
             lines.append(f"\tif = {{ limit = {{ can_build_railway = {{ path = {{ {a} {b} }} }} }}")
             lines.append(f"\t\tbuild_railway = {{ level = @WA_RAIL_CORRIDOR_LEVEL path = {{ {a} {b} }} }}")
             lines.append(f"\t\tset_variable = {{ global.WA_AI_PC_railway_connections^{a} = 1 }}")
