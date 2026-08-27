@@ -36,13 +36,14 @@
 # -2000 + three flank walls) are MERGED - being both armed from 1942.11, their negatives summed
 # to -4000; one block now carries -2000 + the flank walls. Still outvoted, so behaviour-neutral;
 # the audit's net-per-window table shrinks accordingly (the -4000 window no longer exists).
-# Windows re-walked after the date->state regate: wherever this block fires at war with GER,
-# the +2000 walls (dont_waste_ships_here, invade_the_axis_..._france, FACTION coast block) are
-# state-gated on the same German-held coast and co-fire, so the -2000 stays outvoted; the one
-# corner with no wall (war with ITA only, GER absent) is PRE-EXISTING - the old enable had the
-# same GER/ITA OR - and unchanged by this refactor.
+# 2026-08-27 (dedup batch): the USA's duplicate +2000 walls on 42 (dont_waste_ships_here,
+# invade_the_axis_..._france) are RETIRED - the FACTION coast block is the sole wall now
+# (+2000). That turned the historically-inert -2000 into a live opener (net 0 during Torch),
+# i.e. a behaviour change nobody decided - so the -2000 is REMOVED to preserve the observed
+# behaviour (Bay avoided during Torch). The design question the audit reserved - SHOULD Torch
+# open the Bay? - is now a one-line change (re-add -2000 here) awaiting the owner's call.
 #
-# purpose: Torch corridor book - nominally open the Bay of Biscay (inert, see audit) and wall
+# purpose: Torch corridor book - wall
 #          the Balearic/Ionian flanks and the Norwegian Trench while the landing is on
 # range:   -2000 (inert attraction) to +2000 (walls)
 # policy:  Additive per region
@@ -73,11 +74,6 @@ WA_AI_NAVAL_COUNTRY_USA_torch_corridor = {
 	}
 	abort_when_not_enabled = yes
 
-	ai_strategy = {
-		type = naval_avoid_region
-		id = 42 #Bay of Biscay
-		value = -2000 #open - inert, outvoted by the walls; see the audit above
-	}
 	ai_strategy = {
 		type = naval_avoid_region
 		id = 219 #Baleric Sea
