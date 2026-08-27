@@ -3451,8 +3451,10 @@ WA_AI_MILITARY_AIR_home_only_release = {
 ############################################################################################################
 # [minor-expeditionary-fitness] Who may hold a front away from home
 ############################################################################################################
-# CONTROL PANEL. Both triggers below are read by exactly one block - WA_AI_MILITARY_CAPS_unfit_army_stays_home
-# in WA_AI_MILITARY_DEFAULT_FRONT_caps.txt. Change the behaviour here, never in the strategy block.
+# CONTROL PANEL. The fitness trigger is read by the CAPS brake (WA_AI_MILITARY_CAPS_unfit_army_stays_home),
+# WA_AI_MILITARY_total_commitment_active, the three fitness-gated ALLIES pulls (FACTION_ALLIES_FRONT)
+# and the lend-lease gate (WA_AI_LEND_LEASE_recipient_is_worth_equipping); the state trigger below by the
+# CAPS brake only. Change the behaviour here, never in the strategy blocks.
 #
 # The problem they solve: HOI4 front allocation has no per-DIVISION lever a script can reach.
 # `front_unit_request` weights a FRONT, not a unit (common/ai_strategy/documentation.info, section
@@ -3462,13 +3464,14 @@ WA_AI_MILITARY_AIR_home_only_release = {
 
 # COUNTRY scope. "This country's infantry is worth putting on a front that is not its own."
 #
-# ONE term, no exemptions - owner rule, 2026-08-23: five military factories for everybody.
+# ONE term, no exemptions - owner rule, 2026-08-27: ten military factories for everybody
+# (raised from five: ETH at 8 factories campaigned abroad, which the owner ruled out).
 #
-# The number is deliberately the SAME as WA_AI_TEMPLATES_use_heavy_infantry (WA_AI_TEMPLATES_triggers.txt):
-# below it the template system hands the country target template 1000 - ten light-infantry battalions,
-# no support company, no artillery, no anti-tank (common/ai_templates/WA_AI_TEMPLATES_infantry.txt). A
-# country whose best division is that one is a home-defence army by construction. If the template floor
-# moves, this number moves with it: the two state the same fact about the same country.
+# The floor now sits ABOVE the WA_AI_TEMPLATES_use_heavy_infantry template floor of 5
+# (WA_AI_TEMPLATES_triggers.txt) - the two are DECOUPLED by that same ruling. A country at 6-10
+# factories gets real templates and trains freely at home but is still not sent abroad; the
+# trains-no-divisions cap stays at < 5 (registry group expeditionary_fitness_mil_factory_floor,
+# advisory - the deliberate 5-9 band replaces the old exactly-5 stripe).
 #
 # REJECTED, and recorded so it is not re-added by accident: an `is_subject = yes` escape hatch. MEASURED
 # 2026-08-23 from history/states, New Zealand starts with 2 arms factories and South Africa with 4, both
@@ -3478,7 +3481,7 @@ WA_AI_MILITARY_AIR_home_only_release = {
 # not an oversight: a dominion stays home until it has built past the floor itself. If a Commonwealth
 # theatre later reads as unmanned, THIS is the first line to suspect.
 WA_AI_MILITARY_is_fit_for_expeditionary_front = {
-	num_of_military_factories > 5
+	num_of_military_factories > 10
 }
 
 # STATE scope, called from a `front_unit_request` state_trigger ONLY. Inside that trigger the engine

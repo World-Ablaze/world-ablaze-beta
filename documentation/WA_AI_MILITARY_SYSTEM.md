@@ -1511,7 +1511,7 @@ owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLI
 | CAN/AST/NZL/RAJ/SAF at war, home safe, fit | commitment ON | garrison released, Africa areas at net +100, +60 African requests, Europe demand after foothold |
 | Japan enters (or prepares) the war | Pacific Commonwealth (AST/NZL/RAJ) flip to threatened | release OFF in one pass; `minors_home_first +50` and the Japan-war buffer blocks take over; RAJ's own `-5000` keeps its army on the Asian fronts |
 | Enemy lands on a dominion core / hostile border war (any setup) | threatened | same stand-down, no tag involved |
-| NZL/SAF before they build past 6 military factories | not fit | home-bound - the owner's uniform fitness rule, not an oversight |
+| Any minor before it builds past 10 military factories (NZL/SAF for years; ETH at its 8) | not fit | home-bound - the owner's uniform fitness rule (floor raised 5 → 10 on 2026-08-27), not an oversight |
 | Committed minor of ANY other faction (e.g. an Axis minor at war only with distant enemies) | commitment ON | garrison released; direction pulls are Allies-only, so movement depends on that faction's own pulls - stated, accepted residual |
 
 ### Known limits
@@ -1547,7 +1547,7 @@ owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLI
   plus the engine's own areadef re-staffing time - unquantified; the campaign probe (b) bounds it
   empirically at 3 months.
 - **The non-Allied population that passes `total_commitment_active`** (minor + at war + faction/subject
-  + >5 mil factories + home safe): historically, Axis Balkan minors in the window where they are at
+  + >10 mil factories + home safe): historically, Axis Balkan minors in the window where they are at
   war with distant Allies only (HUN/ROM/BUL before Barbarossa; the SOV border war then flips them to
   threatened), plus symmetric ahistorical cases. MAN/SIA-class Co-Prosperity minors border their
   enemies and stay threatened. These release their areadef garrison but receive NO direction pull
