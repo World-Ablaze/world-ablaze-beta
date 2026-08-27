@@ -170,7 +170,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+### aifc-traction — TESTED (2026-08-27)
+- **Owner harness run 2026-08-27 (`event wa_aifc.2`, save 1944.4, all scope headers `1 1 1 1 0`)
+  — L2 diagnosis COMPLETE, floor SAVE-PROVEN live, F9 boot OK (the build loaded and the new
+  constant resolved in-game).** Key pasted lines:
+  `USA: elig all green (shipped trigger reads 1, div=42) | cand_native=0 cand_total=0
+  ally-states-with-3+div=0 max_pad=0 | NO sector` — **the six-box for L2**: eligibility passes;
+  candidate collection returns ZERO because USA borders no enemy natively AND not one allied
+  state on the map holds 3 US divisions (helpers:135 `divisions_in_state > 2` — working as
+  designed on a real absence). The cause is UPSTREAM of AIFC: 42 divisions worldwide at 1944.4,
+  none massed abroad — the allied-invasion-foothold-deadlock (six-boxed in the campaign header)
+  plus the USA army-building gap own it. **Proposed ruling: no AIFC fix for L2 — lowering the
+  3-division bar would aim a schwerpunkt nobody can execute. Owner acceptance closes L2.**
+  Floor mechanics MEASURED live: `ENG Cairo pad=1 anchor-eligible=0`, `GER Constantine pad=1
+  anchor-eligible=0` — pad-1 candidates excluded exactly as designed; FRA control case correct
+  (capitulated, 7 div → shipped trigger 0, no sector). **Mass-alignment bonus reading (feeds
+  L1)**: GER stored anchor 193 Chernigov = its max-pad candidate (pad 9/13 eligible), SOV anchor
+  203 Cherkasy = max-pad 11 — at this date the anchor SITS on the mass; and ENG's main enemy
+  now reads GER (Tunisia pad 3 > desert pad 2), so the next re-selection moves its schwerpunkt
+  off the 24-month desert pointer onto the front where its divisions stand — the L3 unpinning,
+  observable in-game. Full log in the session transcript; `wa_aifc.1 <TAG>` re-runs any tag.
 - Scope: owner request 2026-08-27 ("diagnostic masse qui ne suit pas + USA + ENG bloqué dans le
   désert"), from the AIFC passivity measurement (campaign `24933fb9`, quarterly sweep
   1939.9→1945.10, 3 extraction passes; full tables in the session scratchpad
