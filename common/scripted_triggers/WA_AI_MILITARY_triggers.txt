@@ -1991,6 +1991,75 @@ WA_AI_MILITARY_holds_east_africa_colony = {
 	}
 }
 
+# [aoi-border-garrison] the colony's OWNER-DEFENDER (self or own subject holds 550/559) - the country whose
+# home region 17 is; unlike holds_east_africa_colony there is deliberately NO faction limb, so an ally of
+# Italy (GER) never reads yes and keeps the full abandon brakes. Reader: the colony THEATRE brake exemption.
+WA_AI_MILITARY_owns_east_africa_colony = {
+	OR = {
+		550 = { OR = { is_owned_by = PREV is_controlled_by = PREV CONTROLLER = { is_subject_of = PREV.PREV } } }
+		559 = { OR = { is_owned_by = PREV is_controlled_by = PREV CONTROLLER = { is_subject_of = PREV.PREV } } }
+	}
+}
+
+# [aoi-border-garrison] shared gate of the AXIS_abandon_east_africa family (FRONT / THEATRE / colony_THEATRE /
+# DIPLOMACY) - extracted verbatim from the three identical inline `enable` blocks so a fourth copy was not
+# added. Reads: Italian homeland power or its ally, colonial war over, colony held by our side, war footing,
+# and the Mediterranean supply line to East Africa not secured; yields to the Country-layer ddab override.
+WA_AI_MILITARY_AXIS_abandon_east_africa_family_gate = {
+	OR = {
+		WA_AI_MILITARY_is_italian_homeland_power = yes
+		WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+	}
+	WA_AI_MILITARY_ethiopian_war_finished = yes
+	# [med-axis-posture] the colony is ours / a subject's / an ally-Italy's (was `country_exists = ITS`,
+	# which never armed when Italy administered Eritrea/Somaliland directly).
+	WA_AI_MILITARY_holds_east_africa_colony = yes
+	OR = {
+		GER = {
+			has_completed_focus = GER_mol_rib_pact
+		}
+		has_war = yes
+	}
+	OR = {
+		alliance_naval_strength_ratio < 1.5
+		NOT = {
+			AND = {
+				any_country = {
+					controls_state = 551 # cheap first (review 2026-08-17)
+					OR = {
+						WA_AI_MILITARY_is_italian_homeland_power = yes
+						WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+					}
+				}
+				any_country = {
+					controls_state = 446 # cheap first (review 2026-08-17)
+					OR = {
+						WA_AI_MILITARY_is_italian_homeland_power = yes
+						WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+					}
+				}
+				any_country = {
+					controls_state = 456 # cheap first (review 2026-08-17)
+					OR = {
+						WA_AI_MILITARY_is_italian_homeland_power = yes
+						WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+					}
+				}
+				any_country = {
+					controls_state = 1097 # cheap first (review 2026-08-17)
+					OR = {
+						WA_AI_MILITARY_is_italian_homeland_power = yes
+						WA_AI_MILITARY_allied_with_italian_homeland_power = yes
+					}
+				}
+			}
+		}
+	}
+
+	# Phase 5 mutual exclusion: yield to Country-layer overrides.
+	NOT = { WA_AI_MILITARY_country_owns_ddab_ITS = yes }
+}
+
 # Force-balance verdict for an offensive into the AOI core - the WA_AI_MILITARY_north_africa_offensive_viable
 # pattern (read its header): an enemy holding AOI ground either has a published posture verdict > 0 vs us,
 # or is too small to receive one (then the push is unconditional). ITA is a major, so against Italy the

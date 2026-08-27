@@ -478,52 +478,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   while an Italian homeland power is an enemy, (c) no regression of the Maginot/fall_rot arithmetic
   (north_france/france nets unchanged).
 
-### rk-no-divisions — OPEN (2026-08-27)
-- Scope: owner rule 2026-08-27: a Reichskommissariat builds (trains) NO division, of any role.
-  Divisions granted by script are out of scope — the RCZ ger_armor.999 bootstrap (6 spawned
-  garrison divisions, recorded design) and the Military Police `load_oob` template files stay.
-- State: shipped 2026-08-27. (i) New archetype `WA_AI_CONFIG_is_reichskommissariat`
-  (`WA_AI_CONFIG.txt`) = `has_autonomy_state = autonomy_reichskommissariat` — dynamic, covers all
-  creation paths MEASURED this session (GER decisions 39 tags, ITA decisions 8 tags, ENG dominion
-  conversions, toolpack) with no tag list. The reichsprotectorate autonomy (RCZ) deliberately does
-  not pass; RCZ enters only if the GER decision later moves it to RK autonomy. **ITS (Italian East
-  Africa) exempt by owner order 2026-08-27** (mid-session): script never gives ITS the RK autonomy
-  (MEASURED: only `autonomy_collaboration_government`, ITA.txt establish_ITS), but the autonomy
-  ladder can slide a fascist ITA subject into it, and ITS's Ascari divisions are a fed design
-  (ITA sends equipment + `add_units_to_division_template`). Exception encoded as
-  `NOT = { original_tag = ITS }` inside the CONFIG trigger (the one file where tags are legal).
-  (ii) New block
-  `WA_AI_PRODUCTION_DEFAULT_reichskommissariat_builds_no_divisions`
-  (`WA_AI_PRODUCTION_DEFAULT_army_composition.txt`): `build_army infantry -500` (USA
-  disarmed-nation precedent) + `role_ratio -1000` on every WA template role except the removed
-  garrison role (infantry, cavalry, suppression, motorized, mechanized, armor, light/medium/
-  heavy/modern_armor, marines, mountaineers). Legacy tag-list blocks
-  (`GER_reichskomissariats_dont_build_divisions` -1 war-gated, `ENG_puppets_...`,
-  `FRA_puppets_...`) kept untouched — additive change, they cover pre-RK windows.
-- Why the old brake failed (MEASURED): `GER_reichskomissariats_dont_build_divisions` is value -1
-  (vs USA's -500), war-gated (`enable = { has_war = yes }` — nothing at peace), infantry-id only
-  (the Military Police templates are cavalry-role), and a tag list that misses ITA's 8 RK tags and
-  ENG's dominion conversions. Meanwhile released RK tags inherit overlord templates and
-  `WA_AI_PRODUCTION_build_army_base` asserts `role_ratio infantry = 100` for everyone.
-- ASSUMED, stated: engine stacking of same-id entries across ai_strategy blocks; `role_ratio` base
-  100 + value with a negative net reading as zero want (supported by the campaign-9be92c89 note in
-  the same file: negative infantry want stopped USA training entirely). The engine may
-  DECOMMISSION existing RK divisions of zero-want roles (garrison-role lesson, SOV Strelkovaya) —
-  accepted, the owner rule wants them at none; the block comment says so instead of claiming
-  "granted divisions stay".
-- Reviews 2026-08-27: architecture CONCERNS + lessons CONCERNS — both on the same point (the
-  "granted divisions stay" claim was ASSUMED against the decommission mechanism): claim relabelled
-  and accepted as above. Lessons item 2 (12 role-id strings, one bad token silently voids the
-  block — F9 + error.log id check) folded into Verification; lessons item 3 (ENG/FRA colonial
-  blocks share `build_army id = infantry` with RK-eligible tags): both negative, summing cannot
-  flip sign, recorded ASSUMED.
-- Verification: F9 boot test owed (ai_strategy block add = launch-test territory, 2026-08-09 CTD
-  precedent) INCLUDING error.log check that none of the 12 `role_ratio`/`build_army` id tokens is
-  rejected; owner `imgui show ai-strategy` on an RK tag (e.g. RUK after conversion) listing the
-  new block under Active strategies is the cheap confirmation.
-- Closed when: a campaign save shows every country holding `autonomy_reichskommissariat` (ITS
-  excepted) with zero divisions in training and a division count that only ever falls or holds
-  (scripted grants aside); control: ITS still fields/trains its colonial divisions.
+### aoi-border-garrison — OPEN (2026-08-27)
+- Scope: owner request 2026-08-27: at Italy's war entry the AOI garrison must hold the colony's
+  BORDER defensively instead of standing on the ports. The Fix 97 intent stays: no offensive into
+  Sudan/Kenya, no mainland reinforcement of the AOI.
+- Symptom (MEASURED, campaign `15176ce6` BHU, saves 1940.9/1940.10): ITA 9/9 AOI divisions inside
+  the `put_unit_buffers` order pinned to {550,559}; ZERO front orders in East Africa for ITA **and**
+  for ITS (the owning tag, engine garrisons only); Oromia/Somali/Amhara lost in two months; British
+  Somaliland never attacked.
+- State: shipped 2026-08-27. (i) `AXIS_abandon_east_africa_FRONT` -100 retargeted to
+  `corridor_regions` {380,381} + `strategic_region = 217` — region 17 exempt for the whole family.
+  (ii) `AXIS_abandon_east_africa_THEATRE` -200 retargeted to `corridor_regions`; new twin
+  `_colony_THEATRE` -200 on `colony_regions` {17} gated `NOT owns_east_africa_colony` (new tag-free
+  trigger, self/subject only — allies keep the brake, the owner-defender ITA/ITS/RIT is exempt; no
+  counter-bid, per the 2026-08-25 ruling). (iii) ITA garrison buffer `states` widened to
+  {550,559,271,909,910} (all five verified in region 17 against map/strategicregions). Shared
+  family gate extracted verbatim to `WA_AI_MILITARY_AXIS_abandon_east_africa_family_gate` (4
+  readers incl. DIPLOMACY, unchanged behaviour). Doc §12 updated. Reviews 2026-08-27: architecture
+  CONFLICT on the v2 counter-bid (replaced by the enable exemption) + lessons CONCERNS (buffer
+  divisions pinned — answered by (iii)); required items applied.
+- ASSUMED, stated: engine attribution of the AOI border front to region 17 (R62 risk — if it
+  attributes to the enemy-side region, (i) is inert and behaviour falls back to today's); front
+  orders in region 17 drawing on the buffer (`area` = {17} permits it, never observed); 217 keeps
+  only its FRONT brake (area_priority cannot address a bare strategic region).
+- Verification: F9 boot test owed (ai_strategy block add). Owner `imgui show ai-strategy` on ITA
+  and ITS in a 1940 war save: corridor -100 + s.r. 217 -100 listed, NO -100/-200 entry covering
+  region 17 for the owner-defender, `_colony_THEATRE` listed for GER. §12's East-Africa telemetry
+  was retired with R62 — re-instrument (WA_TLM) before the next campaign scores this theatre.
+- Closed when: a campaign save at Italy-at-war shows (a) >= half the AOI divisions in border states
+  (271/909/910/550) rather than all in 559/550 port stacks, (b) a front order in East Africa for
+  the AOI holder (ITA or ITS), (c) zero ITA/ITS divisions in 217/380/381 states (Sudan/Kenya), and
+  (d) control: GER holds no divisions in the AOI.
 
 ## PARKED
 
@@ -532,6 +517,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `rk-no-divisions` | SHIPPED 2026-08-27 (`1652af012`), parked 2026-08-27 (WIP limit, owner choice; F9 boot test + error.log check of the 12 role/build_army id tokens still OWED) | Old brake value -1, war-gated, infantry-id only, tag list missing ITA's 8 RK tags and ENG conversions — RK tags train divisions (MEASURED in code) | F9 boot + error.log id check pass; a campaign shows every `autonomy_reichskommissariat` country (ITS excepted) with zero divisions in training and a non-rising division count (scripted grants aside); control: ITS still fields/trains its colonial divisions. Full record: git log `[rk-no-divisions]` + this file's history |
 | `allied-total-commitment` | TESTED, parked 2026-08-27 for the next campaign (WIP limit; F9 boot test for the 2026-08-27 CAN reserve-batch reward still OWED) | CAN 4-9 div, 100% areadef home garrison (`8f9b5653`); release trigger PROVEN on CAN (wa_tc.1 harness 1942.2, closure PASS); `garrison -5000` engine honour still ASSUMED | Campaign legs: (a) CAN majority front/buffer outside North America while home safe; (b) AST/NZL/RAJ areadef ~0 while Pacific quiet AND re-garrisoned within 3 months of `pacific_threat_imminent`; (c) dominions on African fronts once past the 6-factory floor; (d) control: a non-faction minor at war keeps its home garrison; plus SS24 bulwark-guest probe (zero Commonwealth div on FRA soil while FRA holds `disjointed_government`, historical difficulty). Full record: git log of this file + [allied-total-commitment] commits |
 | `scripted-invasion-reservation` | OPEN, parked 2026-08-27 (owner order; console harness legs A-C PASSED 2026-08-23, leg (b) NOT CHECKED on `8f9b5653` - the Allied AI never wanted a French landing, so the mechanism never ran) | Halab 1944.6: USA order 252 holds 9 divisions on a GER-held, GER-flagged reserved target - H1 (@FROM inert in ai_strategy context) vs H2 (-200 outbid on a pre-existing order) undecidable from the save | A campaign in which the Allied AI wants a reserved beach shows no engine invasion order against it; or an ai_strategy-context harness leg proves @FROM renders. Full record: git log of this file + [scripted-invasion-reservation] commits |
 | `uk-truck-supply` | SHIPPED 2026-08-27, boot OK - parked for the next campaign (WIP limit) | Owner: ENG truck deficit every game, Africa supply fulfillment < 50%. MEASURED in code: demand multiplied (hub cost 60->500, motorize ratio 0.95, buffer 1.2) while ENG (36 arms factories) sat on the 3-factory tier with a 1000-stock cutoff | A campaign shows ENG on the 6-factory tier with motorized stock >= 1500 sustained at war, and Africa hub motorization no longer truck-starved. Shipped: stock bar 1500 = lend-lease starve (registry truck_stock_starve_floor), 30-49-factory tier at 6, min_wanted_supply_trucks 2000/1000 (vanilla precedent SIA). Successor of the raj-trucks SAF-tier residual |

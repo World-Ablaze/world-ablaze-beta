@@ -564,6 +564,41 @@ the exemption term inside the contested block on 2026-08-25):
 exactly one side's behaviour, which is the intent. R93 has a mandatory RELEASE leg for the same reason:
 a gate that never lets go is not a fix.
 
+---
+
+**[aoi-border-garrison] (2026-08-27, campaign `15176ce6`) - the abandon brake stops at the colony's own
+region, and the garrison stands on the border, not the ports.**
+
+MEASURED on the BHU run, 1940.9/1940.10: at Italy's war entry ITA held 9 divisions in the AOI, **9/9
+inside the `put_unit_buffers` order pinned to {550,559}** (the two port states), with **zero front
+orders in East Africa on either side** - ITS, the tag owning the AOI, defended under engine garrisons
+only. Oromia/Somali/Amhara fell in two months; British Somaliland was never attacked. Cause: the Fix 97
+abandon family braked the whole theatre alias {17,217,380,381}, including region 17 - the colony's own
+region - so no defensive front could form or draw on the buffer (`area` = {17} allows the draw, but
+there was never an order to do the drawing).
+
+Three changes, none a counter-bid (per the 2026-08-25 ruling: gate in `enable`, never compensate):
+
+| Piece | Change |
+| --- | --- |
+| `AXIS_abandon_east_africa_FRONT` | `-100` now targets `corridor_regions` {380,381} + `strategic_region = 217`; region 17 exempt for the whole family. 217 keeps only this FRONT brake (`area_priority` cannot address a bare strategic region) |
+| `AXIS_abandon_east_africa_THEATRE` | `-200` retargeted to `corridor_regions`; new twin `_colony_THEATRE` carries `-200` on `colony_regions` {17} gated `NOT = { WA_AI_MILITARY_owns_east_africa_colony }` - allies (GER) keep the brake on 17, the owner-defender (ITA direct, ITS, RIT) is exempt |
+| `ITA_east_africa_garrison_THEATRE` | buffer `states` widened {550,559} → {550,559,271,909,910}: the 0.10 garrison spreads over the whole colony including the inland border states (all five verified in region 17 against `map/strategicregions`, 2026-08-27) |
+
+New triggers (`WA_AI_MILITARY_triggers.txt`): `WA_AI_MILITARY_owns_east_africa_colony` (self or own
+subject holds 550/559 - deliberately NO faction limb, unlike `holds_east_africa_colony`) and
+`WA_AI_MILITARY_AXIS_abandon_east_africa_family_gate` (the family's three identical inline `enable`
+blocks extracted verbatim; FRONT/THEATRE/colony_THEATRE/DIPLOMACY all read it). The DIPLOMACY member
+(`dont_defend_ally_borders ITS`) is per-ally and region-blind - untouched.
+
+Ally leg (the FRONT exemption is family-wide, the THEATRE exemption is owner-only): GER at war reads
+region 17 at FRONT 0 / area_priority −200 −90 frame = strongly negative, so no ally pull into the AOI.
+ASSUMED, open until the campaign probe: whether the engine attributes the AOI border front to region 17
+(R62 attribution risk) - if it attributes it to the enemy-side region the FRONT exemption is inert and
+behaviour falls back to today's, minus nothing. Verification owned by the `aoi-border-garrison` subject
+in WORK.md (owner `imgui show ai-strategy` on ITA/ITS + campaign probe; §12's R62 telemetry was retired
+- re-instrument before scoring).
+
 ## 13. The 1936 Ethiopian war - AI Italy attacks the mission's states, on every aggressive rule (Fix 98, 2026-08-17)
 
 Campaign `0edbc955`: Italy lost the war by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success =
