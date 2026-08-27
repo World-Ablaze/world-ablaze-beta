@@ -297,8 +297,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Deliberately a DIFFERENT band from the fitness floor (`> 5` at `WA_AI_MILITARY_triggers.txt`):
   exactly-5 = unfit abroad but uncapped at home. Overshoot bound and decommission cycle cost in
   the block header (t0/t1, ASSUMED terms named). Reviews: lessons CONCERNS — 3 items applied
-  (bound table, cycle-cost sentence, probe below); architecture review re-run owed (first run
-  lost to a process exit). **F9 boot test OWED** (new ai_strategy block).
+  (bound table, cycle-cost sentence, probe below); architecture CONCERNS — 2 items applied
+  (registry group `expeditionary_fitness_mil_factory_floor` ties the two 5s, commit hash moved
+  out of the code header). **F9 boot test OWED** (new ai_strategy block).
   Verification (cap probe): next campaign, every no-civil-war country at < 5 MILs shows deployed
   divisions <= 8 (5 + conveyor bound 3) sustained after 6 months at war — NEP (1 MIL, read 10-16
   divisions on `8f9b5653`/`24933fb9`) is the known-positive that must flatten; control: a minor
