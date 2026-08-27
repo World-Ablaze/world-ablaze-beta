@@ -343,51 +343,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   populated with donor/recipient closure holding — the full donor→receiver→materiel→channel
   picture readable from one tool call.
 
-### aoi-border-garrison — OPEN (2026-08-27)
-- Scope: owner request 2026-08-27: at Italy's war entry the AOI garrison must hold the colony's
-  BORDER defensively instead of standing on the ports. The Fix 97 intent stays: no offensive into
-  Sudan/Kenya, no mainland reinforcement of the AOI.
-- Symptom (MEASURED, campaign `15176ce6` BHU, saves 1940.9/1940.10): ITA 9/9 AOI divisions inside
-  the `put_unit_buffers` order pinned to {550,559}; ZERO front orders in East Africa for ITA **and**
-  for ITS (the owning tag, engine garrisons only); Oromia/Somali/Amhara lost in two months; British
-  Somaliland never attacked.
-- State: shipped 2026-08-27. (i) `AXIS_abandon_east_africa_FRONT` -100 retargeted to
-  `corridor_regions` {380,381} + `strategic_region = 217` — region 17 exempt for the whole family.
-  (ii) `AXIS_abandon_east_africa_THEATRE` -200 retargeted to `corridor_regions`; new twin
-  `_colony_THEATRE` -200 on `colony_regions` {17} gated `NOT owns_east_africa_colony` (new tag-free
-  trigger, self/subject only — allies keep the brake, the owner-defender ITA/ITS/RIT is exempt; no
-  counter-bid, per the 2026-08-25 ruling). (iii) ITA garrison buffer `states` widened to
-  {550,559,271,909,910} (all five verified in region 17 against map/strategicregions). Shared
-  family gate extracted verbatim to `WA_AI_MILITARY_AXIS_abandon_east_africa_family_gate` (4
-  readers incl. DIPLOMACY, unchanged behaviour). Doc §12 updated. Reviews 2026-08-27: architecture
-  CONFLICT on the v2 counter-bid (replaced by the enable exemption) + lessons CONCERNS (buffer
-  divisions pinned — answered by (iii)); required items applied.
-- ASSUMED, stated: engine attribution of the AOI border front to region 17 (R62 risk — if it
-  attributes to the enemy-side region, (i) is inert and behaviour falls back to today's); front
-  orders in region 17 drawing on the buffer (`area` = {17} permits it, never observed); 217 keeps
-  only its FRONT brake (area_priority cannot address a bare strategic region).
-- Verification: F9 boot test owed (ai_strategy block add). Owner `imgui show ai-strategy` on ITA
-  and ITS in a 1940 war save: corridor -100 + s.r. 217 -100 listed, NO -100/-200 entry covering
-  region 17 for the owner-defender, `_colony_THEATRE` listed for GER. §12's East-Africa telemetry
-  was retired with R62 — re-instrument (WA_TLM) before the next campaign scores this theatre.
-- Closed when: a campaign save at Italy-at-war shows (a) >= half the AOI divisions in border states
-  (271/909/910/550) rather than all in 559/550 port stacks, (b) a front order in East Africa for
-  the AOI holder (ITA or ITS), (c) zero ITA/ITS divisions in 217/380/381 states (Sudan/Kenya), and
-  (d) control: GER holds no divisions in the AOI.
-- **Campaign `24933fb9` scored 2026-08-27 — fix LIVE and the colony holds 37 months (vs 2 pre-fix);
-  (b) PASS, (d) PASS, (c) marginal FAIL, (a) FAIL as written / PASS on the buffer population.**
-  MEASURED: ITS never existed this run (no `units` at 1936.2 — never released; owner symptom "slow
-  to kill ITS" is about ITA's own colony). Fingerprint: ITA's buffer army occupies ALL FIVE states
-  {550,559,271,909,910} at 1940.9→1942.6 — impossible under the old 2-state list. (a): all-division
-  border share 20-55 % (port stacks are naval-invasion STAGING, a different order class — probe
-  measures the wrong population; buffer-only share 43-57 %). (b): East-Africa front orders manned
-  (inst 190 + the 298/297 Sudan corridor, 3-4 div). (c): 1-2 stray divisions in Kenya/Sudan most
-  saves, worst a **buffer-class division in Kurdufan 1942.6** — a garrison outside its own state
-  list, unexplained leak from order 9607. (d): zero GER divisions in the AOI at all four dates.
-  **The "slow kill" is Allied under-commitment, not garrison strength**: Allies in region 17 =
-  4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
-  lever is Allied theatre sizing, outside this subject.
-
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
@@ -431,6 +386,115 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
+### aifc-traction — OPEN (2026-08-27)
+- Scope: owner request 2026-08-27 ("diagnostic masse qui ne suit pas + USA + ENG bloqué dans le
+  désert"), from the AIFC passivity measurement (campaign `24933fb9`, quarterly sweep
+  1939.9→1945.10, 3 extraction passes; full tables in the session scratchpad
+  `aifc_passivity_measurement_24933fb9.md`, delivered to owner). Intended behaviour: the AIFC
+  schwerpunkt has operational TRACTION — the sector points at ground the country can attack with
+  mass, and the mass is there. Three legs: (L1) the mass does not follow the anchor, (L2) USA
+  never gets a sector, (L3) ENG pinned 24 months on an unreachable corridor.
+- Symptom (MEASURED, `24933fb9`): corridor capture at t+6mo productive in ~1/3 of 11 snapshots —
+  2 objective captures of 22, 3 total stalls (SOV 1942.1 and ENG 1943.1/1944.1 byte-identical
+  province split six months later), 2 net reverses (GER 1943.10, 1944.7). (L1) GER 1942.7:
+  8/259 divisions (3.1 %) in the named corridor (Novgorod anchor) — the real mass (84 div, 32 %)
+  sits at Bryansk/Sumy/Roslavl, the PREVIOUS anchor; GER anchor churn 87 % of quarterly
+  transitions, 17 distinct anchors, vs `constant:wa_ai_aifc.sector.max_age = 4` weekly
+  re-evaluation. (L2) USA: 0 sectors in 47 war months while its offensive-bonus conditions hold
+  88 % of war quarters; armour book installed/retired 7× (only churning tag, r67), never caught
+  live on 25 snapshots; its sole surviving `front_armor_score` signal is a stale +400 on dead FRN.
+  (L3) ENG: corridor ids byte-identical 1943.7→1945.7 (552 Western Desert vs ITA), 0/71 corridor
+  provinces held for 24 months, 12/61 divisions in theatre; `age` reads 1 wk — weekly re-selection
+  CONVERGING on the same unreachable state (a stable pointer, not churn). Exonerated by the same
+  sweep: the posture brake (`hold_the_line` on 4/132 war tag-quarters, 3 %) and sector presence
+  (100 % of war quarters for GER/SOV/ITA/JAP — the machinery runs).
+- Rung reached (wa-diagnosis): measurement done, NO script line named for any leg — diagnosis
+  INCOMPLETE by contract. Candidate hypotheses (ASSUMED, each needs its killing measurement):
+  (H1/L1) AIFC steers only the surplus left after front minimum needs (writes no
+  front_control/unit_request — FIX 56, verified inert), so on long fronts the surplus is ~0 and
+  Layer 4 modulates nothing; (H2/L1) `max_age = 4` re-selects faster than armies redeploy or
+  battles resolve — the anchor outruns the mass; (H3/L3) sector selection scores the LAUNCHING PAD
+  (`WA_AI_AIFC_helpers.txt`) but has no corridor-wide feasibility term (own mass vs corridor
+  size/ratio); (H4/L2) USA fails the expeditionary pass entry (3 native enemy-adjacent states / 3
+  divisions on faction ground, `[offensive-posture]`) or the land-contact-first anchor never sees
+  a USA pad — the "no sector" reason is not separable in a save.
+- Engine boundary, stated: Layer 4 consumption (file-defined `force_concentration_*` values) never
+  serialises, and the share of surplus actually concentrated is engine-internal. Owner
+  `imgui show ai-strategy` (force_concentration tree, GER + USA in a war save) is the only view of
+  what is armed — needed to separate H1 from H2 and to read USA's Layer 1/2 state.
+- **L3 diagnosis COMPLETE 2026-08-27 (code read, MEASURED in source): H3 CONFIRMED — the scorer
+  has no feasibility term, and its defender-side terms actively prefer un-attackable ground.**
+  `WA_AI_AIFC_score_state` (`WA_AI_AIFC_helpers.txt:373-425`) scores baseline 100 + terrain
+  (desert +20) + thin garrison (< 3 div → **+40**, helpers:400-403) + non-core +20 — all
+  DEFENDER-side; the only own-force term anywhere is the launching-pad bonus (5/band, cap 60,
+  helpers:244-250), and there is **no minimum**: selection proceeds at pad 0-1
+  (helpers:226-258 has no floor), and when NO candidate has any pad the fallback scores
+  everything rather than selecting nothing (helpers:233-236 — also explains the ITA-vs-SOV
+  Mesopotamia anomaly). Nothing compares own mass to corridor size (corridor build
+  helpers:301-337 caps at max_states only). DERIVED: an empty desert held by < 3 enemy
+  divisions is near the global maximum score (+20 desert +40 thin +20 non-core) precisely
+  BECAUSE nobody is there — ENG's 552 Western Desert wins every weekly re-selection with a
+  pad bonus of ~5-10 against ~80 of defender-side score, and the validity test
+  (`WA_AI_AIFC_core.txt:152-209`) only asks "still enemy-held and still adjacent", so the
+  pointer is stable forever. ASSUMED (engine): with no mass, Layer 4's weights modulate an
+  engine decision that never attacks — the sector is decorative. Candidate lever (owner
+  decision, not shipped): a feasibility floor in section 2 — e.g. skip candidates whose pad
+  is 0 when any pad > 0 exists is already half-present via main-enemy election; the missing
+  half is a corridor-wide own-mass/enemy-mass term or a minimum pad for ANCHOR eligibility.
+- **L3 fix SHIPPED 2026-08-27 (owner order "corrige d'abord ça").** Anchor feasibility floor:
+  new `constant:wa_ai_aifc.selection.min_pad = 1` (strict `>`, repo idiom — i.e. pad band sum >= 2:
+  two occupied adjacent friendly states, or one holding 5+ ROOT divisions); selection section 2
+  now requires it for anchor eligibility, and the `_aifc_main_enemy = 0` "score everything"
+  fallback arm is DELETED (not left dead — legacy-gates discipline; main_enemy = 0 implies all
+  pads 0, which the floor rejects). No candidate above the floor → no sector → Layer 4 inert,
+  engine default targeting (documented safe path). Pad WEIGHT (5/band cap 60) deliberately
+  untouched — kept for the L1 diagnosis. Docs synced: helpers SELECTION MODEL, constants header,
+  wa-constants-registry SKILL.md row. Checkers: check_constants 0 err/0 warn, check_skill_refs 0.
+  Reviews 2026-08-27: architecture CONCERNS (3 items — else-comment both reasons, `selection`
+  group documented, combined-commit constants run: all applied) + lessons CONCERNS (3 items,
+  resolved as follows). **Flap table (lessons item 1), weekly cadence, country oscillating across
+  the floor:** t0 pad drops ≤1 at re-selection → clear → armour reconcile retires the book, emits
+  N+1 negations, ledger +N+1 entries, NET 0 (closure save-proven: aifc.py NET OK on all 25
+  snapshots of `24933fb9` — entries never leave the type-83 list, only NET closes); t1 pad back
+  ≥2 → reinstall, +N+1 entries, NET restored; t2 worst case weekly flap = 2(N+1) ≈ 58
+  entries/week at N=28 (~3000/year pathological, vs USA's measured 365 in 10 years) — cost is
+  ledger length at armour evaluation only, mis-steering none (one unsteered week per cycle = the
+  pre-fix no-sector state). Grace-window sizing data now MEASURED for the next lever: real lapse
+  episodes are 1 week (GER 195→195+1 once, ITA once), so a K=2-week retirement grace absorbs
+  every measured episode — ship it only if a campaign shows r67 retire_n climbing post-floor.
+  **Mission-war walk (lessons item 2):** `WA_AI_MILITARY_ITA_ethiopia_mission_objectives_FRONT`
+  (`ITA_FRONT.txt:498`) is gated on `has_war_with = ETH` + mission states only — its
+  `force_concentration_target_weight` ±80/−60 literal-state pairs aim AIFC INDEPENDENTLY of the
+  scripted sector arrays, so the floor cannot break mission-war steering even at pad 0; ITA's
+  AOI buffer additionally stands 9+ divisions adjacent to the mission states at war start
+  (pad ≥ 2). **Fallback removal (lessons item 3): removed outright with the rationale in the
+  section-2 comment.** F9 boot test OWED (scripted-effect edit + new constant group).
+- Coordination: `allied-division-stability` Step B already names "AIFC dwell" as a candidate
+  hysteresis — L1's churn measurement is what motivates it; a dwell change ships under ONE slug.
+- **Owner imgui 2026-08-27 (MEASURED, save 1944.4): the Layer 4 arming question is settled.**
+  GER `force_concentration` trees: `factor` 1 entry +28 points (engine total 15+28 = 43 % of
+  surplus may concentrate), `front_factor` 2 entries +50/−50, `target_weight` 2 entries +50/−99 —
+  boost and suppression PAIRED exactly as the file designs them (the −99 catch-all is the
+  documented value). USA: `factor` +13 (→ 28 %) and **zero `front_factor`/`target_weight` rows**.
+  DERIVED: (i) the hypothesis "Layer 4 blocks fail to arm" is DEAD for GER — the values are armed
+  and paired, so L1's missing traction is H1 (no surplus to modulate) and/or H2 (anchor outruns
+  the mass), which imgui cannot separate (surplus share is engine-internal); (ii) L2 is localised
+  to SECTOR SELECTION: USA's Layers 1–2 work (factor armed at +13), the scripted axis never
+  exists, so H4 is the only live branch for USA — next discriminator is a scripted probe on the
+  expeditionary-pass entry conditions, not the strategy files. ASSUMED: the Target ids 714–717 are
+  imgui-internal entry ids for the trigger-keyed Layer 4 blocks, not state ids — un-decoded.
+- Verification (probes runnable with this sweep's method — `aifc.py` + `control` + `plans.py
+  --where`): (L1) main attacker: >= 25 % of non-garrison divisions in or adjacent to the corridor
+  within 2 months of selection, and corridor province gain > 0 in a majority of 6-month windows;
+  (L2) USA holds a sector >= 2 consecutive quarters once at war with land contact (1943+); (L3) no
+  country keeps a byte-identical corridor > 6 months while holding 0 % of its provinces. Added
+  for the L3 floor: (L3b) a country with no pad >= 2 anywhere holds NO sector (aifc.py: sector
+  absent, not decorative), and (L3c) r67 `retire_n` does not climb post-floor (flap watch — the
+  K=2 grace window is the ready lever if it does).
+- Closed when: each leg carries a six-box diagnosis naming the script line or documented engine
+  boundary, AND per leg either a fix ships under this slug and its verification line passes in a
+  campaign, or the owner accepts a written no-fix ruling.
+
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
@@ -438,6 +502,8 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `aoi-border-garrison` | OPEN, both legs shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `aifc-traction`). Leg 1: `AXIS_abandon_east_africa` FRONT/THEATRE retargeted off region 17 (corridor {380,381} + s.r. 217), new `_colony_THEATRE` -200 gated `NOT owns_east_africa_colony`, ITA buffer widened to {550,559,271,909,910}, family gate extracted. Leg 2 (sea reinforcement): buffer ratio 0.10→0.20, trigger `east_africa_sea_route_hostile` (Suez 923), `owner_cut_off_THEATRE` -200, `naval_avoid_region` +1000 on the 5 Red-Sea/Indian-Ocean lanes. Campaign `24933fb9`: colony holds 37 months vs 2 pre-fix; (b) PASS (EA front orders manned), (d) PASS (0 GER div), (c) marginal FAIL (1-2 strays, Kurdufan buffer leak order 9607 unexplained), (a) FAIL as written / PASS on buffer population (43-57 % border). OWED: F9 boot (new ai_strategy blocks), owner imgui (cut-off gate armed/released vs Suez), §12 telemetry re-instrumentation before next scoring | ITA 9/9 AOI divisions pinned to {550,559} port buffer, zero EA front orders for ITA and ITS (`15176ce6` 1940.9-10); leg 2: AOI grows 9→11-23 by 1943 by sea past the Allied navy (`24933fb9`; ITS never released, growth = external) — engine never refuses the route (`MAX_ALLOWED_NAVAL_DANGER 80` vs ceiling 50) | (a) >= half AOI divisions in border states {271,909,910,550}, (b) EA front order for the AOI holder, (c) zero ITA/ITS div in 217/380/381, (d) zero GER div in AOI, (e) no sea growth while Suez hostile (~0.20 prepositioned at entry), (f) reinforcement resumes once the Axis takes Suez. Full record: git log `[aoi-border-garrison]` + this file's history |
+| `aifc-closure-eth` | MEASURED 2026-08-27, never opened (found during the `aifc-traction` sweep) | ITA carries a `CLOSURE MISMATCH` on ETH — ledger NET +250 vs book -150 — on 8 consecutive quarterly saves, 1943.10→1945.10 (`24933fb9`): the +400 boost was never cancelled when ETH was annexed, a later -150 suppression stacked on top; the `WA_AI_AIFC_helpers.txt` KNOWN GAP's "rare and self-correcting" does NOT self-correct in 25 months | The armour reconcile retires/cancels book entries on annexed or dead tags (or the residual is bounded with a t0/t1/t2 table and accepted in writing); a campaign shows no ledger-vs-book mismatch persisting past 2 reconciles |
 | `minor-expeditionary-fitness` | SHIPPED-UNTESTED, parked 2026-08-27 (owner order). Shipped: fitness floor `WA_AI_MILITARY_is_fit_for_expeditionary_front` (> 5 MIL; raised to > 10 on 2026-08-27, owner order on the ETH-at-8 symptom — trains cap kept at < 5, registry group `expeditionary_fitness_mil_factory_floor` now advisory, the 5-9 band trains at home but stays home) + CAPS `unfit_army_stays_home` -100 (`e958ef934`); the two ALLIES pulls (`europe_first`, `east_africa_contested_FRONT`) fitness-gated 2026-08-25; lend-lease gate `WA_AI_LEND_LEASE_recipient_is_worth_equipping` (fitness OR `home_threatened`, homeland hatch owner-ruled) on both recipient paths; 2026-08-27 `WA_AI_PRODUCTION_trains_no_divisions` (< 5 MIL + > 4 div + no civil war -> build suppression, merged [rk-no-divisions], registry group `expeditionary_fitness_mil_factory_floor`). Diagnosis settled: H1 KILLED (owner imgui MEASURED, entry armed at -100), live cause H2 (-100 under-sized vs ALLIES +150/+75 pulls, cross-area summing still ASSUMED) + H3 (buffer/no-order divisions out of any front_unit_request's reach). Campaign `24933fb9`: leg (a) materially improved (1944.6 12/12 NEP home; 1941.6 window still violated, 6/10 in Egypt/Libya). OWED: console harness (FROM.FROM state_trigger), F9 boot (`trains_no_divisions` block), lend-lease harness run (`wa_test.300`/`301`) | NEP at 1 arms factory holds front orders across the Sahel/Horn for 4.5 years, 9-13 of its 12-16 divisions out of region (`8f9b5653`); ETH at 8 factories behaves identically = the > 5 gate misses the owner's rule | (a) NEP/BHU divisions never beyond their own neighbourhood, (b) no country at <= 10 MILs fronting beyond its neighbourhood AND every no-civil-war < 5-MIL country deployed <= 8 div sustained after 6 months at war (NEP flattens; ETH-class control at >= 5 MILs still grows), (c) RAJ/AST/CAN theatres still manned once NZL/SAF are held back. Full record: git log `[minor-expeditionary-fitness]` + this file's history |
 | `fra-battle-of-france` | OPEN, fix shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `lend-lease-observability`). Shipped: `FRA_homeland_invaded_recall_colonials_THEATRE` (area_priority -90 NA/med/middle_east, gated `home_threatened`), Alpine pair `FRA_alpine_front_FRONT`/`_THEATRE` (+100 south_france, gated `any_enemy_country = is_italian_homeland_power`), `FRA_defense_of_the_colonies_FRONT` re-armed to -5000 release, no-op `FRA_ignore_garrisons_until_invasion_start` deleted; spec SS25; reviews applied; F9 boot OK. Campaign `24933fb9` NOT CHECKED — `surrender_progress` not serialised and the gate window falls between monthly saves (ITA declares 1940.6.11, FRA dead by 1940.7.1); symptom near-vacuous this run (FRA 3/121 div in NA+Corsica). ASSUMED stated: garrison -5000 release semantics; colonial channel of the ~20 div | Owner report (ironman `feedback_save`, so owner figure not save-MEASURED): FRA garrisons North Africa/Corsica (~20 div) during the Battle of France while the Italian border sits open | A non-ironman Battle-of-France save (mid-June, or the console harness) shows (a) FRA NA+Corsica division count falling once `surrender_progress > 0.05`, (b) >= 2 FRA divisions on the south_france fronts while an Italian homeland power is an enemy, (c) Maginot/fall_rot nets unchanged |
 | `rk-no-divisions` | SHIPPED 2026-08-27 (`1652af012`), parked (WIP limit). **Campaign `24933fb9` PASSED**: 7 of 8 `autonomy_reichskommissariat` tags (RBA/RBE/RGR/RHO/RNO/RPO/RSE) at ZERO divisions on every save, ALB flat at its 3 scripted starters, no count ever rises; ITS-control leg vacuous (ITS never released). F9 boot + error.log id check still OWED | Old brake value -1, war-gated, infantry-id only, tag list missing ITA's 8 RK tags and ENG conversions — RK tags train divisions (MEASURED in code) | F9 boot + error.log id check pass; a campaign shows every `autonomy_reichskommissariat` country (ITS excepted) with zero divisions in training and a non-rising division count (scripted grants aside); control: ITS still fields/trains its colonial divisions. Full record: git log `[rk-no-divisions]` + this file's history |

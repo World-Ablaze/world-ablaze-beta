@@ -18,7 +18,9 @@
 #		   armies massed at Rzhev. A schwerpunkt follows our mass; a thin seam on a front we are not
 #		   actually on is not a schwerpunkt (same front-local lesson as the posture calculus).
 #		2. Score each candidate ON THAT FRONT on how good a breakthrough point it is - terrain, how
-#		   thinly it is held, what is behind it worth taking - plus its own launching pad.
+#		   thinly it is held, what is behind it worth taking - plus its own launching pad. Candidates
+#		   without a real pad (> constant:wa_ai_aifc.selection.min_pad) are not anchor-eligible
+#		   ([aifc-traction]); if none qualifies, no sector is selected.
 #		3. The winner becomes the anchor. The corridor is the anchor plus its enemy-held neighbours,
 #		   capped at constant:wa_ai_aifc.sector.max_states.
 #		4. Objectives are the anchor plus the best-scoring state in the corridor - the depth target the
@@ -220,8 +222,15 @@ WA_AI_AIFC_select_sector = {
 	############################################################
 	# 2. Score the main enemy's candidates, keep the single best
 	############################################################
-	# _aifc_main_enemy = 0 means no candidate has any launching pad (all fronts remote); fall back to
-	# scoring everything rather than selecting nothing.
+	# [aifc-traction] feasibility floor: every scoring term except the pad bonus is DEFENDER-side
+	# (thin garrison +40, desert +20, non-core +20), so without a floor the global maximum is empty
+	# ground precisely BECAUSE nobody is there - ENG held a byte-identical Western Desert corridor
+	# for 24 months at 0/71 provinces (campaign 24933fb9). An anchor now needs a real launching pad
+	# (pad > selection.min_pad); when no candidate has one, NO sector is selected - Layer 4 goes
+	# inert and the engine falls back to its own target scoring, which the core header documents as
+	# the safe path. The old "_aifc_main_enemy = 0 -> score everything rather than selecting
+	# nothing" fallback arm was REMOVED with the floor (not left dead): main_enemy = 0 means every
+	# pad is 0, which the floor rejects anyway. Assumes the 0/4/9 pad banding of section 1c.
 
 	set_temp_variable = { _aifc_best_id = 0 }
 	set_temp_variable = { _aifc_best_score = -9999 }
@@ -230,10 +239,8 @@ WA_AI_AIFC_select_sector = {
 
 		if = {
 			limit = {
-				OR = {
-					check_variable = { _aifc_main_enemy = 0 }
-					check_variable = { _aifc_ctrl_arr^_aifc_i = _aifc_main_enemy }
-				}
+				check_variable = { _aifc_pad_arr^_aifc_i > constant:wa_ai_aifc.selection.min_pad }
+				check_variable = { _aifc_ctrl_arr^_aifc_i = _aifc_main_enemy }
 			}
 
 			set_temp_variable = { _aifc_target = _aifc_c }
@@ -346,8 +353,10 @@ WA_AI_AIFC_select_sector = {
 		}
 	}
 	else = {
-		# No land contact with any enemy - amphibious or air war only. Leave the sector empty so Layer 4
-		# stays inert rather than suppressing targets the engine could otherwise use.
+		# No anchor: either no land contact with any enemy (amphibious or air war only), or
+		# [aifc-traction] no candidate cleared the feasibility floor (no real launching pad
+		# anywhere). Leave the sector empty so Layer 4 stays inert rather than suppressing
+		# targets the engine could otherwise use.
 		WA_AI_AIFC_clear_sector = yes
 	}
 
