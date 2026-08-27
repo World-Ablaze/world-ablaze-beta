@@ -143,8 +143,9 @@ through the save's own `countries={}` order — and the **closure test as the pa
 tag must equal the book exactly (boost +400, each suppressed −150, others 0). `RESIDUALS` on
 annexed/dead tags are the documented KNOWN GAP (`WA_AI_AIFC_helpers.txt`), printed apart from a
 `CLOSURE MISMATCH`, which is always an alarm. Also prints the `wa_tlm_r67_aifc_arm_*` churn
-telemetry (mean lapse = `lapse_wk / retire_n`, the number a retirement grace window would be
-sized against) and, over several saves, a trend table — **age pinned at 1 in every save is the
+telemetry — raw counters only: `lapse_wk` is never reset at first install, so it carries every
+pre-install week and `lapse_wk / retire_n` is **not** a mean episode length (a save cannot yield
+one; never size a retirement grace window on it) — and, over several saves, a trend table — **age pinned at 1 in every save is the
 historical R1 weekly-re-selection pathology**. What it cannot show, stated in its own header:
 Layer 4 consumption (file-defined ai_strategy never serialises) and causality — correlate with
 `plans.py --where` (is the corridor's front manned) and `control` (was the corridor taken).

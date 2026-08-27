@@ -271,13 +271,17 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend):
            if k.startswith("wa_tlm_r67_aifc_arm_")}
     if r67:
         lapse, ret = r67.get("lapse_wk", 0), r67.get("retire_n", 0)
-        mean = f"{lapse / ret:.1f}wk" if ret else "-"
         last = r67.get("last_t", 0)
         print(f"  r67: entries_n={r67.get('entries_n', 0):.0f} "
               f"lapse_wk={lapse:.0f} retire_n={ret:.0f} "
               f"install_n={r67.get('install_n', 0):.0f}  "
-              f"mean lapse={mean}  "
               f"last emit={sg._tlm_date(last) if last else 'never'}")
+        # lapse_wk is never reset at first install: it carries every pre-install
+        # week, so lapse_wk/retire_n is NOT a mean episode length (GER read 195wk
+        # for a 1wk episode). No per-episode mean is derivable from a save.
+        if lapse and ret:
+            print("  r67 note: lapse_wk includes pre-install weeks - do NOT size "
+                  "a grace window on lapse_wk/retire_n")
     else:
         print("  r67: absent (pre-R67 build - telemetry void, not zero)")
 
@@ -288,6 +292,8 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend):
 
 
 def main(argv):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     tags, files, show_ledger, limit = None, [], False, 16
     i = 0
     while i < len(argv):
