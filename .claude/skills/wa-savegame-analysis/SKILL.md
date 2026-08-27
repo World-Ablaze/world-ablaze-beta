@@ -132,6 +132,23 @@ own tightness per save. An edge is matched by the widest level **both** its prov
 **a `BREAK` is sound while an `ok`/`THIN` is an upper bound** — see the gotcha below and the script
 header. Consumers: any corridor / supply-reach question (Fix 95, 97, 99).
 
+Sixth companion: `aifc.py TAG[,TAG…]|ALL <save>… [--ledger] [--limit N]` — **the AIFC
+(force-concentration) state: sector, armour book, and the engine's applied ledger, with the
+closure test built in.** Per country: the corridor/objectives arrays resolved to state names,
+anchor, age, sector enemy; the armour book (`armor_boost` / `armor_suppressed`, country-ref
+decoded); the `persistent_strategy type=83` ledger from the `ai` section with `id` resolved
+through the save's own `countries={}` order — and the **closure test as the payload**: NET per
+tag must equal the book exactly (boost +400, each suppressed −150, others 0). `RESIDUALS` on
+annexed/dead tags are the documented KNOWN GAP (`WA_AI_AIFC_helpers.txt`), printed apart from a
+`CLOSURE MISMATCH`, which is always an alarm. Also prints the `wa_tlm_r67_aifc_arm_*` churn
+telemetry (mean lapse = `lapse_wk / retire_n`, the number a retirement grace window would be
+sized against) and, over several saves, a trend table — **age pinned at 1 in every save is the
+historical R1 weekly-re-selection pathology**. What it cannot show, stated in its own header:
+Layer 4 consumption (file-defined ai_strategy never serialises) and causality — correlate with
+`plans.py --where` (is the corridor's front manned) and `control` (was the corridor taken).
+A few tags over a few saves (~12 lines per tag per save) is fine inline; `ALL` (~18 active
+blocks per save) belongs in a subagent. ~1.3 s/save.
+
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
 ## Save formats
