@@ -1,0 +1,237 @@
+############################################################################################################
+#	World Ablaze - AIFC sector-selection console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[aifc-traction] L2 instrument: prints every stage of the weekly sector selection for ROOT so a
+#	human can read WHICH stage zeroes out (eligibility / candidate collection / expeditionary pass /
+#	feasibility floor). Written for the "USA holds 0 sectors in 47 war months" diagnosis; also the
+#	owner-run test for the anchor feasibility floor (constant:wa_ai_aifc.selection.min_pad).
+#
+#	Recipe: events/wa_test_aifc.txt header. Fire `event wa_aifc.1 USA` from ANY tag - do NOT tag
+#	into the country under test (tag-switching makes it human). Output: logs/game.log, "AIFC SECTOR TEST".
+#
+#	The walks below DUPLICATE the shipped selection's limits (WA_AI_AIFC_helpers.txt sections 1/1b/1c
+#	and the section-2 floor) on purpose - contract rule 4: when instrument and system disagree, the
+#	fault is localised. Only script constants are shared (they ARE the bars being measured).
+############################################################################################################
+
+############################################################
+#	Per-candidate probe: dedup, pad, floor, logging
+#	THIS = enemy-held candidate state, called from the walks below
+#	Reads/writes the _aifct_* temps of WA_TEST_AIFC_report
+############################################################
+
+WA_TEST_AIFC_probe_candidate = {
+
+	# Dedup on the engine-encoded ref (a candidate borders several of our states) - encoding is
+	# consistent within one run, which is all is_in_array needs (the Layer 4 _ref idiom).
+	ROOT = { set_temp_variable = { _aifct_ref = PREV.id } }
+
+	if = {
+		limit = { NOT = { is_in_array = { _aifct_seen = _aifct_ref } } }
+
+		add_to_temp_array = { _aifct_seen = _aifct_ref }
+		add_to_temp_variable = { _aifct_n = 1 }
+
+		# Launching pad - the shipped 1c banding duplicated: per adjacent friendly (own or
+		# faction/subject-relation) state, ROOT divisions >9 = 3, >4 = 2, >0 = 1, summed.
+		set_temp_variable = { _aifct_pad = 0 }
+		every_neighbor_state = {
+			limit = {
+				OR = {
+					is_controlled_by = ROOT
+					CONTROLLER = {
+						OR = {
+							is_in_faction_with = ROOT
+							is_subject_of = ROOT
+							ROOT = { is_subject_of = PREV }
+						}
+					}
+				}
+			}
+			if = {
+				limit = { ROOT = { divisions_in_state = { state = PREV size > 9 } } }
+				add_to_temp_variable = { _aifct_pad = 3 }
+			}
+			else_if = {
+				limit = { ROOT = { divisions_in_state = { state = PREV size > 4 } } }
+				add_to_temp_variable = { _aifct_pad = 2 }
+			}
+			else_if = {
+				limit = { ROOT = { divisions_in_state = { state = PREV size > 0 } } }
+				add_to_temp_variable = { _aifct_pad = 1 }
+			}
+		}
+
+		# Anchor feasibility floor ([aifc-traction])
+		set_temp_variable = { _aifct_okflag = 0 }
+		if = {
+			limit = { check_variable = { _aifct_pad > constant:wa_ai_aifc.selection.min_pad } }
+			set_temp_variable = { _aifct_okflag = 1 }
+			add_to_temp_variable = { _aifct_ok = 1 }
+		}
+
+		if = {
+			limit = { check_variable = { _aifct_pad > _aifct_max_pad } }
+			set_temp_variable = { _aifct_max_pad = _aifct_pad }
+			CONTROLLER = {
+				ROOT = { set_temp_variable = { _aifct_main = PREV.id } }
+			}
+		}
+
+		if = {
+			limit = { check_variable = { _aifct_n < 16 } }
+			log = "  cand  : [This.GetName]  pad=[?_aifct_pad|.0]  anchor-eligible=[?_aifct_okflag|.0]"
+		}
+	}
+}
+
+
+############################################################
+#	The report
+#	ROOT = country under test (fire the event WITH a target)
+############################################################
+
+WA_TEST_AIFC_report = {
+
+	log = "=== AIFC SECTOR TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _aifct_e1_ = 0 }
+	set_temp_variable = { _aifct_e2_ = 0 }
+	set_temp_variable = { _aifct_e3_ = 0 }
+	set_temp_variable = { _aifct_e4_ = 0 }
+	set_temp_variable = { _aifct_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _aifct_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _aifct_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _aifct_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _aifct_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _aifct_e5_ = 1 } }
+	log = "  scope : always=[?_aifct_e1_|.0]  I-am-ROOT=[?_aifct_e2_|.0]  I-am-THIS=[?_aifct_e3_|.0]  ROOT-scope-usable=[?_aifct_e4_|.0]  control-false=[?_aifct_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	############################################################
+	# A. Eligibility - each term of WA_AI_AIFC_should_select_sector, independently
+	############################################################
+
+	set_temp_variable = { _aifct_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _aifct_ai = 1 } }
+	set_temp_variable = { _aifct_war = 0 }
+	if = { limit = { has_war = yes } set_temp_variable = { _aifct_war = 1 } }
+	set_temp_variable = { _aifct_cap = 0 }
+	if = { limit = { has_capitulated = yes } set_temp_variable = { _aifct_cap = 1 } }
+	set_temp_variable = { _aifct_enemy = 0 }
+	if = { limit = { any_enemy_country = { exists = yes } } set_temp_variable = { _aifct_enemy = 1 } }
+	set_temp_variable = { _aifct_states = num_of_controlled_states }
+	set_temp_variable = { _aifct_div = num_divisions }
+	set_temp_variable = { _aifct_bar_states = constant:wa_ai_aifc.eligibility.min_states }
+	set_temp_variable = { _aifct_bar_div = constant:wa_ai_aifc.eligibility.min_div }
+	set_temp_variable = { _aifct_armysz = 0 }
+	if = {
+		limit = { has_army_size = { size > constant:wa_ai_aifc.eligibility.min_div } }
+		set_temp_variable = { _aifct_armysz = 1 }
+	}
+	set_temp_variable = { _aifct_sur = 0 }
+	if = {
+		limit = { surrender_progress < constant:wa_ai_aifc.eligibility.max_surrender }
+		set_temp_variable = { _aifct_sur = 1 }
+	}
+	set_temp_variable = { _aifct_rec = 0 }
+	if = {
+		limit = {
+			num_of_controlled_states > constant:wa_ai_aifc.eligibility.recovery_min_states
+			has_army_size = { size > constant:wa_ai_aifc.eligibility.recovery_min_div }
+		}
+		set_temp_variable = { _aifct_rec = 1 }
+	}
+	# The shipped aggregate, for localisation when it disagrees with the terms above.
+	set_temp_variable = { _aifct_sel = 0 }
+	if = { limit = { WA_AI_AIFC_should_select_sector = yes } set_temp_variable = { _aifct_sel = 1 } }
+
+	log = "  elig  : is_ai=[?_aifct_ai|.0]  war=[?_aifct_war|.0]  capitulated=[?_aifct_cap|.0]  enemy-exists=[?_aifct_enemy|.0]  states=[?_aifct_states|.0](bar>[?_aifct_bar_states|.0])  div=[?_aifct_div|.0]  army>[?_aifct_bar_div|.0]=[?_aifct_armysz|.0]  surrender-ok=[?_aifct_sur|.0]  recovery-hatch=[?_aifct_rec|.0]"
+	log = "  elig  : shipped WA_AI_AIFC_should_select_sector reads [?_aifct_sel|.0] (0 with all terms above green = trigger and terms disagree - localise there)"
+
+	############################################################
+	# B. Native candidate collection (helpers section 1 duplicated)
+	############################################################
+
+	clear_temp_array = _aifct_seen
+	set_temp_variable = { _aifct_n = 0 }
+	set_temp_variable = { _aifct_ok = 0 }
+	set_temp_variable = { _aifct_max_pad = 0 }
+	set_temp_variable = { _aifct_main = 0 }
+
+	every_controlled_state = {
+		every_neighbor_state = {
+			limit = { CONTROLLER = { has_war_with = ROOT } }
+			WA_TEST_AIFC_probe_candidate = yes
+		}
+	}
+	set_temp_variable = { _aifct_n_native = _aifct_n }
+
+	############################################################
+	# C. Expeditionary pass (helpers section 1b) - run UNCONDITIONALLY here, with the
+	#    shipped gate (native < 3) reported beside it, so the ally-soil presence is
+	#    visible even when the shipped code would have skipped the walk.
+	############################################################
+
+	set_temp_variable = { _aifct_exp_gate = 0 }
+	if = {
+		limit = { check_variable = { _aifct_n_native < 3 } }
+		set_temp_variable = { _aifct_exp_gate = 1 }
+	}
+	set_temp_variable = { _aifct_pad_src = 0 }
+
+	every_country = {
+		limit = {
+			NOT = { tag = ROOT }
+			exists = yes
+			OR = {
+				is_in_faction_with = ROOT
+				is_subject_of = ROOT
+				ROOT = { is_subject_of = PREV }
+			}
+		}
+		every_controlled_state = {
+			limit = {
+				ROOT = { divisions_in_state = { state = PREV size > 2 } }
+			}
+			add_to_temp_variable = { _aifct_pad_src = 1 }
+			every_neighbor_state = {
+				limit = { CONTROLLER = { has_war_with = ROOT } }
+				WA_TEST_AIFC_probe_candidate = yes
+			}
+		}
+	}
+
+	############################################################
+	# D. Stored sector + summary
+	############################################################
+
+	if = {
+		limit = { check_variable = { WA_AI_AIFC_sector_states^num > 0 } }
+		set_temp_variable = { _aifct_corr = WA_AI_AIFC_sector_states^num }
+		log = "  stored: sector LIVE  anchor=[?WA_AI_AIFC_sector_anchor|.0]  corridor=[?_aifct_corr|.0]  age=[?WA_AI_AIFC_sector_age|.0]wk"
+		if = {
+			limit = { has_variable = WA_AI_AIFC_sector_enemy }
+			var:WA_AI_AIFC_sector_enemy = {
+				log = "  stored: sector enemy = [This.GetName]"
+			}
+		}
+	}
+	else = {
+		log = "  stored: NO sector on [Root.GetName] (weekly tick last wrote nothing, or cleared)"
+	}
+
+	log = "  sum   : cand_native=[?_aifct_n_native|.0]  cand_total=[?_aifct_n|.0]  exp-gate(native<3)=[?_aifct_exp_gate|.0]  ally-states-with-3+div=[?_aifct_pad_src|.0]  anchor-eligible(pad>floor)=[?_aifct_ok|.0]  max_pad=[?_aifct_max_pad|.0]"
+	if = {
+		limit = { check_variable = { _aifct_max_pad > 0 } }
+		var:_aifct_main = {
+			log = "  sum   : main enemy (strongest pad) = [This.GetName] - shipped selection only anchors on THIS enemy's candidates"
+		}
+	}
+	log = "  read  : elig 0 -> gate; cand_total 0 -> no land contact; anchor-eligible 0 with cand_total > 0 -> the feasibility floor (or all pads 0) - and for an expeditionary power check ally-states-with-3+div first"
+	log = "=== AIFC SECTOR TEST END === [Root.GetName]"
+
+	clear_temp_array = _aifct_seen
+}

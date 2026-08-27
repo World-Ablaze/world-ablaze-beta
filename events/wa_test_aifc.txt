@@ -1,0 +1,57 @@
+############################################################################################################
+#	World Ablaze - AIFC sector-selection harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human and is_ai reads no.
+#	From any tag (observer included):
+#
+#		event wa_aifc.1 USA      one country's full selection report (swap the tag at will)
+#		event wa_aifc.2          the same report for every AI major at war
+#
+#	Output: logs/game.log under "AIFC SECTOR TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP (see the effect header). Then `elig`, `cand`, `sum`, and the `read` key.
+#	Effects: common/scripted_effects/WA_TEST_aifc.txt. Owning subject: WORK.md [aifc-traction].
+############################################################################################################
+
+add_namespace = wa_aifc
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_aifc.1
+	title = wa_aifc.1.t
+	desc = wa_aifc.1.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_AIFC_report = yes
+	}
+
+	option = { name = wa_aifc.1.a }
+}
+
+# Fan-out: one report per AI major at war (contract rule 5 - per-country firing).
+country_event = {
+	id = wa_aifc.2
+	title = wa_aifc.2.t
+	desc = wa_aifc.2.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_ai = yes
+				is_major = yes
+				has_war = yes
+			}
+			country_event = { id = wa_aifc.1 }
+		}
+	}
+
+	option = { name = wa_aifc.2.a }
+}

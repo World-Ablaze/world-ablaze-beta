@@ -170,7 +170,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — OPEN (2026-08-27)
+### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
 - Scope: owner request 2026-08-27 ("diagnostic masse qui ne suit pas + USA + ENG bloqué dans le
   désert"), from the AIFC passivity measurement (campaign `24933fb9`, quarterly sweep
   1939.9→1945.10, 3 extraction passes; full tables in the session scratchpad
@@ -246,6 +246,17 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   pre-fix no-sector state). Grace-window sizing data now MEASURED for the next lever: real lapse
   episodes are 1 week (GER 195→195+1 once, ITA once), so a K=2-week retirement grace absorbs
   every measured episode — ship it only if a campaign shows r67 retire_n climbing post-floor.
+  **L2 harness SHIPPED 2026-08-27 (contract v1): `WA_TEST_aifc.txt` + `events/wa_test_aifc.txt`.**
+  Prints every selection stage for one country — eligibility term by term, native candidates,
+  the expeditionary pass run UNCONDITIONALLY with the shipped gate (native < 3) and the
+  ally-states-with-3+-ROOT-divisions count reported beside it (the USA discriminator), per-candidate
+  pad + anchor-eligibility vs the new floor, stored sector, main enemy. Independent walk
+  (duplicates helpers 1/1b/1c/2 limits; shares only the constants, which ARE the bars). **Owner
+  console run owed, and it is BOTH tests at once**: `event wa_aifc.1 USA` then `event wa_aifc.1 ENG`
+  (do NOT tag into them — tag-switching makes them human; fire with the target from any tag),
+  paste the `elig`/`cand`/`sum` lines here. Expected reads: USA — which stage zeroes (H4 settles);
+  ENG 1944-shape — cand_total > 0 with anchor-eligible = 0 proves the floor unpins the desert.
+  `event wa_aifc.2` = all AI majors at once. F9 boot covers the new event file too.
   **Mission-war walk (lessons item 2):** `WA_AI_MILITARY_ITA_ethiopia_mission_objectives_FRONT`
   (`ITA_FRONT.txt:498`) is gated on `has_war_with = ETH` + mission states only — its
   `force_concentration_target_weight` ±80/−60 literal-state pairs aim AIFC INDEPENDENTLY of the
