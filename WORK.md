@@ -388,7 +388,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   4-6 div (RAJ only) for 18 months, parity (1.13:1) reached only in 1943 against 11-23 ITA — the
   lever is Allied theatre sizing, outside this subject.
 
-### rail-corridors — TESTED (2026-08-27)
+### rail-corridors — SHIPPED-UNTESTED (2026-08-27)
 - Scope: owner request 2026-08-27 ("éviter que les IA passent trop de temps en transit maritime").
   A declared CHEAT, no gameplay-economy intent: once every state along a land corridor is held by
   one side (faction + subjects), a level-5 railway is spawned instantly and free between the
@@ -459,9 +459,28 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   The run-#1/run-#2 contrast (observer tag poisons inline country compares, nested trigger clean)
   is recorded as an addendum to the "Two call sites, one effect" lessons entry. F9: the 1945.7.1
   load that produced both runs is a successful boot with all five new files parsed.
-- Still owed before CAMPAIGN-OK: one force-build (`event wa_test_rail.11`) on a throwaway save
-  with the supply mapmode open — verifies the ASSUMED clamp/upgrade (existing rails raised, no
-  parallel duplicate, level caps at 5); then the campaign probe below.
+- **Owner test #3 (2026-08-27, save `SAF_1945_08_05_23`, one monthly tick ran at 1945.8.1) — the
+  GATES work, the whole-path BUILD form does not; rebuilt per-edge, state back to
+  SHIPPED-UNTESTED.** MEASURED (savegame): flags 1/3/4/8 set at 1945.8.1.1 (2/5/6/7 correctly
+  absent — matches harness run #2 exactly); `rail.py` reads corridors 3/4/8 railed **level 5
+  end-to-end** (12/9/42 hops) — the ASSUMED upgrade-in-place behaviour is therefore observed on
+  the US seaboard's pre-existing rails — but **corridor 1 has ZERO new track** (anchors
+  4927/2056/2081 carry no rail_way entry at all) despite its built flag. The owner's "no rails
+  as SAF" is exactly corridors 1 (silent build failure) and 2 (gate legitimately blocked by
+  Portuguese Africa). DERIVED: `build_railway` with the 30-province `path` list no-opped as a
+  whole while three same-form corridors built — cause not isolated (candidate: one engine-invalid
+  edge, e.g. a diagonal-pixel bmp adjacency, rejecting the entire list); stateless-province
+  hypothesis MEASURED dead (all 8 paths fully state-mapped).
+- Fix shipped same day: builds are now PER EDGE (`path = { a b }`, the only form PC core has
+  proven in campaigns), each edge guarded by `can_build_railway` (triggers_documentation.md:1884)
+  with the PC mirror stamped ONLY on a built edge (closes the poisoned-mirror residue: the SAF
+  save had `wa_ai_pc_railway_connections^4927 = 1` over bare ground); a refused-and-unrailed edge
+  logs itself; an endpoint `has_railway_connection` post-check latches a save-visible
+  `WA_rail_corridor_<i>_incomplete` flag instead of failing silently. Harness report now prints
+  the endpoint connection per corridor.
+- Verification owed: owner re-runs `event wa_test_rail.11` (corridor 1) on the same throwaway
+  save — expected: Sahel track appears, or the log names the exact REFUSED edges; paste the log
+  lines here. Then the campaign probe below.
 - Closed when: a campaign save shows (a) at least one corridor's global flag
   (`WA_rail_corridor_<i>_built`) set with the railway present on the map at level 5, (b) the flag
   only set while the corridor's gate states were same-side at some prior month, and (c) no

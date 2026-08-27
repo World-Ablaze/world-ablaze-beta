@@ -103,10 +103,11 @@ def parse_region_provinces(region_dir: Path, region_ids: set) -> set:
 def parse_special_pairs(path: Path):
     """Province pairs from map/adjacencies.csv, split by kind.
 
-    Returns (impassable, other): `impassable` rows BLOCK a bmp-adjacency in the engine
-    (the shared province_connections generator wrongly keeps them in the land graph, so
-    they must be removed here before pathing); `other` rows (straits, canals) are real
-    crossings a railway may still not be buildable over - warned, not removed.
+    Returns (impassable, other): `impassable` rows BLOCK a bmp-adjacency in the engine.
+    The shared province_connections generator strips them from the land graph since
+    2026-08-27; the strip below is kept as defense against pathing over a stale
+    generated file. `other` rows (straits, canals) are real crossings a railway may
+    still not be buildable over - warned, not removed.
     """
     impassable, other = set(), set()
     if not path.exists():
@@ -255,29 +256,31 @@ def main() -> int:
         lines.append("\t}")
         lines.append("}")
         lines.append("")
-        lines.append(f"# Explicit province path (the generator's BFS chain, waypoints included), so the")
-        lines.append(f"# track built and the PC mirror written below cannot disagree about the route.")
-        lines.append(f"# fallback = yes: if the engine rejects the list it re-paths between the endpoints -")
-        lines.append(f"# the rail still appears, the mirror may then overstate up to this one corridor.")
+        lines.append(f"# Built EDGE BY EDGE (path = {{ a b }}), the only build_railway form this repo has")
+        lines.append(f"# proven in campaigns (PC core uses it for every railway project). A 30-province")
+        lines.append(f"# path list no-opped silently on the 2026-08-27 owner test (corridor 1: built flag")
+        lines.append(f"# set, zero track on the map) while shorter-legged corridors built - per-edge builds")
+        lines.append(f"# salvage every good edge, log each refused one, and keep the PC mirror honest:")
+        lines.append(f"# the mirror (readers: PC railway_helpers/_core, WA_AI_pathfinding_effects) is")
+        lines.append(f"# stamped ONLY for an edge that passed can_build_railway and was actually built.")
         lines.append(f"WA_AI_RAIL_CORRIDOR_build_{idx} = {{")
-        lines.append("\tbuild_railway = {")
-        lines.append("\t\tlevel = @WA_RAIL_CORRIDOR_LEVEL")
-        lines.append("\t\tfallback = yes")
-        chunks = [" ".join(str(p) for p in path_provs[i:i + 12])
-                  for i in range(0, len(path_provs), 12)]
-        lines.append("\t\tpath = {")
-        for c in chunks:
-            lines.append(f"\t\t\t{c}")
-        lines.append("\t\t}")
-        lines.append("\t}")
-        lines.append("\t# [rail-corridors] sync the PC railway shadow bookkeeping (readers:")
-        lines.append("\t# WA_AI_CONSTRUCTION_PRIORITY_railway_helpers/_core, WA_AI_pathfinding_effects)")
-        lines.append("\t# so the priority-construction system sees the cheat track instead of buying it again.")
-        for p in path_provs:
-            lines.append(f"\tset_variable = {{ global.WA_AI_PC_railway_connections^{p} = 1 }}")
         for a, b in zip(path_provs, path_provs[1:]):
-            lines.append(f"\tset_variable = {{ global.WA_AI_PC_railway_connection_level_{a}^{b} = @WA_RAIL_CORRIDOR_LEVEL }}")
-            lines.append(f"\tset_variable = {{ global.WA_AI_PC_railway_connection_level_{b}^{a} = @WA_RAIL_CORRIDOR_LEVEL }}")
+            lines.append(f"\tif = {{ limit = {{ can_build_railway = {{ path = {{ {a} {b} }} }} }}")
+            lines.append(f"\t\tbuild_railway = {{ level = @WA_RAIL_CORRIDOR_LEVEL path = {{ {a} {b} }} }}")
+            lines.append(f"\t\tset_variable = {{ global.WA_AI_PC_railway_connections^{a} = 1 }}")
+            lines.append(f"\t\tset_variable = {{ global.WA_AI_PC_railway_connections^{b} = 1 }}")
+            lines.append(f"\t\tset_variable = {{ global.WA_AI_PC_railway_connection_level_{a}^{b} = @WA_RAIL_CORRIDOR_LEVEL }}")
+            lines.append(f"\t\tset_variable = {{ global.WA_AI_PC_railway_connection_level_{b}^{a} = @WA_RAIL_CORRIDOR_LEVEL }}")
+            lines.append("\t}")
+            lines.append(f"\telse_if = {{ limit = {{ NOT = {{ has_railway_connection = {{ path = {{ {a} {b} }} }} }} }}")
+            lines.append(f'\t\tlog = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor {idx} edge {a}-{b} REFUSED by can_build_railway and not already railed"')
+            lines.append("\t}")
+        lines.append(f"\t# endpoint-to-endpoint post-check: a corridor that did not come out connected")
+        lines.append(f"\t# latches an _incomplete flag (save-visible) instead of failing silently.")
+        lines.append(f"\tif = {{ limit = {{ NOT = {{ has_railway_connection = {{ start_province = {anchors[0]} target_province = {anchors[-1]} }} }} }}")
+        lines.append(f"\t\tset_global_flag = WA_rail_corridor_{idx}_incomplete")
+        lines.append(f'\t\tlog = "[GetDateText] WA_AI_RAIL_CORRIDOR: corridor {idx} ({slug}) INCOMPLETE after build - see REFUSED edges above"')
+        lines.append("\t}")
         lines.append("}")
         lines.append("")
     data_text = "\n".join(lines) + "\n"
@@ -334,6 +337,12 @@ def main() -> int:
             h.append(f"\t\t{s} = {{ if = {{ limit = {{ NOT = {{ {INLINE_PRED.format()} }} }}")
             h.append(f'\t\t\tCONTROLLER = {{ log = "    corridor {idx} BLOCKED at state {s} by [This.GetName]" }}')
             h.append("\t\t} }")
+        h.append("\t}")
+        h.append(f"\tif = {{ limit = {{ has_railway_connection = {{ start_province = {anchors[0]} target_province = {anchors[-1]} }} }}")
+        h.append(f'\t\tlog = "    corridor {idx}: endpoint rail connection = YES"')
+        h.append("\t}")
+        h.append("\telse = {")
+        h.append(f'\t\tlog = "    corridor {idx}: endpoint rail connection = NO"')
         h.append("\t}")
     h.append('\tlog = "=== RAIL CORRIDOR TEST END ==="')
     h.append("}")
