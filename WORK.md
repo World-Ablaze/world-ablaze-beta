@@ -492,7 +492,31 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — TESTED (2026-08-27)
+### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+- **Option A SHIPPED 2026-08-27 (owner order "partons sur A").** Main-enemy election rebuilt: §1c no
+  longer elects (strict-max removed); new §1d elects the enemy whose FLOOR-ELIGIBLE candidates
+  (pad > `constant:wa_ai_aifc.selection.min_pad` — the constant's documented second role) carry the
+  largest SUM of pad bands (`WA_AI_AIFC_helpers.txt`, railway find-or-append idiom, temp books
+  cleared head+tail). Kills the residual L3 shape: a single token pad (desert band-2 vs ITA) can no
+  longer outvote a distributed real front (France/Tunisia vs GER); floor-ineligible candidates do
+  not vote, so 1-division contact chains elect nobody; zero eligible candidates → main_enemy 0 →
+  no sector (unchanged safe path). Section 2, §1b filters, validity mirror, FIX-65, ITA/ETH mission
+  steering untouched. Headers synced (helpers SELECTION MODEL + FRONT_aifc.txt); harness
+  `WA_TEST_aifc.txt` carries an independently re-typed election (per-enemy `eligible-pad-sum` lines
+  + elected-enemy line). Accepted residuals: pre-D-Day single-front desert pointer persists (no
+  alternative front exists); sum measures border geometry × mass (a pad state counts once per
+  adjacent candidate); election flips at sum near-ties cost ~4 permanent type-83 entries per flip,
+  ~48/yr worst case — full t0/t1/t2 table in session scratchpad `aifc_scorer_fix_options.md`.
+  Reviews on the diff 2026-08-27: architecture OK; lessons CONCERNS (2 items, both applied:
+  this WORK.md record; `_aifc_ctrl` loop-head init added). Checkers: constants 0 err/0 warn,
+  worklist 0 ERROR. K=2 grace and the two-state dead-band alternative remain UNSHIPPED (designs
+  ready in the scratchpad, owner decision pending).
+- **Owner console run owed (moves this back to TESTED): `event wa_aifc.1 ENG` on the 1944.6.20+ fork
+  (expected: `enemy :` sum lines printed, elected = GER with France/Tunisia mass vs desert ITA sum)
+  and `event wa_aifc.2` (GER/SOV: elected enemy unchanged vs pre-fix, anchors still on their main
+  front).** F9 boot OWED (scripted-effect edit). Campaign probe (L3 replay): no country keeps a
+  byte-identical corridor > 6 months at 0 % held WHILE another enemy carries a larger eligible pad
+  sum; GER/SOV anchors still stable 2 quarters (L1 regression watch); L3c retire_n watch unchanged.
 - **Owner console run pasted 2026-08-27 (`wa_aifc.1 ENG`, save 1945.7.5) — the merge-bar build
   is live and correct, subject back to TESTED.** Scope header `1 1 1 1 0` (valid measurement);
   elig all green, shipped trigger 1. Key lines: native candidates Western Desert pad=1 /
@@ -798,8 +822,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   stale enemy against an army whose total mass faces the other one. WORK.md's earlier "lost the
   score" wording was imprecise. Remaining unknown (one): the merged candidates' exact pads in the
   1944.7 selection week (tie vs strictly lower) — `wa_aifc.1 ENG` on that save would settle it;
-  both cases are covered by the proposed fix. **Options PROPOSED to owner (decision pending,
-  nothing shipped)** — full a-g analysis, flap table under the measured type-83 accumulation
+  both cases are covered by the proposed fix. **Options PROPOSED to owner (Option A ORDERED and
+  shipped same day — see the head of this entry)** — full a-g analysis, flap table under the measured type-83 accumulation
   defect, and both ready levers (K=2 grace; two-state dead-band alternative) in the session
   scratchpad `aifc_scorer_fix_options.md`. Recommended: Option A — elect the main enemy by
   PER-ENEMY SUM of pad bands over floor-eligible candidates (pad > min_pad) only; section 2,

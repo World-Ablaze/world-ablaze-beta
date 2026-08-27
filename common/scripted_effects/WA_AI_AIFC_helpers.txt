@@ -12,11 +12,11 @@
 #
 #		1. Collect every enemy-held state that touches territory we control. These are the only places a
 #		   ground offensive can actually begin, which keeps the candidate set naturally small.
-#		1c. Measure each candidate's launching pad - our own divisions in the friendly states next to it -
-#		   and let the strongest pad pick the MAIN ENEMY. Campaign 5709c8b9 showed why: scoring that only
-#		   looked at the defender sent GER's schwerpunkt to Kurdufan and SOV's to Finland while both
-#		   armies massed at Rzhev. A schwerpunkt follows our mass; a thin seam on a front we are not
-#		   actually on is not a schwerpunkt (same front-local lesson as the posture calculus).
+#		1c. Measure each candidate's launching pad - our own divisions in the friendly states next to it.
+#		1d. Elect the MAIN ENEMY: the enemy whose floor-eligible candidates carry the largest SUM of
+#		   pad bands ([aifc-traction]). A schwerpunkt follows our mass; a thin seam on a front we are
+#		   not actually on is not a schwerpunkt (same front-local lesson as the posture calculus), and
+#		   one strong token contact cannot outvote the distributed front the army actually stands on.
 #		2. Score each candidate ON THAT FRONT on how good a breakthrough point it is - terrain, how
 #		   thinly it is held, what is behind it worth taking - plus its own launching pad. Candidates
 #		   without a real pad (> constant:wa_ai_aifc.selection.min_pad) are not anchor-eligible
@@ -217,25 +217,22 @@ WA_AI_AIFC_select_sector = {
 	}
 
 	############################################################
-	# 1c. Launching pads and the main enemy
+	# 1c. Launching pads
 	############################################################
 	# Per candidate: band-count ROOT's own divisions in the adjacent friendly states (own or, for
-	# expeditionary powers, faction/subject-relation controlled - mirrors the [offensive-posture] scopes). The
-	# candidate with the strongest pad names the MAIN ENEMY; only that enemy's candidates compete for
-	# the anchor. This is what keeps the schwerpunkt on the front where the army actually stands
-	# instead of the thinnest seam anywhere in the world (campaign 5709c8b9: GER->Kurdufan,
-	# SOV->Finland, armour at Rzhev).
-	# _aifc_pad_arr and _aifc_ctrl_arr are index-aligned with _aifc_cand.
+	# expeditionary powers, faction/subject-relation controlled - mirrors the [offensive-posture] scopes).
+	# _aifc_pad_arr and _aifc_ctrl_arr are index-aligned with _aifc_cand. The controller id is
+	# written by ONE route only (CONTROLLER -> PREV.id through the ROOT hop, scope-encoded); the
+	# 1d election and the section-2 filter compare these entries against each other, so never mix
+	# in an id from any other route - a plain map-data id would compare silently false.
 
 	clear_temp_array = _aifc_pad_arr
 	clear_temp_array = _aifc_ctrl_arr
 
-	set_temp_variable = { _aifc_main_enemy = 0 }
-	set_temp_variable = { _aifc_max_pad = 0 }
-
 	for_each_loop = { array = _aifc_cand value = _aifc_c
 
 		set_temp_variable = { _aifc_pad = 0 }
+		set_temp_variable = { _aifc_ctrl = 0 }
 
 		var:_aifc_c = {
 			every_neighbor_state = {
@@ -273,11 +270,66 @@ WA_AI_AIFC_select_sector = {
 
 		add_to_temp_array = { _aifc_pad_arr = _aifc_pad }
 		add_to_temp_array = { _aifc_ctrl_arr = _aifc_ctrl }
+	}
+
+	############################################################
+	# 1d. Main-enemy election - the front carrying our mass
+	############################################################
+	# [aifc-traction] elected by PER-ENEMY SUM of pad bands over floor-eligible candidates
+	# (pad > selection.min_pad). Two behaviours protected here:
+	#   (1) the schwerpunkt follows OUR mass, never the globally thinnest seam - pure
+	#       defender-side election aimed schwerpunkte at empty theatres the army was not in;
+	#   (2) one strong token pad cannot outvote a distributed real front - the previous
+	#       strict-max election (first-seen wins ties, natives enumerate first) let a single
+	#       band-2 contact elect a stale enemy against an army whose whole mass faced another
+	#       one. Candidates are counted, armies are weighed.
+	# Floor-ineligible candidates do not vote, so a 1-division contact chain elects nobody;
+	# no eligible candidate anywhere leaves _aifc_main_enemy = 0 and section 2 selects no
+	# anchor. The sum counts a friendly pad state once PER ADJACENT candidate: it measures
+	# border geometry x mass, not mass alone (accepted; the strict-max election lost the same
+	# information to band saturation). Ties between equal sums: first enemy encountered in
+	# candidate order wins - rare at sum level. Assumes the @AIFC_PAD_* banding of 1c.
+
+	clear_temp_array = _aifc_enemy_ids
+	clear_temp_array = _aifc_enemy_sums
+	set_temp_variable = { _aifc_main_enemy = 0 }
+
+	for_each_loop = { array = _aifc_cand index = _aifc_i value = _aifc_c
 
 		if = {
-			limit = { check_variable = { _aifc_pad > _aifc_max_pad } }
-			set_temp_variable = { _aifc_max_pad = _aifc_pad }
-			set_temp_variable = { _aifc_main_enemy = _aifc_ctrl }
+			limit = { check_variable = { _aifc_pad_arr^_aifc_i > constant:wa_ai_aifc.selection.min_pad } }
+
+			set_temp_variable = { _aifc_vpad = _aifc_pad_arr^_aifc_i }
+			set_temp_variable = { _aifc_vctrl = _aifc_ctrl_arr^_aifc_i }
+
+			# Find-or-append the controller in the enemy books (railway
+			# score_and_sort_by_enemy_threat idiom).
+			set_temp_variable = { _aifc_efound = 0 }
+			set_temp_variable = { _aifc_eb_ = 0 }
+			for_each_loop = { array = _aifc_enemy_ids index = _aifc_j value = _aifc_eid break = _aifc_eb_
+				if = {
+					limit = { check_variable = { _aifc_eid = _aifc_vctrl } }
+					set_temp_variable = { _aifc_newsum = _aifc_enemy_sums^_aifc_j }
+					add_to_temp_variable = { _aifc_newsum = _aifc_vpad }
+					set_temp_variable = { _aifc_enemy_sums^_aifc_j = _aifc_newsum }
+					set_temp_variable = { _aifc_efound = 1 }
+					set_temp_variable = { _aifc_eb_ = 1 }
+				}
+			}
+			if = {
+				limit = { check_variable = { _aifc_efound < 1 } }
+				add_to_temp_array = { _aifc_enemy_ids = _aifc_vctrl }
+				add_to_temp_array = { _aifc_enemy_sums = _aifc_vpad }
+			}
+		}
+	}
+
+	set_temp_variable = { _aifc_best_sum = 0 }
+	for_each_loop = { array = _aifc_enemy_sums index = _aifc_j value = _aifc_esum
+		if = {
+			limit = { check_variable = { _aifc_esum > _aifc_best_sum } }
+			set_temp_variable = { _aifc_best_sum = _aifc_esum }
+			set_temp_variable = { _aifc_main_enemy = _aifc_enemy_ids^_aifc_j }
 		}
 	}
 
@@ -291,8 +343,9 @@ WA_AI_AIFC_select_sector = {
 	# (pad > selection.min_pad); when no candidate has one, NO sector is selected - Layer 4 goes
 	# inert and the engine falls back to its own target scoring, which the core header documents as
 	# the safe path. The old "_aifc_main_enemy = 0 -> score everything rather than selecting
-	# nothing" fallback arm was REMOVED with the floor (not left dead): main_enemy = 0 means every
-	# pad is 0, which the floor rejects anyway. Assumes the @AIFC_PAD_* banding of section 1c.
+	# nothing" fallback arm was REMOVED with the floor (not left dead): main_enemy = 0 now means
+	# no candidate cleared the floor in the 1d election, and the floor here rejects the same set.
+	# Assumes the @AIFC_PAD_* banding of section 1c.
 
 	set_temp_variable = { _aifc_best_id = 0 }
 	set_temp_variable = { _aifc_best_score = -9999 }
@@ -425,6 +478,8 @@ WA_AI_AIFC_select_sector = {
 	clear_temp_array = _aifc_cand
 	clear_temp_array = _aifc_pad_arr
 	clear_temp_array = _aifc_ctrl_arr
+	clear_temp_array = _aifc_enemy_ids
+	clear_temp_array = _aifc_enemy_sums
 }
 
 

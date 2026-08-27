@@ -3,8 +3,9 @@
 ############################################################################################################
 #	[aifc-traction] L2 instrument: prints every stage of the weekly sector selection for ROOT so a
 #	human can read WHICH stage zeroes out (eligibility / candidate collection / expeditionary pass /
-#	feasibility floor). Written for the "USA holds 0 sectors in 47 war months" diagnosis; also the
-#	owner-run test for the anchor feasibility floor (constant:wa_ai_aifc.selection.min_pad).
+#	feasibility floor / main-enemy election by per-enemy pad-band sums). Written for the "USA holds
+#	0 sectors in 47 war months" diagnosis; also the owner-run test for the anchor feasibility floor
+#	(constant:wa_ai_aifc.selection.min_pad) and the sum election.
 #
 #	Recipe: events/wa_test_aifc.txt header. Fire `event wa_aifc.1 USA` from ANY tag - do NOT tag
 #	into the country under test (tag-switching makes it human). Output: logs/game.log, "AIFC SECTOR TEST".
@@ -73,8 +74,33 @@ WA_TEST_AIFC_probe_candidate = {
 		if = {
 			limit = { check_variable = { _aifct_pad > _aifct_max_pad } }
 			set_temp_variable = { _aifct_max_pad = _aifct_pad }
+		}
+
+		# Main-enemy election books ([aifc-traction]) - independent copy of the shipped 1d
+		# election (contract rule 4): floor-eligible candidates add their pad to their
+		# controller's sum; the largest sum is elected in the report. min_pad is shared
+		# (it IS the bar); the find-or-append structure is re-typed.
+		if = {
+			limit = { check_variable = { _aifct_okflag > 0 } }
 			CONTROLLER = {
-				ROOT = { set_temp_variable = { _aifct_main = PREV.id } }
+				ROOT = { set_temp_variable = { _aifct_ctrl = PREV.id } }
+			}
+			set_temp_variable = { _aifct_efound = 0 }
+			set_temp_variable = { _aifct_eb_ = 0 }
+			for_each_loop = { array = _aifct_eids index = _aifct_j value = _aifct_eid break = _aifct_eb_
+				if = {
+					limit = { check_variable = { _aifct_eid = _aifct_ctrl } }
+					set_temp_variable = { _aifct_newsum = _aifct_esums^_aifct_j }
+					add_to_temp_variable = { _aifct_newsum = _aifct_pad }
+					set_temp_variable = { _aifct_esums^_aifct_j = _aifct_newsum }
+					set_temp_variable = { _aifct_efound = 1 }
+					set_temp_variable = { _aifct_eb_ = 1 }
+				}
+			}
+			if = {
+				limit = { check_variable = { _aifct_efound < 1 } }
+				add_to_temp_array = { _aifct_eids = _aifct_ctrl }
+				add_to_temp_array = { _aifct_esums = _aifct_pad }
 			}
 		}
 
@@ -156,10 +182,11 @@ WA_TEST_AIFC_report = {
 	############################################################
 
 	clear_temp_array = _aifct_seen
+	clear_temp_array = _aifct_eids
+	clear_temp_array = _aifct_esums
 	set_temp_variable = { _aifct_n = 0 }
 	set_temp_variable = { _aifct_ok = 0 }
 	set_temp_variable = { _aifct_max_pad = 0 }
-	set_temp_variable = { _aifct_main = 0 }
 
 	every_controlled_state = {
 		every_neighbor_state = {
@@ -229,14 +256,37 @@ WA_TEST_AIFC_report = {
 	}
 
 	log = "  sum   : cand_native=[?_aifct_n_native|.0]  native-maxpad=[?_aifct_native_maxpad|.0]  cand_total=[?_aifct_n|.0]  exp-gate(native-maxpad<=[?_aifct_gate_bar|.0])=[?_aifct_exp_gate|.0]  ally-states-with-5+div=[?_aifct_pad_src|.0]  anchor-eligible(pad>floor)=[?_aifct_ok|.0]  max_pad=[?_aifct_max_pad|.0]"
-	if = {
-		limit = { check_variable = { _aifct_max_pad > 0 } }
-		var:_aifct_main = {
-			log = "  sum   : main enemy (strongest pad) = [This.GetName] - shipped selection only anchors on THIS enemy's candidates"
+
+	# Election readout ([aifc-traction]): one line per enemy with floor-eligible candidates,
+	# then the elected main enemy (largest sum). Computed over ALL candidates (walk is
+	# unconditional here) - when the shipped exp gate skips the ally walk, the shipped
+	# election sees native-only books; that display divergence is the instrument's job.
+	set_temp_variable = { _aifct_bestsum = 0 }
+	set_temp_variable = { _aifct_elect = 0 }
+	for_each_loop = { array = _aifct_eids index = _aifct_j value = _aifct_eid
+		set_temp_variable = { _aifct_esum_p = _aifct_esums^_aifct_j }
+		var:_aifct_eid = {
+			log = "  enemy : [This.GetName]  eligible-pad-sum=[?_aifct_esum_p|.0]"
 		}
+		if = {
+			limit = { check_variable = { _aifct_esum_p > _aifct_bestsum } }
+			set_temp_variable = { _aifct_bestsum = _aifct_esum_p }
+			set_temp_variable = { _aifct_elect = _aifct_eid }
+		}
+	}
+	if = {
+		limit = { check_variable = { _aifct_elect > 0 } }
+		var:_aifct_elect = {
+			log = "  sum   : main enemy (largest eligible pad SUM=[?_aifct_bestsum|.0]) = [This.GetName] - shipped selection only anchors on THIS enemy's candidates"
+		}
+	}
+	else = {
+		log = "  sum   : no enemy elected (no floor-eligible candidate) - shipped selection writes NO sector"
 	}
 	log = "  read  : elig 0 -> gate; cand_total 0 -> no land contact; anchor-eligible 0 with cand_total > 0 -> the feasibility floor (or all pads 0) - and for an expeditionary power check ally-states-with-5+div first"
 	log = "=== AIFC SECTOR TEST END === [Root.GetName]"
 
 	clear_temp_array = _aifct_seen
+	clear_temp_array = _aifct_eids
+	clear_temp_array = _aifct_esums
 }
