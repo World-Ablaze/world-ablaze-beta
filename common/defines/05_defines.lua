@@ -1207,16 +1207,13 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 --NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_CONTROLLED = 0								-- Extra patrol mission score near controlled provinces
 
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
--- R36 candidate 3, NOT changed by Fix 53b - highest blast radius of the three, change
--- it on its own or not at all. Vanilla is 25. Missions and strategic-region assignment
--- are FLEET-level properties (a task force flies a mission only if its fleet holds at
--- least one strategic_region - measured with no exceptions across 10 game-years of
--- campaign bec4d829), so the number of fleets IS the number of region-holding slots the
--- AI has to work with. Tripling the merge target trebles fleet size and thirds that
--- count, and it is the most direct explanation on file for "99-100% of idle tonnage
--- sits in one or two giant region-less holding fleets". Re-measure fleet counts after
--- Fix 53b before touching this: restoring escort scoring should itself force splits.
-NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
+-- [can-transit-attrition] vanilla 25 kept: missions and strategic-region assignment are
+-- FLEET-level properties (a task force flies a mission only if its fleet holds at least
+-- one strategic_region), so the fleet-merge target is the region-holding-slot count -
+-- a large target pools idle tonnage into giant region-less, admiral-less holding fleets
+-- and starves escort/patrol coverage. Stale if idle screens stop pooling in region-less
+-- fleets while this reads 25.
+NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 25											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
 NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.09							-- AI will not replace ships being built by newer types if progress is above this
 NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.09      					-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this

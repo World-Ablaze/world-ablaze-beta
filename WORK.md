@@ -375,14 +375,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   share floor - owns the majority (first-crossing) mode; (L2) shuttle damping is
   `allied-division-stability` Step B, not this slug; (L3) build rate - a CAN standing-force
   floor (front_unit_request or buffer minimum) - secondary, owner-ranked below losses.
+- State: L1 SHIPPED 2026-08-27 (owner order "il faut trouver une solution"; both reviewers
+  CONCERNS, no CONFLICT, all required amendments applied). Two changes, each with its own
+  probe: (C1) `05_defines.lua` `NAVY_PREFERED_MAX_SIZE` 80 -> 25 - vanilla 25 MEASURED at
+  install `00_defines.lua:2824` (1.19.2); executes the file's own pre-registered R36
+  candidate 3, whose re-measurement condition this campaign satisfies (parked screen share
+  36-61% and rising post-Fix-53b/86). "On its own" honoured: no other R36 escort-score
+  candidate is bundled - C2 is a different mechanism (fleet placement, not fleet sizing).
+  (C2) new `WA_AI_NAVAL_COUNTRY_CAN.txt`: `naval_avoid_region` +1000 on regions 166
+  (Hudson Bay) and 246 (Hudson Strait) - ids verified from the in-block `id =` of
+  `map/strategicregions/166-*.txt`/`246-*.txt`, not filenames; enable = at war + AI +
+  NOT `WA_AI_MILITARY_CAN_home_defense_required` (ahistorical escape: war with USA or a
+  threatened homeland re-opens Hudson), abort_when_not_enabled. Caveat carried from the
+  archive: a positive avoid is a DETERRENT weight, not a ban. F9 boot test OWED (defines +
+  new strategy file).
 - Verification (probes with this campaign's method): (a) survival - in the next campaign,
   >= 10 of the divisions CAN deploys after 1941 are still in the OOB 6 months after
   deployment (vs ~1 of 16 on `1ac7e4ea`); (b) standing army - CAN holds >= 8 deployed
   divisions at any save from 1943 on (vs 1-2); (c) the at-sea death clustering signature is
   gone (no month where every embarked division of the previous save has left the OOB);
   (d) control: CAN→SOV lend-lease keeps flowing (the arsenal role must survive the fix).
-- Closed when: a fix ships under this slug and (a)-(d) pass in a campaign, or the owner
-  accepts a written no-fix ruling on a named engine boundary.
+  Mechanism probes, one per shipped change (avoid weight is a deterrent, not a ban - probe
+  the outcome, never assume it): (e) C1 - the parked share falls: admiral-less/region-less
+  share of ENG+USA+CAN screens < 30% at two mid-war saves (vs 36-61% rising on `1ac7e4ea`),
+  and no single mission-none fleet > 40 ships (vs ENG Fleet 13 at 101); (f) C2 - CAN's
+  active fleets hold no strategic_region in {166, 246} at any war save with home safe, AND
+  >= 1 CAN or ENG escort/patrol mission operates a western-corridor region (Newfoundland
+  Sea 55 / Labrador Sea 50 / Labrador Basin 247) at 2 consecutive sampled saves - fleet
+  relocation alone does not create escort missions there (escort objectives are
+  own-danger-driven), so (f) measures missions, not just position.
+- Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
+  a written no-fix ruling on a named engine boundary.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts

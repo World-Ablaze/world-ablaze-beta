@@ -117,9 +117,9 @@ For each type: total count, where it currently appears (counts per file), recomm
 - Currently in: GER 20, SOV 19, JAP 17, ENG 15, USA 14, MAN 11, ITA 9, ALLIES 9, FRA 5, AXIS 2, CAN 1, RAJ 1, SAF 1.
 - Target: Country (THEATRE domain) primarily; Faction for coalition focus.
 
-### `naval_avoid_region` (427)
+### `naval_avoid_region` (429)
 
-- Currently in (mechanical recount 2026-08-27): USA 95, ENG 87, GER 78, ALLIES 54, JAP 35, DEFAULT 20, RCZ 11, AXIS 10, COMINTERN 9, FRA 8, ITA 8, SPA 5, MAN 5, SOV 2.
+- Currently in (mechanical recount 2026-08-27): USA 95, ENG 87, GER 78, ALLIES 54, JAP 35, DEFAULT 20, RCZ 11, AXIS 10, COMINTERN 9, FRA 8, ITA 8, SPA 5, MAN 5, CAN 2 (Hudson dead-water repel, `[can-transit-attrition]`), SOV 2.
 - Target: Country (NAVAL domain); Faction for coalition-wide lane closures (deep-Atlantic avoidance, the East-Africa cut-off lane).
 - **Known issue:** USA's 67 `naval_avoid_region` blocks are a candidate for tooling-assisted generation (one block per region, repetitive structure). Track for a Phase 4+ generator under `tools/`.
 
