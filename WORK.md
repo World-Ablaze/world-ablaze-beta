@@ -44,6 +44,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > admitted (WIP limit): allied-invasion-foothold-deadlock.** Second candidate, sharpened from
 > `8f9b5653`: **CAN never rebuilds** — 2-4 divisions 1941-1944 on 104 arms factories (the reserve
 > batch deployed then was consumed by 1942; the army-building gap is upstream of any reserve grant).
+> **USA half diagnosed and first lever SHIPPED 2026-08-27 `[reserve-quality]`** (owner order "l'US
+> doit déployer toutes ses divisions de réserves"): MEASURED — USA bank frozen at `reserves=30`
+> 1941.12→1943.6 while fielding 4 divisions with 2.5M free manpower (owner console), the
+> conscription-law chain ruled out as binding. Blocker = `WA_reserves_is_expeditionary_only`
+> (overseas-only war → deploy factor 0). Fix: `num_divisions > 29` added to the veto — under 30
+> divisions the reserves ARE the army and the bank opens; ENG (36-75 divisions all war) stays
+> vetoed so the blessed fewer-better-divisions behaviour is untouched. Retroactive on a running
+> save (the decision re-evaluates). Probe: next campaign, USA `reserves` variable drains to 0
+> within 3 months of Pearl Harbor and deployed count jumps by the banked amount.
+> Reviews 2026-08-27: architecture CONCERNS (header cut to rule-7 length, RAJ-bar independence
+> written) + lessons CONCERNS, resolved as follows. **Drain table (USA, deploy = 10/batch,
+> decision cost 5 PP / 1 day):** t0 army 4 bank 30 → t1 14/20 → t2 24/10 → t3 34/0 — the third
+> deploy passes because 24 < 30, so the USA case reaches bank = 0 and the owner's "toutes" is
+> met. **Residue accepted, in writing:** a bank large enough to carry the army past 29 mid-drain
+> strands its remainder (max bank 100 → worst residue 70 at army 29) — that IS the
+> fewer-better-divisions intent re-arming at 30+ fielded; and attrition back under 30 redeploys
+> it, i.e. reserves replace losses — intended, not flap. **Micro-dump interaction closed
+> (DERIVED):** recruiting a batch needs > 200k manpower AND > 15k equipment stock
+> (`WA_reserves_meets_recruitment_threshold`), out of reach of a < 5-MIL country, so a banked
+> create_unit dump past the 5-division cap has no realistic population.
 
 > **Campaign `8f9b5653` scored 2026-08-25** (cloud, `dlcs=257535`, BHU observer, 117 monthly saves
 > 1936.2-1945.10, unbranched, build = HEAD `ed109de9d` by a 4-minute commit->run gap,

@@ -279,17 +279,15 @@ WA_reserves_deployment_complete = {
 # EXPEDITIONARY HOLD
 ############################################################################################################
 
-# [reserve-quality] COUNTRY scope. Read by ONE caller: the deploy_reserves_infantry ai_will_do
-# (common/decisions/_reserves.txt) - change the behaviour here, not in the decision.
-# Protects: an army fighting only overseas from being diluted by a reserve dump. One deploy spawns
-# 10 divisions at 30 % equipment (WA_reserves_effects.txt), and those 150 battalions draw reinforcement
-# from the same stockpile the divisions already at the front need.
-# Assumes: "no home-area neighbour at war with us AND no VP lost" == no ground threat at home. That fact
-# is gone the day an enemy borders the home area or surrender_progress leaves 0, and the bank unlocks.
-# `has_war = yes` is load-bearing: without it this would also veto the pre-war early_reserve_mobilization
-# path, which is the one case where deploying with no war and no threat is the intended behaviour.
+# [reserve-quality] COUNTRY scope; single reader: deploy_reserves_infantry ai_will_do
+# (common/decisions/_reserves.txt) - change the behaviour here. Protects an overseas-only army
+# from a 30%-equipment reserve dump. Assumes no-home-neighbour-at-war + no VP lost == no ground
+# threat; either flipping unlocks the bank. Load-bearing: has_war (else the pre-war
+# early_reserve_mobilization path is vetoed too) and num_divisions > 29 (under 30 the reserves
+# ARE the army; 29 is independent of the RAJ delegate bar - same value, tune separately).
 WA_reserves_is_expeditionary_only = {
 	has_war = yes
+	num_divisions > 29
 	NOT = { surrender_progress > 0 }
 	NOT = {
 		any_home_area_neighbor_country = {
