@@ -190,38 +190,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
 - Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
-### analysis-tooling — TESTED (2026-08-27)
-- F9 boot PASSED (owner, 2026-08-27) — the v33 comp-gauge rungs loaded in-game; the two
-  analysis-side tools were already validated on real saves. Remaining: the v33 campaign
-  probe ((i) in Verification below).
-- Scope: owner request 2026-08-27 ("d'abord les deux sujets open + la méta") — the three
-  measurement defects the `1ac7e4ea` scoring exposed: (i) `wa_tlm_comp_armor/mech` band floor
-  (any armour arm < 5 divisions read 0 → false "zero armour" verdict on ENG), (ii) `aifc.py`
-  printing a dead tag's frozen sector as live churn (SHA read as the R1 pathology for 13 saves),
-  (iii) `plans.py` unable to name a type-3 invasion order's target (blocked
-  scripted-invasion-reservation leg (b) and mis-shaped the foothold-deadlock candidate).
-- State: (i) SHIPPED — exact rungs 1-4 added to both ladders (`WA_TLM_core.txt`), comments +
-  doc registry now say LOWER BOUND (exact ≤ 5, coarser above), `@WA_TLM_VERSION` 32 → 33;
-  cost 8 trigger evals per major per monthly sample. (ii) SHIPPED and validated on a real save
-  — `aifc.py` flags `[DEAD TAG]` on a country block with no `units` section (MEASURED: SHA
-  1944.1 prints the banner, GER unaffected, exit 0); trend footer amended. (iii) SHIPPED and
-  validated — MEASURED: a type-3 `order_instance` carries its target as `path={}` (province
-  list, p2s-resolvable) plus `invasion_source` and `convoys=N/M`; `plans.py ENG,USA --invasions
-  1942.10_Oct.hoi4` prints both orders with `TARGET Madagascar (provinces 5222)`, staging and
-  source resolved; empty case explicit ("0 naval-invasion order(s)"); pathless case says "NO
-  target recorded"; default census and `--fronts` unchanged; `ALL` sweep clean on ~70 tags.
-  Retro-correction this surfaces: the 1942.9-10 invasion orders read earlier as "Torch orders"
-  were MADAGASCAR orders (both ENG and USA) — Torch's landings left no surviving type-3 order
-  in any monthly save; the falsified-deadlock conclusion is unaffected (outcome evidence).
-  Reviews 2026-08-27: architecture CONCERNS (2 items — code-site campaign hash stripped, doc
-  version cell for the pct row: both applied).
-- Verification: (i) is a `WA_TLM_*` write-site change — F9 boot owed (next launch covers it);
-  campaign probe: first v33 campaign, a major with 1-4 armour divisions reads `comp_armor`
-  = that count (ENG-shape control), and `tlm` never reports comp_* as FROZEN on live majors.
-  (ii)/(iii) are analysis-side tools: validated by the pasted real-save outputs in this entry.
-- Closed when: v33 campaign probe (i) passes, and `plans.py --invasions` output on a save with
-  a live invasion order names its target states (pasted here).
-
 ### usa-military-refactor — SHIPPED-UNTESTED (2026-08-27)
 - Scope: owner request 2026-08-27 ("refactorise les fichiers WA_AI_MILITARY_COUNTRY_USA_* —
   noms avec conventions, triggers dynamiques ouverts à l'ahistorique, éviter les dates en dur,
@@ -338,6 +306,44 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   instances stable per ocean (shared probe with allied-division-stability).
 - Closed when: F9 passes AND probes (a)-(c) pass in the next campaign, or a regression traces
   to a specific removed date/merge and is fixed under this slug.
+
+### can-transit-attrition — OPEN (2026-08-27)
+- Scope: owner admission 2026-08-27 (candidate validated the same day, owner mechanism
+  CONFIRMED against the first verdict). Intended behaviour: what Canada builds REACHES the
+  war - divisions survive the transatlantic crossing, and the build rate is worth the name.
+- Symptom (MEASURED, `1ac7e4ea`, 61 monthly saves, conveyor-reset series - the valid counter;
+  `post_mortem` is a freed-NAME pool, never a death ledger): CAN builds CONTINUOUSLY (queue
+  occupied 59/61 months, 16 divisions deployed 1941-46, ~3.1/year, ~5 months and ~18.5k
+  manpower each) and **~15 of the 16 leave the OOB (±5)**; standing army pinned 1-2 divisions
+  1942-45 on 37→113 arms factories. Not lent (0 `expeditionary_owner="CAN"`, positive
+  control works), essentially never in land combat (`last_combat_date` null 47/61 months, 3
+  episodes in 10 years); deaths cluster the month AFTER a high at-sea reading on
+  transatlantic runs (1943.8: 4/4 embarked, one sea province → 1943.9: 3 lost; destinations
+  Dorset/Sussex/Algiers/Gabès); `efficiency_due_to_lost_convoys` 0.875-0.93 on its routes.
+  DERIVED: sunk in transit (own at-sea losses never serialised; failed-invasion residual for
+  the minority under front orders). Second lever, MEASURED: the build rate is also LOW in
+  absolute - 1-2 conveyors, never a backlog, while 153k own rifles bank and CAN→SOV runs the
+  campaign's top lend-lease pair (206 656 IC).
+- Rung reached (wa-diagnosis): measurement complete; NO script line named yet for either
+  half. Candidate hypotheses, each needing its killing measurement: (H1, losses) the
+  crossing is unescorted - the engine ships single divisions through raider water (owned by
+  naval region ratings / escort availability - reads into PARKED `convoys` R36); (H2,
+  losses) the theatre-distributor shuttle multiplies crossings, each a kill window (shared
+  lever with `allied-division-stability`); (H3, build rate) the engine's wanted-division
+  count for CAN is ~0 while its only army mission is a fraction-of-army buffer (the
+  empty-request finding - real but secondary to the owner-confirmed loss mechanism).
+- Engine boundary, stated: the killer of an at-sea division (convoy raid on the transport)
+  is never serialised; whether strategic redeployment vs naval-invasion transit die
+  differently is engine-internal. An owner-observed crossing (or imgui during one) is the
+  only direct view.
+- Verification (probes with this campaign's method): (a) survival - in the next campaign,
+  >= 10 of the divisions CAN deploys after 1941 are still in the OOB 6 months after
+  deployment (vs ~1 of 16 on `1ac7e4ea`); (b) standing army - CAN holds >= 8 deployed
+  divisions at any save from 1943 on (vs 1-2); (c) the at-sea death clustering signature is
+  gone (no month where every embarked division of the previous save has left the OOB);
+  (d) control: CAN→SOV lend-lease keeps flowing (the arsenal role must survive the fix).
+- Closed when: a fix ships under this slug and (a)-(d) pass in a campaign, or the owner
+  accepts a written no-fix ruling on a named engine boundary.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
@@ -790,6 +796,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `analysis-tooling` | TESTED, parked 2026-08-27 (slot freed for `can-transit-attrition`, owner admission). All three tools shipped+validated (comp rungs v33 F9-booted; aifc.py DEAD-TAG banner; plans.py --invasions) | comp gauges floored to 0 under 5 armour divisions; aifc.py printed dead tags as live churn; type-3 targets unreadable | v33 campaign probe: a major with 1-4 armour divisions reads `comp_armor` = that count, and `tlm` never reports comp_* FROZEN on live majors |
 | commonwealth-handoff | OPEN (parked 2026-08-27, owner order - WIP limit; exemption lever live since 2026-08-25) | Handoff inverts: availability bars read TOTAL divisions, not in-theatre (24933fb9: RAJ reads available with 3 div in East Africa on 76 total, ENG back-fills 14); every bar single-threshold, flap lever documented in the block (git history of this file) | Delegate missions armed and manned (R72 legs), Indian army in East Africa/El Alamein, no dominion dockyard nailed by an unbuildable design |
 | `aoi-border-garrison` | OPEN, both legs shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `aifc-traction`). Leg 1: `AXIS_abandon_east_africa` FRONT/THEATRE retargeted off region 17 (corridor {380,381} + s.r. 217), new `_colony_THEATRE` -200 gated `NOT owns_east_africa_colony`, ITA buffer widened to {550,559,271,909,910}, family gate extracted. Leg 2 (sea reinforcement): buffer ratio 0.10→0.20, trigger `east_africa_sea_route_hostile` (Suez 923), `owner_cut_off_THEATRE` -200, `naval_avoid_region` +1000 on the 5 Red-Sea/Indian-Ocean lanes. Campaign `24933fb9`: colony holds 37 months vs 2 pre-fix; (b) PASS (EA front orders manned), (d) PASS (0 GER div), (c) marginal FAIL (1-2 strays, Kurdufan buffer leak order 9607 unexplained), (a) FAIL as written / PASS on buffer population (43-57 % border). OWED: F9 boot (new ai_strategy blocks), owner imgui (cut-off gate armed/released vs Suez), §12 telemetry re-instrumentation before next scoring | ITA 9/9 AOI divisions pinned to {550,559} port buffer, zero EA front orders for ITA and ITS (`15176ce6` 1940.9-10); leg 2: AOI grows 9→11-23 by 1943 by sea past the Allied navy (`24933fb9`; ITS never released, growth = external) — engine never refuses the route (`MAX_ALLOWED_NAVAL_DANGER 80` vs ceiling 50) | (a) >= half AOI divisions in border states {271,909,910,550}, (b) EA front order for the AOI holder, (c) zero ITA/ITS div in 217/380/381, (d) zero GER div in AOI, (e) no sea growth while Suez hostile (~0.20 prepositioned at entry), (f) reinforcement resumes once the Axis takes Suez. Full record: git log `[aoi-border-garrison]` + this file's history |
 | `aifc-closure-eth` | MEASURED 2026-08-27, never opened (found during the `aifc-traction` sweep) | ITA carries a `CLOSURE MISMATCH` on ETH — ledger NET +250 vs book -150 — on 8 consecutive quarterly saves, 1943.10→1945.10 (`24933fb9`): the +400 boost was never cancelled when ETH was annexed, a later -150 suppression stacked on top; the `WA_AI_AIFC_helpers.txt` KNOWN GAP's "rare and self-correcting" does NOT self-correct in 25 months | The armour reconcile retires/cancels book entries on annexed or dead tags (or the residual is bounded with a t0/t1/t2 table and accepted in writing); a campaign shows no ledger-vs-book mismatch persisting past 2 reconciles |
