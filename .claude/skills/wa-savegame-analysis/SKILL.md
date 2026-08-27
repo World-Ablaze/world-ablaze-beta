@@ -155,6 +155,24 @@ Layer 4 consumption (file-defined ai_strategy never serialises) and causality �
 A few tags over a few saves (~12 lines per tag per save) is fine inline; `ALL` (~18 active
 blocks per save) belongs in a subagent. ~1.3 s/save.
 
+Seventh companion: `convoywar.py FILE… [--killer TAGS] [--owner TAGS] [--limit N]` — **the
+convoy-raiding / submarine-campaign dashboard: kills, losses, regions, posture, in one pass per
+save.** Assembles what no single structure carries: the top-level `sunk_convoys_history` ledger
+(one record per month × killer × victim — but a **ROLLING 24-MONTH WINDOW** per save, so a
+full-campaign curve needs several saves ≤ 24 months apart; months no passed save covers print
+`no data`, never 0), `convoys_destroyed` cumulative kills with per-save deltas, the raid/escort
+mission split (same `_NAVAL_MISSIONS` map as `navy`), the per-region need / danger /
+`last_sunk_convoy_date` map (names via `regions.py`), and two **survivor-biased lower bounds it
+labels as such**: the aces table (per-ship `sunk_convoys` dies with the boat — GER 1944.6: alive
+boats hold 30 % of the national 13 493, and 17 % by 1945.10) and submarine losses reconstructed
+from **every** country's `sunk_ship` kill logs (held on the killer's *surviving* ship; warships
+only — `convoy=yes` occurs 0 times in 1 536 records; the union across passed saves is the honest
+floor). What no save carries, stated in its header: the victim's convoy NEED (free pool
+`wa_tlm_nav_convoys` is the only proxy — 0 = real famine), a victim-side loss counter, per-region
+loss counts, and `efficiency=` on ~96 % of regional entries (ASSUMED omitted when 1.0). Output is
+bulky (a stitched monthly curve alone is ~70 rows) — **run it in a subagent**; verified against
+`navy` on `1ac7e4ea` 1944.6 (GER raid=100, ENG escort=101, byte-equal).
+
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
 ## Save formats
