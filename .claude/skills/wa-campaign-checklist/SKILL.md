@@ -1,6 +1,6 @@
 ---
 name: wa-campaign-checklist
-description: Scoring an analysed World Ablaze test campaign — the FUNDAMENTAL items F1–F9 (WW2 arc, no-pathology invariants, boot) in references/checklist.md, plus the Verification lines of every non-PARKED subject in WORK.md. Use this IN TANDEM with wa-savegame-analysis whenever a test campaign (cloud observer run or local control run) is being analysed: verify the build, run the probes verbatim, record the verdicts with evidence in the same session. Also use it when a subject ships code — every subject carries its own verification (console harness and/or campaign probe) before it can close. Analysing a campaign without scoring wastes the run; the checklist and WORK.md are the institutional memory of what each campaign was supposed to prove.
+description: Scoring an analysed World Ablaze test campaign — the FUNDAMENTAL items (F2, F5, F6, F8, F9 — WW2 arc, no-pathology invariants, boot) in references/checklist.md, plus the Verification lines of every non-PARKED subject in WORK.md. Use this IN TANDEM with wa-savegame-analysis whenever a test campaign (cloud observer run or local control run) is being analysed: verify the build, run the probes verbatim, record the verdicts with evidence in the same session. Also use it when a subject ships code — every subject carries its own verification (console harness and/or campaign probe) before it can close. Analysing a campaign without scoring wastes the run; the checklist and WORK.md are the institutional memory of what each campaign was supposed to prove.
 ---
 
 # WA campaign checklist
@@ -8,9 +8,9 @@ description: Scoring an analysed World Ablaze test campaign — the FUNDAMENTAL 
 Two things get scored when a campaign is analysed (protocol changed 2026-08-23,
 `documentation/PROCESS_REDESIGN_PROPOSAL.md`):
 
-1. **`references/checklist.md`** — the FUNDAMENTAL items **F1–F9** (what a healthy campaign
-   looks like), the campaign registry, and the cosmetic-anomaly list. Never removed; their
-   history accumulates forever.
+1. **`references/checklist.md`** — the FUNDAMENTAL items **F2, F5, F6, F8, F9** (what a healthy
+   campaign looks like; F1/F3/F4/F7 retired 2026-08-27 on owner order — always-passing, git holds
+   them), the campaign registry, and the cosmetic-anomaly list.
 2. **`WORK.md`** — the *Verification* lines of every subject in OPEN. A subject whose
    criterion is met records the evidence and moves toward `CAMPAIGN-OK`/`CLOSED`; a
    regression on a CLOSED subject reopens it from the symptom.
@@ -25,7 +25,7 @@ summary.
 ## When to run
 
 Score **every time a campaign is analysed** with `wa-savegame-analysis` — full audits and
-narrow bug-hunts alike. On a narrow bug-hunt, still score F1–F9 and any OPEN subject the
+narrow bug-hunts alike. On a narrow bug-hunt, still score the FUNDAMENTAL items and any OPEN subject the
 saves you already opened can answer cheaply; mark the rest `NOT CHECKED` rather than
 guessing. Run `python tools/check_worklist.py` first (BOM, harness contract, WIP, stale
 untested subjects).

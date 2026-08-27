@@ -68,7 +68,7 @@ fix-number system on 2026-08-23 (`documentation/PROCESS_REDESIGN_PROPOSAL.md`;
 | `.claude/skills/wa-tooling/SKILL.md` | Map generators, `ai_will_do` replacers, dry-run discipline. |
 | `.claude/skills/wa-lessons-learned/SKILL.md` | Known gotchas (`references/lessons-log.md`) and the protocol for recording new ones. |
 | `.claude/skills/wa-savegame-analysis/SKILL.md` | Reading HOI4 savegames: campaign identity, extracting variables/ideas/flags, cross-save trends. |
-| `.claude/skills/wa-campaign-checklist/SKILL.md` | Scoring analysed test campaigns: the FUNDAMENTAL items F1–F9 (`references/checklist.md`) plus the Verification lines of every OPEN subject in `WORK.md`. Used in tandem with `wa-savegame-analysis`; every subject that ships code carries its verification. |
+| `.claude/skills/wa-campaign-checklist/SKILL.md` | Scoring analysed test campaigns: the FUNDAMENTAL items (F2/F5/F6/F8/F9, `references/checklist.md`) plus the Verification lines of every OPEN subject in `WORK.md`. Used in tandem with `wa-savegame-analysis`; every subject that ships code carries its verification. |
 | `.claude/skills/wa-constants-registry/SKILL.md` | How AI numbers are declared: script constants (`constant:cat.group.key`) vs the one case a file-scoped `@` is legal, the cross-format registry (`tools/constants_registry.json`) and `python tools/check_constants.py`, and the validated-contexts table (`constant:` does not work in `ai_strategy value =`). Run the checker before committing any change to `WA_AI_*` effects/triggers, `common/script_constants/`, `05_defines.lua`, `00_buildings.txt`, or `savegame.py`. |
 
 ## AI Design Philosophy
