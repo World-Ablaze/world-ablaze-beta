@@ -506,6 +506,38 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
      `imgui show ai_navy` during the dissolution window is the only direct view.
   - Rival named and killed: "admiral shortage" (H-A) and "fuel" (H-B) both dead by
     measurement above; H-C (deployment sink with a near-closed engine drain valve) stands.
+- **Radar-lock six-box (2026-08-27, owner symptom "dominions stuck on Egret/Tribal
+  classes", `0767987f`):**
+  1. Symptom: the five UK dominions never field a frigate past Egret or a destroyer past
+     Tribal.
+  2. Measurement (MEASURED, saves 1943.6 + 1945.6): CAN/AST/NZL/SAF/RAJ all own ZERO radar
+     techs (radio_detection/decimetric/improved absent, none in progress, no alternate
+     name) and sit at exactly eng_frigate_5 / eng_destroyer_6 in BOTH saves - a static
+     ceiling, byte-identical across the five. Positive control: ENG owns the radar chain
+     (1936/1938/1939) and advances frigate 9->10, destroyer 10->12 over the same window.
+  3. Mod state: `eng_frigate_6`+ (Black Swan on) and `eng_destroyer_7`+ (J/K/N on) carry a
+     HARD `dependencies = { decimetric_radar = 1 }` (`naval_eng.txt:314-316`, `:1063-1065`)
+     - without the radar the AI cannot research them regardless of ai_will_do.
+  4. Mod decision - a DOUBLE lock, both deliberate-looking: (i) research path:
+     `WA_AI_RESEARCH_needs_radar` = major OR strategic-bombing airforce
+     (`WA_AI_RESEARCH_electronics.txt:22-27`; the airforce trigger is ENG/USA only,
+     `WA_AI_CONFIG.txt:161-166`) - a dominion fails both terms, so radio_detection and
+     decimetric_radar ai_will_do = 0 for it; (ii) gift path: ENG's radar
+     `on_research_complete` grants the tech to subjects but its limit EXCLUDES
+     `autonomy_dominion`/`autonomy_colony` (`electronic_mechanical_engineering.txt:169-189`)
+     - only integrated subjects (UKE) receive it.
+  5. Script lines: `WA_AI_RESEARCH_electronics.txt:22-27` (the gate that zeroes dominion
+     radar research) and `electronic_mechanical_engineering.txt:100-110/:172-181` (the
+     gift filter). Candidate levers, PROPOSED ONLY: (L-a) widen `needs_radar` with an
+     escort-capability term (`WA_AI_CONFIG_focus_on_escorts` or
+     `has_navy_size = { type = screen_ship size > 10 }`, the same shape `needs_asw` already
+     uses at `:49-59`); (L-b) extend the gift to dominions (the autonomy exclusion looks
+     deliberate - legacy-gate trace owed before touching); (L-c) drop the hard radar
+     dependency from hull techs (changes design intent, not recommended).
+  6. Engine boundary: none - the whole mechanism is mod script; nothing here is ASSUMED.
+  - Interaction with the shipped DD-escort fix: the lock caps hull QUALITY, not frigate
+    existence (Egret/frigate_5 stays buildable - CAN holds 49). The ASW-relevant classes
+    (Black Swan on) are exactly the locked ones.
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
