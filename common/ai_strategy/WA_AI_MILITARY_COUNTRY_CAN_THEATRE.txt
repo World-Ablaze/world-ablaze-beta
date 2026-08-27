@@ -98,3 +98,53 @@ WA_AI_MILITARY_COUNTRY_CAN_THEATRE_sealion = {
 
 # [allied-total-commitment] CAN_theatre_boost_europe generalised into
 # WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe (FACTION_ALLIES_THEATRE).
+
+
+# purpose: a committed Canada leaves NOTHING on the mainland - the spare parks in Britain;
+#          divisions already on a front stay there (subtract_fronts_from_need). Exists because a
+#          negative `garrison` value, though armed and held by the engine, does not empty
+#          existing engine home areadef orders - the buffer is the proven mover (doc SS23).
+#          ASSUMED: continental fronts drawing on a britain-area buffer (the USA
+#          unit_buffer_for_europe pattern, feed never measured - next campaign's probe).
+# range:   put_unit_buffers ratio 0.75, sized as ITS OWN order (each block becomes a separate
+#          order, lessons-measured; arbitration when requests exceed the army is UNKNOWN) -
+#          "most of a committed army stages in Britain", NOT pool arithmetic with the 0.25
+# policy:  Additive per order; requires the same guard terms as defend_britain
+# domain:  THEATRE
+WA_AI_MILITARY_COUNTRY_CAN_THEATRE_total_commitment_empty_mainland = {
+	allowed = {
+		WA_AI_CONFIG_MILITARY_is_commonwealth_uk_guard = yes
+	}
+	enable = {
+		WA_AI_MILITARY_total_commitment_active = yes
+		WA_AI_MILITARY_CAN_uk_guard_available = yes
+		NOT = { WA_AI_MILITARY_ENG_britain_invaded = yes }
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+
+		order_id = 9403
+
+		# britain
+		states = {
+			857
+			127
+			860
+			859
+			133
+			121
+			130
+			131
+			132
+		}
+
+		ratio = 0.75
+
+		area = britain
+
+		subtract_invasions_from_need = yes
+		subtract_fronts_from_need = yes
+	}
+}

@@ -1484,6 +1484,8 @@ while the war is elsewhere; the garrison comes back the moment somebody can actu
 | `WA_AI_MILITARY_DEFAULT_THEATRE_non_african_avoid_africa` | Default | the `-90` African `area_priority` brake now EXEMPTS committed minors (gate, not a counter-entry - a counter only works if the engine sums per area, which is ASSUMED) |
 | `WA_AI_MILITARY_ALLIES_committed_minor_join_africa` (`FACTION_ALLIES_FRONT.txt`) | Faction | `front_unit_request +60` on the East-Africa alias - the direction for the released army. The `north_africa` +60 lives in the sibling `..._join_north_africa`, gated by the §24 guest gate (the area contains French Morocco/Algeria/Tunisia) |
 | `WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe` (`FACTION_ALLIES_THEATRE.txt`) | Faction | `theatre_distribution_demand_increase id = 15 value = 6` once the coalition holds a western foothold - theatre demand, not a front request, is what moves an army across an ocean (campaign 5078fe10). Also gated by the §24 guest gate: the foothold test counts FRENCH-controlled states while FRA is an ally, so without the gate the demand is armed from 1936 |
+| `WA_AI_MILITARY_COUNTRY_CAN_FRONT_protect_home_floor` (`COUNTRY_CAN_FRONT.txt`) | Country | the `+10` Canadian home floor carries `NOT total_commitment_active` in its enable - a committed Canada keeps NO home request; the threatened `+200` tier re-arms on `CAN_home_defense_required` alone |
+| `WA_AI_MILITARY_COUNTRY_CAN_THEATRE_total_commitment_empty_mainland` (`COUNTRY_CAN_THEATRE.txt`) | Country | `put_unit_buffers` order 9403, britain states, ratio 0.75 on top of `defend_britain`'s 0.25 - the whole spare parks in Britain (`subtract_fronts_from_need` leaves front divisions abroad). Exists because the `-5000` garrison release, though armed and held (owner imgui 2026-08-27: one SUMMED garrison entry at -4950 - also the first direct proof that same-type/same-target entries sum), does not empty the engine's home areadef orders - the buffer is the proven mover |
 
 The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
 +150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
@@ -1514,9 +1516,22 @@ owned are now `always = no`), both `canada_is_a_special_snowflake` blocks, `ALLI
 
 ### Known limits
 
-- The `garrison` type has NO engine documentation; `-5000` = force-off is WA convention, MEASURED
-  only through the §16 cross-section. `imgui show ai-strategy` on a released dominion is the cheap
-  confirmation.
+- The `garrison` type has NO engine documentation; `-5000` = force-off is WA convention. **Owner
+  imgui 2026-08-27 (campaign `24933fb9` resumed, CAN): the entry is armed, held, and summed with
+  `minors_home_first` into ONE row at -4950 — yet the home engine areadef orders kept their
+  divisions.** So the value reaches the engine but does NOT empty existing engine area-defense
+  orders; emptying the mainland needs a catcher (`put_unit_buffers`), which is what
+  `..._empty_mainland` does. The same read is the first direct proof that same-type/same-target
+  `ai_strategy` entries SUM (the cross-AREA variant of the question stays open).
+- Two `put_unit_buffers` blocks on the same area become TWO separate orders (lessons-measured on
+  the USA `unit_buffer_for_europe_*` 1→N split); how the engine arbitrates when their combined
+  requests exceed the army is UNKNOWN. `..._empty_mainland`'s 0.75 is therefore sized as its own
+  order ("most of a committed army stages in Britain"), not as pool arithmetic with
+  `defend_britain`'s 0.25. Also ASSUMED: continental (Europe/Africa) fronts drawing divisions
+  out of a britain-area buffer — the feed mechanism has never been measured; the next campaign's
+  probe (zero CAN divisions in Canada AND CAN divisions appearing on continental fronts) tests
+  both at once. If ~25 % still parks home while committed, the two-order arbitration is the
+  first suspect.
 - Divisions under NO order (the H3 buffer/no-order ceiling of `minor-expeditionary-fitness`) are
   beyond every lever here; the campaign probe measures whether the released areadef divisions
   actually convert into front/buffer orders abroad.
