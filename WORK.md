@@ -324,18 +324,57 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the minority under front orders). Second lever, MEASURED: the build rate is also LOW in
   absolute - 1-2 conveyors, never a backlog, while 153k own rifles bank and CAN→SOV runs the
   campaign's top lend-lease pair (206 656 IC).
-- Rung reached (wa-diagnosis): measurement complete; NO script line named yet for either
-  half. Candidate hypotheses, each needing its killing measurement: (H1, losses) the
-  crossing is unescorted - the engine ships single divisions through raider water (owned by
-  naval region ratings / escort availability - reads into PARKED `convoys` R36); (H2,
-  losses) the theatre-distributor shuttle multiplies crossings, each a kill window (shared
-  lever with `allied-division-stability`); (H3, build rate) the engine's wanted-division
-  count for CAN is ~0 while its only army mission is a fraction-of-army buffer (the
-  empty-request finding - real but secondary to the owner-confirmed loss mechanism).
-- Engine boundary, stated: the killer of an at-sea division (convoy raid on the transport)
-  is never serialised; whether strategic redeployment vs naval-invasion transit die
-  differently is engine-internal. An owner-observed crossing (or imgui during one) is the
-  only direct view.
+- Six-box diagnosis (2026-08-27, this session; three extraction subagents, labels relayed
+  unchanged):
+  1. Symptom: CAN builds continuously yet its standing army pins at 1-4 divisions with
+     near-zero land combat - what it builds leaves the OOB.
+  2. Measurement (MEASURED, 77 war saves 1939.9-1946.1, closure vs `army` byte-equal):
+     20 true transit losses (at sea -> gone next save), 17/20 North Atlantic; net growth
+     -10 (14->4); 1943.8 = 100% of the army at sea. Comparative (7 Allied tags, table in
+     session scratchpad `transit-comparative-1ac7e4ea.md`): CAN is the WORST case - 49% of
+     its disappearances are at-sea vs ENG 14% / RAJ 16%; USA loses more absolutely (71
+     at-sea losses, 1-4/month for 3.5 years) but grows +90; SAF loses 0. A coalition-wide
+     pathology with CAN as its extreme, not an isolated case.
+  3. Mod state (MEASURED, saves 1943.6/1943.8/1943.9/1944.6): Allied escort = 20 CAN +
+     82-122 ENG + 20-40 USA hulls on 3-5 eastern regions vs 100-126 GER raiders covering
+     30+ regions; the WESTERN half of the CAN->UK route (Newfoundland/Labrador waters)
+     carries ZERO escort missions in all 4 saves; 36-61% of Allied screens parked in
+     admiral-LESS fleets, share rising monotonically through 1944; CAN's main active force
+     (40 screens) patrols Hudson Bay (danger 0); GER->CAN 1146 convoys sunk 1941.8-1944.5.
+  4. Mod decision: the Atlantic escort plan IS armed for CAN (corridor-user includes CAN,
+     `WA_AI_CONFIG.txt:1198`; dominance 70-80 + pull -1000 + escort bar at 0), so H1's
+     strong form ("unescorted, no plan") is FALSE - the failure is coverage and response,
+     the R36 "escorts parked" shape. H2 (shuttle) REFUTED as dominant mode: 9/13 at-sea
+     losses died on their FIRST crossing, 4 were multi-crossing (real minority; lower
+     bound, monthly sampling). H3 CONFIRMED: a committed CAN keeps no home floor
+     (`CAN_FRONT.txt:103`), its only standing requests are fraction-of-army britain
+     buffers (`CAN_THEATRE.txt:44` ratio 0.25, `:143` ratio 0.75) - wanted-count ~0 on a
+     1-4 division army, and every fresh deployment must cross the Atlantic to reach its
+     buffer order.
+  5. Script lines: `WA_AI_NAVAL_FACTION_ALLIES.txt:290-327` (corridor dominance/pull the
+     engine answers with a Hudson Bay patrol - no WA line steers CAN's navy anywhere, and
+     the engine's patrol-near-owned score 500 is uncontested, per the Fix 53b note at
+     `05_defines.lua:1082`); `05_defines.lua:1090-1131` (escort score/danger terms, Fix
+     53b/86 - present and still insufficient in this campaign); `05_defines.lua:1135-1136`
+     (escort screen-share band 0.3-0.7 - unreachable while the screens sit in admiral-less
+     fleets); `CAN_THEATRE.txt:44`/`:143` + `CAN_FRONT.txt:103` (build-rate half).
+  6. Engine boundary (ASSUMED): whether an escort mission protects an ALLY's troop convoys
+     or only the escorter's own (Fix 86 established objectives are per-country
+     own-danger-driven); how `naval_dominance` converts into patrol placement; admiral
+     auto-assignment to parked fleets; the killer of an at-sea division is never
+     serialised, and whether strategic redeployment vs invasion transit die differently is
+     engine-internal. An owner-observed crossing with `imgui show ai-strategy` open is the
+     only direct view.
+- Rival explanations, counted apart (MEASURED): 6/19 losses 1941-46 were NOT at sea (3 last
+  seen on Europe/Africa land = ground-combat deaths; 3 in the Americas = disband/merge at
+  home); expeditionary transfer refuted campaign-wide (0 lost ids reappear under any of the
+  7 tags at N+1 or N+2).
+- Candidate levers (PROPOSED ONLY - nothing ships without an owner order; each requires its
+  own impact analysis + wa-architecture-reviewer/wa-lessons-reviewer pass): (L1) escort
+  response - western-corridor coverage, admiral supply for the parked screens, or escort
+  share floor - owns the majority (first-crossing) mode; (L2) shuttle damping is
+  `allied-division-stability` Step B, not this slug; (L3) build rate - a CAN standing-force
+  floor (front_unit_request or buffer minimum) - secondary, owner-ranked below losses.
 - Verification (probes with this campaign's method): (a) survival - in the next campaign,
   >= 10 of the divisions CAN deploys after 1941 are still in the OOB 6 months after
   deployment (vs ~1 of 16 on `1ac7e4ea`); (b) standing army - CAN holds >= 8 deployed
@@ -751,6 +790,25 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   no compaction is possible, entries retire only by exact negation, ENG's 737-entry ledger
   is arithmetically correct and inert, its LENGTH is the only cost). Recommended: measure
   lever 2's blast radius across the campaign's junior partners before choosing 1 vs 2.
+- **Residual-L3 mechanism re-diagnosed 2026-08-27 (source read): the failure stage is the MAIN-ENEMY
+  ELECTION, not the scorer.** The desert (vs ITA — MEASURED sector_enemy) and the real front
+  (Tunisia/France vs GER — MEASURED fork) have different controllers, so the scorer NEVER compares
+  them: election (`WA_AI_AIFC_helpers.txt:277-281`) takes the strict max pad, first-seen wins ties,
+  and `_aifc_cand` enumerates native (§1) before merged (§1b) — a single token pad-2 elects the
+  stale enemy against an army whose total mass faces the other one. WORK.md's earlier "lost the
+  score" wording was imprecise. Remaining unknown (one): the merged candidates' exact pads in the
+  1944.7 selection week (tie vs strictly lower) — `wa_aifc.1 ENG` on that save would settle it;
+  both cases are covered by the proposed fix. **Options PROPOSED to owner (decision pending,
+  nothing shipped)** — full a-g analysis, flap table under the measured type-83 accumulation
+  defect, and both ready levers (K=2 grace; two-state dead-band alternative) in the session
+  scratchpad `aifc_scorer_fix_options.md`. Recommended: Option A — elect the main enemy by
+  PER-ENEMY SUM of pad bands over floor-eligible candidates (pad > min_pad) only; section 2,
+  §1b filters, validity mirror, ITA/ETH mission steering all untouched; no new constant.
+  Design reviews run 2026-08-27: lessons CONCERNS (break var + entry-init, id-encoding header
+  sentence, t0/t1/t2 flip table with accumulation — all integrated into the proposal) +
+  architecture CONCERNS (helpers SELECTION-MODEL header sync, dual-behaviour election comment,
+  head+tail temp clears, min_pad second-role sentence, subject → SHIPPED-UNTESTED on ship — all
+  queued as ship-time items). No CONFLICT.
 - Closed when: each leg carries a six-box diagnosis naming the script line or documented engine
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
