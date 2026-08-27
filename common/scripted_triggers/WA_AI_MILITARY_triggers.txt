@@ -3504,8 +3504,9 @@ WA_AI_MILITARY_state_is_beyond_home_reach = {
 ############################################################################################################
 # CONTROL PANEL. Read by the Faction pumps that push Allied members toward French ground
 # (WA_AI_MILITARY_ALLIES_europe_first, WA_AI_MILITARY_ALLIES_committed_minor_theatre_boost_europe,
-# WA_AI_MILITARY_ALLIES_committed_minor_join_north_africa) and by the ENG BEF pair
-# (WA_AI_MILITARY_ENG_bef_in_europe_FRONT/_THEATRE). Change the behaviour here, never in the blocks.
+# WA_AI_MILITARY_ALLIES_committed_minor_join_north_africa), by the ENG BEF pair
+# (WA_AI_MILITARY_ENG_bef_in_europe_FRONT/_THEATRE), and - inverted, via the audience trigger below -
+# by the brake WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark. Change behaviour here, never in the blocks.
 
 # COUNTRY scope (ROOT = the Allied member asking "may I deploy onto the bulwark's ground?").
 # Owner rule: on the historical AI difficulty, Commonwealth deployment onto French
@@ -3528,4 +3529,19 @@ WA_AI_MILITARY_western_bulwark_accepts_guests = {
 			}
 		}
 	}
+}
+
+# COUNTRY scope. The gate's BRAKE audience: the overseas member (capital outside Europe) the bulwark
+# is currently refusing. Exists because a closed gate only withholds the +150 boosts - engine default
+# assignment still routes a total-commitment released army onto the only live European fronts (owner
+# report 2026-08-27: RAJ divisions in BEL/HOL mid-battle of France). European-capital members are
+# excluded so the veto can never reach a country defending its own or a neighbour's homeland.
+# ASSUMED: front_unit_request -100 fully vetoes a front (E2/documentation.info prose, no save proof);
+# no European member's capital leaves Europe before fall_of_france opens the gate (an exile capital
+# off-continent would flip that member into this audience for the remaining window).
+WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
+	WA_AI_MILITARY_is_allies_member = yes
+	has_war = yes
+	NOT = { capital_scope = { is_on_continent = europe } }
+	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
 }

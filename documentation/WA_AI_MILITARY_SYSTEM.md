@@ -1567,18 +1567,33 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   in-faction bulwark (`WA_AI_CONFIG_MILITARY_is_western_european_bulwark`) still holding a
   disjointed-government idea (`doesnt_have_disjointed_government`, FRA_scripted_triggers.txt - now
   covers all FOUR variants incl. `_bloc_path`).
-- Consumers (gate in `enable`, never a counter-bid - the RAJ -100 was already E2-saturated at a net
-  +50): `ALLIES_europe_first` (its SE-Asia sink split out to `ALLIES_southeast_asia_sink`, NOT
-  gated), `ALLIES_committed_minor_theatre_boost_europe`, `ALLIES_committed_minor_join_north_africa`
-  (split from `join_africa`; the East-Africa +60 is not gated), and the ENG BEF pair
-  `ENG_bef_in_europe_FRONT`/`_THEATRE`.
+- Consumers (positives gate in `enable`, never a compensating bid against a live positive - the RAJ
+  -100 was already E2-saturated at a net +50): `ALLIES_europe_first` (its SE-Asia sink split out to
+  `ALLIES_southeast_asia_sink`, NOT gated), `ALLIES_committed_minor_theatre_boost_europe`,
+  `ALLIES_committed_minor_join_north_africa` (split from `join_africa`; the East-Africa +60 is not
+  gated), and the ENG BEF pair `ENG_bef_in_europe_FRONT`/`_THEATRE`.
+- **The brake half (2026-08-27, owner report: RAJ divisions in BEL/HOL mid-Battle of France).**
+  Gating the positives is not enough: a total-commitment released army (§23) still reaches the only
+  live European fronts through engine default assignment on the flat area_priority baseline, with no
+  CAPS veto applying to a fit, home-safe member. `WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark`
+  (`FACTION_ALLIES_FRONT.txt`) puts `front_unit_request -100` on `benelux`/`north_france`/`france`/
+  `west_france`/`south_france` for the audience trigger
+  `WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark` (allies member, at war, capital outside
+  Europe, gate closed). This is NOT the counter-bid the 2026-08-25 ruling forbids: during the brake
+  window every positive on those five areas is enable-gated off by the same trigger (or off by
+  date/flag), so the -100 never nets against a live bid - it suppresses the engine default only. The
+  European-capital exclusion is the ECONOMY.md 2.4 escape hatch: no member defending its own or a
+  neighbour's homeland (BEL/HOL/FRA/ENG/POL) can be vetoed.
 - Residual, stated: while the gate is closed, the whole `europe_first` block is down, so its
   `north_africa +75` does not reach EGYPT either; the Egypt cover in that window is the anglo-major
   `ALLIES_war_against_ITA_north_africa_THEATRE` +100 and `ALLIES_theatre_boost_north_africa` (id
-  447), both untouched. Ahistorical difficulty: gate always open, behaviour unchanged.
-- Probe: pre-fall saves show zero RAJ/dominion divisions in metropolitan France and zero
-  Commonwealth divisions on FRA-owned North-African states while FRA still holds the idea; the BEF
-  deploys only after the idea is gone; post-fall behaviour identical to pre-gate campaigns.
+  447), both untouched. Ahistorical difficulty: gate always open, brake never arms, behaviour
+  unchanged - if the owner's reported game ran non-historical difficulty, the symptom persists there
+  by the standing owner ruling (non-historical never waits); flag to the owner if it recurs.
+- Probe: pre-fall saves show zero RAJ/dominion divisions in metropolitan France AND on the
+  `benelux`/BEL/HOL fronts, and zero Commonwealth divisions on FRA-owned North-African states while
+  FRA still holds the idea; the BEF deploys only after the idea is gone; post-fall behaviour
+  identical to pre-gate campaigns.
 
 ## 25. France fights the Battle of France, not the empire ([fra-battle-of-france], 2026-08-27)
 
