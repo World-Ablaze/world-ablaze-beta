@@ -305,8 +305,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   pattern) so the faction deathtrap guard re-arms after the phase flip. (5) **Biscay
   correction**: the dedup turned the historically-inert Torch −2000 on region 42 LIVE
   (net 0 = the Bay would have opened, a design change nobody decided) — removed to preserve
-  observed behaviour; **"should Torch open the Bay" is now an explicit one-line owner
-  decision stated at the site**. Deferred with reasons (survey file): defend_britain
+  observed behaviour; **Biscay DECIDED 2026-08-27 (owner): the wall
+  stays - Torch does not open the Bay; settled at the site**. Deferred with reasons (survey file): defend_britain
   DIPLOMACY (coupled to commonwealth-handoff's CAN guard), commit_to_europe partial,
   reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
   full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
