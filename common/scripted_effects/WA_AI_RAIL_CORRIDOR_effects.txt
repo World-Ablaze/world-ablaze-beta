@@ -1,0 +1,127 @@
+############################################################################################################
+#	[rail-corridors] Strategic rail corridors - an AI-only PATHFINDING CHEAT, not an economy feature.
+#	Intent (owner, 2026-08-27): keep AI divisions off the sea. Once every state along a land corridor
+#	is held by ONE side (faction members + subjects), a max-level railway is spawned INSTANTLY and
+#	FREE between the endpoint cities, so strategic redeployment prefers the land route over naval
+#	transit and fewer divisions drown mid-convoy. No cost, no factories, no balance intent - the
+#	railway is capacity on ground the faction already holds, usable by whoever controls it later.
+#	Pieces: this file (dispatch), WA_AI_RAIL_CORRIDOR_data.txt (GENERATED gates + builds -
+#	regenerate with tools/gen_rail_corridors.py, never hand-edit), WA_AI_RAIL_CORRIDOR_triggers.txt
+#	(same-side predicate), monthly call in WA_AI_misc_on_actions.txt, harness
+#	WA_TEST_rail_corridors.txt (+ events/wa_test_rail_corridors.txt).
+#	ASSUMED (engine, unobservable in script): build_railway over an edge that already carries a
+#	railway raises it and clamps at MAX_RAILWAY_LEVEL rather than stacking above it or laying a
+#	parallel line - the force-build harness events exist to check this visually in the supply
+#	mapmode. Existing lines on the route are therefore upgraded, not duplicated.
+############################################################################################################
+
+# Runs the corridor sweep once per month TOTAL, not once per country: the first AI country's
+# monthly pulse claims a 20-day timed global flag (the WA_TLM_tick_clock idiom) and every check
+# inside is an absolute state read, so the firing country is irrelevant.
+# Cost when idle: 2 flag reads per country-month; when sweeping: 8 flag reads + per unbuilt
+# corridor a walk that dies after 2 state checks unless both endpoints are already same-side.
+# A built corridor is closed by its global flag forever - control flipping later does not
+# re-check, the track stays on the map for whoever holds it (engine behaviour, intended).
+WA_AI_RAIL_CORRIDOR_monthly_tick = {
+	if = {
+		limit = {
+			NOT = { has_global_flag = WA_rail_corridors_all_built }
+			NOT = { has_global_flag = WA_rail_corridor_pulse }
+		}
+		set_global_flag = { flag = WA_rail_corridor_pulse value = 1 days = 20 }
+		set_temp_variable = { _rc_built_n = 0 }
+
+		# corridor 1: Dakar - Djibouti (Sahel line)
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_1_built } }
+			WA_AI_RAIL_CORRIDOR_gate_1 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_1 = yes
+				set_global_flag = WA_rail_corridor_1_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 1 (dakar_djibouti)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 2: Pretoria - Khartoum (east-African line)
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_2_built } }
+			WA_AI_RAIL_CORRIDOR_gate_2 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_2 = yes
+				set_global_flag = WA_rail_corridor_2_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 2 (pretoria_khartoum)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 3: Prayagraj - Karachi
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_3_built } }
+			WA_AI_RAIL_CORRIDOR_gate_3 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_3 = yes
+				set_global_flag = WA_rail_corridor_3_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 3 (prayagraj_karachi)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 4: Karachi - Fars (province 10797)
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_4_built } }
+			WA_AI_RAIL_CORRIDOR_gate_4 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_4 = yes
+				set_global_flag = WA_rail_corridor_4_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 4 (karachi_fars)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 5: Kuwait City - Baghdad
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_5_built } }
+			WA_AI_RAIL_CORRIDOR_gate_5 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_5 = yes
+				set_global_flag = WA_rail_corridor_5_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 5 (kuwait_baghdad)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 6: Baghdad - Cairo
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_6_built } }
+			WA_AI_RAIL_CORRIDOR_gate_6 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_6 = yes
+				set_global_flag = WA_rail_corridor_6_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 6 (baghdad_cairo)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 7: Casablanca - Cairo (owner rule: needs ALL of North Africa, not just the route)
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_7_built } }
+			WA_AI_RAIL_CORRIDOR_gate_7 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_7 = yes
+				set_global_flag = WA_rail_corridor_7_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 7 (casablanca_cairo)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# corridor 8: Miami - Halifax (eastern seaboard)
+		if = { limit = { NOT = { has_global_flag = WA_rail_corridor_8_built } }
+			WA_AI_RAIL_CORRIDOR_gate_8 = yes
+			if = { limit = { check_variable = { _rc_ok = 1 } }
+				WA_AI_RAIL_CORRIDOR_build_8 = yes
+				set_global_flag = WA_rail_corridor_8_built
+				log = "[GetDateText] WA_AI_RAIL_CORRIDOR: built corridor 8 (miami_halifax)"
+			}
+		}
+		else = { add_to_variable = { _rc_built_n = 1 } }
+
+		# all 8 built (counted on the pulse AFTER the last build) - retire the monthly work for good
+		if = { limit = { check_variable = { _rc_built_n = 8 } }
+			set_global_flag = WA_rail_corridors_all_built
+		}
+	}
+}

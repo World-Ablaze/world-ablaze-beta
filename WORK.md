@@ -660,11 +660,29 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Sahara, hence the waypoints), harness `WA_TEST_rail_corridors.txt` +
   `events/wa_test_rail_corridors.txt` (report `wa_test_rail.1`, force-builds `.11`-`.18`).
   Monthly call added in `WA_AI_misc_on_actions.txt`.
+- Reviews 2026-08-27: lessons CONFLICT + architecture CONCERNS, both resolved in-session. (i) PC
+  railway interaction: the cheat now builds along the generator's EXPLICIT province path
+  (`path = { ... }`, `fallback = yes`) and stamps the same edges into the PC shadow bookkeeping
+  (`WA_AI_PC_railway_connections^p`, `WA_AI_PC_railway_connection_level_a^b` — readers:
+  railway_helpers/core, pathfinding), so priority-construction sees the cheat track instead of
+  buying it again; the native `has_railway_level` "done" gate (railway_strategies) is the second
+  mitigation. Residual, stated: if the engine rejects a path list, `fallback = yes` re-paths
+  between the endpoints and the mirror can OVERSTATE up to that one corridor (suppresses PC rail
+  spend there, never wastes it). (ii) `_rc_anchor` is entry-initialised to 0 with a no-controller
+  guard in every gate and in the harness duplicate. (iii) registry group `engine_max_railway_level`
+  ties the generated `@WA_RAIL_CORRIDOR_LEVEL = 5` to the generator's emission (engine side:
+  `NDefines.NSupply.MAX_RAILWAY_LEVEL = 5`, install `00_defines.lua:4263`, not rebound by
+  `05_defines.lua`).
+- Found on the way past, NOT fixed here (spawned as a separate task): the shared
+  `tools/map_generators/province_connections.py` ADDS `impassable` rows of `map/adjacencies.csv`
+  to the land graph instead of removing them (MEASURED: 7643-8014 and 1506-7558, both "East
+  Coast" impassable, present as connections) — `gen_rail_corridors.py` strips them locally
+  before pathing.
 - ASSUMED, stated: (i) `build_railway` over an existing line RAISES it and clamps at
   MAX_RAILWAY_LEVEL 5 instead of stacking or laying a parallel line — unobservable in script, the
-  force-build events are the visual check; (ii) the engine's build path between two anchors matches
-  the generator's BFS chain only approximately — a deviation can lay track through a state the gate
-  never checked (bounded by the waypoint spacing); (iii) trigger-AND short-circuits left to right.
+  force-build events are the visual check; (ii) trigger-AND short-circuits left to right (cost
+  claim only, not correctness); (iii) a rejected explicit path falls back per the engine doc's
+  fallback chain — never observed, covered by the same force-build check.
 - Verification: owner console run owed — `event wa_test_rail.1` (report pasted here), then one
   force-build (`event wa_test_rail.11`) on a throwaway save with the supply mapmode open: existing
   rails upgraded not duplicated, level caps at 5. F9 boot test owed (new on_action call + 2 new

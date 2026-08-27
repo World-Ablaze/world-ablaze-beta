@@ -1,0 +1,22 @@
+# [rail-corridors] Predicate for the strategic rail corridor cheat (an AI pathfinding aid,
+# no gameplay-economy intent). System: WA_AI_RAIL_CORRIDOR_effects.txt (dispatch),
+# WA_AI_RAIL_CORRIDOR_data.txt (generated gates/builds - tools/gen_rail_corridors.py).
+
+# State scope. Reads _rc_anchor (country id of the corridor's reference controller, set by the
+# generated gate before the walk). TRUE when this state's controller is on the anchor's side:
+# the anchor itself, a faction partner, either one the other's subject, or a subject whose
+# overlord is a faction partner. Two co-belligerents sharing no faction read FALSE on purpose -
+# the owner rule is "the faction controls the corridor", not "nobody hostile holds it".
+WA_AI_RAIL_CORRIDOR_state_is_friendly = {
+	OR = {
+		is_controlled_by = var:_rc_anchor
+		CONTROLLER = {
+			OR = {
+				is_in_faction_with = var:_rc_anchor
+				is_subject_of = var:_rc_anchor
+				var:_rc_anchor = { is_subject_of = PREV }
+				OVERLORD = { is_in_faction_with = var:_rc_anchor }
+			}
+		}
+	}
+}
