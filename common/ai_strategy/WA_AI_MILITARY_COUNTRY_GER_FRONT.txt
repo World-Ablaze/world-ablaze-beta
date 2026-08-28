@@ -40,30 +40,6 @@ WA_AI_MILITARY_GER_africa_is_lost_FRONT = {
 	}
 }
 
-
-# Phase 6 split from WA_AI_MILITARY_GER_abandon_allies (FRONT domain)
-WA_AI_MILITARY_GER_abandon_allies_FRONT = {
-
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		OR = {
-			ROM = {
-				surrender_progress > 0
-			}
-			surrender_progress > 0
-		}
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "GER"
-		value = 100
-	}
-}
-
 ############################################################################################################
 # WA Military V2 - GER Country Overlay
 ############################################################################################################
@@ -165,12 +141,6 @@ WA_AI_MILITARY_GER_gank_everyone_FRONT = {
 	#	#execute_order = yes
 	#	manual_attack = yes
 	#}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "BEL"
-		value = 100
-	}
 	ai_strategy = {
 		type = front_unit_request
 		area = east_europe
@@ -494,7 +464,7 @@ WA_AI_MILITARY_GER_naval_invade_norway_FRONT = {
 # purpose: [med-axis-posture] - the Afrika Korps (user decision 2026-08-20): while no enemy stands in Western
 #          Europe and Germany is not fighting the Soviets, the Egypt-side enemy gets a German
 #          armoured expedition instead of the legacy economy veto. Replaces the old payload
-#          (front_unit_request -75 + front_armor_score id "ITL" 10): the ITL entry was INERT -
+#          (front_unit_request -75): the ITL entry was INERT -
 #          `id` is the ENEMY tag of the front (vanilla usage: GER id=POL 250 for Poland,
 #          id=SOV 500 for Barbarossa) and Germany is never at war with its ally ITL. The armor
 #          ids below are the mod's own East-Egypt anchor tags (payload, not gating - rule 4);
@@ -565,23 +535,8 @@ WA_AI_MILITARY_GER_focus_on_north_africa_FRONT = {
 		area = north_africa
 		value = 40
 	}
-	# NOT halved, deliberately: armour is the NATURE of the expedition, not its size. Cutting this
-	# would send the same reduced force with worse divisions in it.
-	ai_strategy = {
-		type = front_armor_score
-		id = "ENG"
-		value = 150
-	}
-	ai_strategy = {
-		type = front_armor_score
-		id = "UKE"
-		value = 150
-	}
-	ai_strategy = {
-		type = front_armor_score
-		id = "UKM"
-		value = 150
-	}
+	# [aifc] the +150 armor ids (ENG/UKE/UKM) were deleted: they fought the dynamic
+	# +400/-150 from WA_AI_AIFC_armor_reconcile. Armor-follows-schwerpunkt owns this now.
 }
 
 
@@ -917,18 +872,8 @@ WA_AI_MILITARY_GER_frontline_requests = { ###stops the AI from garrisoning rando
 		area = south_italy
 		value = 200 # economy: was 450
 	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "ITA"
-		value = -100
-	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "ENG"
-		value = -50
-	}
+	# [aifc] the -100 (ITA) / -50 (ENG) armor ids were deleted: they fought the dynamic
+	# +400/-150 from WA_AI_AIFC_armor_reconcile. Armor-follows-schwerpunkt owns this now.
 }
 
 
@@ -1672,64 +1617,6 @@ WA_AI_MILITARY_GER_battle_of_britain_yes_FRONT = {
 ############################################################################################################
 # WA Military V2 - GER Country Overlay
 ############################################################################################################
-# Phase 2 split: THEATRE domain blocks.
-
-# Phase 2 split: THEATRE domain blocks.
-# Phase 6 split from WA_AI_MILITARY_GER_war_with_norway (FRONT domain)
-WA_AI_MILITARY_GER_war_with_norway_FRONT = {
-
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		country_exists = NOR
-		has_completed_focus = GER_western_war_plans
-		NOT = {
-			is_in_faction_with = NOR
-		}
-		NOT = {
-			NOR = { is_subject_of = GER }
-		}
-		NOR = { has_capitulated = no }
-		OR = {
-			110 = { CONTROLLER = { has_war_with = ROOT } }
-			1017 = { CONTROLLER = { has_war_with = ROOT } }
-			1020 = { CONTROLLER = { has_war_with = ROOT } }
-			#99 = { CONTROLLER = { is_in_faction_with = ROOT } }
-			#99 = { CONTROLLER = { is_subject_of = ROOT } }
-			#99 = { CONTROLLER = { tag = ROOT } }
-			#37 = { CONTROLLER = { is_in_faction_with = ROOT } }
-			#37 = { CONTROLLER = { is_subject_of = ROOT } }
-			#37 = { CONTROLLER = { tag = ROOT } }
-		}
-		NOT = { surrender_progress > 0.1 }
-		OR = {
-			AND = {
-				date < 1940.5.10
-				NOT = { has_war_with = HOL }
-				NOT = { has_war_with = BEL }
-			}
-			AND = {
-				date < 1941.5.1
-				110 = { CONTROLLER = { has_war_with = ROOT } }
-			}
-		}
-	}
-	abort_when_not_enabled = yes
-
-	#	ai_strategy = {
-	#		type = front_unit_request
-	#		area = scandinavia
-	#		value = 10
-	#	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "NOR"
-		value = -100
-	}
-}
-
 
 # Phase 6 split from WA_AI_MILITARY_GER_germany_protect_the_fatherland (FRONT domain)
 WA_AI_MILITARY_GER_germany_protect_the_fatherland_FRONT = {
@@ -1899,99 +1786,5 @@ WA_AI_MILITARY_GER_no_army_on_swiss_border = {
 		type = front_unit_request
 		tag = SWI
 		value = -100 # economy: was -1000
-	}
-}
-
-############################################################################################################
-# Phase 7c relocations from legacy GER.txt (behaviour parity - gates copied verbatim).
-############################################################################################################
-
-# purpose: armour leads the Poland opening (relocated from legacy GER.txt war_with_poland; its
-#          force_concentration_target_weight sibling was deleted per economy E5 - AIFC owns concentration)
-# range:   +100
-# policy:  Additive
-# domain:  FRONT
-WA_AI_MILITARY_GER_poland_war_armor_FRONT = {
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		has_completed_focus = GER_danzig_or_war
-		country_exists = POL
-	}
-	abort = {
-		OR = {
-			NOT = { country_exists = NOR }
-			NOR = { has_capitulated = yes }
-			date > 1940.5.10
-			has_war_with = HOL
-			has_war_with = BEL
-			has_war_with = LUX
-		}
-	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "POL"
-		value = 100
-	}
-}
-
-# purpose: armour leads the rush on Holland once Poland falls (relocated from legacy GER.txt
-#          GER_make_sure_holland_is_ganked_asap)
-# range:   +100
-# policy:  Additive
-# domain:  FRONT
-WA_AI_MILITARY_GER_holland_rush_armor_FRONT = {
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		has_war_with = POL
-		POL = { has_capitulated = yes }
-	}
-	abort = {
-		OR = {
-			POL = { has_capitulated = no }
-			HOL = { has_capitulated = yes }
-		}
-	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "HOL"
-		value = 100
-	}
-}
-
-# purpose: armour leads against Belgium while France is the priority (relocated from legacy GER.txt
-#          ignore_scandanavia_until_france_is_dealt_with)
-# range:   +100
-# policy:  Additive
-# domain:  FRONT
-WA_AI_MILITARY_GER_belgium_armor_FRONT = {
-	allowed = {
-		tag = GER
-	}
-	enable = {
-		has_war_with = NOR
-		has_war_with = FRA
-		NOR = { has_capitulated = yes }
-		OR = {
-			NOT = { has_war_with = SWE }
-			SWE = { has_capitulated = yes }
-		}
-	}
-	abort = {
-		OR = {
-			FRA = { has_capitulated = yes }
-			NOR = { has_capitulated = no }
-		}
-	}
-
-	ai_strategy = {
-		type = front_armor_score
-		id = "BEL"
-		value = 100
 	}
 }

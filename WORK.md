@@ -444,7 +444,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
-### recruit-loop — SHIPPED-UNTESTED (2026-08-28)
+### recruit-loop — TESTED (2026-08-28)
 - Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
   boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
   (5th subject in OPEN is an explicit owner override of the WIP limit; the checker's WIP-LIMIT
@@ -503,15 +503,40 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   generals >= 3 by 1938; (iv) no country carries WA_AI_recruit_general_broken unless its
   official count genuinely cannot grow (flag census, expect ~0 with XSM/YUN the watched
   exceptions).
-- Closed when: the owner pastes the harness output here and campaign probes (i)-(iii) pass once.
+- TESTED 2026-08-28 (owner console run): harness output pasted below. `wa_test_rl2.1 ARG`
+  scope line 1 1 1 1 0 (valid). `wa_test_rl2.2 ARG` delta +1 general, -10 CP (cost clamp min
+  10 for 1 general: 2x1=2 clamped). 6 days later: generals 1->3, admirals 1->2, CP 0.4->17.5,
+  watchdog armed (pending=1, expected=3) with fail_n=0, navy_pending=1, navy_expected=2,
+  seq=3. Gates closed on next count (under3=0, ships/admirals ratio 19/2=9.5 < 10). System
+  functional: registration works, watchdog armed correctly, no latch, cost mirrors engine.
+- Campaign probe (next scored run): (i) orphan corps-commander count stops growing
+  campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG CP accumulates (> 50 at some 1939+
+  save vs pinned < 13); (iii) ARG official non-marshal generals >= 3 by 1938; (iv) no country
+  carries WA_AI_recruit_general_broken unless its official count genuinely cannot grow;
+  (v) ARG navy leader count grows if ships > 10.
+- Closed when: campaign probes (i)-(iii) pass once on a scored run.
 - Amendment 2026-08-28 (same session): added `WA_AI_recruit_navy` (ships/admirals ratio > 10
   or count < 1 with > 4 ships, same CP cost 2x clamped 10-50, same watchdog + refund + latch
   exit). Wired into `WA_AI_background.0` at the same cadence as general/marshal. No navy
   promotion path exists (no captain pool); admirals are generated at skill 1. The `navy_leader`
   role in `generate_character` is ASSUMED valid (documented as "whatever you would put when
-  writing character"; `navy_leader = {}` is the standard character role block). Harness
-  `event wa_test_rl.1 ARG` now prints navy counts too; probe (v): ARG navy leader count grows
-  if ships > 10.
+  writing character"; `navy_leader = {}` is the standard character role block).
+- Amendment 2026-08-28 (same session, owner console run): the original harness call site
+  `events/wa_test_recruit_loop.txt` is POISONED - country-valued triggers (`tag = ROOT`,
+  `tag = THIS`) read false from it while `always` and `ROOT`-scoped reads work. Scope line
+  `1 0 0 1 0` from `wa_test_rl.1`, correct `1 1 1 1 0` from `wa_iso.3` (same effect, clean
+  call site). This is the same anomaly as convoy-arsenal 2026-08-20; cause UNKNOWN.
+  Harness rehomed to `events/wa_test_recruit_loop2.txt` (namespace `wa_test_rl2`). Also fixed
+  the navy ratio gate: dropped the `WA_AI_navy_leader_count > 0` requirement from the ratio
+  branch so a 0-admiral country with > 10 ships can recruit its first admiral.
+- Verification (updated): console harness `event wa_test_rl2.1 ARG` (counts + watchdog state;
+  scope line must be 1 1 1 1 0), `event wa_test_rl2.2 ARG` (one real recruit; delta +1 =
+  registration fixed), control `event wa_test_rl2.1 TUR` (>= 3 generals, gate closed, no
+  recruit). Campaign probe: next scored run - (i) orphan corps-commander count stops growing
+  campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG CP accumulates (> 50 at some 1939+
+  save vs pinned < 13); (iii) ARG official non-marshal generals >= 3 by 1938; (iv) no country
+  carries WA_AI_recruit_general_broken unless its official count genuinely cannot grow;
+  (v) ARG navy leader count grows if ships > 10.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
