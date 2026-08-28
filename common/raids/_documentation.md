@@ -9,7 +9,7 @@ WA-SYNC: a line number is a silent-drift mechanism, a section name is not.
 WA-SYNC: The previous copy predated the entire custom success-chance-modifier system (scoped MTTH formulas,
 WA-SYNC: `weight` / `reference` / `can_actor_affect` / `can_target_affect`, and their loc keys), plus
 WA-SYNC: `unit_animations`, `ai_min_success_chance` and `max_distance`. It also carried a WA unit rename in an
-WA-SYNC: example (`mountaineers` -> `mountaineer_horse_batallion_line`, commit f647c2770) that this sync discards.
+WA-SYNC: example (`mountaineers` -> `mountaineer_horse_battalion_line`, commit f647c2770) that this sync discards.
 -->
 
 # Raid Categories

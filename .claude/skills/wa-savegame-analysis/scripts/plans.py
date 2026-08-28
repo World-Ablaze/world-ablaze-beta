@@ -325,13 +325,13 @@ def template_family(rec, fams):
     return "?"
 
 
-_BN_SUFFIX = re.compile(r"_(?:battalion|batallion)(?:_line)?$|_line$")
+_BN_SUFFIX = re.compile(r"_(?:battalion|battalion)(?:_line)?$|_line$")
 
 
 def bn_mix(counter, top=4):
     """10x infantry_heavy_horse, 3x artillery_horse (+2 more).
 
-    Only the `_battalion_line` suffix is stripped (and the `_batallion_line` typo
+    Only the `_battalion_line` suffix is stripped (and the `_battalion_line` typo
     variant, which real WA templates use); the rest of the key is printed verbatim
     because it is the one measured statement about what the division is made of.
     """
