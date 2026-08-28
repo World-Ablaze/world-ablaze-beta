@@ -426,12 +426,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   raise, activate and later professionalise that militia.
 - Symptom (MEASURED, mod files, no save needed): Switzerland starts with
   `country_lock_all_division_template = yes` (`history/countries/SWI - Switzerland.txt:175`), so
-  no template can be created; and all four recruitable OOB templates contain mountaineers, while
-  the country fields 31 special-forces battalions (5 mountain divisions x 3 + 8
-  `Infanterie-Division` x 2) against a cap of `max(10, 0.02 x 48 regular battalions) = 10`
-  (`common/defines/05_defines.lua:116-117`) — the engine then refuses the deploy
-  (`DEPLOYMENT_NOT_ALLOWED_REASON_SPECIAL_FORCES`, install `localisation/english/deployment_l_english.yml:43`).
-  The only non-SF fallback is the Swiss Citizen Militia, and its whole mechanic was dead.
+  no template can be CREATED. Separately, the Swiss Citizen Militia — the one template the Swiss
+  mechanic is built around — had its whole activation/conversion/penalty chain broken (cause
+  below). The special-forces cap is NOT part of this symptom: MEASURED `31/55` on HEAD, 24 free
+  battalions (see the fix-2 retraction).
 - Cause (MEASURED, script lines): the unit-rename pass split vanilla `militia` into
   `militia_light_horse_battalion_line` / `militia_heavy_horse_battalion_line`. The template
   BUILDER was rewritten to heavy, the three template READERS were left on light —
@@ -452,37 +450,22 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   is available and not greyed; (c) after `add_ideas`/focus path to `SWI_professionalize_militias`,
   existing militia divisions convert to "Swiss Infantry Division". All three fail on HEAD before
   this change.
-- Fix 2 (SHIPPED, uncommitted, owner-approved 2026-08-28 — special-forces cap): MEASURED,
-  Switzerland fields 31 special-forces battalions at a 1936 BBA start (5 mountain divisions x3 +
-  8 `Infanterie-Division` x2; 24 in the non-BBA `SWI_1936` OOB) against a floor of
-  `SPECIAL_FORCES_CAP_MIN = 10` (`common/defines/05_defines.lua:117`) — the percentage path is
-  irrelevant at this size (`0.02 x 56 regular battalions = 1.1`). New SWI-only idea
-  `SWI_alpine_army` (`common/ideas/switzerland.txt`, `special_forces_min = 24`) added
-  unconditionally in `history/countries/SWI - Switzerland.txt` so it covers both DLC branches:
-  floor 10 -> 34, leaving 3 free SF battalions = one more mountain division. Vanilla SWI is
-  39/24, i.e. 15 OVER with no headroom ever, so this is strictly less generous than a straight
-  vanilla-parity restore would have to be.
-  Rejected carrier — `armed_neutrality`: it is SHARED (`add_ideas = armed_neutrality` in
-  `common/national_focus/greece.txt:577` and `finland.txt:2336`, so FIN/GRE would silently gain
-  the cap) and Switzerland LOSES it on its first offensive war (`events/Switzerland.txt:19`,
-  `swiss.1`) — exactly when the army is needed. `SWI_swiss_neutrality` cancels on war and
-  `SWI_citizen_militia_1` is swapped out by professionalisation; no existing Swiss idea survives.
-- Verification for fix 2 (owner, 1936 Switzerland): hover the special-forces counter on the
-  Division Templates screen and read the `SPECIAL_FORCES_DETAILS` tooltip ("the limit is X% of
-  your fielded regular battalions (N) with a minimum of M") — M must rise by 24 with the idea on.
-  Then a Gebirgsinfanterie must queue without `Cannot Deploy a unit that would put us over the
-  special forces limit`.
-  OPEN QUESTION (2026-08-28, owner screenshot): a Swiss game reads `31/55`. 31 used matches the
-  1936 BBA OOB exactly, but 55 is NOT derivable from `max(SPECIAL_FORCES_CAP_MIN 10, 0.02 x 56
-  regular battalions)` with or without the +24 — the engine's cap formula is therefore NOT fully
-  understood here, and the +24 value is provisional until the tooltip readout is pasted. Which
-  build produced the screenshot was not established.
+- Fix 2 — RETRACTED 2026-08-28, my premise was FALSE. I claimed Switzerland was pinned at
+  `31/10` special forces and shipped a `special_forces_min = 24` idea for it. MEASURED (owner
+  screenshot, HEAD, Division Templates screen): the readout is **`31/55`** — 24 free battalions,
+  the cap was never binding. `SWI_alpine_army` (idea + history line + localisation) reverted;
+  only fix 1 remains. Where 55 comes from is still UNKNOWN: it is not
+  `max(SPECIAL_FORCES_CAP_MIN 10, 0.02 x 56 regular battalions)` from
+  `common/defines/05_defines.lua:116-117`, nor the vanilla `max(24, 0.05 x 56)`, and no other
+  `special_forces_min` / `special_forces_cap` source in `common/` applies to SWI at start. The
+  lesson is the one this file keeps re-learning: a define read off the file is not the number the
+  engine used — read the in-game tooltip before building on it.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
   `SWI_expanded_special_forces` (the reward of focus `SWI_expand_special_forces`) is INERT under
   WA's numbers — `special_forces_cap = 0.3` scales the 2% path (`0.026 x 56 = 1.5`), which never
   beats the floor for a country this small. Every percentage-only `special_forces_cap` grant in
   the mod has the same problem. Owner call whether it becomes a subject.
-- Closed when: the owner pastes (a), (b), (c) and the fix-2 readout here.
+- Closed when: the owner pastes (a), (b) and (c) here.
 
 ### can-transit-attrition — PARKED (2026-08-28)
 - PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below
@@ -1424,9 +1407,11 @@ OPEN with a session of its own.
 
 ### division-target-scaling — PARKED (2026-08-28)
 - Parked 2026-08-28 (WIP limit, `armor-role-budget` enters - its Change 2 moved there
-  wholesale). State at parking: Change 1 shipped, unverified; the subject now rests on ONE
-  owner console read (`imgui show ai_division_production` on GER after a full restart) plus
-  the USA/CAN non-binding controls. Reopen when that window is available.
+  wholesale). State at parking: Change 1 shipped, unverified.
+- **Change 3 shipped 2026-08-28 WHILE PARKED, and the subject stayed parked only because the OPEN
+  section is at the WIP limit.** It is a tester report against Change 1, so it belongs here rather
+  than in a new subject. Move this back to SHIPPED-UNTESTED when a slot frees up; until then the
+  three-day `UNTESTED-STALE` pressure is NOT on it, which is the one thing parking costs here.
 - Scope: owner request 2026-08-28 — reduce every AI country's theoretical division target by
   75% because WA's factory counts and combat-area geometry make vanilla's target unattainable.
 - Symptom, MEASURED (owner `imgui show ai_division_production`, GER): 149 active divisions,
@@ -1469,8 +1454,43 @@ OPEN with a session of its own.
   build at their pre-change full rate; the same ENG state shows wanted medium armor near 95 while
   wanted mechanized stays near 95; USA infantry stays positive near 30% on its deepest stack; GER
   and SOV retain non-zero wanted armor.
+- Symptom 3, MEASURED (tester report 2026-08-28, playthrough): in the early game up to mid-1940,
+  GER and ITA need about 50% more divisions than the quartered target gives them. This is the first
+  feedback on Change 1 and it does not contradict it - the GER reading that motivated the quartering
+  was 1943-shaped (149 active against a target of 521), and the same weights leave the two countries
+  that must be ARMED BEFORE the war they start too small in 1936-40.
+- Change 3 (owner order 2026-08-28, from the tester report): +50% theoretical division target for
+  the two European Axis majors until 1940.7.1.
+  - New archetype `WA_AI_CONFIG_MILITARY_is_axis_european_major` (GER, ITA) in `WA_AI_CONFIG.txt` -
+    the tags live there and nowhere else. Deliberately NOT `WA_AI_MILITARY_is_axis_member` +
+    `is_major`: Italy is not an Axis faction member for most of this window, so a faction-derived
+    gate would silently miss half the request. Kept separate from
+    `WA_AI_CONFIG_MILITARY_is_axis_continental_core`, which also carries ROM/HUN/SLO - minors that
+    must not receive a major's army target.
+  - Gate `WA_AI_PRODUCTION_early_war_army_target_boost` (archetype + `date < 1940.7.1`) in
+    `common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt`; payload
+    `WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost`,
+    `ai_strategy = { type = ai_wanted_divisions_factor value = 50 }`.
+  - The window closes at mid-1940 because after the fall of France the war itself drives the target
+    (the threat and war factors multiply it) and a flat boost would compound with them.
+  - Stacks with `WA_AI_PRODUCTION_DEFAULT_army_expansion_override` for GER before 1938 - different
+    strategy types, intended: that block forces BUILDING, this one raises what the AI thinks it needs.
+  - **ASSUMED, and this is the weak point of the change**: `ai_wanted_divisions_factor` is base
+    100 + value like every other `*_factor` strategy, so 50 reads as x1.5. DERIVED from vanilla
+    `USA_90_division_gamble` (-30 for a deliberately small army) and
+    `CHI_stop_disbanding_your_army_during_war` (1000). The install documents this type by NAME only
+    (`common/ai_strategy/documentation.info`, strategy list); vanilla `SOV_cant_stop_wont_stop` uses
+    `0.15` with a "FEED THE MEATGRINDER" comment, which under this reading does nothing and is most
+    likely a vanilla authoring slip. The DIRECTION is safe, the MAGNITUDE is not.
+- Verification of Change 3 (owner console; no harness - 15 lines, no scripted effect touched): on a
+  1938-39 save, `imgui show ai_division_production` on GER and on ITA shows `Nr Wanted Divisions`
+  about 1.5x what the testers reported, with the same `breakdown [nr wanted]` inputs; a 1941 save
+  shows the boost gone; a control major outside the archetype (SOV or ENG) is unchanged on both
+  dates. If GER moves by something other than ~50%, the ASSUMED magnitude is what is wrong - retune
+  the one literal, do not add a second lever.
 - Closed when: the GER target, ENG armor ratio, USA infantry residual, GER/SOV armor controls and
-  both USA/CAN non-binding controls pass once in the live window.
+  both USA/CAN non-binding controls pass once in the live window, and the Change 3 verification
+  passes on GER, ITA and one control.
 
 
 ### theorist-hiring — PARKED (2026-08-28)
