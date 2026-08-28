@@ -172,6 +172,56 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### mot-field-hospital — OPEN (2026-08-29)
+- Scope: owner request 2026-08-29 — "je veux que l'Allemagne utilise les hôpitaux motorisés dans
+  ses divisions". Intended behaviour: a rich army that is otherwise entirely horse-drawn still
+  fields the MOTORISED field hospital, which is the one support company whose horse variant caps
+  the whole division's speed.
+- Symptom (MEASURED, `1943.1_Jan.hoi4`): GER runs `WA_INFANTRY_TEMPLATE = 1004` and
+  `WA_MOUNTAINEERS_TEMPLATE = 2002` — both 100%-horse targets — with 439 owned arms factories.
+  Cause (MEASURED, script): the horse/mot choice has exactly one gate,
+  `WA_AI_CONFIG_DIVISIONS_can_motorize_support` (`WA_AI_CONFIG.txt:574`), whose two ways in are a
+  tag list (USA/ENG/FRA/SOV + dominions) and a latch that needs `is_in_faction_with USA/ENG`.
+  Germany can satisfy neither, ever, at any industrial level.
+- Why the hospital and not the whole support line (MEASURED, `common/units/support_field_hospital.txt`):
+  the horse company carries `maximum_speed = 0.6`, which caps the division; the mot company has no
+  speed line, +0.04 casualty_trickleback and −0.06 experience_loss_factor. It pays 25
+  motorized_equipment and the WA motorised-support combat nerfs (`max_strength −0.5`, `defense`
+  and `breakthrough −0.5`, `soft/hard_attack −0.9`) — a deliberate trade the owner asked for.
+- Fix (SHIPPED 2026-08-29): a THIRD motorisation tier between HRS and MOT, named `HMH` in the
+  template legend. Six mirror targets, each identical to its source but for the hospital company:
+  1003→1103, 1004→1104 (infantry), 2000→2100, 2002→2102 (mountaineers), 10000→10100,
+  10002→10102 (marines). The calculator reaches them with `+100`
+  (`WA_AI_TEMPLATES_apply_motorized_hospital_mirror`), called on the six horse leaves only — the
+  same offset idiom as `[modern-chassis-tier]`'s `+500`. Gate:
+  `WA_AI_TEMPLATES_can_motorize_field_hospital` = one-way flag set by
+  `WA_AI_TEMPLATES_update_motorized_hospital_latch` at `num_of_military_factories > 300` AND
+  `has_tech = motorised_infantry`. Owner decision 2026-08-29: 300 military factories, not 400,
+  and not total factories.
+- Why a latch and not a live threshold: the value picks WHICH ai_template is enabled, and every
+  change of the enabled target re-runs the engine's template decommission pass — the rule the
+  three latches above this one already encode. The tech term is not decoration:
+  `motorised_infantry` is what unlocks `motorized_equipment` (`common/technologies/armor.txt:174`),
+  so without it the mirror target is unfillable.
+- Blast radius (MEASURED, grep): nothing outside `common/ai_templates/` reads
+  `WA_INFANTRY_TEMPLATE` / `WA_MOUNTAINEERS_TEMPLATE` / `WA_MARINES_TEMPLATE` values — the six new
+  values reach the six new blocks and nothing else. The reserve template
+  (`WA_reserves_effects.txt:127`) is deliberately NOT mirrored (owner choice: emergency divisions
+  stay cheap), and the scripted division creator keeps its own `can_motorize_support` splice, so
+  its equipment calculator needs no new motorized_equipment term.
+- Who else this reaches (MEASURED, savegames): ITA 111 and JAP 159 owned arms factories at
+  1940.6 — neither crosses 300 in that campaign, so the tier is Germany-only in practice. USA /
+  ENG / FRA / SOV are already fully motorised by tag and never see the mirror branch.
+- Closed when: a campaign save taken after GER crosses 300 military factories shows
+  `WA_INFANTRY_TEMPLATE = 1104` (or 1103) and `WA_MOUNTAINEERS_TEMPLATE = 2102` (or 2100), the
+  flag `WA_AI_TEMPLATES_motorized_hospital_earned` set, and GER infantry divisions carrying
+  `field_hospital_mot_company_divisional`. Expected crossing on the current reference campaign:
+  ~1941.8 (MEASURED: 300 owned arms factories at 1941.7, 303 at 1941.9).
+  Counter-check on the same save: ITA and JAP still on 1003/1004/2000/2002.
+- No console harness: the templates calculator has none, and this change is 33 lines of scripted
+  effect with no signature or scope change, below the harness-writing threshold. Verification is
+  the campaign probe above.
+
 ### modern-chassis-tier — SHIPPED-UNTESTED (2026-08-28)
 - Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
   tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
@@ -1223,7 +1273,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+### aifc-traction — PARKED (2026-08-29)
+- Parked 2026-08-29 (WIP limit, `mot-field-hospital` enters on owner request). State at
+  parking: Option A SHIPPED 2026-08-27, unverified — `WA_TEST_aifc.txt` carries the
+  independently re-typed election and is waiting on one owner console run. Reopen by
+  pasting that output; nothing in this subject is blocked on code.
 - **Option A SHIPPED 2026-08-27 (owner order "partons sur A").** Main-enemy election rebuilt: §1c no
   longer elects (strict-max removed); new §1d elects the enemy whose FLOOR-ELIGIBLE candidates
   (pad > `constant:wa_ai_aifc.selection.min_pad` — the constant's documented second role) carry the
