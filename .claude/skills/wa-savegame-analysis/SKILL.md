@@ -145,7 +145,7 @@ decoded); the `persistent_strategy type=83` ledger from the `ai` section with `i
 through the save's own `countries={}` order — and the **closure test as the payload**: NET per
 tag must equal the book exactly (boost +400, each suppressed −150, others 0). `RESIDUALS` on
 annexed/dead tags are the documented KNOWN GAP (`WA_AI_AIFC_helpers.txt`), printed apart from a
-`CLOSURE MISMATCH`, which is always an alarm. Also prints the `wa_tlm_r67_aifc_arm_*` churn
+`CLOSURE MISMATCH`, which is always an alarm. Plus the **`active push` line**: the engine serialises one `force_concentration_target={ target from progress }` block per *live* AIFC plan in the country's `ai` section, present only when a push is actually running (2026-11, `ENG_1943_11_06`: USA 2, ENG 0 — matched the owner's `imgui show ai_force_concentration` screenshot, `progress` byte-equal to its `Freshness`). It is the save-side proof that the engine turned an armed sector into a real push; per-front AIFC score, should-receive/assigned counts and the strategic-target list stay engine-runtime-only. Also prints the `wa_tlm_r67_aifc_arm_*` churn
 telemetry — raw counters only: `lapse_wk` is never reset at first install, so it carries every
 pre-install week and `lapse_wk / retire_n` is **not** a mean episode length (a save cannot yield
 one; never size a retirement grace window on it) — and, over several saves, a trend table — **age pinned at 1 in every save is the

@@ -165,6 +165,45 @@ session is whatever the owner captured. It replaces neither `savegame.py` (trend
 a `WA_TEST_*` harness (repeatable, logged). Ask for it when the blocking question is *"is this block
 armed right now"* or *"what value does the engine actually hold"*.
 
+### The live AIFC window - is the engine actually launching a concentrated push
+
+Sibling window, same owner-run rules, a different question. `ai-strategy` answers *"is the block
+armed"* (rung 4); this one answers *"did the engine turn the armed AIFC strategies into a live
+push, on which front, with how many units"* — the arbitration itself, which is engine-runtime and
+never in a save.
+
+```
+tag ENG
+imgui show ai_force_concentration
+```
+
+One row per front: `AIFC score=N, Front <n> rawFrontId=<id>, sectionId=<id> <enemy>`. Expand the top
+row for the detail block: `2 enemies`, `Should receive N units`, `N assigned units`, `Army N led by
+<leader>`, `Freshness: <f>`, and `7 strategic Targets` with per-target scores and costs (supply-hub
+/ naval-base targets). A row expanded with a `=>` marker and a filled detail block is a front with a
+LIVE plan; the rest are scored candidates.
+
+| Field | Meaning | In a save? |
+| --- | --- | --- |
+| `=>` active-plan marker + detail block | this front has a running push | **YES** — the `ai` section carries one `force_concentration_target={ target from progress }` block per active push; `aifc.py` prints it as `active push` |
+| `Freshness: <f>` | how long the plan has been running | **YES** — the block's `progress` field, byte-equal (verified 41.94396, 2026-11) |
+| `rawFrontId` / `sectionId` | the front's engine identity | **YES, indirectly** — the push order's type-2 `order_instance` carries `root_front={id=<rawFrontId>}` / `root_section=<sectionId>` |
+| `AIFC score` per front | the arbitration ranking | **NO** — recomputed per tick, never serialised (searched, not found) |
+| `Should receive` / `N assigned units` | the concentration mass target and fill | **NO** — only inferable as the assigned army's division count (`plans.py --armies`), the outcome not the target |
+| `7 strategic Targets` + scores | the engine's objective list inside the push | **NO** — engine-recomputed each `AIFC_UPDATE_FREQUENCY_DAYS` (5) |
+
+The diagnostic split this opens: **sector armed + no active push** (WA's arrays are set, `aifc.py`
+shows a corridor, but this window shows no `=>` row and the save shows no
+`force_concentration_target`) means the engine is declining to mass — look at
+`force_concentration_factor` (is a posture brake at -100?), at whether the front has any
+*non-essential* surplus to pull, and at `AIFC_MAX_NR_FRONTS` (4) competition. **Sector armed + active
+push** but the corridor unmanned means the push exists but is losing or starved — `plans.py
+--where` and `control`. Verified 2026-11: USA held an active push on Gabès (Army 9, 3 units) while
+ENG, with a live WA sector on Suez, had **zero** active push — the gap this window exists to see.
+
+Same limits as technique 5: owner-run, one country, one instant, a screenshot. The save-side half
+(`active push` in `aifc.py`) is what carries it into a cross-save trend.
+
 ## The engine boundary - where diagnosis legitimately stops
 
 HOI4's internal AI weighting, its front assignment and its unit-request arbitration are not
@@ -206,6 +245,7 @@ that two subagents disagreed about rung 3.
 | --- | --- |
 | To measure rungs 2–3 out of a savegame | skill `wa-savegame-analysis` |
 | To learn which `ai_strategy` blocks are armed / what values the engine holds | ask the owner for `imgui show ai-strategy` (technique 5) |
+| To learn whether the engine is actually launching an AIFC push, on which front, with what mass | ask the owner for `imgui show ai_force_concentration`; the save-side half is `aifc.py`'s `active push` line |
 | To know which WA system owns rung 4–5 | skill `wa-ai-systems`, then `AGENTS.md` |
 | To settle rung 6 against the engine | skill `wa-engine-reference` |
 | To check the cause is not one already known | subagent `wa-lessons-reviewer` |
