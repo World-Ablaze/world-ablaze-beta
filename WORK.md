@@ -234,6 +234,130 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
   simulation).
 
+### mech-window — SHIPPED-UNTESTED (2026-08-29)
+- Scope: owner request 2026-08-29 after a tester report. Intended behaviour: a country that reaches
+  mechanization through the INDUSTRIAL branch does not flip its armour templates from motorised to
+  mechanized until its army has stopped expanding. Germany specifically: not before 1.6M men
+  deployed AND not before 1940.1.1 - i.e. after the Polish campaign, not before it. Owner chose
+  option B (policy in one CONFIG trigger) containing option A (the date).
+- Symptom (REPORTED, tester playthrough): GER converted its light-tank divisions from trucks to
+  mechanized before the war with Poland; massive mechanized_equipment deficit; the AI moved its
+  production lines onto it.
+- Symptom CONFIRMED (MEASURED, monthly saves of the local campaign): GER carries
+  `WA_LIGHT_ARMOR_TEMPLATE = 5100` (MOT) at the 1938.9 pulse and `5102` (MEC) at the 1938.10 pulse
+  — eleven months before the Polish campaign. `WA_MECHANIZED_TEMPLATE = 4000` appears the same
+  month. Still 5102 at 1938.11, 1938.12, 1939.3, 1939.6.
+- Cause (MEASURED, script): `WA_AI_TEMPLATES_use_mechanized_templates` opened on
+  `num_of_military_factories > 100` with NO date or state term. GER starts 1936 with 104
+  `arms_factory` (summed over `owner = GER` states), so that branch is true on day one and the only
+  remaining verrou is `ger_mechanized_infantry_1`, whose generated `ai_will_do` opens 1938.1.1
+  (`common/technologies/armor_ger.txt:111`). GER reaches the tech early because
+  `WA_AI_RESEARCH_needs_mechanized` admits it on `focus_on_medium_armor`, not on the factory branch
+  — and the research trigger's OWN factory branch is dated `date > 1941.1.1`
+  (`WA_AI_RESEARCH_tanks.txt:73`) while the template trigger's was not. That asymmetry is the bug.
+- Which path carries the bill — CORRECTION to the first reading of this subject. I first attributed
+  the deficit to the conversion of the FIELDED force. MEASURED (`savegame.py tlm GER 1939.4`:
+  `wa_tlm_comp_armor = 4`, `wa_tlm_comp_mech = 0`, `wa_tlm_comp_div_total = 90`): GER had FOUR
+  armour divisions and no mech divisions, so that path bills ~4 x 6 x 50 = 1200 pieces (DERIVED at
+  50 `mechanized_equipment` per `infantry_heavy_mechanized_battalion_line`,
+  `common/units/land_mot_mech.txt:409`) — real but not "massive". The production side is the larger
+  lever and is UNMEASURED: at the same flip, `WA_AI_PRODUCTION_build_mechanized` turns on an
+  `equipment_variant_production_factor id = mechanized_equipment value = 60` and
+  `mech_min_factories_*` sets a hard floor of 3/8/15 factories. Which of the two the tester saw is
+  ASSUMED; the fix moves BOTH, in opposite directions, deliberately.
+- Fix (SHIPPED 2026-08-29), three parts:
+  1. `WA_AI_CONFIG_DIVISIONS_mechanization_window_open` (CONFIG) = `date > 1941.1.1` OR
+     (`original_tag = GER` AND `has_army_manpower = { size > 1600000 }` AND `date > 1940.1.1`).
+     Owner set the 1940 term 2026-08-29 after the crossing measurement below: 1.6M alone landed
+     ~1939.3, still six months BEFORE the Polish campaign. The two GER terms bind in different
+     games - on the historical path the DATE binds (GER is already at ~124 divisions in 1940.1),
+     in a slow-growth game the MANPOWER bar binds.
+  2. The trigger is SPLIT. `WA_AI_TEMPLATES_mechanization_line_open` is the old body verbatim, no
+     timing term — "does this country mechanize at all". `WA_AI_TEMPLATES_use_mechanized_templates`
+     is now `mechanization_line_open` AND (identity OR the one-way flag
+     `WA_AI_TEMPLATES_mechanization_earned`) — "may its templates carry mech NOW".
+  3. Weight late, floor early. The three `mech_min_factories_*` FLOORS read the ungated line form,
+     so a few factories build a buffer during the window; the three `build_mechanized*` production
+     WEIGHTS keep the windowed form, because switching a weight on early IS the reported symptom.
+- Latch: `WA_AI_TEMPLATES_update_mechanization_latch`, monthly pulse and on_startup, placed FIRST of
+  the four template latches — `update_modern_chassis_latch` reads `use_mechanized_templates`, which
+  reads this flag, so setting it after would arm the chassis latch a month late.
+- Why a latch: the GER branch is NOT monotone (deployed manpower falls in war) and every change of
+  the enabled ai_template re-runs the engine's decommission pass (`lessons-log.md:256`).
+- t0/t1/t2 at the real cadences (division counts MEASURED; manpower DERIVED at 18 200 men per
+  template-1004 division; stock DERIVED):
+
+  | t | date | trigger state | mech stock | who pays |
+  | --- | --- | --- | --- | --- |
+  | t0 | ~1938.10, tech lands | `line_open` 1, window 0, latch 0 | 0, floor 3 opens | ~3 of ~110 mil factories (2.7%) |
+  | t0b | ~1939.3, 90 div ~1.64M | manpower term met, DATE term not - window still 0 | buffer growing | unchanged |
+  | t1 | 1940.1.1, 124 div | window 1, latch 1, same tick `calculate_templates` writes the MEC value | ~15 months x 3+ factories | fielded bill; weight 60 turns on |
+  | t2 | t1 + months | floor rises to 8 above 149 factories | rising | normal line |
+
+  Division counts MEASURED: 60 (1938.6), 74 (1938.12), 86 (1939.2), 90 (1939.4), 104 (1939.8),
+  109 (1939.10), 119 (1939.12), 124 (1940.1), 146 (1940.6). The 1.6M crossing is bracketed at
+  ~1939.3 (86 div ~1.57M, 90 div ~1.64M), so on this campaign the 1940 date is the binding term and
+  the buffer window is ~15 months rather than ~5. The residual deficit at t1 is REDUCED, NOT
+  eliminated, and is not claimed to be bounded.
+- Timing outcome (DERIVED from the counts above): the flip moves from 1938.10 - eleven months
+  before the Polish campaign - to 1940.1, four months after it and five months before the fall of
+  France (1940.6.23 on the reference campaign). That is the behaviour the tester report asked for.
+- Blast radius (MEASURED, grep of both trigger names):
+  - windowed form: the 47 armour-ladder call sites in `WA_AI_TEMPLATES_effects.txt`,
+    `use_mechanized_division_templates`, `update_modern_chassis_latch`, the three
+    `WA_AI_PRODUCTION_build_mechanized*` weights, and the harness.
+  - ungated line form: the three `WA_AI_PRODUCTION_mech_min_factories_*` floors and
+    `WA_AI_TEMPLATES_use_motorized_templates`. That last one is the reader the first pass MISSED
+    (caught by wa-architecture-reviewer): it reads `NOT = { use_mechanized_templates }`, so gating
+    the industrial branch would have OPENED the motorised-substitute branch — and with it a
+    `role_ratio` for motorised divisions — for any 101-150-factory country with no armour
+    templates and no `mobile_warfare_drive_tech`, for the whole window. Pointing it at the line
+    form keeps it byte-identical to before.
+  - NOT affected: `use_mechanized_td_armor` / `_spg_armor` / `_spaa_armor` do not read either.
+  - `update_modern_chassis_latch` is delayed with the window. Inert in practice: modern armour
+    unlocks well after 1941 (DERIVED, not measured on a save).
+- Identity branch NOT gated (USA/ENG/CAN/AST/SAF via `WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions`):
+  owner scope — the request was to gate the industrial path, and this list is the
+  [mech-divisions-usa-only] identity. NOT because they are immune: CAN/AST/SAF have no factory floor
+  in that branch and take the same conversion bill on the smallest industry in the set. Noted at the
+  call site in `WA_AI_CONFIG.txt`, unmeasured, not fixed.
+- Principle 1 residual, recorded not fixed: `date > 1941.1.1` is the only path for every country but
+  GER, so an ahistorical 1938 industrialiser waits on the calendar and a 1941 late industrialiser
+  flips mid-expansion. Deliberate tuning fallback; the GER branch shows the state-based form if it
+  ever needs closing.
+- `has_army_manpower` verified in the 1.19.2 install (`documentation/triggers_documentation.md`,
+  section `has_army_manpower`, COUNTRY scope); syntax `= { size > N }` already used at
+  `common/decisions/GER.txt:2840`. The 1.6M bar is held equal between CONFIG and the harness by
+  `tools/constants_registry.json` group `ger_mechanization_manpower_bar` (proved live: mutating the
+  harness copy to 1500000 raises DRIFT). NOT unified with the neighbouring `size > 1599999` in
+  `common/decisions/GER.txt` — same idea, different decision, owner call.
+- Checkers: `check_constants.py` 0 ERROR (75 groups), `check_worklist.py` 0 ERROR,
+  `check_skill_refs.py` 0 dead references, `check_templates.py` 0 ERROR / 0 WARN (deterministic
+  over three consecutive runs on the final tree).
+- Working-tree caveat, MEASURED, NOT this subject's work: `WA_AI_TEMPLATES_effects.txt` in the
+  working tree carries an uncommitted flattening of the calculators (`_template_claimed`, 161
+  occurrences) that is absent from HEAD and from every `git stash` entry — the
+  `armor-ladder-integrity` refactor, alongside the untracked `tools/check_templates.py`. I ran
+  `git stash` / `git stash pop` over it to measure a baseline; the apply was clean (no conflict
+  markers, braces balanced, checkers deterministic) but it flipped the file LF, which I normalised
+  back to CRLF. `check_templates.py` read 17 / 28 / 0 WARN at three points of that session and I
+  cannot reconcile those numbers — do not treat any of them as a verdict. Do NOT `git stash` in
+  this tree again while that work is uncommitted.
+- Verification (console harness, OWNER-RUN, section B3 of `WA_TEST_armor_budget.txt`): fire
+  `event wa_abg.1 GER` from another tag, read `mline` / `mwin` / `mfloor` in `logs/game.log`.
+  During 1939 the discriminating read is `over-1.6M-men=1  after-1940.1=0  window-open=0  latch=0`
+  with `line-open=1`, `mech-factory-floor=3`, `mechanized=0` on the `tier` line and `mech-in-armies`
+  rising — that single line proves the manpower term passed and the DATE term is what is holding
+  the flip. From 1940.1: `after-1940.1=1 window-open=1 latch=1 mechanized=1 mech-production-line=1`
+  with `mech-in-armies` NON-ZERO at the flip — zero stock there means the floor never ran and the
+  decoupling is inert. Counter-check on the same run: `event wa_abg.1 USA` shows
+  `identity-branch=1` and `mechanized=1` regardless of the window.
+- Closed when: a campaign save taken during the Polish campaign (1939.9-1939.10) shows GER
+  carrying a MOT light-armour value (5100 family, not 5101/5102/5103/5105), no
+  `WA_AI_TEMPLATES_mechanization_earned` flag, and a NON-ZERO `mechanized_equipment` stock; and a
+  save from 1940.2 or later shows the flip done with no production-line collapse onto mechanized at
+  the crossing. Counter-check: the pre-fix reference campaign has GER on 5102 from 1938.10.
+
 ### mot-field-hospital — OPEN (2026-08-29)
 - Scope: owner request 2026-08-29 — "je veux que l'Allemagne utilise les hôpitaux motorisés dans
   ses divisions". Intended behaviour: a rich army that is otherwise entirely horse-drawn still
@@ -627,7 +751,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
 - Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
-### swi-militia — SHIPPED-UNTESTED (2026-08-28)
+### swi-militia — PARKED (2026-08-29)
+- PARKED state: code SHIPPED 2026-08-28, owner console run STILL OWED (the Verification lines
+  below are unchanged and still the exit). Parked, not closed, only to keep the OPEN WIP limit at
+  4 when `mech-window` opened; nothing about the fix or its evidence changed. Un-park it by
+  restoring the `SHIPPED-UNTESTED (2026-08-28)` heading.
 - Scope: owner request 2026-08-28 — "the Swiss tree can't create or recruit any division".
   Intended behaviour: a Switzerland that starts under the Citizen Militia system can actually
   raise, activate and later professionalise that militia.

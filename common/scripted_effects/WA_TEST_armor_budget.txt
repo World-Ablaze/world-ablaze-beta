@@ -177,6 +177,57 @@ WA_TEST_ABG_report = {
 	log = "  band  : medium-chassis-value=[?_abt_bandmed|.0]  modern-chassis-value=[?_abt_bandmod|.0]  (exactly one must be 1 once the medium role is open; both 0 = the country carries a value no template answers)"
 
 	############################################################
+	# B3. [mech-window] WHEN the armour ladders may swap their motorised line battalions for
+	#     mechanized ones. The window is the policy, the latch is what the ladders actually read,
+	#     and `mechanized` on the tier line above is the result. Window 1 with latch 0 means the
+	#     monthly pulse has not run since it opened; latch 1 with window 0 is CORRECT and expected
+	#     (the latch is one-way - GER bled below 1.6M men and keeps its mechanized templates).
+	############################################################
+
+	set_temp_variable = { _abt_mwin = 0 }
+	if = { limit = { WA_AI_CONFIG_DIVISIONS_mechanization_window_open = yes } set_temp_variable = { _abt_mwin = 1 } }
+	set_temp_variable = { _abt_mlatch = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_mechanization_earned } set_temp_variable = { _abt_mlatch = 1 } }
+	set_temp_variable = { _abt_mid = 0 }
+	if = { limit = { WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes } set_temp_variable = { _abt_mid = 1 } }
+	set_temp_variable = { _abt_mtech = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_mechanized_unlocked = yes } set_temp_variable = { _abt_mtech = 1 } }
+	set_temp_variable = { _abt_mmen = 0 }
+	if = { limit = { has_army_manpower = { size > 1600000 } } set_temp_variable = { _abt_mmen = 1 } }
+	set_temp_variable = { _abt_mdate = 0 }
+	if = { limit = { date > 1940.1.1 } set_temp_variable = { _abt_mdate = 1 } }
+	set_temp_variable = { _abt_mline = 0 }
+	if = { limit = { WA_AI_PRODUCTION_build_mechanized = yes } set_temp_variable = { _abt_mline = 1 } }
+	set_temp_variable = { _abt_mfloor = 0 }
+	if = { limit = { WA_AI_PRODUCTION_mech_min_factories_small = yes } set_temp_variable = { _abt_mfloor = 3 } }
+	if = { limit = { WA_AI_PRODUCTION_mech_min_factories_medium = yes } set_temp_variable = { _abt_mfloor = 8 } }
+	if = { limit = { WA_AI_PRODUCTION_mech_min_factories_large = yes } set_temp_variable = { _abt_mfloor = 15 } }
+	set_temp_variable = { _abt_mstock = num_equipment_in_armies@mechanized_equipment }
+	# The three terms of the LINE trigger that are not the window. Printed because without them a
+	# country failing any one of them reads as "the gate is not being read" on the line below.
+	set_temp_variable = { _abt_mfac = 0 }
+	if = { limit = { num_of_military_factories > 100 } set_temp_variable = { _abt_mfac = 1 } }
+	set_temp_variable = { _abt_mxp = 0 }
+	if = {
+		limit = {
+			OR = {
+				date > 1942.1.1
+				NOT = { WA_AI_CONFIG_has_penalised_army_xp_gain = yes }
+			}
+		}
+		set_temp_variable = { _abt_mxp = 1 }
+	}
+	set_temp_variable = { _abt_mlineopen = 0 }
+	if = { limit = { WA_AI_TEMPLATES_mechanization_line_open = yes } set_temp_variable = { _abt_mlineopen = 1 } }
+
+	log = "  mline : mech-tech=[?_abt_mtech|.0]  identity-branch=[?_abt_mid|.0]  mil-factories>100=[?_abt_mfac|.0]  xp-term=[?_abt_mxp|.0]  no-early-expansion-override=[?_abt_expand|.0](inverted: 0 means the override is OFF)  ->  line-open=[?_abt_mlineopen|.0]  mech-production-line=[?_abt_mline|.0]  mech-in-armies=[?_abt_mstock|.0]"
+	log = "  mwin  : over-1.6M-men=[?_abt_mmen|.0]  after-1940.1=[?_abt_mdate|.0]  (GER branch needs BOTH)  window-open=[?_abt_mwin|.0]  ->  latch=[?_abt_mlatch|.0]"
+	log = "            (non-GER countries reach window-open only on date > 1941.1.1, so over-1.6M-men and after-1940.1 are informational for them, not terms.)"
+	log = "            (mechanized on the tier line = line-open AND (identity-branch OR latch) - nothing else. line-open=1 with mechanized=0 is the window doing its job, not a fault. line-open=0 explains itself from the mline terms, not from the window.)"
+	log = "  mfloor: mech-factory-floor=[?_abt_mfloor|.0]  (opens with line-open, BEFORE the window; the production WEIGHT mech-production-line opens with the window. Weight late, floor early.)"
+	log = "            (mech-in-armies should be NON-ZERO before mechanized flips to 1: the floor builds the buffer during the window, the templates spend it at the flip. Zero stock at the flip = the floor never ran.)"
+
+	############################################################
 	# C. Independent re-derivation of the split (contract rule 4)
 	#    Reads the TEMPLATE triggers above, not the shipped slot triggers.
 	############################################################

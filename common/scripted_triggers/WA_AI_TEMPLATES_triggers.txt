@@ -97,7 +97,9 @@ WA_AI_TEMPLATES_use_motorized_templates = {
 		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
 		AND = {
 			num_of_military_factories > 50
-			NOT = { WA_AI_TEMPLATES_use_mechanized_templates = yes }
+			# [mech-window] the LINE form on purpose: a country that mechanizes but is still
+			# inside the window has not become a motorised country for those years.
+			NOT = { WA_AI_TEMPLATES_mechanization_line_open = yes }
 			NOT = { WA_AI_TEMPLATES_use_armor_templates = yes }
 		}
 	}
@@ -111,7 +113,17 @@ WA_AI_TEMPLATES_has_motorized_unlocked = {
 	has_tech = motorised_infantry
 }
 
-WA_AI_TEMPLATES_use_mechanized_templates = {
+# [mech-window] "This country mechanizes at all" - tech, industry, design affordability, NO timing
+# term. This is the whole of what use_mechanized_templates was before the window was added.
+# Two readers, both of which must NOT see the window:
+#  - the three WA_AI_PRODUCTION_mech_min_factories_* FLOORS (WA_AI_PRODUCTION_tanks.txt), so a few
+#    factories build a mech buffer DURING the window and the flip does not land on a stock of 0.
+#    The production WEIGHTS stay on the windowed form - weight late, floor early, reasons there.
+#  - WA_AI_TEMPLATES_use_motorized_templates below: that fallback asks whether the country
+#    mechanizes AT ALL, not whether it may flip yet. On the windowed form, a 101-150-factory major
+#    with no armour templates would field motorised divisions for the years the window holds it
+#    back, and then have them decommissioned when it opens.
+WA_AI_TEMPLATES_mechanization_line_open = {
 	WA_AI_TEMPLATES_has_mechanized_unlocked = yes
 	OR = {
 		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
@@ -126,6 +138,21 @@ WA_AI_TEMPLATES_use_mechanized_templates = {
 	OR = {
 		date > 1942.1.1
 		NOT = { WA_AI_CONFIG_has_penalised_army_xp_gain = yes }
+	}
+}
+
+# [mech-window] "May this country's armour templates carry mechanized line battalions NOW". The
+# INDUSTRIAL path is timing-gated, the identity path is not (see the exemption note on
+# WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions). Flipping this swaps every motorised line
+# battalion in the light / medium / heavy ladders for a mechanized one across the whole fielded
+# force at once - the templates carry can_upgrade_in_field - so GER, which clears 100 military
+# factories on day one (104 in 1936), mechanized the month its 1938 tech landed. The gate is read
+# through its latch, never live: WA_AI_TEMPLATES_update_mechanization_latch.
+WA_AI_TEMPLATES_use_mechanized_templates = {
+	WA_AI_TEMPLATES_mechanization_line_open = yes
+	OR = {
+		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
+		has_country_flag = WA_AI_TEMPLATES_mechanization_earned
 	}
 }
 

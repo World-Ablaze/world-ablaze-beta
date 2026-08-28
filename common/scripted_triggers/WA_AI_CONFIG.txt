@@ -446,6 +446,11 @@ WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = {
 	always = no
 }
 
+# [mech-window] These five are EXEMPT from WA_AI_CONFIG_DIVISIONS_mechanization_window_open below:
+# they reach the mechanized armour templates by identity, ungated, at any date. Owner scope 2026-08-29
+# - the request was to gate the industrial path, and this list is the [mech-divisions-usa-only]
+# identity. NOT because they are immune: CAN/AST/SAF have no factory floor at all here and take the
+# same whole-force conversion bill on the smallest industry in the set. Unmeasured, flagged, not fixed.
 WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = {
 	OR = {
 		original_tag = USA
@@ -453,6 +458,43 @@ WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = {
 		original_tag = CAN
 		original_tag = AST
 		original_tag = SAF
+	}
+}
+
+# [mech-window] When a country that reaches mechanization through the INDUSTRIAL branch of
+# WA_AI_TEMPLATES_use_mechanized_templates (>100 military factories, i.e. everyone outside
+# WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions above) may flip its armour templates from
+# motorised to mechanized. The flip is army-wide and instant - 47 call sites in the light /
+# medium / heavy ladders, and every armour template carries can_upgrade_in_field - so it bills
+# 50 mechanized_equipment per battalion on the whole fielded armour force. The stock that pays it
+# is built by WA_AI_TEMPLATES_mechanization_line_open, which opens EARLIER - this trigger only
+# decides when the templates start spending it. The size of the residual deficit at the flip is
+# NOT bounded here and is not claimed to be: WORK.md [mech-window] carries the t0/t1/t2 table.
+# The 1941 date is a deliberate tuning fallback, not a capability test (AGENTS.md principle 1): it
+# is the only path for every country but GER, so an ahistorical 1938 industrialiser still waits on
+# the calendar and a 1941 late industrialiser still flips mid-expansion. The GER branch shows the
+# state-based formulation if that residual ever needs closing.
+# Read ONLY through the latch WA_AI_TEMPLATES_update_mechanization_latch: the GER branch is not
+# monotone (an army bleeds men), and a gate that flickers re-runs the engine's template
+# decommission pass.
+WA_AI_CONFIG_DIVISIONS_mechanization_window_open = {
+	OR = {
+		date > 1941.1.1
+		AND = {
+			original_tag = GER
+			# [mech-window] owner rule 2026-08-29, TWO terms, both required, and each binds in a
+			# different game. The 1.6M bar is mirrored in the B3 harness probe and held equal by
+			# tools/constants_registry.json group ger_mechanization_manpower_bar; neighbour, NOT
+			# unified: common/decisions/GER.txt spells the same "GER is at war strength" idea as
+			# size > 1599999.
+			# On the historical path the DATE binds: GER passed 1.6M around 1939.3 (MEASURED: 86
+			# divisions 1939.2, 90 in 1939.4, at 18 200 men per template-1004 division), so 1940.1
+			# is what puts the flip after the Polish campaign rather than six months before it.
+			# In a game where the German army grows slower the MANPOWER bar binds instead - that is
+			# the term that keeps an under-strength GER off mechanized in 1940.
+			has_army_manpower = { size > 1600000 }
+			date > 1940.1.1
+		}
 	}
 }
 
