@@ -460,12 +460,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `special_forces_min` / `special_forces_cap` source in `common/` applies to SWI at start. The
   lesson is the one this file keeps re-learning: a define read off the file is not the number the
   engine used — read the in-game tooltip before building on it.
+- Fix 3 (SHIPPED, uncommitted) — the ACTUAL "cannot recruit", from the owner's third screenshot
+  (decommissioned templates shown): Switzerland has 9 templates and 7 are DECOMMISSIONED,
+  including `Swiss Citizen Militia` at **0/36** — the AI had raised the cap to 36 via
+  `SWI_broaden_militias` and never trained one. MEASURED chain:
+  (a) `common/ai_strategy/SWI.txt:213-229` still ships `SWI_template_design` with
+      `ai_strategy = { type = template_prio  id = militias  value = 100000 }`;
+  (b) the ONLY file that ever defined `role = militias` for SWI was vanilla
+      `common/ai_templates/templates_SWI.txt` (`available_for = { SWI }`, target `militia = 9`);
+  (c) `descriptor.mod` has `replace_path="common/ai_templates"`, so that file is DELETED from the
+      running game, and WA's replacement folder defines no `militias` role at all (roles present:
+      cavalry, heavy_armor, infantry x2, light_armor x2, marines, mechanized, medium_armor,
+      modern_armor, motorized, mountaineers, suppression).
+  DERIVED: the Swiss AI is aimed at a role no file defines, so its wanted militia count is zero
+  (install `common/ai_templates/_documentation.md`: "The AI strategy `role_ratio` determines how
+  many divisions the AI wants for each role"). ASSUMED, in no doc: that the same missing role is
+  also why the engine decommissioned the militia and the other unmatched scripted templates.
+  Fix: new `common/ai_templates/WA_AI_TEMPLATES_COUNTRY_SWI_militia.txt` — a `militias` role-level
+  entry, `available_for = { SWI }`, `upgrade_prio = { factor = 0 }` (the template is
+  `is_locked = yes`; the AI must not spend army XP trying to edit what it cannot edit), target =
+  20x `militia_light_horse_battalion_line`, the end state of the scripted template after fix 1.
+- Verification for fix 3 (owner, any Swiss save): `imgui show ai_division_production` for SWI
+  lists a `militias` row with a non-zero wanted count; `Swiss Citizen Militia` is no longer
+  decommissioned and its counter climbs off 0/36.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
   `SWI_expanded_special_forces` (the reward of focus `SWI_expand_special_forces`) is INERT under
   WA's numbers — `special_forces_cap = 0.3` scales the 2% path (`0.026 x 56 = 1.5`), which never
   beats the floor for a country this small. Every percentage-only `special_forces_cap` grant in
   the mod has the same problem. Owner call whether it becomes a subject.
-- Closed when: the owner pastes (a), (b) and (c) here.
+- Closed when: the owner pastes (a), (b), (c) and the fix-3 readout here.
 
 ### can-transit-attrition — PARKED (2026-08-28)
 - PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below
@@ -1455,11 +1478,12 @@ OPEN with a session of its own.
   wanted mechanized stays near 95; USA infantry stays positive near 30% on its deepest stack; GER
   and SOV retain non-zero wanted armor.
 - Symptom 3, MEASURED (tester report 2026-08-28, playthrough): in the early game up to mid-1940,
-  GER and ITA need about 50% more divisions than the quartered target gives them. This is the first
+  GER and ITA need about 30% more divisions than the quartered target gives them (owner corrected
+  the figure from 50% to 30% the same day, before any of it was tested). This is the first
   feedback on Change 1 and it does not contradict it - the GER reading that motivated the quartering
   was 1943-shaped (149 active against a target of 521), and the same weights leave the two countries
   that must be ARMED BEFORE the war they start too small in 1936-40.
-- Change 3 (owner order 2026-08-28, from the tester report): +50% theoretical division target for
+- Change 3 (owner order 2026-08-28, from the tester report): +30% theoretical division target for
   the two European Axis majors until 1940.7.1.
   - New archetype `WA_AI_CONFIG_MILITARY_is_axis_european_major` (GER, ITA) in `WA_AI_CONFIG.txt` -
     the tags live there and nowhere else. Deliberately NOT `WA_AI_MILITARY_is_axis_member` +
@@ -1470,13 +1494,13 @@ OPEN with a session of its own.
   - Gate `WA_AI_PRODUCTION_early_war_army_target_boost` (archetype + `date < 1940.7.1`) in
     `common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt`; payload
     `WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost`,
-    `ai_strategy = { type = ai_wanted_divisions_factor value = 50 }`.
+    `ai_strategy = { type = ai_wanted_divisions_factor value = 30 }`.
   - The window closes at mid-1940 because after the fall of France the war itself drives the target
     (the threat and war factors multiply it) and a flat boost would compound with them.
   - Stacks with `WA_AI_PRODUCTION_DEFAULT_army_expansion_override` for GER before 1938 - different
     strategy types, intended: that block forces BUILDING, this one raises what the AI thinks it needs.
   - **ASSUMED, and this is the weak point of the change**: `ai_wanted_divisions_factor` is base
-    100 + value like every other `*_factor` strategy, so 50 reads as x1.5. DERIVED from vanilla
+    100 + value like every other `*_factor` strategy, so 30 reads as x1.3. DERIVED from vanilla
     `USA_90_division_gamble` (-30 for a deliberately small army) and
     `CHI_stop_disbanding_your_army_during_war` (1000). The install documents this type by NAME only
     (`common/ai_strategy/documentation.info`, strategy list); vanilla `SOV_cant_stop_wont_stop` uses
@@ -1484,10 +1508,10 @@ OPEN with a session of its own.
     likely a vanilla authoring slip. The DIRECTION is safe, the MAGNITUDE is not.
 - Verification of Change 3 (owner console; no harness - 15 lines, no scripted effect touched): on a
   1938-39 save, `imgui show ai_division_production` on GER and on ITA shows `Nr Wanted Divisions`
-  about 1.5x what the testers reported, with the same `breakdown [nr wanted]` inputs; a 1941 save
+  about 1.3x what the testers reported, with the same `breakdown [nr wanted]` inputs; a 1941 save
   shows the boost gone; a control major outside the archetype (SOV or ENG) is unchanged on both
   dates. If GER moves by something other than ~50%, the ASSUMED magnitude is what is wrong - retune
-  the one literal, do not add a second lever.
+  the one literal, do not add a second lever. `GER moves by ~30%` is the pass condition.
 - Closed when: the GER target, ENG armor ratio, USA infantry residual, GER/SOV armor controls and
   both USA/CAN non-binding controls pass once in the live window, and the Change 3 verification
   passes on GER, ITA and one control.
