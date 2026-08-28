@@ -6,9 +6,9 @@
 # - Motorized : 3000-3999
 # - Mechanized : 4000-4999
 # - Light Armor : 5000-5999
-# - Medium Armor : 6000-6999
+# - Medium Armor : 6000-6999 (6000-6116 medium chassis, +500 = the modern-chassis mirror)
 # - Heavy Armor : 7000-7999
-# - Modern Armor : 8000-8999
+# - Modern Armor : REMOVED 2026-08-28, range 8000-8999 free ([modern-chassis-tier])
 # - Garrison : REMOVED 2026-08-19, range 9000-9999 free (WA_AI_TEMPLATES_garrison.txt)
 # - Marines : 10000-10999
 # - Airborne : 11000-11999
@@ -62,6 +62,25 @@ WA_AI_TEMPLATES_update_design_deadline_latch = {
 	}
 }
 
+# [modern-chassis-tier] One-way latch: once the medium role fields the modern chassis it never
+# goes back. Same reason as the two latches above - the flag decides WHICH ai_template is enabled,
+# and a gate that flickers re-runs the engine's template decommission pass. Two of the three terms
+# are NOT monotone: use_mechanized_templates falls back under 100 military factories, and
+# use_medium_armor_templates falls under the early-expansion override.
+# The mechanized term is deliberate: the modern-chassis mirror is mechanized-only, so a
+# focus-medium country with no mechanized never switches. Owner rule 2026-08-28.
+WA_AI_TEMPLATES_update_modern_chassis_latch = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_has_modern_armor_unlocked = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_country_flag = WA_AI_TEMPLATES_modern_chassis_earned
+	}
+}
+
 WA_AI_TEMPLATES_calculate_templates = {
 	if = {
 		limit = {
@@ -85,8 +104,8 @@ WA_AI_TEMPLATES_calculate_templates = {
 }
 
 # Template type codes:
-# 1 = INFANTRY, 2 = MOTORIZED, 3 = MECHANIZED, 4 = LIGHT_ARMOR, 5 = MEDIUM_ARMOR, 6 = HEAVY_ARMOR, 7 = MODERN_ARMOR
-# 8 = free (was GARRISON), 9 = MARINES, 10 = AIRBORNE, 11 = MOUNTAINEER, 12 = RANGERS
+# 1 = INFANTRY, 2 = MOTORIZED, 3 = MECHANIZED, 4 = LIGHT_ARMOR, 5 = MEDIUM_ARMOR, 6 = HEAVY_ARMOR
+# 7 = free (was MODERN_ARMOR), 8 = free (was GARRISON), 9 = MARINES, 10 = AIRBORNE, 11 = MOUNTAINEER, 12 = RANGERS
 
 WA_AI_TEMPLATES_update_target_template = {
 	#Inputs :
@@ -128,8 +147,6 @@ WA_AI_TEMPLATES_block_all_templates = {
 	set_temp_variable = { _template_type_code = 5 }  # Medium Armor
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 6 }  # Heavy Armor
-	WA_AI_TEMPLATES_update_target_template = yes
-	set_temp_variable = { _template_type_code = 7 }  # Modern Armor
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 9 }  # Marines
 	WA_AI_TEMPLATES_update_target_template = yes
@@ -262,7 +279,6 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 		WA_AI_TEMPLATES_calculate_light_armor_template = yes
 		WA_AI_TEMPLATES_calculate_medium_armor_template = yes
 		WA_AI_TEMPLATES_calculate_heavy_armor_template = yes
-		WA_AI_TEMPLATES_calculate_modern_armor_template = yes
 	}
 }
 
@@ -594,9 +610,20 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
+# [modern-chassis-tier] ONE ladder, two chassis tiers. The ladder below decides the COMPOSITION and
+# writes a medium value; the tier offset applied at the end decides the CHASSIS. Every value the
+# ladder can write has a twin at +500 in the generated mirror
+# (common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt, tools/gen_ai_medium_modern_mirror.py)
+# - a medium value with no twin leaves the country holding a flag no template answers, so never add
+# a branch here without regenerating the mirror.
 WA_AI_TEMPLATES_calculate_medium_armor_template = {
 	set_temp_variable = { _template_type_code = 5 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _tier_offset = 0 }
+	if = {
+		limit = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+		set_temp_variable = { _tier_offset = 500 }
+	}
 	if = {
 		limit = {
 			WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -749,6 +776,12 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 			}
 		}
 	}
+	# [modern-chassis-tier] the CHASSIS decision, applied once to whatever composition the ladder
+	# picked. Guarded on non-zero so a blocked role stays blocked instead of becoming value 500.
+	if = {
+		limit = { NOT = { check_variable = { _template_value = 0 } } }
+		add_to_temp_variable = { _template_value = _tier_offset }
+	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
@@ -883,63 +916,6 @@ WA_AI_TEMPLATES_calculate_heavy_armor_template = {
 			}
 		}
 	}
-	WA_AI_TEMPLATES_update_target_template = yes
-}
-
-WA_AI_TEMPLATES_calculate_modern_armor_template = {
-	set_temp_variable = { _template_type_code = 7 }
-	set_temp_variable = { _template_value = 0 }
-	if = {
-		limit = {
-			WA_AI_TEMPLATES_use_modern_armor = yes
-			WA_AI_TEMPLATES_use_mechanized_templates = yes
-		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_TEMPLATES_use_modern_spg_armor = yes
-					WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-				}
-				set_temp_variable = { _template_value = 8001 }
-				else = {
-					set_temp_variable = { _template_value = 8000 }
-				}
-			}
-			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			else = {
-				if = {
-					limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_modern_td_armor = yes
-						WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-					}
-					set_temp_variable = { _template_value = 8103 }
-					else_if = {
-						limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 8102 }
-					}
-					else_if = {
-						limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 8101 }
-					}
-					else = {
-						set_temp_variable = { _template_value = 8100 } #medium tanks and mot
-					}
-				}
-				set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			}
-		}
-	}
-
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
