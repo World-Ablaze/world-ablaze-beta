@@ -383,6 +383,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Scope note: the owner rule names heavy only. Modern armour is on the STANDARD weight, which is
   the rule as given and NOT a claim that a modern division is cheap - say so if it should be 1 too,
   it is one constant lookup away.
+- Change 7 - the armour TEMPLATE FLAG JOIN, found with this subject's own harness. Owner report:
+  ENG stopped wanting heavy tanks in test3. MEASURED (owner console 1943.11.12, ENG): budget books
+  medium 17 / heavy 8, `VERDICT 1 1 1`, `tmpl heavy=1` - and `imgui show ai_division_production`
+  showed **no heavy_armor row at all**. Cause, MEASURED: the heavy calculator emits template values
+  7103-7113 while `WA_AI_TEMPLATES_armored_heavy.txt` declared 7100-7109, left three entries at the
+  literal placeholder `value = xxxx`, and declared 7102 twice. Every template existed and was
+  correctly composed; the numbers were never assigned. A country landing on an undeclared value
+  carries a flag pointing at nothing - no target template, no divisions, no row, and its whole
+  role_ratio share wasted. The light family had the same defect (5104 dead, 5105 duplicated).
+  Pre-existing: `git show 86ca60e63` has the same 4 dead values, introduced by `101fd357d`.
+  Progressive, which is why it reads as a regression - ENG held its heavies while its unlocks landed
+  in 7100-7109 and lost them by researching modern SPG/SPAA into a branch with no entry.
+  Fix: renumber by TEMPLATE NAME (the names encode the branch conditions exactly), 11 heavy entries
+  and 1 light entry. No template was authored and no composition changed. Audit after: all four
+  armour families have zero dead values and zero duplicates; one unreachable spare remains (heavy
+  7003, a 20-width variant the calculator never emits). Durable rule recorded in
+  `wa-lessons-learned`.
+- Not built, offered: a mechanical check of this join (emitted values vs declared values per family)
+  belongs in `tools/check_worklist.py`, which needs a self-test fixture per rule. Meta-work, owner
+  request required.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
   `WA_AI_TEMPLATES_use_mountaineers` is `NOT = { use_marines }` and nothing else - no terrain, tech
   or industry term - so every non-marine AI country spends 10 points of its ratio on mountain
@@ -399,7 +419,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Owner reports manual in-game verification OK, 2026-08-28, no console output pasted for Change 5.
   Recorded as an owner statement, not as a probe result: probes (iii), (iv), (v), (viii) and (ix)
   are still owed, and (ix) is the one that would catch the mech floors moving when they must not.
-- Closed when: (iii), (iv), (v), (viii) and (ix) pass, with the output pasted here. (iii), (v) and
+- Probe (x), Change 7: on the ENG save that produced the report, after a full restart and one
+  monthly pulse, `imgui show ai_division_production` shows a `heavy_armor` row with wanted near 8%
+  of the total. Two residuals from that same reading are NOT explained by Change 7 and need their
+  own look: ENG medium read 15 wanted where the book value of 17 predicts about 21, and ENG showed
+  no marines or mountaineers row at all despite carrying 10 points of special forces.
+- Closed when: (iii), (iv), (v), (viii), (ix) and (x) pass, with the output pasted here. (iii), (v) and
   (ix) are readable on any late save; (iv) and (viii) need a fresh campaign sampled around 1940 and
   early 1942.
 
@@ -480,15 +505,59 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   entry, `available_for = { SWI }`, `upgrade_prio = { factor = 0 }` (the template is
   `is_locked = yes`; the AI must not spend army XP trying to edit what it cannot edit), target =
   20x `militia_light_horse_battalion_line`, the end state of the scripted template after fix 1.
+- Fix 4 (SHIPPED, uncommitted, owner decision 2026-08-28: Switzerland-scoped lever, not a global
+  floor and not a re-tune of the weights). MEASURED (`imgui show ai_division_production`, SWI):
+  21 active / **4 wanted** — fronts 25 x 0.08 = 2.00, factories 40 x 0.09 = 3.60, manpower
+  65 x 0.07 = 4.55, threat 0.72; per-role militias 3/0, infantry 13/4, mountaineers 5/0. Full
+  analysis in `division-target-scaling` (COUNTER-EXAMPLE bullet). New SWI-only idea
+  `SWI_nation_in_arms` (`common/ideas/switzerland.txt`, `ai_desired_divisions_factor = 10`),
+  added unconditionally in `history/countries/SWI - Switzerland.txt` so both DLC branches get it,
+  plus name/desc/tooltip in `localisation/replace/afo_focus_l_english.yml`.
+  Value derivation, and it is a DERIVED estimate not a measured one: the readout shows wanted 4
+  while `SWI_citizen_militia_1` already contributes `ai_desired_divisions_factor = 1`, so the
+  observed 4 corresponds to a total factor of about 2; a total of ~12 lands wanted near 24, i.e.
+  just above the 21 divisions Switzerland already fields. **10 is therefore a first cut to be
+  re-read in game, not a computed constant** — one number to change if the readout lands wrong.
+  Carrier is a NEW idea for the same reason fix 2 could not use `armed_neutrality`: that one is
+  shared with FIN/GRE and removed by `swiss.1`; `SWI_swiss_neutrality` cancels on war and
+  `SWI_citizen_militia_1` is swapped out by professionalisation (which would silently drop 1 from
+  the total — harmless at 12, but only because the new idea carries the bulk).
+- Verification for fix 4 (owner, any Swiss save): `imgui show ai_division_production` for SWI
+  shows `Nr Wanted Divisions` ABOVE `Nr Active Divisions` (target ~24 vs 21), and the per-role
+  table gives `militias` a non-zero Wanted. If wanted lands far above ~24, lower the 10.
 - Verification for fix 3 (owner, any Swiss save): `imgui show ai_division_production` for SWI
   lists a `militias` row with a non-zero wanted count; `Swiss Citizen Militia` is no longer
   decommissioned and its counter climbs off 0/36.
+- Fix 5 (SHIPPED, uncommitted) — owner report 2026-08-28, blank focus title in the Swiss tree.
+  Adjacent to this subject, not part of it: it is localisation, not recruitment. It has NO subject
+  of its own only because the OPEN section is at the WIP limit; comment tag is `# [swi-loc]`.
+  MEASURED: `SWI_purchase_german_planes` renders empty. Its vanilla loc is
+  `SWI_purchase_german_planes: "[SWI_purchase_fascist_planes_name]"` — a SCRIPTED-loc indirection.
+  `descriptor.mod:66` has `replace_path="common/scripted_localisation"`, which deletes vanilla's
+  `BBA_Switzerland_scripted_loc.txt`, and WA never shipped a replacement — so all 25 of its keys
+  resolve to the empty string while the vanilla .yml that references them still loads
+  (localisation is NOT replace_path'd). Same failure class as fix 3.
+  Fix: restored the file verbatim as `common/scripted_localisation/BBA_Switzerland_scripted_loc.txt`
+  after checking every symbol it reads still exists in WA — 5 triggers
+  (`SWI_country_has_alpine_states`, `_opinion_is_excellent`, `_opinion_is_good`,
+  `SWI_dem_usa_valid_to_buy_planes`, `SWI_is_country_to_balance`) and 7 variables
+  (`SWI_biggest_fascist`, `_confederation_president`, `_councilor_1`, `_angriest_country`,
+  `_influence_target_state`, `_state_being_claimed`, `_last_angriest_country`). All present.
+- Verification for fix 5 (owner, Swiss focus tree): the focus above "Ban the Swiss Communist
+  Party" reads "Purchase German Planes" (or "Purchase Planes from Fascist Neighbor" when the
+  biggest fascist neighbour is not GER), and no other Swiss focus/decision title is blank.
+- Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
+  `replace_path="common/scripted_localisation"` drops **30** vanilla scripted-loc files, ~900 keys
+  (largest: `FR_SCRIPTING_FULL_AUTOMATED` 337, `TOA_shared_military_branch` 120,
+  `WTT_china_political_struggle` 100, `WUW_GER` 62, `TAOG_AST` 48, `BBA_ethiopia` 46). Switzerland
+  proves at least some of that is unintentional. A sweep would need, per file, a check that the
+  keys are still referenced and the symbols still exist. Owner call whether it becomes a subject.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
   `SWI_expanded_special_forces` (the reward of focus `SWI_expand_special_forces`) is INERT under
   WA's numbers — `special_forces_cap = 0.3` scales the 2% path (`0.026 x 56 = 1.5`), which never
   beats the floor for a country this small. Every percentage-only `special_forces_cap` grant in
   the mod has the same problem. Owner call whether it becomes a subject.
-- Closed when: the owner pastes (a), (b), (c) and the fix-3 readout here.
+- Closed when: the owner pastes (a), (b), (c), the fix-3 / fix-4 readouts and the fix-5 title here.
 
 ### can-transit-attrition — PARKED (2026-08-28)
 - PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below
@@ -1442,6 +1511,24 @@ OPEN with a session of its own.
   threat 1.06, war factor 1.15.
 - Change 1: `05_defines.lua` overrides all three `WANTED_UNITS_WEIGHT_*` inputs: fronts 0.08,
   factories 0.09, manpower 0.07. Every downstream threat/war multiplier stays unchanged.
+- COUNTER-EXAMPLE against Change 1, MEASURED 2026-08-28 (owner `imgui show
+  ai_division_production`, SWI): **21 active divisions, 4 wanted.** Breakdown fronts 25 x 0.08 =
+  2.00, factories 40 x 0.09 = 3.60, manpower 65 x 0.07 = 4.55, threat 0.72. Per-role: militias
+  current 3 / wanted 0, infantry current 13 / wanted 4, mountaineers current 5 / wanted 0.
+  At vanilla's weights the same country reads fronts 8.75, factories 18.0, manpower 19.5.
+  DERIVED: the 75% cut was sized on GERMANY, where active (149) sat far BELOW target (521) — a
+  country building toward its ceiling. It inverts for a country whose STARTING OOB already
+  exceeds the scaled target: wanted < active means the AI builds nothing at all, ever, until
+  combat losses drag it under 4. Switzerland starts with 13 OOB divisions and gains 8 more from
+  its own focuses (5 Sharpshooters + 3 Militia Anti-Tank) = 21, on 40 factories. This is the
+  mechanism behind the owner's 2026-08-28 report that Switzerland 'can't create or recruit any
+  division' (subject `swi-militia`) — the two militia bugs fixed there are real but downstream:
+  with a wanted budget of 4 fully consumed by infantry, the militias role gets 0 whatever its
+  template says.
+  NOT ACTED ON: the three weights are the owner's explicit 75% cut, so the lever choice is his.
+  Open question - a global floor (wanted never below active), a per-country
+  `ai_desired_divisions_factor`, or a re-tune of the weights.
+
 - Symptom 2, MEASURED (owner `imgui show ai_division_production`, ENG): wanted medium armor 189,
   infantry 47 and mechanized 95; the live ratio is approximately 40:10:20.
 - Change 2 (owner order 2026-08-28): halve every armor `role_ratio` transfer from -20/+20 to

@@ -2430,3 +2430,40 @@ process caveats (stale process, and the absence of a load-time hook).
   `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`. Engine boundary, ASSUMED: what the
   documentation.info sentence actually describes - possibly `unit_ratio` for air, which the same
   section covers separately.
+
+### An `ai_templates` flag value is a hand-maintained join key - a calculator branch with no entry deletes the role
+
+- **Symptom:** the United Kingdom stopped wanting heavy tanks entirely (owner console 1943.11,
+  `imgui show ai_division_production`: no `heavy_armor` row at all, while `medium_armor` was there).
+  The role_ratio budget was correct and the console harness read `VERDICT 1 1 1`, so the AI was
+  being told to want heavy divisions and simply could not.
+- **Real cause, MEASURED:** `WA_AI_TEMPLATES_calculate_heavy_armor_template` selects a template by
+  writing a NUMBER into `WA_HEAVY_ARMOR_TEMPLATE`, and each entry in
+  `common/ai_templates/WA_AI_TEMPLATES_armored_heavy.txt` enables on
+  `has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = N }`. The two lists had drifted: the
+  calculator emitted 7103-7113, the file declared 7100-7109 plus **three entries left at the literal
+  placeholder `value = xxxx`**, and one value (7102) was declared twice. Every template existed and
+  was correctly composed - the numbers were simply never assigned. A country whose branch landed on
+  a number no entry declares carries a flag pointing at nothing: the role has no target template,
+  the AI cannot build it, the panel stops listing it, and its whole `role_ratio` share is spent on
+  divisions that can never appear. The same defect existed in the light family (5104 dead, 5105
+  duplicated). Introduced by `101fd357d "More AI template designs"`, silent ever since.
+- **It is progressive, which is what makes it look like a regression.** ENG had heavy tanks while
+  its unlocks landed it in 7100-7109; researching modern SPG/SPAA moved it up the else_if chain into
+  a branch with no entry, and it lost the role. The country breaks itself by teching forward.
+- **Rule:** the value in `set_temp_variable = { _template_value = N }` and the value in
+  `has_country_flag = { flag = WA_<X>_TEMPLATE value = N }` are a JOIN KEY maintained by hand across
+  two files, with no parser, no checker and no error message. After touching either side, diff the
+  emitted set against the declared set - a value on only one side is a silently deleted role, not a
+  warning. Match them by TEMPLATE NAME, never by position: the names encode the branch conditions
+  (`..._MEC_MEDIUM_SPG_HEAVY_TD_MEDIUM_SPAA` is exactly `mech + medium_spg + heavy_td +
+  medium_spaa`), so the name is the only reliable identity when the numbers have drifted.
+- **Detection:** for each family, extract `_template_value = (\d+)` from the calculator and
+  `WA_<X>_TEMPLATE value = (\d+)` from its `ai_templates` file and compare the two sets; also flag
+  duplicates on the declared side and any literal `value = xxxx`. Live: `imgui show
+  ai_division_production` - a role with a positive role_ratio share and NO row is this bug.
+- **Evidence:** WORK.md `armor-role-budget`;
+  `common/ai_templates/WA_AI_TEMPLATES_armored_heavy.txt` (7103-7113 renumbered by name 2026-08-28),
+  `WA_AI_TEMPLATES_armored_light.txt` (5104). Engine boundary, ASSUMED: whether a role with a flag
+  pointing at no entry is merely unbuildable or is also dropped from the ratio denominator - the ENG
+  reading fits the denominator KEEPING it, i.e. the share is wasted rather than redistributed.
