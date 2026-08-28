@@ -269,7 +269,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `wa_abg.1 <TAG>` and `wa_abg.2`, recipe in `events/wa_test_armor_budget.txt`):
   (i) the `scope :` line reads `1 1 1 1 0` - anything else and nothing below is a measurement;
   (ii) GER or SOV after 1943 with three tank roles open: the VERDICT line reads `1 1 1` and the
-  `books :` row sums to 25 with the heaviest role holding the remainder;
+  `books :` row sums to 25 with heavy holding about half of medium;
   (iii) ENG after 1941: the medium slot is open through the switch and holds ONE share, not two;
   (iv) SOV before 1941: the `flags :` line reads `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=1` and
   `WA_LIGHT_ARMOR_TEMPLATE=0`, and the light slot is open;
@@ -362,6 +362,27 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   - Expected SOV shape after the change, DERIVED from the run-1 table: infantry 65% (242 of 372,
     up from 167), mechanized 0, mountaineers 10%, armour unchanged at 25%. The armour total does
     not move - the budget is a fixed amount, not a residual.
+- Change 6 - the split becomes WEIGHTED (owner rule 2026-08-28: "a heavy tank division costs a lot,
+  so it should be half the number of the mediums"; stated as budget 9 with medium and heavy open
+  gives 6 medium and 3 heavy). Two new constants,
+  `armor_weight_standard = 2` (light, medium, modern) and `armor_weight_heavy = 1`; a role gets
+  budget x its weight / the sum of the OPEN weights, floored, with the leftover going to the
+  largest-weight open role (modern, else medium, else light, else heavy - heavy is last on purpose,
+  it can only take the leftover when it is the only open role and the ratio has nothing to hold it
+  against). Only the RATIO between the two constants matters, never their size.
+- Verified by exhaustive simulation of the shipped arithmetic over all 15 reachable role
+  combinations, under BOTH half-up and half-even rounding (the floor correction makes the result
+  rounding-independent): every combination sums to exactly 25, and the owner example reproduces
+  exactly 6 / 3. Selected rows at budget 25 - medium alone 25; medium+heavy 17 / 8 (2.12);
+  medium+heavy+modern 10 / 5 / 10 (2.00); light+medium+heavy 10 / 10 / 5 (2.00); all four
+  7 / 8 / 3 / 7 (2.33). The ratio is exactly 2.00 when the division is clean and drifts up to 2.33
+  when the leftover lands on medium or modern - never below 2, which is the direction the rule
+  cares about.
+- SOV impact, DERIVED from the run-1 table (372 wanted, medium+heavy open): medium 12 -> 17 of the
+  budget (45 -> 63 divisions), heavy 13 -> 8 (48 -> 30). The armour TOTAL is unchanged at 25 / 93.
+- Scope note: the owner rule names heavy only. Modern armour is on the STANDARD weight, which is
+  the rule as given and NOT a claim that a modern division is cheap - say so if it should be 1 too,
+  it is one constant lookup away.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
   `WA_AI_TEMPLATES_use_mountaineers` is `NOT = { use_marines }` and nothing else - no terrain, tech
   or industry term - so every non-marine AI country spends 10 points of its ratio on mountain
@@ -372,6 +393,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   wanted mix; the same SOV save still shows mech battalions inside its medium/heavy tank templates,
   and its `mechanized_equipment` production is still running. Both halves must hold - a SOV with no
   mech equipment means the floors moved when they should not have.
+- Run 1 predates Changes 5 and 6 and its numbers (medium 12 / heavy 13) are the OLD equal split.
+  The next harness run on the same SOV window must read medium 17 / heavy 8; if it still reads
+  12 / 13 the weighted split did not load.
 - Owner reports manual in-game verification OK, 2026-08-28, no console output pasted for Change 5.
   Recorded as an owner statement, not as a probe result: probes (iii), (iv), (v), (viii) and (ix)
   are still owed, and (ix) is the one that would catch the mech floors moving when they must not.
@@ -416,7 +440,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (`division_has_majority_template`, the professionalisation conversion) and
   `SWI_dormant_citizen_militia` (`common/dynamic_modifiers/bba_dynamic_modifiers.txt:1378-1386`,
   five `modifier_army_sub_unit_militia_light_*` lines). All three matched nothing.
-- Fix (SHIPPED, uncommitted): `SWI_upgrade_template_and_divisions` now builds the Swiss Citizen
+- Fix 1 (SHIPPED, uncommitted): `SWI_upgrade_template_and_divisions` now builds the Swiss Citizen
   Militia from `militia_light_horse_battalion_line` only (6 regiment lines), restoring vanilla's
   single-sub-unit template. Rejected alternative — repoint the three readers at heavy: rejected
   because the template is MIXED after the first upgrade and heavy ties light at levels 2, 6 and
@@ -428,13 +452,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   is available and not greyed; (c) after `add_ideas`/focus path to `SWI_professionalize_militias`,
   existing militia divisions convert to "Swiss Infantry Division". All three fail on HEAD before
   this change.
+- Fix 2 (SHIPPED, uncommitted, owner-approved 2026-08-28 — special-forces cap): MEASURED,
+  Switzerland fields 31 special-forces battalions at a 1936 BBA start (5 mountain divisions x3 +
+  8 `Infanterie-Division` x2; 24 in the non-BBA `SWI_1936` OOB) against a floor of
+  `SPECIAL_FORCES_CAP_MIN = 10` (`common/defines/05_defines.lua:117`) — the percentage path is
+  irrelevant at this size (`0.02 x 56 regular battalions = 1.1`). New SWI-only idea
+  `SWI_alpine_army` (`common/ideas/switzerland.txt`, `special_forces_min = 24`) added
+  unconditionally in `history/countries/SWI - Switzerland.txt` so it covers both DLC branches:
+  floor 10 -> 34, leaving 3 free SF battalions = one more mountain division. Vanilla SWI is
+  39/24, i.e. 15 OVER with no headroom ever, so this is strictly less generous than a straight
+  vanilla-parity restore would have to be.
+  Rejected carrier — `armed_neutrality`: it is SHARED (`add_ideas = armed_neutrality` in
+  `common/national_focus/greece.txt:577` and `finland.txt:2336`, so FIN/GRE would silently gain
+  the cap) and Switzerland LOSES it on its first offensive war (`events/Switzerland.txt:19`,
+  `swiss.1`) — exactly when the army is needed. `SWI_swiss_neutrality` cancels on war and
+  `SWI_citizen_militia_1` is swapped out by professionalisation; no existing Swiss idea survives.
+- Verification for fix 2 (owner, 1936 Switzerland): hover the special-forces counter on the
+  Division Templates screen and read the `SPECIAL_FORCES_DETAILS` tooltip ("the limit is X% of
+  your fielded regular battalions (N) with a minimum of M") — M must rise by 24 with the idea on.
+  Then a Gebirgsinfanterie must queue without `Cannot Deploy a unit that would put us over the
+  special forces limit`.
+  OPEN QUESTION (2026-08-28, owner screenshot): a Swiss game reads `31/55`. 31 used matches the
+  1936 BBA OOB exactly, but 55 is NOT derivable from `max(SPECIAL_FORCES_CAP_MIN 10, 0.02 x 56
+  regular battalions)` with or without the +24 — the engine's cap formula is therefore NOT fully
+  understood here, and the +24 value is provisional until the tooltip readout is pasted. Which
+  build produced the screenshot was not established.
 - Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
-  Switzerland is 31/10 over its special-forces cap at game start (vanilla: 39/24 — over too, but
-  WA's global `SPECIAL_FORCES_CAP_BASE 0.05 -> 0.02` and `SPECIAL_FORCES_CAP_MIN 24 -> 10` make it
-  3.1x). It can therefore never recruit a mountain template until a focus unlocks the designer.
-  A Switzerland-scoped `special_forces_min = 24` on the SWI-only `armed_neutrality` idea would
-  restore vanilla's floor. Owner call whether it becomes a subject.
-- Closed when: the owner pastes (a), (b) and (c) here.
+  `SWI_expanded_special_forces` (the reward of focus `SWI_expand_special_forces`) is INERT under
+  WA's numbers — `special_forces_cap = 0.3` scales the 2% path (`0.026 x 56 = 1.5`), which never
+  beats the floor for a country this small. Every percentage-only `special_forces_cap` grant in
+  the mod has the same problem. Owner call whether it becomes a subject.
+- Closed when: the owner pastes (a), (b), (c) and the fix-2 readout here.
 
 ### can-transit-attrition — PARKED (2026-08-28)
 - PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below

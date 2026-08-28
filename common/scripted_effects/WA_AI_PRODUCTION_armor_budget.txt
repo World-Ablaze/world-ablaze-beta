@@ -41,9 +41,12 @@
 #	hundreds of role_ratio persistent_strategy entries, an open-role trigger is flapping - find which
 #	one, do not add a grace window blind.
 #
-#	SPLIT: budget / open roles rounded DOWN, with the HEAVIEST open role taking the remainder, so
-#	the rows sum to the budget exactly and the heaviest role is never the smallest: 25 over 2 =
-#	12 / 13, over 3 = 8 / 8 / 9, over 4 = 6 / 6 / 6 / 7.
+#	SPLIT: WEIGHTED. A role gets budget x its weight / the sum of the open weights, rounded DOWN,
+#	and the largest-weight open role (modern, else medium, else light, else heavy) takes the
+#	remainder so the rows sum to the budget exactly. Heavy armour carries half a standard weight
+#	(armor_weight_heavy vs armor_weight_standard) because a heavy division costs about twice as
+#	much to field. At budget 25: medium alone 25; medium+heavy 17/8; medium+heavy+modern 10/5/10;
+#	all four 7 light / 8 medium / 3 heavy / 7 modern.
 ############################################################################################################
 
 ############################################################
@@ -96,40 +99,58 @@ WA_AI_ARMOR_BUDGET_reconcile = {
 	}
 
 	############################################################
-	# 2. The split
+	# 2. The weighted split
 	############################################################
+	# A role gets budget x its weight / the sum of the OPEN weights. Only two distinct weights
+	# exist, so two shares are computed rather than one per role. Both are floored and the
+	# leftover goes to the largest-weight open role, which keeps the rows summing to the budget
+	# without ever inflating heavy - the role the weighting exists to hold down.
 
 	set_temp_variable = { _abg_total = 0 }
-	set_temp_variable = { _abg_share = 0 }
-	set_temp_variable = { _abg_primary = 0 }
+	set_temp_variable = { _abg_std = 0 }
+	set_temp_variable = { _abg_hvy = 0 }
+	set_temp_variable = { _abg_wsum = 0 }
+	set_temp_variable = { _abg_wstd = constant:wa_ai_production.army_composition.armor_weight_standard }
+	set_temp_variable = { _abg_whvy = constant:wa_ai_production.army_composition.armor_weight_heavy }
 
 	if = {
 		limit = { check_variable = { _abg_n > 0 } }
 
 		set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_total }
-		set_temp_variable = { _abg_share = _abg_total }
-		divide_temp_variable = { _abg_share = _abg_n }
-		round_temp_variable = _abg_share
-		# round_temp_variable is nearest, not floor, so it can round UP and hand the remainder role
-		# LESS than the others (25 over 2 rounded to 13, leaving 12 for the heaviest). One correction
-		# makes it an exact floor for any budget and count: if the rounded share overshoots the
-		# budget when multiplied back, it was the ceiling.
-		set_temp_variable = { _abg_check = _abg_share }
-		multiply_temp_variable = { _abg_check = _abg_n }
-		if = {
-			limit = { check_variable = { _abg_check > _abg_total } }
-			subtract_from_temp_variable = { _abg_share = 1 }
-		}
-		clamp_temp_variable = { var = _abg_share min = 0 }
 
-		# primary = budget - share x (open roles - 1). Whichever way the division rounded, the four
-		# rows sum to exactly the budget.
-		set_temp_variable = { _abg_primary = _abg_share }
-		multiply_temp_variable = { _abg_primary = _abg_n }
-		subtract_from_temp_variable = { _abg_primary = _abg_share }
-		multiply_temp_variable = { _abg_primary = -1 }
-		add_to_temp_variable = { _abg_primary = _abg_total }
-		clamp_temp_variable = { var = _abg_primary min = 0 }
+		if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_modern > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_heavy > 0 } } add_to_temp_variable = { _abg_wsum = _abg_whvy } }
+
+		# Standard share, floored. round_temp_variable is nearest, not floor: if the rounded share
+		# overshoots budget x weight when multiplied back by the weight sum, it was the ceiling.
+		set_temp_variable = { _abg_num = _abg_total }
+		multiply_temp_variable = { _abg_num = _abg_wstd }
+		set_temp_variable = { _abg_std = _abg_num }
+		divide_temp_variable = { _abg_std = _abg_wsum }
+		round_temp_variable = _abg_std
+		set_temp_variable = { _abg_check = _abg_std }
+		multiply_temp_variable = { _abg_check = _abg_wsum }
+		if = {
+			limit = { check_variable = { _abg_check > _abg_num } }
+			subtract_from_temp_variable = { _abg_std = 1 }
+		}
+		clamp_temp_variable = { var = _abg_std min = 0 }
+
+		# Heavy share, same construction.
+		set_temp_variable = { _abg_num = _abg_total }
+		multiply_temp_variable = { _abg_num = _abg_whvy }
+		set_temp_variable = { _abg_hvy = _abg_num }
+		divide_temp_variable = { _abg_hvy = _abg_wsum }
+		round_temp_variable = _abg_hvy
+		set_temp_variable = { _abg_check = _abg_hvy }
+		multiply_temp_variable = { _abg_check = _abg_wsum }
+		if = {
+			limit = { check_variable = { _abg_check > _abg_num } }
+			subtract_from_temp_variable = { _abg_hvy = 1 }
+		}
+		clamp_temp_variable = { var = _abg_hvy min = 0 }
 	}
 
 	set_temp_variable = { _abg_t_light = 0 }
@@ -137,16 +158,25 @@ WA_AI_ARMOR_BUDGET_reconcile = {
 	set_temp_variable = { _abg_t_heavy = 0 }
 	set_temp_variable = { _abg_t_modern = 0 }
 
-	if = { limit = { check_variable = { _abg_w_light > 0 } } set_temp_variable = { _abg_t_light = _abg_share } }
-	if = { limit = { check_variable = { _abg_w_medium > 0 } } set_temp_variable = { _abg_t_medium = _abg_share } }
-	if = { limit = { check_variable = { _abg_w_heavy > 0 } } set_temp_variable = { _abg_t_heavy = _abg_share } }
-	if = { limit = { check_variable = { _abg_w_modern > 0 } } set_temp_variable = { _abg_t_modern = _abg_share } }
+	if = { limit = { check_variable = { _abg_w_light > 0 } } set_temp_variable = { _abg_t_light = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_medium > 0 } } set_temp_variable = { _abg_t_medium = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_modern > 0 } } set_temp_variable = { _abg_t_modern = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_heavy > 0 } } set_temp_variable = { _abg_t_heavy = _abg_hvy } }
 
-	# Heaviest open role carries the remainder.
-	if = { limit = { check_variable = { _abg_w_modern > 0 } } set_temp_variable = { _abg_t_modern = _abg_primary } }
-	else_if = { limit = { check_variable = { _abg_w_heavy > 0 } } set_temp_variable = { _abg_t_heavy = _abg_primary } }
-	else_if = { limit = { check_variable = { _abg_w_medium > 0 } } set_temp_variable = { _abg_t_medium = _abg_primary } }
-	else_if = { limit = { check_variable = { _abg_w_light > 0 } } set_temp_variable = { _abg_t_light = _abg_primary } }
+	# Leftover from the two floors, to the largest-weight open role. Heavy is last on purpose: it
+	# only takes the leftover when it is the ONLY open role, where the ratio rule has nothing to
+	# hold it against.
+	set_temp_variable = { _abg_rem = _abg_total }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_light }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_medium }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_heavy }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_modern }
+	clamp_temp_variable = { var = _abg_rem min = 0 }
+
+	if = { limit = { check_variable = { _abg_w_modern > 0 } } add_to_temp_variable = { _abg_t_modern = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_t_medium = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_t_light = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_heavy > 0 } } add_to_temp_variable = { _abg_t_heavy = _abg_rem } }
 
 	############################################################
 	# 3. Diff each book against its target, emit only the difference
@@ -235,7 +265,7 @@ WA_AI_ARMOR_BUDGET_reconcile = {
 
 	if = {
 		limit = { has_country_flag = WA_AI_logging }
-		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | ARMOR BUDGET: roles=[?_abg_n|.0] share=[?_abg_share|.0] primary=[?_abg_primary|.0] light=[?_abg_t_light|.0] medium=[?_abg_t_medium|.0] heavy=[?_abg_t_heavy|.0] modern=[?_abg_t_modern|.0] infantry_offset=[?_abg_total|.0]"
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | ARMOR BUDGET: roles=[?_abg_n|.0] wsum=[?_abg_wsum|.0] std=[?_abg_std|.0] hvy=[?_abg_hvy|.0] rem=[?_abg_rem|.0] light=[?_abg_t_light|.0] medium=[?_abg_t_medium|.0] heavy=[?_abg_t_heavy|.0] modern=[?_abg_t_modern|.0] infantry_offset=[?_abg_total|.0]"
 	}
 }
 

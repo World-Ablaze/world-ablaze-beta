@@ -133,45 +133,73 @@ WA_TEST_ABG_report = {
 	}
 
 	set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_total }
+	set_temp_variable = { _abt_wstd = constant:wa_ai_production.army_composition.armor_weight_standard }
+	set_temp_variable = { _abt_whvy = constant:wa_ai_production.army_composition.armor_weight_heavy }
 	set_temp_variable = { _abt_total = 0 }
-	set_temp_variable = { _abt_share = 0 }
-	set_temp_variable = { _abt_prim = 0 }
+	set_temp_variable = { _abt_wsum = 0 }
+	set_temp_variable = { _abt_std = 0 }
+	set_temp_variable = { _abt_hvy = 0 }
 	if = {
 		limit = { check_variable = { _abt_n > 0 } }
 		set_temp_variable = { _abt_total = _abt_budget }
-		set_temp_variable = { _abt_share = _abt_budget }
-		divide_temp_variable = { _abt_share = _abt_n }
-		round_temp_variable = _abt_share
-		# Floor correction, re-typed rather than shared: a rounded-up share fails the multiply-back.
-		set_temp_variable = { _abt_back = _abt_share }
-		multiply_temp_variable = { _abt_back = _abt_n }
+
+		# Weight sum, counted from the open flags rather than from a shared helper.
+		set_temp_variable = { _abt_nstd = 0 }
+		if = { limit = { check_variable = { _abt_wl > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		if = { limit = { check_variable = { _abt_wm > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		if = { limit = { check_variable = { _abt_wmo > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		set_temp_variable = { _abt_wsum = _abt_nstd }
+		multiply_temp_variable = { _abt_wsum = _abt_wstd }
+		if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_wsum = _abt_whvy } }
+
+		# Standard share, floored. Re-typed rather than shared: a rounded-up share fails multiply-back.
+		set_temp_variable = { _abt_nstd = _abt_budget }
+		multiply_temp_variable = { _abt_nstd = _abt_wstd }
+		set_temp_variable = { _abt_std = _abt_nstd }
+		divide_temp_variable = { _abt_std = _abt_wsum }
+		round_temp_variable = _abt_std
+		set_temp_variable = { _abt_back = _abt_std }
+		multiply_temp_variable = { _abt_back = _abt_wsum }
 		if = {
-			limit = { check_variable = { _abt_back > _abt_budget } }
-			subtract_from_temp_variable = { _abt_share = 1 }
+			limit = { check_variable = { _abt_back > _abt_nstd } }
+			subtract_from_temp_variable = { _abt_std = 1 }
 		}
-		# primary = budget - share x (open - 1), written the long way round so it is not the same
-		# expression as the shipped one.
-		set_temp_variable = { _abt_others = _abt_n }
-		subtract_from_temp_variable = { _abt_others = 1 }
-		multiply_temp_variable = { _abt_others = _abt_share }
-		set_temp_variable = { _abt_prim = _abt_budget }
-		subtract_from_temp_variable = { _abt_prim = _abt_others }
+
+		# Heavy share, same construction.
+		set_temp_variable = { _abt_nhvy = _abt_budget }
+		multiply_temp_variable = { _abt_nhvy = _abt_whvy }
+		set_temp_variable = { _abt_hvy = _abt_nhvy }
+		divide_temp_variable = { _abt_hvy = _abt_wsum }
+		round_temp_variable = _abt_hvy
+		set_temp_variable = { _abt_back = _abt_hvy }
+		multiply_temp_variable = { _abt_back = _abt_wsum }
+		if = {
+			limit = { check_variable = { _abt_back > _abt_nhvy } }
+			subtract_from_temp_variable = { _abt_hvy = 1 }
+		}
 	}
 
 	set_temp_variable = { _abt_xl = 0 }
 	set_temp_variable = { _abt_xm = 0 }
 	set_temp_variable = { _abt_xh = 0 }
 	set_temp_variable = { _abt_xmo = 0 }
-	if = { limit = { check_variable = { _abt_wl > 0 } } set_temp_variable = { _abt_xl = _abt_share } }
-	if = { limit = { check_variable = { _abt_wm > 0 } } set_temp_variable = { _abt_xm = _abt_share } }
-	if = { limit = { check_variable = { _abt_wh > 0 } } set_temp_variable = { _abt_xh = _abt_share } }
-	if = { limit = { check_variable = { _abt_wmo > 0 } } set_temp_variable = { _abt_xmo = _abt_share } }
-	if = { limit = { check_variable = { _abt_wmo > 0 } } set_temp_variable = { _abt_xmo = _abt_prim } }
-	else_if = { limit = { check_variable = { _abt_wh > 0 } } set_temp_variable = { _abt_xh = _abt_prim } }
-	else_if = { limit = { check_variable = { _abt_wm > 0 } } set_temp_variable = { _abt_xm = _abt_prim } }
-	else_if = { limit = { check_variable = { _abt_wl > 0 } } set_temp_variable = { _abt_xl = _abt_prim } }
+	if = { limit = { check_variable = { _abt_wl > 0 } } set_temp_variable = { _abt_xl = _abt_std } }
+	if = { limit = { check_variable = { _abt_wm > 0 } } set_temp_variable = { _abt_xm = _abt_std } }
+	if = { limit = { check_variable = { _abt_wmo > 0 } } set_temp_variable = { _abt_xmo = _abt_std } }
+	if = { limit = { check_variable = { _abt_wh > 0 } } set_temp_variable = { _abt_xh = _abt_hvy } }
 
-	log = "  expect: budget=[?_abt_budget|.0]  open-roles=[?_abt_n|.0]  share=[?_abt_share|.0]  primary=[?_abt_prim|.0]  ->  light=[?_abt_xl|.0] medium=[?_abt_xm|.0] heavy=[?_abt_xh|.0] modern=[?_abt_xmo|.0] infantry-offset=[?_abt_total|.0]"
+	set_temp_variable = { _abt_rem = _abt_total }
+	subtract_from_temp_variable = { _abt_rem = _abt_xl }
+	subtract_from_temp_variable = { _abt_rem = _abt_xm }
+	subtract_from_temp_variable = { _abt_rem = _abt_xh }
+	subtract_from_temp_variable = { _abt_rem = _abt_xmo }
+	if = { limit = { check_variable = { _abt_wmo > 0 } } add_to_temp_variable = { _abt_xmo = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wm > 0 } } add_to_temp_variable = { _abt_xm = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wl > 0 } } add_to_temp_variable = { _abt_xl = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_xh = _abt_rem } }
+
+	log = "  expect: budget=[?_abt_budget|.0]  open-roles=[?_abt_n|.0]  weight-sum=[?_abt_wsum|.0](std [?_abt_wstd|.0] / heavy [?_abt_whvy|.0])  std-share=[?_abt_std|.0]  heavy-share=[?_abt_hvy|.0]  leftover=[?_abt_rem|.0]"
+	log = "  expect: light=[?_abt_xl|.0] medium=[?_abt_xm|.0] heavy=[?_abt_xh|.0] modern=[?_abt_xmo|.0] infantry-offset=[?_abt_total|.0]"
 
 	############################################################
 	# D. What the shipped effect actually applied - its own books
