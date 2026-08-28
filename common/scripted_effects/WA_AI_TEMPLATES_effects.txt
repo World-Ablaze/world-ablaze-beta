@@ -6,9 +6,9 @@
 # - Motorized : 3000-3999
 # - Mechanized : 4000-4999
 # - Light Armor : 5000-5999
-# - Medium Armor : 6000-6999
+# - Medium Armor : 6000-6999 (6000-6116 medium chassis, +500 = the modern-chassis mirror)
 # - Heavy Armor : 7000-7999
-# - Modern Armor : 8000-8999
+# - Modern Armor : REMOVED 2026-08-28, range 8000-8999 free ([modern-chassis-tier])
 # - Garrison : REMOVED 2026-08-19, range 9000-9999 free (WA_AI_TEMPLATES_garrison.txt)
 # - Marines : 10000-10999
 # - Airborne : 11000-11999
@@ -62,6 +62,52 @@ WA_AI_TEMPLATES_update_design_deadline_latch = {
 	}
 }
 
+# [modern-chassis-tier] One-way latch: once the medium role fields the modern chassis it never
+# goes back. Same reason as the two latches above - the flag decides WHICH ai_template is enabled,
+# and a gate that flickers re-runs the engine's template decommission pass. Two of the three terms
+# are NOT monotone: use_mechanized_templates falls back under 100 military factories, and
+# use_medium_armor_templates falls under the early-expansion override.
+# The mechanized term is deliberate: the modern-chassis mirror is mechanized-only, so a
+# focus-medium country with no mechanized never switches. Owner rule 2026-08-28.
+WA_AI_TEMPLATES_update_modern_chassis_latch = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_has_modern_armor_unlocked = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_country_flag = WA_AI_TEMPLATES_modern_chassis_earned
+	}
+}
+
+# [mot-field-hospital] One-way latch: 300 military factories buy the MOTORISED field hospital
+# inside an otherwise horse-drawn line. motorised_infantry is required because that tech is what
+# unlocks motorized_equipment (common/technologies/armor.txt) - without it the mirror target is
+# unfillable. One-way for the same reason as the three latches above: the flag decides WHICH
+# ai_template is enabled, and a gate that flickers re-runs the template decommission pass.
+WA_AI_TEMPLATES_update_motorized_hospital_latch = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_TEMPLATES_motorized_hospital_earned }
+			num_of_military_factories > 300
+			WA_AI_TEMPLATES_has_motorized_unlocked = yes
+		}
+		set_country_flag = WA_AI_TEMPLATES_motorized_hospital_earned
+	}
+}
+
+# [mot-field-hospital] +100 turns a 100%-horse target into the same line with a motorised field
+# hospital. Call it ONLY on a value that HAS a mirror block - 1003/1004 (infantry), 2000/2002
+# (mountaineers), 10000/10002 (marines). On any other value it lands on a target that does not
+# exist and the role is left with no enabled template at all.
+WA_AI_TEMPLATES_apply_motorized_hospital_mirror = {
+	if = {
+		limit = { WA_AI_TEMPLATES_can_motorize_field_hospital = yes }
+		add_to_temp_variable = { _template_value = 100 }
+	}
+}
+
 WA_AI_TEMPLATES_calculate_templates = {
 	if = {
 		limit = {
@@ -85,8 +131,8 @@ WA_AI_TEMPLATES_calculate_templates = {
 }
 
 # Template type codes:
-# 1 = INFANTRY, 2 = MOTORIZED, 3 = MECHANIZED, 4 = LIGHT_ARMOR, 5 = MEDIUM_ARMOR, 6 = HEAVY_ARMOR, 7 = MODERN_ARMOR
-# 8 = free (was GARRISON), 9 = MARINES, 10 = AIRBORNE, 11 = MOUNTAINEER, 12 = RANGERS
+# 1 = INFANTRY, 2 = MOTORIZED, 3 = MECHANIZED, 4 = LIGHT_ARMOR, 5 = MEDIUM_ARMOR, 6 = HEAVY_ARMOR
+# 7 = free (was MODERN_ARMOR), 8 = free (was GARRISON), 9 = MARINES, 10 = AIRBORNE, 11 = MOUNTAINEER, 12 = RANGERS
 
 WA_AI_TEMPLATES_update_target_template = {
 	#Inputs :
@@ -128,8 +174,6 @@ WA_AI_TEMPLATES_block_all_templates = {
 	set_temp_variable = { _template_type_code = 5 }  # Medium Armor
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 6 }  # Heavy Armor
-	WA_AI_TEMPLATES_update_target_template = yes
-	set_temp_variable = { _template_type_code = 7 }  # Modern Armor
 	WA_AI_TEMPLATES_update_target_template = yes
 	set_temp_variable = { _template_type_code = 9 }  # Marines
 	WA_AI_TEMPLATES_update_target_template = yes
@@ -262,7 +306,6 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 		WA_AI_TEMPLATES_calculate_light_armor_template = yes
 		WA_AI_TEMPLATES_calculate_medium_armor_template = yes
 		WA_AI_TEMPLATES_calculate_heavy_armor_template = yes
-		WA_AI_TEMPLATES_calculate_modern_armor_template = yes
 	}
 }
 
@@ -292,6 +335,7 @@ WA_AI_TEMPLATES_calculate_infantry_template = {
 						set_temp_variable = { _template_value = 1006 }
 						else = {
 							set_temp_variable = { _template_value = 1004 }
+							WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 						}
 					}
 					else = {
@@ -302,6 +346,7 @@ WA_AI_TEMPLATES_calculate_infantry_template = {
 							set_temp_variable = { _template_value = 1005 }
 							else = {
 								set_temp_variable = { _template_value = 1003 }
+								WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 							}
 						}
 					}
@@ -358,6 +403,7 @@ WA_AI_TEMPLATES_calculate_mountaineer_template = {
 				set_temp_variable = { _template_value = 2001 }
 				else = {
 					set_temp_variable = { _template_value = 2000 }
+					WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 				}
 			}
 		}
@@ -369,6 +415,7 @@ WA_AI_TEMPLATES_calculate_mountaineer_template = {
 				set_temp_variable = { _template_value = 2003 }
 				else = {
 					set_temp_variable = { _template_value = 2002 }
+					WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 				}
 			}
 		}
@@ -416,8 +463,10 @@ WA_AI_TEMPLATES_calculate_marines_template = {
 								WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
 							}
 							set_temp_variable = { _template_value = 10000 }
+							WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 							else = {
 								set_temp_variable = { _template_value = 10002 }
+								WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
 							}
 						}
 					}
@@ -545,12 +594,15 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 						}
 						set_temp_variable = { _template_value = 5106 }
 					}
+					# The SPAA-less twin of 5107 above, so a country with TDs and infantry-support
+					# tanks but no SPAA keeps both instead of falling through to 5103. Dropping
+					# the spaa term here is what makes this branch reachable at all - with it the
+					# condition was identical to 5107's and 5107 won the chain.
 					else_if = {
 						limit = {
 							WA_AI_TEMPLATES_use_mechanized_templates = yes
 							WA_AI_TEMPLATES_use_light_td_armor = yes
 							WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
 						}
 						set_temp_variable = { _template_value = 5105 }
 					}
@@ -562,6 +614,42 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 							WA_AI_TEMPLATES_use_light_spaa_armor = yes
 						}
 						set_temp_variable = { _template_value = 5104 }
+					}
+					# [light-td-coverage] the reduced TD forms. Placed HERE, under every variant
+					# that carries more, so they only capture cells that used to fall to 5101/5102
+					# and lose the tank destroyer entirely. 5119 sits below 5105 on purpose: a
+					# country with TDs, SPG and infantry-support tanks keeps 5105's infantry
+					# support rather than trading it for the SPG battalion.
+					else_if = {
+						limit = {
+							WA_AI_TEMPLATES_use_mechanized_templates = yes
+							WA_AI_TEMPLATES_use_light_td_armor = yes
+							WA_AI_TEMPLATES_use_light_spg_armor = yes
+						}
+						set_temp_variable = { _template_value = 5119 }
+					}
+					else_if = {
+						limit = {
+							WA_AI_TEMPLATES_use_mechanized_templates = yes
+							WA_AI_TEMPLATES_use_light_td_armor = yes
+							WA_AI_TEMPLATES_use_light_assault_armor = yes
+						}
+						set_temp_variable = { _template_value = 5120 }
+					}
+					else_if = {
+						limit = {
+							WA_AI_TEMPLATES_use_mechanized_templates = yes
+							WA_AI_TEMPLATES_use_light_td_armor = yes
+							WA_AI_TEMPLATES_use_light_spaa_armor = yes
+						}
+						set_temp_variable = { _template_value = 5118 }
+					}
+					else_if = {
+						limit = {
+							WA_AI_TEMPLATES_use_mechanized_templates = yes
+							WA_AI_TEMPLATES_use_light_td_armor = yes
+						}
+						set_temp_variable = { _template_value = 5117 }
 					}
 					else_if = {
 						limit = {
@@ -594,9 +682,20 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
+# [modern-chassis-tier] ONE ladder, two chassis tiers. The ladder below decides the COMPOSITION and
+# writes a medium value; the tier offset applied at the end decides the CHASSIS. Every value the
+# ladder can write has a twin at +500 in the generated mirror
+# (common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt, tools/gen_ai_medium_modern_mirror.py)
+# - a medium value with no twin leaves the country holding a flag no template answers, so never add
+# a branch here without regenerating the mirror.
 WA_AI_TEMPLATES_calculate_medium_armor_template = {
 	set_temp_variable = { _template_type_code = 5 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _tier_offset = 0 }
+	if = {
+		limit = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+		set_temp_variable = { _tier_offset = 500 }
+	}
 	if = {
 		limit = {
 			WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -749,6 +848,12 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 			}
 		}
 	}
+	# [modern-chassis-tier] the CHASSIS decision, applied once to whatever composition the ladder
+	# picked. Guarded on non-zero so a blocked role stays blocked instead of becoming value 500.
+	if = {
+		limit = { NOT = { check_variable = { _template_value = 0 } } }
+		add_to_temp_variable = { _template_value = _tier_offset }
+	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 
@@ -883,63 +988,6 @@ WA_AI_TEMPLATES_calculate_heavy_armor_template = {
 			}
 		}
 	}
-	WA_AI_TEMPLATES_update_target_template = yes
-}
-
-WA_AI_TEMPLATES_calculate_modern_armor_template = {
-	set_temp_variable = { _template_type_code = 7 }
-	set_temp_variable = { _template_value = 0 }
-	if = {
-		limit = {
-			WA_AI_TEMPLATES_use_modern_armor = yes
-			WA_AI_TEMPLATES_use_mechanized_templates = yes
-		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_TEMPLATES_use_modern_spg_armor = yes
-					WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-				}
-				set_temp_variable = { _template_value = 8001 }
-				else = {
-					set_temp_variable = { _template_value = 8000 }
-				}
-			}
-			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			else = {
-				if = {
-					limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_modern_td_armor = yes
-						WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-					}
-					set_temp_variable = { _template_value = 8103 }
-					else_if = {
-						limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 8102 }
-					}
-					else_if = {
-						limit = {
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 8101 }
-					}
-					else = {
-						set_temp_variable = { _template_value = 8100 } #medium tanks and mot
-					}
-				}
-				set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			}
-		}
-	}
-
 	WA_AI_TEMPLATES_update_target_template = yes
 }
 

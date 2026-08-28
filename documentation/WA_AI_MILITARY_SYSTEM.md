@@ -1227,6 +1227,18 @@ a date, each enabling below its own bar and aborting above the next one so the n
 hysteresis. The four thresholds, the ring membership and the contested-Germany backstop are all in
 the trigger sections above - **change behaviour there, never by editing the strategy blocks**.
 
+**[east-air-theatre] Poland 296 sits in the near ring AND in the Default Eastern Europe theatre.**
+Until 2026-08-29 the western Allies collected both pulls: `WA_AI_MILITARY_DEFAULT_AIR_eastern_europe`
+arms on `WA_AI_MILITARY_AIR_theatre_contested_eastern_europe`, whose "our side" half accepts any
+co-belligerent's ground (`has_war_together_with`), so the Soviet front made the East read as London's
+and Washington's own theatre. Net on 296 was +92,000 (50k theatre + 50k raid pull - 8k out-of-theatre)
+against +50,000 on 6/7/8 - the Default file carries no German block by design - and the RAF/USAAF
+ranked Poland above Germany proper. The block now also requires
+`WA_AI_MILITARY_AIR_theatre_own_ground_eastern_europe`: ground held by ROOT or a subject inside
+296/37/39/131/130/270. GER and SOV are unaffected; ENG/USA fall back to the raid pull alone (+42,000),
+one tier below the German regions. The other nine Default theatres keep the single gate - there an
+ally's foothold is exactly the pull that softens a target before our own landing.
+
 The positive half of the campaign is `WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE`, which
 writes `area_priority` and is a separate axis.
 

@@ -172,6 +172,188 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-ladder-integrity — PARKED (2026-08-29)
+- PARKED, not SHIPPED-UNTESTED: every mechanical defect below is fixed AND verified, by script
+  rather than by a console harness — these are structural faults in declarative files, which a
+  script sees and a runtime probe does not. Nothing is owed to the owner. What remains is one
+  decision (generate the light ladder, see KNOWN REMAINING), so the subject waits rather than
+  occupying a WIP slot. Un-park it the moment that decision is taken.
+- Scope: owner request 2026-08-29, after the duplicate template names surfaced during
+  `modern-chassis-tier`. Intended behaviour: the armour template ladder always selects a template
+  that mounts everything the country can actually build, and every template it can select exists
+  and is reachable. Found by auditing the ladders mechanically rather than by reading them.
+- Defect class, MEASURED: two `ai_template` entries under ONE key inside a role group means only
+  one is reachable, and the flag value written for the other selects nothing — the country silently
+  keeps its previous template. Four such pairs existed. Nothing in the game logs it.
+- Fixed (`903bb73ad`): medium 6108/6109/6110 shared their names with 6105/6106/6107; the
+  distinguishing `MEDIUM_ASSAULT` term was missing (their ladder branches carry
+  `WA_AI_TEMPLATES_use_medium_assault_armor` and their regimental slot mounts
+  `medium_assault_gun_company_regimental`). Light 5105 shared its name with 5107.
+- Fixed (`903bb73ad`): medium 6107 and 6110 carried `medium_infantry_support_armor_battalion_line`
+  inside their `support` block — a line battalion in a divisional support slot, where all four
+  siblings carry `medium_infantry_support_company_divisional`.
+- Fixed (`004c2aa4f`): light 5105 and 5107 also shared their ladder CONDITION, so 5107 won the
+  else_if chain and 5105 was dead twice over. Traced: `d7e227e49` created 5107 as a duplicate of
+  5108; `811e731b5` retargeted it onto 5105's condition. 5105 is now the SPAA-less twin of 5107 —
+  the shape the medium ladder already uses with 6105/6106/6107 — with its regimental pair repaired.
+  The identification is MEASURED, not inferred: across the armour role the regimental pair is
+  invariably ONE artillery-type company (pack artillery, else assault gun, else SPG, by unlock)
+  plus ONE anti-tank-type company (anti-tank, else tank destroyer), and 5105 was the only template
+  of 74 that broke it — zero artillery, two anti-tank. That is what marks it as the botched copy.
+- Fixed (`004c2aa4f`): heavy 7003 deleted, defined but selected by no branch. The 20-width branch
+  of every armour class has exactly two variants (mechanized, motorized) and no component
+  sub-branches, so it had no home. Inert content that reads as an available variant is a trap.
+- Fixed (this ship) — `[light-td-coverage]`: the three TD-bearing light variants all required
+  light SPAA, so a country holding light tank destroyers but no SPAA fell to 5101/5102 and fielded
+  neither its TD battalion nor its TD company. Added 5117 (TD), 5118 (TD + SPAA), 5119 (SPG + TD),
+  5120 (assault + TD), each placed BELOW the variant it is the reduced form of, so no existing
+  capability set changes hands. 5119 sits below 5105 on purpose: a country with TDs, SPG and
+  infantry-support tanks keeps 5105's infantry support instead of trading it for the SPG battalion.
+- Fixed (this ship): restoring 5105's `heavy_anti_air_mot_company_divisional`. Removing its light
+  SPAA company left it the only light template with NO air-defence company at all — a defect this
+  session introduced and the AA audit caught. Every light template carries exactly one AA company:
+  `heavy_anti_air_mot` without light SPAA, `light_self_propelled_anti_air` with it.
+- Simulation, MEASURED (light role, all 24 reachable capability sets — SPG and assault are mutually
+  exclusive by `WA_AI_TEMPLATES_use_light_assault_armor`, so the space is 2 x 3 x 2 x 2): sets where
+  the selected template drops something the country can build went **16 -> 12**, and sets where a
+  TD-capable country fields NO tank destroyer went **4 -> 0**.
+- KNOWN REMAINING, not fixed, needs an owner decision: 12 of 24 light sets still lose an artillery
+  tier (pack artillery instead of SPG or assault gun), an SPAA company, or trade infantry support
+  for the SPG battalion. Closing them all is not more branches — the ladder is a 3 x 2 x 2 x 2 cross
+  product and hand-writing it is exactly how the four duplicate pairs above got in. The real fix is
+  to GENERATE the light 30-width ladder and its templates the way
+  `tools/gen_ai_medium_modern_mirror.py` generates the modern-chassis mirror. That is a rewrite of a
+  file the collaborator also edits, and it renumbers live values, so it is not started.
+- Verification: `python tools/check_worklist.py`, plus the four audits re-run over every file in
+  `common/ai_templates/` — regimental shape (1 artillery + 1 anti-tank), one AA company per
+  template, zero duplicate names, zero entries whose suffix does not match their slot, zero ladder
+  branches sharing a condition, and ladder-to-template completeness both ways for light, medium and
+  heavy. All clean at 77 templates. No console harness: these are structural defects in declarative
+  files, visible to a script and not to a runtime probe.
+- Closed when: a campaign shows a light-armour AI that researched light tank destroyers fielding a
+  template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
+  simulation).
+
+### mot-field-hospital — OPEN (2026-08-29)
+- Scope: owner request 2026-08-29 — "je veux que l'Allemagne utilise les hôpitaux motorisés dans
+  ses divisions". Intended behaviour: a rich army that is otherwise entirely horse-drawn still
+  fields the MOTORISED field hospital, which is the one support company whose horse variant caps
+  the whole division's speed.
+- Symptom (MEASURED, `1943.1_Jan.hoi4`): GER runs `WA_INFANTRY_TEMPLATE = 1004` and
+  `WA_MOUNTAINEERS_TEMPLATE = 2002` — both 100%-horse targets — with 439 owned arms factories.
+  Cause (MEASURED, script): the horse/mot choice has exactly one gate,
+  `WA_AI_CONFIG_DIVISIONS_can_motorize_support` (`WA_AI_CONFIG.txt:574`), whose two ways in are a
+  tag list (USA/ENG/FRA/SOV + dominions) and a latch that needs `is_in_faction_with USA/ENG`.
+  Germany can satisfy neither, ever, at any industrial level.
+- Why the hospital and not the whole support line (MEASURED, `common/units/support_field_hospital.txt`):
+  the horse company carries `maximum_speed = 0.6`, which caps the division; the mot company has no
+  speed line, +0.04 casualty_trickleback and −0.06 experience_loss_factor. It pays 25
+  motorized_equipment and the WA motorised-support combat nerfs (`max_strength −0.5`, `defense`
+  and `breakthrough −0.5`, `soft/hard_attack −0.9`) — a deliberate trade the owner asked for.
+- Fix (SHIPPED 2026-08-29): a THIRD motorisation tier between HRS and MOT, named `HMH` in the
+  template legend. Six mirror targets, each identical to its source but for the hospital company:
+  1003→1103, 1004→1104 (infantry), 2000→2100, 2002→2102 (mountaineers), 10000→10100,
+  10002→10102 (marines). The calculator reaches them with `+100`
+  (`WA_AI_TEMPLATES_apply_motorized_hospital_mirror`), called on the six horse leaves only — the
+  same offset idiom as `[modern-chassis-tier]`'s `+500`. Gate:
+  `WA_AI_TEMPLATES_can_motorize_field_hospital` = one-way flag set by
+  `WA_AI_TEMPLATES_update_motorized_hospital_latch` at `num_of_military_factories > 300` AND
+  `has_tech = motorised_infantry`. Owner decision 2026-08-29: 300 military factories, not 400,
+  and not total factories.
+- Why a latch and not a live threshold: the value picks WHICH ai_template is enabled, and every
+  change of the enabled target re-runs the engine's template decommission pass — the rule the
+  three latches above this one already encode. The tech term is not decoration:
+  `motorised_infantry` is what unlocks `motorized_equipment` (`common/technologies/armor.txt:174`),
+  so without it the mirror target is unfillable.
+- Blast radius (MEASURED, grep): nothing outside `common/ai_templates/` reads
+  `WA_INFANTRY_TEMPLATE` / `WA_MOUNTAINEERS_TEMPLATE` / `WA_MARINES_TEMPLATE` values — the six new
+  values reach the six new blocks and nothing else. The reserve template
+  (`WA_reserves_effects.txt:127`) is deliberately NOT mirrored (owner choice: emergency divisions
+  stay cheap), and the scripted division creator keeps its own `can_motorize_support` splice, so
+  its equipment calculator needs no new motorized_equipment term.
+- Who else this reaches (MEASURED, savegames): ITA 111 and JAP 159 owned arms factories at
+  1940.6 — neither crosses 300 in that campaign, so the tier is Germany-only in practice. USA /
+  ENG / FRA / SOV are already fully motorised by tag and never see the mirror branch.
+- Closed when: a campaign save taken after GER crosses 300 military factories shows
+  `WA_INFANTRY_TEMPLATE = 1104` (or 1103) and `WA_MOUNTAINEERS_TEMPLATE = 2102` (or 2100), the
+  flag `WA_AI_TEMPLATES_motorized_hospital_earned` set, and GER infantry divisions carrying
+  `field_hospital_mot_company_divisional`. Expected crossing on the current reference campaign:
+  ~1941.8 (MEASURED: 300 owned arms factories at 1941.7, 303 at 1941.9).
+  Counter-check on the same save: ITA and JAP still on 1003/1004/2000/2002.
+- No console harness: the templates calculator has none, and this change is 33 lines of scripted
+  effect with no signature or scope change, below the harness-writing threshold. Verification is
+  the campaign probe above.
+
+### modern-chassis-tier — SHIPPED-UNTESTED (2026-08-28)
+- Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
+  tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
+  a WEIGHT CLASS of division, not a chassis generation — a medium division that reaches the
+  Panther keeps its role and its share of the army, and every component of the template steps up
+  one tier with the hull (medium TD → modern TD, light SPAA → medium SPAA).
+- Root cause, MEASURED: `WA_AI_RESEARCH_needs_modern_armor` required `date > 1945.1.1`
+  (`common/scripted_triggers/WA_AI_RESEARCH_tanks.txt` before this change) while
+  `WA_AI_TEMPLATES_use_modern_armor` accepted modern from `date > 1942.9.1`. Every modern chassis
+  `ai_will_do` carries `modifier = { factor = 0 NOT = { WA_AI_RESEARCH_needs_modern_armor } }`
+  (`common/technologies/armor_ger.txt`, `ger_modern_tank_chassis_1`), so no AI researched a modern
+  chassis inside a normal campaign and the modern role never opened. The 28-month gap between the
+  two gates is the whole symptom; the template system was not at fault.
+- Not a bootstrap problem (owner objection, retained): the production lever is
+  `equipment_variant_production_factor` (`WA_AI_PRODUCTION_DEFAULT_tanks.txt`), undocumented in the
+  engine's own token list but whose documented twin `equipment_production_factor` "increases the
+  perceived needed factories" (`common/ai_strategy/documentation.info`, SYNCED 1.19.2.0). It is a
+  multiplier on a NEED, and the need exists only once a template mounts the battalion — so the
+  template leads and production follows, exactly as the light→medium switch already does
+  (`WA_AI_CONFIG_switch_from_light_to_medium_armor` = a bare date, no stock guard). An earlier
+  draft that opened the production line first was DROPPED, along with its stock threshold.
+- Change 1 — research: `WA_AI_RESEARCH_needs_modern_armor` takes the shape of
+  `needs_medium_armor` (focus medium/heavy, `date > 1942.1.1`). The binding date becomes the
+  per-tech `ai_will_do` window (1943, or 1942 with free research slots).
+- Change 2 — one ladder, two chassis tiers. `WA_AI_TEMPLATES_calculate_medium_armor_template`
+  still picks the COMPOSITION and writes 6000–6116; a flat `+500` then picks the CHASSIS. Every
+  value therefore needs a twin, so the mirror is GENERATED:
+  `tools/gen_ai_medium_modern_mirror.py` → `common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`
+  (19 templates, `role = medium_armor`, the shape `WA_light_support_armor_role` already uses). A
+  component with no modern-tier answer is a hard error in the generator, never a silent copy.
+- Change 3 — the switch is a one-way latch `WA_AI_TEMPLATES_modern_chassis_earned` (medium
+  templates + modern chassis + mechanized), set on the monthly pulse BEFORE the calculate. One-way
+  because two of its three terms are not monotone and a flickering gate re-runs the engine's
+  template decommission pass. Owner rule: a focus-medium country with no mechanized never switches.
+- Change 4 — `role = modern_armor` retired. `WA_AI_TEMPLATES_armored_modern.txt` gone, template
+  type code 7 and the 8000–8999 range freed, `WA_AI_PRODUCTION_build_army_modern_armor` removed,
+  the static `role_ratio id = modern_armor value = -1000` removed. The armour budget now has THREE
+  open roles, never four: medium+heavy stays 17/8 instead of splitting to 10/5/10 the day the
+  Panther lands. The modern slot in `WA_AI_PRODUCTION_armor_budget.txt` is KEPT at target 0 so the
+  reconcile emits the exact negation of any entry a pre-change save carries — do not delete it
+  before a campaign shows `WA_AI_ARMOR_BUDGET_modern` at 0.
+- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_78` was
+  enabled by `ger_medium_tank_chassis_2_6`, one tech before the chassis it designs;
+  `medium_tank_7` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
+  IV H; `2_7` was missing from `has_medium_armor_unlocked`.
+- Superseded a collaborator's parallel change (`b19bf6a43` and the commit that moved the six modern
+  templates into the medium file, owner decision 2026-08-28 to keep this design instead). Their
+  four 30-width component signatures are reproduced at 6611/6612/6613/6616; their tuned
+  compositions (7 tanks + 3 SPG + 5 mech against the medium 9 + 6) are NOT preserved, because the
+  mirror is structure-preserving by construction. Retuning is a pass over all 19 slots.
+- Residual, ASSUMED (engine): at the month of the switch a division loses its
+  `medium_armor_battalion_line` and gains `modern_armor_battalion_line` it cannot yet equip. Depth
+  and duration are not observable in a savegame. Mitigations already present, no new code:
+  `can_upgrade_in_field = { always = yes }`, `reinforce_prio = 1`, and the `+90`
+  `modern_tank_chassis` production factor active the same month.
+- Pre-existing defect found in passing, NOT fixed here: the medium ladder carries duplicate
+  template NAMES — 6105/6108, 6106/6109, 6107/6110 are each two `ai_template` entries with one key
+  inside `WA_medium_armor_role`. Only one of each pair can be reachable. The generator works around
+  it by suffixing its mirrors (`..._6608`), which is why three mirror names carry a number.
+- Verification — console harness: `common/scripted_effects/WA_TEST_armor_budget.txt` extended with
+  section B2 (chassis tier) and verdict V4. Fire `event wa_abg.1 GER` from another tag on a save
+  past 1943. **All FOUR verdict values must read 1**, and the `tier`/`band` lines must show: a
+  country with the medium role open sits in exactly one band, and that band agrees with
+  `owns-medium-role`. Owner run required to leave SHIPPED-UNTESTED.
+- Verification — campaign probe: GER at 1944.6 fields divisions of role `medium_armor` mounting
+  `modern_armor_battalion_line`; zero divisions of role `modern_armor` anywhere; no residual
+  `role_ratio id = modern_armor` entry in any `persistent_strategy` block.
+- Closed when: the harness reads 1/1/1/1 on GER post-1943 AND a campaign shows German medium
+  divisions mounting the modern chassis before 1945.
+
 ### armor-role-budget — SHIPPED-UNTESTED (2026-08-28)
 - Scope: owner request 2026-08-28, two parts. (1) A country with tanks holds a CONSTANT,
   configurable armour share of its wanted-division mix whatever the NUMBER of tank types it
@@ -1039,7 +1221,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   no `option` block. Harmless, not fixed.
 - Closed when: campaign probes (i)-(iii) and (vi) pass once on a scored run.
 
-### allied-division-stability — OPEN (2026-08-27)
+### allied-division-stability — PARKED (2026-08-28)
+- PARKED 2026-08-28 only to make room for `modern-chassis-tier` under the WIP limit, by the agent,
+  not by an owner decision — move it back to OPEN in one line if that is the wrong pick. Chosen
+  because it is the only live subject owing the owner NOTHING right now: its Step A defines are
+  shipped and its verification is a campaign probe that has not been run, so it waits either way,
+  whereas the SHIPPED-UNTESTED subjects each owe a console-harness run. Step B (the hysteresis
+  pass) was never started.
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
   transit FREQUENCY. Step A (this ship) = engine theatre-distributor damping, defines only.
@@ -1147,7 +1335,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   starvation regression — no active front under-manned while idle divisions sit in a quiet
   theatre (F-items unaffected), (c) owner confirms the in-game impression improved.
 
-### aifc-traction — SHIPPED-UNTESTED (2026-08-27)
+### aifc-traction — PARKED (2026-08-29)
+- Parked 2026-08-29 (WIP limit, `mot-field-hospital` enters on owner request). State at
+  parking: Option A SHIPPED 2026-08-27, unverified — `WA_TEST_aifc.txt` carries the
+  independently re-typed election and is waiting on one owner console run. Reopen by
+  pasting that output; nothing in this subject is blocked on code.
 - **Option A SHIPPED 2026-08-27 (owner order "partons sur A").** Main-enemy election rebuilt: §1c no
   longer elects (strict-max removed); new §1d elects the enemy whose FLOOR-ELIGIBLE candidates
   (pad > `constant:wa_ai_aifc.selection.min_pad` — the constant's documented second role) carry the

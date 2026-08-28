@@ -14,7 +14,7 @@
 #	the budget constant, which IS the bar being measured. When C and D disagree the fault is in one
 #	of the two, not hidden between them.
 #
-#	READ THE THREE VERDICT LINES AT THE BOTTOM. All three must read 1.
+#	READ THE VERDICT LINE AT THE BOTTOM. All four values must read 1.
 ############################################################################################################
 
 WA_TEST_ABG_report = {
@@ -98,6 +98,85 @@ WA_TEST_ABG_report = {
 	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  (both 1 = the two light templates are enabled at once, which the exclusivity is supposed to prevent)"
 
 	############################################################
+	# B2. [modern-chassis-tier] Which CHASSIS TIER the medium role fields
+	#     Modern armour is the last chassis generation of the MEDIUM class, not a role. The
+	#     selector adds +500 to the medium template value when the latch is set, so the carried
+	#     flag value is the only place the decision is observable.
+	############################################################
+
+	set_temp_variable = { _abt_modtech = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_modern_armor_unlocked = yes } set_temp_variable = { _abt_modtech = 1 } }
+	set_temp_variable = { _abt_modmech = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_mechanized_templates = yes } set_temp_variable = { _abt_modmech = 1 } }
+	set_temp_variable = { _abt_modlatch = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned } set_temp_variable = { _abt_modlatch = 1 } }
+	set_temp_variable = { _abt_modowns = 0 }
+	if = { limit = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes } set_temp_variable = { _abt_modowns = 1 } }
+	set_temp_variable = { _abt_modline = 0 }
+	if = { limit = { WA_AI_PRODUCTION_build_modern_armor = yes } set_temp_variable = { _abt_modline = 1 } }
+
+	# Which BAND the carried value sits in. Tested value by value because a flag value cannot be
+	# loaded into a variable. Both lists must stay in step with tools/gen_ai_medium_modern_mirror.py:
+	# a value missing from them reads as "no template" and looks like a template-system failure.
+	set_temp_variable = { _abt_bandmed = 0 }
+	if = {
+		limit = {
+			OR = {
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6000 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6001 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6100 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6101 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6102 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6103 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6104 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6105 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6106 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6107 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6108 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6109 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6110 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6111 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6112 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6113 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6114 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6115 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6116 }
+			}
+		}
+		set_temp_variable = { _abt_bandmed = 1 }
+	}
+	set_temp_variable = { _abt_bandmod = 0 }
+	if = {
+		limit = {
+			OR = {
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6500 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6501 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6600 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6601 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6602 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6603 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6604 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6605 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6606 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6607 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6608 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6609 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6610 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6611 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6612 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6613 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6614 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6615 }
+				has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6616 }
+			}
+		}
+		set_temp_variable = { _abt_bandmod = 1 }
+	}
+
+	log = "  tier  : modern-chassis-tech=[?_abt_modtech|.0]  mechanized=[?_abt_modmech|.0]  medium-role-open=[?_abt_tm|.0]  ->  latch=[?_abt_modlatch|.0]  owns-medium-role=[?_abt_modowns|.0]  modern-production-line=[?_abt_modline|.0]"
+	log = "  band  : medium-chassis-value=[?_abt_bandmed|.0]  modern-chassis-value=[?_abt_bandmod|.0]  (exactly one must be 1 once the medium role is open; both 0 = the country carries a value no template answers)"
+
+	############################################################
 	# C. Independent re-derivation of the split (contract rule 4)
 	#    Reads the TEMPLATE triggers above, not the shipped slot triggers.
 	############################################################
@@ -125,11 +204,9 @@ WA_TEST_ABG_report = {
 			set_temp_variable = { _abt_wh = 1 }
 			add_to_temp_variable = { _abt_n = 1 }
 		}
-		if = {
-			limit = { check_variable = { _abt_tmo > 0 } }
-			set_temp_variable = { _abt_wmo = 1 }
-			add_to_temp_variable = { _abt_n = 1 }
-		}
+		# [modern-chassis-tier] modern_armor is NOT an open role since 2026-08-28 - the modern
+		# chassis is priced inside the medium slot. _abt_wmo stays 0 on purpose; the modern
+		# columns below are kept so a stale book from a pre-change save is visible, not hidden.
 	}
 
 	set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_total }
@@ -251,5 +328,31 @@ WA_TEST_ABG_report = {
 		set_temp_variable = { _abt_v3 = 1 }
 	}
 
-	log = "  VERDICT: sum-equals-offset=[?_abt_v1|.0]  offset-equals-budget=[?_abt_v2|.0]  books-match-independent-split=[?_abt_v3|.0]   (all three must read 1)"
+	# V4 - [modern-chassis-tier] the chassis-tier claim: the carried template value sits in exactly
+	# one band, and that band is the one the latch asked for. A 0 with the medium role open is the
+	# interesting failure - either the mirror is missing the value the ladder produced (regenerate
+	# with tools/gen_ai_medium_modern_mirror.py), or the latch and the offset disagree.
+	set_temp_variable = { _abt_v4 = 1 }
+	if = {
+		limit = { check_variable = { _abt_tm > 0 } }
+		set_temp_variable = { _abt_v4 = 0 }
+		if = {
+			limit = {
+				check_variable = { _abt_bandmed = 1 }
+				check_variable = { _abt_bandmod = 0 }
+				check_variable = { _abt_modowns = 0 }
+			}
+			set_temp_variable = { _abt_v4 = 1 }
+		}
+		if = {
+			limit = {
+				check_variable = { _abt_bandmed = 0 }
+				check_variable = { _abt_bandmod = 1 }
+				check_variable = { _abt_modowns = 1 }
+			}
+			set_temp_variable = { _abt_v4 = 1 }
+		}
+	}
+
+	log = "  VERDICT: sum-equals-offset=[?_abt_v1|.0]  offset-equals-budget=[?_abt_v2|.0]  books-match-independent-split=[?_abt_v3|.0]  chassis-tier-consistent=[?_abt_v4|.0]   (all four must read 1)"
 }
