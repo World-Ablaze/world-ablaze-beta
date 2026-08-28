@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this repository.
 
 These rules govern every user-facing message. They are about *how* you write, not *what* you conclude — the content rules below still apply in full.
 
-**Reply in the user's language** (French, currently).
+**Reply in the user's language.** Default to English when the user's language is not specified or cannot be determined.
 
 **Answer first.** The verdict is the first thing on screen: at most 5 short lines, one idea per line, the verdict in bold. Everything after it is evidence, and evidence goes in a table, not in prose. No preamble, no restating the question.
 
