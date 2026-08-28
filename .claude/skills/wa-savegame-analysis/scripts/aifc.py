@@ -24,11 +24,21 @@ tags (the reconcile skips the negation for a tag that no longer exists - documen
 KNOWN GAP in WA_AI_AIFC_helpers.txt), an alarm on a live one. A book tag whose NET
 is not its expected value is a MISMATCH and always an alarm.
 
+  ai section  force_concentration_target={ target=<prov> from=<prov> progress=<f> }
+              - one block per ACTIVE engine AIFC push, present ONLY on a country
+              with a live plan right now (2026-11, ENG_1943_11_06: USA had 2,
+              ENG 0, matching the owner's imgui screenshot). `progress` is the
+              imgui "Freshness" byte-equal. Printed as "active push".
+
 WHAT A SAVE CANNOT TELL YOU: whether Layer 4 (force_concentration_* state_triggers)
 consumed the arrays - file-defined ai_strategy blocks never serialise - and whether
-the engine actually massed divisions BECAUSE of the sector. Correlate with
+the engine actually massed divisions BECAUSE of the sector. Of the live imgui
+window (`imgui show ai_force_concentration`) fields, only the push's EXISTENCE,
+its target/from provinces and its freshness serialise; the per-front AIFC score,
+the should-receive / assigned-units counts and the strategic-target list are
+engine-runtime-only (searched the save 2026-11, not found). Correlate with
 plans.py --where (is the corridor's front manned) and control (was it taken);
-causality needs the owner's live `imgui show ai-strategy` window.
+the full window is owner-run live only (skill wa-diagnosis, technique 5).
 
 usage: aifc.py TAG[,TAG,...]|ALL FILE... [--ledger] [--limit N]
   ALL       every country with any AIFC state (silent tags are skipped)
@@ -48,6 +58,7 @@ TAG_RE = re.compile(r"^\t([A-Z0-9]{3})=\{")
 SEC_RE = re.compile(r"^\t\t([a-z_]+)=\{")
 VAR_PREFIXES = ("wa_ai_aifc_", "wa_tlm_r67_aifc_")
 STRAT_RE = re.compile(r"type=(\d+)\s+id=(\d+)\s+value=(-?\d+(?:\.\d+)?)")
+FCT_RE = re.compile(r"target=(\d+)\s+from=(\d+)\s+progress=(-?\d+(?:\.\d+)?)")
 BOOST, SUPPRESS = 400, -150
 
 STATE_LOC = os.path.join(sg.REPO, "localisation", "english",
@@ -102,7 +113,7 @@ def scan_save(fh, want):
     else:
         return order, data
     depth, cur, section, capture = 1, None, None, False
-    varz, ledger, acc = None, None, None
+    varz, ledger, acc, fc = None, None, None, None
     for line in fh:
         delta = line.count("{") - line.count("}")
         if cur is None:
@@ -112,6 +123,7 @@ def scan_save(fh, want):
                 order.append(cur)
                 capture = want is None or cur in want
                 varz, ledger, section = {}, [], None
+                fc, fct = None, []
                 alive = False
             depth += delta
             if depth <= 0:
@@ -147,9 +159,26 @@ def scan_save(fh, want):
                             if m and m.group(1) == "83":
                                 ledger.append((int(m.group(2)), float(m.group(3))))
                             acc = None
+                    elif fc is not None:
+                        # force_concentration_target block: one per ACTIVE engine
+                        # push; only a country with a live plan has any. `progress`
+                        # is the imgui window's "Freshness" (byte-equal, 2026-11).
+                        fc.append(line.strip())
+                        if sum(x.count("{") - x.count("}") for x in fc) <= 0:
+                            m = FCT_RE.search(" ".join(fc))
+                            fct.append((int(m.group(1)), int(m.group(2)),
+                                        float(m.group(3))) if m else None)
+                            fc = None
                     else:
                         t = line.strip()
-                        if t.startswith(("persistent_strategy={", "ai_strategy={")):
+                        if t.startswith("force_concentration_target={"):
+                            if delta <= 0:  # single-line block: close it at once
+                                m = FCT_RE.search(t)
+                                fct.append((int(m.group(1)), int(m.group(2)),
+                                            float(m.group(3))) if m else None)
+                            else:
+                                fc = [t]
+                        elif t.startswith(("persistent_strategy={", "ai_strategy={")):
                             if delta <= 0:
                                 m = STRAT_RE.search(t)
                                 if m and m.group(1) == "83":
@@ -161,8 +190,8 @@ def scan_save(fh, want):
                     section, acc = None, None
         depth += delta
         if depth <= 1:
-            if capture and (varz or ledger):
-                data[cur] = (varz, ledger, alive)
+            if capture and (varz or ledger or fct):
+                data[cur] = (varz, ledger, alive, fct)
             cur, section, acc, capture = None, None, None, False
             if depth <= 0:
                 break
@@ -188,7 +217,8 @@ def fmt_states(ids, names=True):
     return ", ".join(sname(int(i)) if names else str(int(i)) for i in ids)
 
 
-def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True):
+def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True,
+           fct=None):
     print(f"\n=== {date}  {tag} ==={'' if alive else '  [DEAD TAG]'}")
     if not alive:
         print("  !! no `units` section - annihilated tag, every value below FROZE at")
@@ -228,6 +258,26 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True
               f"suppressed({len(supp)})={','.join(supp) if supp else '-'}")
     else:
         print("  armor book: empty (steering off, no sector, or mid-lapse)")
+
+    # -- active engine push (force_concentration_target blocks) --
+    # Present ONLY on a country whose AIFC has a live plan right now. The save
+    # carries the push's target province, its launch province, and `progress`
+    # (= the imgui window's "Freshness"). It does NOT carry the per-front AIFC
+    # score, the should-receive / assigned counts, or the strategic-target list.
+    if fct:
+        p2s = sg.province_state_map()
+        print(f"  active push ({len(fct)} plan"
+              f"{'s' if len(fct) > 1 else ''}):")
+        for rec in fct:
+            if rec is None:
+                print("     <unparsed force_concentration_target block>")
+                continue
+            tgt, frm, prog = rec
+            ts, fs = p2s.get(tgt), p2s.get(frm)
+            print(f"     -> target {sname(ts) if ts else f'prov {tgt}'}"
+                  f"  from {sname(fs) if fs else f'prov {frm}'}"
+                  f"  freshness={prog:g}")
+    # absent = no active plan this save; says nothing about the sector above.
 
     # -- ledger + closure --
     if ledger:
@@ -337,7 +387,7 @@ def main(argv):
         found = [t for t in (sorted(data) if want is None else tags) if t in data]
         quiet = []
         for t in found:
-            varz, ledger, alive = data[t]
+            varz, ledger, alive, fct = data[t]
             # ALL mode: a tag whose only AIFC trace is the r67 lapse counters has
             # never held a sector or an armour entry - one census line, not a block.
             if want is None and not ledger \
@@ -346,7 +396,7 @@ def main(argv):
                 quiet.append(t)
                 continue
             report(t, varz, ledger, order, date, show_ledger, limit, trend,
-                   alive=alive)
+                   alive=alive, fct=fct)
         if quiet:
             print(f"\n  ({len(quiet)} more tags carry only r67 lapse counters - "
                   f"never held a sector: {' '.join(quiet[:20])}"
