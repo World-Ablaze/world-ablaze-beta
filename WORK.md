@@ -172,6 +172,68 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-ladder-integrity — PARKED (2026-08-29)
+- PARKED, not SHIPPED-UNTESTED: every mechanical defect below is fixed AND verified, by script
+  rather than by a console harness — these are structural faults in declarative files, which a
+  script sees and a runtime probe does not. Nothing is owed to the owner. What remains is one
+  decision (generate the light ladder, see KNOWN REMAINING), so the subject waits rather than
+  occupying a WIP slot. Un-park it the moment that decision is taken.
+- Scope: owner request 2026-08-29, after the duplicate template names surfaced during
+  `modern-chassis-tier`. Intended behaviour: the armour template ladder always selects a template
+  that mounts everything the country can actually build, and every template it can select exists
+  and is reachable. Found by auditing the ladders mechanically rather than by reading them.
+- Defect class, MEASURED: two `ai_template` entries under ONE key inside a role group means only
+  one is reachable, and the flag value written for the other selects nothing — the country silently
+  keeps its previous template. Four such pairs existed. Nothing in the game logs it.
+- Fixed (`903bb73ad`): medium 6108/6109/6110 shared their names with 6105/6106/6107; the
+  distinguishing `MEDIUM_ASSAULT` term was missing (their ladder branches carry
+  `WA_AI_TEMPLATES_use_medium_assault_armor` and their regimental slot mounts
+  `medium_assault_gun_company_regimental`). Light 5105 shared its name with 5107.
+- Fixed (`903bb73ad`): medium 6107 and 6110 carried `medium_infantry_support_armor_battalion_line`
+  inside their `support` block — a line battalion in a divisional support slot, where all four
+  siblings carry `medium_infantry_support_company_divisional`.
+- Fixed (`004c2aa4f`): light 5105 and 5107 also shared their ladder CONDITION, so 5107 won the
+  else_if chain and 5105 was dead twice over. Traced: `d7e227e49` created 5107 as a duplicate of
+  5108; `811e731b5` retargeted it onto 5105's condition. 5105 is now the SPAA-less twin of 5107 —
+  the shape the medium ladder already uses with 6105/6106/6107 — with its regimental pair repaired.
+  The identification is MEASURED, not inferred: across the armour role the regimental pair is
+  invariably ONE artillery-type company (pack artillery, else assault gun, else SPG, by unlock)
+  plus ONE anti-tank-type company (anti-tank, else tank destroyer), and 5105 was the only template
+  of 74 that broke it — zero artillery, two anti-tank. That is what marks it as the botched copy.
+- Fixed (`004c2aa4f`): heavy 7003 deleted, defined but selected by no branch. The 20-width branch
+  of every armour class has exactly two variants (mechanized, motorized) and no component
+  sub-branches, so it had no home. Inert content that reads as an available variant is a trap.
+- Fixed (this ship) — `[light-td-coverage]`: the three TD-bearing light variants all required
+  light SPAA, so a country holding light tank destroyers but no SPAA fell to 5101/5102 and fielded
+  neither its TD battalion nor its TD company. Added 5117 (TD), 5118 (TD + SPAA), 5119 (SPG + TD),
+  5120 (assault + TD), each placed BELOW the variant it is the reduced form of, so no existing
+  capability set changes hands. 5119 sits below 5105 on purpose: a country with TDs, SPG and
+  infantry-support tanks keeps 5105's infantry support instead of trading it for the SPG battalion.
+- Fixed (this ship): restoring 5105's `heavy_anti_air_mot_company_divisional`. Removing its light
+  SPAA company left it the only light template with NO air-defence company at all — a defect this
+  session introduced and the AA audit caught. Every light template carries exactly one AA company:
+  `heavy_anti_air_mot` without light SPAA, `light_self_propelled_anti_air` with it.
+- Simulation, MEASURED (light role, all 24 reachable capability sets — SPG and assault are mutually
+  exclusive by `WA_AI_TEMPLATES_use_light_assault_armor`, so the space is 2 x 3 x 2 x 2): sets where
+  the selected template drops something the country can build went **16 -> 12**, and sets where a
+  TD-capable country fields NO tank destroyer went **4 -> 0**.
+- KNOWN REMAINING, not fixed, needs an owner decision: 12 of 24 light sets still lose an artillery
+  tier (pack artillery instead of SPG or assault gun), an SPAA company, or trade infantry support
+  for the SPG battalion. Closing them all is not more branches — the ladder is a 3 x 2 x 2 x 2 cross
+  product and hand-writing it is exactly how the four duplicate pairs above got in. The real fix is
+  to GENERATE the light 30-width ladder and its templates the way
+  `tools/gen_ai_medium_modern_mirror.py` generates the modern-chassis mirror. That is a rewrite of a
+  file the collaborator also edits, and it renumbers live values, so it is not started.
+- Verification: `python tools/check_worklist.py`, plus the four audits re-run over every file in
+  `common/ai_templates/` — regimental shape (1 artillery + 1 anti-tank), one AA company per
+  template, zero duplicate names, zero entries whose suffix does not match their slot, zero ladder
+  branches sharing a condition, and ladder-to-template completeness both ways for light, medium and
+  heavy. All clean at 77 templates. No console harness: these are structural defects in declarative
+  files, visible to a script and not to a runtime probe.
+- Closed when: a campaign shows a light-armour AI that researched light tank destroyers fielding a
+  template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
+  simulation).
+
 ### mot-field-hospital — OPEN (2026-08-29)
 - Scope: owner request 2026-08-29 — "je veux que l'Allemagne utilise les hôpitaux motorisés dans
   ses divisions". Intended behaviour: a rich army that is otherwise entirely horse-drawn still
