@@ -327,48 +327,70 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 
 WA_AI_TEMPLATES_calculate_infantry_template = {
 	set_temp_variable = { _template_type_code = 1 }
+	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
 			NOT = { WA_AI_TEMPLATES_use_heavy_infantry = yes }
 		}
 		set_temp_variable = { _template_value = 1000 }
+		set_temp_variable = { _template_claimed = 1 }
 	}
-	else = {
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			set_temp_variable = { _template_value = 1001 }
-			else = {
-				if = {
-					limit = {
-						WA_AI_CONFIG_DIVISIONS_use_line_support = yes
-					}
-					if = {
-						limit = {
-							WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-						}
-						set_temp_variable = { _template_value = 1006 }
-						else = {
-							set_temp_variable = { _template_value = 1004 }
-							WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-						}
-					}
-					else = {
-						if = {
-							limit = {
-								WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-							}
-							set_temp_variable = { _template_value = 1005 }
-							else = {
-								set_temp_variable = { _template_value = 1003 }
-								WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-							}
-						}
-					}
-				}
-			}
+	# [templates-motorised-20w] the motorised twin of 1001, the shape 1005/1006 already
+	# have at 30 width. Without it a rich army in marsh or mountain terrain fields the
+	# horse-drawn 20-width line and its motorised regimental companies go unused.
+	# 1001 takes no hospital mirror: no 1101 exists.
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
 		}
+		set_temp_variable = { _template_value = 1002 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 1001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_CONFIG_DIVISIONS_use_line_support = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+		}
+		set_temp_variable = { _template_value = 1006 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_CONFIG_DIVISIONS_use_line_support = yes
+		}
+		set_temp_variable = { _template_value = 1004 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+		}
+		set_temp_variable = { _template_value = 1005 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+		}
+		set_temp_variable = { _template_value = 1003 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
@@ -404,37 +426,44 @@ WA_AI_TEMPLATES_calculate_mechanized_template = {
 WA_AI_TEMPLATES_calculate_mountaineer_template = {
 	set_temp_variable = { _template_type_code = 11 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_mountaineers = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+		}
+		set_temp_variable = { _template_value = 2001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_mountaineers = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 2000 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_mountaineers = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+		}
+		set_temp_variable = { _template_value = 2003 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_mountaineers = yes
 		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-				}
-				set_temp_variable = { _template_value = 2001 }
-				else = {
-					set_temp_variable = { _template_value = 2000 }
-					WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-				}
-			}
-		}
-		else = {
-			if = {
-				limit = {
-					WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-				}
-				set_temp_variable = { _template_value = 2003 }
-				else = {
-					set_temp_variable = { _template_value = 2002 }
-					WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-				}
-			}
-		}
+		set_temp_variable = { _template_value = 2002 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
@@ -442,53 +471,63 @@ WA_AI_TEMPLATES_calculate_mountaineer_template = {
 WA_AI_TEMPLATES_calculate_marines_template = {
 	set_temp_variable = { _template_type_code = 9 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_marines = yes
+			WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 10004 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_marines = yes
+			WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = yes
+		}
+		set_temp_variable = { _template_value = 10005 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_marines = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 10001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_marines = yes
+			WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
+		}
+		set_temp_variable = { _template_value = 10003 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_marines = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 10000 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_marines = yes
 		}
-		if = {
-			limit = {
-				WA_AI_TEMPLATES_has_amphibious_mechanized_unlocked = yes
-			}
-			if = {
-				limit = {
-					WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-				}
-				set_temp_variable = { _template_value = 10004 }
-				else = {
-					set_temp_variable = { _template_value = 10005 }
-				}
-			}
-			else = {
-				if = {
-					limit = {
-						WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-					}
-					if = {
-						limit = {
-							WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-						}
-						set_temp_variable = { _template_value = 10001 }
-						else = {
-							set_temp_variable = { _template_value = 10003 }
-						}
-					}
-					else = {
-						if = {
-							limit = {
-								WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-							}
-							set_temp_variable = { _template_value = 10000 }
-							WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-							else = {
-								set_temp_variable = { _template_value = 10002 }
-								WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
-							}
-						}
-					}
-				}
-			}
-		}
+		set_temp_variable = { _template_value = 10002 }
+		WA_AI_TEMPLATES_apply_motorized_hospital_mirror = yes
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
@@ -496,204 +535,267 @@ WA_AI_TEMPLATES_calculate_marines_template = {
 WA_AI_TEMPLATES_calculate_light_armor_template = {
 	set_temp_variable = { _template_type_code = 4 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
+	# 20 width, for a country whose expected terrain is marsh or mountain.
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 5001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 5000 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5116 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 5115 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 5114 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+		}
+		set_temp_variable = { _template_value = 5113 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5112 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 5111 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 5110 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+		}
+		set_temp_variable = { _template_value = 5109 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5108 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5107 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5106 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	# The SPAA-less twin of 5107 above, so a country with TDs and infantry-support
+	# tanks but no SPAA keeps both instead of falling through to 5103. Dropping
+	# the spaa term here is what makes this branch reachable at all - with it the
+	# condition was identical to 5107's and 5107 won the chain.
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 5105 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5104 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	# [light-td-coverage] the reduced TD forms. Placed HERE, under every variant
+	# that carries more, so they only capture cells that used to fall to 5101/5102
+	# and lose the tank destroyer entirely. 5119 sits below 5105 on purpose: a
+	# country with TDs, SPG and infantry-support tanks keeps 5105's infantry
+	# support rather than trading it for the SPG battalion.
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+		}
+		set_temp_variable = { _template_value = 5119 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 5120 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5118 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+		}
+		set_temp_variable = { _template_value = 5117 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 5103 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 5102 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_light_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 5101 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_light_armor_templates = yes
 		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_TEMPLATES_use_mechanized_templates = yes
-				}
-				set_temp_variable = { _template_value = 5001 }
-				else = {
-					set_temp_variable = { _template_value = 5000 }
-				}
-			}
-			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			else = {
-				if = {
-					limit = {
-						WA_AI_TEMPLATES_use_medium_armor_templates = yes
-						WA_AI_TEMPLATES_use_mechanized_templates = yes
-						WA_AI_TEMPLATES_use_light_td_armor = yes
-						WA_AI_TEMPLATES_use_light_spg_armor = yes
-						WA_AI_TEMPLATES_use_light_spaa_armor = yes
-					}
-					set_temp_variable = { _template_value = 5116 }
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 5115 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 5114 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-						}
-						set_temp_variable = { _template_value = 5113 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5112 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 5111 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 5110 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_armor_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-						}
-						set_temp_variable = { _template_value = 5109 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5108 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5107 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5106 }
-					}
-					# The SPAA-less twin of 5107 above, so a country with TDs and infantry-support
-					# tanks but no SPAA keeps both instead of falling through to 5103. Dropping
-					# the spaa term here is what makes this branch reachable at all - with it the
-					# condition was identical to 5107's and 5107 won the chain.
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 5105 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5104 }
-					}
-					# [light-td-coverage] the reduced TD forms. Placed HERE, under every variant
-					# that carries more, so they only capture cells that used to fall to 5101/5102
-					# and lose the tank destroyer entirely. 5119 sits below 5105 on purpose: a
-					# country with TDs, SPG and infantry-support tanks keeps 5105's infantry
-					# support rather than trading it for the SPG battalion.
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-						}
-						set_temp_variable = { _template_value = 5119 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 5120 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 5118 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_td_armor = yes
-						}
-						set_temp_variable = { _template_value = 5117 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 5103 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 5102 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-						}
-						set_temp_variable = { _template_value = 5101 }
-					}
-					else = {
-						set_temp_variable = { _template_value = 5100 }
-					}
-				}
-				set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			}
-		}
+		set_temp_variable = { _template_value = 5100 }
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
@@ -712,160 +814,212 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 		limit = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
 		set_temp_variable = { _tier_offset = 500 }
 	}
+	set_temp_variable = { _template_claimed = 0 }
+	# 20 width, for a country whose expected terrain is marsh or mountain.
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 6000 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 6001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_td_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6116 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6115 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_td_armor = yes
+		}
+		set_temp_variable = { _template_value = 6114 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6113 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6112 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6111 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_medium_assault_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6110 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_medium_assault_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6109 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_medium_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 6108 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6107 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 6106 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 6105 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 6104 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 6103 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 6102 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 6101 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_medium_armor_templates = yes
 		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_TEMPLATES_use_mechanized_templates = yes
-				}
-				set_temp_variable = { _template_value = 6000 }
-				else = {
-					set_temp_variable = { _template_value = 6001 }
-				}
-			}
-			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			else = {
-				if = {
-					limit = {
-						WA_AI_TEMPLATES_use_mechanized_templates = yes
-						WA_AI_TEMPLATES_use_medium_spg_armor = yes
-						WA_AI_TEMPLATES_use_medium_td_armor = yes
-						WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-					}
-					set_temp_variable = { _template_value = 6116 }
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_medium_td_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6115 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_medium_td_armor = yes
-						}
-						set_temp_variable = { _template_value = 6114 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6113 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6112 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6111 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_medium_assault_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6110 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_medium_assault_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6109 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_medium_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 6108 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6107 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 6106 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 6105 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-						}
-						set_temp_variable = { _template_value = 6104 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 6103 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_assault_armor = yes
-						}
-						set_temp_variable = { _template_value = 6102 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-						}
-						set_temp_variable = { _template_value = 6101 }
-					}
-					else = {
-						set_temp_variable = { _template_value = 6100 } #medium tanks and mot
-					}
-				}
-				set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			}
-		}
+		set_temp_variable = { _template_value = 6100 }
+		set_temp_variable = { _template_claimed = 1 }
 	}
-	# [modern-chassis-tier] the CHASSIS decision, applied once to whatever composition the ladder
-	# picked. Guarded on non-zero so a blocked role stays blocked instead of becoming value 500.
+	# [modern-chassis-tier] the CHASSIS decision, applied once to whatever composition
+	# the ladder picked. Guarded on non-zero so a blocked role stays blocked instead of
+	# becoming value 500.
 	if = {
 		limit = { NOT = { check_variable = { _template_value = 0 } } }
 		add_to_temp_variable = { _template_value = _tier_offset }
@@ -876,133 +1030,175 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 WA_AI_TEMPLATES_calculate_heavy_armor_template = {
 	set_temp_variable = { _template_type_code = 6 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
+	# 20 width, for a country whose expected terrain is marsh or mountain.
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 7000 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
+		}
+		set_temp_variable = { _template_value = 7001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_modern_spg_armor = yes
+			WA_AI_TEMPLATES_use_heavy_td_armor = yes
+			WA_AI_TEMPLATES_use_modern_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7113 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_modern_spg_armor = yes
+			WA_AI_TEMPLATES_use_modern_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7112 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_heavy_td_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7111 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7110 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7109 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7108 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_heavy_assault_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7107 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_heavy_assault_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7106 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 7105 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_spg_armor = yes
+		}
+		set_temp_variable = { _template_value = 7104 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
+		}
+		set_temp_variable = { _template_value = 7103 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 7102 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+			WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
+		}
+		set_temp_variable = { _template_value = 7101 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_heavy_armor_templates = yes
 		}
-		if = {
-			limit = {
-				WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes
-			}
-			if = {
-				limit = {
-					WA_AI_TEMPLATES_use_mechanized_templates = yes
-				}
-				set_temp_variable = { _template_value = 7000 }
-				else = {
-					set_temp_variable = { _template_value = 7001 }
-				}
-			}
-			set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			else = {
-				if = {
-					limit = {
-						WA_AI_TEMPLATES_use_mechanized_templates = yes
-						WA_AI_TEMPLATES_use_modern_spg_armor = yes
-						WA_AI_TEMPLATES_use_heavy_td_armor = yes
-						WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-					}
-					set_temp_variable = { _template_value = 7113 }
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_modern_spg_armor = yes
-							WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7112 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_heavy_td_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7111 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7110 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7109 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7108 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_light_spg_armor = yes
-							WA_AI_TEMPLATES_use_heavy_assault_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7107 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_heavy_assault_armor = yes
-							WA_AI_TEMPLATES_use_light_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7106 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_mechanized_spaa_armor = yes
-						}
-						set_temp_variable = { _template_value = 7105 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
-							WA_AI_TEMPLATES_use_medium_spg_armor = yes
-						}
-						set_temp_variable = { _template_value = 7104 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-							WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
-						}
-						set_temp_variable = { _template_value = 7103 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_mechanized_templates = yes
-						}
-						set_temp_variable = { _template_value = 7102 }
-					}
-					else_if = {
-						limit = {
-							WA_AI_TEMPLATES_use_medium_support_armor_templates = yes
-						}
-						set_temp_variable = { _template_value = 7101 }
-					}
-					else = {
-						set_temp_variable = { _template_value = 7100 } #medium tanks and mot
-					}
-				}
-				set_temp_variable = { _weird_debug = 1 } #for some reason, removing this line breaks the function ????
-			}
-		}
+		set_temp_variable = { _template_value = 7100 }
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
@@ -1010,19 +1206,23 @@ WA_AI_TEMPLATES_calculate_heavy_armor_template = {
 WA_AI_TEMPLATES_calculate_suppression_template = {
 	set_temp_variable = { _template_type_code = 13 }
 	set_temp_variable = { _template_value = 0 }
+	set_temp_variable = { _template_claimed = 0 }
 	if = {
 		limit = {
+			check_variable = { _template_claimed = 0 }
+			WA_AI_TEMPLATES_use_suppression_templates = yes
+			has_army_experience > 300
+		}
+		set_temp_variable = { _template_value = 14001 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_suppression_templates = yes
 		}
-		if = {
-			limit = {
-				has_army_experience > 300
-			}
-			set_temp_variable = { _template_value = 14001 }
-			else = {
-				set_temp_variable = { _template_value = 14000 }
-			}
-		}
+		set_temp_variable = { _template_value = 14000 }
+		set_temp_variable = { _template_claimed = 1 }
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }

@@ -1,0 +1,139 @@
+############################################################################################################
+# WA TEST - AI division template selection console harness. harness-contract: v1 (wa-testing SKILL).
+# Recipe: events/wa_test_templates.txt header. Output: logs/game.log under "TEMPLATES".
+# Country scope (ROOT = the reported country; fire the event PER COUNTRY, never loop every_country).
+############################################################################################################
+
+# Report: independent walk. It reads the country FLAGS the calculators wrote and the `use_*`
+# triggers, never the calculators' own temp variables.
+#
+# The one measurement that matters: `has_country_flag = WA_<TYPE>_TEMPLATE` with NO value term is
+# true exactly when that role holds a non-zero value, because WA_AI_TEMPLATES_update_target_template
+# clears the flag and only re-sets it when the value is non-zero. So `used=1 set=0` on any line
+# below means the role is wanted and NO ai_template answers it - the silent failure this whole
+# system keeps having.
+WA_TEST_TMPL_report = {
+	log = "=== TEMPLATES [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _tm_e1_ = 0 }
+	set_temp_variable = { _tm_e2_ = 0 }
+	set_temp_variable = { _tm_e3_ = 0 }
+	set_temp_variable = { _tm_e4_ = 0 }
+	set_temp_variable = { _tm_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _tm_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _tm_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _tm_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _tm_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _tm_e5_ = 1 } }
+	log = "  scope : always=[?_tm_e1_|.0]  I-am-ROOT=[?_tm_e2_|.0]  I-am-THIS=[?_tm_e3_|.0]  ROOT-scope-usable=[?_tm_e4_|.0]  control-false=[?_tm_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### Admission - a country outside these two gates gets no templates at all, by design.
+	set_temp_variable = { _tm_a1 = 0 }
+	set_temp_variable = { _tm_a2 = 0 }
+	set_temp_variable = { _tm_a3 = 0 }
+	if = { limit = { WA_AI_CONFIG_DIVISIONS_use_default_templates = yes } set_temp_variable = { _tm_a1 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_has_infantry_focus_completed = yes } set_temp_variable = { _tm_a2 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_has_tank_focus_completed = yes } set_temp_variable = { _tm_a3 = 1 } }
+	log = "  admit : default_templates=[?_tm_a1|.0] infantry_focus=[?_tm_a2|.0] tank_focus=[?_tm_a3|.0] (all 0 = every used/set pair below is legitimately empty)"
+
+	### Per role: is it wanted, and does it hold a template. used=1 set=0 is the defect.
+	WA_TEST_TMPL_role_infantry = yes
+	WA_TEST_TMPL_role_armour = yes
+	WA_TEST_TMPL_role_other = yes
+
+	### Infantry values, in full. The 20-width motorised twin 1002 is the one this harness was
+	### written for: before [templates-motorised-20w] no calculator could write it.
+	set_temp_variable = { _tm_v = 0 }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1000 } } set_temp_variable = { _tm_v = 1000 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1001 } } set_temp_variable = { _tm_v = 1001 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1002 } } set_temp_variable = { _tm_v = 1002 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1003 } } set_temp_variable = { _tm_v = 1003 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1004 } } set_temp_variable = { _tm_v = 1004 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1005 } } set_temp_variable = { _tm_v = 1005 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1006 } } set_temp_variable = { _tm_v = 1006 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1103 } } set_temp_variable = { _tm_v = 1103 } }
+	if = { limit = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1104 } } set_temp_variable = { _tm_v = 1104 } }
+	set_temp_variable = { _tm_c1 = 0 }
+	set_temp_variable = { _tm_c2 = 0 }
+	set_temp_variable = { _tm_c3 = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_heavy_infantry = yes } set_temp_variable = { _tm_c1 = 1 } }
+	if = { limit = { WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = yes } set_temp_variable = { _tm_c2 = 1 } }
+	if = { limit = { WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes } set_temp_variable = { _tm_c3 = 1 } }
+	log = "  inf   : value=[?_tm_v|.0]  heavy_inf=[?_tm_c1|.0] marsh_or_mtn=[?_tm_c2|.0] can_motorize=[?_tm_c3|.0]"
+	log = "            (heavy_inf=1 marsh_or_mtn=1 can_motorize=1 must give value=1002; before this ship it gave 1001 and the motorised regimental companies went unused)"
+}
+
+# The ten roles, split into three effects so no single log line runs past what the console shows.
+WA_TEST_TMPL_role_infantry = {
+	set_temp_variable = { _tm_u1 = 0 }
+	set_temp_variable = { _tm_s1 = 0 }
+	set_temp_variable = { _tm_u2 = 0 }
+	set_temp_variable = { _tm_s2 = 0 }
+	set_temp_variable = { _tm_u3 = 0 }
+	set_temp_variable = { _tm_s3 = 0 }
+	# Infantry has no `use_` trigger: every admitted country fields it, so `used` is admission.
+	if = { limit = { WA_AI_TEMPLATES_has_infantry_focus_completed = yes } set_temp_variable = { _tm_u1 = 1 } }
+	if = { limit = { has_country_flag = WA_INFANTRY_TEMPLATE } set_temp_variable = { _tm_s1 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_mountaineers = yes } set_temp_variable = { _tm_u2 = 1 } }
+	if = { limit = { has_country_flag = WA_MOUNTAINEERS_TEMPLATE } set_temp_variable = { _tm_s2 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_marines = yes } set_temp_variable = { _tm_u3 = 1 } }
+	if = { limit = { has_country_flag = WA_MARINES_TEMPLATE } set_temp_variable = { _tm_s3 = 1 } }
+	log = "  foot  : infantry used=[?_tm_u1|.0] set=[?_tm_s1|.0] | mountaineers used=[?_tm_u2|.0] set=[?_tm_s2|.0] | marines used=[?_tm_u3|.0] set=[?_tm_s3|.0]"
+}
+
+WA_TEST_TMPL_role_armour = {
+	set_temp_variable = { _tm_u1 = 0 }
+	set_temp_variable = { _tm_s1 = 0 }
+	set_temp_variable = { _tm_u2 = 0 }
+	set_temp_variable = { _tm_s2 = 0 }
+	set_temp_variable = { _tm_u3 = 0 }
+	set_temp_variable = { _tm_s3 = 0 }
+	set_temp_variable = { _tm_u4 = 0 }
+	set_temp_variable = { _tm_s4 = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_light_armor_templates = yes } set_temp_variable = { _tm_u1 = 1 } }
+	if = { limit = { has_country_flag = WA_LIGHT_ARMOR_TEMPLATE } set_temp_variable = { _tm_s1 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_medium_armor_templates = yes } set_temp_variable = { _tm_u2 = 1 } }
+	if = { limit = { has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE } set_temp_variable = { _tm_s2 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_heavy_armor_templates = yes } set_temp_variable = { _tm_u3 = 1 } }
+	if = { limit = { has_country_flag = WA_HEAVY_ARMOR_TEMPLATE } set_temp_variable = { _tm_s3 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes } set_temp_variable = { _tm_u4 = 1 } }
+	if = { limit = { has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE } set_temp_variable = { _tm_s4 = 1 } }
+	log = "  armour: light used=[?_tm_u1|.0] set=[?_tm_s1|.0] | medium used=[?_tm_u2|.0] set=[?_tm_s2|.0] | heavy used=[?_tm_u3|.0] set=[?_tm_s3|.0] | light_support used=[?_tm_u4|.0] set=[?_tm_s4|.0]"
+}
+
+WA_TEST_TMPL_role_other = {
+	set_temp_variable = { _tm_u1 = 0 }
+	set_temp_variable = { _tm_s1 = 0 }
+	set_temp_variable = { _tm_u2 = 0 }
+	set_temp_variable = { _tm_s2 = 0 }
+	set_temp_variable = { _tm_u3 = 0 }
+	set_temp_variable = { _tm_s3 = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_motorized_templates = yes } set_temp_variable = { _tm_u1 = 1 } }
+	if = { limit = { has_country_flag = WA_MOTORIZED_TEMPLATE } set_temp_variable = { _tm_s1 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_mechanized_division_templates = yes } set_temp_variable = { _tm_u2 = 1 } }
+	if = { limit = { has_country_flag = WA_MECHANIZED_TEMPLATE } set_temp_variable = { _tm_s2 = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_suppression_templates = yes } set_temp_variable = { _tm_u3 = 1 } }
+	if = { limit = { has_country_flag = WA_SUPPRESSION_TEMPLATE } set_temp_variable = { _tm_s3 = 1 } }
+	log = "  other : motorized used=[?_tm_u1|.0] set=[?_tm_s1|.0] | mechanized used=[?_tm_u2|.0] set=[?_tm_s2|.0] | suppression used=[?_tm_u3|.0] set=[?_tm_s3|.0]"
+	log = "            (used=1 set=0 on ANY line above is the defect: the role is wanted and no ai_template answers it)"
+}
+
+# Execute: run one real calculation pass, then re-read the flags in the SAME tick.
+# The claim cascade is a pure function of the triggers, so a second pass must land on the same
+# values. A line that changes between pre and post means a branch is writing without its
+# `_template_claimed` guard and is overwriting a higher-priority branch.
+WA_TEST_TMPL_execute = {
+	log = "=== TEMPLATES EXECUTE [This.GetName] [GetDateText] ==="
+	log = "  pre:"
+	WA_TEST_TMPL_role_infantry = yes
+	WA_TEST_TMPL_role_armour = yes
+	WA_TEST_TMPL_role_other = yes
+	WA_AI_TEMPLATES_calculate_templates = yes
+	log = "  post:"
+	WA_TEST_TMPL_role_infantry = yes
+	WA_TEST_TMPL_role_armour = yes
+	WA_TEST_TMPL_role_other = yes
+	log = "            (pre and post must match line for line; any difference is a missing claim guard)"
+}

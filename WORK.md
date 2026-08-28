@@ -172,12 +172,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### armor-ladder-integrity — PARKED (2026-08-29)
-- PARKED, not SHIPPED-UNTESTED: every mechanical defect below is fixed AND verified, by script
-  rather than by a console harness — these are structural faults in declarative files, which a
-  script sees and a runtime probe does not. Nothing is owed to the owner. What remains is one
-  decision (generate the light ladder, see KNOWN REMAINING), so the subject waits rather than
-  occupying a WIP slot. Un-park it the moment that decision is taken.
+### armor-ladder-integrity — SHIPPED-UNTESTED (2026-08-29)
+- SHIPPED-UNTESTED as of the flattening ship below: it rewrites seven calculators inside an
+  effect an on_action calls, which is exactly the size of change the owner console-test rule
+  covers. Owed: `event wa_test_tmpl.1 <TAG>` and `event wa_test_tmpl.2 <TAG>` output pasted here.
+  Everything ABOVE that ship was structural and script-verified, and nothing there is owed.
 - Scope: owner request 2026-08-29, after the duplicate template names surfaced during
   `modern-chassis-tier`. Intended behaviour: the armour template ladder always selects a template
   that mounts everything the country can actually build, and every template it can select exists
@@ -224,12 +223,59 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   to GENERATE the light 30-width ladder and its templates the way
   `tools/gen_ai_medium_modern_mirror.py` generates the modern-chassis mirror. That is a rewrite of a
   file the collaborator also edits, and it renumbers live values, so it is not started.
-- Verification: `python tools/check_worklist.py`, plus the four audits re-run over every file in
-  `common/ai_templates/` — regimental shape (1 artillery + 1 anti-tank), one AA company per
-  template, zero duplicate names, zero entries whose suffix does not match their slot, zero ladder
-  branches sharing a condition, and ladder-to-template completeness both ways for light, medium and
-  heavy. All clean at 77 templates. No console harness: these are structural defects in declarative
-  files, visible to a script and not to a runtime probe.
+- Tooling (this ship, owner request 2026-08-29): the audits below were run by hand and would have
+  rotted the moment nobody re-ran them. `python tools/check_templates.py` now holds them
+  mechanically — it parses the eleven calculators, rebuilds every if/else_if chain (both the
+  sibling and the nested spelling), computes the values each role can actually reach including the
+  +100 hospital and +500 chassis mirrors, and cross-checks that set against `common/ai_templates/`
+  both ways. Eight rules: VALUE-NO-TEMPLATE, TEMPLATE-NO-VALUE, DUP-CONDITION, UNREACHABLE-BRANCH,
+  DUP-TEMPLATE-NAME, SLOT-SUFFIX-MISMATCH, NO-DIRECT-EFFECT, ELSE-SEPARATED. `--selftest` mutates a
+  fixture once per rule and fails if any rule does not fire on the input built to break it.
+- Non-regression, MEASURED: run against `903bb73ad~1` (a git worktree at the commit before the
+  hand fixes) it reports 4 DUP-TEMPLATE-NAME, 4 SLOT-SUFFIX-MISMATCH and 1 DUP-CONDITION — the
+  same defects this subject found by reading. The rules are not inert.
+- Flattened (this ship): the seven calculators with branches — infantry, mountaineer, marines,
+  light, medium, heavy, suppression — are now flat first-match-wins sequences. Each branch is an
+  independent `if` that tests `check_variable = { _template_claimed = 0 }` and sets it to 1 when
+  it takes the role, so file order IS priority and no branch nests inside another. Zero `else` and
+  zero `_weird_debug` remain in the seven. The `_template_claimed` guard is enforced by
+  `check_templates.py` (CLAIM-GUARD-MISSING): a branch added later without both halves is an
+  ERROR, not a silent overwrite of a higher-priority branch.
+- Why it had to be flattened, MEASURED: the nested form was AMBIGUOUS and no syntactic rule
+  recovers the intent. An `else` that sits inside one `if` and follows another means "not the
+  OUTER if" in infantry/marines/light/medium/heavy, and "not the INNER if" in mountaineer. Read
+  one way the five ladders were broken; read the other way mountaineer was broken — handing
+  2002/2003 to a country that wants no mountain divisions at all, the decommission trap the
+  garrison header describes. The flat form is correct under both readings.
+- Equivalence, MEASURED: a boolean sweep of every calculator over every assignment of the
+  triggers it reads (35 316 cells; `equiv.py`, an interpreter run against both file versions).
+  Against the outer-if reading: heavy/light/medium/marines/suppression/motorized/mechanized/
+  light_support all IDENTICAL, infantry differs in exactly one cell (the 1002 fix below), and
+  mountaineer differs in the six cells that were the bug.
+- Fixed (this ship) — `[templates-motorised-20w]`: infantry 1002 was declared and written by no
+  calculator. It is the motorised twin of the 20-width 1001, the shape 1005/1006 already have at
+  30 width, so a rich army in marsh or mountain terrain fielded the horse-drawn line and its
+  motorised regimental companies went unused. Now selected on `marsh_or_mountain` +
+  `can_motorize_support`. 1001 takes no hospital mirror — no 1101 exists.
+- NOT resolved, and the flattening does not answer it: the owner ruling that a scripted-effect
+  `if` block needs an effect of its own, which is what the six `_weird_debug` sentinels were
+  supplying. The flat form gives every block two real effects, so the question no longer applies
+  to these seven — but `check_templates.py` keeps the NO-DIRECT-EFFECT rule for whatever is
+  written next.
+- Harness (this ship): `common/scripted_effects/WA_TEST_templates.txt` +
+  `events/wa_test_templates.txt`, contract v1. Its measurement is that
+  `has_country_flag = WA_<TYPE>_TEMPLATE` with no `value` term is true exactly when the role holds
+  a non-zero value, so a `used=1 set=0` pair on any role names the silent failure directly.
+  `wa_test_tmpl.2` runs a real pass and prints pre/post, which a missing claim guard would split.
+- Verification: `python tools/check_templates.py` — **0 ERROR, 0 WARN** (was 0/17 before the
+  flattening: 16 NO-DIRECT-EFFECT, 3 ELSE-SEPARATED and the dead 1002 are all gone).
+  `--selftest` exit 0 with nine rules, each firing on the input built to break it.
+  `python tools/check_constants.py`, `python tools/check_worklist.py` both clean.
+- Verification OWED to the owner, in an observer game: `event wa_test_tmpl.1 <TAG>` on a major
+  reads no `used=1 set=0` pair on any role; on a country with heavy_inf + marsh_or_mountain +
+  can_motorize it reads `value=1002`; `event wa_test_tmpl.2 <TAG>` prints pre and post that match
+  line for line. Control: `wa_test_tmpl.1` on a 1936 minor before its infantry focus reads
+  `admit : ... 0` and every `set=` legitimately 0.
 - Closed when: a campaign shows a light-armour AI that researched light tank destroyers fielding a
   template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
   simulation).
@@ -477,279 +523,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `role_ratio id = modern_armor` entry in any `persistent_strategy` block.
 - Closed when: the harness reads 1/1/1/1 on GER post-1943 AND a campaign shows German medium
   divisions mounting the modern chassis before 1945.
-
-### armor-role-budget — SHIPPED-UNTESTED (2026-08-28)
-- Scope: owner request 2026-08-28, two parts. (1) A country with tanks holds a CONSTANT,
-  configurable armour share of its wanted-division mix whatever the NUMBER of tank types it
-  fields - the AI is about to run up to four at once. (2) The AI can actually field light-support
-  armour, which it never has (owner: SOV).
-- Symptom 1, MEASURED (`common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_army_composition.txt` before
-  this change): every tank role carried its own `role_ratio infantry -10 / <role> +10` block, so
-  the armour share was 10 x the number of open tank roles and infantry paid it once PER ROLE. The
-  live ENG reading recorded in `division-target-scaling` (`imgui show ai_division_production`:
-  wanted medium 189 / infantry 47 / mechanized 95, i.e. 40 : 10 : 20 at the pre-halving values) is
-  that stacking, with medium double-counted by a second block for the light-to-medium transition.
-- Symptom 2, MEASURED (`common/ai_templates/WA_AI_TEMPLATES_armored_light_support.txt:42`): the
-  light-support template enabled on `has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value =
-  15000 }`, while the effect that writes that flag (template type code 14,
-  `common/scripted_localisation/WA_AI_templates_scripted_loc.txt:79`) writes
-  `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE`. **No file under `common/ai_templates/` contains that name** -
-  the template could never enable, for any country, and no `role_ratio` ever requested the role.
-- Change 1 - the budget (owner decisions: runtime emission, total 25). New
-  `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`: `WA_AI_ARMOR_BUDGET_reconcile`
-  counts the open tank roles, splits
-  `constant:wa_ai_production.army_composition.armor_budget_total` (new file
-  `common/script_constants/wa_ai_production.txt`, value 25) evenly between them with the heaviest
-  open role taking the rounding remainder, and emits the DIFFERENCE against a stored book through
-  `meta_effect` + `add_ai_strategy`. Infantry pays the budget exactly ONCE. Wired into the monthly
-  AI pulse right after `WA_AI_TEMPLATES_calculate_templates`, and into `on_startup`.
-- Change 2 - the five static armour blocks are DELETED from
-  `WA_AI_PRODUCTION_DEFAULT_army_composition.txt` (light, medium, light-to-medium transition,
-  heavy, modern). The transition is now the second way into the medium SLOT
-  (`WA_AI_PRODUCTION_build_army_medium_armor`), not a second ratio: the double count is gone.
-- Change 3 - light-support exists at all. Flag name corrected in the template file. Light-support
-  now owns the light slot outright (`WA_AI_TEMPLATES_light_support_armor_owns_light_role`, keyed on
-  the chassis tech, NOT on the run being open, added as a `NOT` to
-  `WA_AI_TEMPLATES_use_light_armor_templates`), because both templates declare `role = light_armor`
-  and their gates were otherwise identical - the engine was left to arbitrate two enabled targets
-  for one role. Owner decision: exclusive, not a fifth role.
-- Change 4 - the light-support RUN (owner rule 2026-08-28: build until 10 000 on the field, retire
-  the template in 1942). The two ends sit on DIFFERENT levers on purpose:
-  - **1942 closes the ROLE.** `date < 1942.1.1` in
-    `WA_AI_TEMPLATES_use_light_support_armor_templates`, with the plain light template still shut by
-    `owns_light_role`, so the whole light slot leaves the budget and the light_armor want goes to
-    zero. **ASSUMED** (mechanism recorded in `WA_AI_TEMPLATES_garrison.txt` header, where it froze
-    SOV at 87 divisions): a template captured by a role the AI wants zero of is decommissioned. That
-    engine behaviour IS the requested decommission - WA does not delete the divisions itself.
-  - **10 000 closes the PRODUCTION LINE, not the role.** New
-    `WA_AI_PRODUCTION_light_support_armor_at_fielded_cap`
-    (`check_variable = { num_equipment_in_armies@light_tank_support_chassis > constant:...
-    light_support_armor_fielded_cap }`, 10000) drives
-    `equipment_variant_production_factor id = light_tank_support_chassis` +45 -> -100. Putting the
-    cap on the role instead would have scrapped the divisions the moment the cap was reached,
-    which is exactly what the 1942 rule says must not happen yet.
-  - The off block is the negation of the on block, so it also holds the line shut after 1942: the
-    decommission returns chassis to the stockpile, `num_equipment_in_armies` falls back under the
-    cap, and nothing else would stop the line restarting for a role that no longer exists.
-  - **MEASURED** (install 1.19.2 `dynamic_variables_documentation.md`): `num_equipment_in_armies@`
-    is equipment in the country's ARMIES, i.e. on the field, not the stockpile.
-    **MEASURED** (`common/units/armor_support.txt`): the battalion needs 25
-    `light_tank_support_chassis`, 9 battalions per division, so 10 000 is about 44 divisions.
-  - **ASSUMED**: that the AI stops adding light-support divisions once the chassis line is at -100.
-    It is an equipment brake, not a training brake; probe (viii) below is what would catch an
-    overshoot.
-- Setup-agnostic: every gate is dynamic (chassis tech, focus, factory count, fielded equipment,
-  date). No tag was added anywhere; the whole light-support run is reachable by any country holding
-  a `sov_light_tank_support_chassis_*` tech, which today is only SOV. The run is deliberately NOT
-  gated on `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`: that fires 1941.1.1 for every
-  country and would have ended the run a year before the owner rule says.
-- WHY runtime and not an ai_strategy file (the owner chose this over the block table): the
-  per-role value is budget / open-roles. `ai_strategy value =` takes a literal and does not
-  resolve `constant:` (wa-constants-registry, validated contexts), so a file version needs one
-  block per (role, open-role-count) pair with the budget written out 16 times. The rendered-value
-  form is the one the lend-lease boot test proved (`WA_AI_lend_lease_effects.txt`,
-  `AMT = "[?_llr_amount]"`); integer rendering is MEASURED through the railway `[?_cp_v_]` array
-  index, which could not resolve a variable NAME if it rendered decimals. Negative rendering is
-  NOT relied on: each role has an add emitter and a sub emitter, the sign is a literal in the text.
-- Entry accumulation - the AIFC failure mode, bounded with a table rather than an adjective. There
-  is no `remove_ai_strategy`; entries are retired by adding their negation and accumulate in
-  `persistent_strategy`. A book moves only when a tank ROLE opens or closes. SOV walk, DERIVED
-  from the template gates: t0 1936.1, no armour tech, 0 entries; t1 light chassis and armour
-  templates open, 2 entries (light +25, infantry -25); t2 medium chassis, 2 roles, 4 entries
-  (light 25 to 13, medium 0 to 12); t3 1941.1 the switch closes light, 2 entries (light 13 to 0,
-  medium 12 to 25); t4 heavy chassis, 3 roles, 3 entries; t5 1942.9 modern, 4 roles, 4 entries.
-  Terminal about 15 entries per major over a campaign, flat between transitions, against the
-  MEASURED 517 AIFC accumulated on USA. A major carrying hundreds of role_ratio entries means an
-  open-role trigger is FLAPPING - find which one, do not add a grace window blind.
-- Impact on existing behaviour. Callers of the four `WA_AI_PRODUCTION_build_army_*_armor`
-  triggers: MEASURED, only the five deleted blocks - nothing else read them.
-  `WA_AI_PRODUCTION_trains_no_divisions` keeps its static `-1000` rows and now also zeroes the
-  budget, so its books stay empty instead of churning under it. Old saves lose the deleted blocks
-  on reload (file strategies are not persisted) and open the books from zero on the next monthly
-  pulse; no migration needed. Regression risk, stated plainly: the armour share of GER, SOV, ENG
-  and USA falls from 30-40 to a flat 25 on top of the quartered targets of
-  `division-target-scaling` - if the next campaign shows majors with no armoured spearhead, the
-  lever is that one constant, not the return of per-role blocks.
-- Not run this session (session rule): `wa-architecture-reviewer`, `wa-lessons-reviewer`.
-- Verification (owner console; harness `common/scripted_effects/WA_TEST_armor_budget.txt`, events
-  `wa_abg.1 <TAG>` and `wa_abg.2`, recipe in `events/wa_test_armor_budget.txt`):
-  (i) the `scope :` line reads `1 1 1 1 0` - anything else and nothing below is a measurement;
-  (ii) GER or SOV after 1943 with three tank roles open: the VERDICT line reads `1 1 1` and the
-  `books :` row sums to 25 with heavy holding about half of medium;
-  (iii) ENG after 1941: the medium slot is open through the switch and holds ONE share, not two;
-  (iv) SOV before 1941: the `flags :` line reads `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=1` and
-  `WA_LIGHT_ARMOR_TEMPLATE=0`, and the light slot is open;
-  (v) a minor with no armour: `open-roles=0` and every book 0 - the control that proves the
-  report can print something other than a pass;
-  (vi) `imgui show ai_division_production` on that same GER or SOV save: wanted divisions across
-  all tank roles together are about 25% of the wanted total, and wanted infantry stays positive;
-  (vii) SOV `lsline:` reads exactly one of ON / OFF at every read, never both and never neither
-  once the chassis is unlocked;
-  (viii) the run ends on BOTH levers: at the cap, `lsrun: reached=1` with `chassis-line-OFF=1`
-  while the light slot is STILL in the books (divisions kept); and on a 1942 save the light book
-  is 0, `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=0`, and the SOV OOB no longer lists light-support
-  divisions - that last one is the engine decommission and the only proof it happens.
-- **Harness run 1, owner console 2026-08-28, SOV 1943.11.3 (save loaded, monthly pulse of Nov 1
-  had fired). VERDICT `1 1 1`.**
-
-      gates : is_ai=1  composition-enabled=1  trains-no-divisions=0  early-expansion-override=0  use-armor-templates=1
-      tmpl  : light=0  light-support=0  medium=1  light-to-medium-switch=1  heavy=1  modern=0
-      lsrun : has-support-chassis=1  owns-light-role=1  fielded=3277(cap 10000, reached=0)  before-1942=0
-      lsline: chassis-line-ON=0  chassis-line-OFF=1
-      flags : WA_LIGHT_ARMOR_TEMPLATE=0  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=0
-      expect: budget=25  open-roles=2  share=12  primary=13  ->  light=0 medium=12 heavy=13 modern=0 infantry-offset=25
-      books : light=0 medium=12 heavy=13 modern=0  sum=25  infantry-offset=25
-      VERDICT: sum-equals-offset=1  offset-equals-budget=1  books-match-independent-split=1
-
-  PASSED: (i) scope, (ii) partially - two open roles, not three, (vii) exactly one line state.
-  Also MEASURED on the way: SOV already fields 3277 `light_tank_support_chassis` from its starting
-  templates, so the 10 000 cap would not have bound on this campaign.
-  A prior run on the same save at 1943.10.20 read `books : 0 0 0 0` - a save load without a monthly
-  tick, since `on_startup` does not re-fire on load. `event wa_abg.3 <TAG>` was added to force the
-  reconcile and tell that case from a load failure in one command.
-  Two defects the run caught and closed: the rounding was nearest, not floor, so with two open roles
-  the HEAVIEST role received the smaller share (13/12 the wrong way round) - corrected to an exact
-  floor in both the shipped effect and the harness, hence `share=12 primary=13` above.
-- Run 1 could not prove DELIVERY on its own (contract rule 3, the instrument validating itself):
-  the harness reads the BOOKS, which are `set_variable` calls beside the emitters, so a silent
-  `meta_effect` / `add_ai_strategy` failure would leave the books correct and the VERDICT green.
-  Probe (vi) closed that.
-- **Probe (vi) PASSED - owner `imgui show ai_division_production`, SOV, same 1943.11 window. The
-  emitted entries reach the engine and the whole composition matches to within rounding.** 372
-  wanted divisions; WA strategy sums that day were infantry 45 (100 base, -20 mechanized, -10
-  mountaineers, -25 armor budget), mechanized 20, mountaineers 10, heavy 13, medium 12 - sum 100.
-
-      role            strategy   expected %   wanted   measured %
-      infantry              45         45.0      167         45.0
-      mechanized            20         20.0       74         19.9
-      mountaineers          10         10.0       37         10.0
-      heavy_armor           13         13.0       48         12.9
-      medium_armor          12         12.0       45         12.1
-      ARMOUR TOTAL          25         25.0       93         25.1
-      suppression            0          0.0        0          0.0
-
-  The constancy claim is therefore MEASURED end to end, not just in the books: two open tank roles,
-  armour exactly 25% of the wanted mix. The `meta_effect`-rendered `add_ai_strategy` value, listed
-  above as the change's main ASSUMED, is now MEASURED for `role_ratio`.
-- Side finding, recorded in `wa-lessons-learned`: the run also settles what `role_ratio` values MEAN.
-  A role's share is its strategy sum divided by the sum of all strategy sums; a role with no
-  strategy wants nothing (`suppression` 0 with a 0 strategy, `motorized` no row at all). The
-  "base of 100 plus the value" sentence in `common/ai_strategy/documentation.info` does not describe
-  this.
-- Change 5 - mechanized DIVISIONS become expeditionary-major-only (owner rule 2026-08-28, off the
-  probe (vi) reading: SOV wanted 74 mechanized divisions, 20% of its army, against 7 fielded).
-  Owner chose 0 for everyone but the USA, with "mechanized inside tank divisions is still wanted".
-  Those two are separable and the change lives entirely in the trigger layer - **no ai_strategy
-  value moved**:
-  - New `WA_AI_TEMPLATES_use_mechanized_division_templates` = `use_mechanized_templates` AND
-    `WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major`. It gates the mech division TARGET
-    TEMPLATE (`WA_AI_TEMPLATES_calculate_mechanized_template`) and the composition slot
-    (`WA_AI_PRODUCTION_build_army_mechanized`). Both open and close together on purpose: a share
-    with no target is wasted outright, a target with no share gets its divisions decommissioned.
-  - `WA_AI_TEMPLATES_use_mechanized_templates` is **deliberately untouched**. MEASURED, 44 call
-    sites in `WA_AI_TEMPLATES_effects.txt` read it inside
-    `calculate_<light|medium|heavy|modern>_armor_template` to choose the MECHANIZED variant of each
-    armour template, and `WA_AI_PRODUCTION_mech_min_factories_small|medium|large`
-    (`mechanized_equipment` floors 3/8/15) plus `WA_AI_PRODUCTION_build_mechanized*` hang off it.
-    Narrowing it would have stripped the mech battalions out of GER/SOV tank divisions and removed
-    their mech-equipment factory floor - the exact opposite of the owner rule. MEASURED, mech
-    battalions are present in all four armour families (medium 17 sites, heavy 15, light 14,
-    modern 7).
-  - The two ai_strategy blocks keep their values. The base block (-20/+20) is now the expeditionary
-    major OUTSIDE its window; the expeditionary block (-30/+30) is it inside. Every other country
-    has no mechanized `role_ratio` at all, which by the run-1 finding means a want of exactly zero.
-  - Consequence the owner accepted by choosing 0: non-USA countries have their existing mechanized
-    divisions DECOMMISSIONED (SOV 7 at 1943.11). Same engine mechanism as the 1942 light-support
-    retirement, ASSUMED the same way.
-  - Deepest reachable stacks after this: USA `100 -25 armor -30 mech -10 special = 35`; everyone
-    else `100 -25 armor -10 special -5 motorized = 60`. Motorized cannot stack with mechanized
-    (`WA_AI_TEMPLATES_use_motorized_templates` excludes it) and marines/mountaineers are mutually
-    exclusive, so these are floors, not estimates.
-  - Expected SOV shape after the change, DERIVED from the run-1 table: infantry 65% (242 of 372,
-    up from 167), mechanized 0, mountaineers 10%, armour unchanged at 25%. The armour total does
-    not move - the budget is a fixed amount, not a residual.
-- Change 6 - the split becomes WEIGHTED (owner rule 2026-08-28: "a heavy tank division costs a lot,
-  so it should be half the number of the mediums"; stated as budget 9 with medium and heavy open
-  gives 6 medium and 3 heavy). Two new constants,
-  `armor_weight_standard = 2` (light, medium, modern) and `armor_weight_heavy = 1`; a role gets
-  budget x its weight / the sum of the OPEN weights, floored, with the leftover going to the
-  largest-weight open role (modern, else medium, else light, else heavy - heavy is last on purpose,
-  it can only take the leftover when it is the only open role and the ratio has nothing to hold it
-  against). Only the RATIO between the two constants matters, never their size.
-- Verified by exhaustive simulation of the shipped arithmetic over all 15 reachable role
-  combinations, under BOTH half-up and half-even rounding (the floor correction makes the result
-  rounding-independent): every combination sums to exactly 25, and the owner example reproduces
-  exactly 6 / 3. Selected rows at budget 25 - medium alone 25; medium+heavy 17 / 8 (2.12);
-  medium+heavy+modern 10 / 5 / 10 (2.00); light+medium+heavy 10 / 10 / 5 (2.00); all four
-  7 / 8 / 3 / 7 (2.33). The ratio is exactly 2.00 when the division is clean and drifts up to 2.33
-  when the leftover lands on medium or modern - never below 2, which is the direction the rule
-  cares about.
-- SOV impact, DERIVED from the run-1 table (372 wanted, medium+heavy open): medium 12 -> 17 of the
-  budget (45 -> 63 divisions), heavy 13 -> 8 (48 -> 30). The armour TOTAL is unchanged at 25 / 93.
-- Scope note: the owner rule names heavy only. Modern armour is on the STANDARD weight, which is
-  the rule as given and NOT a claim that a modern division is cheap - say so if it should be 1 too,
-  it is one constant lookup away.
-- Change 7 - the armour TEMPLATE FLAG JOIN, found with this subject's own harness. Owner report:
-  ENG stopped wanting heavy tanks in test3. MEASURED (owner console 1943.11.12, ENG): budget books
-  medium 17 / heavy 8, `VERDICT 1 1 1`, `tmpl heavy=1` - and `imgui show ai_division_production`
-  showed **no heavy_armor row at all**. Cause, MEASURED: the heavy calculator emits template values
-  7103-7113 while `WA_AI_TEMPLATES_armored_heavy.txt` declared 7100-7109, left three entries at the
-  literal placeholder `value = xxxx`, and declared 7102 twice. Every template existed and was
-  correctly composed; the numbers were never assigned. A country landing on an undeclared value
-  carries a flag pointing at nothing - no target template, no divisions, no row, and its whole
-  role_ratio share wasted. The light family had the same defect (5104 dead, 5105 duplicated).
-  Pre-existing: `git show 86ca60e63` has the same 4 dead values, introduced by `101fd357d`.
-  Progressive, which is why it reads as a regression - ENG held its heavies while its unlocks landed
-  in 7100-7109 and lost them by researching modern SPG/SPAA into a branch with no entry.
-  Fix: renumber by TEMPLATE NAME (the names encode the branch conditions exactly), 11 heavy entries
-  and 1 light entry. No template was authored and no composition changed. Audit after: all four
-  armour families have zero dead values and zero duplicates; one unreachable spare remains (heavy
-  7003, a 20-width variant the calculator never emits). Durable rule recorded in
-  `wa-lessons-learned`.
-- Not built, offered: a mechanical check of this join (emitted values vs declared values per family)
-  belongs in `tools/check_worklist.py`, which needs a self-test fixture per rule. Meta-work, owner
-  request required.
-- Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
-  `WA_AI_TEMPLATES_use_mountaineers` is `NOT = { use_marines }` and nothing else - no terrain, tech
-  or industry term - so every non-marine AI country spends 10 points of its ratio on mountain
-  troops. That is 37 wanted mountain divisions for the Soviet Union in 1943. Owner call whether it
-  becomes a subject.
-- Probe (ix), Change 5, owner console on any late save: `imgui show ai_division_production` shows
-  NO `mechanized` row for SOV (or the row at 0 wanted) while USA still shows one near 30% of its
-  wanted mix; the same SOV save still shows mech battalions inside its medium/heavy tank templates,
-  and its `mechanized_equipment` production is still running. Both halves must hold - a SOV with no
-  mech equipment means the floors moved when they should not have.
-- Run 1 predates Changes 5 and 6 and its numbers (medium 12 / heavy 13) are the OLD equal split.
-  The next harness run on the same SOV window must read medium 17 / heavy 8; if it still reads
-  12 / 13 the weighted split did not load.
-- Owner reports manual in-game verification OK, 2026-08-28, no console output pasted for Change 5.
-  Recorded as an owner statement, not as a probe result: probes (iii), (iv), (v), (viii) and (ix)
-  are still owed, and (ix) is the one that would catch the mech floors moving when they must not.
-- Probe (x), Change 7: on the ENG save that produced the report, after a full restart and one
-  monthly pulse, `imgui show ai_division_production` shows a `heavy_armor` row with wanted near 8%
-  of the total. Two residuals from that same reading are NOT explained by Change 7 and need their
-  own look: ENG medium read 15 wanted where the book value of 17 predicts about 21, and ENG showed
-  no marines or mountaineers row at all despite carrying 10 points of special forces.
-- Closed when: (iii), (iv), (v), (viii), (ix) and (x) pass, with the output pasted here. (iii), (v) and
-  (ix) are readable on any late save; (iv) and (viii) need a fresh campaign sampled around 1940 and
-  early 1942.
-
-### rail-corridors — SHIPPED-UNTESTED (2026-08-27, reopened)
-- Scope: owner request 2026-08-27: add a 9th strategic corridor, San Francisco - Washington,
-  level 5 (same free AI pathfinding cheat as corridors 1-8; subject was CLOSED 2026-08-27 and
-  reopens only for this extension).
-- State: SHIPPED — generator `tools/gen_rail_corridors.py` corridor 9
-  (`sanfrancisco_washington`, anchors 9671 SF → 4865 Salt Lake City → 12586 Omaha → 9450
-  Chicago → 3957 Washington; waypoints pin the Overland Route), data + harness regenerated
-  (41 provinces, 40 edges, 16 gate states — all US: SF/Nevada/Utah/Wyoming/S.Dakota/Nebraska/
-  Iowa/Illinois/Chicago/Indiana/Ohio/Erie/W.Penn/W.Virginia/Maryland), dispatch corridor-9
-  block + `_rc_built_n = 9` retirement count in `WA_AI_RAIL_CORRIDOR_effects.txt`, force-build
-  event `wa_test_rail.19`. `check_constants.py` + `check_worklist.py` exit 0, no BOM.
-- Verification: owner console run — `event wa_test_rail.1` (report shows corridor 9 gate
-  verdicts) then `event wa_test_rail.19` on a throwaway save; supply mapmode shows one
-  continuous level-5 line SF→Washington, no `REFUSED` edge in game.log. Campaign probe folded
-  into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
-- Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
 ### swi-militia — PARKED (2026-08-29)
 - PARKED state: code SHIPPED 2026-08-28, owner console run STILL OWED (the Verification lines
@@ -1168,186 +941,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     gone at 1945.8 - ASSUMED combat loss, no warship-loss counter exists in a save.
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
-
-### recruit-loop — TESTED (2026-08-28, 2nd ship verified by owner reload test)
-- Parked 2026-08-28 (WIP limit; console harness passed, awaiting the next scored campaign).
-- Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
-  boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
-  (5th subject in OPEN is an explicit owner override of the WIP limit; the checker's WIP-LIMIT
-  ERROR is accepted until a subject closes). Intended behaviour: scripted leader recruitment
-  recruits generals that actually exist, at the engine-mirrored CP cost, and stops when the
-  target count is met.
-- Symptom, MEASURED (campaign 0767987f, saves 1937.1/1940.1/1943.1/1945.10): every scripted
-  `create_corps_commander = { skill = 1 }` creation lands ORPHANED in character_manager -
-  present in the DB (token `TAG_` with empty suffix, generic portrait, skill 1/1/1/1), never in
-  the country's characters list, invisible to `every_army_leader`. The count gate `< 3`
-  therefore never closes: any country whose official roster holds < 3 non-marshal generals
-  recruits forever at the 10-CP min clamp. 0 exceptions over 74 cells (37 tags x 2 saves) on
-  "official < 3 => growing orphans + CP pinned < 13". ARG: 117 orphans, CP 0-11 for 9 years,
-  ~1170 CP burned. Global: 10 394 orphans across 106 countries (> 55% of the save's character
-  DB). Reverse direction has 2 exceptions: XSM/YUN loop despite official >= 3 (warlord/united
-  front reading, engine boundary, ASSUMED). Explicitly decorrelated from the advisor mystery:
-  CHL/PRU/URG/COS/GUA/HON loop identically AND hire advisors fine.
-- Root cause, DERIVED: nameless `create_corps_commander`/`create_field_marshal` - every vanilla
-  and Expert AI usage passes `name` (+ gfx); the empty-suffix tokens are the nameless-creation
-  signature. Engine registration mechanics ASSUMED (not save-observable).
-- Shipped 2026-08-28, `WA_AI_leader_recruitment_effects.txt`: (1) both creations replaced by
-  `generate_character` - documented "create + recruit" (install effects_documentation.md:4441),
-  random name from the country's own lists when omitted, unique token per creation
-  (`WA_AI_gen_<TAG>_<seq>` via meta_effect + per-country sequence variable); (2) registration
-  watchdog: after each creation a pending flag + expected count verify on the NEXT firing
-  (2-day event) that the counter grew; two consecutive unregistered creations latch scripted
-  recruitment off for that country (one-way flag) - the second strike absorbs the
-  general-died-inside-the-window false positive; the gate also refuses to stack a second
-  creation while one is pending (max rate one per ~2 firings). Same pattern on the marshal
-  branch (its own flags/expected). Promotion branch untouched.
-- Reviews 2026-08-28: architecture OK + lessons CONCERNS, no unresolved CONFLICT; amendments
-  applied: (1) failed verify REFUNDS the exact debited cost (stored at debit) - the watchdog's
-  strikes now cost 0 CP net; (2) the broken latch gained an exit: cleared when the official
-  count grows ABOVE its value at latch time (growth-since-latch, not a threshold - a threshold
-  would re-arm every pulse for a ratio-branch looper like XSM/YUN and re-flood orphans);
-  (3) count oracle kept over a token-existence check ON PURPOSE - orphans EXIST in the
-  character DB, so has_character would read success on the very failure mode this watchdog
-  hunts; death interference is absorbed by the two-strike rule + refund + exit, reasoning at
-  the code site; (4) variable-absence safety: the verify block only runs under the pending
-  flag, set in the same pass that sets the expected count - the invariant is stated at the
-  site. Watchdog timeline (t-table): t0 creation + debit + pending; t0+2d verify -> success
-  (fail_n=0) or strike 1 + refund; t0+4d second creation; t0+6d strike 2 -> latch, net CP
-  cost 0, max 2 orphans per country per latch cycle. SEQ render: `[?var|.0]` prints integers;
-  behaviour at seq >= 1000 (thousands separator) is ASSUMED-safe and unreachable in practice
-  (max ~2 creations per latch cycle, dozens for healthy countries).
-- ASSUMED, stated: generate_character supports unit-leader role blocks ("whatever you would put
-  when writing character" - doc wording, not an example); same-tick visibility of a fresh
-  leader in every_army_leader (the harness's delta-0 branch says re-check next day, and the
-  watchdog only judges on the next firing).
-- Verification: console harness `event wa_test_rl.1 ARG` (counts + watchdog state; scope line
-  1 1 1 1 0), `event wa_test_rl.2 ARG` (one real recruit; delta +1 = registration fixed),
-  control `event wa_test_rl.1 TUR` (>= 3 generals, gate closed, no recruit). Campaign probe:
-  next scored run - (i) orphan corps-commander count (empty-suffix tokens in character_manager
-  outside country lists) stops growing campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG
-  CP accumulates (> 50 at some 1939+ save vs pinned < 13); (iii) ARG official non-marshal
-  generals >= 3 by 1938; (iv) no country carries WA_AI_recruit_general_broken unless its
-  official count genuinely cannot grow (flag census, expect ~0 with XSM/YUN the watched
-  exceptions).
-- TESTED 2026-08-28 (owner console run): harness output pasted below. `wa_test_rl2.1 ARG`
-  scope line 1 1 1 1 0 (valid). `wa_test_rl2.2 ARG` delta +1 general, -10 CP (cost clamp min
-  10 for 1 general: 2x1=2 clamped). 6 days later: generals 1->3, admirals 1->2, CP 0.4->17.5,
-  watchdog armed (pending=1, expected=3) with fail_n=0, navy_pending=1, navy_expected=2,
-  seq=3. Gates closed on next count (under3=0, ships/admirals ratio 19/2=9.5 < 10). System
-  functional: registration works, watchdog armed correctly, no latch, cost mirrors engine.
-- Campaign probe (next scored run): (i) orphan corps-commander count stops growing
-  campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG CP accumulates (> 50 at some 1939+
-  save vs pinned < 13); (iii) ARG official non-marshal generals >= 3 by 1938; (iv) no country
-  carries WA_AI_recruit_general_broken unless its official count genuinely cannot grow;
-  (v) ARG navy leader count grows if ships > 10.
-- Closed when: campaign probes (i)-(iii) pass once on a scored run.
-- Amendment 2026-08-28 (same session): added `WA_AI_recruit_navy` (ships/admirals ratio > 10
-  or count < 1 with > 4 ships, same CP cost 2x clamped 10-50, same watchdog + refund + latch
-  exit). Wired into `WA_AI_background.0` at the same cadence as general/marshal. No navy
-  promotion path exists (no captain pool); admirals are generated at skill 1. The `navy_leader`
-  role in `generate_character` is ASSUMED valid (documented as "whatever you would put when
-  writing character"; `navy_leader = {}` is the standard character role block).
-- Amendment 2026-08-28 (same session, owner console run): the original harness call site
-  `events/wa_test_recruit_loop.txt` is POISONED - country-valued triggers (`tag = ROOT`,
-  `tag = THIS`) read false from it while `always` and `ROOT`-scoped reads work. Scope line
-  `1 0 0 1 0` from `wa_test_rl.1`, correct `1 1 1 1 0` from `wa_iso.3` (same effect, clean
-  call site). This is the same anomaly as convoy-arsenal 2026-08-20; cause UNKNOWN.
-  Harness rehomed to `events/wa_test_recruit_loop2.txt` (namespace `wa_test_rl2`). Also fixed
-  the navy ratio gate: dropped the `WA_AI_navy_leader_count > 0` requirement from the ratio
-  branch so a 0-admiral country with > 10 ships can recruit its first admiral.
-- Verification (updated): console harness `event wa_test_rl2.1 ARG` (counts + watchdog state;
-  scope line must be 1 1 1 1 0), `event wa_test_rl2.2 ARG` (one real recruit; delta +1 =
-  registration fixed), control `event wa_test_rl2.1 TUR` (>= 3 generals, gate closed, no
-  recruit). Campaign probe: next scored run - (i) orphan corps-commander count stops growing
-  campaign-wide (vs 907 -> 10 394 on 0767987f); (ii) ARG CP accumulates (> 50 at some 1939+
-  save vs pinned < 13); (iii) ARG official non-marshal generals >= 3 by 1938; (iv) no country
-  carries WA_AI_recruit_general_broken unless its official count genuinely cannot grow;
-  (v) ARG navy leader count grows if ships > 10.
-- Reopened 2026-08-28 (owner symptom: loading a campaign save reports 558 missing character
-  templates). Second defect of the same ship: the `generate_character` token was built at
-  RUNTIME by meta_effect (`WA_AI_gen_<TAG>_<seq>`), so it exists in no parsed file. MEASURED on
-  save 1943.9_Sep (campaign to 1945.8): 558 of 558 generated characters raise
-  "Character template WA_AI_gen_* does not exist anymore" plus one empty-icon error each; the
-  other 5724 characters in the same save resolve. First probe of the earlier ship PASSED at the
-  same time: empty-suffix orphans 10 394 -> 4, 593 generated leaders across 120 countries,
-  max 25 creations per country, median 5.
-- Root cause, MEASURED (gen-token harness, 4 cells, full quit + relaunch + reload, owner run
-  2026-08-28): the character-template registry is built by PARSING script files, not by
-  executing them. Cells, by declaration site: (A) literal `generate_character` written straight
-  into a scripted effect -> character created with `template="none"` AND **no role block at
-  all** - not a general; (B) same plus `portraits` -> identical, still role-less; (C) token
-  built by meta_effect, declared nowhere (known-false control, reproduces the shipped bug) ->
-  template error on reload, but the leader KEEPS its role, name and skill; (D) token built by
-  meta_effect, declared in `history/general` under `limit = { always = no }` -> template
-  resolves, portrait correct, survives the round-trip intact. Vanilla uses exactly site D
-  (install `history/general/generic_advisors.txt`, static `token_base`, token repeated across
-  countries). Expert AI 5.0 has no leader-recruitment module at all - only a commented-out
-  `EAI_leader_recruitment_logging` flag remains in `EAI_DEBUG_effects.txt`.
-- Damage assessment, MEASURED: the defect is COSMETIC. Cell C and the campaign's own leaders
-  keep role, name, skill and experience across the reload (owner check: ITA admiral still
-  present in 1943.9_Sep after load). What is lost is the template link and the portrait, plus
-  558 lines of error log per load.
-- Shipped 2026-08-28 (2nd ship): (1) new `history/general/WA_AI_leader_pool.txt` declaring
-  3 x 40 tokens (`WA_AI_gen_general_1..40`, `_marshal_1..40`, `_admiral_1..40`) with role +
-  `portraits`, under `limit = { always = no }` - parsed, never executed. Start-of-game cost is
-  DERIVED negligible, not zero: the `every_possible_country` block is still walked once, its
-  limit false; unmeasured. (2) the three call sites index into that pool with a per-role sequence
-  (`WA_AI_gen_<role>_seq`; the old `WA_AI_gen_seq` was shared by all three) and pass an explicit
-  `portraits` block - army category for land, navy for admirals; (3) meta_effect KEPT on
-  purpose - cell A proves a literal in a scripted effect creates a role-less character;
-  (4) pool guard in each recruit gate, comparing the index the NEXT creation would take against
-  `constant:wa_ai_leaders.pool.last_index`, so an exhausted pool closes recruitment instead of
-  minting an undeclared token; (5) harness `seq=` readout now prints the three per-role counters.
-- Reviews 2026-08-28 (2nd ship): architecture CONFLICT and lessons CONCERNS, both resolved before
-  ship. Applied: (a) the pool size is now a script constant
-  (`common/script_constants/wa_ai_leaders.txt`, `pool.last_index = 40`) mirrored to the pool file's
-  last declared index by `tools/constants_registry.json` group `leader_token_pool_last_index` -
-  the "keep the two in step" comment was not a mechanism; the gate compares `seq + 1` against it so
-  there is no hand-copied off-by-one. (b) Exhaustion is no longer silent: a one-shot country flag
-  `WA_AI_recruit_<role>_pool_empty` (save-visible) plus a `WA_AI_logging` line, mirroring the
-  watchdog latch - the two stops share one observable otherwise. (c) The guard header states the
-  counter counts CREATIONS EVER, not living leaders: a dead or captured leader does not return its
-  slot, and a refunded watchdog strike still consumes one. (d) Dates and campaign numbers stripped
-  from the code-site comments (AGENTS rule 7); the 8-line block collapsed to 5.
-- Pool-exhaustion timeline (AGENTS P3(f), counting CREATIONS not roster size). t0 1936-1939:
-  MEASURED median 1-3 per country. t1 1945.8: MEASURED median 5, max 25 (JAP) - and that 25 is the
-  SHARED counter of all three roles, so no single role exceeded it; ceiling per role is lower.
-  t2 1948 (DERIVED, linear on the 1936-1945 slope, 2.6 creations/year for the worst tag): ~32 on
-  the shared counter, comfortably under 40 per role. Upper bound is structural, not statistical:
-  the general gate needs divisions/generals > 18, so 40 generals means ~720 divisions. Residual
-  risk = a country with heavy leader turnover in a very long war; it now shows up as
-  `WA_AI_recruit_<role>_pool_empty` in the save instead of stopping silently.
-- ASSUMED, stated: two countries holding same-token commanders that merge (annexation,
-  `set_nationality`) is untested. Vanilla repeats `generic_*` tokens across countries the same way
-  (MEASURED, 1105 instances in one save), so the shape is not novel.
-- Not migrated: saves from campaigns before this ship keep their `WA_AI_gen_<TAG>_<n>` errors
-  forever. Harmless by the damage assessment above; only new campaigns are clean.
-- Verification (2nd ship): console - `event wa_test_rl2.1 ARG` (scope line 1 1 1 1 0),
-  `event wa_test_rl2.2 ARG` (delta +1, `seq=1/0/0`), then `save`, QUIT THE GAME COMPLETELY,
-  relaunch, reload, and grep `logs/error.log` for `WA_AI_gen` - must be empty, AND the
-  `icon_entry.cpp` count must not rise (cell D carried only a `large` portrait and produced no
-  icon error, so `small` is MEASURED unnecessary - the probe keeps the claim honest). The test is
-  only valid on a NEW game: a save written before this ship keeps its old `WA_AI_gen_<TAG>_<n>`
-  tokens by construction and cannot come back clean. Campaign probe (next scored run):
-  (vi) zero `Character template WA_AI_gen_*` errors when loading any save of the run, and no rise
-  in empty-icon errors; (vii) no country carries `WA_AI_recruit_<role>_pool_empty`.
-- TESTED 2026-08-28 (owner run, create -> save -> full game restart -> reload). New 1936 game,
-  observer, ARG; ~2 weeks of game time so the AI pulse could pay the 10-CP clamp (at 1936.1.1
-  ARG holds cp=0.4, so day-one firing of the execute event cannot recruit - that is the gate, not
-  a failure). Harness scope line 1 1 1 1 0.
-  MEASURED in `test3.hoi4`: 6 generated leaders, 4 distinct tokens
-  (`WA_AI_gen_general_1` x2 - two different countries holding the same token, as intended -
-  `_general_2`, `_marshal_1`, `_admiral_1` x2). Each record carries
-  `template="WA_AI_gen_<role>_<n>"` intact, `portraits={ army={ large="GFX_portrait_unknown" } }`
-  and its role block.
-  MEASURED after the restart + reload (fresh error.log): 0 `WA_AI_gen` errors, 0
-  "does not exist anymore", 0 `icon_entry.cpp` - against 558 + 558 on the pre-fix campaign save.
-  MEASURED start-of-game leakage: 0 `WA_AI_gen_*` characters in a fresh 1936 save, so
-  `limit = { always = no }` declares without creating.
-  Cosmetic residue: firing a hidden harness event from the console spawns an empty popup
-  (`eventwindow.cpp:271`, "Spawned event without any allowed options") - the harness events carry
-  no `option` block. Harmless, not fixed.
-- Closed when: campaign probes (i)-(iii) and (vi) pass once on a scored run.
 
 ### allied-division-stability — PARKED (2026-08-28)
 - PARKED 2026-08-28 only to make room for `modern-chassis-tier` under the WIP limit, by the agent,
@@ -2187,12 +1780,13 @@ OPEN with a session of its own.
 
 | Date | Subject | Note |
 | --- | --- | --- |
+| 2026-08-29 | `recruit-loop` | Scripted leader recruitment. Console harness PASSED twice (owner, 2026-08-28: `wa_test_rl2.1 ARG` scope 1 1 1 1 0, 2nd ship verified by a full quit + relaunch + reload). CLOSED BY OWNER ORDER 2026-08-29 with the campaign probes (i)-(iii) and (vi) never run on a scored campaign - that residual is accepted, not discharged. |
+| 2026-08-29 | `armor-role-budget` | Constant per-role armour share + one open role at a time. Owner console 2026-08-28: harness run 1 PASSED (i), (vii) and (ii) partially (two open roles, not three); probe (vi) PASSED via `imgui show ai_division_production` on SOV 1943.11. CLOSED BY OWNER ORDER 2026-08-29 with (iii), (iv), (v), (viii), (ix), (x) NEVER RUN, including the re-read that was to confirm the template-flag join reads medium 17 / heavy 8. |
+| 2026-08-29 | `rail-corridors` | Strategic corridor railways (free AI pathfinding cheat, level-5 rail so redeployment stays off the sea). Corridors 1-8: owner-tested and functional in-game 2026-08-27. Corridor 9 San Francisco-Washington (41 provinces, 40 edges, 16 gate states) SHIPPED 2026-08-27 and CLOSED BY OWNER ORDER 2026-08-29 WITHOUT its console run - `event wa_test_rail.19` and the supply-mapmode check were never performed. Campaign probe stays folded into the F-checks: `WA_rail_corridor_*_built` flags + level-5 track. |
 | 2026-08-27 | `lend-lease-observability` | `lendlease.py` + WA_TLM v32 recipient matrix. Campaign `1ac7e4ea` (first v32): matrix populated (739 pairs, 65 donors), donor↔recipient closure exact on send-counts and to 2 units in 1.31M on amounts. Console harness waived by owner closure order 2026-08-27. Known limits recorded in git history of this file. |
 | 2026-08-27 | `silo-breadth` | Breadth-first silo walk. Harness owner-PASSED 2026-08-24; campaign `1ac7e4ea`: GER 28 / ENG 19 / JAP 13 / USA 13 / SOV 12 built levels vs per-state cap 6 → ≥ 2 states each, SOV grew 7→12 (no first-state stall) against scripted need 17. |
 | 2026-08-27 | `rk-no-divisions` | RK training brake. PASSED on `24933fb9` AND `1ac7e4ea` (7 RK tags with no `units` section, ALB flat at its 3 scripted starters); boot discharged by the F9 campaign entries; error.log id check waived by owner closure order. |
 | 2026-08-27 | `uk-truck-supply` | ENG truck stock PASSED twice (`24933fb9` 8-19.6k, `1ac7e4ea` 9.4-12.6k own-built motorized vs bar 1500). Africa hub-motorization leg not save-visible (needs a WA_TLM gauge at the hub site) — residual accepted by owner closure order. |
 | 2026-08-27 | `raj-trucks` | CAMPAIGN-OK since `8f9b5653` (all three positive legs + control). SAF tier residual accepted in writing by owner closure order 2026-08-27. |
-| 2026-08-27 | `rail-corridors` | Strategic corridor railways (AI pathfinding cheat): 8 faction-gated land corridors get free level-5 rail so redeployment stays off the sea. Per-edge builds, impassable states routed around, PC mirror synced, `wa_test_rail` harness. Human validation: tested and functional in-game (owner, 2026-08-27). Campaign probe folded into F-checks: `WA_rail_corridor_*_built` flags + level-5 track. |
 | 2026-08-23 | `na-corridor` | NA corridor logistics (rail/depots/ports/theatre air bases, Fix 95–135). Human validation: tested and functional. Absorbed R9, R13, R52, R60, R68, R69, R71, R77, R78, R81, R91, R96, QUEUE 0q/0r/0m/0i. |
 | 2026-08-23 | `med-axis-posture` | Axis Mediterranean posture (Afrika Korps, Tunis, Italy, Ethiopia, Med fleet, convoy interdiction; Fix 96–137). Human validation: tested and functional. Absorbed R17, R61, R63, R64, R74–R76, R80, R82, R83, R92, R94, R97, QUEUE 0t/0h/0f/0g/0. |
-| 2026-08-23 | 14 R-items retired on PASS | R10, R19, R31, R38, R39, R40, R42, R44, R45, R49, R50, R56, R66 (folded), + R53 dropped (probe tool never existed). Details: archive. |

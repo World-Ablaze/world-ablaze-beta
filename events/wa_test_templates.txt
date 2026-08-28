@@ -1,0 +1,47 @@
+############################################################################################################
+# TEMPLATES console harness (subject: armor-ladder-integrity). harness-contract: v1.
+# Its own event file, never events/wa_events_test.txt - that call site poisoned country-valued
+# triggers (recruit-loop 2026-08-28, convoy-arsenal 2026-08-20).
+#
+# Recipe (observer game; fire per tag, do NOT tag into the country):
+#   event wa_test_tmpl.1 ARG   -> per-role used/set pairs + the infantry value, in logs/game.log
+#                                  under "TEMPLATES". `used=1 set=0` on any role is the defect.
+#   event wa_test_tmpl.2 ARG   -> one real calculation pass; pre and post must match line for line
+#                                  (a difference means a branch writes without its claim guard).
+#   CONTROL (known-empty): event wa_test_tmpl.1 for a country before its infantry focus - the
+#   "admit :" line reads 0 and every set= is legitimately 0. Pick any minor in 1936.
+#   The value check: a country with heavy_inf=1 marsh_or_mtn=1 can_motorize=1 must read
+#   value=1002. Reading 1001 there means [templates-motorised-20w] did not ship.
+# Read the "scope :" line first: anything but 1 1 1 1 0 means STOP (see the harness file).
+# Effects: common/scripted_effects/WA_TEST_templates.txt
+############################################################################################################
+
+add_namespace = wa_test_tmpl
+
+# Per-role used/set report
+country_event = {
+	id = wa_test_tmpl.1
+	title = wa_test_tmpl.1.t
+	desc = wa_test_tmpl.1.d
+	is_triggered_only = yes
+	hidden = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_TMPL_report = yes
+	}
+}
+
+# One real calculation pass, read before and after in the same tick
+country_event = {
+	id = wa_test_tmpl.2
+	title = wa_test_tmpl.2.t
+	desc = wa_test_tmpl.2.d
+	is_triggered_only = yes
+	hidden = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_TMPL_execute = yes
+	}
+}
