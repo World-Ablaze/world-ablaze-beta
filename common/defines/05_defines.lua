@@ -1351,6 +1351,11 @@ NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_AIR_MAX_CONSUMPTION = 60  			-- 
 NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_NAVY_MAX_CONSUMPTION = 60 	 		-- AI will try to buffer at least this amount of days on max consumption, will trade if necesarry and will go into fuel saving mode/aggresive mode using this buffer
 NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted fuel buffers for AI (in thousands)
 
+-- [division-target-scaling] WA's overall balance makes vanilla division targets unattainable; stale if AI countries stop reaching their sustainable deployment ceiling.
+NDefines.NAI.WANTED_UNITS_WEIGHT_FRONTS_WANT = 0.08
+NDefines.NAI.WANTED_UNITS_WEIGHT_FACTORIES = 0.09
+NDefines.NAI.WANTED_UNITS_WEIGHT_MANPOWER = 0.07
+
 --NDefines.NAI.NUM_SILOS_PER_CIVILIAN_FACTORIES = 0.0025							-- ai will try to build a silo per this ratio of civ factories
 --NDefines.NAI.NUM_SILOS_PER_MILITARY_FACTORIES = 0.024								-- ai will try to build a silo per this ratio of mil factories
 --NDefines.NAI.NUM_SILOS_PER_DOCKYARDS = 0.02										-- ai will try to build a silo per this ratio of dockyards

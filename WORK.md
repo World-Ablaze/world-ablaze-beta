@@ -172,6 +172,49 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### division-target-scaling — OPEN (2026-08-28)
+- Scope: owner request 2026-08-28 — reduce every AI country's theoretical division target by
+  75% because WA's factory counts and combat-area geometry make vanilla's target unattainable.
+- Symptom, MEASURED (owner `imgui show ai_division_production`, GER): 149 active divisions,
+  target 521; breakdown fronts 274 x 0.35, factories 528 x 0.45, manpower 311 x 0.30,
+  threat 1.06, war factor 1.15.
+- Change 1: `05_defines.lua` overrides all three `WANTED_UNITS_WEIGHT_*` inputs: fronts 0.08,
+  factories 0.09, manpower 0.07. Every downstream threat/war multiplier stays unchanged.
+- Symptom 2, MEASURED (owner `imgui show ai_division_production`, ENG): wanted medium armor 189,
+  infantry 47 and mechanized 95; the live ratio is approximately 40:10:20.
+- Change 2 (owner order 2026-08-28): halve every armor `role_ratio` transfer from -20/+20 to
+  -10/+10: light, medium, light-to-medium transition, heavy and modern. Mobile and special-force
+  ratios stay unchanged. ENG's two active medium blocks therefore fall together from 40 to 20.
+  The dependent USA-only `infantry_floor +15` block and trigger are removed: the deepest reachable
+  stack now leaves infantry at 30 without it.
+- Impact: global and setup-agnostic. USA/CAN are owner-confirmed capacity-bound at their current
+  full build rate; whether their lowered theoretical targets remain non-binding is ASSUMED until
+  the live window is checked. Existing training-queue cancellation/decommission behaviour is an
+  engine boundary and is not claimed.
+- Armor impact, MEASURED (composition + template triggers): every country reaching an armor role
+  keeps that role at a positive weight of 10 per active block in historical and ahistorical games.
+  Regression risk, ASSUMED: GER/SOV/ENG/USA may field too few armored formations for spearheads;
+  compare their wanted and current armor counts in the next campaign.
+- Reachable-stack audit, DERIVED from the composition and template gates: light and transition are
+  mutually exclusive; motorized is a fallback when armor/mechanized are absent; exactly one of
+  marines/mountaineers costs 10. The deepest non-USA stack is `100 -40 armor -20 mechanized -10
+  special = 30`; USA is `100 -30 armor -30 expeditionary mechanized -10 special = 30`.
+- Historical constraint from commit `3da0be383`: "GER/SOV composition was healthy and is
+  deliberately left byte-identical." `mine covers it because` the new owner order deliberately
+  retunes every armor role after a live disproportionate wanted value; both countries retain each
+  armed armor role at 10 and are explicit regression controls below.
+- Owner objection: "USA et CAN construisent déjà à pleine capacité, et la cap souhaitée est
+  irréalisable avec l'équilibrage du mod". `mine covers it because` the change lowers theoretical
+  demand without lowering build throughput; the USA/CAN controls explicitly fail the change if
+  the quartered target becomes their binding constraint.
+- Verification: after a full restart, the same GER save shows the lower `Nr Wanted Divisions`;
+  USA and CAN show `Current + Total Being Built` below `Nr Wanted Divisions` while continuing to
+  build at their pre-change full rate; the same ENG state shows wanted medium armor near 95 while
+  wanted mechanized stays near 95; USA infantry stays positive near 30% on its deepest stack; GER
+  and SOV retain non-zero wanted armor.
+- Closed when: the GER target, ENG armor ratio, USA infantry residual, GER/SOV armor controls and
+  both USA/CAN non-binding controls pass once in the live window.
+
 
 ### rail-corridors — SHIPPED-UNTESTED (2026-08-27, reopened)
 - Scope: owner request 2026-08-27: add a 9th strategic corridor, San Francisco - Washington,
@@ -441,10 +484,55 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   decimetric_radar by 1942.1, and >= 1 dominion's best eng_frigate tech > 5 or best
   eng_destroyer tech > 6 by 1944.1 (vs frozen 5/6 on `0767987f`). F9 boot test owed
   (trigger edit).
+- **Campaign `067ef4ac` (second post-fix, 2026-08-28, 115 saves 1936.2-1945.8, carries BOTH
+  fix waves - fingerprint MEASURED: dominions own 6 radar techs vs 0 on `0767987f`, and
+  `USA/CAN_ConvoyEscort_DD_1` task forces serialised; closure 14/14 vs `army`). The
+  subject's OWN probes (a)-(d) now all PASS; the residual failures are elsewhere.**
+  Caveat: run ends 1945.8 vs 1945.10/1946.1 - 2-5 months shorter than the comparators.
+  - (a) PASS: 17 post-1941 CAN deployments survive >= 6 months (bar 10; 1 then 7 before).
+  - (b) PASS: max 23 CAN divisions deployed from 1943 (bar 8; 1-2 then 7 before); CAN grows
+    monotonically 10->23 and ENDS ABOVE its 1939 strength - net +9 after -10 and -9.
+  - (c) PASS: 1 wipe month (1939.10, one division at sea) vs 7 before.
+  - (d) PASS: CAN->SOV 146 288 IC at 1945.6 and climbing (+78k in twelve months).
+  - (h) PASS with margin: 5/5 dominions own radio_detection AND decimetric_radar by 1938
+    (bar: 3/5 by 1942.1), centimetric by mid-1940; hulls unfreeze from frigate 5 /
+    destroyer 6 to frigate 10 / destroyer 12.
+  - (e) SPLIT - the depot pathology MOVED: CAN PASS (idle screens 22-39%, largest idle
+    fleet 17-31 hulls vs bar 40 - the 79/83% catastrophe is gone), ENG FAIL (idle fleets
+    87-118), USA FAIL HARD (200-292; at 1945.6 one admiral-less region-less fleet holds
+    292 hulls incl. 140 frigates + 100 destroyers while four all-destroyer escort TFs run).
+  - (f) PASS on Hudson (zero CAN fleets in 166/246 across all 32 monthly saves swept);
+    western corridor literal FAIL, but the bar itself is now suspect: at 1945.6 ENG danger
+    reads Western Approaches 13 160 / Icelandic Basin 8 596 vs **Labrador Basin 0 /
+    Newfoundland Sea 0**, no convoy sunk there since 1944.12 - the escorts sit where the
+    bleeding is. DERIVED: rewrite probe (f) around the danger map, not fixed region ids.
+  - (g) PASS for CAN: convoy_escort task forces present in 31 of 32 saves (2-5 TF, 20-70
+    hulls, composition `CAN_ConvoyEscort_DD_1` x2-3) - the wave-1 "CAN stops escorting
+    after 1943.9" failure is fixed. Threshold: USA crossed 100 frigates at 1944.5 (101)
+    and its DD-escort TF pool stayed flat at 11 while every escort TF added afterwards was
+    the generic frigate template (+2) - consistent with the cutoff, but ASSUMED not proven
+    (the pool was already flat for 16 months before the crossing). The two unattested
+    assumptions stand; owner `imgui show ai_navy` check still OWED.
+  - Coalition deltas (MEASURED, pre-fix -> wave 1 -> now): total at-sea losses
+    **129 -> 104 -> 62**; CAN 20 -> 13 -> **5** (last transit loss 1942.1, zero in the final
+    43 months); USA 71 -> 42 -> 21 (net +272); RAJ 25 -> 11; AST 12 -> 9; NZL 5 -> 4; SAF 0.
+    ENG is the exception and rose 5 -> 12, on far higher exposure (peak 35% of its army at
+    sea vs 19%). GER convoy kills over the comparable 24-month window fall to ~1/3 of the
+    baseline for every victim EXCEPT CAN (122 -> 146). GER sub losses >= 392, now 366 to
+    frigates / 47 to destroyers.
+  - New findings, each a candidate subject rather than this slug (admission rule - do NOT
+    fix on the way past): (1) the USA depot - 140 idle frigates in one fleet while its
+    escorts are all-destroyer; (2) the four other dominions got the TECH but no escort
+    BRIDGE - NZL and SAF ran zero convoy_escort task forces all campaign and RAJ lost its
+    only one, because the DD-escort template exists solely for CAN/USA and the generic is
+    frigate-only; (3) MEASURED anomaly, unexplained: CAN's frigate force collapses 41
+    (1945.2) -> 9 (1945.4) -> 6 during a GER raiding surge, and CAN's last escort TF is
+    gone at 1945.8 - ASSUMED combat loss, no warship-loss counter exists in a save.
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
-### recruit-loop — TESTED (2026-08-28)
+### recruit-loop — PARKED (2026-08-28)
+- Parked 2026-08-28 (WIP limit; console harness passed, awaiting the next scored campaign).
 - Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
   boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
   (5th subject in OPEN is an explicit owner override of the WIP limit; the checker's WIP-LIMIT
