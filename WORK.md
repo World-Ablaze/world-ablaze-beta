@@ -172,6 +172,76 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### modern-chassis-tier — SHIPPED-UNTESTED (2026-08-28)
+- Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
+  tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
+  a WEIGHT CLASS of division, not a chassis generation — a medium division that reaches the
+  Panther keeps its role and its share of the army, and every component of the template steps up
+  one tier with the hull (medium TD → modern TD, light SPAA → medium SPAA).
+- Root cause, MEASURED: `WA_AI_RESEARCH_needs_modern_armor` required `date > 1945.1.1`
+  (`common/scripted_triggers/WA_AI_RESEARCH_tanks.txt` before this change) while
+  `WA_AI_TEMPLATES_use_modern_armor` accepted modern from `date > 1942.9.1`. Every modern chassis
+  `ai_will_do` carries `modifier = { factor = 0 NOT = { WA_AI_RESEARCH_needs_modern_armor } }`
+  (`common/technologies/armor_ger.txt`, `ger_modern_tank_chassis_1`), so no AI researched a modern
+  chassis inside a normal campaign and the modern role never opened. The 28-month gap between the
+  two gates is the whole symptom; the template system was not at fault.
+- Not a bootstrap problem (owner objection, retained): the production lever is
+  `equipment_variant_production_factor` (`WA_AI_PRODUCTION_DEFAULT_tanks.txt`), undocumented in the
+  engine's own token list but whose documented twin `equipment_production_factor` "increases the
+  perceived needed factories" (`common/ai_strategy/documentation.info`, SYNCED 1.19.2.0). It is a
+  multiplier on a NEED, and the need exists only once a template mounts the battalion — so the
+  template leads and production follows, exactly as the light→medium switch already does
+  (`WA_AI_CONFIG_switch_from_light_to_medium_armor` = a bare date, no stock guard). An earlier
+  draft that opened the production line first was DROPPED, along with its stock threshold.
+- Change 1 — research: `WA_AI_RESEARCH_needs_modern_armor` takes the shape of
+  `needs_medium_armor` (focus medium/heavy, `date > 1942.1.1`). The binding date becomes the
+  per-tech `ai_will_do` window (1943, or 1942 with free research slots).
+- Change 2 — one ladder, two chassis tiers. `WA_AI_TEMPLATES_calculate_medium_armor_template`
+  still picks the COMPOSITION and writes 6000–6116; a flat `+500` then picks the CHASSIS. Every
+  value therefore needs a twin, so the mirror is GENERATED:
+  `tools/gen_ai_medium_modern_mirror.py` → `common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`
+  (19 templates, `role = medium_armor`, the shape `WA_light_support_armor_role` already uses). A
+  component with no modern-tier answer is a hard error in the generator, never a silent copy.
+- Change 3 — the switch is a one-way latch `WA_AI_TEMPLATES_modern_chassis_earned` (medium
+  templates + modern chassis + mechanized), set on the monthly pulse BEFORE the calculate. One-way
+  because two of its three terms are not monotone and a flickering gate re-runs the engine's
+  template decommission pass. Owner rule: a focus-medium country with no mechanized never switches.
+- Change 4 — `role = modern_armor` retired. `WA_AI_TEMPLATES_armored_modern.txt` gone, template
+  type code 7 and the 8000–8999 range freed, `WA_AI_PRODUCTION_build_army_modern_armor` removed,
+  the static `role_ratio id = modern_armor value = -1000` removed. The armour budget now has THREE
+  open roles, never four: medium+heavy stays 17/8 instead of splitting to 10/5/10 the day the
+  Panther lands. The modern slot in `WA_AI_PRODUCTION_armor_budget.txt` is KEPT at target 0 so the
+  reconcile emits the exact negation of any entry a pre-change save carries — do not delete it
+  before a campaign shows `WA_AI_ARMOR_BUDGET_modern` at 0.
+- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_78` was
+  enabled by `ger_medium_tank_chassis_2_6`, one tech before the chassis it designs;
+  `medium_tank_7` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
+  IV H; `2_7` was missing from `has_medium_armor_unlocked`.
+- Superseded a collaborator's parallel change (`b19bf6a43` and the commit that moved the six modern
+  templates into the medium file, owner decision 2026-08-28 to keep this design instead). Their
+  four 30-width component signatures are reproduced at 6611/6612/6613/6616; their tuned
+  compositions (7 tanks + 3 SPG + 5 mech against the medium 9 + 6) are NOT preserved, because the
+  mirror is structure-preserving by construction. Retuning is a pass over all 19 slots.
+- Residual, ASSUMED (engine): at the month of the switch a division loses its
+  `medium_armor_battalion_line` and gains `modern_armor_battalion_line` it cannot yet equip. Depth
+  and duration are not observable in a savegame. Mitigations already present, no new code:
+  `can_upgrade_in_field = { always = yes }`, `reinforce_prio = 1`, and the `+90`
+  `modern_tank_chassis` production factor active the same month.
+- Pre-existing defect found in passing, NOT fixed here: the medium ladder carries duplicate
+  template NAMES — 6105/6108, 6106/6109, 6107/6110 are each two `ai_template` entries with one key
+  inside `WA_medium_armor_role`. Only one of each pair can be reachable. The generator works around
+  it by suffixing its mirrors (`..._6608`), which is why three mirror names carry a number.
+- Verification — console harness: `common/scripted_effects/WA_TEST_armor_budget.txt` extended with
+  section B2 (chassis tier) and verdict V4. Fire `event wa_abg.1 GER` from another tag on a save
+  past 1943. **All FOUR verdict values must read 1**, and the `tier`/`band` lines must show: a
+  country with the medium role open sits in exactly one band, and that band agrees with
+  `owns-medium-role`. Owner run required to leave SHIPPED-UNTESTED.
+- Verification — campaign probe: GER at 1944.6 fields divisions of role `medium_armor` mounting
+  `modern_armor_battalion_line`; zero divisions of role `modern_armor` anywhere; no residual
+  `role_ratio id = modern_armor` entry in any `persistent_strategy` block.
+- Closed when: the harness reads 1/1/1/1 on GER post-1943 AND a campaign shows German medium
+  divisions mounting the modern chassis before 1945.
+
 ### armor-role-budget — SHIPPED-UNTESTED (2026-08-28)
 - Scope: owner request 2026-08-28, two parts. (1) A country with tanks holds a CONSTANT,
   configurable armour share of its wanted-division mix whatever the NUMBER of tank types it
@@ -1039,7 +1109,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   no `option` block. Harmless, not fixed.
 - Closed when: campaign probes (i)-(iii) and (vi) pass once on a scored run.
 
-### allied-division-stability — OPEN (2026-08-27)
+### allied-division-stability — PARKED (2026-08-28)
+- PARKED 2026-08-28 only to make room for `modern-chassis-tier` under the WIP limit, by the agent,
+  not by an owner decision — move it back to OPEN in one line if that is the wrong pick. Chosen
+  because it is the only live subject owing the owner NOTHING right now: its Step A defines are
+  shipped and its verification is a campaign probe that has not been run, so it waits either way,
+  whereas the SHIPPED-UNTESTED subjects each owe a console-harness run. Step B (the hysteresis
+  pass) was never started.
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
   (cross-theatre shuffling). Rails and naval corridors already cut transit COST; this subject cuts
   transit FREQUENCY. Step A (this ship) = engine theatre-distributor damping, defines only.
