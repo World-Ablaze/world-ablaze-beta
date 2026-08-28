@@ -531,7 +531,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
   a written no-fix ruling on a named engine boundary.
 
-### recruit-loop — PARKED (2026-08-28)
+### recruit-loop — TESTED (2026-08-28, 2nd ship verified by owner reload test)
 - Parked 2026-08-28 (WIP limit; console harness passed, awaiting the next scored campaign).
 - Scope: owner symptom 2026-08-28 ("l'IA fait quelque chose qui dépense 10 command power en
   boucle" - live observation on ARG) + owner order "dépasses la limite, et fixe le soucis"
@@ -625,6 +625,91 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   save vs pinned < 13); (iii) ARG official non-marshal generals >= 3 by 1938; (iv) no country
   carries WA_AI_recruit_general_broken unless its official count genuinely cannot grow;
   (v) ARG navy leader count grows if ships > 10.
+- Reopened 2026-08-28 (owner symptom: loading a campaign save reports 558 missing character
+  templates). Second defect of the same ship: the `generate_character` token was built at
+  RUNTIME by meta_effect (`WA_AI_gen_<TAG>_<seq>`), so it exists in no parsed file. MEASURED on
+  save 1943.9_Sep (campaign to 1945.8): 558 of 558 generated characters raise
+  "Character template WA_AI_gen_* does not exist anymore" plus one empty-icon error each; the
+  other 5724 characters in the same save resolve. First probe of the earlier ship PASSED at the
+  same time: empty-suffix orphans 10 394 -> 4, 593 generated leaders across 120 countries,
+  max 25 creations per country, median 5.
+- Root cause, MEASURED (gen-token harness, 4 cells, full quit + relaunch + reload, owner run
+  2026-08-28): the character-template registry is built by PARSING script files, not by
+  executing them. Cells, by declaration site: (A) literal `generate_character` written straight
+  into a scripted effect -> character created with `template="none"` AND **no role block at
+  all** - not a general; (B) same plus `portraits` -> identical, still role-less; (C) token
+  built by meta_effect, declared nowhere (known-false control, reproduces the shipped bug) ->
+  template error on reload, but the leader KEEPS its role, name and skill; (D) token built by
+  meta_effect, declared in `history/general` under `limit = { always = no }` -> template
+  resolves, portrait correct, survives the round-trip intact. Vanilla uses exactly site D
+  (install `history/general/generic_advisors.txt`, static `token_base`, token repeated across
+  countries). Expert AI 5.0 has no leader-recruitment module at all - only a commented-out
+  `EAI_leader_recruitment_logging` flag remains in `EAI_DEBUG_effects.txt`.
+- Damage assessment, MEASURED: the defect is COSMETIC. Cell C and the campaign's own leaders
+  keep role, name, skill and experience across the reload (owner check: ITA admiral still
+  present in 1943.9_Sep after load). What is lost is the template link and the portrait, plus
+  558 lines of error log per load.
+- Shipped 2026-08-28 (2nd ship): (1) new `history/general/WA_AI_leader_pool.txt` declaring
+  3 x 40 tokens (`WA_AI_gen_general_1..40`, `_marshal_1..40`, `_admiral_1..40`) with role +
+  `portraits`, under `limit = { always = no }` - parsed, never executed. Start-of-game cost is
+  DERIVED negligible, not zero: the `every_possible_country` block is still walked once, its
+  limit false; unmeasured. (2) the three call sites index into that pool with a per-role sequence
+  (`WA_AI_gen_<role>_seq`; the old `WA_AI_gen_seq` was shared by all three) and pass an explicit
+  `portraits` block - army category for land, navy for admirals; (3) meta_effect KEPT on
+  purpose - cell A proves a literal in a scripted effect creates a role-less character;
+  (4) pool guard in each recruit gate, comparing the index the NEXT creation would take against
+  `constant:wa_ai_leaders.pool.last_index`, so an exhausted pool closes recruitment instead of
+  minting an undeclared token; (5) harness `seq=` readout now prints the three per-role counters.
+- Reviews 2026-08-28 (2nd ship): architecture CONFLICT and lessons CONCERNS, both resolved before
+  ship. Applied: (a) the pool size is now a script constant
+  (`common/script_constants/wa_ai_leaders.txt`, `pool.last_index = 40`) mirrored to the pool file's
+  last declared index by `tools/constants_registry.json` group `leader_token_pool_last_index` -
+  the "keep the two in step" comment was not a mechanism; the gate compares `seq + 1` against it so
+  there is no hand-copied off-by-one. (b) Exhaustion is no longer silent: a one-shot country flag
+  `WA_AI_recruit_<role>_pool_empty` (save-visible) plus a `WA_AI_logging` line, mirroring the
+  watchdog latch - the two stops share one observable otherwise. (c) The guard header states the
+  counter counts CREATIONS EVER, not living leaders: a dead or captured leader does not return its
+  slot, and a refunded watchdog strike still consumes one. (d) Dates and campaign numbers stripped
+  from the code-site comments (AGENTS rule 7); the 8-line block collapsed to 5.
+- Pool-exhaustion timeline (AGENTS P3(f), counting CREATIONS not roster size). t0 1936-1939:
+  MEASURED median 1-3 per country. t1 1945.8: MEASURED median 5, max 25 (JAP) - and that 25 is the
+  SHARED counter of all three roles, so no single role exceeded it; ceiling per role is lower.
+  t2 1948 (DERIVED, linear on the 1936-1945 slope, 2.6 creations/year for the worst tag): ~32 on
+  the shared counter, comfortably under 40 per role. Upper bound is structural, not statistical:
+  the general gate needs divisions/generals > 18, so 40 generals means ~720 divisions. Residual
+  risk = a country with heavy leader turnover in a very long war; it now shows up as
+  `WA_AI_recruit_<role>_pool_empty` in the save instead of stopping silently.
+- ASSUMED, stated: two countries holding same-token commanders that merge (annexation,
+  `set_nationality`) is untested. Vanilla repeats `generic_*` tokens across countries the same way
+  (MEASURED, 1105 instances in one save), so the shape is not novel.
+- Not migrated: saves from campaigns before this ship keep their `WA_AI_gen_<TAG>_<n>` errors
+  forever. Harmless by the damage assessment above; only new campaigns are clean.
+- Verification (2nd ship): console - `event wa_test_rl2.1 ARG` (scope line 1 1 1 1 0),
+  `event wa_test_rl2.2 ARG` (delta +1, `seq=1/0/0`), then `save`, QUIT THE GAME COMPLETELY,
+  relaunch, reload, and grep `logs/error.log` for `WA_AI_gen` - must be empty, AND the
+  `icon_entry.cpp` count must not rise (cell D carried only a `large` portrait and produced no
+  icon error, so `small` is MEASURED unnecessary - the probe keeps the claim honest). The test is
+  only valid on a NEW game: a save written before this ship keeps its old `WA_AI_gen_<TAG>_<n>`
+  tokens by construction and cannot come back clean. Campaign probe (next scored run):
+  (vi) zero `Character template WA_AI_gen_*` errors when loading any save of the run, and no rise
+  in empty-icon errors; (vii) no country carries `WA_AI_recruit_<role>_pool_empty`.
+- TESTED 2026-08-28 (owner run, create -> save -> full game restart -> reload). New 1936 game,
+  observer, ARG; ~2 weeks of game time so the AI pulse could pay the 10-CP clamp (at 1936.1.1
+  ARG holds cp=0.4, so day-one firing of the execute event cannot recruit - that is the gate, not
+  a failure). Harness scope line 1 1 1 1 0.
+  MEASURED in `test3.hoi4`: 6 generated leaders, 4 distinct tokens
+  (`WA_AI_gen_general_1` x2 - two different countries holding the same token, as intended -
+  `_general_2`, `_marshal_1`, `_admiral_1` x2). Each record carries
+  `template="WA_AI_gen_<role>_<n>"` intact, `portraits={ army={ large="GFX_portrait_unknown" } }`
+  and its role block.
+  MEASURED after the restart + reload (fresh error.log): 0 `WA_AI_gen` errors, 0
+  "does not exist anymore", 0 `icon_entry.cpp` - against 558 + 558 on the pre-fix campaign save.
+  MEASURED start-of-game leakage: 0 `WA_AI_gen_*` characters in a fresh 1936 save, so
+  `limit = { always = no }` declares without creating.
+  Cosmetic residue: firing a hidden harness event from the console spawns an empty popup
+  (`eventwindow.cpp:271`, "Spawned event without any allowed options") - the harness events carry
+  no `option` block. Harmless, not fixed.
+- Closed when: campaign probes (i)-(iii) and (vi) pass once on a scored run.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts
