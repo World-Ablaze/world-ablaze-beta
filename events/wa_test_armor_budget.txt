@@ -1,0 +1,90 @@
+############################################################################################################
+#	World Ablaze - ARMOR ROLE BUDGET harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human and is_ai reads no.
+#	From any tag (observer included):
+#
+#		event wa_abg.1 SOV      one country's full budget report (swap the tag at will)
+#		event wa_abg.2          the same report for every AI major
+#		event wa_abg.3 SOV      run the SHIPPED reconcile once, then report - use this on a LOADED
+#		                        save instead of waiting for the 1st of the next month. The books are
+#		                        written by the monthly AI pulse and by on_startup, and on_startup
+#		                        does NOT re-fire on a save load, so a freshly loaded save reads
+#		                        `books : 0 0 0 0` until a month ticks. That is the expected reading,
+#		                        not a failure - wa_abg.3 tells the two apart in one command.
+#
+#	Output: logs/game.log under "ARMOR BUDGET TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line: all three must read 1.
+#
+#	WHAT TO FIRE IT ON
+#	------------------
+#	The budget is only interesting where several tank roles are open at once. Best reads:
+#		GER / SOV after 1943 (medium + heavy + modern open together)
+#		SOV before 1941    (the light-support slot - flags line must show SUPPORT=1, plain=0)
+#		ENG after 1941     (the medium slot reached through the light-to-medium switch)
+#		any minor          (open-roles=0, every book 0 - the control)
+#
+#	Effects: common/scripted_effects/WA_TEST_armor_budget.txt. Owning subject: WORK.md [armor-role-budget].
+############################################################################################################
+
+add_namespace = wa_abg
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_abg.1
+	title = wa_abg.1.t
+	desc = wa_abg.1.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_ABG_report = yes
+	}
+
+	option = { name = wa_abg.1.a }
+}
+
+# Force the shipped reconcile on ROOT, then report. The measurement in section C stays independent
+# (contract rule 4); this only removes the wait for the monthly pulse. Idempotent: the reconcile
+# diffs against its own books, so firing it twice emits nothing the second time.
+country_event = {
+	id = wa_abg.3
+	title = wa_abg.3.t
+	desc = wa_abg.3.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_AI_ARMOR_BUDGET_reconcile = yes
+		WA_TEST_ABG_report = yes
+	}
+
+	option = { name = wa_abg.3.a }
+}
+
+# Fan-out: one report per AI major (contract rule 5 - per-country firing).
+country_event = {
+	id = wa_abg.2
+	title = wa_abg.2.t
+	desc = wa_abg.2.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_ai = yes
+				is_major = yes
+			}
+			country_event = { id = wa_abg.1 }
+		}
+	}
+
+	option = { name = wa_abg.2.a }
+}

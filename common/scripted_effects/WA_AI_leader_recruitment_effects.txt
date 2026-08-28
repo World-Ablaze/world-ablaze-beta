@@ -54,6 +54,23 @@ WA_AI_recruit_general = {
 		set_variable = { WA_AI_recruit_general_fail_n = 0 }
 	}
 
+	# [recruit-loop] index the NEXT creation would take. Compared against the pool's last
+	# declared index, so the gate and history/general/WA_AI_leader_pool.txt share one number.
+	set_temp_variable = { WA_AI_gen_general_next = WA_AI_gen_general_seq }
+	add_to_temp_variable = { WA_AI_gen_general_next = 1 }
+
+	# [recruit-loop] exhaustion notice: a pool-exhausted country stops recruiting general forever,
+	# and that must be distinguishable from the watchdog latch, which logs its own line. The flag is
+	# the save-visible half - a campaign census reads it without a log.
+	if = {
+		limit = {
+			check_variable = { WA_AI_gen_general_next > constant:wa_ai_leaders.pool.last_index }
+			NOT = { has_country_flag = WA_AI_recruit_general_pool_empty }
+		}
+		set_country_flag = WA_AI_recruit_general_pool_empty
+		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: general token pool exhausted - scripted recruitment stopped" }
+	}
+
 	### cost of recruiting a new general
 
 	set_temp_variable = { WA_AI_recruit_cost = 0 }
@@ -75,6 +92,11 @@ WA_AI_recruit_general = {
 		limit = {
 			NOT = { has_country_flag = WA_AI_recruit_general_broken }
 			NOT = { has_country_flag = WA_AI_recruit_general_pending }
+			# [recruit-loop] pool guard: only a token declared in history/general/WA_AI_leader_pool.txt
+			# resolves after a reload; past the last one the leader loses its template and portrait.
+			# Counts CREATIONS EVER, not living leaders - a leader lost to death or capture does not
+			# give its slot back, and a watchdog strike consumes a slot even though it refunds the CP.
+			NOT = { check_variable = { WA_AI_gen_general_next > constant:wa_ai_leaders.pool.last_index } }
 			OR = {
 				check_variable = { WA_AI_divisions_to_generals_ratio > 18 }
 				check_variable = { WA_AI_general_count < 3 } # get at least 3
@@ -87,22 +109,23 @@ WA_AI_recruit_general = {
 		multiply_temp_variable = { WA_AI_recruit_cost = -1 }
 		add_command_power = WA_AI_recruit_cost
 
-		# [recruit-loop] generate_character = documented "create + recruit" (random name from the
-		# country's own lists when omitted); the bare create_corps_commander it replaces left every
-		# creation as an unregistered orphan invisible to every_army_leader. Token must be unique
-		# per creation, hence the per-country sequence in the meta.
-		add_to_variable = { WA_AI_gen_seq = 1 }
+		# [recruit-loop] generate_character = "create + recruit"; the bare create_corps_commander it
+		# replaces left every creation an orphan invisible to every_army_leader. The token indexes
+		# into history/general/WA_AI_leader_pool.txt - an undeclared token loses its template and
+		# portrait on reload. Tokens repeat across countries, like vanilla's generic advisors.
+		# Keep the meta_effect: a literal generate_character here creates the character WITHOUT its role.
+		add_to_variable = { WA_AI_gen_general_seq = 1 }
 		meta_effect = {
 			text = {
 				generate_character = {
-					token_base = WA_AI_gen_[TAG]_[SEQ]
+					token_base = WA_AI_gen_general_[SEQ]
+					portraits = { army = { large = "GFX_portrait_unknown" } }
 					corps_commander = {
 						skill = 1
 					}
 				}
 			}
-			TAG = "[ROOT.GetTag]"
-			SEQ = "[?WA_AI_gen_seq|.0]"
+			SEQ = "[?WA_AI_gen_general_seq|.0]"
 		}
 
 		set_variable = { WA_AI_expected_generals = WA_AI_general_count }
@@ -157,6 +180,23 @@ WA_AI_recruit_marshal = {
 		set_variable = { WA_AI_recruit_marshal_fail_n = 0 }
 	}
 
+	# [recruit-loop] index the NEXT creation would take. Compared against the pool's last
+	# declared index, so the gate and history/general/WA_AI_leader_pool.txt share one number.
+	set_temp_variable = { WA_AI_gen_marshal_next = WA_AI_gen_marshal_seq }
+	add_to_temp_variable = { WA_AI_gen_marshal_next = 1 }
+
+	# [recruit-loop] exhaustion notice: a pool-exhausted country stops recruiting marshal forever,
+	# and that must be distinguishable from the watchdog latch, which logs its own line. The flag is
+	# the save-visible half - a campaign census reads it without a log.
+	if = {
+		limit = {
+			check_variable = { WA_AI_gen_marshal_next > constant:wa_ai_leaders.pool.last_index }
+			NOT = { has_country_flag = WA_AI_recruit_marshal_pool_empty }
+		}
+		set_country_flag = WA_AI_recruit_marshal_pool_empty
+		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: marshal token pool exhausted - scripted recruitment stopped" }
+	}
+
 	### Check if a new marshal is needed
 
 	if = {
@@ -187,6 +227,11 @@ WA_AI_recruit_marshal = {
 			limit = {
 				NOT = { has_country_flag = WA_AI_recruit_marshal_broken }
 				NOT = { has_country_flag = WA_AI_recruit_marshal_pending }
+				# [recruit-loop] pool guard: only a token declared in history/general/WA_AI_leader_pool.txt
+				# resolves after a reload; past the last one the leader loses its template and portrait.
+				# Counts CREATIONS EVER, not living leaders - a leader lost to death or capture does not
+				# give its slot back, and a watchdog strike consumes a slot even though it refunds the CP.
+				NOT = { check_variable = { WA_AI_gen_marshal_next > constant:wa_ai_leaders.pool.last_index } }
 				NOT = { check_variable = { command_power < WA_AI_marshal_total_cost } }
 			}
 
@@ -195,19 +240,19 @@ WA_AI_recruit_marshal = {
 			multiply_temp_variable = { WA_AI_marshal_total_cost = -1 }
 			add_command_power = WA_AI_marshal_total_cost
 
-			# [recruit-loop] generate_character - see WA_AI_recruit_general
-			add_to_variable = { WA_AI_gen_seq = 1 }
+			# [recruit-loop] generate_character + declared token pool - see WA_AI_recruit_general
+			add_to_variable = { WA_AI_gen_marshal_seq = 1 }
 			meta_effect = {
 				text = {
 					generate_character = {
-						token_base = WA_AI_gen_[TAG]_[SEQ]
+						token_base = WA_AI_gen_marshal_[SEQ]
+						portraits = { army = { large = "GFX_portrait_unknown" } }
 						field_marshal = {
 							skill = 1
 						}
 					}
 				}
-				TAG = "[ROOT.GetTag]"
-				SEQ = "[?WA_AI_gen_seq|.0]"
+				SEQ = "[?WA_AI_gen_marshal_seq|.0]"
 			}
 
 			set_variable = { WA_AI_expected_marshals = WA_AI_marshal_count }
@@ -317,6 +362,23 @@ WA_AI_recruit_navy = {
 		set_variable = { WA_AI_recruit_navy_fail_n = 0 }
 	}
 
+	# [recruit-loop] index the NEXT creation would take. Compared against the pool's last
+	# declared index, so the gate and history/general/WA_AI_leader_pool.txt share one number.
+	set_temp_variable = { WA_AI_gen_admiral_next = WA_AI_gen_admiral_seq }
+	add_to_temp_variable = { WA_AI_gen_admiral_next = 1 }
+
+	# [recruit-loop] exhaustion notice: a pool-exhausted country stops recruiting admiral forever,
+	# and that must be distinguishable from the watchdog latch, which logs its own line. The flag is
+	# the save-visible half - a campaign census reads it without a log.
+	if = {
+		limit = {
+			check_variable = { WA_AI_gen_admiral_next > constant:wa_ai_leaders.pool.last_index }
+			NOT = { has_country_flag = WA_AI_recruit_navy_pool_empty }
+		}
+		set_country_flag = WA_AI_recruit_navy_pool_empty
+		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: admiral token pool exhausted - scripted recruitment stopped" }
+	}
+
 	### cost of recruiting a new admiral
 
 	set_temp_variable = { WA_AI_recruit_cost = 0 }
@@ -336,6 +398,11 @@ WA_AI_recruit_navy = {
 		limit = {
 			NOT = { has_country_flag = WA_AI_recruit_navy_broken }
 			NOT = { has_country_flag = WA_AI_recruit_navy_pending }
+			# [recruit-loop] pool guard: only a token declared in history/general/WA_AI_leader_pool.txt
+			# resolves after a reload; past the last one the leader loses its template and portrait.
+			# Counts CREATIONS EVER, not living leaders - a leader lost to death or capture does not
+			# give its slot back, and a watchdog strike consumes a slot even though it refunds the CP.
+			NOT = { check_variable = { WA_AI_gen_admiral_next > constant:wa_ai_leaders.pool.last_index } }
 			OR = {
 				AND = {
 					check_variable = { WA_AI_ships_to_navy_leaders_ratio > 10 }
@@ -354,21 +421,20 @@ WA_AI_recruit_navy = {
 		multiply_temp_variable = { WA_AI_recruit_cost = -1 }
 		add_command_power = WA_AI_recruit_cost
 
-		# [recruit-loop] generate_character = documented "create + recruit" (random name from the
-		# country's own lists when omitted); navy_leader is a valid character role block.
-		# Token must be unique per creation, hence the per-country sequence in the meta.
-		add_to_variable = { WA_AI_gen_seq = 1 }
+		# [recruit-loop] generate_character + declared token pool - see WA_AI_recruit_general.
+		# navy portrait category, matching the admiral pool declaration.
+		add_to_variable = { WA_AI_gen_admiral_seq = 1 }
 		meta_effect = {
 			text = {
 				generate_character = {
-					token_base = WA_AI_gen_[TAG]_[SEQ]
+					token_base = WA_AI_gen_admiral_[SEQ]
+					portraits = { navy = { large = "GFX_portrait_unknown" } }
 					navy_leader = {
 						skill = 1
 					}
 				}
 			}
-			TAG = "[ROOT.GetTag]"
-			SEQ = "[?WA_AI_gen_seq|.0]"
+			SEQ = "[?WA_AI_gen_admiral_seq|.0]"
 		}
 
 		set_variable = { WA_AI_expected_navy_leaders = WA_AI_navy_leader_count }

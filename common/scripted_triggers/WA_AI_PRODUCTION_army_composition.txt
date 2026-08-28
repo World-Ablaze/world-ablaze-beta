@@ -19,16 +19,32 @@ WA_AI_PRODUCTION_army_composition_is_enabled = {
 # ARMOR COMPOSITION TRIGGERS
 # ============================================================================
 
+# [armor-role-budget] The four *_armor triggers below ARE the budget's slot definition: each answers
+# "is this tank role open for this country", and the budget is split evenly between the open ones
+# (common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt). They no longer gate an ai_strategy
+# block. Assumes each slot maps to exactly one role_ratio id - light_armor covers BOTH light
+# templates because WA_light_support_armor_role declares role = light_armor.
+
 WA_AI_PRODUCTION_build_army_light_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
-	WA_AI_TEMPLATES_use_light_armor_templates = yes
+	OR = {
+		WA_AI_TEMPLATES_use_light_armor_templates = yes
+		WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+	}
 }
 
+# The transition path is the second way into the medium slot: a country past the light-to-medium
+# switch builds medium templates even before it passes WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor.
+# It used to be a SECOND static block, which double-counted medium (ENG read 40 against 10 for every
+# other role); inside the budget it is one slot either way.
 WA_AI_PRODUCTION_build_army_medium_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
-	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	OR = {
+		WA_AI_TEMPLATES_use_medium_armor_templates = yes
+		WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
+	}
 }
 
 WA_AI_PRODUCTION_build_army_heavy_armor = {
@@ -53,10 +69,15 @@ WA_AI_PRODUCTION_build_army_motorized = {
 	WA_AI_TEMPLATES_use_motorized_templates = yes
 }
 
+# [mech-divisions-usa-only] Owner rule 2026-08-28: mechanized DIVISIONS are for the expeditionary
+# mechanized major and nobody else. Reads the narrow template trigger, so the role_ratio share and
+# the target template open and close together - a share with no target is wasted, a target with no
+# share gets its divisions decommissioned. Mechanized inside TANK divisions is untouched: that runs
+# off WA_AI_TEMPLATES_use_mechanized_templates, which stays open for everyone.
 WA_AI_PRODUCTION_build_army_mechanized = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
-	WA_AI_TEMPLATES_use_mechanized_templates = yes
+	WA_AI_TEMPLATES_use_mechanized_division_templates = yes
 }
 
 # Expeditionary mechanized majors (currently only the USA, per
@@ -100,6 +121,21 @@ WA_AI_PRODUCTION_build_army_mountaineers = {
 # ============================================================================
 # SUPPORT COMPOSITION TRIGGERS
 # ============================================================================
+
+# ============================================================================
+# ARMY SIZE TRIGGERS
+# ============================================================================
+
+# [division-target-scaling] One question: does this country need a bigger theoretical army than the
+# global division-target weights give it, in the run-up to the war it starts. Tester report
+# 2026-08-28: GER and ITA under-build until mid-1940. Payload is
+# WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost. The window closes at 1940.7.1 because after
+# the fall of France the war itself drives the target (threat and war factors multiply it) and the
+# boost would compound with them.
+WA_AI_PRODUCTION_early_war_army_target_boost = {
+	WA_AI_CONFIG_MILITARY_is_axis_european_major = yes
+	date < 1940.7.1
+}
 
 # ============================================================================
 # NO-NEW-DIVISIONS TRIGGER

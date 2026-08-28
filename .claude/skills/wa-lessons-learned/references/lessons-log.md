@@ -2404,3 +2404,66 @@ process caveats (stale process, and the absence of a load-time hook).
   harness `common/scripted_effects/WA_TEST_recruit_loop.txt`. Engine boundary, ASSUMED: why
   registration fails for the nameless form, and why XSM/YUN loop despite an official count >= 3
   (warlord/united-front reading).
+
+### `role_ratio` shares are the strategy VALUES normalised, not "base 100 plus value" per role
+
+- **Symptom:** `common/ai_strategy/documentation.info` (UNIT RATIOS / ALL BUT AIR) says unit ratios
+  are "a base of 100 plus the value indicated in the strategy", which reads as: every role starts at
+  100 and a role with no strategy competes on equal footing with infantry. Every WA header written
+  against that sentence had to invent a reason why 13 roles do not all come out equal.
+- **Real behaviour, MEASURED** (owner console `imgui show ai_division_production`, SOV 1943.11.3,
+  372 wanted divisions). WA strategy sums for SOV that day were infantry 45 (100 base, -20
+  mechanized, -10 mountaineers, -25 armor budget), mechanized 20, mountaineers 10, heavy_armor 13,
+  medium_armor 12 - sum 100. The engine wanted infantry 167, mechanized 74, mountaineers 37,
+  heavy 48, medium 45: **45.0 / 19.9 / 10.0 / 12.9 / 12.1 percent**, every row within rounding of
+  its strategy value. `suppression` carried no strategy and wanted 0; `motorized` carried none and
+  had no row at all.
+- **Rule:** a role's share of the wanted divisions is `its strategy sum / the sum of all strategy
+  sums`. A role with no `role_ratio` strategy wants **nothing**, it does not silently claim 100.
+  So the WA convention of keeping the values summing to 100 is not a house style - it is what makes
+  each value readable directly as a percent. Two consequences worth stating: giving a role a share
+  it has no enabled target template for WASTES that share outright (the naval_escort case, above),
+  and a role whose share reaches 0 has its templates decommissioned (the garrison case).
+- **Detection:** `imgui show ai_division_production`, the per-role table under the country. Nothing
+  in a savegame names a `role_ratio` strategy by role, so this is a live-window read only.
+- **Evidence:** WORK.md `armor-role-budget` (harness run 1);
+  `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`. Engine boundary, ASSUMED: what the
+  documentation.info sentence actually describes - possibly `unit_ratio` for air, which the same
+  section covers separately.
+
+### An `ai_templates` flag value is a hand-maintained join key - a calculator branch with no entry deletes the role
+
+- **Symptom:** the United Kingdom stopped wanting heavy tanks entirely (owner console 1943.11,
+  `imgui show ai_division_production`: no `heavy_armor` row at all, while `medium_armor` was there).
+  The role_ratio budget was correct and the console harness read `VERDICT 1 1 1`, so the AI was
+  being told to want heavy divisions and simply could not.
+- **Real cause, MEASURED:** `WA_AI_TEMPLATES_calculate_heavy_armor_template` selects a template by
+  writing a NUMBER into `WA_HEAVY_ARMOR_TEMPLATE`, and each entry in
+  `common/ai_templates/WA_AI_TEMPLATES_armored_heavy.txt` enables on
+  `has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = N }`. The two lists had drifted: the
+  calculator emitted 7103-7113, the file declared 7100-7109 plus **three entries left at the literal
+  placeholder `value = xxxx`**, and one value (7102) was declared twice. Every template existed and
+  was correctly composed - the numbers were simply never assigned. A country whose branch landed on
+  a number no entry declares carries a flag pointing at nothing: the role has no target template,
+  the AI cannot build it, the panel stops listing it, and its whole `role_ratio` share is spent on
+  divisions that can never appear. The same defect existed in the light family (5104 dead, 5105
+  duplicated). Introduced by `101fd357d "More AI template designs"`, silent ever since.
+- **It is progressive, which is what makes it look like a regression.** ENG had heavy tanks while
+  its unlocks landed it in 7100-7109; researching modern SPG/SPAA moved it up the else_if chain into
+  a branch with no entry, and it lost the role. The country breaks itself by teching forward.
+- **Rule:** the value in `set_temp_variable = { _template_value = N }` and the value in
+  `has_country_flag = { flag = WA_<X>_TEMPLATE value = N }` are a JOIN KEY maintained by hand across
+  two files, with no parser, no checker and no error message. After touching either side, diff the
+  emitted set against the declared set - a value on only one side is a silently deleted role, not a
+  warning. Match them by TEMPLATE NAME, never by position: the names encode the branch conditions
+  (`..._MEC_MEDIUM_SPG_HEAVY_TD_MEDIUM_SPAA` is exactly `mech + medium_spg + heavy_td +
+  medium_spaa`), so the name is the only reliable identity when the numbers have drifted.
+- **Detection:** for each family, extract `_template_value = (\d+)` from the calculator and
+  `WA_<X>_TEMPLATE value = (\d+)` from its `ai_templates` file and compare the two sets; also flag
+  duplicates on the declared side and any literal `value = xxxx`. Live: `imgui show
+  ai_division_production` - a role with a positive role_ratio share and NO row is this bug.
+- **Evidence:** WORK.md `armor-role-budget`;
+  `common/ai_templates/WA_AI_TEMPLATES_armored_heavy.txt` (7103-7113 renumbered by name 2026-08-28),
+  `WA_AI_TEMPLATES_armored_light.txt` (5104). Engine boundary, ASSUMED: whether a role with a flag
+  pointing at no entry is merely unbuildable or is also dropped from the ratio denominator - the ENG
+  reading fits the denominator KEEPING it, i.e. the share is wasted rather than redistributed.

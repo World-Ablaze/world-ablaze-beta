@@ -1,0 +1,255 @@
+############################################################################################################
+#	World Ablaze - ARMOR ROLE BUDGET console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[armor-role-budget] Instrument for the runtime role_ratio budget
+#	(common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt). Nothing in a savegame names a
+#	role_ratio strategy by role, and the split is computed from a book that gameplay never reads
+#	back, so the only way to see whether the budget is correct is to print it.
+#
+#	Recipe: events/wa_test_armor_budget.txt header. Fire `event wa_abg.1 SOV` from ANY tag - do NOT
+#	tag into the country under test. Output: logs/game.log, "ARMOR BUDGET TEST".
+#
+#	Section C RE-DERIVES the open-role set from the TEMPLATE triggers and re-does the split with its
+#	own arithmetic, on purpose (contract rule 4): it shares no helper with the shipped effect except
+#	the budget constant, which IS the bar being measured. When C and D disagree the fault is in one
+#	of the two, not hidden between them.
+#
+#	READ THE THREE VERDICT LINES AT THE BOTTOM. All three must read 1.
+############################################################################################################
+
+WA_TEST_ABG_report = {
+
+	log = "=== ARMOR BUDGET TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _abt_e1_ = 0 }
+	set_temp_variable = { _abt_e2_ = 0 }
+	set_temp_variable = { _abt_e3_ = 0 }
+	set_temp_variable = { _abt_e4_ = 0 }
+	set_temp_variable = { _abt_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _abt_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _abt_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _abt_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _abt_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _abt_e5_ = 1 } }
+	log = "  scope : always=[?_abt_e1_|.0]  I-am-ROOT=[?_abt_e2_|.0]  I-am-THIS=[?_abt_e3_|.0]  ROOT-scope-usable=[?_abt_e4_|.0]  control-false=[?_abt_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	############################################################
+	# A. Gates - the terms that can zero the whole budget
+	############################################################
+
+	set_temp_variable = { _abt_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _abt_ai = 1 } }
+	set_temp_variable = { _abt_comp = 0 }
+	if = { limit = { WA_AI_PRODUCTION_army_composition_is_enabled = yes } set_temp_variable = { _abt_comp = 1 } }
+	set_temp_variable = { _abt_nodiv = 0 }
+	if = { limit = { WA_AI_PRODUCTION_trains_no_divisions = yes } set_temp_variable = { _abt_nodiv = 1 } }
+	set_temp_variable = { _abt_expand = 0 }
+	if = { limit = { WA_AI_CONFIG_early_game_army_expansion_override = yes } set_temp_variable = { _abt_expand = 1 } }
+	set_temp_variable = { _abt_armortpl = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_armor_templates = yes } set_temp_variable = { _abt_armortpl = 1 } }
+
+	log = "  gates : is_ai=[?_abt_ai|.0]  composition-enabled=[?_abt_comp|.0]  trains-no-divisions=[?_abt_nodiv|.0]  early-expansion-override=[?_abt_expand|.0]  use-armor-templates=[?_abt_armortpl|.0]"
+
+	############################################################
+	# B. Template layer - which tank templates the country may design
+	############################################################
+
+	set_temp_variable = { _abt_tl = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_light_armor_templates = yes } set_temp_variable = { _abt_tl = 1 } }
+	set_temp_variable = { _abt_tls = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes } set_temp_variable = { _abt_tls = 1 } }
+	set_temp_variable = { _abt_tm = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_medium_armor_templates = yes } set_temp_variable = { _abt_tm = 1 } }
+	set_temp_variable = { _abt_tsw = 0 }
+	if = { limit = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes } set_temp_variable = { _abt_tsw = 1 } }
+	set_temp_variable = { _abt_th = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_heavy_armor_templates = yes } set_temp_variable = { _abt_th = 1 } }
+	set_temp_variable = { _abt_tmo = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_modern_armor = yes } set_temp_variable = { _abt_tmo = 1 } }
+
+	# Flags actually carried. A light-support country must show the SUPPORT flag and not the plain one.
+	set_temp_variable = { _abt_fl = 0 }
+	if = { limit = { has_country_flag = WA_LIGHT_ARMOR_TEMPLATE } set_temp_variable = { _abt_fl = 1 } }
+	set_temp_variable = { _abt_fls = 0 }
+	if = { limit = { has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE } set_temp_variable = { _abt_fls = 1 } }
+
+	# Light-support run state - the two ends of the finite run, printed even when it is shut.
+	set_temp_variable = { _abt_lschassis = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes } set_temp_variable = { _abt_lschassis = 1 } }
+	set_temp_variable = { _abt_lsfield = num_equipment_in_armies@light_tank_support_chassis }
+	set_temp_variable = { _abt_lscap = constant:wa_ai_production.army_composition.light_support_armor_fielded_cap }
+	set_temp_variable = { _abt_lsdate = 0 }
+	if = { limit = { date < 1942.1.1 } set_temp_variable = { _abt_lsdate = 1 } }
+	set_temp_variable = { _abt_lsowns = 0 }
+	if = { limit = { WA_AI_TEMPLATES_light_support_armor_owns_light_role = yes } set_temp_variable = { _abt_lsowns = 1 } }
+	set_temp_variable = { _abt_lsline = 0 }
+	if = { limit = { WA_AI_PRODUCTION_build_light_support_armor = yes } set_temp_variable = { _abt_lsline = 1 } }
+	set_temp_variable = { _abt_lsoff = 0 }
+	if = { limit = { WA_AI_PRODUCTION_light_support_armor_line_off = yes } set_temp_variable = { _abt_lsoff = 1 } }
+	set_temp_variable = { _abt_lscapped = 0 }
+	if = { limit = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes } set_temp_variable = { _abt_lscapped = 1 } }
+
+	log = "  tmpl  : light=[?_abt_tl|.0]  light-support=[?_abt_tls|.0]  medium=[?_abt_tm|.0]  light-to-medium-switch=[?_abt_tsw|.0]  heavy=[?_abt_th|.0]  modern=[?_abt_tmo|.0]"
+	log = "  lsrun : has-support-chassis=[?_abt_lschassis|.0]  owns-light-role=[?_abt_lsowns|.0]  fielded=[?_abt_lsfield|.0](cap [?_abt_lscap|.0], reached=[?_abt_lscapped|.0])  before-1942=[?_abt_lsdate|.0]"
+	log = "  lsline: chassis-line-ON=[?_abt_lsline|.0]  chassis-line-OFF=[?_abt_lsoff|.0]  (exactly one must be 1 once the chassis is unlocked; both 0 = the country has no support chassis)"
+	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  (both 1 = the two light templates are enabled at once, which the exclusivity is supposed to prevent)"
+
+	############################################################
+	# C. Independent re-derivation of the split (contract rule 4)
+	#    Reads the TEMPLATE triggers above, not the shipped slot triggers.
+	############################################################
+
+	set_temp_variable = { _abt_n = 0 }
+	set_temp_variable = { _abt_wl = 0 }
+	set_temp_variable = { _abt_wm = 0 }
+	set_temp_variable = { _abt_wh = 0 }
+	set_temp_variable = { _abt_wmo = 0 }
+
+	if = {
+		limit = { check_variable = { _abt_nodiv < 1 } }
+		if = {
+			limit = { OR = { check_variable = { _abt_tl > 0 } check_variable = { _abt_tls > 0 } } }
+			set_temp_variable = { _abt_wl = 1 }
+			add_to_temp_variable = { _abt_n = 1 }
+		}
+		if = {
+			limit = { OR = { check_variable = { _abt_tm > 0 } check_variable = { _abt_tsw > 0 } } }
+			set_temp_variable = { _abt_wm = 1 }
+			add_to_temp_variable = { _abt_n = 1 }
+		}
+		if = {
+			limit = { check_variable = { _abt_th > 0 } }
+			set_temp_variable = { _abt_wh = 1 }
+			add_to_temp_variable = { _abt_n = 1 }
+		}
+		if = {
+			limit = { check_variable = { _abt_tmo > 0 } }
+			set_temp_variable = { _abt_wmo = 1 }
+			add_to_temp_variable = { _abt_n = 1 }
+		}
+	}
+
+	set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_total }
+	set_temp_variable = { _abt_wstd = constant:wa_ai_production.army_composition.armor_weight_standard }
+	set_temp_variable = { _abt_whvy = constant:wa_ai_production.army_composition.armor_weight_heavy }
+	set_temp_variable = { _abt_total = 0 }
+	set_temp_variable = { _abt_wsum = 0 }
+	set_temp_variable = { _abt_std = 0 }
+	set_temp_variable = { _abt_hvy = 0 }
+	if = {
+		limit = { check_variable = { _abt_n > 0 } }
+		set_temp_variable = { _abt_total = _abt_budget }
+
+		# Weight sum, counted from the open flags rather than from a shared helper.
+		set_temp_variable = { _abt_nstd = 0 }
+		if = { limit = { check_variable = { _abt_wl > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		if = { limit = { check_variable = { _abt_wm > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		if = { limit = { check_variable = { _abt_wmo > 0 } } add_to_temp_variable = { _abt_nstd = 1 } }
+		set_temp_variable = { _abt_wsum = _abt_nstd }
+		multiply_temp_variable = { _abt_wsum = _abt_wstd }
+		if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_wsum = _abt_whvy } }
+
+		# Standard share, floored. Re-typed rather than shared: a rounded-up share fails multiply-back.
+		set_temp_variable = { _abt_nstd = _abt_budget }
+		multiply_temp_variable = { _abt_nstd = _abt_wstd }
+		set_temp_variable = { _abt_std = _abt_nstd }
+		divide_temp_variable = { _abt_std = _abt_wsum }
+		round_temp_variable = _abt_std
+		set_temp_variable = { _abt_back = _abt_std }
+		multiply_temp_variable = { _abt_back = _abt_wsum }
+		if = {
+			limit = { check_variable = { _abt_back > _abt_nstd } }
+			subtract_from_temp_variable = { _abt_std = 1 }
+		}
+
+		# Heavy share, same construction.
+		set_temp_variable = { _abt_nhvy = _abt_budget }
+		multiply_temp_variable = { _abt_nhvy = _abt_whvy }
+		set_temp_variable = { _abt_hvy = _abt_nhvy }
+		divide_temp_variable = { _abt_hvy = _abt_wsum }
+		round_temp_variable = _abt_hvy
+		set_temp_variable = { _abt_back = _abt_hvy }
+		multiply_temp_variable = { _abt_back = _abt_wsum }
+		if = {
+			limit = { check_variable = { _abt_back > _abt_nhvy } }
+			subtract_from_temp_variable = { _abt_hvy = 1 }
+		}
+	}
+
+	set_temp_variable = { _abt_xl = 0 }
+	set_temp_variable = { _abt_xm = 0 }
+	set_temp_variable = { _abt_xh = 0 }
+	set_temp_variable = { _abt_xmo = 0 }
+	if = { limit = { check_variable = { _abt_wl > 0 } } set_temp_variable = { _abt_xl = _abt_std } }
+	if = { limit = { check_variable = { _abt_wm > 0 } } set_temp_variable = { _abt_xm = _abt_std } }
+	if = { limit = { check_variable = { _abt_wmo > 0 } } set_temp_variable = { _abt_xmo = _abt_std } }
+	if = { limit = { check_variable = { _abt_wh > 0 } } set_temp_variable = { _abt_xh = _abt_hvy } }
+
+	set_temp_variable = { _abt_rem = _abt_total }
+	subtract_from_temp_variable = { _abt_rem = _abt_xl }
+	subtract_from_temp_variable = { _abt_rem = _abt_xm }
+	subtract_from_temp_variable = { _abt_rem = _abt_xh }
+	subtract_from_temp_variable = { _abt_rem = _abt_xmo }
+	if = { limit = { check_variable = { _abt_wmo > 0 } } add_to_temp_variable = { _abt_xmo = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wm > 0 } } add_to_temp_variable = { _abt_xm = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wl > 0 } } add_to_temp_variable = { _abt_xl = _abt_rem } }
+	else_if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_xh = _abt_rem } }
+
+	log = "  expect: budget=[?_abt_budget|.0]  open-roles=[?_abt_n|.0]  weight-sum=[?_abt_wsum|.0](std [?_abt_wstd|.0] / heavy [?_abt_whvy|.0])  std-share=[?_abt_std|.0]  heavy-share=[?_abt_hvy|.0]  leftover=[?_abt_rem|.0]"
+	log = "  expect: light=[?_abt_xl|.0] medium=[?_abt_xm|.0] heavy=[?_abt_xh|.0] modern=[?_abt_xmo|.0] infantry-offset=[?_abt_total|.0]"
+
+	############################################################
+	# D. What the shipped effect actually applied - its own books
+	############################################################
+
+	set_temp_variable = { _abt_bl = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_light } set_temp_variable = { _abt_bl = WA_AI_ARMOR_BUDGET_light } }
+	set_temp_variable = { _abt_bm = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_medium } set_temp_variable = { _abt_bm = WA_AI_ARMOR_BUDGET_medium } }
+	set_temp_variable = { _abt_bh = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_heavy } set_temp_variable = { _abt_bh = WA_AI_ARMOR_BUDGET_heavy } }
+	set_temp_variable = { _abt_bmo = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_modern } set_temp_variable = { _abt_bmo = WA_AI_ARMOR_BUDGET_modern } }
+	set_temp_variable = { _abt_binf = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_inf } set_temp_variable = { _abt_binf = WA_AI_ARMOR_BUDGET_inf } }
+
+	set_temp_variable = { _abt_bsum = _abt_bl }
+	add_to_temp_variable = { _abt_bsum = _abt_bm }
+	add_to_temp_variable = { _abt_bsum = _abt_bh }
+	add_to_temp_variable = { _abt_bsum = _abt_bmo }
+
+	log = "  books : light=[?_abt_bl|.0] medium=[?_abt_bm|.0] heavy=[?_abt_bh|.0] modern=[?_abt_bmo|.0]  sum=[?_abt_bsum|.0]  infantry-offset=[?_abt_binf|.0]"
+
+	############################################################
+	# E. Verdicts - all three must read 1
+	############################################################
+
+	# V1 - the constancy claim: whatever the number of open roles, the tank rows sum to the infantry
+	# offset. A 0 here means infantry is paying more (or less) than the tanks receive.
+	set_temp_variable = { _abt_v1 = 0 }
+	if = { limit = { check_variable = { _abt_bsum = _abt_binf } } set_temp_variable = { _abt_v1 = 1 } }
+
+	# V2 - the budget claim: with at least one open role the offset IS the budget, and with none it
+	# is zero. A 0 here with V1 at 1 means the split is internally consistent but the wrong size.
+	set_temp_variable = { _abt_v2 = 0 }
+	if = { limit = { check_variable = { _abt_binf = _abt_total } } set_temp_variable = { _abt_v2 = 1 } }
+
+	# V3 - the reconciliation claim: the books match an independent re-derivation from the template
+	# layer. A 0 here is the interesting failure - a slot trigger and its template trigger disagree,
+	# or a reconcile tick was missed.
+	set_temp_variable = { _abt_v3 = 0 }
+	if = {
+		limit = {
+			check_variable = { _abt_bl = _abt_xl }
+			check_variable = { _abt_bm = _abt_xm }
+			check_variable = { _abt_bh = _abt_xh }
+			check_variable = { _abt_bmo = _abt_xmo }
+		}
+		set_temp_variable = { _abt_v3 = 1 }
+	}
+
+	log = "  VERDICT: sum-equals-offset=[?_abt_v1|.0]  offset-equals-budget=[?_abt_v2|.0]  books-match-independent-split=[?_abt_v3|.0]   (all three must read 1)"
+}

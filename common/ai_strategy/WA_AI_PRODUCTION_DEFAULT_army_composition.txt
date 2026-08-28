@@ -2,11 +2,14 @@
 # Army Composition Strategies
 # ============================================================================
 # These strategies control army composition using role_ratio.
-# All strategies are PURELY ADDITIVE - each reduces infantry and adds
+# Every block here is PURELY ADDITIVE - it reduces infantry and adds
 # the same amount to a new type, so they stack while maintaining sum = 100.
 #
 # Base: infantry = 100
 # Each modifier: infantry -= X, new_type += X (net change = 0)
+#
+# EXCEPTION - the tank roles are NOT here. They share one constant budget emitted at runtime by
+# common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt. See ARMOR MODIFIERS below.
 # ============================================================================
 
 # ============================================================================
@@ -21,54 +24,18 @@ WA_AI_PRODUCTION_build_army_base = {
 }
 
 # ============================================================================
-# ARMOR MODIFIERS
+# ARMOR MODIFIERS - MOVED, do not re-add blocks here
 # ============================================================================
-
-# [division-target-scaling] Armor roles take half their former army share; stale if live wanted armor is no longer disproportionate to the other roles.
-# Light Armor: infantry -10, light_armor +10
-WA_AI_PRODUCTION_DEFAULT_build_army_light_armor = {
-	enable = { WA_AI_PRODUCTION_build_army_light_armor = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = role_ratio id = infantry value = -10 }
-	ai_strategy = { type = role_ratio id = light_armor value = 10 }
-}
-
-# Medium Armor: infantry -10, medium_armor +10
-WA_AI_PRODUCTION_DEFAULT_build_army_medium_armor = {
-	enable = { WA_AI_PRODUCTION_build_army_medium_armor = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = role_ratio id = infantry value = -10 }
-	ai_strategy = { type = role_ratio id = medium_armor value = 10 }
-}
-
-# Medium Armor: infantry -10, medium_armor +10
-WA_AI_PRODUCTION_DEFAULT_build_army_switch_from_light_to_medium_armor = {
-	enable = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = role_ratio id = infantry value = -10 }
-	ai_strategy = { type = role_ratio id = medium_armor value = 10 }
-}
-
-# Heavy Armor: infantry -10, heavy_armor +10
-WA_AI_PRODUCTION_DEFAULT_build_army_heavy_armor = {
-	enable = { WA_AI_PRODUCTION_build_army_heavy_armor = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = role_ratio id = infantry value = -10 }
-	ai_strategy = { type = role_ratio id = heavy_armor value = 10 }
-}
-
-# Modern Armor: infantry -10, modern_armor +10
-WA_AI_PRODUCTION_DEFAULT_build_army_modern_armor = {
-	enable = { WA_AI_PRODUCTION_build_army_modern_armor = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = role_ratio id = infantry value = -10 }
-	ai_strategy = { type = role_ratio id = modern_armor value = 10 }
-}
+# [armor-role-budget] The five static blocks that used to live here (light, medium, the
+# light-to-medium transition, heavy, modern) each moved 10 points from infantry to one tank role,
+# so the armour share was 10 x the number of open tank roles and infantry paid it once per role.
+# The tank roles now share ONE constant budget emitted at runtime by
+# common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt, because the per-role value is
+# budget / open-roles and `ai_strategy value =` takes a literal. A tank role_ratio block added
+# back in this file would stack on top of that budget and re-create the bug.
+# WHICH roles are open is still decided by the WA_AI_PRODUCTION_build_army_*_armor triggers in
+# common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt; the SIZE is
+# constant:wa_ai_production.army_composition.armor_budget_total.
 
 # ============================================================================
 # MOBILE MODIFIERS
@@ -84,12 +51,15 @@ WA_AI_PRODUCTION_DEFAULT_build_army_motorized = {
 }
 
 # Mechanized: infantry -20, mechanized +20
-# The NOT below makes this the base tier only: expeditionary majors get the -30/+30
-# block instead of stacking both (stacked, USA's infantry want went NEGATIVE - -25%
-# of 575 wanted divisions in campaign 9be92c89 - and it stopped training entirely).
-# The exclusion lives HERE and not in the trigger because the expeditionary trigger
-# itself requires WA_AI_PRODUCTION_build_army_mechanized - putting a NOT in the
-# trigger would recurse.
+# [mech-divisions-usa-only] Since 2026-08-28 this is the expeditionary mechanized major OUTSIDE its
+# window, not a global base tier: WA_AI_PRODUCTION_build_army_mechanized is now gated on
+# WA_AI_TEMPLATES_use_mechanized_division_templates, so every other country has no mechanized
+# role_ratio at all. Its value is unchanged.
+# The NOT below keeps this and the -30/+30 block mutually exclusive (stacked, USA's infantry want
+# went NEGATIVE - -25% of 575 wanted divisions in campaign 9be92c89 - and it stopped training
+# entirely). The exclusion lives HERE and not in the trigger because the expeditionary trigger
+# itself requires WA_AI_PRODUCTION_build_army_mechanized - putting a NOT in the trigger would
+# recurse.
 WA_AI_PRODUCTION_DEFAULT_build_army_mechanized = {
 	enable = {
 		WA_AI_PRODUCTION_build_army_mechanized = yes
@@ -103,9 +73,9 @@ WA_AI_PRODUCTION_DEFAULT_build_army_mechanized = {
 
 # Expeditionary mechanization: infantry -30, mechanized +30. REPLACES the base
 # mechanized block above (mutually exclusive), it does not stack on it.
-# [division-target-scaling] Deepest USA stack: 100 -10 medium -10 transition
-# -10 modern -30 here -10 special forces = 30 infantry; the old +15 floor is
-# gone because no reachable armor stack can make the residual negative.
+# [armor-role-budget] Deepest reachable USA stack: 100 -25 armor budget -30 here -10 special forces
+# = 35 infantry. Motorized cannot join it (its template trigger excludes mechanized) and marines and
+# mountaineers are mutually exclusive, so 35 is the floor, not an estimate.
 WA_AI_PRODUCTION_DEFAULT_build_army_expeditionary_mechanization = {
 	enable = { WA_AI_PRODUCTION_build_army_expeditionary_mechanization = yes }
 	abort_when_not_enabled = yes
@@ -164,6 +134,23 @@ WA_AI_PRODUCTION_DEFAULT_army_expansion_override = {
 
 	ai_strategy = { type = build_army id = infantry value = 500 }
 	ai_strategy = { type = force_build_armies value = 300 }
+}
+
+# [division-target-scaling] +30% theoretical division target for the two European Axis majors until
+# mid-1940 (tester report 2026-08-28: GER and ITA under-build in the early game after the global
+# WANTED_UNITS_WEIGHT_* quartering). WHO and WHEN live in
+# WA_AI_PRODUCTION_early_war_army_target_boost; this is the payload.
+# ASSUMED: ai_wanted_divisions_factor is base 100 + value like every other *_factor strategy, so 30
+# reads as x1.3. DERIVED from vanilla USA_90_division_gamble (-30 for a deliberately small army) and
+# CHI_stop_disbanding_your_army (1000). The engine does not document this type beyond its name, so
+# the magnitude is what the owner console must confirm, not the direction.
+# Stacks with the army_expansion_override above for GER before 1938 - different strategy types,
+# intended: that block forces BUILDING, this one raises what the AI thinks it needs.
+WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost = {
+	enable = { WA_AI_PRODUCTION_early_war_army_target_boost = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = ai_wanted_divisions_factor value = 30 }
 }
 
 ############################################################################################################

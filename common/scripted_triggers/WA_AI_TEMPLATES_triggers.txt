@@ -120,6 +120,18 @@ WA_AI_TEMPLATES_use_mechanized_templates = {
 	}
 }
 
+# [mech-divisions-usa-only] Owner rule 2026-08-28: only the expeditionary mechanized major fields
+# mechanized DIVISIONS. Deliberately NARROWER than WA_AI_TEMPLATES_use_mechanized_templates, which
+# stays open for everyone and must not be touched: 44 call sites in WA_AI_TEMPLATES_effects.txt read
+# it to pick the MECHANIZED variant of every armour template, and the mechanized_equipment factory
+# floors hang off it. Narrowing that one would strip the mech battalions out of GER/SOV tank
+# divisions - the exact opposite of the rule. This trigger gates only the mech division target
+# template and its role_ratio share.
+WA_AI_TEMPLATES_use_mechanized_division_templates = {
+	WA_AI_TEMPLATES_use_mechanized_templates = yes
+	WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major = yes
+}
+
 WA_AI_TEMPLATES_use_armor_templates = {
 	OR = {
 		WA_AI_CONFIG_DIVISIONS_use_armored_divisions = yes
@@ -131,19 +143,40 @@ WA_AI_TEMPLATES_use_armor_templates = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [armor-role-budget] Light-support armour is a FINITE RUN, owner rule 2026-08-28, with the two
+# ends on DIFFERENT levers: the 1942 date closes the ROLE here (want -> 0, which is what retires the
+# divisions), while the fielded cap closes only the PRODUCTION LINE
+# (WA_AI_PRODUCTION_build_light_support_armor) so reaching 10k stops building without scrapping what
+# is already built. Deliberately NOT gated on WA_AI_TEMPLATES_switch_from_light_to_medium_armor:
+# that fires 1941.1.1 for every country and would end the run a year early.
 WA_AI_TEMPLATES_use_light_support_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes
 	WA_AI_CONFIG_TEMPLATES_focus_on_light_armor = yes
-	NOT = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
+	date < 1942.1.1
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [armor-role-budget] Answers "does light-support own this country's light_armor role". Both light
+# templates declare role = light_armor, so without this the engine arbitrates two enabled templates
+# for one role. It keys on the CHASSIS, not on the run being open, so reaching the fielded cap or
+# 1942 closes the light slot outright instead of falling back to the plain light template - which
+# is what lets the engine retire the light-support divisions (a template captured by a role the AI
+# wants zero of is decommissioned: WA_AI_TEMPLATES_garrison.txt header).
+WA_AI_TEMPLATES_light_support_armor_owns_light_role = {
+	WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes
+}
+
+# [armor-role-budget] A country holding a light-support chassis never uses the plain light
+# template - see WA_AI_TEMPLATES_light_support_armor_owns_light_role. Assumes the support chassis
+# techs stay country-specific (sov_light_tank_support_chassis_*); a second country researching one
+# takes the light slot the same way, which is the intent, not a leak.
 WA_AI_TEMPLATES_use_light_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
 	WA_AI_CONFIG_TEMPLATES_focus_on_light_armor = yes
 	NOT = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
+	NOT = { WA_AI_TEMPLATES_light_support_armor_owns_light_role = yes }
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
@@ -151,14 +184,12 @@ WA_AI_TEMPLATES_use_medium_support_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_support_armor_unlocked = yes
 	WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = yes
-	#NOT = { WA_AI_TEMPLATES_use_heavy_armor_templates = yes }
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
 WA_AI_TEMPLATES_use_medium_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_armor_unlocked = yes
-	#NOT = { WA_AI_TEMPLATES_use_heavy_armor_templates = yes }
 	WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }

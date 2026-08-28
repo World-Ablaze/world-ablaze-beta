@@ -1,0 +1,346 @@
+############################################################################################################
+#	World Ablaze AI - ARMOR ROLE BUDGET. Runtime role_ratio emitter for the tank roles.
+############################################################################################################
+#	[armor-role-budget] WHAT THIS PROTECTS
+#	--------------------------------------
+#	ALL tank roles together take a CONSTANT share of the role_ratio total - the budget,
+#	`constant:wa_ai_production.army_composition.armor_budget_total` - however many tank roles the
+#	country has open, and infantry pays that share ONCE. The static blocks this replaces each took
+#	10 from infantry per tank role, so a country opening light + medium + heavy + modern paid 40 and
+#	its armour share moved with the calendar rather than with any decision.
+#
+#	WHY SCRIPT AND NOT AN ai_strategy FILE
+#	--------------------------------------
+#	The per-role value is budget / open-roles, a number known only at runtime. `ai_strategy value =`
+#	takes a literal and does NOT resolve `constant:` (wa-constants-registry, validated contexts), so
+#	a file version needs one block per (role, open-role-count) pair with the budget written out N
+#	times. The emitters below render the value through meta_effect instead - the form proven by the
+#	lend-lease send (WA_AI_lend_lease_effects.txt, "the exact form the boot test proved") and by the
+#	railway `[?_cp_v_]` array index, where an integer-valued variable renders as bare digits. Values
+#	stay integer by construction; the sign is carried by two emitters per role, never by the text.
+#
+#	RECONCILIATION MODEL
+#	--------------------
+#	There is no remove_ai_strategy and role_ratio entries are additive per id, so an entry is retired
+#	by adding its exact negation, and the books must track what is currently applied:
+#
+#		WA_AI_ARMOR_BUDGET_light|medium|heavy|modern   value currently applied to that role id
+#		WA_AI_ARMOR_BUDGET_inf                         magnitude currently subtracted from infantry
+#
+#	WA_AI_ARMOR_BUDGET_reconcile runs on the monthly AI pulse right after
+#	WA_AI_TEMPLATES_calculate_templates, so this month's role set is the one priced, and diffs the
+#	books against the desired split. An unchanged slot emits NOTHING - a country whose open-role set
+#	is stable reconciles to zero work.
+#
+#	ENTRY ACCUMULATION - the failure mode this shape has to bound. WA_AI_AIFC_helpers.txt measured
+#	517 accumulated front_armor_score entries on USA because its book was retired and reinstalled on
+#	every transient selection failure. Here the books move only when a tank ROLE opens or closes: a
+#	chassis tech, a focus, the light-to-medium switch, the modern-armor date, the trains-no-divisions
+#	gate. DERIVED bound: about 5 role transitions per major per campaign x 5 slots x 2 entries, i.e.
+#	under 50 entries per country against AIFC's ~250/year. If a campaign save shows a major carrying
+#	hundreds of role_ratio persistent_strategy entries, an open-role trigger is flapping - find which
+#	one, do not add a grace window blind.
+#
+#	SPLIT: WEIGHTED. A role gets budget x its weight / the sum of the open weights, rounded DOWN,
+#	and the largest-weight open role (modern, else medium, else light, else heavy) takes the
+#	remainder so the rows sum to the budget exactly. Heavy armour carries half a standard weight
+#	(armor_weight_heavy vs armor_weight_standard) because a heavy division costs about twice as
+#	much to field. At budget 25: medium alone 25; medium+heavy 17/8; medium+heavy+modern 10/5/10;
+#	all four 7 light / 8 medium / 3 heavy / 7 modern.
+############################################################################################################
+
+############################################################
+#	Reconcile the applied tank-role budget against this month's open roles
+#	ROOT = country scope. Called from the monthly AI pulse and from on_startup.
+#	Reads:  WA_AI_PRODUCTION_build_army_<light|medium|heavy|modern>_armor,
+#	        WA_AI_PRODUCTION_trains_no_divisions, wa_ai_production.army_composition.armor_budget_total
+#	Writes: the WA_AI_ARMOR_BUDGET_* books and role_ratio entries on ROOT
+############################################################
+
+WA_AI_ARMOR_BUDGET_reconcile = {
+
+	############################################################
+	# 1. Which tank roles are open this month
+	############################################################
+	# The same four triggers the deleted static blocks used, so a role is priced exactly when the
+	# country can design and build it.
+
+	set_temp_variable = { _abg_n = 0 }
+	set_temp_variable = { _abg_w_light = 0 }
+	set_temp_variable = { _abg_w_medium = 0 }
+	set_temp_variable = { _abg_w_heavy = 0 }
+	set_temp_variable = { _abg_w_modern = 0 }
+
+	# A country forbidden to train divisions gets no budget at all: its static -1000 rows already
+	# hold every want at zero, and skipping here leaves the books empty instead of churning under it.
+	if = {
+		limit = { NOT = { WA_AI_PRODUCTION_trains_no_divisions = yes } }
+
+		if = {
+			limit = { WA_AI_PRODUCTION_build_army_light_armor = yes }
+			set_temp_variable = { _abg_w_light = 1 }
+			add_to_temp_variable = { _abg_n = 1 }
+		}
+		if = {
+			limit = { WA_AI_PRODUCTION_build_army_medium_armor = yes }
+			set_temp_variable = { _abg_w_medium = 1 }
+			add_to_temp_variable = { _abg_n = 1 }
+		}
+		if = {
+			limit = { WA_AI_PRODUCTION_build_army_heavy_armor = yes }
+			set_temp_variable = { _abg_w_heavy = 1 }
+			add_to_temp_variable = { _abg_n = 1 }
+		}
+		if = {
+			limit = { WA_AI_PRODUCTION_build_army_modern_armor = yes }
+			set_temp_variable = { _abg_w_modern = 1 }
+			add_to_temp_variable = { _abg_n = 1 }
+		}
+	}
+
+	############################################################
+	# 2. The weighted split
+	############################################################
+	# A role gets budget x its weight / the sum of the OPEN weights. Only two distinct weights
+	# exist, so two shares are computed rather than one per role. Both are floored and the
+	# leftover goes to the largest-weight open role, which keeps the rows summing to the budget
+	# without ever inflating heavy - the role the weighting exists to hold down.
+
+	set_temp_variable = { _abg_total = 0 }
+	set_temp_variable = { _abg_std = 0 }
+	set_temp_variable = { _abg_hvy = 0 }
+	set_temp_variable = { _abg_wsum = 0 }
+	set_temp_variable = { _abg_wstd = constant:wa_ai_production.army_composition.armor_weight_standard }
+	set_temp_variable = { _abg_whvy = constant:wa_ai_production.army_composition.armor_weight_heavy }
+
+	if = {
+		limit = { check_variable = { _abg_n > 0 } }
+
+		set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_total }
+
+		if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_modern > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
+		if = { limit = { check_variable = { _abg_w_heavy > 0 } } add_to_temp_variable = { _abg_wsum = _abg_whvy } }
+
+		# Standard share, floored. round_temp_variable is nearest, not floor: if the rounded share
+		# overshoots budget x weight when multiplied back by the weight sum, it was the ceiling.
+		set_temp_variable = { _abg_num = _abg_total }
+		multiply_temp_variable = { _abg_num = _abg_wstd }
+		set_temp_variable = { _abg_std = _abg_num }
+		divide_temp_variable = { _abg_std = _abg_wsum }
+		round_temp_variable = _abg_std
+		set_temp_variable = { _abg_check = _abg_std }
+		multiply_temp_variable = { _abg_check = _abg_wsum }
+		if = {
+			limit = { check_variable = { _abg_check > _abg_num } }
+			subtract_from_temp_variable = { _abg_std = 1 }
+		}
+		clamp_temp_variable = { var = _abg_std min = 0 }
+
+		# Heavy share, same construction.
+		set_temp_variable = { _abg_num = _abg_total }
+		multiply_temp_variable = { _abg_num = _abg_whvy }
+		set_temp_variable = { _abg_hvy = _abg_num }
+		divide_temp_variable = { _abg_hvy = _abg_wsum }
+		round_temp_variable = _abg_hvy
+		set_temp_variable = { _abg_check = _abg_hvy }
+		multiply_temp_variable = { _abg_check = _abg_wsum }
+		if = {
+			limit = { check_variable = { _abg_check > _abg_num } }
+			subtract_from_temp_variable = { _abg_hvy = 1 }
+		}
+		clamp_temp_variable = { var = _abg_hvy min = 0 }
+	}
+
+	set_temp_variable = { _abg_t_light = 0 }
+	set_temp_variable = { _abg_t_medium = 0 }
+	set_temp_variable = { _abg_t_heavy = 0 }
+	set_temp_variable = { _abg_t_modern = 0 }
+
+	if = { limit = { check_variable = { _abg_w_light > 0 } } set_temp_variable = { _abg_t_light = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_medium > 0 } } set_temp_variable = { _abg_t_medium = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_modern > 0 } } set_temp_variable = { _abg_t_modern = _abg_std } }
+	if = { limit = { check_variable = { _abg_w_heavy > 0 } } set_temp_variable = { _abg_t_heavy = _abg_hvy } }
+
+	# Leftover from the two floors, to the largest-weight open role. Heavy is last on purpose: it
+	# only takes the leftover when it is the ONLY open role, where the ratio rule has nothing to
+	# hold it against.
+	set_temp_variable = { _abg_rem = _abg_total }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_light }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_medium }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_heavy }
+	subtract_from_temp_variable = { _abg_rem = _abg_t_modern }
+	clamp_temp_variable = { var = _abg_rem min = 0 }
+
+	if = { limit = { check_variable = { _abg_w_modern > 0 } } add_to_temp_variable = { _abg_t_modern = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_t_medium = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_t_light = _abg_rem } }
+	else_if = { limit = { check_variable = { _abg_w_heavy > 0 } } add_to_temp_variable = { _abg_t_heavy = _abg_rem } }
+
+	############################################################
+	# 3. Diff each book against its target, emit only the difference
+	############################################################
+
+	# light_armor
+	set_temp_variable = { _abg_cur = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_light } set_temp_variable = { _abg_cur = WA_AI_ARMOR_BUDGET_light } }
+	set_temp_variable = { _abg_delta = _abg_t_light }
+	subtract_from_temp_variable = { _abg_delta = _abg_cur }
+	if = {
+		limit = { check_variable = { _abg_delta > 0 } }
+		WA_AI_ARMOR_BUDGET_emit_light_add = yes
+	}
+	else_if = {
+		limit = { check_variable = { _abg_delta < 0 } }
+		multiply_temp_variable = { _abg_delta = -1 }
+		WA_AI_ARMOR_BUDGET_emit_light_sub = yes
+	}
+	set_variable = { WA_AI_ARMOR_BUDGET_light = _abg_t_light }
+
+	# medium_armor
+	set_temp_variable = { _abg_cur = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_medium } set_temp_variable = { _abg_cur = WA_AI_ARMOR_BUDGET_medium } }
+	set_temp_variable = { _abg_delta = _abg_t_medium }
+	subtract_from_temp_variable = { _abg_delta = _abg_cur }
+	if = {
+		limit = { check_variable = { _abg_delta > 0 } }
+		WA_AI_ARMOR_BUDGET_emit_medium_add = yes
+	}
+	else_if = {
+		limit = { check_variable = { _abg_delta < 0 } }
+		multiply_temp_variable = { _abg_delta = -1 }
+		WA_AI_ARMOR_BUDGET_emit_medium_sub = yes
+	}
+	set_variable = { WA_AI_ARMOR_BUDGET_medium = _abg_t_medium }
+
+	# heavy_armor
+	set_temp_variable = { _abg_cur = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_heavy } set_temp_variable = { _abg_cur = WA_AI_ARMOR_BUDGET_heavy } }
+	set_temp_variable = { _abg_delta = _abg_t_heavy }
+	subtract_from_temp_variable = { _abg_delta = _abg_cur }
+	if = {
+		limit = { check_variable = { _abg_delta > 0 } }
+		WA_AI_ARMOR_BUDGET_emit_heavy_add = yes
+	}
+	else_if = {
+		limit = { check_variable = { _abg_delta < 0 } }
+		multiply_temp_variable = { _abg_delta = -1 }
+		WA_AI_ARMOR_BUDGET_emit_heavy_sub = yes
+	}
+	set_variable = { WA_AI_ARMOR_BUDGET_heavy = _abg_t_heavy }
+
+	# modern_armor
+	set_temp_variable = { _abg_cur = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_modern } set_temp_variable = { _abg_cur = WA_AI_ARMOR_BUDGET_modern } }
+	set_temp_variable = { _abg_delta = _abg_t_modern }
+	subtract_from_temp_variable = { _abg_delta = _abg_cur }
+	if = {
+		limit = { check_variable = { _abg_delta > 0 } }
+		WA_AI_ARMOR_BUDGET_emit_modern_add = yes
+	}
+	else_if = {
+		limit = { check_variable = { _abg_delta < 0 } }
+		multiply_temp_variable = { _abg_delta = -1 }
+		WA_AI_ARMOR_BUDGET_emit_modern_sub = yes
+	}
+	set_variable = { WA_AI_ARMOR_BUDGET_modern = _abg_t_modern }
+
+	# infantry pays the budget ONCE - that is the whole point of the system. The emitters are named
+	# for what happens to the INFANTRY ratio, so a book that owes more calls _sub.
+	set_temp_variable = { _abg_cur = 0 }
+	if = { limit = { has_variable = WA_AI_ARMOR_BUDGET_inf } set_temp_variable = { _abg_cur = WA_AI_ARMOR_BUDGET_inf } }
+	set_temp_variable = { _abg_delta = _abg_total }
+	subtract_from_temp_variable = { _abg_delta = _abg_cur }
+	if = {
+		limit = { check_variable = { _abg_delta > 0 } }
+		WA_AI_ARMOR_BUDGET_emit_infantry_sub = yes
+	}
+	else_if = {
+		limit = { check_variable = { _abg_delta < 0 } }
+		multiply_temp_variable = { _abg_delta = -1 }
+		WA_AI_ARMOR_BUDGET_emit_infantry_add = yes
+	}
+	set_variable = { WA_AI_ARMOR_BUDGET_inf = _abg_total }
+
+	if = {
+		limit = { has_country_flag = WA_AI_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | ARMOR BUDGET: roles=[?_abg_n|.0] wsum=[?_abg_wsum|.0] std=[?_abg_std|.0] hvy=[?_abg_hvy|.0] rem=[?_abg_rem|.0] light=[?_abg_t_light|.0] medium=[?_abg_t_medium|.0] heavy=[?_abg_t_heavy|.0] modern=[?_abg_t_modern|.0] infantry_offset=[?_abg_total|.0]"
+	}
+}
+
+############################################################
+#	Entry emitters. ROOT = country scope, _abg_delta = POSITIVE magnitude.
+#	One role id per effect: the id is a role token, not a tag, so it cannot be rendered from a
+#	variable. The sign lives in the literal text, never in the rendered number.
+############################################################
+
+WA_AI_ARMOR_BUDGET_emit_light_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = light_armor value = [V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_light_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = light_armor value = -[V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_medium_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = medium_armor value = [V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_medium_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = medium_armor value = -[V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_heavy_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = heavy_armor value = [V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_heavy_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = heavy_armor value = -[V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_modern_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = modern_armor value = [V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_modern_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = modern_armor value = -[V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_infantry_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = infantry value = [V] } }
+		V = "[?_abg_delta]"
+	}
+}
+
+WA_AI_ARMOR_BUDGET_emit_infantry_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = role_ratio id = infantry value = -[V] } }
+		V = "[?_abg_delta]"
+	}
+}
