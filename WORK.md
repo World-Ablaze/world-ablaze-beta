@@ -1483,29 +1483,6 @@ OPEN with a session of its own.
   feedback on Change 1 and it does not contradict it - the GER reading that motivated the quartering
   was 1943-shaped (149 active against a target of 521), and the same weights leave the two countries
   that must be ARMED BEFORE the war they start too small in 1936-40.
-- Change 3 (owner order 2026-08-28, from the tester report): +30% theoretical division target for
-  the two European Axis majors until 1940.7.1.
-  - New archetype `WA_AI_CONFIG_MILITARY_is_axis_european_major` (GER, ITA) in `WA_AI_CONFIG.txt` -
-    the tags live there and nowhere else. Deliberately NOT `WA_AI_MILITARY_is_axis_member` +
-    `is_major`: Italy is not an Axis faction member for most of this window, so a faction-derived
-    gate would silently miss half the request. Kept separate from
-    `WA_AI_CONFIG_MILITARY_is_axis_continental_core`, which also carries ROM/HUN/SLO - minors that
-    must not receive a major's army target.
-  - Gate `WA_AI_PRODUCTION_early_war_army_target_boost` (archetype + `date < 1940.7.1`) in
-    `common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt`; payload
-    `WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost`,
-    `ai_strategy = { type = ai_wanted_divisions_factor value = 30 }`.
-  - The window closes at mid-1940 because after the fall of France the war itself drives the target
-    (the threat and war factors multiply it) and a flat boost would compound with them.
-  - Stacks with `WA_AI_PRODUCTION_DEFAULT_army_expansion_override` for GER before 1938 - different
-    strategy types, intended: that block forces BUILDING, this one raises what the AI thinks it needs.
-  - **ASSUMED, and this is the weak point of the change**: `ai_wanted_divisions_factor` is base
-    100 + value like every other `*_factor` strategy, so 30 reads as x1.3. DERIVED from vanilla
-    `USA_90_division_gamble` (-30 for a deliberately small army) and
-    `CHI_stop_disbanding_your_army_during_war` (1000). The install documents this type by NAME only
-    (`common/ai_strategy/documentation.info`, strategy list); vanilla `SOV_cant_stop_wont_stop` uses
-    `0.15` with a "FEED THE MEATGRINDER" comment, which under this reading does nothing and is most
-    likely a vanilla authoring slip. The DIRECTION is safe, the MAGNITUDE is not.
 - Verification of Change 3 (owner console; no harness - 15 lines, no scripted effect touched): on a
   1938-39 save, `imgui show ai_division_production` on GER and on ITA shows `Nr Wanted Divisions`
   about 1.3x what the testers reported, with the same `breakdown [nr wanted]` inputs; a 1941 save
