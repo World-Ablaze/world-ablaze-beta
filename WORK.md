@@ -504,6 +504,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   official count genuinely cannot grow (flag census, expect ~0 with XSM/YUN the watched
   exceptions).
 - Closed when: the owner pastes the harness output here and campaign probes (i)-(iii) pass once.
+- Amendment 2026-08-28 (same session): added `WA_AI_recruit_navy` (ships/admirals ratio > 10
+  or count < 1 with > 4 ships, same CP cost 2x clamped 10-50, same watchdog + refund + latch
+  exit). Wired into `WA_AI_background.0` at the same cadence as general/marshal. No navy
+  promotion path exists (no captain pool); admirals are generated at skill 1. The `navy_leader`
+  role in `generate_character` is ASSUMED valid (documented as "whatever you would put when
+  writing character"; `navy_leader = {}` is the standard character role block). Harness
+  `event wa_test_rl.1 ARG` now prints navy counts too; probe (v): ARG navy leader count grows
+  if ships > 10.
 
 ### allied-division-stability — OPEN (2026-08-27)
 - Scope: owner request 2026-08-27: Allied divisions are permanently in transit between fronts

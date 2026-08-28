@@ -274,3 +274,107 @@ WA_AI_recruit_marshal = {
 			}
 		}
 }
+
+WA_AI_recruit_navy = {
+
+	### ratio of ships:admirals
+
+	set_temp_variable = { WA_AI_navy_leader_count = 0 }
+	set_temp_variable = { WA_AI_ships_to_navy_leaders_ratio = num_ships }
+
+	every_navy_leader = {
+		add_to_temp_variable = { WA_AI_navy_leader_count = 1 } # count the number of admirals
+	}
+
+	divide_temp_variable = { WA_AI_ships_to_navy_leaders_ratio = WA_AI_navy_leader_count }
+
+	# [recruit-loop] same registration watchdog as WA_AI_recruit_general - see the comments there
+	if = {
+		limit = { has_country_flag = WA_AI_recruit_navy_pending }
+		if = {
+			limit = { check_variable = { WA_AI_navy_leader_count < WA_AI_expected_navy_leaders } }
+			add_to_variable = { WA_AI_recruit_navy_fail_n = 1 }
+			add_command_power = WA_AI_last_navy_cost
+			if = {
+				limit = { check_variable = { WA_AI_recruit_navy_fail_n > 1 } }
+				set_country_flag = WA_AI_recruit_navy_broken
+				set_variable = { WA_AI_broken_at_navy_leaders = WA_AI_navy_leader_count }
+				if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: navy leader creation does not register - latched off" }
+			}
+		}
+		else = {
+			set_variable = { WA_AI_recruit_navy_fail_n = 0 }
+		}
+		clr_country_flag = WA_AI_recruit_navy_pending
+	}
+	# [recruit-loop] latch exit (growth-since-latch) - see WA_AI_recruit_general
+	if = {
+		limit = {
+			has_country_flag = WA_AI_recruit_navy_broken
+			check_variable = { WA_AI_navy_leader_count > WA_AI_broken_at_navy_leaders }
+		}
+		clr_country_flag = WA_AI_recruit_navy_broken
+		set_variable = { WA_AI_recruit_navy_fail_n = 0 }
+	}
+
+	### cost of recruiting a new admiral
+
+	set_temp_variable = { WA_AI_recruit_cost = 0 }
+
+	every_navy_leader = {
+		add_to_temp_variable = { WA_AI_recruit_cost = 1 }
+	}
+
+	# recruitment is paid in command power, mirroring NDefines.NPolitics.NAVY_LEADER_COST
+	# (2 x existing navy leaders). Same clamp as army recruitment.
+	multiply_temp_variable = { WA_AI_recruit_cost = 2 }
+	clamp_temp_variable = { var = WA_AI_recruit_cost min = 10 max = 50 }
+
+	### recruit an admiral
+
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_recruit_navy_broken }
+			NOT = { has_country_flag = WA_AI_recruit_navy_pending }
+			OR = {
+				AND = {
+					check_variable = { WA_AI_ships_to_navy_leaders_ratio > 10 }
+					check_variable = { WA_AI_navy_leader_count > 0 }
+				}
+				AND = {
+					check_variable = { WA_AI_navy_leader_count < 1 } # get at least 1
+					check_variable = { num_ships > 4 } # but only if there is a navy to lead
+				}
+			}
+			NOT = { check_variable = { command_power < WA_AI_recruit_cost } }
+		}
+
+		# remembered so a failed registration refunds exactly what was debited
+		set_variable = { WA_AI_last_navy_cost = WA_AI_recruit_cost }
+		multiply_temp_variable = { WA_AI_recruit_cost = -1 }
+		add_command_power = WA_AI_recruit_cost
+
+		# [recruit-loop] generate_character = documented "create + recruit" (random name from the
+		# country's own lists when omitted); navy_leader is a valid character role block.
+		# Token must be unique per creation, hence the per-country sequence in the meta.
+		add_to_variable = { WA_AI_gen_seq = 1 }
+		meta_effect = {
+			text = {
+				generate_character = {
+					token_base = WA_AI_gen_[TAG]_[SEQ]
+					navy_leader = {
+						skill = 1
+					}
+				}
+			}
+			TAG = "[ROOT.GetTag]"
+			SEQ = "[?WA_AI_gen_seq|.0]"
+		}
+
+		set_variable = { WA_AI_expected_navy_leaders = WA_AI_navy_leader_count }
+		add_to_variable = { WA_AI_expected_navy_leaders = 1 }
+		set_country_flag = WA_AI_recruit_navy_pending
+
+		if = { limit = { has_country_flag = WA_AI_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RECRUIT: navy leader" }
+	}
+}
