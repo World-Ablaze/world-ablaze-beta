@@ -360,7 +360,7 @@ NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = {	1,  4,  7,  10, 13,             
 												16, 18, 20, 22, 24,
 												17, 19, 21, 23, 25 }
 
-NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
+NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 0								--Base XP cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to unlock a support slot
 NDefines.NMilitary.REGIMENTAL_SUPPORT_SLOT_COST_MULTIPLIER = 1	 					-- Regimental support slot costs are scaled by this value compared to normal support slots
