@@ -63,6 +63,33 @@ WA_AI_PRODUCTION_build_light_armor_inf_support = {
 	WA_AI_TEMPLATES_has_light_inf_support_unlocked = yes
 }
 
+# [armor-role-budget] The light-support chassis line. Owner rule 2026-08-28: build until the fielded
+# cap, then stop - the cap belongs HERE and not on the role, because a role the AI wants zero of has
+# its divisions decommissioned (WA_AI_TEMPLATES_garrison.txt header) and the owner wants them kept
+# until 1942. Assumes light_tank_support_chassis is the archetype the battalion needs
+# (common/units/armor_support.txt); if the battalion is ever re-based on another chassis this
+# trigger measures the wrong stock and silently never caps.
+WA_AI_PRODUCTION_build_light_support_armor = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+	NOT = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes }
+}
+
+# One question: are enough light-support chassis already in the armies. FIELDED, not stockpiled -
+# losses move it down and can reopen the line, which is intended while the run is open.
+WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = {
+	check_variable = { num_equipment_in_armies@light_tank_support_chassis > constant:wa_ai_production.army_composition.light_support_armor_fielded_cap }
+}
+
+# The off switch: the country CAN build the chassis but should not - capped, or past 1942 with the
+# role gone. Without it the post-1942 decommission returns chassis to the stockpile, the fielded
+# count drops back under the cap, and nothing else would stop the line restarting for no role.
+WA_AI_PRODUCTION_light_support_armor_line_off = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes
+	NOT = { WA_AI_PRODUCTION_build_light_support_armor = yes }
+}
+
 WA_AI_PRODUCTION_build_light_armor_spg = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
 	OR = {

@@ -172,49 +172,212 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### division-target-scaling — OPEN (2026-08-28)
-- Scope: owner request 2026-08-28 — reduce every AI country's theoretical division target by
-  75% because WA's factory counts and combat-area geometry make vanilla's target unattainable.
-- Symptom, MEASURED (owner `imgui show ai_division_production`, GER): 149 active divisions,
-  target 521; breakdown fronts 274 x 0.35, factories 528 x 0.45, manpower 311 x 0.30,
-  threat 1.06, war factor 1.15.
-- Change 1: `05_defines.lua` overrides all three `WANTED_UNITS_WEIGHT_*` inputs: fronts 0.08,
-  factories 0.09, manpower 0.07. Every downstream threat/war multiplier stays unchanged.
-- Symptom 2, MEASURED (owner `imgui show ai_division_production`, ENG): wanted medium armor 189,
-  infantry 47 and mechanized 95; the live ratio is approximately 40:10:20.
-- Change 2 (owner order 2026-08-28): halve every armor `role_ratio` transfer from -20/+20 to
-  -10/+10: light, medium, light-to-medium transition, heavy and modern. Mobile and special-force
-  ratios stay unchanged. ENG's two active medium blocks therefore fall together from 40 to 20.
-  The dependent USA-only `infantry_floor +15` block and trigger are removed: the deepest reachable
-  stack now leaves infantry at 30 without it.
-- Impact: global and setup-agnostic. USA/CAN are owner-confirmed capacity-bound at their current
-  full build rate; whether their lowered theoretical targets remain non-binding is ASSUMED until
-  the live window is checked. Existing training-queue cancellation/decommission behaviour is an
-  engine boundary and is not claimed.
-- Armor impact, MEASURED (composition + template triggers): every country reaching an armor role
-  keeps that role at a positive weight of 10 per active block in historical and ahistorical games.
-  Regression risk, ASSUMED: GER/SOV/ENG/USA may field too few armored formations for spearheads;
-  compare their wanted and current armor counts in the next campaign.
-- Reachable-stack audit, DERIVED from the composition and template gates: light and transition are
-  mutually exclusive; motorized is a fallback when armor/mechanized are absent; exactly one of
-  marines/mountaineers costs 10. The deepest non-USA stack is `100 -40 armor -20 mechanized -10
-  special = 30`; USA is `100 -30 armor -30 expeditionary mechanized -10 special = 30`.
-- Historical constraint from commit `3da0be383`: "GER/SOV composition was healthy and is
-  deliberately left byte-identical." `mine covers it because` the new owner order deliberately
-  retunes every armor role after a live disproportionate wanted value; both countries retain each
-  armed armor role at 10 and are explicit regression controls below.
-- Owner objection: "USA et CAN construisent déjà à pleine capacité, et la cap souhaitée est
-  irréalisable avec l'équilibrage du mod". `mine covers it because` the change lowers theoretical
-  demand without lowering build throughput; the USA/CAN controls explicitly fail the change if
-  the quartered target becomes their binding constraint.
-- Verification: after a full restart, the same GER save shows the lower `Nr Wanted Divisions`;
-  USA and CAN show `Current + Total Being Built` below `Nr Wanted Divisions` while continuing to
-  build at their pre-change full rate; the same ENG state shows wanted medium armor near 95 while
-  wanted mechanized stays near 95; USA infantry stays positive near 30% on its deepest stack; GER
-  and SOV retain non-zero wanted armor.
-- Closed when: the GER target, ENG armor ratio, USA infantry residual, GER/SOV armor controls and
-  both USA/CAN non-binding controls pass once in the live window.
+### armor-role-budget — SHIPPED-UNTESTED (2026-08-28)
+- Scope: owner request 2026-08-28, two parts. (1) A country with tanks holds a CONSTANT,
+  configurable armour share of its wanted-division mix whatever the NUMBER of tank types it
+  fields - the AI is about to run up to four at once. (2) The AI can actually field light-support
+  armour, which it never has (owner: SOV).
+- Symptom 1, MEASURED (`common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_army_composition.txt` before
+  this change): every tank role carried its own `role_ratio infantry -10 / <role> +10` block, so
+  the armour share was 10 x the number of open tank roles and infantry paid it once PER ROLE. The
+  live ENG reading recorded in `division-target-scaling` (`imgui show ai_division_production`:
+  wanted medium 189 / infantry 47 / mechanized 95, i.e. 40 : 10 : 20 at the pre-halving values) is
+  that stacking, with medium double-counted by a second block for the light-to-medium transition.
+- Symptom 2, MEASURED (`common/ai_templates/WA_AI_TEMPLATES_armored_light_support.txt:42`): the
+  light-support template enabled on `has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value =
+  15000 }`, while the effect that writes that flag (template type code 14,
+  `common/scripted_localisation/WA_AI_templates_scripted_loc.txt:79`) writes
+  `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE`. **No file under `common/ai_templates/` contains that name** -
+  the template could never enable, for any country, and no `role_ratio` ever requested the role.
+- Change 1 - the budget (owner decisions: runtime emission, total 25). New
+  `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`: `WA_AI_ARMOR_BUDGET_reconcile`
+  counts the open tank roles, splits
+  `constant:wa_ai_production.army_composition.armor_budget_total` (new file
+  `common/script_constants/wa_ai_production.txt`, value 25) evenly between them with the heaviest
+  open role taking the rounding remainder, and emits the DIFFERENCE against a stored book through
+  `meta_effect` + `add_ai_strategy`. Infantry pays the budget exactly ONCE. Wired into the monthly
+  AI pulse right after `WA_AI_TEMPLATES_calculate_templates`, and into `on_startup`.
+- Change 2 - the five static armour blocks are DELETED from
+  `WA_AI_PRODUCTION_DEFAULT_army_composition.txt` (light, medium, light-to-medium transition,
+  heavy, modern). The transition is now the second way into the medium SLOT
+  (`WA_AI_PRODUCTION_build_army_medium_armor`), not a second ratio: the double count is gone.
+- Change 3 - light-support exists at all. Flag name corrected in the template file. Light-support
+  now owns the light slot outright (`WA_AI_TEMPLATES_light_support_armor_owns_light_role`, keyed on
+  the chassis tech, NOT on the run being open, added as a `NOT` to
+  `WA_AI_TEMPLATES_use_light_armor_templates`), because both templates declare `role = light_armor`
+  and their gates were otherwise identical - the engine was left to arbitrate two enabled targets
+  for one role. Owner decision: exclusive, not a fifth role.
+- Change 4 - the light-support RUN (owner rule 2026-08-28: build until 10 000 on the field, retire
+  the template in 1942). The two ends sit on DIFFERENT levers on purpose:
+  - **1942 closes the ROLE.** `date < 1942.1.1` in
+    `WA_AI_TEMPLATES_use_light_support_armor_templates`, with the plain light template still shut by
+    `owns_light_role`, so the whole light slot leaves the budget and the light_armor want goes to
+    zero. **ASSUMED** (mechanism recorded in `WA_AI_TEMPLATES_garrison.txt` header, where it froze
+    SOV at 87 divisions): a template captured by a role the AI wants zero of is decommissioned. That
+    engine behaviour IS the requested decommission - WA does not delete the divisions itself.
+  - **10 000 closes the PRODUCTION LINE, not the role.** New
+    `WA_AI_PRODUCTION_light_support_armor_at_fielded_cap`
+    (`check_variable = { num_equipment_in_armies@light_tank_support_chassis > constant:...
+    light_support_armor_fielded_cap }`, 10000) drives
+    `equipment_variant_production_factor id = light_tank_support_chassis` +45 -> -100. Putting the
+    cap on the role instead would have scrapped the divisions the moment the cap was reached,
+    which is exactly what the 1942 rule says must not happen yet.
+  - The off block is the negation of the on block, so it also holds the line shut after 1942: the
+    decommission returns chassis to the stockpile, `num_equipment_in_armies` falls back under the
+    cap, and nothing else would stop the line restarting for a role that no longer exists.
+  - **MEASURED** (install 1.19.2 `dynamic_variables_documentation.md`): `num_equipment_in_armies@`
+    is equipment in the country's ARMIES, i.e. on the field, not the stockpile.
+    **MEASURED** (`common/units/armor_support.txt`): the battalion needs 25
+    `light_tank_support_chassis`, 9 battalions per division, so 10 000 is about 44 divisions.
+  - **ASSUMED**: that the AI stops adding light-support divisions once the chassis line is at -100.
+    It is an equipment brake, not a training brake; probe (viii) below is what would catch an
+    overshoot.
+- Setup-agnostic: every gate is dynamic (chassis tech, focus, factory count, fielded equipment,
+  date). No tag was added anywhere; the whole light-support run is reachable by any country holding
+  a `sov_light_tank_support_chassis_*` tech, which today is only SOV. The run is deliberately NOT
+  gated on `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`: that fires 1941.1.1 for every
+  country and would have ended the run a year before the owner rule says.
+- WHY runtime and not an ai_strategy file (the owner chose this over the block table): the
+  per-role value is budget / open-roles. `ai_strategy value =` takes a literal and does not
+  resolve `constant:` (wa-constants-registry, validated contexts), so a file version needs one
+  block per (role, open-role-count) pair with the budget written out 16 times. The rendered-value
+  form is the one the lend-lease boot test proved (`WA_AI_lend_lease_effects.txt`,
+  `AMT = "[?_llr_amount]"`); integer rendering is MEASURED through the railway `[?_cp_v_]` array
+  index, which could not resolve a variable NAME if it rendered decimals. Negative rendering is
+  NOT relied on: each role has an add emitter and a sub emitter, the sign is a literal in the text.
+- Entry accumulation - the AIFC failure mode, bounded with a table rather than an adjective. There
+  is no `remove_ai_strategy`; entries are retired by adding their negation and accumulate in
+  `persistent_strategy`. A book moves only when a tank ROLE opens or closes. SOV walk, DERIVED
+  from the template gates: t0 1936.1, no armour tech, 0 entries; t1 light chassis and armour
+  templates open, 2 entries (light +25, infantry -25); t2 medium chassis, 2 roles, 4 entries
+  (light 25 to 13, medium 0 to 12); t3 1941.1 the switch closes light, 2 entries (light 13 to 0,
+  medium 12 to 25); t4 heavy chassis, 3 roles, 3 entries; t5 1942.9 modern, 4 roles, 4 entries.
+  Terminal about 15 entries per major over a campaign, flat between transitions, against the
+  MEASURED 517 AIFC accumulated on USA. A major carrying hundreds of role_ratio entries means an
+  open-role trigger is FLAPPING - find which one, do not add a grace window blind.
+- Impact on existing behaviour. Callers of the four `WA_AI_PRODUCTION_build_army_*_armor`
+  triggers: MEASURED, only the five deleted blocks - nothing else read them.
+  `WA_AI_PRODUCTION_trains_no_divisions` keeps its static `-1000` rows and now also zeroes the
+  budget, so its books stay empty instead of churning under it. Old saves lose the deleted blocks
+  on reload (file strategies are not persisted) and open the books from zero on the next monthly
+  pulse; no migration needed. Regression risk, stated plainly: the armour share of GER, SOV, ENG
+  and USA falls from 30-40 to a flat 25 on top of the quartered targets of
+  `division-target-scaling` - if the next campaign shows majors with no armoured spearhead, the
+  lever is that one constant, not the return of per-role blocks.
+- Not run this session (session rule): `wa-architecture-reviewer`, `wa-lessons-reviewer`.
+- Verification (owner console; harness `common/scripted_effects/WA_TEST_armor_budget.txt`, events
+  `wa_abg.1 <TAG>` and `wa_abg.2`, recipe in `events/wa_test_armor_budget.txt`):
+  (i) the `scope :` line reads `1 1 1 1 0` - anything else and nothing below is a measurement;
+  (ii) GER or SOV after 1943 with three tank roles open: the VERDICT line reads `1 1 1` and the
+  `books :` row sums to 25 with the heaviest role holding the remainder;
+  (iii) ENG after 1941: the medium slot is open through the switch and holds ONE share, not two;
+  (iv) SOV before 1941: the `flags :` line reads `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=1` and
+  `WA_LIGHT_ARMOR_TEMPLATE=0`, and the light slot is open;
+  (v) a minor with no armour: `open-roles=0` and every book 0 - the control that proves the
+  report can print something other than a pass;
+  (vi) `imgui show ai_division_production` on that same GER or SOV save: wanted divisions across
+  all tank roles together are about 25% of the wanted total, and wanted infantry stays positive;
+  (vii) SOV `lsline:` reads exactly one of ON / OFF at every read, never both and never neither
+  once the chassis is unlocked;
+  (viii) the run ends on BOTH levers: at the cap, `lsrun: reached=1` with `chassis-line-OFF=1`
+  while the light slot is STILL in the books (divisions kept); and on a 1942 save the light book
+  is 0, `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=0`, and the SOV OOB no longer lists light-support
+  divisions - that last one is the engine decommission and the only proof it happens.
+- **Harness run 1, owner console 2026-08-28, SOV 1943.11.3 (save loaded, monthly pulse of Nov 1
+  had fired). VERDICT `1 1 1`.**
 
+      gates : is_ai=1  composition-enabled=1  trains-no-divisions=0  early-expansion-override=0  use-armor-templates=1
+      tmpl  : light=0  light-support=0  medium=1  light-to-medium-switch=1  heavy=1  modern=0
+      lsrun : has-support-chassis=1  owns-light-role=1  fielded=3277(cap 10000, reached=0)  before-1942=0
+      lsline: chassis-line-ON=0  chassis-line-OFF=1
+      flags : WA_LIGHT_ARMOR_TEMPLATE=0  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=0
+      expect: budget=25  open-roles=2  share=12  primary=13  ->  light=0 medium=12 heavy=13 modern=0 infantry-offset=25
+      books : light=0 medium=12 heavy=13 modern=0  sum=25  infantry-offset=25
+      VERDICT: sum-equals-offset=1  offset-equals-budget=1  books-match-independent-split=1
+
+  PASSED: (i) scope, (ii) partially - two open roles, not three, (vii) exactly one line state.
+  Also MEASURED on the way: SOV already fields 3277 `light_tank_support_chassis` from its starting
+  templates, so the 10 000 cap would not have bound on this campaign.
+  A prior run on the same save at 1943.10.20 read `books : 0 0 0 0` - a save load without a monthly
+  tick, since `on_startup` does not re-fire on load. `event wa_abg.3 <TAG>` was added to force the
+  reconcile and tell that case from a load failure in one command.
+  Two defects the run caught and closed: the rounding was nearest, not floor, so with two open roles
+  the HEAVIEST role received the smaller share (13/12 the wrong way round) - corrected to an exact
+  floor in both the shipped effect and the harness, hence `share=12 primary=13` above.
+- Run 1 could not prove DELIVERY on its own (contract rule 3, the instrument validating itself):
+  the harness reads the BOOKS, which are `set_variable` calls beside the emitters, so a silent
+  `meta_effect` / `add_ai_strategy` failure would leave the books correct and the VERDICT green.
+  Probe (vi) closed that.
+- **Probe (vi) PASSED - owner `imgui show ai_division_production`, SOV, same 1943.11 window. The
+  emitted entries reach the engine and the whole composition matches to within rounding.** 372
+  wanted divisions; WA strategy sums that day were infantry 45 (100 base, -20 mechanized, -10
+  mountaineers, -25 armor budget), mechanized 20, mountaineers 10, heavy 13, medium 12 - sum 100.
+
+      role            strategy   expected %   wanted   measured %
+      infantry              45         45.0      167         45.0
+      mechanized            20         20.0       74         19.9
+      mountaineers          10         10.0       37         10.0
+      heavy_armor           13         13.0       48         12.9
+      medium_armor          12         12.0       45         12.1
+      ARMOUR TOTAL          25         25.0       93         25.1
+      suppression            0          0.0        0          0.0
+
+  The constancy claim is therefore MEASURED end to end, not just in the books: two open tank roles,
+  armour exactly 25% of the wanted mix. The `meta_effect`-rendered `add_ai_strategy` value, listed
+  above as the change's main ASSUMED, is now MEASURED for `role_ratio`.
+- Side finding, recorded in `wa-lessons-learned`: the run also settles what `role_ratio` values MEAN.
+  A role's share is its strategy sum divided by the sum of all strategy sums; a role with no
+  strategy wants nothing (`suppression` 0 with a 0 strategy, `motorized` no row at all). The
+  "base of 100 plus the value" sentence in `common/ai_strategy/documentation.info` does not describe
+  this.
+- Change 5 - mechanized DIVISIONS become expeditionary-major-only (owner rule 2026-08-28, off the
+  probe (vi) reading: SOV wanted 74 mechanized divisions, 20% of its army, against 7 fielded).
+  Owner chose 0 for everyone but the USA, with "mechanized inside tank divisions is still wanted".
+  Those two are separable and the change lives entirely in the trigger layer - **no ai_strategy
+  value moved**:
+  - New `WA_AI_TEMPLATES_use_mechanized_division_templates` = `use_mechanized_templates` AND
+    `WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major`. It gates the mech division TARGET
+    TEMPLATE (`WA_AI_TEMPLATES_calculate_mechanized_template`) and the composition slot
+    (`WA_AI_PRODUCTION_build_army_mechanized`). Both open and close together on purpose: a share
+    with no target is wasted outright, a target with no share gets its divisions decommissioned.
+  - `WA_AI_TEMPLATES_use_mechanized_templates` is **deliberately untouched**. MEASURED, 44 call
+    sites in `WA_AI_TEMPLATES_effects.txt` read it inside
+    `calculate_<light|medium|heavy|modern>_armor_template` to choose the MECHANIZED variant of each
+    armour template, and `WA_AI_PRODUCTION_mech_min_factories_small|medium|large`
+    (`mechanized_equipment` floors 3/8/15) plus `WA_AI_PRODUCTION_build_mechanized*` hang off it.
+    Narrowing it would have stripped the mech battalions out of GER/SOV tank divisions and removed
+    their mech-equipment factory floor - the exact opposite of the owner rule. MEASURED, mech
+    battalions are present in all four armour families (medium 17 sites, heavy 15, light 14,
+    modern 7).
+  - The two ai_strategy blocks keep their values. The base block (-20/+20) is now the expeditionary
+    major OUTSIDE its window; the expeditionary block (-30/+30) is it inside. Every other country
+    has no mechanized `role_ratio` at all, which by the run-1 finding means a want of exactly zero.
+  - Consequence the owner accepted by choosing 0: non-USA countries have their existing mechanized
+    divisions DECOMMISSIONED (SOV 7 at 1943.11). Same engine mechanism as the 1942 light-support
+    retirement, ASSUMED the same way.
+  - Deepest reachable stacks after this: USA `100 -25 armor -30 mech -10 special = 35`; everyone
+    else `100 -25 armor -10 special -5 motorized = 60`. Motorized cannot stack with mechanized
+    (`WA_AI_TEMPLATES_use_motorized_templates` excludes it) and marines/mountaineers are mutually
+    exclusive, so these are floors, not estimates.
+  - Expected SOV shape after the change, DERIVED from the run-1 table: infantry 65% (242 of 372,
+    up from 167), mechanized 0, mountaineers 10%, armour unchanged at 25%. The armour total does
+    not move - the budget is a fixed amount, not a residual.
+- Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
+  `WA_AI_TEMPLATES_use_mountaineers` is `NOT = { use_marines }` and nothing else - no terrain, tech
+  or industry term - so every non-marine AI country spends 10 points of its ratio on mountain
+  troops. That is 37 wanted mountain divisions for the Soviet Union in 1943. Owner call whether it
+  becomes a subject.
+- Probe (ix), Change 5, owner console on any late save: `imgui show ai_division_production` shows
+  NO `mechanized` row for SOV (or the row at 0 wanted) while USA still shows one near 30% of its
+  wanted mix; the same SOV save still shows mech battalions inside its medium/heavy tank templates,
+  and its `mechanized_equipment` production is still running. Both halves must hold - a SOV with no
+  mech equipment means the floors moved when they should not have.
+- Owner reports manual in-game verification OK, 2026-08-28, no console output pasted for Change 5.
+  Recorded as an owner statement, not as a probe result: probes (iii), (iv), (v), (viii) and (ix)
+  are still owed, and (ix) is the one that would catch the mech floors moving when they must not.
+- Closed when: (iii), (iv), (v), (viii) and (ix) pass, with the output pasted here. (iii), (v) and
+  (ix) are readable on any late save; (iv) and (viii) need a fresh campaign sampled around 1940 and
+  early 1942.
 
 ### rail-corridors — SHIPPED-UNTESTED (2026-08-27, reopened)
 - Scope: owner request 2026-08-27: add a 9th strategic corridor, San Francisco - Washington,
@@ -233,7 +396,49 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   into F-checks like corridors 1-8: `WA_rail_corridor_9_built` flag + level-5 track.
 - Closed when: the owner pastes the console-harness output here and the mapmode check passes.
 
-### can-transit-attrition — OPEN (2026-08-27)
+### swi-militia — SHIPPED-UNTESTED (2026-08-28)
+- Scope: owner request 2026-08-28 — "the Swiss tree can't create or recruit any division".
+  Intended behaviour: a Switzerland that starts under the Citizen Militia system can actually
+  raise, activate and later professionalise that militia.
+- Symptom (MEASURED, mod files, no save needed): Switzerland starts with
+  `country_lock_all_division_template = yes` (`history/countries/SWI - Switzerland.txt:175`), so
+  no template can be created; and all four recruitable OOB templates contain mountaineers, while
+  the country fields 31 special-forces battalions (5 mountain divisions x 3 + 8
+  `Infanterie-Division` x 2) against a cap of `max(10, 0.02 x 48 regular battalions) = 10`
+  (`common/defines/05_defines.lua:116-117`) — the engine then refuses the deploy
+  (`DEPLOYMENT_NOT_ALLOWED_REASON_SPECIAL_FORCES`, install `localisation/english/deployment_l_english.yml:43`).
+  The only non-SF fallback is the Swiss Citizen Militia, and its whole mechanic was dead.
+- Cause (MEASURED, script lines): the unit-rename pass split vanilla `militia` into
+  `militia_light_horse_battalion_line` / `militia_heavy_horse_battalion_line`. The template
+  BUILDER was rewritten to heavy, the three template READERS were left on light —
+  `common/decisions/SWI.txt:4246` (`has_template_majority_unit`, gates `SWI_activate_militia`),
+  `common/scripted_effects/SWI_scripted_effects.txt` `SWI_turn_militias_into_regulars`
+  (`division_has_majority_template`, the professionalisation conversion) and
+  `SWI_dormant_citizen_militia` (`common/dynamic_modifiers/bba_dynamic_modifiers.txt:1378-1386`,
+  five `modifier_army_sub_unit_militia_light_*` lines). All three matched nothing.
+- Fix (SHIPPED, uncommitted): `SWI_upgrade_template_and_divisions` now builds the Swiss Citizen
+  Militia from `militia_light_horse_battalion_line` only (6 regiment lines), restoring vanilla's
+  single-sub-unit template. Rejected alternative — repoint the three readers at heavy: rejected
+  because the template is MIXED after the first upgrade and heavy ties light at levels 2, 6 and
+  10 (10H/10L at max), so "majority" would still fail at max level whichever unit the readers
+  name, and one dynamic modifier cannot cover two sub-units. Light is also the 1:1 port of
+  vanilla `militia` (abbreviation MIL, `need = { infantry_equipment }` only).
+- Verification (owner, console, any 1936 Switzerland game): `tag SWI`, then (a) the Swiss Citizen
+  Militia template is recruitable and the counter reads 0/6; (b) the decision "Activate Militias"
+  is available and not greyed; (c) after `add_ideas`/focus path to `SWI_professionalize_militias`,
+  existing militia divisions convert to "Swiss Infantry Division". All three fail on HEAD before
+  this change.
+- Observation outside this subject, NOT admitted (one line per the admission rule): MEASURED,
+  Switzerland is 31/10 over its special-forces cap at game start (vanilla: 39/24 — over too, but
+  WA's global `SPECIAL_FORCES_CAP_BASE 0.05 -> 0.02` and `SPECIAL_FORCES_CAP_MIN 24 -> 10` make it
+  3.1x). It can therefore never recruit a mountain template until a focus unlocks the designer.
+  A Switzerland-scoped `special_forces_min = 24` on the SWI-only `armed_neutrality` idea would
+  restore vanilla's floor. Owner call whether it becomes a subject.
+- Closed when: the owner pastes (a), (b) and (c) here.
+
+### can-transit-attrition — PARKED (2026-08-28)
+- PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below
+  is intact, nothing was retracted.
 - Scope: owner admission 2026-08-27 (candidate validated the same day, owner mechanism
   CONFIRMED against the first verdict). Intended behaviour: what Canada builds REACHES the
   war - divisions survive the transatlantic crossing, and the build rate is worth the name.
@@ -1168,6 +1373,57 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+### division-target-scaling — PARKED (2026-08-28)
+- Parked 2026-08-28 (WIP limit, `armor-role-budget` enters - its Change 2 moved there
+  wholesale). State at parking: Change 1 shipped, unverified; the subject now rests on ONE
+  owner console read (`imgui show ai_division_production` on GER after a full restart) plus
+  the USA/CAN non-binding controls. Reopen when that window is available.
+- Scope: owner request 2026-08-28 — reduce every AI country's theoretical division target by
+  75% because WA's factory counts and combat-area geometry make vanilla's target unattainable.
+- Symptom, MEASURED (owner `imgui show ai_division_production`, GER): 149 active divisions,
+  target 521; breakdown fronts 274 x 0.35, factories 528 x 0.45, manpower 311 x 0.30,
+  threat 1.06, war factor 1.15.
+- Change 1: `05_defines.lua` overrides all three `WANTED_UNITS_WEIGHT_*` inputs: fronts 0.08,
+  factories 0.09, manpower 0.07. Every downstream threat/war multiplier stays unchanged.
+- Symptom 2, MEASURED (owner `imgui show ai_division_production`, ENG): wanted medium armor 189,
+  infantry 47 and mechanized 95; the live ratio is approximately 40:10:20.
+- Change 2 (owner order 2026-08-28): halve every armor `role_ratio` transfer from -20/+20 to
+  -10/+10. The dependent USA-only `infantry_floor +15` block and trigger were removed with it.
+  **SUPERSEDED 2026-08-28 by `armor-role-budget`**: halving kept the armour share proportional to
+  the NUMBER of open tank roles, which is the bug the owner named the same day. The five per-role
+  blocks no longer exist, so the armour lines below (armor impact, reachable-stack audit, and the
+  ENG / USA-infantry verification rows) describe a shape that is gone - read `armor-role-budget`
+  for the live armour behaviour. Everything in this subject about the three
+  `WANTED_UNITS_WEIGHT_*` defines is unaffected.
+- Impact: global and setup-agnostic. USA/CAN are owner-confirmed capacity-bound at their current
+  full build rate; whether their lowered theoretical targets remain non-binding is ASSUMED until
+  the live window is checked. Existing training-queue cancellation/decommission behaviour is an
+  engine boundary and is not claimed.
+- Armor impact, MEASURED (composition + template triggers): every country reaching an armor role
+  keeps that role at a positive weight of 10 per active block in historical and ahistorical games.
+  Regression risk, ASSUMED: GER/SOV/ENG/USA may field too few armored formations for spearheads;
+  compare their wanted and current armor counts in the next campaign.
+- Reachable-stack audit, DERIVED from the composition and template gates: light and transition are
+  mutually exclusive; motorized is a fallback when armor/mechanized are absent; exactly one of
+  marines/mountaineers costs 10. The deepest non-USA stack is `100 -40 armor -20 mechanized -10
+  special = 30`; USA is `100 -30 armor -30 expeditionary mechanized -10 special = 30`.
+- Historical constraint from commit `3da0be383`: "GER/SOV composition was healthy and is
+  deliberately left byte-identical." `mine covers it because` the new owner order deliberately
+  retunes every armor role after a live disproportionate wanted value; both countries retain each
+  armed armor role at 10 and are explicit regression controls below.
+- Owner objection: "USA et CAN construisent déjà à pleine capacité, et la cap souhaitée est
+  irréalisable avec l'équilibrage du mod". `mine covers it because` the change lowers theoretical
+  demand without lowering build throughput; the USA/CAN controls explicitly fail the change if
+  the quartered target becomes their binding constraint.
+- Verification: after a full restart, the same GER save shows the lower `Nr Wanted Divisions`;
+  USA and CAN show `Current + Total Being Built` below `Nr Wanted Divisions` while continuing to
+  build at their pre-change full rate; the same ENG state shows wanted medium armor near 95 while
+  wanted mechanized stays near 95; USA infantry stays positive near 30% on its deepest stack; GER
+  and SOV retain non-zero wanted armor.
+- Closed when: the GER target, ENG armor ratio, USA infantry residual, GER/SOV armor controls and
+  both USA/CAN non-binding controls pass once in the live window.
+
 
 ### theorist-hiring — PARKED (2026-08-28)
 - Parked 2026-08-28 (net removed on owner ruling, nothing actionable until the next scored

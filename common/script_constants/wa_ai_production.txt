@@ -1,0 +1,38 @@
+####################################################################################################
+#	World Ablaze AI - army-composition production constants.
+#	Read with `constant:wa_ai_production.<group>.<key>` (HOI4 1.18 script constants) from
+#	WA_AI_PRODUCTION_armor_budget.txt (the runtime role_ratio emitter). Full restart, not `reload`,
+#	when tuning: the emitter reconciles against a stored book, it does not re-derive from the file.
+####################################################################################################
+
+wa_ai_production = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# [armor-role-budget] The share of the role_ratio total that ALL tank roles together get, whatever
+	# the number of tank roles the country has open. role_ratio is base 100 + value
+	# (ai_strategy/documentation.info, UNIT RATIOS / ALL BUT AIR), so this reads directly as a percent
+	# of the wanted-division mix. It is split evenly between the open roles, the heaviest one taking
+	# the rounding remainder, and infantry pays exactly this much once - never once per tank role.
+	# Assumes infantry keeps the residual after mechanized (up to 30) and special forces (10 each);
+	# raising this above ~50 can drive that residual to zero and stop infantry training entirely.
+	army_composition = {
+		armor_budget_total = 25
+
+		# [armor-role-budget] Light-support armour is a finite RUN, not a permanent role: the country
+		# builds it until this many chassis are FIELDED (num_equipment_in_armies, strict >), then the
+		# template retires. Assumes light_tank_support_chassis is the only archetype the battalion
+		# needs (common/units/armor_support.txt: need = 25 per battalion, 9 per division = 225 per
+		# division, so this cap is about 44 divisions). Losses move the count DOWN and can reopen the
+		# run - the hard end is the 1942 date in WA_AI_TEMPLATES_use_light_support_armor_templates.
+		light_support_armor_fielded_cap = 10000
+	}
+
+}

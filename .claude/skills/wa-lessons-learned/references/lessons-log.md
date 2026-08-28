@@ -2404,3 +2404,29 @@ process caveats (stale process, and the absence of a load-time hook).
   harness `common/scripted_effects/WA_TEST_recruit_loop.txt`. Engine boundary, ASSUMED: why
   registration fails for the nameless form, and why XSM/YUN loop despite an official count >= 3
   (warlord/united-front reading).
+
+### `role_ratio` shares are the strategy VALUES normalised, not "base 100 plus value" per role
+
+- **Symptom:** `common/ai_strategy/documentation.info` (UNIT RATIOS / ALL BUT AIR) says unit ratios
+  are "a base of 100 plus the value indicated in the strategy", which reads as: every role starts at
+  100 and a role with no strategy competes on equal footing with infantry. Every WA header written
+  against that sentence had to invent a reason why 13 roles do not all come out equal.
+- **Real behaviour, MEASURED** (owner console `imgui show ai_division_production`, SOV 1943.11.3,
+  372 wanted divisions). WA strategy sums for SOV that day were infantry 45 (100 base, -20
+  mechanized, -10 mountaineers, -25 armor budget), mechanized 20, mountaineers 10, heavy_armor 13,
+  medium_armor 12 - sum 100. The engine wanted infantry 167, mechanized 74, mountaineers 37,
+  heavy 48, medium 45: **45.0 / 19.9 / 10.0 / 12.9 / 12.1 percent**, every row within rounding of
+  its strategy value. `suppression` carried no strategy and wanted 0; `motorized` carried none and
+  had no row at all.
+- **Rule:** a role's share of the wanted divisions is `its strategy sum / the sum of all strategy
+  sums`. A role with no `role_ratio` strategy wants **nothing**, it does not silently claim 100.
+  So the WA convention of keeping the values summing to 100 is not a house style - it is what makes
+  each value readable directly as a percent. Two consequences worth stating: giving a role a share
+  it has no enabled target template for WASTES that share outright (the naval_escort case, above),
+  and a role whose share reaches 0 has its templates decommissioned (the garrison case).
+- **Detection:** `imgui show ai_division_production`, the per-role table under the country. Nothing
+  in a savegame names a `role_ratio` strategy by role, so this is a live-window read only.
+- **Evidence:** WORK.md `armor-role-budget` (harness run 1);
+  `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`. Engine boundary, ASSUMED: what the
+  documentation.info sentence actually describes - possibly `unit_ratio` for air, which the same
+  section covers separately.
