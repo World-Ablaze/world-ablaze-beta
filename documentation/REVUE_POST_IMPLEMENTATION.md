@@ -251,6 +251,11 @@ déclaré n'a été trouvé** — ni par l'échantillon, ni par les balayages, n
 
 ---
 
+> **Addendum 2026-08-29** — condition (1) : boot test rapporté **OK** par l'owner (déclaration en
+> session, sortie error.log non collée — owner-reported, pas MEASURED par cette revue). Restent
+> ouvertes : (2) perf NAVAL (seuil Q7 à fixer d'abord), (3) `explain_naval` relu par l'outil,
+> puis les bundles géographiques avant la prochaine campagne scorée.
+
 ## 9. Verdict final
 
 **Prêt à merger ? NON en l'état — OUI sous trois conditions, toutes côté jeu :**
