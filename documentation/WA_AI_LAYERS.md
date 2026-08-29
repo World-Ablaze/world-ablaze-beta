@@ -88,3 +88,24 @@ journalise le verdict de chaque couche séparément, relu par
 `python tools/read_harness_log.py --marker "EXPLAIN <SYS>" --interpret <sys>`. Critère
 d'acceptation d'un lot : l'interpréteur nomme la couche qui bloque sans lecture humaine du
 journal. Un harnais sans interpréteur livré n'est pas un explain.
+
+## 7. Grammaire de nommage des gates (normalisée le 2026-08-30)
+
+Un gate de couche 3 s'écrit `WA_AI_<SYS>_should_[<tag>_][not_]<intention>[_N]` :
+
+- `<tag>` (minuscules) est présent si et seulement si le gate n'est lu que par les fichiers
+  Country d'UN pays — le nom dit alors qui décide. Un gate de faction/région n'a pas de tag.
+- `not_` est la seule forme de négation dans un nom (jamais `dont_`).
+- Aucun mot de domaine (`front`/`diplomacy`/`theatre`/`invasion`) dans le nom — le domaine est
+  porté par le fichier de stratégie qui lit le gate, pas par l'intention. Exception : les
+  groupes de coïncidence où le mot de domaine est la seule chose qui distingue deux intentions
+  distinctes à corps identique (règle Q4) — ils le gardent.
+- Jamais `legacy_` — l'histoire vit dans git, pas dans les noms.
+- `_N` final = échelon d'une séquence scriptée (les phases `chinese_war_1..5`, la ligne Staline
+  `_10/_11`) : légitime tant que la séquence existe ; un `_2` qui ne fait pas partie d'une
+  échelle est un nom à finir d'écrire.
+- Suffixe `_allowed` : la moitié `allowed` d'un bloc converti dont l'`enable` a son propre gate.
+
+Une observation de couche 2 contient `is_` / `has_` / `holds_` (`is_at_war_with_european_axis`,
+`axis_holds_southern_sicily`).
+
