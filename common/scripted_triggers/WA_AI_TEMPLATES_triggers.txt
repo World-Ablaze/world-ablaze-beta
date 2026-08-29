@@ -229,6 +229,17 @@ WA_AI_TEMPLATES_use_light_support_armor_templates = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [historical-tank-park] Does this country's light-support run use the MIXED composition (support
+# + plain light battalions in one division)? One target per role is an engine constraint, so
+# fielding both chassis means one template consuming both. Read EXACTLY ONCE, by the latch in
+# WA_AI_TEMPLATES_calculate_light_support_armor_template (flag value 15000 pure / 15001 mixed) —
+# never by a template enable: a live difficulty read there would flip targets mid-campaign.
+WA_AI_TEMPLATES_use_mixed_light_support_armor = {
+	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+	WA_AI_DIFFICULTY_is_historical = yes
+	WA_AI_CONFIG_pursues_historical_tank_park = yes
+}
+
 # [armor-role-budget] Answers "does light-support own this country's light_armor role". Both light
 # templates declare role = light_armor, so without this the engine arbitrates two enabled templates
 # for one role. It keys on the CHASSIS, not on the run being open, so reaching the fielded cap or
@@ -322,6 +333,19 @@ WA_AI_TEMPLATES_can_use_light_transition_templates = {
 		WA_AI_TEMPLATES_use_light_armor_templates = yes
 		WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
 	}
+}
+
+# [historical-tank-park] The light-support twin of the conversion window above (which excludes
+# the light-support country by design): when the finite run ends, the fielded park converts into
+# the medium class instead of decommissioning. The latch flag is the memory that this country ran
+# the park; the majority term retires the window together with the park itself. Same engine
+# assumption as the light window: the engine still upgrades a role whose role_ratio want is 0.
+WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = {
+	has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+	NOT = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes }
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	has_template_ai_majority_unit = light_support_armor_battalion_line
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
 WA_AI_TEMPLATES_use_mechanized_td_armor = {

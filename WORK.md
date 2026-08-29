@@ -255,13 +255,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `light_armor` — for GER, `Light Tank template E` and its 8 divisions. That decommission is
   ALREADY what HEAD does: `813099474` closes light on the same date with or without this change.
   What changes is that the freed role gets a successor instead of the country being left empty.
-- **EXTENDED 2026-08-29 (owner order, save 1941.4.9): the DIVISION half â€” conversion instead of
+- **EXTENDED 2026-08-29 (owner order, save 1941.4.9): the DIVISION half — conversion instead of
   abandonment.** Symptom, MEASURED (owner screenshot, `imgui show ai-templates` + division
   production, GER 1941.4.9): light-armor divisions frozen post-boundary, medium built NEW
   (current 6 / wanted 38), no light row in the wanted table. Cause, MEASURED (script): the 8
-  LIGHT_MEDIUM transition templates (5109â€“5116, `replace_with` â†’ medium at
-  `replace_at_match = 0.8` â€” the mod's only division-conversion mechanism) all sat behind
-  `use_light_armor_templates`, which contains `NOT = { switch_from_light_to_medium_armor }` â€”
+  LIGHT_MEDIUM transition templates (5109–5116, `replace_with` → medium at
+  `replace_at_match = 0.8` — the mod's only division-conversion mechanism) all sat behind
+  `use_light_armor_templates`, which contains `NOT = { switch_from_light_to_medium_armor }` —
   the boundary that says "go medium" killed the only path there. Second gap: every transition
   rung required `use_light_td_armor`, so a TD-less country could never converge even pre-boundary.
   Fix: (a) new `WA_AI_TEMPLATES_should_convert_light_to_medium_armor` (post-boundary window:
@@ -286,12 +286,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
   | t | event | if engine upgrades want-0 roles | if it does not |
   | --- | --- | --- | --- |
-  | t0 (first pulse â‰¥ boundary) | flag 0â†’5121-5122/5109-5116; enable-set change re-runs the one-template-per-role pass | old light template captured by the light role, transition target armed | same capture, target armed but idle |
+  | t0 (first pulse ≥ boundary) | flag 0→5121-5122/5109-5116; enable-set change re-runs the one-template-per-role pass | old light template captured by the light role, transition target armed | same capture, target armed but idle |
   | t1 (days-weeks) | field upgrade toward the transition target (needs medium tanks in stock), `replace_with` flips each division to the medium template at 0.8 match | divisions become medium, leave the light role | divisions stay frozen on the old template = HEAD behaviour |
-  | t2 (steady) | monthly recalc idempotent (terms monotone: date, techs) | light role empties, transition template deleted at zero divisions (lessons rule) â€” clean end state | enabled no-op target persists; count frozen, same as HEAD |
+  | t2 (steady) | monthly recalc idempotent (terms monotone: date, techs) | light role empties, transition template deleted at zero divisions (lessons rule) — clean end state | enabled no-op target persists; count frozen, same as HEAD |
 
   The honest failure mode is the right column, NOT "inert": the transition template itself sits
-  in a want-0 role and may be decommissioned before converting â€” never worse than HEAD (whose
+  in a want-0 role and may be decommissioned before converting — never worse than HEAD (whose
   divisions are already frozen), but conversion is UNPROVEN until the owner console run.
   Reviews 2026-08-29: lessons CONCERNS (this table, RS note and the parked-save line are its
   three required repairs) + architecture CONCERNS (verification lines below extended to cover
@@ -375,7 +375,185 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
   divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones.
 
-### armor-budget-ramp — SHIPPED-UNTESTED (2026-08-29)
+### light-support-conversion — SHIPPED-UNTESTED (2026-08-29)
+- SHIPPED-UNTESTED: Changes 3-4 touch `WA_AI_TEMPLATES_effects.txt` (harnessed system); the owner
+  console runs owed are listed in the Verification lines (wa_abg.1 lsmix/conv-window, the two
+  imgui reads).
+- Scope: owner request 2026-08-29 ("vas-y, implémente") — deployed SOV 1936 tank brigades must be
+  field-upgradeable to the light-support target template, so the fielded light-support count can
+  reach the `[armor-role-budget]` 10k run cap instead of stalling at the army's composition
+  ceiling; then (owner rulings, same day) the mission stays as written and historical difficulty
+  fulfils all three bars; then the park converts to medium at end-of-run instead of
+  decommissioning.
+- Symptom (MEASURED, `SOV_1940_03_01_16.hoi4`, campaign 8a14581e): 8 400
+  `light_tank_support_chassis` in armies vs 10 782 in stockpile; 23 divisions still on the
+  8-battalion "Tankovaya brigada", 6 on the 9+6 target shape. DERIVED: full-strength ceiling of
+  the current army is ~9 500 — the 10k cap is unreachable without conversion. Mission
+  `SOV_the_greatest_tank_army` active, 670 days left, fails all three bars.
+- Cause (MEASURED, install `common/ai_templates/_documentation.md`, target-template section):
+  field upgrade only moves a division to a target's `replace_with`; the role's single target had
+  `can_upgrade_in_field` but no `replace_with` and nothing matched the brigade shape — no
+  destination, so no conversion, ever.
+- Change (`common/ai_templates/WA_AI_TEMPLATES_armored_light_support.txt`): new target
+  `WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_20_STARTER` mirroring the OOB brigade (8x
+  light_support + 1x mot inf), `enable` = flag 15000 + `has_template = "Tankovaya brigada"`,
+  prio 15 vs 10, `replace_at_match 0.9` / `replace_with` = 30_MOT / `target_min_match 0.3`.
+  Vanilla ENG starter pattern (doc); EAI 5.0 uses enable-gated replace chains on 1.19.2.
+- t0/t1/t2 walk (lessons-reviewer requirement; engine evaluation cadence unobservable, ASSUMED
+  sub-monthly): t0 = flag 15000 present + brigades exist → starter enabled AND best-match 1.0 —
+  gate and match are the SAME template object, so the target flips to 30_MOT the same evaluation
+  and brigades convert as manpower/equipment allow (stock: +25 support chassis and 6 mot btns per
+  division, 10.8k chassis available). t1 = brigades all converted, template empty: if it lingers,
+  flip keeps firing (still the 1.0 match), field upgrade finds no matching division — no-op; if
+  the engine deletes it, `enable` goes false the same state — file degrades to today's single
+  30_MOT target. t2 residual: divisions sitting on engine-made RENAMED 8+1 copies when the
+  original dies are stranded unconverted = exactly today's behaviour, never worse. ASSUMED
+  (engine): deployed divisions do not migrate to copies except via field upgrade, so the stranded
+  set is plausibly empty.
+- Residual (architecture reviewer, ASSUMED): while the brigade exists, prio 15 could steer other
+  light-support divisions toward the 8+1 STARTER shape as a detour — campaign probe watches for
+  non-brigade divisions on that shape.
+- Change 2 (owner ruling 2026-08-29: the mission stays as written; historical difficulty fulfils
+  it, competitive will not; lever = build_army): conversion alone cannot cross 10k — wanted for
+  the light role is 32 vs current 59 (the 30 OOB cavalry divisions classify into the role,
+  DERIVED 29+30=59 from the 1940.3 save), so the AI builds ZERO new light-role divisions and the
+  ceiling stays ~9 500. Added: `WA_AI_CONFIG_pursues_historical_tank_park` (CONFIG, original_tag
+  SOV), decision trigger `WA_AI_PRODUCTION_should_build_historical_tank_park`
+  (`WA_AI_PRODUCTION_army_composition.txt`) = historical difficulty + CONFIG + run open + NOT
+  fielded-cap, and gate block `WA_AI_PRODUCTION_DEFAULT_historical_tank_park`
+  (`WA_AI_PRODUCTION_DEFAULT_army_composition.txt`, OVERRIDE section): `build_army id =
+  light_armor value = 500` + `force_build_armies value = 300` — magnitudes mirror the
+  army_expansion_override block above it, the one pair with campaign precedent.
+- Change 2 timeline at the real cadences (lessons-reviewer requirement; the race it prices: the
+  1942.1.1 run close does not merely miss the bar, it INVERTS it — want → 0 retires the park):
+  - t0 = 1940.3 (MEASURED state): 29 armor divisions, 8 400 fielded support chassis, 10 782 in
+    stock, 12-factory line running. Equipment is NOT the binding constraint: conversions
+    (~+1 700 to fill 23 brigades to 225) plus ~16 new divisions (3 600) draw ~5 300 < stock.
+  - t1 (DERIVED, training-bound): 23 in-field conversions fill from stock as reinforcement flows;
+    ~16 new 30_MOT divisions train under the force — at ASSUMED armor training ~4–6 months and
+    parallel slots, deployment completes mid-to-late 1941. Fielded crosses 10 000 → cap trigger
+    closes force and production line off the same measurement = mission bar 1 satisfied.
+  - t2 = 1942.1.1: run closes, want → 0, park decommissions. Margin under the ASSUMED rates is
+    ~3–6 months; if a campaign shows deployment slipping into 1942, the fix is a longer run for
+    the mission country, not a bigger force value. ASSUMED and flagged in the block comment:
+    build_army 500 / force_build_armies 300 actually push building past wanted<current — only
+    id=infantry has campaign precedent; the owner `imgui show ai_division_production` read
+    (light_armor Being Built > 0 with Current 59 > Wanted) is the killing measurement.
+- Change 2 known limit: covers mission bars 1 (10k support) and 3 (>29 armor divisions) only.
+  Bar 2 (5 000 plain light_tank_chassis in armies) was structurally unreachable — no SOV template
+  outside the 30 OOB cavalry divisions (75 lights each) and the 15-per-division recon companies
+  carries plain lights; ceiling ~2 900. Change 3 below is the owner-approved answer.
+- Change 3 (owner approval 2026-08-29 "vas-y, fais le template mixte"): MIXED composition for the
+  historical mission country — one target per role is an engine constraint (install ai_templates
+  doc), so fielding both chassis means one template consuming both.
+  - `WA_AI_TEMPLATES_triggers.txt`: new `WA_AI_TEMPLATES_use_mixed_light_support_armor` =
+    run open + historical difficulty + `WA_AI_CONFIG_pursues_historical_tank_park`.
+  - `WA_AI_TEMPLATES_armored_light_support.txt`: the role now holds an enable-exclusive pair of
+    finals — pure 30_MOT (9 support + 6 mot, NOT mixed) vs 30_MOT_LIGHT_MIX (6 support + 3
+    light_armor + 6 mot, mixed) — and a starter per final (`replace_with` is a static token, so
+    each destination needs its own bridge; identical composition and prio 15).
+  - Math (DERIVED, 25/battalion, recon 15): mixed division = 150 supports + 90 lights. At ~39
+    mixed + the 6 existing pure divisions: supports ≈ 10 750 (incl. 3 550 in infantry), lights ≈
+    5 850 with cavalry — both equipment bars cross. Cap interplay: at 150/div the 10k cap needs
+    ~43 divisions instead of ~45 — same force lever, same shutdown.
+  - Latch (lessons-reviewer requirement 1, was a CONFLICT): the composition is decided ONCE, at
+    first arming, in `WA_AI_TEMPLATES_calculate_light_support_armor_template` — flag value 15000
+    = pure, 15001 = mixed, latch flags `WA_AI_TEMPLATES_light_support_composition_latched` /
+    `_light_support_mixed`. No template enable reads the live mixed trigger, so a mid-campaign
+    difficulty change can never re-run the decommission pass on the fielded park (the
+    flag-transition lesson). Exclusivity is now by flag-value equality, stronger than the NOT
+    pairs the first review saw.
+  - RS slack (lessons-reviewer requirement 2): MIX carries 4+4 regimental supports, not the pure
+    template's 5+5 — 10 RS on 15 battalions of three types has zero grid-stacking slack
+    (designer-deadlock rule). The pure template's inherited 5+5 tightness is pre-existing and
+    untouched.
+  - Production/fielded timeline (lessons-reviewer requirement 3 — the bars count FIELDED, the
+    division math counts SLOTS; they converge only if equipment flows): t0 = latch (new campaign:
+    when the run arms; the 1940.3 save: next monthly pulse). Lights needed in armor divisions ≈
+    3 600 (39 × 90 + recon); stock already holds ~3 129 and cavalry carries its 2 250
+    independently — the light bar is mostly STOCK-funded, the 2-factory line only covers the
+    ~500 gap plus attrition. Supports needed ≈ +2 350 net over the measured 8 400; stock holds
+    10 782 — also stock-funded. t1 = conversions + ~16 forced builds deploy (training-bound,
+    ASSUMED 4–6 month training → mid/late 1941). t2 = 1942.1.1 run close. If a campaign shows
+    either chassis starving instead, the named lever is an
+    `equipment_production_min_factories_archetype` floor (need-blind, additive — use with a cap),
+    not a bigger force value.
+  - Residual, accepted: the 6 existing pure divisions cannot chain to MIX (their final is
+    disabled under value 15001) and stay 9+6 — the math counts them as pure.
+- Change 3 verification: `WA_TEST_armor_budget` gained the `lsmix` line (latched vs live trigger
+  vs fielded plain lights) — owner run required, the subject enters SHIPPED-UNTESTED at commit
+  because Change 3 touches a `WA_AI_*` scripted effect of a harnessed system. Campaign probe:
+  under historical difficulty SOV light-role divisions mount BOTH battalion types;
+  `num_equipment_in_armies@light_tank_chassis` > 5 000 before 1942; flag value is exactly one of
+  15000/15001 and never flips after first arming.
+- Change 4 (owner order 2026-08-29 "quand l'IA bascule aux medium/heavy, les divisions changent
+  de template"): the plain-light half shipped in the CONCURRENT session (`06c485bfa` conversion
+  window + rungs 5121/5122, `bf2568ae8` un-swap + retarget), whose window EXCLUDES the
+  light-support country by design (`NOT light_support_armor_owns_light_role`). This change is its
+  light-support twin, end-of-life for the park:
+  - `WA_AI_TEMPLATES_triggers.txt`: `WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor`
+    = latch flag (memory the country ran the park) + run over + medium class live +
+    `has_template_ai_majority_unit = light_support_armor_battalion_line` (retires the window with
+    the park; syntax MEASURED vanilla `ai_strategy/SOV.txt:407`) + NOT expansion override.
+  - Calculator code-14: else_if branch emits transition values — 15002 pure→MOT, 15003 pure→MEC,
+    15004 MIX→MOT, 15005 MIX→MEC (MOT/MEC mirrors the medium calculator's mechanized branch;
+    destination names verified post-un-swap: 30_MOT=6100, 30_MEC=6101).
+  - Role file: 4 TRANSITION rungs, each targeting the park's own shape (fielded divisions match
+    ~1.0 ≥ replace_at 0.8) with replace_with = the medium entry final, min_match 0.3.
+  - Same ASSUMED as the light window, in writing: the engine still field-upgrades a role whose
+    role_ratio want is 0 — if false, the park freezes instead of decommissioning (still better
+    than decommission only if freeze is; the owner console run decides). Second ASSUMED: MIX has
+    no strict majority unit (6/6/3) — if `has_template_ai_majority_unit` resolves ties away from
+    light_support, the MIX park's window never opens and it decommissions as today (bounded to
+    status quo, visible in the harness conv-window bit).
+  - Join-key diff (lessons requirement, run by hand): calculator emissions for code 14 are
+    exactly {0-clear, 15000, 15001, 15002, 15003, 15004, 15005}; declared enables are 15000
+    (STARTER + pure final), 15001 (STARTER_MIX + MIX final), 15002-15005 (the 4 rungs). No
+    emission without a declared entry; the conversion branch sets its base value as a direct
+    effect first, so no path leaves the trigger open with no value.
+  - Lost-race bound (assumption a), in writing: if decommission beats conversion at the run-end
+    flip, the outcome sits between today's status quo (all decommissioned) and full conversion —
+    a partially converted park, never a broken state; the equipment of decommissioned divisions
+    returns to stockpile as today.
+  - Window close: conversion empties the park template; it lingers at 0 divisions until the
+    engine deletes it (ASSUMED timing). While it lingers the window stays open harmlessly — the
+    lingering template IS the 1.0 best-match, so the role target flips to the medium final every
+    evaluation and field upgrade finds no matching division (same gate-and-match-same-object
+    argument as the STARTER). Engine deletion → majority term false → window closes → flag
+    cleared.
+  - Non-retroactive: a campaign already past its run end (or predating the latch flag) has no
+    park left to convert and keeps its decommission — new-campaign feature.
+  - Telemetry, resolved by review: `WA_TLM_armor_roles_open` is defined as "flags the selector
+    actually wrote" (registry row v34) and the committed light window already keeps its flag set
+    while converting — so the flag holding 15002+ during conversion is the DEFINED semantics, not
+    drift. A value guard was briefly added then reverted to keep the two windows consistent.
+  - Verification: `wa_abg.1` lsmix line now prints `conv-window`; campaign probe — a SOV save
+    post-1942.1 shows former park divisions on medium templates, not decommissioned; the flag
+    holds 15002-15005 only while the majority term is true. Owner console run decides assumption
+    (a) — the decommission-vs-conversion race has a measured lost precedent, so SHIPPED-UNTESTED
+    until observed.
+- Verification — owner live check: `tag SOV` then `imgui show ai_templates` (install doc,
+  Tips section) on the 1940.3 save — the light_armor role must show the STARTER→30_MOT chain with
+  "Tankovaya brigada" as best match. Then `imgui show ai_division_production`: light_armor
+  `Being Built` > 0 while Current (59) > Wanted — the build_army-forces-past-want assumption's
+  killing measurement. If Being Built stays 0, the payload is wrong, not the enable: probe the
+  enable first (lessons rule silently-OFF) — the strategy block must appear armed in
+  `imgui show ai-strategy`.
+- Verification — campaign probe: a SOV save ≥ 3 months after the template flag arms: divisions on
+  the 8+1 shape falling toward 0, `num_equipment_in_armies@light_tank_support_chassis` above
+  9 500 (yesterday's ceiling) and crossing 10 000 before 1942; zero NEW divisions built on the
+  STARTER shape.
+- Closed when: a campaign save shows ≥ 1 former brigade on the 9+6 shape AND fielded support
+  chassis > 9 500.
+- Out of scope, one line: mission bars 2–3 (5 000 plain light tanks, 30 armor divisions) stay
+  unreachable under the light-support-owns-the-role design — mission-side alignment is a separate
+  owner decision, not admitted.
+
+### armor-budget-ramp — PARKED (2026-08-29)
+- PARKED state: code SHIPPED 2026-08-29, owner console run STILL OWED (Verification lines below
+  unchanged and still the exit). Parked, not closed, only to keep the OPEN WIP limit at 4 when
+  `light-support-conversion` opened; nothing about the fix or its evidence changed. Un-park it by
+  restoring the `SHIPPED-UNTESTED (2026-08-29)` heading.
 - Scope: owner order 2026-08-29 — the armour share of the wanted-division mix must grow with the
   era instead of jumping to its terminal size the month a country unlocks its first chassis.
   Successor to the CLOSED `armor-role-budget`, which fixed how the budget is SHARED between tank

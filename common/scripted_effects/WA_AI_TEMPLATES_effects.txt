@@ -1255,7 +1255,47 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 		limit = {
 			WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 		}
+		# [historical-tank-park] Composition is LATCHED at first arming: 15000 = pure, 15001 =
+		# mixed. The mixed trigger reads live difficulty, and a live read in the template enables
+		# would flip all four targets on a mid-campaign difficulty change and decommission the
+		# fielded park — so it is read exactly once, here.
 		set_temp_variable = { _template_value = 15000 }
+		if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched }
+			}
+			set_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+			if = {
+				limit = { WA_AI_TEMPLATES_use_mixed_light_support_armor = yes }
+				set_country_flag = WA_AI_TEMPLATES_light_support_mixed
+			}
+		}
+		if = {
+			limit = { has_country_flag = WA_AI_TEMPLATES_light_support_mixed }
+			set_temp_variable = { _template_value = 15001 }
+		}
+	}
+	# [historical-tank-park] Conversion rungs: run over, park still fielded -> point the role at a
+	# transition rung whose replace_with is the medium ENTRY final. MOT vs MEC follows the same
+	# mechanized branch the medium calculator uses (6100 vs 6101), pure vs MIX follows the latch.
+	else_if = {
+		limit = { WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes }
+		set_temp_variable = { _template_value = 15002 }
+		if = {
+			limit = {
+				has_country_flag = WA_AI_TEMPLATES_light_support_mixed
+				WA_AI_TEMPLATES_use_mechanized_templates = yes
+			}
+			set_temp_variable = { _template_value = 15005 }
+		}
+		else_if = {
+			limit = { has_country_flag = WA_AI_TEMPLATES_light_support_mixed }
+			set_temp_variable = { _template_value = 15004 }
+		}
+		else_if = {
+			limit = { WA_AI_TEMPLATES_use_mechanized_templates = yes }
+			set_temp_variable = { _template_value = 15003 }
+		}
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
