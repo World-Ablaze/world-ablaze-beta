@@ -429,6 +429,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   template appears under the MEDIUM role group in imgui (or `plans.py --templates` shows them on
   a 9-medium template) rather than under light. Probe: same save, run forward — arrow moves
   5113 → `_30_MEC_FINAL` within a week, compositions reach 9-medium, then the capture signal.
+- **Conversion chain PASSED live 2026-08-29 (owner, same Apr-1941 save on `d898e2105`)**: "la
+  flèche est passée sur FINAL, et les templates se sont améliorés". The switch fires and
+  fielded compositions climb — the two chained ASSUMED (in-group replace_with switch, greedy
+  reachability from the hybrid) are settled TRUE. Still open for a campaign read: the
+  medium-role capture signal and the front-strength cost. Same repair applied the same day to
+  the light-support exit rungs (see `light-support-conversion`), whose replace_with pointed
+  cross-group at the medium templates — the exact stall this chain measured.
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
   `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
@@ -438,6 +445,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - SHIPPED-UNTESTED: Changes 3-4 touch `WA_AI_TEMPLATES_effects.txt` (harnessed system); the owner
   console runs owed are listed in the Verification lines (wa_abg.1 lsmix/conv-window, the two
   imgui reads).
+- Exit rungs repaired 2026-08-29 by the `armor-class-handoff` session, after its live stall
+  measurement (owner imgui: match 0.8125 ≥ replace_at 0.8, switch never fires when replace_with
+  points OUTSIDE its role group): the four transition rungs (15002-15005) pointed cross-group at
+  `GENERIC_MEDIUM_ARMOR_30_MOT/30_MEC`. Retargeted onto two new same-group FINAL templates
+  (`..._TRANSITION_MOT_FINAL`/`_MEC_FINAL`, pure-medium compositions, enabled while the flag
+  holds any conversion value); exit = medium-role best-match capture, same ASSUMED and probe as
+  the light chain, which PASSED live on the Apr-1941 GER save the same day.
 - Scope: owner request 2026-08-29 ("vas-y, implémente") — deployed SOV 1936 tank brigades must be
   field-upgradeable to the light-support target template, so the fielded light-support count can
   reach the `[armor-role-budget]` 10k run cap instead of stalling at the army's composition

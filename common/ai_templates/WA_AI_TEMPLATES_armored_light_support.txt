@@ -161,9 +161,9 @@ WA_light_support_armor_role = {
 
 	# [historical-tank-park] Conversion rungs (values 15002-15005, emitted by the calculator when
 	# the run is over and the park still fielded): each targets the park's own shape so fielded
-	# divisions match at ~1.0, and its replace_with is the medium ENTRY final — MOT (6100) or MEC
-	# (6101) mirroring the medium calculator's mechanized branch. This is the light-support twin
-	# of the [armor-class-handoff] conversion window; without it the park decommissions in 1942.
+	# divisions match at ~1.0, and its replace_with is the same-group FINAL below (a cross-group
+	# pointer at the medium templates stalls the switch - the [armor-class-handoff] stall). This
+	# is the light-support twin of that conversion window; without it the park decommissions in 1942.
 	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT = {
 		enable = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15002 } }
 		upgrade_prio = { base = 10 }
@@ -177,7 +177,7 @@ WA_light_support_armor_role = {
 			}
 		}
 		replace_at_match = 0.8
-		replace_with = WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MOT
+		replace_with = WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL
 		target_min_match = 0.3
 	}
 	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC = {
@@ -193,7 +193,7 @@ WA_light_support_armor_role = {
 			}
 		}
 		replace_at_match = 0.8
-		replace_with = WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC
+		replace_with = WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL
 		target_min_match = 0.3
 	}
 	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MIX_MOT = {
@@ -210,7 +210,7 @@ WA_light_support_armor_role = {
 			}
 		}
 		replace_at_match = 0.8
-		replace_with = WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MOT
+		replace_with = WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL
 		target_min_match = 0.3
 	}
 	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MIX_MEC = {
@@ -227,7 +227,80 @@ WA_light_support_armor_role = {
 			}
 		}
 		replace_at_match = 0.8
-		replace_with = WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC
+		replace_with = WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL
 		target_min_match = 0.3
+	}
+
+	# [historical-tank-park] The FINAL step, same shape as the [armor-class-handoff] pair in
+	# WA_light_armor_role: a replace_with must resolve inside its own role group (the cross-group
+	# pointer at the medium templates is the stall the owner measured live at match 0.8125).
+	# Enabled while the flag holds any conversion value - no calculator writes a FINAL value.
+	# Exit = engine best-match capture by the medium role at full composition. Keep LAST in group.
+
+	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL = {
+		enable = {
+			OR = {
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15002 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15004 }
+			}
+		}
+		reinforce_prio = 1
+		custom_icon = 140
+		can_upgrade_in_field = { always = yes }
+		upgrade_prio = { base = 10 }
+		target_template = {
+			regiments = {
+				medium_armor_battalion_line = 9
+				infantry_heavy_motorized_battalion_line = 6
+			}
+			regimental_support = {
+				pack_artillery_mot_company_regimental = 5
+				anti_tank_mot_company_regimental = 5
+			}
+			support = {
+				engineer_mot_battalion_divisional = 1
+				maintenance_mot_company_divisional = 1
+				recon_mot_company_divisional = 1
+				field_hospital_mot_company_divisional = 1
+				signal_mot_company_divisional = 1
+				logistics_mot_company_divisional = 1
+				heavy_artillery_mot_company_divisional = 1
+				military_police_mot_company_divisional = 1
+				heavy_anti_air_mot_company_divisional = 1
+			}
+		}
+	}
+	WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL = {
+		enable = {
+			OR = {
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15003 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15005 }
+			}
+		}
+		reinforce_prio = 1
+		custom_icon = 140
+		can_upgrade_in_field = { always = yes }
+		upgrade_prio = { base = 10 }
+		target_template = {
+			regiments = {
+				medium_armor_battalion_line = 9
+				infantry_heavy_mechanized_battalion_line = 6
+			}
+			regimental_support = {
+				pack_artillery_mot_company_regimental = 5
+				anti_tank_mot_company_regimental = 5
+			}
+			support = {
+				engineer_med_tank_battalion_divisional = 1
+				maintenance_med_tank_company_divisional = 1
+				recon_light_tank_company_divisional = 1
+				field_hospital_mot_company_divisional = 1
+				signal_mot_company_divisional = 1
+				logistics_mot_company_divisional = 1
+				heavy_artillery_mot_company_divisional = 1
+				military_police_mot_company_divisional = 1
+				heavy_anti_air_mot_company_divisional = 1
+			}
+		}
 	}
 }
