@@ -28,28 +28,7 @@
 
 WA_AI_MILITARY_EXEC_no_stockpiles_stop = {
 	enable = {
-		has_war = yes
-		# has_variable guard: absent ratio (background event not fired yet, e.g. a freshly spawned
-		# tag at war) must not read as 0 and freeze every front at priority 10000.
-		has_variable = WA_AI_fielded_eq_ratio
-		OR = {
-			# Normal case: home front threatened while short on fielded equipment.
-			AND = {
-				NOT = { has_civil_war = yes }
-				WA_AI_MILITARY_home_threatened = yes
-				check_variable = { WA_AI_fielded_eq_ratio < 0.9 }
-			}
-			# Fix S1 (SCW stall, campaign 66d6b53c): a civil-war belligerent controls only part of
-			# its cores, so home_threatened (surrender_progress > 0.05) is its PERMANENT default
-			# condition for the entire war - on both sides - and this brake became a nine-year
-			# attack veto. For civil-war countries the brake is rebased on equipment alone, at a
-			# harsher floor (0.5 < flag-set 0.6 < the 0.9 used above): still stop when genuinely
-			# starved, never because "home is threatened" - it always is.
-			AND = {
-				has_civil_war = yes
-				check_variable = { WA_AI_fielded_eq_ratio < 0.5 }
-			}
-		}
+		WA_AI_MILITARY_should_exec_no_stockpiles_stop = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -77,24 +56,7 @@ WA_AI_MILITARY_EXEC_no_stockpiles_stop = {
 # domain:  FRONT
 WA_AI_MILITARY_EXEC_low_equipment_hold = {
 	enable = {
-		has_war = yes
-		OR = {
-			AND = {
-				NOT = { has_civil_war = yes }
-				has_country_flag = WA_AI_defensive_front_strategy
-			}
-			# Fix S1 (SCW stall, campaign 66d6b53c): the flag's clear threshold (fielded ratio
-			# > 0.9, WA_AI_misc_effects.txt) is unreachable for a civil-war economy, so once
-			# latched the flag vetoed attacks for the entire war. Civil-war countries bypass the
-			# flag hysteresis and hold only while genuinely starved, on the same 0.5 floor as
-			# no_stockpiles_stop above (has_variable guard per ECONOMY rule 2.7: absent must not
-			# read as critically low).
-			AND = {
-				has_civil_war = yes
-				has_variable = WA_AI_fielded_eq_ratio
-				check_variable = { WA_AI_fielded_eq_ratio < 0.5 }
-			}
-		}
+		WA_AI_MILITARY_should_exec_low_equipment_hold = yes
 	}
 	abort_when_not_enabled = yes
 
