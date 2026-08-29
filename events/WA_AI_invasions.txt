@@ -64,6 +64,301 @@ country_event = {
 	}
 }
 
+#Fired 100 days before D-Day (see WA_KDE_yearly_event_fire_1944, days = 57 = 157 - 100)
+#to pick which D-Day variant will happen. Stores the choice in WA_AI_dday_variant
+#rather than firing the invasion event immediately; WA_AI_invasions.dday_launch reads
+#it back on the actual date of D-Day.
+#Every variant has a real anchor state and its own launch event below:
+#  .88 		 -> state 15  Lower Normandy
+#  .89       -> state 14  Brittany
+#  .90       -> state 7   Holland
+#  .95       -> state 19  Aquitaine
+country_event = {
+	id = WA_AI_invasions.random
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		random_list = {
+			2 = {
+				set_variable = { WA_AI_dday_variant = 88 }
+
+				modifier = { #Lightly held target: extra bonus
+					factor = 3
+					15 = {
+						CONTROLLER = {
+							divisions_in_state = { state = 15 size < 10 }
+							# [dday-lightly-held] whole enemy side, not just the state controller
+							OR = {
+								is_subject = no
+								NOT = { OVERLORD = { divisions_in_state = { state = 15 size > 9 } } }
+							}
+							NOT = {
+								any_other_country = {
+									OR = { is_in_faction_with = PREV is_subject_of = PREV }
+									divisions_in_state = { state = 15 size > 9 }
+								}
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 0.5
+					15 = {
+						any_province_building_level = {
+							province = { all_provinces = yes limit_to_coastal = yes }
+							building = coastal_bunker
+							level > 4
+						}
+					}
+				}
+			}
+			2 = {
+				set_variable = { WA_AI_dday_variant = 89 }
+				modifier = { #Lightly held target: extra bonus
+					factor = 3
+					14 = {
+						CONTROLLER = {
+							divisions_in_state = { state = 14 size < 10 }
+							# [dday-lightly-held] whole enemy side, not just the state controller
+							OR = {
+								is_subject = no
+								NOT = { OVERLORD = { divisions_in_state = { state = 14 size > 9 } } }
+							}
+							NOT = {
+								any_other_country = {
+									OR = { is_in_faction_with = PREV is_subject_of = PREV }
+									divisions_in_state = { state = 14 size > 9 }
+								}
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 0.5
+					14 = {
+						any_province_building_level = {
+							province = { all_provinces = yes limit_to_coastal = yes }
+							building = coastal_bunker
+							level > 4
+						}
+					}
+				}
+			}
+			2 = {
+				set_variable = { WA_AI_dday_variant = 90 }
+				modifier = { #Lightly held target: extra bonus
+					factor = 3
+					7 = {
+						CONTROLLER = {
+							divisions_in_state = { state = 7 size < 10 }
+							# [dday-lightly-held] whole enemy side, not just the state controller
+							OR = {
+								is_subject = no
+								NOT = { OVERLORD = { divisions_in_state = { state = 7 size > 9 } } }
+							}
+							NOT = {
+								any_other_country = {
+									OR = { is_in_faction_with = PREV is_subject_of = PREV }
+									divisions_in_state = { state = 7 size > 9 }
+								}
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 0.5
+					7 = {
+						any_province_building_level = {
+							province = { all_provinces = yes limit_to_coastal = yes }
+							building = coastal_bunker
+							level > 4
+						}
+					}
+				}
+			}
+			2 = {
+				set_variable = { WA_AI_dday_variant = 95 }
+				modifier = { #Lightly held target: extra bonus
+					factor = 3
+					19 = {
+						CONTROLLER = {
+							divisions_in_state = { state = 19 size < 10 }
+							# [dday-lightly-held] whole enemy side, not just the state controller
+							OR = {
+								is_subject = no
+								NOT = { OVERLORD = { divisions_in_state = { state = 19 size > 9 } } }
+							}
+							NOT = {
+								any_other_country = {
+									OR = { is_in_faction_with = PREV is_subject_of = PREV }
+									divisions_in_state = { state = 19 size > 9 }
+								}
+							}
+						}
+					}
+				}
+				modifier = {
+					factor = 0.5
+					19 = {
+						any_province_building_level = {
+							province = { all_provinces = yes limit_to_coastal = yes }
+							building = coastal_bunker
+							level > 4
+						}
+					}
+				}
+			}
+		}
+
+		log = "[ROOT.GetName] WA_AI_invasions D-Day variant picked: [?WA_AI_dday_variant]"
+	}
+}
+
+#Fired on the date of D-Day (see WA_KDE_yearly_event_fire_1944). Launches whichever
+#D-Day variant was picked by WA_AI_invasions.random, 100 days earlier.
+country_event = {
+	id = WA_AI_invasions.dday_launch
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		log = "[ROOT.GetName] WA_AI_invasions D-Day variant launching: [?WA_AI_dday_variant]"
+
+		if = {
+			limit = { check_variable = { WA_AI_dday_variant = 88 } }
+			country_event = { id = WA_AI_invasions.88 }
+		}
+		if = {
+			limit = { check_variable = { WA_AI_dday_variant = 89 } }
+			country_event = { id = WA_AI_invasions.89 }
+		}
+		if = {
+			limit = { check_variable = { WA_AI_dday_variant = 90 } }
+			country_event = { id = WA_AI_invasions.90 }
+		}
+		if = {
+			limit = { check_variable = { WA_AI_dday_variant = 95 } }
+			country_event = { id = WA_AI_invasions.95 }
+		}
+	}
+}
+
+# Mulberry dismantling: removes the two artificial D-Day harbours placed by
+# WA_AI_invasions.101 (Mulberry A, province 3579) and .102 (Mulberry B, province
+# 13851) 120 days after each was built. Both spawners schedule this event, so it
+# can fire twice - set_building_level to 0 is idempotent, the second firing is a
+# no-op on the province already cleared and removes the other harbour if built.
+country_event = {
+	id = WA_AI_invasions.100
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		15 = { # Lower Normandy
+			set_building_level = {
+				type = naval_base
+				province = { id = 3579 }
+				level = 0
+				instant_build = yes
+			}
+		}
+		1016 = { # Upper Normandy
+			set_building_level = {
+				type = naval_base
+				province = { id = 13851 }
+				level = 0
+				instant_build = yes
+			}
+		}
+	}
+}
+
+# Mulberry A placement. Scheduled by WA_AI_invasions.2 at the landing; waits for
+# state 15 to be ROOT/ally-controlled so the Nero-decree demolition (which fires
+# synchronously on the state-control flip, once per state) has already resolved
+# before the harbour exists. Retries every 3 days, gives up 45 days after the
+# landing (beachhead failed). Level 5 = 25 supply (NAVAL_FLOW_PER_LEVEL 5.0).
+country_event = {
+	id = WA_AI_invasions.101
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_invasions.101_flag }
+			}
+			set_country_flag = WA_AI_invasions.101_flag
+		}
+
+		if = {
+			limit = {
+				15 = { is_controlled_by_ROOT_or_ally = yes } # Lower Normandy
+			}
+			15 = {
+				set_building_level = {
+					type = naval_base
+					province = { id = 3579 }
+					level = 5
+					instant_build = yes
+				}
+			}
+			country_event = { id = WA_AI_invasions.100 days = 120 }
+		}
+		else_if = {
+			limit = {
+				NOT = { has_country_flag = { flag = WA_AI_invasions.101_flag days > 45 } }
+			}
+			country_event = { id = WA_AI_invasions.101 days = 3 }
+		}
+	}
+}
+
+# Mulberry B placement. Scheduled by WA_AI_invasions.34 at the landing; same
+# wait-for-capture logic as .101, for state 1016 / province 13851.
+country_event = {
+	id = WA_AI_invasions.102
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_invasions.102_flag }
+			}
+			set_country_flag = WA_AI_invasions.102_flag
+		}
+
+		if = {
+			limit = {
+				1016 = { is_controlled_by_ROOT_or_ally = yes } # Upper Normandy
+			}
+			1016 = {
+				set_building_level = {
+					type = naval_base
+					province = { id = 13851 }
+					level = 5
+					instant_build = yes
+				}
+			}
+			country_event = { id = WA_AI_invasions.100 days = 120 }
+		}
+		else_if = {
+			limit = {
+				NOT = { has_country_flag = { flag = WA_AI_invasions.102_flag days > 45 } }
+			}
+			country_event = { id = WA_AI_invasions.102 days = 3 }
+		}
+	}
+}
+
+
 #########################################################################################
 #########################################################################################
 #########################################################################################
@@ -7733,115 +8028,751 @@ country_event = {
 	}
 }
 
-# Mulberry dismantling: removes the two artificial D-Day harbours placed by
-# WA_AI_invasions.101 (Mulberry A, province 3579) and .102 (Mulberry B, province
-# 13851) 120 days after each was built. Both spawners schedule this event, so it
-# can fire twice - set_building_level to 0 is idempotent, the second firing is a
-# no-op on the province already cleared and removes the other harbour if built.
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+   ###    	##     ## ####  ######  ########  #######  ########  ##    ##
+  ## ##   	##     ##  ##  ##    ##    ##    ##     ## ##     ##  ##  ##
+ ##   ##  	##     ##  ##  ##          ##    ##     ## ##     ##   ####
+##     ## 	#########  ##   ######     ##    ##     ## ########     ##
+######### 	##     ##  ##        ##    ##    ##     ## ##   ##      ##
+##     ## 	##     ##  ##  ##    ##    ##    ##     ## ##    ##     ##
+##     ## 	##     ## ####  ######     ##     #######  ##     ##    ##
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+##     ##  ######     ###
+##     ## ##    ##   ## ##
+##     ## ##        ##   ##
+##     ##  ######  ##     ##
+##     ##       ## #########
+##     ## ##    ## ##     ##
+ #######   ######  ##     ##
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+
+#DDAY expanded
 country_event = {
-	id = WA_AI_invasions.100
+	id = WA_AI_invasions.88
 	hidden = yes
 
 	is_triggered_only = yes
 
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+
+		# WA_AI_invasions.random picks a variant 100 days before D-Day (88/89/90/95) and
+		# WA_AI_invasions.dday_launch only calls the matching one; this guards a
+		# direct/console call to .88 when a different variant was picked.
+		check_variable = { WA_AI_dday_variant = 88 }
+	}
+
 	immediate = {
+		# Example: reading the same variable as text, via [?VAR] substitution.
+		log = "[ROOT.GetName] WA_AI_invasions.88 firing as the picked D-Day variant: [?WA_AI_dday_variant]"
+
+		# Get target country tag
 		15 = { # Lower Normandy
-			set_building_level = {
-				type = naval_base
-				province = { id = 3579 }
-				level = 0
-				instant_build = yes
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
 			}
 		}
-		1016 = { # Upper Normandy
-			set_building_level = {
-				type = naval_base
-				province = { id = 13851 }
-				level = 0
-				instant_build = yes
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 15 # Lower Normandy
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.88_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 18 } # English Channel
+				}
+
+				# Triggers for invasion launch country
+				WA_AI_MILITARY_invasion_launcher_not_collapsing = yes
+
+				# Triggers for 'invasion launch states'
+				127 = { is_controlled_by_ROOT_or_ally = yes } # Sussex
+				# Other misc triggers for overall game state
+				# Allies control africa? Italy?
 			}
+			# Account for checking for more defenses with any_province_building_level?
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3579 }
+			add_to_temp_array = { _invasion_state_provinces = 11535 }
+			add_to_temp_array = { _invasion_state_provinces = 9550 }
+			add_to_temp_array = { _invasion_state_provinces = 13848 }
+			add_to_temp_array = { _invasion_state_provinces = 6449 }
+			add_to_temp_array = { _invasion_state_provinces = 6599 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3579 }
+			add_to_temp_array = { _invasion_state_provinces = 11535 }
+			add_to_temp_array = { _invasion_state_provinces = 9550 }
+			add_to_temp_array = { _invasion_state_provinces = 13848 }
+			add_to_temp_array = { _invasion_state_provinces = 6449 }
+			add_to_temp_array = { _invasion_state_provinces = 6599 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 15 } #Lower Normandy
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13849 }
+			add_to_temp_array = { _invasion_state_provinces = 13850 }
+			add_to_temp_array = { _invasion_state_provinces = 539 }
+			add_to_temp_array = { _invasion_state_provinces = 11521 }
+			add_to_temp_array = { _invasion_state_provinces = 553 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			# [amphibious-invasion] (2026-08-16): Mulberry A call site. The re-add (9f7839647/eb19ebccd)
+			# restored the .101 definition but no scheduler, so nothing Mulberry-shaped
+			# fired at D-Day on campaign a232d96c. .101 waits for state 15 to flip before
+			# it places the harbour, so firing it here (at the landing) is correct.
+			country_event = { id = WA_AI_invasions.101 }
+
+			ENG = {
+				if = {
+					limit = {
+						var:_target_country = {
+							has_war_with = ROOT
+						}
+						is_ai = yes
+					}
+					set_temp_variable = { _division_template = 1 }
+
+					set_temp_variable = { _invasion_state = 1016 } #Lower Normandy
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 13851 }
+					add_to_temp_array = { _invasion_state_provinces = 9434 }
+					add_to_temp_array = { _invasion_state_provinces = 13852 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 4 }
+
+					set_temp_variable = { _invasion_state = 1016 } #Lower Normandy
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 13851 }
+					add_to_temp_array = { _invasion_state_provinces = 9434 }
+					add_to_temp_array = { _invasion_state_provinces = 13852 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 6 }
+
+					set_temp_variable = { _invasion_state = 1016 } #Lower Normandy
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 11563 }
+					add_to_temp_array = { _invasion_state_provinces = 13397 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					# [amphibious-invasion] (2026-08-16): Mulberry B call site - see the twin in WA_AI_invasions.2.
+					country_event = { id = WA_AI_invasions.102 }
+					CAN = {
+						if = {
+							limit = {
+								var:_target_country = {
+									has_war_with = ROOT
+								}
+								is_ai = yes
+							}
+							set_temp_variable = { _division_template = 1 }
+
+							set_temp_variable = { _invasion_state = 1016 } # Lower Normandy
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 485 }
+							WA_AI_DIVISION_spawn_invasion = yes
+
+							set_temp_variable = { _division_template = 4 }
+
+							set_temp_variable = { _invasion_state = 1016 } #Lower Normandy
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 485 }
+							WA_AI_DIVISION_spawn_invasion = yes
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 15 # Lower Normandy
+				}
+			}
+			country_event = { id = WA_AI_invasions.88 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 18 # English Channel
+				NOT = { has_country_flag = WA_AI_invasions.88_flag }
+			}
+			set_country_flag = WA_AI_invasions.88_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.88_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.88_flag
 		}
 	}
 }
 
-# Mulberry A placement. Scheduled by WA_AI_invasions.2 at the landing; waits for
-# state 15 to be ROOT/ally-controlled so the Nero-decree demolition (which fires
-# synchronously on the state-control flip, once per state) has already resolved
-# before the harbour exists. Retries every 3 days, gives up 45 days after the
-# landing (beachhead failed). Level 5 = 25 supply (NAVAL_FLOW_PER_LEVEL 5.0).
+#DDAY Brittany
 country_event = {
-	id = WA_AI_invasions.101
+	id = WA_AI_invasions.89
 	hidden = yes
 
 	is_triggered_only = yes
 
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+		check_variable = { WA_AI_dday_variant = 89 }
+	}
+
 	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.101_flag }
+		log = "[ROOT.GetName] WA_AI_invasions.89 firing as the picked D-Day variant: [?WA_AI_dday_variant]"
+
+		# Get target country tag
+		14 = { # Brittany
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
 			}
-			set_country_flag = WA_AI_invasions.101_flag
 		}
 
 		if = {
 			limit = {
-				15 = { is_controlled_by_ROOT_or_ally = yes } # Lower Normandy
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 14 # Brittany
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.89_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 42 } # Bay of Biscay
+				}
+
+				# Triggers for invasion launch country
+				WA_AI_MILITARY_invasion_launcher_not_collapsing = yes
+
+				# Triggers for 'invasion launch states'
+				857 = { is_controlled_by_ROOT_or_ally = yes } # Kent
 			}
-			15 = {
-				set_building_level = {
-					type = naval_base
-					province = { id = 3579 }
-					level = 5
-					instant_build = yes
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 14 } #Brittany
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3552 }
+			add_to_temp_array = { _invasion_state_provinces = 6572 }
+			add_to_temp_array = { _invasion_state_provinces = 9525 }
+			add_to_temp_array = { _invasion_state_provinces = 11508 }
+			add_to_temp_array = { _invasion_state_provinces = 542 }
+			add_to_temp_array = { _invasion_state_provinces = 6536 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 14 } #Brittany
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3579 }
+			add_to_temp_array = { _invasion_state_provinces = 11535 }
+			add_to_temp_array = { _invasion_state_provinces = 9550 }
+			add_to_temp_array = { _invasion_state_provinces = 13848 }
+			add_to_temp_array = { _invasion_state_provinces = 6449 }
+			add_to_temp_array = { _invasion_state_provinces = 6599 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 14 } #Brittany
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3758 }
+			add_to_temp_array = { _invasion_state_provinces = 6548 }
+			add_to_temp_array = { _invasion_state_provinces = 9495 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			#country_event = { id = WA_AI_invasions.101 }
+
+			ENG = {
+				if = {
+					limit = {
+						var:_target_country = {
+							has_war_with = ROOT
+						}
+						is_ai = yes
+					}
+					set_temp_variable = { _division_template = 1 }
+
+					set_temp_variable = { _invasion_state = 30 } #Loire
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 13853 }
+					add_to_temp_array = { _invasion_state_provinces = 11616 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 4 }
+
+					set_temp_variable = { _invasion_state = 30 } #Loire
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 13853 }
+					add_to_temp_array = { _invasion_state_provinces = 11616 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 6 }
+
+					set_temp_variable = { _invasion_state = 30 } #Loire
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 11465 }
+					add_to_temp_array = { _invasion_state_provinces = 503 }
+					add_to_temp_array = { _invasion_state_provinces = 9867 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					#country_event = { id = WA_AI_invasions.102 }
+					CAN = {
+						if = {
+							limit = {
+								var:_target_country = {
+									has_war_with = ROOT
+								}
+								is_ai = yes
+							}
+							set_temp_variable = { _division_template = 1 }
+
+							set_temp_variable = { _invasion_state = 14 } #Brittany
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 9510 }
+							WA_AI_DIVISION_spawn_invasion = yes
+
+							set_temp_variable = { _division_template = 4 }
+
+							set_temp_variable = { _invasion_state = 14 } #Brittany
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 9510 }
+							WA_AI_DIVISION_spawn_invasion = yes
+						}
+					}
 				}
 			}
-			country_event = { id = WA_AI_invasions.100 days = 120 }
 		}
 		else_if = {
 			limit = {
-				NOT = { has_country_flag = { flag = WA_AI_invasions.101_flag days > 45 } }
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 14 # Brittany
+				}
 			}
-			country_event = { id = WA_AI_invasions.101 days = 3 }
+			country_event = { id = WA_AI_invasions.89 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 42 # Bay of Biscay
+				NOT = { has_country_flag = WA_AI_invasions.89_flag }
+			}
+			set_country_flag = WA_AI_invasions.89_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.89_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.89_flag
 		}
 	}
 }
 
-# Mulberry B placement. Scheduled by WA_AI_invasions.34 at the landing; same
-# wait-for-capture logic as .101, for state 1016 / province 13851.
+#DDAY Netherlands
 country_event = {
-	id = WA_AI_invasions.102
+	id = WA_AI_invasions.90
 	hidden = yes
 
 	is_triggered_only = yes
 
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+		check_variable = { WA_AI_dday_variant = 90 }
+	}
+
 	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.102_flag }
+		log = "[ROOT.GetName] WA_AI_invasions.90 firing as the picked D-Day variant: [?WA_AI_dday_variant]"
+
+		# Get target country tag
+		7 = { # Holland
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
 			}
-			set_country_flag = WA_AI_invasions.102_flag
 		}
 
 		if = {
 			limit = {
-				1016 = { is_controlled_by_ROOT_or_ally = yes } # Upper Normandy
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 7 # Holland
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.90_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 365 } # Southern blight
+				}
+
+				# Triggers for invasion launch country
+				WA_AI_MILITARY_invasion_launcher_not_collapsing = yes
+
+				# Triggers for 'invasion launch states'
+				857 = { is_controlled_by_ROOT_or_ally = yes } # Kent
 			}
-			1016 = {
-				set_building_level = {
-					type = naval_base
-					province = { id = 13851 }
-					level = 5
-					instant_build = yes
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 7 } #Holland
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3314 }
+			add_to_temp_array = { _invasion_state_provinces = 68 }
+			add_to_temp_array = { _invasion_state_provinces = 3211 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 35 } #Noord Brabant
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9498 }
+			add_to_temp_array = { _invasion_state_provinces = 9431 }
+			add_to_temp_array = { _invasion_state_provinces = 13349 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 7 } #Holland
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3314 }
+			add_to_temp_array = { _invasion_state_provinces = 68 }
+			add_to_temp_array = { _invasion_state_provinces = 3211 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 35 } #Noord Brabant
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9498 }
+			add_to_temp_array = { _invasion_state_provinces = 9431 }
+			add_to_temp_array = { _invasion_state_provinces = 13349 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 7 } #Holland
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 13350 }
+			add_to_temp_array = { _invasion_state_provinces = 391 }
+			add_to_temp_array = { _invasion_state_provinces = 13355 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			#country_event = { id = WA_AI_invasions.101 }
+
+			ENG = {
+				if = {
+					limit = {
+						var:_target_country = {
+							has_war_with = ROOT
+						}
+						is_ai = yes
+					}
+					set_temp_variable = { _division_template = 1 }
+
+					set_temp_variable = { _invasion_state = 6 } #Vlaanderen
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6560 }
+					add_to_temp_array = { _invasion_state_provinces = 6446 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 4 }
+
+					set_temp_variable = { _invasion_state = 6 } #Vlaanderen
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6560 }
+					add_to_temp_array = { _invasion_state_provinces = 6446 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 6 }
+
+					set_temp_variable = { _invasion_state = 6 } #Vlaanderen
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 13347 }
+					add_to_temp_array = { _invasion_state_provinces = 3576 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _invasion_state = 979 } #Brabant
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6598 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					#country_event = { id = WA_AI_invasions.102 }
+					CAN = {
+						if = {
+							limit = {
+								var:_target_country = {
+									has_war_with = ROOT
+								}
+								is_ai = yes
+							}
+							set_temp_variable = { _division_template = 1 }
+
+							set_temp_variable = { _invasion_state = 36 } #Friesland
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 6336 }
+							WA_AI_DIVISION_spawn_invasion = yes
+
+							set_temp_variable = { _division_template = 4 }
+
+							set_temp_variable = { _invasion_state = 36 } #Friesland
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 6336 }
+							WA_AI_DIVISION_spawn_invasion = yes
+						}
+					}
 				}
 			}
-			country_event = { id = WA_AI_invasions.100 days = 120 }
 		}
 		else_if = {
 			limit = {
-				NOT = { has_country_flag = { flag = WA_AI_invasions.102_flag days > 45 } }
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 7 # Holland
+				}
 			}
-			country_event = { id = WA_AI_invasions.102 days = 3 }
+			country_event = { id = WA_AI_invasions.90 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 365 # Southern blight
+				NOT = { has_country_flag = WA_AI_invasions.90_flag }
+			}
+			set_country_flag = WA_AI_invasions.90_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.90_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.90_flag
 		}
 	}
 }
 
+# DDAY Western France
+country_event = {
+	id = WA_AI_invasions.95
+	hidden = yes
+
+	is_triggered_only = yes
+
+	trigger = {
+		is_ai = yes
+		WA_AI_DIFFICULTY_is_historical = yes
+		check_variable = { WA_AI_dday_variant = 95 }
+	}
+
+	immediate = {
+		log = "[ROOT.GetName] WA_AI_invasions.95 firing as the picked D-Day variant: [?WA_AI_dday_variant]"
+
+		# Get target country tag
+		19 = { # Aquitaine
+			CONTROLLER = {
+				set_temp_variable = { _target_country = id }
+			}
+		}
+
+		if = {
+			limit = {
+				# Triggers for invasion target country and states
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 19 # Aquitaine
+				}
+
+				# PLAYER ONLY seazone check
+				if = {
+					limit = {
+						var:_target_country = { is_ai = no }
+						NOT = { has_country_flag = { flag = WA_AI_invasions.95_flag days > 179 } }
+					}
+					NOT = { has_enemy_naval_control = 42 } # Bay of Biscay
+				}
+
+				# Triggers for invasion launch country
+				WA_AI_MILITARY_invasion_launcher_not_collapsing = yes
+
+				# Triggers for 'invasion launch states'
+				857 = { is_controlled_by_ROOT_or_ally = yes } # Kent
+			}
+
+			set_temp_variable = { _divisions_per_province = 2 }
+			WA_AI_DIVISION_adjust_invasion_for_difficulty = yes
+
+			set_temp_variable = { _division_template = 1 }
+
+			set_temp_variable = { _invasion_state = 19 } #Aquitaine
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9737 }
+			add_to_temp_array = { _invasion_state_provinces = 6621 }
+			add_to_temp_array = { _invasion_state_provinces = 6777 }
+			add_to_temp_array = { _invasion_state_provinces = 9710 }
+			add_to_temp_array = { _invasion_state_provinces = 743 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 4 }
+
+			set_temp_variable = { _invasion_state = 19 } #Aquitaine
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 3314 }
+			add_to_temp_array = { _invasion_state_provinces = 68 }
+			add_to_temp_array = { _invasion_state_provinces = 3211 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _division_template = 6 }
+
+			set_temp_variable = { _invasion_state = 19 } #Aquitaine
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 6762 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			set_temp_variable = { _invasion_state = 25 } #Aquitaine
+			clear_temp_array = _invasion_state_provinces
+			add_to_temp_array = { _invasion_state_provinces = 9717 }
+			WA_AI_DIVISION_spawn_invasion = yes
+
+			#country_event = { id = WA_AI_invasions.101 }
+
+			ENG = {
+				if = {
+					limit = {
+						var:_target_country = {
+							has_war_with = ROOT
+						}
+						is_ai = yes
+					}
+					set_temp_variable = { _division_template = 1 }
+
+					set_temp_variable = { _invasion_state = 23 } #Poitou
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6657 }
+					add_to_temp_array = { _invasion_state_provinces = 11600 }
+					add_to_temp_array = { _invasion_state_provinces = 9597 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 4 }
+
+					set_temp_variable = { _invasion_state = 23 } #Poitou
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 6657 }
+					add_to_temp_array = { _invasion_state_provinces = 11600 }
+					add_to_temp_array = { _invasion_state_provinces = 9597 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					set_temp_variable = { _division_template = 6 }
+
+					set_temp_variable = { _invasion_state = 6 } #Poitou
+					clear_temp_array = _invasion_state_provinces
+					add_to_temp_array = { _invasion_state_provinces = 9631 }
+					add_to_temp_array = { _invasion_state_provinces = 655 }
+					add_to_temp_array = { _invasion_state_provinces = 11582 }
+					WA_AI_DIVISION_spawn_invasion = yes
+
+					#country_event = { id = WA_AI_invasions.102 }
+					CAN = {
+						if = {
+							limit = {
+								var:_target_country = {
+									has_war_with = ROOT
+								}
+								is_ai = yes
+							}
+							set_temp_variable = { _division_template = 1 }
+
+							set_temp_variable = { _invasion_state = 19 } #Aquitaine
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 11565 }
+							WA_AI_DIVISION_spawn_invasion = yes
+
+							set_temp_variable = { _division_template = 4 }
+
+							set_temp_variable = { _invasion_state = 19 } #Aquitaine
+							clear_temp_array = _invasion_state_provinces
+							add_to_temp_array = { _invasion_state_provinces = 11565 }
+							WA_AI_DIVISION_spawn_invasion = yes
+						}
+					}
+				}
+			}
+		}
+		else_if = {
+			limit = {
+				# Only refire if the invasion target is still valid
+				var:_target_country = {
+					has_war_with = ROOT
+					controls_state = 19 # Aquitaine
+				}
+			}
+			country_event = { id = WA_AI_invasions.95 days = 7 }
+		}
+
+		# Seazone control delay mechanic
+		if = {
+			limit = {
+				has_enemy_naval_control = 42 # Bay of Biscay
+				NOT = { has_country_flag = WA_AI_invasions.95_flag }
+			}
+			set_country_flag = WA_AI_invasions.95_flag
+		}
+		else_if = {
+			limit = {
+				has_country_flag = { flag = WA_AI_invasions.95_flag days > 179 }
+			}
+			clr_country_flag = WA_AI_invasions.95_flag
+		}
+	}
+}
