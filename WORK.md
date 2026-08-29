@@ -388,6 +388,47 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   next lever = throttle new-division training during the window, NOT a bigger number; (3) a
   front-stability read (GER front average strength / org in the division list) so the paid cost
   of understrength conversions is observed, not assumed.
+- Replace-with chain repaired 2026-08-29 (third conversion ship). Owner live run KILLED the
+  time and equipment rivals (`ale 20000`, Dec-1940→Apr-1941, no switch) and MEASURED the stall
+  point: imgui shows targeted = transition 5113, best match `Light Tank template B` at 0.8125 —
+  the first switch condition (replace_at_match 0.8) is MET. Cause, MEASURED
+  (install `_documentation.md:108` + vanilla `generic.txt`): the switch also requires
+  match(best, replace_with target) ≥ target_min_match, WA's 0.6, against a CROSS-ROLE-GROUP
+  pointer at a pure-medium composition the hybrid matches at ~0.2-0.35 (DERIVED) — and vanilla
+  never chains across roles (its light→medium→modern chain lives inside ONE role,
+  target_min_match 0.5, replace_at_match 1.5 = prio-driven). Fix, the vanilla shape: two FINAL
+  templates in the light role (`LIGHT_MEDIUM_ARMOR_30_MOT_FINAL`/`_30_MEC_FINAL`, pure-medium
+  compositions copied battalion-for-battalion from `GENERIC_MEDIUM_ARMOR_30_MOT/30_MEC`),
+  enabled by the window triggers (no flag value — no calculator writes them), placed last so
+  the flag-selected transition stays targeted first; all 10 transition rungs' replace_with
+  retargeted onto their same-role FINAL twin by motorization; target_min_match 0.6 → 0.4
+  (hybrid vs FINAL ≈ 8/15 line battalions ≈ 0.53 nominal, match formula unknown, margin taken).
+  Positive side-finding recorded: the first hop (old light composition → hybrid) DID fire on a
+  want-negative role — the want-0-upgrade ASSUMED of the valves bullet is settled TRUE for the
+  upgrade half. New ASSUMED, the remaining exit: once a division reaches the FINAL composition
+  the medium role captures it by best match (garrison-header mechanism); FINAL == medium target
+  composition, so the tie-break is unknown — accepted residue: divisions fight as full mediums
+  even if still classified light_armor. Reviews (third round): lessons CONCERNS + architecture
+  CONCERNS, repairs applied — header trimmed to 5 lines, the 0.8/0.4 pair documented as one
+  10-copy knob at its first rung (`@` unvalidated in ai_templates, comment chosen over it), and
+  the walks below. Enable-flip walk (lessons req. 1): on a running post-boundary save the FINAL
+  pair first enables at build load, the same evaluation where the transition rungs are already
+  enabled; the targeted template either stays the transition (ASSUMED first-in-order preference,
+  no install-doc citation exists) or becomes the FINAL — and BOTH readings deliver the intended
+  compositions, the second merely skips the hybrid step; the fresh-lettered-copy decommission
+  cost is bounded by the established fact that fielded divisions are never disbanded. Cadence
+  walk at the weekly re-target (`DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7`): t0 build load, FINALs
+  enabled, target = transition, divisions at hybrid 0.8125; t1 first weekly pass, switch fires
+  if match(hybrid, FINAL) ≥ 0.4 (≈0.53 nominal, ASSUMED formula — if the arrow stays on 5113,
+  read the FINAL's match value in the same imgui line before touching the knob); t2+ divisions
+  walk to 9-medium composition, medium-role capture (ASSUMED) reclassifies them — and the light
+  role's share meanwhile builds NOTHING either way (budget holds light at ≤ 0 post-boundary, the
+  want-negative reading on the owner's Dec-1940 save). Owed greedy-grid check (lessons req. 2):
+  no script-side verification exists for column restacking hybrid→FINAL; the probe below is the
+  measurement. Capture signal (architecture req. 3): division census — the converted divisions'
+  template appears under the MEDIUM role group in imgui (or `plans.py --templates` shows them on
+  a 9-medium template) rather than under light. Probe: same save, run forward — arrow moves
+  5113 → `_30_MEC_FINAL` within a week, compositions reach 9-medium, then the capture signal.
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
   `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
