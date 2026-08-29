@@ -204,3 +204,36 @@ corps de chaque trigger `*_gate_triggers.txt` doit être l'ancien bloc au token 
 que la machine a vérifié 774 fois et que les 10 relecteurs ont contre-vérifié par sondage. Si un
 lot te déplaît : `git revert <commit>` + `python tools/check_ai_layers.py --update-baseline`
 dans le même commit de revert.
+
+## 9. Dédup (phase 3b) — exécutée le 2026-08-30, sur tes trois décisions
+
+Décisions owner : **véhicule hybride** ; **périmètre dates + seuils lots 5/6** ; **LAW inclus**
+(déviation assumée du §11, ses dates seulement — le fichier reste par ailleurs le sujet
+« miroir vanilla »).
+
+- **Dates** : 37 bornes calendaires partagées dans le NOUVEAU
+  `common/scripted_triggers/WA_AI_CONFIG_WINDOWS.txt` (le fichier que la 3c attendait), 279
+  sites remplacés (les répétées ≥4×, aborts inclus — 51 sites d'abort). `after_X` et `before_X`
+  portent chacun leur littéral (NOT{after} ≠ before le jour même de la borne). Noms d'époque
+  seulement là où le sens est hors de doute (`global_war_begins`, `overlord`) ; calendaires +
+  commentaire ailleurs — un nom d'époque faux serait pire qu'un nom transparent, renommage
+  trivial (un grep). DATE-LEAK 420 → **141** (les <4× restent gelés dans leurs triggers
+  d'intention).
+- **Lot 5 (invasions)** : les 75 gardes identiques `surrender_progress < 0.1` (« le front
+  intérieur du lanceur tient ») = UNE observation nommée
+  `WA_AI_MILITARY_invasion_launcher_not_collapsing`. Le 0.1 existe une fois.
+- **Lot 6 (production)** : constantes uniquement dans les contextes `constant:` PROUVÉS par
+  l'usage — l'échelle de taille industrielle `wa_ai_production.industry` (20/29/49/99/299,
+  29 lectures) et les bornes donneur lend-lease `wa_ai_lend_lease.donor` (75000/300000/199/479,
+  14 lectures). Les compléments `< borne+1` sont réécrits `NOT = { > borne }` (comptes entiers :
+  équivalence exacte, 5 sites) — une seule quantité, un seul nom, au lieu d'un second nombre
+  qui dérive. Le miroir registry `truck_stock_starve_floor` devient une lecture directe de sa
+  constante propriétaire (le groupe quitte le manifest, 78 groupes, registry.md régénéré).
+  NUMBER-LEAK 495 → **379** (les valeurs uniques restent gelées).
+- LAYER4-READS-CONFIG 136 → 151 : lectures de milestones depuis les blocs `abort` — les aborts
+  étaient hors recensement ; un lot « gates d'abort » reste à faire, le cliquet le tient.
+
+**Dû côté jeu, en plus du §7** : les milestones et constantes passent par les mêmes contextes
+que l'existant (prouvés par l'usage), mais le boot test couvre maintenant aussi
+`WA_AI_CONFIG_WINDOWS.txt` et les deux fichiers de constantes étendus.
+
