@@ -86,43 +86,50 @@ WA_AI_TEMPLATES_use_mountaineers = {
 # Likewise, do NOT widen the WA_AI_CONFIG_DIVISIONS_use_*_divisions triggers: those are country identity
 # markers that drive army HQ templates (uses_motorized_hq -> history/general/taog_hq_template.txt) and
 # research weighting. Tune the thresholds here instead.
+#
+# EXCEPTION - motorised DIVISIONS have no threshold to tune: use_motorized_templates below is pure
+# CONFIG identity ([mot-divisions-config-only]). Bring a country in by marking it in CONFIG.
 ############################################################################################################
 
-# The fallback branch treats motorised as a SUBSTITUTE for armour/mechanised, not a complement: a country
-# only reaches it if it fields neither. Countries that should field motorised alongside armour must be
-# marked via WA_AI_CONFIG_DIVISIONS_use_motorized_divisions instead.
+# [mot-divisions-config-only] Motorised DIVISIONS are a CONFIG identity, never an industrial consequence:
+# the only way in is WA_AI_CONFIG_DIVISIONS_use_motorized_divisions. Trucks elsewhere are untouched -
+# motorised SUPPORT runs off WA_AI_CONFIG_DIVISIONS_can_motorize_support, the motorised battalions inside
+# tank divisions off WA_AI_TEMPLATES_use_armor_templates, supply-hub motorization off the engine.
+# The role_ratio share reads this same trigger, so target and share open and close together.
 WA_AI_TEMPLATES_use_motorized_templates = {
 	WA_AI_TEMPLATES_has_motorized_unlocked = yes
-	OR = {
-		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
-		AND = {
-			num_of_military_factories > 50
-			# [mech-window] the LINE form on purpose: a country that mechanizes but is still
-			# inside the window has not become a motorised country for those years.
-			NOT = { WA_AI_TEMPLATES_mechanization_line_open = yes }
-			NOT = { WA_AI_TEMPLATES_use_armor_templates = yes }
-		}
-	}
+	WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
-# Motorised was the only division type with no tech floor - it had been hard-disabled worldwide via
-# WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = always no, so it never needed one. Added for parity
-# with every other type, so a country cannot spend part of its ratio on divisions it cannot build.
+# [mot-tech-folder] "This country has trucks unlocked at all". The OR is mandatory, not defensive:
+# `motorised_infantry` sits in minor_armour_folder, and the 11 countries with a NATIONAL armour folder
+# hold a <tag>_motorised_infantry instead and can never research the generic one. On the bare generic
+# form this was false forever for GER/SOV/USA/ENG/FRA/ITA/JAP/CZE/HUN/POL/SWE - the tell is a major with
+# no WA_MOTORIZED_TEMPLATE flag. HOL is absent on purpose: its tech is commented out in armor_hol.txt.
 WA_AI_TEMPLATES_has_motorized_unlocked = {
-	has_tech = motorised_infantry
+	OR = {
+		has_tech = motorised_infantry
+		has_tech = cze_motorised_infantry
+		has_tech = eng_motorised_infantry
+		has_tech = fra_motorised_infantry
+		has_tech = ger_motorised_infantry
+		has_tech = hun_motorised_infantry
+		has_tech = ita_motorised_infantry
+		has_tech = jap_motorised_infantry
+		has_tech = pol_motorised_infantry
+		has_tech = sov_motorised_infantry
+		has_tech = swe_motorised_infantry
+		has_tech = usa_motorised_infantry
+	}
 }
 
 # [mech-window] "This country mechanizes at all" - tech, industry, design affordability, NO timing
 # term. This is the whole of what use_mechanized_templates was before the window was added.
-# Two readers, both of which must NOT see the window:
-#  - the three WA_AI_PRODUCTION_mech_min_factories_* FLOORS (WA_AI_PRODUCTION_tanks.txt), so a few
-#    factories build a mech buffer DURING the window and the flip does not land on a stock of 0.
-#    The production WEIGHTS stay on the windowed form - weight late, floor early, reasons there.
-#  - WA_AI_TEMPLATES_use_motorized_templates below: that fallback asks whether the country
-#    mechanizes AT ALL, not whether it may flip yet. On the windowed form, a 101-150-factory major
-#    with no armour templates would field motorised divisions for the years the window holds it
-#    back, and then have them decommissioned when it opens.
+# Read by the three WA_AI_PRODUCTION_mech_min_factories_* FLOORS (WA_AI_PRODUCTION_tanks.txt), which
+# must NOT see the window: a few factories build a mech buffer DURING it so the flip does not land on
+# a stock of 0. The production WEIGHTS stay on the windowed form - weight late, floor early.
+# ([mot-divisions-config-only] dropped the second reader, use_motorized_templates.)
 WA_AI_TEMPLATES_mechanization_line_open = {
 	WA_AI_TEMPLATES_has_mechanized_unlocked = yes
 	OR = {
