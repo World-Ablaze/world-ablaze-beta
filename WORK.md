@@ -270,13 +270,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   conversion window); the 8 transition rungs re-gate onto the OR; (b) TD-less rungs 5122
   (mech) / 5121 (mot) added below 5109, conversion-window ONLY so the pre-boundary ladder is
   byte-identical in behaviour; new templates `..._LIGHT_MEDIUM_ARMOR_30_MOT/_30_MEC` follow the
-  74-template shape rules, `replace_with` â†’ `GENERIC_MEDIUM_ARMOR_30_MEC` like 5109/5113.
+  74-template shape rules, `replace_with` → the plain 30-width medium matching their infantry
+  (mot rungs 5109/5121 → `GENERIC_MEDIUM_ARMOR_30_MOT`, mech rungs 5113/5122 → `_30_MEC`;
+  retargeted in the medium-name-swap addendum below).
   RS reachability (lessons designer-deadlock rule): 5121/5122 copy 5100/5101's column structure
-  battalion-for-battalion (15 line battalions, RS 5+5) with 3 tank battalions swapped medium â€”
+  battalion-for-battalion (15 line battalions, RS 5+5) with 3 tank battalions swapped medium —
   the RS shape is the one the live default light ladder already fields, not a new layout.
   Parked saves, MEASURED (`WA_AI_misc_on_actions.txt:274` monthly `calculate_templates`; the
   chain clears and re-sets the flag every pass): a save already past the boundary with the flag
-  at 0 â€” the 1941.4.9 symptom save â€” re-enters the window on its FIRST monthly pulse under this
+  at 0 — the 1941.4.9 symptom save — re-enters the window on its FIRST monthly pulse under this
   build. Retroactive, no migration needed.
   Boundary-pulse walk (lessons reviewer required this table; monthly pulse cadence). Lessons
   MEASURED baseline: decommission = template frozen (never recruited) and DELETED at zero
@@ -328,6 +330,24 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `generic_naval.txt`. Pre-existing exposure (the old `date > 1941.1.1` fallback reached the same
   five tags a year later); this change moves it 12 months earlier. The probe will name it if it
   matters.
+- **ADDENDUM 2026-08-29 (owner request): medium-name swap.** MEASURED: `_30_MEC` (flag 6100) held
+  motorized content, `_30_MOT` (6101) mechanized — names inverted vs content; the calculator
+  ladder (mechanized → 6101, fallback → 6100) matched CONTENT, so the defect was the NAME.
+  Blame: at `cbfe633b9` names matched content; `d7e227e49` swapped the two contents and the
+  calculator but truncated the names in place (`_MEC_MOT`→`_MEC`, `_MOT_MOT`→`_MOT`) — drift,
+  not intent (lessons reviewer: no recorded deliberate inversion). Fix: names swapped (flags and
+  content stay put), mot rungs 5109/5121 retargeted `replace_with` → `_30_MOT` (same physical
+  block as before, renamed), mech rungs 5113/5122 keep `_30_MEC` which now IS the mechanized
+  6101 block — before this, their `replace_with` named a block whose enable flag (6100) a
+  mechanized country never carries. **ASSUMED** the engine honours the target's enable flag in
+  `replace_with`: under that reading this repairs a dead conversion pointer for mechanized
+  countries; under the other reading (enable ignored) they were converting into the MOTORIZED
+  medium and now convert into the mechanized one — a live behaviour change either way, covered
+  by the existing `conv` harness row and the conversion closing criterion below. Modern mirror
+  regenerated (`gen_ai_medium_modern_mirror.py`, 6600/6601 follow). Recorded, NOT admitted
+  (same class, no MEASURED symptom): mot rungs 5110/5111/5112 (`armored_light.txt:567/602/635`)
+  still `replace_with` mechanized-only targets (6102/6110-family / a `_MEC` light rung) that a
+  motorized country never enables — same dead-pointer class, untouched.
 - Verification, script-level, DONE: `python tools/check_templates.py` 0 ERROR 0 WARN (this is the
   join-key diff the lessons reviewer asked for — VALUE-NO-TEMPLATE / TEMPLATE-NO-VALUE over the
   medium ladder and its generated +500 mirror). `check_constants.py`, `check_worklist.py`,
