@@ -267,3 +267,15 @@ l'expansion des observations du lot D** : les deux passes composent. Checkers : 
 partout ; NUMBER-LEAK 356→352, NOT-MULTI 76→72 (corps dupliqués disparus).
 Bilan net des quatre lots : **environ −110 définitions** et 44 corps raccourcis.
 
+## 11. Révision owner (2026-08-30) : la config redevient UN fichier
+
+Le découpage 3c (CONFIG / _WINDOWS / _FLAGS) est ANNULÉ sur décision owner : il cassait le
+point d'entrée unique (une config pays qui a besoin d'une date = deux fichiers à toucher).
+`WA_AI_CONFIG.txt` porte à nouveau tout, en sections (identités / CALENDAR WINDOWS /
+ALWAYS-FLAGS) ; les deux fichiers sont supprimés, le checker (glob `WA_AI_CONFIG*`) ne change
+pas. En même temps : les 7 bornes calendaires à lecteur unique sont ré-inlinées chez leur
+lecteur (indirection sans valeur de partage — DATE-LEAK 123→130, hausse assumée), et chacune
+des 26 bornes calendaires restantes sans sens fonctionnel établi porte un `TODO(owner)` avec
+sa liste de lecteurs — à trancher : nommer l'intention partagée, ou éclater par intention.
+Restent nommées sans TODO : global_war_begins ×2 et overlord ×2.
+
