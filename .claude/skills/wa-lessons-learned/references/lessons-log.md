@@ -2512,3 +2512,37 @@ process caveats (stale process, and the absence of a load-time hook).
   keeping: `GFX_flag_small` is a `maskedShieldType` drawn at its overlay size (26x21, of which 20x17
   is flag), larger than either frame opening (colonial 19x13, exile 16x11), so it needs `scale` -
   no position alone can make it fit.
+
+### An ai_templates replace_with must resolve inside its own role group - and the switch has a second, silent condition
+
+- **Date:** 2026-08-29
+- **Symptom:** fielded light-armor divisions upgraded to the LIGHT_MEDIUM transition composition and
+  froze there for months (GER Dec-1940 -> Apr-1941, `ale 20000` so equipment excluded); the imgui
+  `ai_templates` window showed best match 0.8125 against `replace_at_match = 0.8` - the threshold
+  MET - and the role still targeting the transition. Earlier in the same chain, no upgrade fired at
+  all for months despite an armed target.
+- **Cause:** three stacked blockers, found in order. (1) `NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS`
+  (90): the AI refuses any field upgrade whose equipment deficit takes longer than that to fill, and
+  a training queue that consumes tank production continuously keeps the estimate above ANY such
+  limit - new-division training and conversion compete for the same stockpile. (2) The replace_with
+  switch has TWO conditions (install `common/ai_templates/_documentation.md`, replace-with section):
+  match >= `replace_at_match` AND match(best template, the replace_with target) >= `target_min_match`
+  - the second is evaluated against the NEXT target and is the one that silently blocks when the
+  compositions differ too much. (3) WA pointed `replace_with` at a template in ANOTHER role group;
+  vanilla never does that - its whole light->medium->modern era chain lives inside ONE role
+  (`generic.txt`, `target_min_match 0.5`, `replace_at_match 1.5` = prio-driven).
+- **Rule:** an era-conversion chain for fielded divisions is built the vanilla shape: every
+  `replace_with` resolves to a template declared in the SAME role group, ending at a FINAL step
+  whose composition equals the destination role's target; the destination role then captures the
+  division by best match. Check `target_min_match` against the REACHABLE intermediate composition
+  (shared battalions / total), not against intent. A conversion that must beat a live training
+  queue also needs the deficit valve (`UPGRADES_DEFICIT_LIMIT_DAYS`) sized for it.
+- **Detection:** live, in `imgui show ai_templates`: a best-match score >= `replace_at_match` with
+  the arrow still on the same target is condition (2) or (3) blocking; a correct chain moves the
+  arrow to the replace_with target within one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass.
+  Positive control from the same session: the first hop (old composition -> transition) fires even
+  on a role whose role_ratio want is NEGATIVE - want does not gate field upgrades.
+- **Evidence:** WORK.md `armor-class-handoff` (conversion half); commits `e75346fea` (valves),
+  `d898e2105` (light FINAL chain, owner-confirmed live PASS same day), `e5c497d2f` (light-support
+  twin); install `common/ai_templates/_documentation.md` replace-with section; vanilla
+  `common/ai_templates/generic.txt` era chain.
