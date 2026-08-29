@@ -346,14 +346,14 @@ NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regi
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer (non-HQ templates).
 NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer (non-HQ templates).
 NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_WIDTH = 5									-- Max width of regimental supports in division designer.
-NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_HEIGHT = 3								-- Max height of regimental supports in division designer.
+NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_HEIGHT = 2								-- Max height of regimental supports in division designer. Capped at 2 because WA's 19 regimental companies share only 2 same_support_type families (regimental_arty_guns, regimental_at_guns) and the engine allows one company per family per regiment - a 3rd row can never offer anything. Raise this only together with a new same_support_type family.
 NDefines.NMilitary.MAX_HQ_BATTALION_WIDTH = 1										-- Max width of regiments in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_BATTALION_HEIGHT = 4										-- Max height of regiments in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_SUPPORT_WIDTH = 1											-- Max width of support in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
-NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3, 3 }				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
+NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3 }  				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
 NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = {	1,  4,  7,  10, 13,                 -- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
 												2,  5,  8,  11, 14,
 												3,  6,  9,  12, 15,
