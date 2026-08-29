@@ -361,6 +361,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `imgui show ai-templates` light role shows the `->` arrow on a LIGHT_MEDIUM template; one month
   later the light-armor division count has moved toward the medium role (the want-0-upgrade
   ASSUMED settled live).
+- Conversion half console run DONE 2026-08-29 (owner, GER save 1943.8.30, campaign build with
+  `06c485bfa` loaded): header `1 1 1 1 0`, `armour: light used=0 set=1 | medium used=1 set=1 |
+  heavy used=1 set=1`, **`conv : window=1 trans=5116`**, no `used=1 set=0` on any line — the
+  script half of the conversion is TESTED. Same session, owner imgui: medium role arrow on
+  `GENERIC_MODERN_ARMOR_30_MEC_MODERN_SPG_MODERN_TD_MODERN_SPAA` — the medium→modern +500 tier
+  is armed and in-role on a live campaign (MEASURED). STILL OPEN before the subject's conversion
+  claim closes: the want-0-upgrade ASSUMED — owner lets the save run ~1 month and reads whether
+  `light_armor current` (11.6 at 1943.8.30) falls as divisions cross to medium/modern; and the
+  original `event wa_abg.1 GER` run for the handoff half remains owed.
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
   `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
