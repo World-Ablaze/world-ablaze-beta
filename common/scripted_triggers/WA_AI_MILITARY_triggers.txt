@@ -460,15 +460,11 @@ WA_AI_MILITARY_north_africa_offensive_viable = {
 	}
 }
 
-WA_AI_MILITARY_is_minor_country = {
-	NOT = { WA_AI_CONFIG_is_major_country = yes }
-}
-
-WA_AI_MILITARY_is_major_naval = {
+WA_AI_MILITARY_has_ocean_going_fleet = {
 	has_navy_size = { size > 100 }
 }
 
-WA_AI_MILITARY_is_major_continental = {
+WA_AI_MILITARY_has_mass_army = {
 	OR = {
 		has_army_manpower = { size > 1000000 }
 	}
@@ -492,46 +488,25 @@ WA_AI_MILITARY_is_co_prosperity_member = {
 	}
 }
 
-WA_AI_MILITARY_is_china_front_member = {
-	OR = {
-		tag = CHI
-		tag = PRC
-		tag = SHA
-		tag = HPC
-		tag = SHX
-		tag = GUC
-		tag = GXC
-		tag = YUN
-		tag = XIK
-		tag = TUG
-		tag = SIC
-		tag = XSM
-		tag = SIK
-		tag = NEA
-		is_in_faction_with = CHI
-	}
-}
-
-WA_AI_MILITARY_is_commonwealth_member = {
-	OR = {
-		original_tag = ENG
-		original_tag = CAN
-		original_tag = AST
-		original_tag = NZL
-		original_tag = SAF
-		original_tag = RAJ
-		original_tag = MAL
-	}
-}
-
 WA_AI_MILITARY_can_safely_open_remote_theatres = {
 	WA_AI_MILITARY_can_open_secondary_fronts = yes
 	NOT = { WA_AI_MILITARY_home_threatened = yes }
 	NOT = { WA_AI_MILITARY_border_hostile_pressure = yes }
 }
 
-WA_AI_MILITARY_pacific_war_active = {
-	WA_AI_CONFIG_MILITARY_pacific_high_risk = yes
+# Observation, not config: "is a Pacific war live or imminent for me" reads the war state.
+# Moved here from WA_AI_CONFIG.txt when the pacific alias chain was collapsed to this one name.
+WA_AI_MILITARY_pacific_high_risk = {
+	OR = {
+		has_war_with = JAP
+		any_enemy_country = {
+			has_war_with = ROOT
+			OR = {
+				original_tag = JAP
+				capital_scope = { is_on_continent = asia }
+			}
+		}
+	}
 }
 
 WA_AI_MILITARY_east_front_war_active = {
@@ -560,7 +535,7 @@ WA_AI_MILITARY_china_war_active = {
 				tag = JAP
 				WA_AI_MILITARY_is_co_prosperity_member = yes
 				tag = CHI
-				WA_AI_MILITARY_is_china_front_member = yes
+				WA_AI_CONFIG_MILITARY_is_china_front_member = yes
 			}
 		}
 	}
@@ -614,7 +589,7 @@ WA_AI_MILITARY_axis_minor_side_theatre_guard_active = {
 }
 
 WA_AI_MILITARY_china_front_anti_japan_member = {
-	WA_AI_MILITARY_is_china_front_member = yes
+	WA_AI_CONFIG_MILITARY_is_china_front_member = yes
 	NOT = { tag = CHI }
 	has_war_with = JAP
 	date < 1946.1.1
@@ -980,7 +955,7 @@ WA_AI_MILITARY_commonwealth_aden_guard_available = {
 ############################################################################################################
 
 # The Pacific threat is REAL: a war is running, or an expansionist has committed to one against us.
-# This is the trigger the whole family reads; `WA_AI_MILITARY_pacific_war_active` alone is not
+# This is the trigger the whole family reads; `WA_AI_MILITARY_pacific_high_risk` alone is not
 # enough, because it only fires once the shooting has started and the user's rule is "not at war
 # AND not about to be".
 # Protects: the home garrison of AST / NZL / RAJ, which exists for this threat and no other.
@@ -992,7 +967,7 @@ WA_AI_MILITARY_commonwealth_aden_guard_available = {
 # own `enable`, and ENG's `any_country` role lookups, which re-root the scope first).
 WA_AI_MILITARY_pacific_threat_imminent = {
 	OR = {
-		WA_AI_MILITARY_pacific_war_active = yes
+		WA_AI_MILITARY_pacific_high_risk = yes
 		any_country = {
 			WA_AI_CONFIG_MILITARY_is_pacific_expansionist = yes
 			exists = yes
@@ -1036,7 +1011,7 @@ WA_AI_MILITARY_home_theatre_threatened = {
 # walk and residuals: WA_AI_MILITARY_SYSTEM.md §23.
 WA_AI_MILITARY_total_commitment_active = {
 	is_ai = yes
-	WA_AI_MILITARY_is_minor_country = yes
+	WA_AI_CONFIG_is_minor_country = yes
 	has_war = yes
 	OR = {
 		is_in_faction = yes
@@ -1219,7 +1194,7 @@ WA_AI_MILITARY_gulf_approach_threatened = {
 		413  = { CONTROLLER = { has_war_with = ENG } }
 		292  = { CONTROLLER = { has_war_with = ENG } }
 		# The maritime half: a Pacific expansionist is IN THE WAR against Britain. Written out
-		# rather than calling WA_AI_MILITARY_pacific_war_active, which resolves `has_war_with = ROOT`
+		# rather than calling WA_AI_MILITARY_pacific_high_risk, which resolves `has_war_with = ROOT`
 		# inside `any_enemy_country` - and ROOT here is whichever country the ai_strategy is being
 		# evaluated for (ENG on two call paths, RAJ on the third). Fixed ENG keeps the verdict
 		# invariant, which is the rule the whole Kuwait family is built on.
@@ -1237,7 +1212,7 @@ WA_AI_MILITARY_gulf_approach_threatened = {
 
 WA_AI_MILITARY_allies_usa_east_staging_conditions = {
 	WA_AI_MILITARY_is_allies_member = yes
-	WA_AI_MILITARY_is_commonwealth_member = yes
+	WA_AI_CONFIG_MILITARY_is_commonwealth_member = yes
 	date > 1944.6.1
 	NOT = { has_war_with = JAP }
 	USA = {

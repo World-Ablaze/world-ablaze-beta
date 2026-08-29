@@ -346,8 +346,8 @@ Scanner artifact: `phase4_dup_scan.py` and `phase4_report.md` (1826 blocks, 153 
 
 2. **`WA_AI_MILITARY_COUNTRY_CHINA_FRONT.txt` was a faction file with embedded country-specific blocks.** Phase 2 split the file into `WA_AI_MILITARY_FACTION_CHINA_FRONT_<DOMAIN>.txt`. **Phase 3** then:
    - Moved `WA_AI_MILITARY_CHINA_FRONT_sic_support_chi_against_japan` (gated on `tag = SIC`) into the new `WA_AI_MILITARY_COUNTRY_SIC_DIPLOMACY.txt`.
-   - Replaced the warlord OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_warlords_china_needs_you` with the new `WA_AI_CONFIG_MILITARY_is_chinese_warlord` trigger (excludes CHI/PRC/SHX, distinct from the existing `WA_AI_MILITARY_is_china_front_member` which includes them).
-   - Replaced the all-China-states OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_all_warlords_support_china_in_war` with the existing `WA_AI_MILITARY_is_china_front_member` trigger.
+   - Replaced the warlord OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_warlords_china_needs_you` with the new `WA_AI_CONFIG_MILITARY_is_chinese_warlord` trigger (excludes CHI/PRC/SHX, distinct from the existing `WA_AI_CONFIG_MILITARY_is_china_front_member` which includes them).
+   - Replaced the all-China-states OR-tag-list in `WA_AI_MILITARY_CHINA_FRONT_all_warlords_support_china_in_war` with the existing `WA_AI_CONFIG_MILITARY_is_china_front_member` trigger.
 
 3. **`WA_AI_MILITARY_COUNTRY_AXIS.txt`, `_ALLIES.txt`, `_COMINTERN.txt`, `_CO_PROSPERITY.txt`** were faction files mis-prefixed `COUNTRY_`. Phase 2 renamed them to `WA_AI_MILITARY_FACTION_<NAME>_<DOMAIN>.txt`. (Note: COMINTERN and CO_PROSPERITY were initially flagged as empty during Phase 1 inventory; they actually contain real `front_unit_request` content gated on the corresponding `WA_AI_MILITARY_is_<faction>_member` trigger.)
 

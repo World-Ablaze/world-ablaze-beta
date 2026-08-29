@@ -297,7 +297,7 @@ dockyards its escort programme does not want on convoys for the side rather than
 
 | Piece | File |
 | --- | --- |
-| Gate | `common/scripted_triggers/WA_AI_PRODUCTION_navy.txt` `WA_AI_PRODUCTION_dockyards_have_nothing_to_build` — default system, at war, `num_of_naval_factories > 3`, NOT `WA_AI_MILITARY_is_major_naval`, NOT the majors' arsenal |
+| Gate | `common/scripted_triggers/WA_AI_PRODUCTION_navy.txt` `WA_AI_PRODUCTION_dockyards_have_nothing_to_build` — default system, at war, `num_of_naval_factories > 3`, NOT `WA_AI_MILITARY_has_ocean_going_fleet`, NOT the majors' arsenal |
 | Exemption | the same verdict negated inside `WA_DEFAULT_production_convoy_stop_MINORS`, in **both** `enable` and `abort` — the idiom `stop_MAJORS` already uses for the majors' arsenal |
 | Payload | `WA_DEFAULT_production_convoy_minor_arsenal` — `equipment_production_surplus_management id = convoy value = 100`, and nothing else |
 | Probe | checklist R87, scored **after** R90 |

@@ -91,6 +91,16 @@ WA_AI_CONFIG_is_minor_country = {
 	}
 }
 
+# The 7 majors OR any country above 99 civilian factories. This is a DIFFERENT question from
+# WA_AI_CONFIG_is_major_country (identity of the 7): laws, lend-lease and diplomacy deliberately
+# treat an industrial giant like a major even when it is not one of the 7.
+WA_AI_CONFIG_is_industrial_power = {
+	OR = {
+		WA_AI_CONFIG_is_major_country = yes
+		num_of_civilian_factories > 99
+	}
+}
+
 # [rk-no-divisions] Reichskommissariat archetype, keyed on the autonomy state so every creation
 # path (GER decisions, ITA decisions, ENG dominion conversion, toolpack) is covered without a tag
 # list; assumes the id in common/autonomous_states/reichskommissariat.txt stays
@@ -999,7 +1009,7 @@ WA_AI_CONFIG_RAILWAY_override_GER_to_SOV = {
 
 WA_AI_CONFIG_MILITARY_is_axis_minor = {
 	is_in_faction_with = GER
-	WA_AI_MILITARY_is_minor_country = yes
+	WA_AI_CONFIG_is_minor_country = yes
 }
 
 WA_AI_CONFIG_MILITARY_is_axis_non_german_member = {
@@ -1008,26 +1018,44 @@ WA_AI_CONFIG_MILITARY_is_axis_non_german_member = {
 }
 
 
-WA_AI_MILITARY_pacific_high_risk = {
-	OR = {
-		has_war_with = JAP
-		any_enemy_country = {
-			has_war_with = ROOT
-			OR = {
-				original_tag = JAP
-				capital_scope = { is_on_continent = asia }
-			}
-		}
-	}
-}
-
-WA_AI_CONFIG_MILITARY_pacific_high_risk = {
-	WA_AI_MILITARY_pacific_high_risk = yes
-}
-
 # ============================================================================
 # MILITARY COALITION ARCHETYPES (Phase 3)
 # ============================================================================
+
+# [china-front] tags are the data, faction membership their natural reading (named exception to
+# frontier 1/2, documentation/WA_AI_LAYERS.md). Includes the leaders; the warlord-only subset is
+# WA_AI_CONFIG_MILITARY_is_chinese_warlord below.
+WA_AI_CONFIG_MILITARY_is_china_front_member = {
+	OR = {
+		tag = CHI
+		tag = PRC
+		tag = SHA
+		tag = HPC
+		tag = SHX
+		tag = GUC
+		tag = GXC
+		tag = YUN
+		tag = XIK
+		tag = TUG
+		tag = SIC
+		tag = XSM
+		tag = SIK
+		tag = NEA
+		is_in_faction_with = CHI
+	}
+}
+
+WA_AI_CONFIG_MILITARY_is_commonwealth_member = {
+	OR = {
+		original_tag = ENG
+		original_tag = CAN
+		original_tag = AST
+		original_tag = NZL
+		original_tag = SAF
+		original_tag = RAJ
+		original_tag = MAL
+	}
+}
 # These triggers replace inline tag = X / original_tag = X lists in DEFAULT,
 # REGION, and FACTION layer ai_strategy files. Country-layer files may still
 # use literal tag = X. See documentation/WA_AI_MILITARY_SYSTEM.md.
@@ -1344,7 +1372,7 @@ WA_AI_CONFIG_MILITARY_is_allied_minor_invasion_suppressed = {
 }
 
 # Chinese warlord (excludes CHI / PRC / SHX). Used by the "warlords help China"
-# diplomacy block. Distinct from WA_AI_MILITARY_is_china_front_member which
+# diplomacy block. Distinct from WA_AI_CONFIG_MILITARY_is_china_front_member which
 # includes the leaders.
 WA_AI_CONFIG_MILITARY_is_chinese_warlord = {
 	OR = {

@@ -20,7 +20,7 @@ All system content lives in `common/ai_strategy/WA_AI_MILITARY_*.txt` and is gat
 
 | Layer | Files | Gating | Country tags allowed? |
 | --- | --- | --- | --- |
-| **Default** | `WA_AI_MILITARY_DEFAULT_*.txt` | Archetype triggers only (`WA_AI_MILITARY_is_major_continental`, `WA_AI_MILITARY_is_major_naval`, `WA_AI_MILITARY_is_minor_country`, etc.) | No |
+| **Default** | `WA_AI_MILITARY_DEFAULT_*.txt` | Archetype triggers only (`WA_AI_MILITARY_has_mass_army`, `WA_AI_MILITARY_has_ocean_going_fleet`, `WA_AI_CONFIG_is_minor_country`, etc.) | No |
 | **Region** | `WA_AI_MILITARY_REGION_<NAME>.txt` | Geography triggers (e.g. `WA_AI_CONFIG_MILITARY_is_south_america`) | No |
 | **Faction** | `WA_AI_MILITARY_FACTION_<NAME>[_<DOMAIN>].txt` | Faction-membership triggers (`WA_AI_MILITARY_is_allies_member`, `_is_axis_member`, `_is_comintern_member`, `_is_co_prosperity_member`, `_is_china_front_member`, `_is_commonwealth_member`) plus optional `WA_AI_CONFIG_MILITARY_*` archetype refinement | No |
 | **Country** | `WA_AI_MILITARY_COUNTRY_<TAG>[_<DOMAIN>].txt` | Country gating; `tag = <TAG>` and `original_tag = <TAG>` are allowed and expected | Yes |
@@ -1264,7 +1264,7 @@ dent over three years of running the entire Libyan supply line, while 35-42 Ital
 | --- | --- |
 | Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_lifeline_raid` (29 + 269 at +250, `naval_avoid_region` -250, `naval_mission_threshold "MISSION_CONVOY_RAIDING" -100`) and `_tobruk_route_raid` (327 at +250, avoid -250) |
 | Switches (control panel) | `WA_AI_MILITARY_triggers.txt`, the Fix 122 section next to the NAVAL corridor triggers: `WA_AI_MILITARY_NAVAL_med_raid_base_held` (Malta 116, Tunis 458 or Bizerte 1061 held by our side), `_axis_african_lifeline_active` (an enemy holds 448/450/451/458/1061 - the convoys exist), `_tobruk_held_by_enemy` (state 451). Same PREV.PREV "our side" idiom as the Fix 99 family |
-| Capability gate | `WA_AI_MILITARY_is_major_naval` (`has_navy_size = { size > 100 }`) in each block's `enable` - **owner ruling 2026-08-21: only large, major navies raid the narrows**. MEASURED 1941.6: ENG 494 hulls and USA 476 pass; AST 11, FRA 21, NZL 7, CAN 2, RAJ 1, SAF 0 do not |
+| Capability gate | `WA_AI_MILITARY_has_ocean_going_fleet` (`has_navy_size = { size > 100 }`) in each block's `enable` - **owner ruling 2026-08-21: only large, major navies raid the narrows**. MEASURED 1941.6: ENG 494 hulls and USA 476 pass; AST 11, FRA 21, NZL 7, CAN 2, RAJ 1, SAF 0 do not |
 | Probe | checklist R83 |
 
 **Three things to know before touching it.**
@@ -1382,7 +1382,7 @@ Mediterranean Fleet HQ), against **259** for the nearest province of any other M
 | --- | --- |
 | Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria` (`strike_force_home_base 69`, `naval_dominance` 69 at 80 / 327 at 70, `naval_avoid_region` -1000 on both) and `_med_narrows_sea_control` (`naval_dominance` 269 / 29 at 70, `naval_avoid_region` -1000 on both) |
 | Switch (control panel) | `WA_AI_MILITARY_triggers.txt`, Fix 136 section: `WA_AI_MILITARY_NAVAL_med_fleet_base_held` = `controls_state = 447` |
-| Capability gate | `WA_AI_MILITARY_is_major_naval`, the same Fix 122 owner ruling |
+| Capability gate | `WA_AI_MILITARY_has_ocean_going_fleet`, the same Fix 122 owner ruling |
 | Probe | checklist R97 |
 
 **Four things to know before touching it.**

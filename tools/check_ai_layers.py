@@ -348,9 +348,16 @@ def run(repo, update_baseline=False, as_json=False, baseline_path=None):
             dirty = True
             findings.append(("INFO", rule, f"baseline initialized at {cur}"))
         elif cur > baseline[rule]:
-            findings.append(("ERROR", rule,
-                             f"{cur} > baseline {baseline[rule]} - new debt added; convert it "
-                             f"or justify a deliberate scope widening with --update-baseline"))
+            if update_baseline:
+                baseline[rule] = cur
+                dirty = True
+                findings.append(("INFO", rule,
+                                 f"baseline RAISED to {cur} - a deliberate widening; justify it "
+                                 f"in the same commit message"))
+            else:
+                findings.append(("ERROR", rule,
+                                 f"{cur} > baseline {baseline[rule]} - new debt added; convert it "
+                                 f"or justify a deliberate scope widening with --update-baseline"))
         elif cur < baseline[rule]:
             if update_baseline:
                 baseline[rule] = cur
