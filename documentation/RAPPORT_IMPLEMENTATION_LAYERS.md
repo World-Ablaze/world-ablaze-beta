@@ -1,7 +1,7 @@
 # Rapport d'implémentation — refactor layers, passe de nuit du 2026-08-29
 
-**Branche : `ai-rework-layers-draft` (locale, JAMAIS poussée), 12 commits au-dessus de
-`ai-rework`.** Rien n'est mergé ; chaque phase = un commit revertable seul. Ce rapport liste
+**Branche : `ai-rework-layers-draft` (locale, JAMAIS poussée), 18 commits au-dessus de
+`ai-rework`** (les 15 de la nuit + les 3 de la dédup du lendemain, §9). Rien n'est mergé ; chaque phase = un commit revertable seul. Ce rapport liste
 tous les choix, toutes les déviations par rapport à la proposition
 (`WA_AI_LAYERS_REFACTOR_PROPOSAL.md` corrigée par `REVUE_LAYERS_REFACTOR.md`), et tout ce qui
 t'est dû côté jeu.
@@ -12,8 +12,9 @@ t'est dû côté jeu.
   NAVAL 100, MILITARY 659) — corps déplacés **verbatim**, égalité token-à-token vérifiée
   machine à chaque bloc. `LAYER4-RAW-GATE = 0`.
 - Phases 1, 2, 2b, 3a, 3c (re-scopée), 4 complet, checker + baselines, docs + guide : **faites**.
-- Phase 3b (dédup des dates/seuils) : **volontairement non faite** — voir §5, c'est ta décision
-  Q4, pas une mécanique.
+- Phase 3b (dédup des dates/seuils) : non faite pendant la nuit (§5 — c'était ta décision Q4),
+  puis **exécutée le lendemain sur tes trois arbitrages** — voir §9. DATE-LEAK 141,
+  NUMBER-LEAK 379.
 - Les 4 checkers du dépôt + `check_ai_layers.py` (nouveau) : **tous à 0 erreur**.
 - **Rien de tout cela n'a tourné dans le jeu.** Le boot test, la mesure perf NAVAL et les runs
   `explain` sont la contrepartie de ta revue (§7).
