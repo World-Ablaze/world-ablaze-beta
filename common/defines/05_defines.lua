@@ -1446,9 +1446,14 @@ NDefines.NAI.DEPLOY_MIN_TRAINING_WAR_FACTOR = 1.0									-- Required percentage
 NDefines.NAI.DEPLOY_MIN_EQUIPMENT_WAR_FACTOR = 0.9									-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime
 
 NDefines.NAI.UPGRADE_DIVISION_RELUCTANCE = 7										-- How often to consider upgrading to new templates for units in the field
-NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.25									-- How big part of the army that should be considered for upgrading
+-- [armor-class-handoff] The two field-upgrade valves, opened so era conversions (light->medium,
+-- medium->modern via replace_with transitions) can compete with an always-full training queue:
+-- at the vanilla 90-day deficit limit an AI whose tank production is consumed by NEW divisions
+-- never converts its fielded ones. 0.5 = half the army eligible per pass; 365 = accept a
+-- conversion that takes up to a year to re-equip (the division fights understrength meanwhile).
+NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.5										-- How big part of the army that should be considered for upgrading
 
-NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 90	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
+NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 365	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
 
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_WARTIME = 0.4					-- deployment will try to buffer a ratio of manpower (for reinforcements) during war time
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_PEACETIME = 0.01				-- deployment will try to buffer a ratio of manpower (for reinforcements) during peace time

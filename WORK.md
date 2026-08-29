@@ -370,6 +370,24 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   claim closes: the want-0-upgrade ASSUMED — owner lets the save run ~1 month and reads whether
   `light_armor current` (11.6 at 1943.8.30) falls as divisions cross to medium/modern; and the
   original `event wa_abg.1 GER` run for the handoff half remains owed.
+- Field-upgrade valves opened 2026-08-29 (owner order "pousse les deux leviers", after his own
+  hypothesis on the GER 1940.12.8 save — window armed, arrow on transition 5113, divisions still
+  not converting). The comment TEXT on `NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS` is MEASURED
+  ("Ai will avoid upgrading units in the field ... if it takes longer than this"); the veto
+  BEHAVIOUR — and whether its deficit estimate counts training-queue demand (22 wanted medium
+  divisions vs ~750 tanks for the 5 conversions, DERIVED) — is ASSUMED, comment-derived, no
+  save has shown the veto firing. Changed in `05_defines.lua`: `UPGRADES_DEFICIT_LIMIT_DAYS`
+  90 → 365, `UPGRADE_PERCENTAGE_OF_FORCES` 0.25 → 0.5. GLOBAL, accepted in writing. The 365 is
+  NOT a bound on anything real: it bounds the engine's decision-time ESTIMATE only — the actual
+  understrength duration is UNBOUNDED (gate loosened, not a budget), and the fix's own premise
+  (queue consumes production forever) can keep the estimate above 365 too, i.e. a silent no-op
+  is a live outcome; GER's Dec-1940 medium-tank output/month is unmeasured, so no honest
+  fill-time table can be written — the probe below is what will write it. Probe (extended per
+  lessons review): on the 1940.12.8 save run ~2 months and read (1) `light_armor current` falls
+  below 5.0 — conversion fired; (2) unchanged — veto still binding or estimate still > 365,
+  next lever = throttle new-division training during the window, NOT a bigger number; (3) a
+  front-stability read (GER front average strength / org in the division list) so the paid cost
+  of understrength conversions is observed, not assumed.
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
   `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
