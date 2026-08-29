@@ -191,11 +191,17 @@ WA_AI_TEMPLATES_use_armor_templates = {
 # divisions), while the fielded cap closes only the PRODUCTION LINE
 # (WA_AI_PRODUCTION_build_light_support_armor) so reaching 10k stops building without scrapping what
 # is already built. Deliberately NOT gated on WA_AI_TEMPLATES_switch_from_light_to_medium_armor:
-# that fires 1941.1.1 for every country and would end the run a year early.
+# that fires at the era boundary (1940.1.1, SOV 1941.1.1 - WA_AI_CONFIG_switch_from_light_to_medium_armor)
+# and would end the run two years early. The `date < 1942.1.1` below IS the end of the run.
+# [armor-class-handoff] This trigger LOST a tag term when WA_AI_CONFIG_TEMPLATES_focus_on_light_armor
+# was deleted, so the run is open to any country holding a light-support chassis, not only the five
+# tags that term listed. That widening is the intent already stated by
+# WA_AI_TEMPLATES_light_support_armor_owns_light_role below: the chassis techs are country-specific
+# (sov_light_tank_support_chassis_*), and a second country researching one takes the light slot the
+# same way. If a generic support chassis is ever added, this becomes a real behaviour change.
 WA_AI_TEMPLATES_use_light_support_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes
-	WA_AI_CONFIG_TEMPLATES_focus_on_light_armor = yes
 	date < 1942.1.1
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
@@ -217,7 +223,6 @@ WA_AI_TEMPLATES_light_support_armor_owns_light_role = {
 WA_AI_TEMPLATES_use_light_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
-	WA_AI_CONFIG_TEMPLATES_focus_on_light_armor = yes
 	NOT = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
 	NOT = { WA_AI_TEMPLATES_light_support_armor_owns_light_role = yes }
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
@@ -226,14 +231,14 @@ WA_AI_TEMPLATES_use_light_armor_templates = {
 WA_AI_TEMPLATES_use_medium_support_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_support_armor_unlocked = yes
-	WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = yes
+	WA_AI_CONFIG_TEMPLATES_admits_medium_armor = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
 WA_AI_TEMPLATES_use_medium_armor_templates = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_armor_unlocked = yes
-	WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = yes
+	WA_AI_CONFIG_TEMPLATES_admits_medium_armor = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
@@ -261,9 +266,16 @@ WA_AI_TEMPLATES_use_modern_armor = {
 	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
 }
 
+# [armor-class-handoff] A HANDOFF, not a cliff: this closes the light template, so it may not fire
+# before the medium class can actually open. `has_medium_armor_unlocked` is that guarantee - without
+# it a country whose medium tech never arrives loses light at the era boundary and holds no armour
+# template at all. Assumes the medium ladder admits everyone past the boundary
+# (WA_AI_CONFIG_TEMPLATES_admits_medium_armor); if that fallback is ever removed, this term
+# stops being sufficient and the gap returns.
 WA_AI_TEMPLATES_switch_from_light_to_medium_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_switch_from_light_to_medium_armor = yes
+	WA_AI_TEMPLATES_has_medium_armor_unlocked = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 

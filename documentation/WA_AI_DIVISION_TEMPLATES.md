@@ -220,6 +220,26 @@ Current division config triggers:
 - `WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_gun`
 - `WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_aa`
 
+The `WA_AI_CONFIG_DIVISIONS_focus_on_*_armor` triggers are read by the PRODUCTION and RESEARCH
+layers only (`WA_AI_PRODUCTION_tanks.txt`, `WA_AI_RESEARCH_tanks.txt`): they say which chassis a
+country's doctrine pushes. The TEMPLATE layer asks a different question and has its own pair:
+
+- `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` — is the medium class admitted yet. The tag/tech
+  list is an ACCELERATOR for a tech leader; its last term is
+  `WA_AI_CONFIG_switch_from_light_to_medium_armor`, so past the era boundary it admits everyone
+  and the list can never act as a gate. `[armor-class-handoff]`
+- `WA_AI_CONFIG_TEMPLATES_focus_on_heavy_armor` — same shape for the heavy class, with no
+  fallback term. Heavy is optional (a country without it keeps medium), so it cannot open a gap.
+- `WA_AI_CONFIG_switch_from_light_to_medium_armor` — THE era boundary between the light and the
+  medium class, and the only date in the system that says the light era is over. Both sides of
+  the handoff derive from it: `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` closes light,
+  `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` opens medium. Do not add a second light-era or
+  medium-era date anywhere.
+
+There is no `WA_AI_CONFIG_TEMPLATES_focus_on_light_armor`: it was deleted with
+`[armor-class-handoff]` because the switch closes the light class a year before that trigger's
+own date could ever bind, and its tag list silently excluded every minor from light templates.
+
 ### Template Use Triggers
 
 `WA_AI_TEMPLATES_use_*` triggers decide whether a role should be selected.
@@ -237,7 +257,10 @@ Current role-selection triggers:
 - `WA_AI_TEMPLATES_use_medium_armor_templates`
 - `WA_AI_TEMPLATES_use_light_armor_templates`
 - `WA_AI_TEMPLATES_use_modern_armor`
-- `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`
+- `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` — a HANDOFF, not a cliff: it also requires
+  `WA_AI_TEMPLATES_has_medium_armor_unlocked`, so the light class is never closed before the
+  medium class can open. `[armor-class-handoff]`
+- `WA_AI_TEMPLATES_use_light_support_armor_templates`
 
 These triggers may call config triggers and unlock triggers. Keep them positive and reusable: `WA_AI_TEMPLATES_use_medium_armor_templates` is better than `WA_AI_TEMPLATES_do_not_use_light_armor`.
 

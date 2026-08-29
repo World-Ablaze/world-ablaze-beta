@@ -172,6 +172,134 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-class-handoff — SHIPPED-UNTESTED (2026-08-29)
+- SHIPPED-UNTESTED: it changes the ENTRY GATE of a system that has a `WA_TEST_armor_budget`
+  harness, so the owner console run is owed before TESTED. Paste `event wa_abg.1 GER` output here.
+- Scope: owner request 2026-08-29, from the question "pourquoi GER fait pas de chars moyens sur
+  la save 29 juin 40". Intended behaviour: a country whose armour layer is switched on always
+  holds at least one armour template — the light class is never closed before the medium class
+  can open, and no tag list can gate the medium class shut.
+- Symptom, MEASURED (`GER_1940_06_29_02.hoi4`, 1940.6.29, build ≥ `d86d5f5b9`): **3 countries on
+  the whole map hold any `WA_*_ARMOR_TEMPLATE` flag** — ENG (heavy+medium), FRA (heavy), SOV
+  (light-support+heavy). GER, ITA, JAP, USA and every minor hold none. GER's
+  `wa_ai_armor_budget_medium` = 15 against `_light` = 0: the role budget wants 15% armour that
+  no template can train. Its 8 armour divisions are `history/` leftovers (`Light Tank template
+  E`), and its medium line runs at 15 factories = exactly the
+  `WA_AI_PRODUCTION_DEFAULT_tank_floor_medium` floor, because
+  `equipment_variant_production_factor` multiplies a need no template creates. 127 medium
+  chassis sit in the stockpile with nothing to mount them.
+- Cause, MEASURED (`813099474`, uncharted85, 2026-08-28): the light-era boundary moved 1941.1.1
+  → 1940.1.1 while the medium gate went from `OR = { DIVISIONS_focus_on_medium ; date > 1941.1.1 }`
+  — a universal date fallback — to a closed 7-entry OR of tag/tech literals with none. GER needs
+  `ger_medium_tank_chassis_2_3` (Panzer III L) and holds `..._2_2`. Two dates for one handoff,
+  moving in opposite directions, and every country outside the 7 entries could never field a
+  medium division at all (AGENTS.md principle 1: no generic fallback; principle 2: `has_tech =
+  ger_*` is a tag list in a tech costume).
+- Their intent, quoted, and why this replaces it rather than reverting: the commit message is
+  `"AI now uses multiple tank templates"` and the change's own shape says the rest — the
+  `_TEMPLATES_` family exists so the TEMPLATE layer can ask "is the chassis good enough to field
+  a division on" separately from the `_DIVISIONS_` family's "which chassis does the doctrine
+  push", read by production and research. **Mine covers it because** the accelerator half of
+  their list is kept verbatim — a tech leader still mounts mediums before the era boundary, which
+  is the behaviour they added — and only its role changes: with
+  `WA_AI_CONFIG_switch_from_light_to_medium_armor` as the last OR term the list can accelerate but
+  never gate. Reverting would have thrown away that acceleration.
+- Single source of truth (the owner's criterion for this session): the era boundary is now ONE
+  literal, `WA_AI_CONFIG_switch_from_light_to_medium_armor`, and both sides of the handoff derive
+  from it — `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` closes light,
+  `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` opens medium. Net −1 trigger, −2 encodings.
+  `date` has no validated `constant:` context (registry skill), so the derivation IS the
+  mechanism; there is no script-constant form available.
+- Commit hygiene, MEASURED and repaired: a CONCURRENT session committing the same two paths at
+  04:45 swept this subject's trigger edits into `6654f729f` ("fix(templates): motorised tech gate
+  read a tech the majors cannot have"), whose message described none of them. On the owner's
+  instruction (unpushed, other session finished) that commit was split: `8d0b2e1c6` re-creates
+  the motorised fix alone, with its original author and date, and this subject's ship carries the
+  armour work. The split was hunk-classified mechanically, not by hand — 2 hunks theirs, 6 mine,
+  none mixed — and the rebuild of base + all hunks was asserted byte-equal to the `6654f729f`
+  blobs before anything was written.
+- Changed:
+  - `WA_AI_CONFIG.txt`: `_TEMPLATES_focus_on_medium_armor` → `_TEMPLATES_admits_medium_armor`,
+    same 7 entries plus the boundary as a final OR term. `_TEMPLATES_focus_on_light_armor`
+    DELETED (both readers go). `_TEMPLATES_focus_on_heavy_armor` untouched — heavy is optional,
+    a country without it keeps medium, so it cannot open a gap.
+  - `WA_AI_TEMPLATES_triggers.txt`: `switch_from_light_to_medium_armor` gains
+    `has_medium_armor_unlocked` — a HANDOFF, not a cliff. `use_light_armor_templates` and
+    `use_light_support_armor_templates` lose the deleted term; `use_medium_armor_templates` and
+    `use_medium_support_armor_templates` take the renamed one.
+  - Comment repaired (AGENTS rule 7, comments drift): the `[armor-role-budget]` header on
+    `use_light_support_armor_templates` said the switch "fires 1941.1.1 for every country";
+    `813099474` made it 1940.1.1 for non-SOV and the header had gone stale in a day.
+- Widening, stated because the deletion causes it: `use_light_support_armor_templates` loses a
+  tag term, so the finite light-support run is open to any country holding a light-support
+  chassis. Today those techs are `sov_light_tank_support_chassis_*` only, so it is a no-op, and
+  the widening is the intent already written into
+  `WA_AI_TEMPLATES_light_support_armor_owns_light_role` ("a second country researching one takes
+  the light slot the same way, which is the intent, not a leak"). A generic support chassis would
+  make it a real behaviour change.
+- Handoff walk at the real cadence (monthly template pulse). LIGHT / MEDIUM = the flag carried.
+
+  | Country class | 1939.12 | 1940.1 | 1941.1 | 1942.1 |
+  | --- | --- | --- | --- | --- |
+  | GER-like (light + medium unlocked, not in the accelerator list) — HEAD today | light | **none** | **none** | **none** |
+  | GER-like — after this change | light | medium | medium | medium |
+  | Minor with light only, no medium tech — HEAD today | light | **none** | **none** | **none** |
+  | Minor with light only — after this change | light | light | light | light |
+  | SOV (boundary 1941.1.1, light-support owns the light role) | light-support | light-support | light-support + medium | medium |
+
+  The GER-like `none` row IS the measured symptom. The minor row is a hole that predates
+  `813099474` (the old boundary produced it at 1941.1.1 instead) and is closed here as well.
+- Decommission window (lessons rule: a change to which `ai_template` target is enabled is a
+  decommission hazard). At the 1940.1 pulse the light flag clears and the medium flag sets in the
+  SAME `WA_AI_TEMPLATES_calculate_all_templates` pass, so the engine decommissions whatever held
+  `light_armor` — for GER, `Light Tank template E` and its 8 divisions. That decommission is
+  ALREADY what HEAD does: `813099474` closes light on the same date with or without this change.
+  What changes is that the freed role gets a successor instead of the country being left empty.
+- `role_ratio` entry burst, DERIVED at the real cadence (monthly reconcile, `armor_budget_ramp`
+  rung 1940 = 15). Per country, not map-wide — `role_ratio` entries are per-country persistent
+  strategies:
+
+  | Pulse | Books before | Entries emitted |
+  | --- | --- | --- |
+  | t0 Dec-1939 | light 10, inf 10 | 0 |
+  | t1 Jan-1940 (HEAD) | → light 0, inf 0 | 2 |
+  | t1 Jan-1940 (after) | → light 0, medium 15, inf 15 | 3 |
+  | t2 Feb-1940 | unchanged | 0 |
+
+  **+1 entry per country, once.** The Jan-1940 pulse was already a rung transition, so this rides
+  a burst the ramp's header already bounds (~9 transitions × 5 slots × 2, under 100 per country).
+  All terms are monotone (`has_tech`, `original_tag`, `date >`), so no flap: the accelerator needs
+  no latch. The pre-existing flicker risk is in the inherited parent
+  `WA_AI_TEMPLATES_use_armor_templates` (`num_of_military_factories > 150`), unchanged here.
+- Probe (standing, WA_TLM v34, `[armor-class-handoff]`): `WA_TLM_armor_enabled` /
+  `_roles_open` / `_gap` / `_gap_n` / `_gap_first_t` / `_gap_t` / `_last_t`, monthly, all AI
+  (`WA_TLM_sample_armor_templates`). The invariant is `enabled = 1` with `roles_open = 0`.
+  Standing under §3.8 criterion 3 — a system-health invariant, not the mechanism of one fix.
+  Second signal: `wa_ai_armor_budget_*` must be non-zero on any country reading `gap = 1`.
+  Registry + reading rule: `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §5 and §6f.
+- Harness (contract rule 4): `WA_TEST_armor_budget.txt` section B1b re-types the handoff from its
+  own terms — `era-boundary / admits-medium / medium-unlocked / light-unlocked` plus a
+  `coverage:` line printing `use-armor-templates` against the count of armour flags carried. `1`
+  and `0` on that line is the defect, in one row.
+- Recorded, NOT admitted as a subject (admission rule — no MEASURED symptom yet): 16 tags can
+  reach `has_medium_armor_unlocked` (ast bel can cze eng fra ger hun ita jap nzl pol sov spr swe
+  usa) and only 11 have a `common/ai_equipment/<TAG>_tank.txt`. AST, BEL, CAN, NZL and SPR can
+  now hold a medium template with no design behind it. **ASSUMED** that this leaves the line
+  unfillable rather than falling back to a generic design — there is no `generic_tank.txt`, only
+  `generic_naval.txt`. Pre-existing exposure (the old `date > 1941.1.1` fallback reached the same
+  five tags a year later); this change moves it 12 months earlier. The probe will name it if it
+  matters.
+- Verification, script-level, DONE: `python tools/check_templates.py` 0 ERROR 0 WARN (this is the
+  join-key diff the lessons reviewer asked for — VALUE-NO-TEMPLATE / TEMPLATE-NO-VALUE over the
+  medium ladder and its generated +500 mirror). `check_constants.py`, `check_worklist.py`,
+  `check_skill_refs.py` all exit 0.
+- Verification OWED to the owner, in an observer game, before TESTED: `event wa_abg.1 GER`
+  in 1940.6 reads `handoff: era-boundary=1 admits-medium=1 medium-unlocked=1` and
+  `coverage: use-armor-templates=1 armour-template-flags-carried=1`. Control: the same command on
+  a 1936 minor reads `use-armor-templates=0` and `flags-carried=0`, which is not a defect.
+- Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
+  `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940.
+
 ### armor-budget-ramp — SHIPPED-UNTESTED (2026-08-29)
 - Scope: owner order 2026-08-29 — the armour share of the wanted-division mix must grow with the
   era instead of jumping to its terminal size the month a country unlocks its first chassis.
@@ -505,7 +633,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
 
-### modern-chassis-tier — SHIPPED-UNTESTED (2026-08-28)
+### modern-chassis-tier — PARKED (2026-08-29)
+- PARKED 2026-08-29 for the WIP limit, owner's choice, NOT because it is verified: the code is
+  shipped and the console run is still owed. Parked rather than another subject because its
+  verification is the SAME command as `armor-class-handoff` — `event wa_abg.1 <TAG>`, whose
+  section B2 prints the chassis tier — so one owner run still covers both. Paste that output and
+  it unparks straight to TESTED.
 - Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
   tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
   a WEIGHT CLASS of division, not a chassis generation — a medium division that reaches the

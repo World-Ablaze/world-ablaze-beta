@@ -298,6 +298,12 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_comp_armor_mech_pct` | gauge (derived, band/count — a lower bound; exact only while both arms ≤ 5) | monthly, majors | R6 | v1 (granularity changed v33) |
 | `WA_TLM_comp_last_t` | stamp | monthly, all AI (written with the family's widest gauge — a stamp inside a narrower gate breaks the absence contract for the excluded countries) | R6 absence contract | v1 |
 | `WA_TLM_comp_armor_mech_pct_hist` | ring | quarterly, majors | R6 trend | v1 |
+| `WA_TLM_armor_enabled` | gauge | monthly, all AI (`WA_TLM_sample_armor_templates`) | standing — code-path companion: is the armour layer switched on at all (`WA_AI_TEMPLATES_use_armor_templates`). Never the pass criterion on its own | v34 |
+| `WA_TLM_armor_roles_open` | gauge (0-4) | same site | standing — VERIFIED EFFECT: how many of `WA_LIGHT_ARMOR_TEMPLATE` / `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` / `WA_MEDIUM_ARMOR_TEMPLATE` / `WA_HEAVY_ARMOR_TEMPLATE` the selector actually wrote. Flags carried, not gates passed — the gate passing and the flag being written are exactly what came apart in 1940 | v34 |
+| `WA_TLM_armor_gap` | gauge (0/1) | same site | standing — the invariant: `armor_enabled = 1` with `armor_roles_open = 0`. A country that wants armour and can design none | v34 |
+| `WA_TLM_armor_gap_n` | counter | same site, only while `armor_gap = 1` | standing — months the gap held. One month at a class handoff is a transient; a run is the defect | v34 |
+| `WA_TLM_armor_gap_first_t` / `_gap_t` | stamps | same site, `_first_t` under a `= 0` guard | standing — brackets the gap run (rule 2: never a bare one-shot stamp). Read `_gap_n > 0` first, not `_first_t > 0` | v34 |
+| `WA_TLM_armor_last_t` | stamp | monthly, all AI (written with the family's widest gauge) | `armor_*` absence contract | v34 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
 | `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
@@ -647,6 +653,36 @@ refused, or which leg fired. Standing under §3.8 criterion 3 (every AI country 
 | `WA_TLM_llr_send_failed_n` | counter, on the DONOR | same site, the ELSE branch: the recipient's free stock did not rise across the meta_effect send | R7b / R56 — must read 0; > 0 means the rendered `send_equipment` failed silently (see the meta_effect lesson) | v18 |
 | `WA_TLM_llr_first_t` / `_last_t` | stamps, on BOTH sides | same site | R7b — timing; `_first_t` written under a `= 0` guard | v18 |
 | `WA_TLM_llr_recv_donor` / `WA_TLM_llr_recv_n` / `WA_TLM_llr_recv_amount` | pair-keyed parallel arrays, on the RECIPIENT (donor country-id / verified sends / cumulative units) | `WA_AI_LEND_LEASE_relief_record`, same verified-send gate as `llr_sent_*`; the donor id is appended on first receive from that donor, then the parallel slots accumulate | the donor→recipient matrix of the scripted channel, both land legs and convoy row 10; units are summed across archetypes (heterogeneous — a magnitude, cross-read against the donor's `llr_sent_amount^idx` for the per-archetype split). Deliberately NOT zero-initialised: absent = never received (the zero-init'd `llr_starving_n` / `llr_first_t` beside it witness that the family exists on the build). Donor ids are engine scope-encoded (`round(v*1e5) − 2^30` = tag as 3 little-endian ASCII bytes); read with `lendlease.py` (decodes them) rather than raw `var TAG "^wa_tlm_llr_recv"` | v32 |
+
+## 6f. Armour-template coverage (standing, v34)
+
+`[armor-class-handoff]`. The armour role layer and the armour TEMPLATE layer are two different
+gates over the same decision, and they came apart: on the 1940.6 save `GER_1940_06_29_02.hoi4`
+only ENG, FRA and SOV held any `WA_*_ARMOR_TEMPLATE` flag, while GER's `wa_ai_armor_budget_medium`
+read 15 — the AI wanted 15% armour and could train none. The symptom reached the owner as "GER
+builds no medium tanks", four layers downstream of the gate that caused it, and **no metric in any
+save named it**. That is what this family exists to name.
+
+Standing under §3.8 criterion 3: "does every armour-capable country hold an armour template" is a
+system-health invariant asked of every campaign, not the mechanism of one fix. It is deliberately
+counters and stamps only — no ring buffer (§3.8: a probe that wants a ring buffer is a standing
+metric in disguise; here the question is *did it ever break*, and `_gap_first_t` / `_gap_t` bracket
+that without a series).
+
+**Reading rule.** `armor_gap = 1` for ONE month at a class handoff is a transient the monthly
+cadence can catch legitimately; `armor_gap_n` well above 1, or `_gap_t − _gap_first_t` spanning
+months, is the defect. `armor_enabled = 0` with `roles_open = 0` is a country with no armour layer
+and is correct, which is why the companion gauge is stored beside the invariant rather than folded
+into it (§3.6 rule 1).
+
+**Second signal** that validates the first campaign's readings: `wa_ai_armor_budget_light` /
+`_medium` / `_heavy` (`WA_AI_PRODUCTION_armor_budget.txt`). The role budget and the template layer
+read the same `WA_AI_TEMPLATES_use_*_armor_templates` triggers, so a country with `armor_gap = 1`
+must show a NON-ZERO budget book — that pairing is the 1940 defect exactly. `gap = 1` with all
+three books at 0 means the two layers agree the country wants no armour, and is not a defect.
+
+**Probe**: `tlm <TAG> <saves>` → `armor_gap_n`, `armor_gap_first_t`, `armor_gap_t`. Pass = every
+major reads `armor_gap_n ≤ 1`. Absence contract per §3.5.
 
 ## 7. Adding a metric — checklist for authors
 

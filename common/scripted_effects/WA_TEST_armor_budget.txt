@@ -104,6 +104,34 @@ WA_TEST_ABG_report = {
 	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  (both 1 = the two light templates are enabled at once, which the exclusivity is supposed to prevent)"
 
 	############################################################
+	# B1b. [armor-class-handoff] The light-to-medium HANDOFF, re-typed from its own terms.
+	#      The switch closes light; admits + medium-unlocked open medium. If the switch is 1
+	#      while medium is 0, the country has just lost its armour layer - that is the defect
+	#      this section exists to make visible in one line.
+	############################################################
+
+	set_temp_variable = { _abt_era = 0 }
+	if = { limit = { WA_AI_CONFIG_switch_from_light_to_medium_armor = yes } set_temp_variable = { _abt_era = 1 } }
+	set_temp_variable = { _abt_madm = 0 }
+	if = { limit = { WA_AI_CONFIG_TEMPLATES_admits_medium_armor = yes } set_temp_variable = { _abt_madm = 1 } }
+	set_temp_variable = { _abt_munl = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_medium_armor_unlocked = yes } set_temp_variable = { _abt_munl = 1 } }
+	set_temp_variable = { _abt_lunl = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_light_armor_unlocked = yes } set_temp_variable = { _abt_lunl = 1 } }
+
+	set_temp_variable = { _abt_fm = 0 }
+	if = { limit = { has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE } set_temp_variable = { _abt_fm = 1 } }
+	set_temp_variable = { _abt_fh = 0 }
+	if = { limit = { has_country_flag = WA_HEAVY_ARMOR_TEMPLATE } set_temp_variable = { _abt_fh = 1 } }
+	set_temp_variable = { _abt_open = _abt_fl }
+	add_to_temp_variable = { _abt_open = _abt_fls }
+	add_to_temp_variable = { _abt_open = _abt_fm }
+	add_to_temp_variable = { _abt_open = _abt_fh }
+
+	log = "  handoff: era-boundary=[?_abt_era|.0]  admits-medium=[?_abt_madm|.0]  medium-unlocked=[?_abt_munl|.0]  light-unlocked=[?_abt_lunl|.0]  (era=1 + medium-unlocked=0 must leave the switch at 0, or light closes with nothing to hand to)"
+	log = "  coverage: use-armor-templates=[?_abt_armortpl|.0]  armour-template-flags-carried=[?_abt_open|.0]  (1 and 0 IS the defect - the country wants armour and can design none)"
+
+	############################################################
 	# B2. [modern-chassis-tier] Which CHASSIS TIER the medium role fields
 	#     Modern armour is the last chassis generation of the MEDIUM class, not a role. The
 	#     selector adds +500 to the medium template value when the latch is set, so the carried

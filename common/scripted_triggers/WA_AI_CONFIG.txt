@@ -678,7 +678,15 @@ WA_AI_CONFIG_TEMPLATES_focus_on_heavy_armor = {
 	}
 }
 
-WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = {
+# [armor-class-handoff] Is the MEDIUM class ADMITTED for this country - not whether its chassis is
+# good. The tag/tech list is an ACCELERATOR (a tech leader mounts mediums before the era boundary);
+# the last term stops the list ever acting as a GATE, admitting everyone once the boundary passes.
+# Whether the country can actually BUILD a medium is a separate question, asked by
+# WA_AI_TEMPLATES_has_medium_armor_unlocked at both call sites.
+# Assumes WA_AI_CONFIG_switch_from_light_to_medium_armor is the ONE era boundary in the system: a
+# second date here re-creates the window where light is already closed and medium not yet open,
+# which left GER, ITA, JAP, USA and every minor with no armour template at all in 1940.
+WA_AI_CONFIG_TEMPLATES_admits_medium_armor = {
 	OR = {
 		has_tech = fra_medium_tank_chassis_2_3
 		original_tag = ENG
@@ -687,34 +695,15 @@ WA_AI_CONFIG_TEMPLATES_focus_on_medium_armor = {
 		has_tech = jap_medium_tank_chassis_4
 		has_tech = ger_medium_tank_chassis_2_3
 		has_tech = sov_medium_tank_chassis_3
+		WA_AI_CONFIG_switch_from_light_to_medium_armor = yes
 	}
 }
 
-WA_AI_CONFIG_TEMPLATES_focus_on_light_armor = {
-	OR = {
-		AND = {
-			original_tag = FRA
-			date < 1941.1.1
-		}
-		AND = {
-			original_tag = ITA
-			date < 1941.1.1
-		}
-		AND = {
-			original_tag = JAP
-			date < 1941.1.1
-		}
-		AND = {
-			original_tag = GER
-			date < 1941.1.1
-		}
-		AND = {
-			original_tag = SOV
-			date < 1942.1.1
-		}
-	}
-}
-
+# [armor-class-handoff] THE era boundary between the light and the medium class - the only date in
+# the system that says "the light era is over". Read by WA_AI_TEMPLATES_switch_from_light_to_medium_armor
+# (which closes light) and, as its fallback term, by WA_AI_CONFIG_TEMPLATES_admits_medium_armor
+# (which opens medium), so the two sides of the handoff cannot drift apart. Do not add a second
+# light-era or medium-era date anywhere: that is what opened the 1940 gap.
 WA_AI_CONFIG_switch_from_light_to_medium_armor = {
 	OR = {
 		AND = {

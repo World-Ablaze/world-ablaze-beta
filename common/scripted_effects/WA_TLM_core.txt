@@ -54,7 +54,8 @@
 #	v29 r114_thair_near_n / _far_n   which phase of the theatre air ladder won the start
 #	v31 sq_adds_by_type^8            fuel silos joined the shared-slot standard ([silo-breadth])
 #	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
-@WA_TLM_VERSION = 33
+#	v34 armor_*                      armour-template coverage ([armor-class-handoff])
+@WA_TLM_VERSION = 34
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -90,6 +91,22 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_comp_last_t } } set_variable = { WA_TLM_comp_last_t = 0 } }
 	# ring buffers: no clear - arrays create themselves on first add_to_array, and
 	# clearing on re-init is exactly the history wipe the guards exist to prevent
+
+	# [armor-class-handoff] armour-template coverage (standing, v34; write site:
+	# WA_TLM_sample_armor_templates below). Standing under 3.8 criterion 3: "does every
+	# armour-capable country hold an armour template" is a system-health invariant asked of
+	# every campaign, not the mechanism of one fix. Second signal that validates the first
+	# campaign's reading: wa_ai_armor_budget_light/_medium/_heavy - a country with gap = 1 must
+	# show a NON-ZERO budget book, because the role budget and the template layer read the same
+	# use_*_armor_templates triggers. gap = 1 with all three books 0 means the two layers agree
+	# the country wants no armour, which is not a defect.
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_enabled } } set_variable = { WA_TLM_armor_enabled = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_roles_open } } set_variable = { WA_TLM_armor_roles_open = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap } } set_variable = { WA_TLM_armor_gap = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap_n } } set_variable = { WA_TLM_armor_gap_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap_first_t } } set_variable = { WA_TLM_armor_gap_first_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap_t } } set_variable = { WA_TLM_armor_gap_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_armor_last_t } } set_variable = { WA_TLM_armor_last_t = 0 } }
 
 	# [scripted-invasion-reservation] target-reservation stamps (v30; write site:
 	# WA_AI_LANDING_stamp_reservation, WA_AI_LANDING_effects.txt). Counter = stamp sweeps
@@ -391,6 +408,7 @@ WA_TLM_monthly_sample = {
 		WA_TLM_init_country = yes
 	}
 	WA_TLM_sample_composition = yes
+	WA_TLM_sample_armor_templates = yes
 	WA_TLM_sample_navy = yes
 	WA_TLM_sample_pc = yes
 	WA_TLM_sample_sq = yes
@@ -629,6 +647,48 @@ WA_TLM_sample_pc = {
 			}
 		}
 	}
+}
+
+############################################################################################################
+#	[armor-class-handoff] Armour-template coverage (standing, v34). Scope: country, is_ai gated by
+#	the caller. Answers ONE invariant: a country whose armour layer is switched on holds at least
+#	one armour template. It was violated map-wide in 1940 (only ENG/FRA/SOV held any) and nothing
+#	in a save named it - the symptom reached us as "GER builds no medium tanks", four layers away.
+#	roles_open is the VERIFIED EFFECT: the flags the selector actually wrote, not the gate it
+#	passed. enabled is the code-path companion and is never the pass criterion on its own -
+#	enabled = 0 with roles_open = 0 is a country with no armour layer, which is correct.
+#	gap is the live gauge (0/1), gap_n counts the months it held, gap_first_t / gap_t bracket them
+#	(honesty rule 2: no bare one-shot stamp). armor_last_t is the family freshness stamp.
+############################################################################################################
+WA_TLM_sample_armor_templates = {
+	# tlm: armor_enabled - gauge, code-path companion - consumer standing
+	set_variable = { WA_TLM_armor_enabled = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_armor_templates = yes } set_variable = { WA_TLM_armor_enabled = 1 } }
+
+	# tlm: armor_roles_open - gauge, verified effect (flags carried, not gates passed) - consumer standing
+	set_variable = { WA_TLM_armor_roles_open = 0 }
+	if = { limit = { has_country_flag = WA_LIGHT_ARMOR_TEMPLATE } add_to_variable = { WA_TLM_armor_roles_open = 1 } }
+	if = { limit = { has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE } add_to_variable = { WA_TLM_armor_roles_open = 1 } }
+	if = { limit = { has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE } add_to_variable = { WA_TLM_armor_roles_open = 1 } }
+	if = { limit = { has_country_flag = WA_HEAVY_ARMOR_TEMPLATE } add_to_variable = { WA_TLM_armor_roles_open = 1 } }
+
+	# tlm: armor_gap / _gap_n / _gap_first_t / _gap_t - gauge + counter + stamps - consumer standing
+	set_variable = { WA_TLM_armor_gap = 0 }
+	if = {
+		limit = {
+			check_variable = { WA_TLM_armor_enabled = 1 }
+			check_variable = { WA_TLM_armor_roles_open = 0 }
+		}
+		set_variable = { WA_TLM_armor_gap = 1 }
+		add_to_variable = { WA_TLM_armor_gap_n = 1 }
+		if = { limit = { check_variable = { WA_TLM_armor_gap_first_t = 0 } }
+			set_variable = { WA_TLM_armor_gap_first_t = global.WA_TLM_clock }
+		}
+		set_variable = { WA_TLM_armor_gap_t = global.WA_TLM_clock }
+	}
+
+	# tlm: armor_last_t - family freshness stamp - consumer standing
+	set_variable = { WA_TLM_armor_last_t = global.WA_TLM_clock }
 }
 
 ############################################################################################################
