@@ -16,9 +16,11 @@
 #	handed a country its 1942 armour share the month it unlocked its first chassis, and infantry
 #	paid for it from 1936 (GER 1939: 21 wanted light armour of 84 divisions). Assumes the ramp is
 #	the ONLY size input - a country that must go faster gets there through the open-role set and the
-#	weights below, never through a second budget lever. It is TIME-ONLY BY DESIGN: a country at war
-#	in 1937 stays at rung 5 with no war-state override, because the war is what would re-create the
-#	tech-leader spike. Intended, not an oversight.
+#	weights below, never through a second budget lever. ONE exception, gated and finite: the
+#	historical tank-park floor (section 2b), which holds the LIGHT slot at tank_park_light_floor
+#	for the park country while its run is open, infantry paying the difference. It is TIME-ONLY BY
+#	DESIGN: a country at war in 1937 stays at rung 5 with no war-state override, because the war is
+#	what would re-create the tech-leader spike. Intended, not an oversight.
 #
 #	ZERO-SHARE FLOOR - a role whose share reaches 0 has its templates DECOMMISSIONED (the garrison
 #	case). At the lowest rung 5 no open-role combination floors a slot to 0: single role 5; two
@@ -219,6 +221,29 @@ WA_AI_ARMOR_BUDGET_reconcile = {
 	else_if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_t_medium = _abg_rem } }
 	else_if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_t_light = _abg_rem } }
 	else_if = { limit = { check_variable = { _abg_w_heavy > 0 } } add_to_temp_variable = { _abg_t_heavy = _abg_rem } }
+
+	############################################################
+	# 2b. Historical tank-park floor on the light slot
+	############################################################
+	# [light-support-conversion] The park's fielded bars are training-bound, so its divisions must
+	# exist BEFORE the run closes - the early rungs (5/10) and the mid-run dilution when medium and
+	# heavy open both hold the light want under the park's size. While the run is open the light
+	# target floors at tank_park_light_floor and infantry pays the difference; the other roles keep
+	# their ladder shares untouched. Requires the light role OPEN (a floored closed role would fund
+	# decommissioned templates). The gate deliberately has NO fielded-cap term - see
+	# WA_AI_PRODUCTION_should_floor_tank_park_budget. Extra transitions: engage at role-open,
+	# release at run-close = 2 per campaign, inside the entry-accumulation bound above.
+	if = {
+		limit = {
+			check_variable = { _abg_w_light > 0 }
+			WA_AI_PRODUCTION_should_floor_tank_park_budget = yes
+			check_variable = { _abg_t_light < constant:wa_ai_production.army_composition.tank_park_light_floor }
+		}
+		set_temp_variable = { _abg_floor = constant:wa_ai_production.army_composition.tank_park_light_floor }
+		subtract_from_temp_variable = { _abg_floor = _abg_t_light }
+		add_to_temp_variable = { _abg_total = _abg_floor }
+		set_temp_variable = { _abg_t_light = constant:wa_ai_production.army_composition.tank_park_light_floor }
+	}
 
 	############################################################
 	# 3. Diff each book against its target, emit only the difference
