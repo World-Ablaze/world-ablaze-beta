@@ -1,9 +1,5 @@
-WA_AI_MILITARY_is_allies_member = {
-	WA_AI_CONFIG_is_in_allies = yes
-}
-
 WA_AI_MILITARY_allies_at_war_with_axis = {
-	WA_AI_MILITARY_is_allies_member = yes
+	WA_AI_CONFIG_is_in_allies = yes
 	OR = {
 		has_war_with = GER
 		has_war_with = ITA
@@ -50,21 +46,9 @@ WA_AI_MILITARY_NAVAL_axis_has_atlantic_opening = {
 	}
 }
 
-WA_AI_MILITARY_COUNTRY_owns_naval_home_defense = {
-	WA_AI_CONFIG_MILITARY_owns_naval_home_defense = yes
-}
-
-WA_AI_MILITARY_COUNTRY_owns_naval_atlantic_corridor = {
-	WA_AI_CONFIG_MILITARY_owns_naval_atlantic_corridor = yes
-}
-
-WA_AI_MILITARY_COUNTRY_owns_naval_pacific_corridor = {
-	WA_AI_CONFIG_MILITARY_owns_naval_pacific_corridor = yes
-}
-
 WA_AI_MILITARY_FACTION_owns_naval_atlantic_corridor = {
 	OR = {
-		WA_AI_MILITARY_is_allies_member = yes
+		WA_AI_CONFIG_is_in_allies = yes
 		WA_AI_MILITARY_is_comintern_member = yes
 	}
 	OR = {
@@ -74,7 +58,7 @@ WA_AI_MILITARY_FACTION_owns_naval_atlantic_corridor = {
 }
 
 WA_AI_MILITARY_FACTION_owns_naval_mediterranean_corridor = {
-	WA_AI_MILITARY_is_allies_member = yes
+	WA_AI_CONFIG_is_in_allies = yes
 	WA_AI_MILITARY_allies_at_war_with_axis = yes
 }
 
@@ -1234,7 +1218,7 @@ WA_AI_MILITARY_gulf_approach_threatened = {
 }
 
 WA_AI_MILITARY_allies_usa_east_staging_conditions = {
-	WA_AI_MILITARY_is_allies_member = yes
+	WA_AI_CONFIG_is_in_allies = yes
 	WA_AI_CONFIG_MILITARY_is_commonwealth_member = yes
 	date > 1944.6.1
 	NOT = { has_war_with = JAP }
@@ -1387,7 +1371,9 @@ WA_AI_MILITARY_AIR_theatre_contested_north_africa = {
 	}
 }
 
-# Air theatre: Italian peninsula - strategic regions 21 (Northern Italy), 23 (Central Italy), 238 (Southern Italy)
+# Air theatre: Italian peninsula - strategic regions 21 (Northern Italy), 23 (Central Italy), 238 (Southern Italy).
+# The AIR_ prefix is historical, not a scope restriction: FRONT and THEATRE consumers ask the
+# identical geographic question and read this trigger directly (the old un-prefixed alias is gone).
 WA_AI_MILITARY_AIR_theatre_contested_italy = {
 	# enemy presence
 	OR = {
@@ -1433,22 +1419,11 @@ WA_AI_MILITARY_AIR_theatre_contested_italy = {
 	}
 }
 
-# Italian theatre (strategic regions 21 / 23 / 238) is contested: an enemy still holds ground in
-# Italy AND our own side holds a foothold there. Delegates to the AIR_ trigger above, which already
-# computes exactly this question over all 15 states and - unlike the hold-Sicily bridge blocks -
-# counts non-faction co-belligerents through has_war_together_with. Named without the AIR_ prefix
-# because the FRONT and THEATRE consumers ask the identical geographic question; the AIR_ name is
-# historical, not a scope restriction. Consumers: WA_AI_MILITARY_ALLIES_italy_mainland_push_THEATRE
-# and _FRONT (WA_AI_MILITARY_FACTION_ALLIES_{THEATRE,FRONT}.txt).
-WA_AI_MILITARY_italy_theatre_contested = {
-	WA_AI_MILITARY_AIR_theatre_contested_italy = yes
-}
-
 # ROOT owns territory on the Italian mainland - strategic regions 21 (Northern Italy) and 23
 # (Central Italy), i.e. exactly the two regions covered by the default `italy` ai_area.
 # Escape hatch for the veto-class Italy brakes, required by WA_AI_MILITARY_ECONOMY.md principle 4:
 # "a veto that can apply to the country whose homeland it covers is a starvation bug by
-# construction". Co-belligerent Italy satisfies WA_AI_MILITARY_is_allies_member, so before this was
+# construction". Co-belligerent Italy satisfies WA_AI_CONFIG_is_in_allies, so before this was
 # added it took the -80 overstack brake on its own soil (campaign 9a4cd657: ITA fields 44 divisions
 # in theatre at 1944.5 and declines from there). Ownership, not control, so a country that has been
 # overrun still keeps its exemption.
@@ -1988,7 +1963,7 @@ WA_AI_MILITARY_east_africa_side_present = {
 }
 
 # FRONT/THEATRE alias of the contest question (the AIR_ name is historical, not a scope restriction -
-# see WA_AI_MILITARY_italy_theatre_contested).
+# see WA_AI_MILITARY_AIR_theatre_contested_italy).
 # [commonwealth-handoff] the second limb. Consumers are all Allied-side pulls
 # (grep: ALLIES_FRONT contested/exec - the contested block carries the ENG delegation exemption -
 # ALLIES_THEATRE contested, RAJ_DIPLOMACY kill_ITS, RAJ_east_africa_available, and WA_TLM_core which
@@ -3494,7 +3469,7 @@ WA_AI_MILITARY_AIR_enemy_bomber_arm_gone = {
 # everywhere it can actually reach. PREV-relative so it survives being read under any_allied_country.
 WA_AI_MILITARY_AIR_home_only_actor = {
 	WA_AI_MILITARY_AIR_actor_enabled = yes
-	WA_AI_MILITARY_is_allies_member = yes
+	WA_AI_CONFIG_is_in_allies = yes
 	has_capitulated = no
 	capital_scope = { is_controlled_by = PREV }
 }
@@ -3604,7 +3579,7 @@ WA_AI_MILITARY_western_bulwark_accepts_guests = {
 # no European member's capital leaves Europe before fall_of_france opens the gate (an exile capital
 # off-continent would flip that member into this audience for the remaining window).
 WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
-	WA_AI_MILITARY_is_allies_member = yes
+	WA_AI_CONFIG_is_in_allies = yes
 	has_war = yes
 	NOT = { capital_scope = { is_on_continent = europe } }
 	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
