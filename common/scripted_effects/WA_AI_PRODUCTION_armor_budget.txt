@@ -3,11 +3,27 @@
 ############################################################################################################
 #	[armor-role-budget] WHAT THIS PROTECTS
 #	--------------------------------------
-#	ALL tank roles together take a CONSTANT share of the role_ratio total - the budget,
-#	`constant:wa_ai_production.army_composition.armor_budget_total` - however many tank roles the
-#	country has open, and infantry pays that share ONCE. The static blocks this replaces each took
-#	10 from infantry per tank role, so a country opening light + medium + heavy + modern paid 40 and
-#	its armour share moved with the calendar rather than with any decision.
+#	ALL tank roles together take ONE share of the role_ratio total - the budget - however many tank
+#	roles the country has open, and infantry pays that share ONCE. The static blocks this replaces
+#	each took 10 from infantry per tank role, so a country opening light + medium + heavy + modern
+#	paid 40: the armour share tracked the NUMBER OF OPEN ROLES, which is a tech accident, not a
+#	decision. That is the property removed here, and it is not the same thing as the calendar ramp
+#	below, which is a decision about the era.
+#
+#	[armor-budget-ramp] The budget SIZE is a calendar ramp, not a constant: the rows
+#	`armor_budget_start / _1939 / _1940 / _1941 / _total` in
+#	common/script_constants/wa_ai_production.txt, picked by the ladder in section 2. A flat budget
+#	handed a country its 1942 armour share the month it unlocked its first chassis, and infantry
+#	paid for it from 1936 (GER 1939: 21 wanted light armour of 84 divisions). Assumes the ramp is
+#	the ONLY size input - a country that must go faster gets there through the open-role set and the
+#	weights below, never through a second budget lever. It is TIME-ONLY BY DESIGN: a country at war
+#	in 1937 stays at rung 5 with no war-state override, because the war is what would re-create the
+#	tech-leader spike. Intended, not an oversight.
+#
+#	ZERO-SHARE FLOOR - a role whose share reaches 0 has its templates DECOMMISSIONED (the garrison
+#	case). At the lowest rung 5 no open-role combination floors a slot to 0: single role 5; two
+#	standard 3/2; standard+heavy 4/1; all three 2/2/1. Any future rung below 5, or a third weight
+#	class, must be re-checked against this - the split floors before the leftover is handed back.
 #
 #	WHY SCRIPT AND NOT AN ai_strategy FILE
 #	--------------------------------------
@@ -36,8 +52,19 @@
 #	517 accumulated front_armor_score entries on USA because its book was retired and reinstalled on
 #	every transient selection failure. Here the books move only when a tank ROLE opens or closes: a
 #	chassis tech, a focus, the light-to-medium switch, the modern-armor date, the trains-no-divisions
-#	gate. DERIVED bound: about 5 role transitions per major per campaign x 5 slots x 2 entries, i.e.
-#	under 50 entries per country against AIFC's ~250/year. If a campaign save shows a major carrying
+#	gate - plus, since [armor-budget-ramp], the FOUR calendar rungs. DERIVED bound: about 9
+#	transitions per major per campaign x 5 slots x 2 entries, i.e. under 100 entries per country
+#	against AIFC's ~250/year. The ramp is stepped by YEAR and not interpolated by month for exactly
+#	this reason: monthly interpolation would be ~12 transitions/year and blow the bound.
+#
+#	A rung is a ONE-MONTH BURST, not a monthly drip. DERIVED at the real cadence (monthly pulse,
+#	role set unchanged, three tank roles open), entries emitted per pulse across the 1939 rung:
+#		t0  Dec-1938 pulse   budget 5  = books 5   -> 0 entries
+#		t1  Jan-1939 pulse   budget 10 vs books 5  -> 4 entries (light, medium, heavy, infantry)
+#		t2  Feb-1939 pulse   budget 10 = books 10  -> 0 entries
+#	Flat again from t2 until the next rung. EXCLUDED from that bound: a country flapping
+#	WA_AI_PRODUCTION_trains_no_divisions re-emits the whole slot set on every flap, ramp or no ramp -
+#	that is an open-role trigger fault, not a rung. If a campaign save shows a major carrying
 #	hundreds of role_ratio persistent_strategy entries, an open-role trigger is flapping - find which
 #	one, do not add a grace window blind.
 #
@@ -45,7 +72,9 @@
 #	and the largest-weight open role (modern, else medium, else light, else heavy) takes the
 #	remainder so the rows sum to the budget exactly. Heavy armour carries half a standard weight
 #	(armor_weight_heavy vs armor_weight_standard) because a heavy division costs about twice as
-#	much to field. At budget 25: medium alone 25; medium+heavy 17/8; light+medium+heavy 10/10/5.
+#	much to field. At the terminal budget 25: medium alone 25; medium+heavy 17/8;
+#	light+medium+heavy 10/10/5. At the 1939 rung 10: medium alone 10; medium+heavy 7/3 (floors give
+#	6/3, the leftover 1 goes to medium); light+medium+heavy 4/4/2.
 #
 #	[modern-chassis-tier] Since 2026-08-28 there are THREE open roles, never four: modern_armor is
 #	no longer a role, only the last chassis generation of the medium class, so a country reaching
@@ -120,7 +149,16 @@ WA_AI_ARMOR_BUDGET_reconcile = {
 	if = {
 		limit = { check_variable = { _abg_n > 0 } }
 
-		set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_total }
+		# [armor-budget-ramp] The budget for THIS year, not one flat number. Ascending ladder, each
+		# rung overwriting the one below, so the LAST satisfied date wins. Boundaries are the 31
+		# December before the rung, chosen so no rung can apply late whatever hour of 1 January the
+		# engine reports (ASSUMED: HOI4 dates carry an hour and `date > 1939.1.1` is true from
+		# 00:01; not verified, and the 12.31 form is correct either way).
+		set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_start }
+		if = { limit = { date > 1938.12.31 } set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_1939 } }
+		if = { limit = { date > 1939.12.31 } set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_1940 } }
+		if = { limit = { date > 1940.12.31 } set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_1941 } }
+		if = { limit = { date > 1941.12.31 } set_temp_variable = { _abg_total = constant:wa_ai_production.army_composition.armor_budget_total } }
 
 		if = { limit = { check_variable = { _abg_w_light > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }
 		if = { limit = { check_variable = { _abg_w_medium > 0 } } add_to_temp_variable = { _abg_wsum = _abg_wstd } }

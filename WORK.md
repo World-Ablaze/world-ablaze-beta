@@ -172,6 +172,51 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-budget-ramp — SHIPPED-UNTESTED (2026-08-29)
+- Scope: owner order 2026-08-29 — the armour share of the wanted-division mix must grow with the
+  era instead of jumping to its terminal size the month a country unlocks its first chassis.
+  Successor to the CLOSED `armor-role-budget`, which fixed how the budget is SHARED between tank
+  roles; this one fixes its SIZE over time.
+- Symptom (MEASURED, owner `imgui show ai_division_production`, GER 1939): 84 wanted divisions,
+  `light_armor` current 12 / wanted 21, infantry 57 / 55, mountaineers 7 / 8 — infantry `Being
+  Built` 0. Owner report: GER never reaches its ~1.5M-men target for the Poland campaign.
+- Cause (MEASURED, script): `constant:wa_ai_production.army_composition.armor_budget_total = 25`
+  was a single flat number consumed by `WA_AI_ARMOR_BUDGET_reconcile`
+  (`common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt`), so the 1942-sized armour share
+  applied from the first month a tank role opened.
+- Change: the budget becomes a calendar ladder — `armor_budget_start = 5` (start..1938.12.31),
+  `_1939 = 10`, `_1940 = 15`, `_1941 = 20`, `_total = 25` from 1942 (terminal). Ladder in the
+  reconcile; the console harness `WA_TEST_armor_budget.txt` re-types it (contract rule 4) and the
+  four boundary dates are registry-mirrored (`armor_budget_ramp_boundary_*`) so the two copies
+  cannot drift.
+- Which of the two states this moves: the role SHARE, not the wanted-division TOTAL. role_ratio
+  only redistributes the 84; the total is set by the `WANTED_UNITS_WEIGHT_*` defines and belongs
+  to `division-target-scaling`. DERIVED for GER 1939 (one open tank role): 8 armour / 8 mountain /
+  67 infantry instead of 21 / 8 / 55.
+- The ramp does NOT move manpower, MEASURED 2026-08-29 (sum of `manpower` in `common/units/` over
+  each `target_template`): a WA armour division is the same 15 line battalions as an infantry one —
+  infantry 1004 = 18 200 men, light armour 5100 = 18 900, mountaineers 2002 = 20 700. Weighted
+  average per division 18 625 before the ramp and 18 520 after: 0.6%. Its payoff is EQUIPMENT cost,
+  not head-count. Any claim that this subject fixes the owner's 1.5M-men target is false — that is
+  `division-target-scaling`'s formula, and `WANTED_UNITS_MANPOWER_DIVISOR = 17250`
+  (`05_defines.lua:1358`) is the engine's own statement of the same division size.
+- Keyed on the DATE and not on armour tech, because the tech unlock is the event that produced the
+  jump. TIME-ONLY BY DESIGN: a country at war in 1937 stays at rung 5 with no war-state override.
+- Zero-share floor (DERIVED, every open-role combination at rung 5): 5 / 3+2 / 4+1 / 2+2+1 — no
+  slot floors to 0, so the engine's decommission-on-zero-share path is never armed.
+- Entry accumulation (DERIVED, monthly cadence, three roles open): Dec-1938 pulse 0 entries,
+  Jan-1939 pulse 4, Feb-1939 pulse 0. Four rungs per campaign take the documented bound from ~50
+  to under 100 entries per country, against AIFC's ~250/year. Monthly interpolation was rejected
+  for this reason and the rejection is written into the effect header.
+- Mid-campaign load (ASSUMED — no lesson covers a role want dropping below current): a pre-1939
+  save resumed on this build sees the armour want fall 25 → 5 on the first reconcile. Nothing
+  recorded says the engine decommissions fielded divisions of a role whose want merely shrinks.
+  Probe: owner `imgui show ai_division_production` on a resumed pre-1939 save one pulse after
+  load — every armour row still present with a non-zero want.
+- Closed when: a harness run (`event wa_abg.1 <TAG>`) on TWO different rungs pasted here shows all
+  four verdicts at 1 with `budget=` reading the rung for that year; and a 1939 GER window shows
+  wanted `light_armor` near 10% of the wanted total with infantry `Being Built` above 0.
+
 ### armor-ladder-integrity — SHIPPED-UNTESTED (2026-08-29)
 - SHIPPED-UNTESTED as of the flattening ship below: it rewrites seven calculators inside an
   effect an on_action calls, which is exactly the size of change the owner console-test rule
@@ -404,7 +449,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   save from 1940.2 or later shows the flip done with no production-line collapse onto mechanized at
   the crossing. Counter-check: the pre-fix reference campaign has GER on 5102 from 1938.10.
 
-### mot-field-hospital — OPEN (2026-08-29)
+### mot-field-hospital — PARKED (2026-08-29)
+- Parked 2026-08-29 (WIP limit, `armor-budget-ramp` enters). State at parking: code SHIPPED
+  2026-08-29, unverified. Parked rather than one of the three SHIPPED-UNTESTED subjects because
+  its verification owes the owner NOTHING to run now: it has no console harness (33 lines, below
+  the threshold) and its only exit is a campaign probe on a save taken after GER crosses 300
+  military factories — a waiting state, the same logic that parked `theorist-hiring` and
+  `templates-admission`. Unpark when that campaign is scored.
 - Scope: owner request 2026-08-29 — "je veux que l'Allemagne utilise les hôpitaux motorisés dans
   ses divisions". Intended behaviour: a rich army that is otherwise entirely horse-drawn still
   fields the MOTORISED field hospital, which is the one support company whose horse variant caps
@@ -1483,6 +1534,36 @@ OPEN with a session of its own.
   feedback on Change 1 and it does not contradict it - the GER reading that motivated the quartering
   was 1943-shaped (149 active against a target of 521), and the same weights leave the two countries
   that must be ARMED BEFORE the war they start too small in 1936-40.
+- Change 3 (owner order 2026-08-28, from the tester report): +30% theoretical division target for
+  the two European Axis majors until 1940.7.1.
+  - New archetype `WA_AI_CONFIG_MILITARY_is_axis_european_major` (GER, ITA) in `WA_AI_CONFIG.txt` -
+    the tags live there and nowhere else. Deliberately NOT `WA_AI_MILITARY_is_axis_member` +
+    `is_major`: Italy is not an Axis faction member for most of this window, so a faction-derived
+    gate would silently miss half the request. Kept separate from
+    `WA_AI_CONFIG_MILITARY_is_axis_continental_core`, which also carries ROM/HUN/SLO - minors that
+    must not receive a major's army target.
+  - Gate `WA_AI_PRODUCTION_early_war_army_target_boost` (archetype + `date < 1940.7.1`) in
+    `common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt`; payload
+    `WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost`,
+    `ai_strategy = { type = ai_wanted_divisions_factor value = 30 }`.
+  - The window closes at mid-1940 because after the fall of France the war itself drives the target
+    (the threat and war factors multiply it) and a flat boost would compound with them.
+  - Stacks with `WA_AI_PRODUCTION_DEFAULT_army_expansion_override` for GER before 1938 - different
+    strategy types, intended: that block forces BUILDING, this one raises what the AI thinks it needs.
+  - **ASSUMED, and this is the weak point of the change**: `ai_wanted_divisions_factor` is base
+    100 + value like every other `*_factor` strategy, so 30 reads as x1.3. DERIVED from vanilla
+    `USA_90_division_gamble` (-30 for a deliberately small army) and
+    `CHI_stop_disbanding_your_army_during_war` (1000). The install documents this type by NAME only
+    (`common/ai_strategy/documentation.info`, strategy list); vanilla `SOV_cant_stop_wont_stop` uses
+    `0.15` with a "FEED THE MEATGRINDER" comment, which under this reading does nothing and is most
+    likely a vanilla authoring slip. The DIRECTION is safe, the MAGNITUDE is not.
+  - REVERTED by the owner 2026-08-29 (`b6271ad9d`), RE-APPLIED 2026-08-29 by owner order, byte-for-byte.
+    It now stacks on a higher global base than it was sized against: `WANTED_UNITS_WEIGHT_FRONTS_WANT`
+    went 0.08 -> 0.09 -> 0.10 and `_FACTORIES` 0.09 -> 0.11 after the revert (`2cbc706f9` and the
+    commit before it), so GER's pre-war target moves from the 84 the owner measured to about 109.
+    DERIVED against the measured WA division size (18 520 men, weighted): 84 divisions = 1.56M men,
+    109 = 2.02M, against 103 divisions / 1.91M for the historical September 1939 army. The x1.3
+    magnitude is still ASSUMED and still the thing the console must confirm.
 - Verification of Change 3 (owner console; no harness - 15 lines, no scripted effect touched): on a
   1938-39 save, `imgui show ai_division_production` on GER and on ITA shows `Nr Wanted Divisions`
   about 1.3x what the testers reported, with the same `breakdown [nr wanted]` inputs; a 1941 save

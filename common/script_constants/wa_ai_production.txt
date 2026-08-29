@@ -17,14 +17,30 @@ wa_ai_production = {
 	}
 
 	# [armor-role-budget] The share of the role_ratio total that ALL tank roles together get, whatever
-	# the number of tank roles the country has open. role_ratio is base 100 + value
-	# (ai_strategy/documentation.info, UNIT RATIOS / ALL BUT AIR), so this reads directly as a percent
-	# of the wanted-division mix. It is split between the open roles by the WEIGHTS below, and
-	# infantry pays exactly this much once - never once per tank role.
+	# the number of tank roles the country has open. A role's share is its summed role_ratio value
+	# divided by the sum over all roles - NORMALISED, base 0. It reads as a percent only because WA
+	# keeps that sum at 100 (base infantry 100, every modifier a matched -X/+X pair). Do not restate
+	# ai_strategy/documentation.info's "base of 100 plus the value" here: at base 100 per role the
+	# GER 1939 panel would read 35/26/23 of 84, and it reads 55/21/8 - the normalised model.
+	# It is split between the open roles by the WEIGHTS below, and infantry pays exactly this much
+	# once - never once per tank role.
 	# Assumes infantry keeps the residual after mechanized (up to 30) and special forces (10 each);
-	# raising this above ~50 can drive that residual to zero and stop infantry training entirely.
+	# raising any of these above ~50 can drive that residual to zero and stop infantry training.
+	#
+	# [armor-budget-ramp] The budget is a CALENDAR RAMP, not one number. A flat terminal share meant
+	# the armour want jumped to its 1942 size the month a country unlocked its first chassis, and
+	# infantry paid for it from 1936 on. The reconcile picks the row for the current year; a year
+	# with no row keeps the one below it. Keyed on the DATE and deliberately NOT on armour tech,
+	# because the tech unlock is the event that produced the jump - a tech-keyed ramp would hand the
+	# tech leader the same early spike. Setup-agnostic: same rows for every country, every start.
+	# Assumes the reconcile is the only reader; a second reader must take the same ladder or the
+	# two disagree silently.
 	army_composition = {
-		armor_budget_total = 25
+		armor_budget_start = 5		# campaign start .. 1938.12.31
+		armor_budget_1939  = 10
+		armor_budget_1940  = 15
+		armor_budget_1941  = 20
+		armor_budget_total = 25		# from 1942.1.1 onward - TERMINAL, the ramp stops here
 
 		# [armor-role-budget] Per-role WEIGHTS inside that budget. A role's share is
 		# budget x its weight / the sum of the open weights, so only the RATIO between these two

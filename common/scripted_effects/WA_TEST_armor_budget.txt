@@ -14,6 +14,12 @@
 #	the budget constant, which IS the bar being measured. When C and D disagree the fault is in one
 #	of the two, not hidden between them.
 #
+#	[armor-budget-ramp] The budget is DATE-dependent (5 / 10 / 15 / 20 / 25 by year), so `budget=`
+#	changing between two runs on different years is correct, not a fault. One expected transient:
+#	the rung steps on 1 January but the books are rewritten on the next MONTHLY pulse, so a run in
+#	the first days of a new year can read offset-equals-budget=0. Re-fire after a month passes
+#	before treating it as a failure.
+#
 #	READ THE VERDICT LINE AT THE BOTTOM. All four values must read 1.
 ############################################################################################################
 
@@ -260,7 +266,13 @@ WA_TEST_ABG_report = {
 		# columns below are kept so a stale book from a pre-change save is visible, not hidden.
 	}
 
-	set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_total }
+	# [armor-budget-ramp] Same calendar ladder as the shipped effect, RE-TYPED on purpose (contract
+	# rule 4). If C and D disagree on the budget alone, one of the two ladders is wrong - read both.
+	set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_start }
+	if = { limit = { date > 1938.12.31 } set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_1939 } }
+	if = { limit = { date > 1939.12.31 } set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_1940 } }
+	if = { limit = { date > 1940.12.31 } set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_1941 } }
+	if = { limit = { date > 1941.12.31 } set_temp_variable = { _abt_budget = constant:wa_ai_production.army_composition.armor_budget_total } }
 	set_temp_variable = { _abt_wstd = constant:wa_ai_production.army_composition.armor_weight_standard }
 	set_temp_variable = { _abt_whvy = constant:wa_ai_production.army_composition.armor_weight_heavy }
 	set_temp_variable = { _abt_total = 0 }

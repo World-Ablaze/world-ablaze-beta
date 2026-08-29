@@ -29,13 +29,15 @@ WA_AI_PRODUCTION_build_army_base = {
 # [armor-role-budget] The five static blocks that used to live here (light, medium, the
 # light-to-medium transition, heavy, modern) each moved 10 points from infantry to one tank role,
 # so the armour share was 10 x the number of open tank roles and infantry paid it once per role.
-# The tank roles now share ONE constant budget emitted at runtime by
+# The tank roles now share ONE budget emitted at runtime by
 # common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt, because the per-role value is
 # budget / open-roles and `ai_strategy value =` takes a literal. A tank role_ratio block added
 # back in this file would stack on top of that budget and re-create the bug.
 # WHICH roles are open is still decided by the WA_AI_PRODUCTION_build_army_*_armor triggers in
-# common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt; the SIZE is
-# constant:wa_ai_production.army_composition.armor_budget_total.
+# common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt; the SIZE is the
+# [armor-budget-ramp] calendar ladder in that same effect, whose rungs are
+# constant:wa_ai_production.army_composition.armor_budget_start / _1939 / _1940 / _1941 and
+# _total - _total being the TERMINAL rung from 1942, not a flat value.
 
 # ============================================================================
 # MOBILE MODIFIERS
@@ -136,14 +138,33 @@ WA_AI_PRODUCTION_DEFAULT_army_expansion_override = {
 	ai_strategy = { type = force_build_armies value = 300 }
 }
 
+# [division-target-scaling] +30% theoretical division target for the two European Axis majors until
+# mid-1940 (tester report 2026-08-28: GER and ITA under-build in the early game after the global
+# WANTED_UNITS_WEIGHT_* quartering). WHO and WHEN live in
+# WA_AI_PRODUCTION_early_war_army_target_boost; this is the payload.
+# ASSUMED: ai_wanted_divisions_factor is base 100 + value like every other *_factor strategy, so 30
+# reads as x1.3. DERIVED from vanilla USA_90_division_gamble (-30 for a deliberately small army) and
+# CHI_stop_disbanding_your_army (1000). The engine does not document this type beyond its name, so
+# the magnitude is what the owner console must confirm, not the direction.
+# Stacks with the army_expansion_override above for GER before 1938 - different strategy types,
+# intended: that block forces BUILDING, this one raises what the AI thinks it needs.
+WA_AI_PRODUCTION_DEFAULT_early_war_army_target_boost = {
+	enable = { WA_AI_PRODUCTION_early_war_army_target_boost = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = ai_wanted_divisions_factor value = 30 }
+}
+
 ############################################################################################################
 # NO-NEW-DIVISIONS SUPPRESSION
 ############################################################################################################
 
 # Shared payload for every owner rule that forbids training divisions; WHO is suppressed lives in
 # WA_AI_PRODUCTION_trains_no_divisions (scripted_triggers/WA_AI_PRODUCTION_army_composition.txt).
-# role_ratio is base 100 + value (documentation.info, UNIT RATIOS / ALL BUT AIR); -1000 keeps the
-# want at zero through every additive modifier above. cavalry covers the Military Police
+# A role's share is its summed role_ratio value over the sum across roles - normalised, base 0
+# (documentation.info's "base of 100 plus the value" does not reproduce the panel; see the header
+# of common/script_constants/wa_ai_production.txt). -1000 keeps the want at zero through every
+# additive modifier above. cavalry covers the Military Police
 # templates; garrison role is gone (see SUPPORT MODIFIERS above).
 # [rk-no-divisions] A Reichskommissariat trains NO divisions of any role (owner rule 2026-08-27):
 # its manpower and MIC belong to the overlord, so anything it trains burns overlord equipment.
