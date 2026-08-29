@@ -1067,15 +1067,38 @@ WA_AI_MILITARY_commonwealth_east_africa_available = {
 # frontier can be manned before the declaration. The Axis side has no such gap: ITA's
 # east_africa_garrison_THEATRE stands on 550/559 in peace.
 #
+# The Italian and German powers share an ideology group, i.e. Italy is likely to come in on the
+# German side. Enumerated over the four groups because HOI4 1.19.2 has NO "same ideology as"
+# trigger - `has_government` takes a literal group and nothing compares two countries' governments
+# (checked in the install's documentation/triggers_documentation.md). If Paradox ever adds one,
+# this collapses to a single line.
+WA_AI_MILITARY_italian_power_shares_german_ideology = {
+	OR = {
+		AND = { ITA = { has_government = fascism }    GER = { has_government = fascism } }
+		AND = { ITA = { has_government = communism }  GER = { has_government = communism } }
+		AND = { ITA = { has_government = democratic } GER = { has_government = democratic } }
+		AND = { ITA = { has_government = neutrality } GER = { has_government = neutrality } }
+	}
+}
+
+# The western-European bulwark is coming apart. `surrender_progress > 0` and not a capitulation
+# flag: the point is to react while France is falling, not after it has fallen.
+WA_AI_MILITARY_western_bulwark_is_collapsing = {
+	FRA = {
+		exists = yes
+		surrender_progress > 0
+	}
+}
+
 # The verdict below is the owner's rule of 2026-08-21, kept literally: the Italian and German powers
 # share an ideology group, AND either the western bulwark is coming apart or the calendar has passed
 # 1940.8.1. The date is an OR fallback, never the only path (AGENTS.md design principle 1) - it can
 # only make the tripwire arm EARLIER in a world where France does not fall, and removing it would
 # leave the dynamic term standing on its own.
 WA_AI_MILITARY_italian_entry_likely = {
-	WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology = yes
+	WA_AI_MILITARY_italian_power_shares_german_ideology = yes
 	OR = {
-		WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing = yes
+		WA_AI_MILITARY_western_bulwark_is_collapsing = yes
 		date > 1940.8.1
 	}
 }

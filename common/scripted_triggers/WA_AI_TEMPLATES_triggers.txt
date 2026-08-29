@@ -144,7 +144,30 @@ WA_AI_TEMPLATES_mechanization_line_open = {
 	# fielded.
 	OR = {
 		date > 1942.1.1
-		NOT = { WA_AI_CONFIG_has_penalised_army_xp_gain = yes }
+		NOT = { WA_AI_TEMPLATES_has_penalised_army_xp_gain = yes }
+	}
+}
+
+# True when the country's army XP income is structurally penalised.
+# Reads the aggregate country modifier, so it covers national spirits, dynamic
+# modifiers and advisors alike, and it closes again by itself once the penalty is
+# lifted. Used to keep "nice to have" template roles shut for countries that cannot
+# fund a second design on top of their line infantry.
+# Catches SOV (purge + red army), CHI/PRC, MAN, JAP, NZL, TUR, BUL, BEL.
+# Does NOT catch a normal GER/ENG/USA/FRA run - their negative XP spirits are
+# civil-war or transient-only.
+WA_AI_TEMPLATES_has_penalised_army_xp_gain = {
+	OR = {
+		check_variable = {
+			var = modifier@experience_gain_army_factor
+			value = -0.05
+			compare = less_than
+		}
+		check_variable = {
+			var = modifier@experience_gain_factor
+			value = -0.05
+			compare = less_than
+		}
 	}
 }
 

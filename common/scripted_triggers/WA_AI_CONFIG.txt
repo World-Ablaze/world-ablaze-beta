@@ -331,9 +331,6 @@ WA_AI_CONFIG_is_escort_navy = {
 # left the old cv-plane production blocks as dead code and their USA counterweight
 # suppressions live - the root cause of carrier-fighter starvation in 9be92c89.)
 
-WA_AI_CONFIG_needs_cv_planes = {
-	has_navy_size = { type = carrier size > 0 }
-}
 
 # ============================================================================
 # PRODUCTION TRIGGERS
@@ -382,24 +379,10 @@ WA_AI_CONFIG_focus_on_minelayers = {
 	}
 }
 
-# Disable capital building on historical due to the AI Capital Ship System
-WA_AI_CONFIG_majors_should_build_capitals = {
-	WA_AI_CONFIG_is_major_country = yes
-	OR = {
-		WA_AI_DIFFICULTY_is_historical = no
-		AND = {
-			WA_AI_DIFFICULTY_is_historical = yes
-			# Allow capital building if game goes past 1948
-			# or before treaty is dissolved so dockyards are put on starting production
-			OR = {
-				date > 1948.1.1
-				any_country_of = {
-					target = { ENG FRA GER ITA JAP SOV USA}
-					has_naval_treaty_trigger = yes
-				}
-			}
-		}
-	}
+# The naval-treaty era is over by the calendar alone - the fallback bound of the capital-ship
+# window (the live bound is the treaty status itself, read by WA_AI_PRODUCTION_should_build_capitals).
+WA_AI_CONFIG_naval_treaty_era_expired = {
+	date > 1948.1.1
 }
 
 # [equipment-selection] SOV added. Routing a submarine navy through this trigger moves its production
@@ -586,28 +569,6 @@ WA_AI_CONFIG_DIVISIONS_use_line_support = {
 	}
 }
 
-# True when the country's army XP income is structurally penalised.
-# Reads the aggregate country modifier, so it covers national spirits, dynamic
-# modifiers and advisors alike, and it closes again by itself once the penalty is
-# lifted. Used to keep "nice to have" template roles shut for countries that cannot
-# fund a second design on top of their line infantry.
-# Catches SOV (purge + red army), CHI/PRC, MAN, JAP, NZL, TUR, BUL, BEL.
-# Does NOT catch a normal GER/ENG/USA/FRA run - their negative XP spirits are
-# civil-war or transient-only.
-WA_AI_CONFIG_has_penalised_army_xp_gain = {
-	OR = {
-		check_variable = {
-			var = modifier@experience_gain_army_factor
-			value = -0.05
-			compare = less_than
-		}
-		check_variable = {
-			var = modifier@experience_gain_factor
-			value = -0.05
-			compare = less_than
-		}
-	}
-}
 
 # Can this country field motorised support companies rather than horse-drawn ones?
 # Read by 18 sites, not only the templates: the scripted division creator's equipment
@@ -906,10 +867,12 @@ WA_AI_CONFIG_early_game_army_expansion_override = {
 # These triggers determine which nations need specific industry technologies
 # ============================================================================
 
-# Nations that face strategic bombing and need industry camouflage
-WA_AI_CONFIG_faces_strategic_bombing = {
+# Identity: the industrial powers whose homeland is a strategic-bombing target by design.
+# The LIVE half of the old faces_strategic_bombing verdict (any enemy with a strategic-bomber
+# airforce) moved to its reader, WA_AI_RESEARCH_needs_industry_camouflage, which already
+# carried the same sweep - the union is unchanged.
+WA_AI_CONFIG_is_strategic_bombing_target = {
 	OR = {
-		any_enemy_country = { WA_AI_CONFIG_is_strategic_bombing_airforce = yes }
 		original_tag = GER
 		original_tag = JAP
 		original_tag = ITA
@@ -981,26 +944,21 @@ WA_AI_CONFIG_has_amphibious_doctrine = {
 # Master check: Does ROOT have any railway override active?
 WA_AI_CONFIG_RAILWAY_has_scripted_override = {
 	OR = {
-		WA_AI_CONFIG_RAILWAY_override_GER_to_SOV = yes
+		WA_AI_RAILWAY_should_override_GER_to_SOV = yes
 		# Add more overrides here as needed
 	}
 }
 
-# Germany -> Soviet Union (Barbarossa preparation)
-# Historical: Germany built extensive railway infrastructure toward
-# Soviet border in early 1941 before Operation Barbarossa
-WA_AI_CONFIG_RAILWAY_override_GER_to_SOV = {
+# Germany -> Soviet Union (Barbarossa preparation) - the SETUP half only: who, which mode,
+# which calendar window, which focus. The LIVE half (SOV exists / not at war / not allied)
+# lives with the verdict, WA_AI_RAILWAY_should_override_GER_to_SOV (WA_AI_CONSTRUCTION_triggers.txt).
+WA_AI_CONFIG_RAILWAY_GER_to_SOV_window = {
 	original_tag = GER
 	is_historical_focus_on = yes
 	has_government = fascism
 	date > 1941.1.1              # After France fell
 	date < 1941.12.1             # Before Barbarossa window closes
 	has_completed_focus = GER_danzig_or_war
-	SOV = {
-		exists = yes
-		NOT = { has_war_with = ROOT }
-		NOT = { is_in_faction_with = ROOT }
-	}
 }
 
 # ============================================================================
@@ -1236,28 +1194,7 @@ WA_AI_CONFIG_MILITARY_is_western_european_bulwark = {
 	original_tag = FRA
 }
 
-# The Italian and German powers share an ideology group, i.e. Italy is likely to come in on the
-# German side. Enumerated over the four groups because HOI4 1.19.2 has NO "same ideology as"
-# trigger - `has_government` takes a literal group and nothing compares two countries' governments
-# (checked in the install's documentation/triggers_documentation.md). If Paradox ever adds one,
-# this collapses to a single line.
-WA_AI_CONFIG_MILITARY_italian_power_shares_german_ideology = {
-	OR = {
-		AND = { ITA = { has_government = fascism }    GER = { has_government = fascism } }
-		AND = { ITA = { has_government = communism }  GER = { has_government = communism } }
-		AND = { ITA = { has_government = democratic } GER = { has_government = democratic } }
-		AND = { ITA = { has_government = neutrality } GER = { has_government = neutrality } }
-	}
-}
 
-# The western-European bulwark is coming apart. `surrender_progress > 0` and not a capitulation
-# flag: the point is to react while France is falling, not after it has fallen.
-WA_AI_CONFIG_MILITARY_western_bulwark_is_collapsing = {
-	FRA = {
-		exists = yes
-		surrender_progress > 0
-	}
-}
 
 # Who actually stands on the colonial frontier. ENG owns the theatre; RAJ is the East-Africa
 # delegate ([commonwealth-handoff]) and the only dominion with an army near it. AST / NZL / CAN / SAF are out:
