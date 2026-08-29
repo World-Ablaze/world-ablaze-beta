@@ -1,0 +1,38 @@
+############################################################################################################
+#	PDXSCRIPT SEMANTICS - console harness (phase 0 of the WA_AI layers refactor). READ-ONLY. TEMPORARY.
+#
+#	Effects: common/scripted_effects/WA_TEST_pdx_semantics.txt
+#	Probe constants: common/script_constants/wa_ai_probe.txt, wa_ai_probe_dates.txt
+#
+#	CONSOLE RECIPE (any save, any date, any country - no probe reads country state):
+#	    tag GER            (or leave your own country; `tag` only matters for the scope controls)
+#	    event wa_pdx.1     (READ-ONLY: three engine questions + their controls)
+#	  then read logs/game.log, search "PDX TEST"; `tag` back to your country afterwards.
+#
+#	  Read the CONTEXT HEADER first. If the scope line is not `1 1 1 1 0`, STOP - nothing below it
+#	  is a measurement. Then read each Q line WITH its controls: a probe whose controls are wrong
+#	  is unreadable, not answered.
+#
+#	WHY ITS OWN FILE: the harness contract forbids hosting console harnesses in
+#	events/wa_events_test.txt ("Two call sites, one effect" lesson - a probe whose readings depend
+#	on which file fired it is worthless). Namespace wa_pdx is this harness's own.
+#
+#	Side effects: none - the effect only reads triggers and writes temp variables, cleared at the end.
+#
+#	LIFECYCLE: delete this file, the effect file and the two probe constant files once the answers
+#	are recorded in documentation/PDXSCRIPT_LANGUAGE_NOTES.md.
+############################################################################################################
+
+add_namespace = wa_pdx
+
+# Read-only report - fire as any country.
+country_event = {
+	id = wa_pdx.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_PDX_report = yes
+	}
+}

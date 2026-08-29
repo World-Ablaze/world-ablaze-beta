@@ -326,3 +326,47 @@ Use these local conventions when adding PDXScript:
 - Test bundle trigger blocks should avoid side effects. Use scripted test effects only for custom in-game harnesses, not vanilla `tests/` parity bundles.
 - In replaced paths, deleting or omitting content can remove vanilla definitions at runtime.
 
+
+## Measured Engine Semantics (1.19.2.0)
+
+Three questions the install's own `documentation/triggers_documentation.md` does NOT answer
+(`## if` gives only the syntax; `## not` says only "negates content of trigger"), settled by the
+console harness `WA_TEST_pdx_semantics` on 2026-08-29. Save 1936.1.1, tag GER, event `wa_pdx.1`,
+context header `1 1 1 1 0`, every probe's positive and negative control valid, `error.log` clean
+apart from the benign `Spawned event without any allowed options` that every hidden triggered
+event without an `option` block emits. Read back with
+`python tools/read_harness_log.py --marker "PDX TEST" --interpret pdx_semantics`.
+
+**MEASURED — `if` with a false `limit` is VACUOUSLY TRUE.**
+
+```
+OR = {
+    always = no
+    if = { limit = { always = no }  always = no }
+}
+```
+evaluates **TRUE**. Controls: the same shape with `limit = { always = yes }` and a true body reads
+1, with a false body reads 0, so `if` is reached and works — the false-limit case is what returns
+true. Consequence: **an `if` inside an `OR` cannot narrow anything. When its limit fails it
+satisfies the whole OR.** Inside an `AND` (the default block semantics) the same vacuous true is
+harmless, which is why the idiom looks safe until someone puts it in an `OR`.
+
+**MEASURED — `NOT = { A B }` with several children is a NOR, not a NAND.**
+
+`NOT = { always = yes  always = no }` reads **0**; `NOT = { always = no  always = no }` reads 1;
+`NOT = { always = yes  always = yes }` reads 0; the three-child form `NOT = { yes  no  no }` reads
+0. So `NOT` over multiple children means **"none of these are true"**, which is what the 71 such
+blocks in the mod were written to mean. No defect. Writing `NOT = { A B }` to mean "not both" is
+the mistake — that shape is `NOT = { AND = { A B } }`.
+
+**MEASURED — a script constant CANNOT carry a date, and the failure is SILENT.**
+
+`common/script_constants/` declares `fixed_point` leaves. A date-shaped value (`1900.1.1`) does not
+prevent the file from loading — its parse-control key still read back correctly — but
+`date > constant:<cat>.dates.past` and `date > constant:<cat>.dates.future` **both read TRUE**,
+including the future date that the literal control `date > 2000.1.1` correctly reads FALSE in a
+1936 game. The reference resolves to something `date >` compares as always-satisfied.
+
+**This is the dangerous failure mode: a gate that stops gating without any error.** Never put a
+date in a script constant. The vehicle for a shared date is a **named scripted trigger** holding
+the literal (the shape `WA_AI_CONFIG_switch_from_light_to_medium_armor` already uses).

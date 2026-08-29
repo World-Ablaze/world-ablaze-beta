@@ -1,0 +1,218 @@
+############################################################################################################
+#	WA_TEST - PDXScript SEMANTICS, console-driven, READ-ONLY. TEMPORARY (phase 0 of the layers refactor).
+#
+#	Fired by wa_pdx.1 in events/wa_test_pdx_semantics.txt. Console recipe:
+#	  tag GER            (any country, any save - none of the probes read country state)
+#	  event wa_pdx.1
+#	  read logs/game.log, lines "PDX TEST"; `tag` back to your country afterwards.
+#
+#	WHAT THIS PROVES AND WHAT IT CANNOT. Three engine questions the 1.19.2 install's
+#	documentation/triggers_documentation.md does NOT answer (`## if` gives only the syntax,
+#	`## not` says only "negates content of trigger"), and that no file in this repo settles:
+#	  Q1  is `if = { limit = { <false> } ... }` TRUE when nested inside an OR?   3 sites depend on it
+#	  Q2  is `NOT = { A  B }` a NAND or a NOR?                                  71 sites depend on it
+#	  Q3  can a script constant hold a date, and does `date > constant:` compare right?
+#	ENGINE RESIDUAL, stated honestly: this proves the semantics IN EVENT/EFFECT TRIGGER CONTEXT.
+#	Whether `ai_strategy` `allowed` / `enable` blocks parse identically is NOT proven here - the
+#	engine evaluates them through a different call path. If Q1 or Q2 comes back surprising, the
+#	confirming read for the ai_strategy path is `imgui show ai-strategy` on a live save.
+#
+#	DELETE THIS FILE, events/wa_test_pdx_semantics.txt, common/script_constants/wa_ai_probe.txt and
+#	common/script_constants/wa_ai_probe_dates.txt once the three answers are recorded in
+#	documentation/PDXSCRIPT_LANGUAGE_NOTES.md. A harness whose question is answered is dead code.
+############################################################################################################
+
+# ROOT = THIS = whatever country fired it. Read-only: temp variables and log only.
+WA_TEST_PDX_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | PDX TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Without these lines a poisoned call site reads every country-valued trigger false while
+	### [Root.GetName] still prints the right name beside it. The fifth check is a KNOWN-FALSE
+	### control: it must read 0.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _pdx_e1_ = 0 }
+	set_temp_variable = { _pdx_e2_ = 0 }
+	set_temp_variable = { _pdx_e3_ = 0 }
+	set_temp_variable = { _pdx_e4_ = 0 }
+	set_temp_variable = { _pdx_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _pdx_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _pdx_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _pdx_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _pdx_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _pdx_e5_ = 1 } }
+	log = "  scope : always=[?_pdx_e1_|.0]  I-am-ROOT=[?_pdx_e2_|.0]  I-am-THIS=[?_pdx_e3_|.0]  ROOT-scope-usable=[?_pdx_e4_|.0]  control-false=[?_pdx_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire from events/wa_test_pdx_semantics.txt - tag GER then event wa_pdx.1 - before reading anything.)"
+
+	########################################################################################
+	### Q1 - `if` with a FALSE limit, nested inside an OR. Is it vacuously TRUE?
+	### Read site that depends on the answer: WA_AI_CONFIG_DIVISIONS_use_armored_divisions
+	### (common/scripted_triggers/WA_AI_CONFIG.txt:433), plus
+	### common/ai_strategy/WA_AI_MILITARY_COUNTRY_GER_FRONT.txt:1429.
+	########################################################################################
+
+	set_temp_variable = { _pdx_q1a_ = 0 }
+	set_temp_variable = { _pdx_q1b_ = 0 }
+	set_temp_variable = { _pdx_q1c_ = 0 }
+	set_temp_variable = { _pdx_q1d_ = 0 }
+
+	# q1a - THE QUESTION. Both OR members are false UNLESS a false-limit `if` counts as true.
+	if = {
+		limit = {
+			OR = {
+				always = no
+				if = { limit = { always = no } always = no }
+			}
+		}
+		set_temp_variable = { _pdx_q1a_ = 1 }
+	}
+
+	# q1b - POSITIVE CONTROL. `if` is reached, limit true, body true -> must read 1.
+	# If this reads 0, `if` does not work in a trigger at all and q1a means nothing.
+	if = {
+		limit = {
+			OR = {
+				always = no
+				if = { limit = { always = yes } always = yes }
+			}
+		}
+		set_temp_variable = { _pdx_q1b_ = 1 }
+	}
+
+	# q1c - NEGATIVE CONTROL. limit true, body false -> must read 0.
+	if = {
+		limit = {
+			OR = {
+				always = no
+				if = { limit = { always = yes } always = no }
+			}
+		}
+		set_temp_variable = { _pdx_q1c_ = 1 }
+	}
+
+	# q1d - the SAME false-limit `if`, at the TOP LEVEL of a limit (AND context) rather than in an
+	# OR. Expected 1 under every reading; it separates "vacuous true" from "the OR is broken".
+	if = {
+		limit = {
+			always = yes
+			if = { limit = { always = no } always = no }
+		}
+		set_temp_variable = { _pdx_q1d_ = 1 }
+	}
+
+	log = "  Q1 if-in-OR : ANSWER=[?_pdx_q1a_|.0]   pos-control=[?_pdx_q1b_|.0] (must be 1)   neg-control=[?_pdx_q1c_|.0] (must be 0)   if-in-AND=[?_pdx_q1d_|.0]"
+	log = "            (controls not 1 and 0: STOP, Q1 unreadable. Otherwise ANSWER=1 means a false-limit `if` is VACUOUSLY TRUE"
+	log = "             -> WA_AI_CONFIG_DIVISIONS_use_armored_divisions is TRUE FOR EVERY COUNTRY on competitive difficulty. ANSWER=0 means the gate works as written.)"
+
+	########################################################################################
+	### Q2 - `NOT = { A  B }` with two children: NAND or NOR?
+	### 71 sites depend on it, incl. 16 in WA_AI_LAW_triggers.txt and 13 in events/WA_AI_GER.txt.
+	########################################################################################
+
+	set_temp_variable = { _pdx_q2a_ = 0 }
+	set_temp_variable = { _pdx_q2b_ = 0 }
+	set_temp_variable = { _pdx_q2c_ = 0 }
+	set_temp_variable = { _pdx_q2d_ = 0 }
+
+	# q2a - THE QUESTION. One child true, one false.
+	#   NAND -> NOT(yes AND no) = NOT(false) = 1
+	#   NOR  -> NOT(yes OR  no) = NOT(true)  = 0
+	if = {
+		limit = { NOT = { always = yes  always = no } }
+		set_temp_variable = { _pdx_q2a_ = 1 }
+	}
+
+	# q2b - CONTROL, both false. Must read 1 under BOTH readings.
+	if = {
+		limit = { NOT = { always = no  always = no } }
+		set_temp_variable = { _pdx_q2b_ = 1 }
+	}
+
+	# q2c - CONTROL, both true. Must read 0 under BOTH readings.
+	if = {
+		limit = { NOT = { always = yes  always = yes } }
+		set_temp_variable = { _pdx_q2c_ = 1 }
+	}
+
+	# q2d - the SAME question with THREE children (one true, two false), because a two-child
+	# special case would not settle the shape the mod actually writes.
+	#   NAND -> 1 ; NOR -> 0
+	if = {
+		limit = { NOT = { always = yes  always = no  always = no } }
+		set_temp_variable = { _pdx_q2d_ = 1 }
+	}
+
+	log = "  Q2 NOT-multi: ANSWER=[?_pdx_q2a_|.0]   all-false=[?_pdx_q2b_|.0] (must be 1)   all-true=[?_pdx_q2c_|.0] (must be 0)   three-children=[?_pdx_q2d_|.0]"
+	log = "            (controls not 1 and 0: STOP, Q2 unreadable. Otherwise ANSWER=1 means NAND - `NOT = { A B }` is NOT(A AND B), so a guard meant as"
+	log = "             'none of these' fires as soon as ONE is false, i.e. it guards nothing. ANSWER=0 means NOR and the 71 sites read as intended.)"
+
+	########################################################################################
+	### Q3 - can a script constant hold a DATE, and does `date > constant:` compare right?
+	### Decides the vehicle for the 430 literal dates: named constant, or named CONFIG trigger.
+	########################################################################################
+
+	# q3-sentinel - does `constant:` resolve here AT ALL, from a file with no date in it?
+	# Reads 7 if wa_ai_probe.txt parsed. Anything else: Q3 is unreadable, not answered.
+	set_temp_variable = { _pdx_q3s_ = 0 }
+	set_temp_variable = { _pdx_q3s_ = constant:wa_ai_probe.sentinel.alive }
+
+	# q3-guard - did wa_ai_probe_dates.txt survive having date-shaped values in it?
+	# Reads 3 if yes. Reads 0 if the date keys killed that file -> Q3 answer is already "no".
+	set_temp_variable = { _pdx_q3g_ = 0 }
+	set_temp_variable = { _pdx_q3g_ = constant:wa_ai_probe_dates.guard.alive }
+
+	log = "  Q3 controls : constant-resolves=[?_pdx_q3s_|.0] (must be 7)   date-file-survived=[?_pdx_q3g_|.0] (must be 3)"
+	log = "            (constant-resolves not 7: STOP, Q3 unreadable - `constant:` does not reach this context and the experiment says nothing."
+	log = "             date-file-survived not 3: ANSWER IS ALREADY NO - a script constants file containing date-shaped values did not load.)"
+
+	# The experiment itself. past = 1900.1.1 (before every start), future = 2000.1.1 (after every end).
+	set_temp_variable = { _pdx_q3a_ = 0 }
+	set_temp_variable = { _pdx_q3b_ = 0 }
+	set_temp_variable = { _pdx_q3c_ = 0 }
+	set_temp_variable = { _pdx_q3d_ = 0 }
+
+	if = {
+		limit = { date > constant:wa_ai_probe_dates.dates.past }
+		set_temp_variable = { _pdx_q3a_ = 1 }
+	}
+	if = {
+		limit = { date > constant:wa_ai_probe_dates.dates.future }
+		set_temp_variable = { _pdx_q3b_ = 1 }
+	}
+
+	# Literal controls on the SAME two dates. These MUST read 1 and 0 in any campaign; they prove
+	# the `date` trigger itself behaves, so a q3a/q3b anomaly is the constant's fault, not `date`'s.
+	if = { limit = { date > 1900.1.1 } set_temp_variable = { _pdx_q3c_ = 1 } }
+	if = { limit = { date > 2000.1.1 } set_temp_variable = { _pdx_q3d_ = 1 } }
+
+	log = "  Q3 date-const: past=[?_pdx_q3a_|.0]  future=[?_pdx_q3b_|.0]   literal-past=[?_pdx_q3c_|.0] (must be 1)   literal-future=[?_pdx_q3d_|.0] (must be 0)"
+	log = "            (read past/future as a PAIR: 1 0 = WORKS, dates can live in script constants."
+	log = "             1 1 = SILENTLY PERMISSIVE, the constant resolves to garbage and `date >` is always true - the worst outcome, never ship this."
+	log = "             0 0 = SILENTLY RESTRICTIVE, always false. 0 1 = incoherent, re-run. Anything but 1 0 means the vehicle for the 430 dates is a"
+	log = "             named CONFIG trigger, not a constant.)"
+
+	log = "  ---- end PDX TEST. Record the three answers in documentation/PDXSCRIPT_LANGUAGE_NOTES.md, then DELETE this harness and its two probe constant files."
+	log = "=========================================================================================="
+
+	clear_variable = _pdx_e1_
+	clear_variable = _pdx_e2_
+	clear_variable = _pdx_e3_
+	clear_variable = _pdx_e4_
+	clear_variable = _pdx_e5_
+	clear_variable = _pdx_q1a_
+	clear_variable = _pdx_q1b_
+	clear_variable = _pdx_q1c_
+	clear_variable = _pdx_q1d_
+	clear_variable = _pdx_q2a_
+	clear_variable = _pdx_q2b_
+	clear_variable = _pdx_q2c_
+	clear_variable = _pdx_q2d_
+	clear_variable = _pdx_q3s_
+	clear_variable = _pdx_q3g_
+	clear_variable = _pdx_q3a_
+	clear_variable = _pdx_q3b_
+	clear_variable = _pdx_q3c_
+	clear_variable = _pdx_q3d_
+}

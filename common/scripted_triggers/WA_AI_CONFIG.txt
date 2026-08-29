@@ -8,7 +8,22 @@
 # ============================================================================
 # DIFFICULTY TRIGGERS
 # ============================================================================
-# These triggers determine the difficulty of the AI
+# [difficulty-mapping] `difficulty` reads the vanilla 0-4 enum, bound to the frontend
+# checkboxes by their engine NAME - and WA's frontend (interface/frontendgamesetupview.gui
+# + localisation/replace/afo_core_l_english.yml) REPOSITIONS those buttons, so the value
+# order is NOT the visual order. Verified 2026-08-29 against both files:
+#   0 = very_easy_cb -> "Easy"   Historical row, 1st button
+#   1 = easy_cb      -> "Hard"   Historical row, 3rd button (scripted assists enabled)
+#   2 = normal_cb    -> "Normal" Historical row, 2nd button (the default; "meant to be played")
+#   3 = hard_cb      -> "Normal" Competitive row, 1st button
+#   4 = very_hard_cb -> "Hard"   Competitive row, 2nd button (scripted assists enabled)
+# Labels and sprites are cosmetic; only the checkbox name carries the value. If the .gui
+# layout or the afo_core labels change, this table is stale and these triggers gate the
+# wrong buttons - re-verify both files before touching any threshold below.
+# Because the mapping is non-monotonic (severity order easy 0 < normal 2 < hard 1), a raw
+# `difficulty >` comparison outside this file CANNOT express "normal or harder" or include
+# Hist Hard in any range - always gate on these named triggers or a composition of them
+# (checker rule DIFFICULTY-RAW; migration = phase 2b of the layers refactor).
 # ============================================================================
 
 # WA Historical AI Difficulty: preserve the sequence of WW2 events/campaigns. This is NOT vanilla's
@@ -32,12 +47,12 @@ WA_AI_DIFFICULTY_is_historical_easy = { # 0
 	difficulty < 1
 }
 
-WA_AI_DIFFICULTY_is_historical_normal = { # 2 - yes, this is out of order intentionally
+WA_AI_DIFFICULTY_is_historical_normal = { # 2 = normal_cb, the vanilla NORMAL slot - see [difficulty-mapping] above
 	difficulty > 1
 	difficulty < 3
 }
 
-WA_AI_DIFFICULTY_is_historical_hard = { # 1
+WA_AI_DIFFICULTY_is_historical_hard = { # 1 = easy_cb, the vanilla EASY slot repurposed as WA Hard - see [difficulty-mapping] above
 	difficulty > 0
 	difficulty < 2
 }
