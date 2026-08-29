@@ -1,0 +1,32 @@
+############################################################################################################
+#	EXPLAIN NAVAL - console harness (ships with the NAVAL layers migration). READ-ONLY.
+#
+#	Effects: common/scripted_effects/WA_TEST_explain_naval.txt
+#
+#	CONSOLE RECIPE:
+#	    tag <country>              (the verdicts are country-scoped - tag first)
+#	    event wa_explain_naval.1
+#	then read back WITHOUT opening game.log by hand:
+#	    python tools/read_harness_log.py --marker "EXPLAIN NAVAL" --interpret naval --errors
+#
+#	Read the CONTEXT HEADER first. If the scope line is not `1 1 1 1 0`, STOP - nothing below it
+#	is a measurement.
+#
+#	WHY ITS OWN FILE: the harness contract forbids sharing event files between harnesses
+#	("Two call sites, one effect"). Namespace wa_explain_naval is this harness's own.
+#	Side effects: none - temp variables and log only, cleared at the end.
+############################################################################################################
+
+add_namespace = wa_explain_naval
+
+# Read-only report - fire as the country you want explained.
+country_event = {
+	id = wa_explain_naval.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_EXPLAIN_NAVAL_report = yes
+	}
+}

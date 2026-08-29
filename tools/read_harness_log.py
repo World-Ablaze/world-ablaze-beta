@@ -27,8 +27,9 @@ WHAT IT CANNOT DO
   `tag`-ed as the intended country, and cannot tell a stale run from a fresh one except by
   the in-game timestamp it prints. Check the date on the run before trusting it.
 
-Stdlib only. Exit 0 on a clean read, 1 if the marker was never found, 2 if the run's own
-context-header controls say STOP.
+Stdlib only. Exit 0 on a clean read, 1 if the marker was never found (or the logs are
+unreadable), 2 if --interpret ran and any shown run's context header says STOP. Without
+--interpret the header is not parsed and a STOP run still exits 0.
 """
 from __future__ import annotations
 
@@ -129,13 +130,21 @@ def extract_runs(lines: list[str], marker: str) -> list[list[tuple[str, str, str
 
 
 def errors_in_window(logdir: Path, wall_from: str, wall_to: str) -> list[str]:
+    """Wall-clock window match. HH:MM:SS strings carry no date, so a run that crosses
+    midnight has wall_from > wall_to - treat that as a wrapped window instead of an
+    empty one, and say so in the output."""
     out = []
+    wrapped = wall_from > wall_to
     for line in read_lines(logdir / "error.log"):
         wall, _, text = strip_prefixes(line)
         if not wall or not text.strip():
             continue
-        if wall_from <= wall <= wall_to:
+        hit = (wall >= wall_from or wall <= wall_to) if wrapped else (wall_from <= wall <= wall_to)
+        if hit:
             out.append(f"[{wall}] {text}")
+    if wrapped:
+        out.insert(0, "(fenetre a cheval sur minuit - correlation par heure seule, "
+                      "des erreurs d'une autre session peuvent s'y glisser)")
     return out
 
 
@@ -151,7 +160,6 @@ def _nums(text: str) -> dict[str, int]:
 
 
 def interpret_pdx_semantics(lines: list[str]) -> list[tuple[str, str, str]]:
-    joined = {"" : ""}
     v: list[tuple[str, str, str]] = []
     scope = q1 = q2 = q3c = q3d = None
     for t in lines:
@@ -185,7 +193,7 @@ def interpret_pdx_semantics(lines: list[str]) -> list[tuple[str, str, str]]:
                   f"controles invalides (pos={q1.get('pos-control')} attendu 1, neg={q1.get('neg-control')} attendu 0) - `if` ne fonctionne pas comme suppose dans un trigger"))
     elif q1.get("ANSWER") == 1:
         v.append(("Q1 if-dans-OR", "VRAI VACUANT",
-                  "un `if` a limit faux vaut VRAI dans un OR -> WA_AI_CONFIG_DIVISIONS_use_armored_divisions est VRAI POUR TOUS LES PAYS en difficulte competitive. 2 sites a corriger."))
+                  "un `if` a limit faux vaut VRAI dans un OR -> WA_AI_CONFIG_DIVISIONS_use_armored_divisions est VRAI POUR TOUS LES PAYS en difficulte competitive (site MEASURED). Le site ai_strategy GER_FRONT:1429 reste ASSUMED (autre chemin d'appel), et le site pathfinding est garde par un else non mesure (q1e)."))
     elif q1.get("ANSWER") == 0:
         v.append(("Q1 if-dans-OR", "SAIN",
                   "un `if` a limit faux vaut FAUX dans un OR - les 2 sites se comportent comme ecrits"))
@@ -236,7 +244,45 @@ def interpret_pdx_semantics(lines: list[str]) -> list[tuple[str, str, str]]:
     return v
 
 
-INTERPRETERS = {"pdx_semantics": interpret_pdx_semantics}
+def interpret_naval(lines: list[str]) -> list[tuple[str, str, str]]:
+    """EXPLAIN NAVAL: name the layer that blocks, without a human reading the journal.
+    Controls first; then armed L3 gates; then, for context, the L1/L2 inputs at 0."""
+    v: list[tuple[str, str, str]] = []
+    scope = None
+    layers: dict[str, dict[str, int]] = {}
+    for t in lines:
+        if "scope :" in t:
+            scope = _nums(t)
+        elif "L1 declarations" in t:
+            layers.setdefault("L1", {}).update(_nums(t))
+        elif "L2 observations" in t:
+            layers.setdefault("L2", {}).update(_nums(t))
+        elif "L3 decisions" in t:
+            layers.setdefault("L3", {}).update(_nums(t))
+    if scope is None:
+        return [("CONTEXTE", "ABSENT", "pas de ligne `scope :` - ce n'est pas un run de ce harnais")]
+    ok = (scope.get("always") == 1 and scope.get("I-am-ROOT") == 1
+          and scope.get("I-am-THIS") == 1 and scope.get("ROOT-scope-usable") == 1
+          and scope.get("control-false") == 0)
+    v.append(("CONTEXTE", "OK" if ok else "STOP",
+              "1 1 1 1 0 attendu, lu " + " ".join(str(scope.get(k)) for k in
+              ("always", "I-am-ROOT", "I-am-THIS", "ROOT-scope-usable", "control-false"))))
+    if not ok:
+        v.append(("TOUT LE RESTE", "NON MESURE", "en-tete de contexte invalide"))
+        return v
+    l3 = layers.get("L3", {})
+    armed = sorted(k for k, x in l3.items() if x == 1)
+    v.append(("L3 armees", str(len(armed)) if armed else "AUCUNE",
+              ", ".join(armed) if armed else "aucun gate naval arme pour ce pays a cet instant"))
+    for lname in ("L2", "L1"):
+        zeros = sorted(k for k, x in layers.get(lname, {}).items() if x == 0)
+        if zeros:
+            v.append((f"{lname} a zero", str(len(zeros)),
+                      ", ".join(zeros) + " - si un gate attendu manque en L3, le blocage est ici"))
+    return v
+
+
+INTERPRETERS = {"pdx_semantics": interpret_pdx_semantics, "naval": interpret_naval}
 
 
 def main() -> int:

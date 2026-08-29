@@ -1,0 +1,118 @@
+############################################################################################################
+#	WA_TEST - EXPLAIN NAVAL, console-driven, READ-ONLY. The diagnosis harness the NAVAL layers
+#	migration ships with (documentation/WA_AI_LAYERS.md section 6).
+#
+#	Fired by wa_explain_naval.1 in events/wa_test_explain_naval.txt. Console recipe:
+#	  tag <the country to explain>     (scope matters - every verdict below is country-scoped)
+#	  event wa_explain_naval.1
+#	then:  python tools/read_harness_log.py --marker "EXPLAIN NAVAL" --interpret naval --errors
+#
+#	WHAT IT DOES: journals the verdict of each layer separately - L1 declarations, L2 observations,
+#	L3 naval gate decisions - so "why is this ai_strategy armed / not armed" reads off the log
+#	without opening a single trigger definition. It journals, it never decides; no gameplay code
+#	reads anything here.
+############################################################################################################
+
+# ROOT = THIS = the country under explanation. Read-only: temp variables and log only.
+WA_TEST_EXPLAIN_NAVAL_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | EXPLAIN NAVAL | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _exn_e1_ = 0 }
+	set_temp_variable = { _exn_e2_ = 0 }
+	set_temp_variable = { _exn_e3_ = 0 }
+	set_temp_variable = { _exn_e4_ = 0 }
+	set_temp_variable = { _exn_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _exn_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _exn_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _exn_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _exn_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _exn_e5_ = 1 } }
+	log = "  scope : always=[?_exn_e1_|.0]  I-am-ROOT=[?_exn_e2_|.0]  I-am-THIS=[?_exn_e3_|.0]  ROOT-scope-usable=[?_exn_e4_|.0]  control-false=[?_exn_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement.)"
+
+	### L1 - declarations (identity, difficulty)
+	set_temp_variable = { _exn_l1a_ = 0 }
+	set_temp_variable = { _exn_l1b_ = 0 }
+	set_temp_variable = { _exn_l1c_ = 0 }
+	set_temp_variable = { _exn_l1d_ = 0 }
+	if = { limit = { WA_AI_CONFIG_is_major_country = yes } set_temp_variable = { _exn_l1a_ = 1 } }
+	if = { limit = { WA_AI_CONFIG_is_in_allies = yes } set_temp_variable = { _exn_l1b_ = 1 } }
+	if = { limit = { WA_AI_DIFFICULTY_is_historical = yes } set_temp_variable = { _exn_l1c_ = 1 } }
+	if = { limit = { WA_AI_CONFIG_MILITARY_is_commonwealth_member = yes } set_temp_variable = { _exn_l1d_ = 1 } }
+	log = "  L1 declarations : is_major_country=[?_exn_l1a_|.0]  is_in_allies=[?_exn_l1b_|.0]  difficulty_historical=[?_exn_l1c_|.0]  commonwealth_member=[?_exn_l1d_|.0]"
+
+	### L2 - observations (capability, world state)
+	set_temp_variable = { _exn_l2a_ = 0 }
+	set_temp_variable = { _exn_l2b_ = 0 }
+	set_temp_variable = { _exn_l2c_ = 0 }
+	set_temp_variable = { _exn_l2d_ = 0 }
+	if = { limit = { WA_AI_MILITARY_has_ocean_going_fleet = yes } set_temp_variable = { _exn_l2a_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_is_axis_member = yes } set_temp_variable = { _exn_l2b_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_pacific_high_risk = yes } set_temp_variable = { _exn_l2c_ = 1 } }
+	if = { limit = { has_war = yes } set_temp_variable = { _exn_l2d_ = 1 } }
+	log = "  L2 observations : has_ocean_going_fleet=[?_exn_l2a_|.0]  is_axis_member=[?_exn_l2b_|.0]  pacific_high_risk=[?_exn_l2c_|.0]  at_war=[?_exn_l2d_|.0]"
+
+	### L3 - naval gate decisions (the strategy arms exactly when its gate reads 1)
+	set_temp_variable = { _exn_g01_ = 0 }
+	set_temp_variable = { _exn_g02_ = 0 }
+	set_temp_variable = { _exn_g03_ = 0 }
+	set_temp_variable = { _exn_g04_ = 0 }
+	set_temp_variable = { _exn_g05_ = 0 }
+	set_temp_variable = { _exn_g06_ = 0 }
+	set_temp_variable = { _exn_g07_ = 0 }
+	set_temp_variable = { _exn_g08_ = 0 }
+	set_temp_variable = { _exn_g09_ = 0 }
+	set_temp_variable = { _exn_g10_ = 0 }
+	set_temp_variable = { _exn_g11_ = 0 }
+	set_temp_variable = { _exn_g12_ = 0 }
+	if = { limit = { WA_AI_NAVAL_should_deep_atlantic_avoidance = yes } set_temp_variable = { _exn_g01_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_downfall_push = yes } set_temp_variable = { _exn_g02_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_sicily_push = yes } set_temp_variable = { _exn_g03_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_trade_through_suez = yes } set_temp_variable = { _exn_g04_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_trade_through_cape = yes } set_temp_variable = { _exn_g05_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_sealion_is_happening = yes } set_temp_variable = { _exn_g06_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_europe_first = yes } set_temp_variable = { _exn_g07_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_pacific_offensive = yes } set_temp_variable = { _exn_g08_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_torch_corridor = yes } set_temp_variable = { _exn_g09_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_battle_of_britain_yes = yes } set_temp_variable = { _exn_g10_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_focus_on_north_africa = yes } set_temp_variable = { _exn_g11_ = 1 } }
+	if = { limit = { WA_AI_NAVAL_should_gank_everyone = yes } set_temp_variable = { _exn_g12_ = 1 } }
+	log = "  L3 decisions a  : deep_atlantic_avoidance=[?_exn_g01_|.0]  downfall_push=[?_exn_g02_|.0]  sicily_push=[?_exn_g03_|.0]  trade_through_suez=[?_exn_g04_|.0]"
+	log = "  L3 decisions b  : trade_through_cape=[?_exn_g05_|.0]  sealion_is_happening=[?_exn_g06_|.0]  europe_first=[?_exn_g07_|.0]  pacific_offensive=[?_exn_g08_|.0]"
+	log = "  L3 decisions c  : torch_corridor=[?_exn_g09_|.0]  battle_of_britain=[?_exn_g10_|.0]  ger_focus_north_africa=[?_exn_g11_|.0]  ger_gank_everyone=[?_exn_g12_|.0]"
+	log = "            (a gate at 1 = the matching WA_AI_NAVAL strategy block is armed for this country NOW;"
+	log = "             country-specific gates read for a foreign tag are meaningless - tag first, then fire.)"
+
+	log = "  ---- end EXPLAIN NAVAL."
+	log = "=========================================================================================="
+
+	clear_variable = _exn_e1_
+	clear_variable = _exn_e2_
+	clear_variable = _exn_e3_
+	clear_variable = _exn_e4_
+	clear_variable = _exn_e5_
+	clear_variable = _exn_l1a_
+	clear_variable = _exn_l1b_
+	clear_variable = _exn_l1c_
+	clear_variable = _exn_l1d_
+	clear_variable = _exn_l2a_
+	clear_variable = _exn_l2b_
+	clear_variable = _exn_l2c_
+	clear_variable = _exn_l2d_
+	clear_variable = _exn_g01_
+	clear_variable = _exn_g02_
+	clear_variable = _exn_g03_
+	clear_variable = _exn_g04_
+	clear_variable = _exn_g05_
+	clear_variable = _exn_g06_
+	clear_variable = _exn_g07_
+	clear_variable = _exn_g08_
+	clear_variable = _exn_g09_
+	clear_variable = _exn_g10_
+	clear_variable = _exn_g11_
+	clear_variable = _exn_g12_
+}
