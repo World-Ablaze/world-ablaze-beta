@@ -238,3 +238,32 @@ Décisions owner : **véhicule hybride** ; **périmètre dates + seuils lots 5/6
 que l'existant (prouvés par l'usage), mais le boot test couvre maintenant aussi
 `WA_AI_CONFIG_WINDOWS.txt` et les deux fichiers de constantes étendus.
 
+## 10. Factorisation (lots A-D) — exécutée le 2026-08-30
+
+Sur la base de `ANALYSE_FACTORISATION_TRIGGERS.md`, quatre lots, un commit chacun :
+
+- **A** : 77 groupes de gates multi-domaines token-identiques fusionnés — **−96 définitions**,
+  canonique sans suffixe de domaine, garde-fou d'égalité de signature avant chaque fusion.
+- **C** : alias effondrés — `is_allies_member` → `CONFIG_is_in_allies` (85 lectures, un seul
+  vocabulaire), la famille morte `owns_naval_*` supprimée de bout en bout (alias ET cibles CONFIG,
+  commentaire [atlantic-naval] annoté), `italy_theatre_contested` dé-aliasé,
+  `ast_protect_home` unifié. GARDÉS sciemment : l'API `RESEARCH_needs_*` (170 lectures générées),
+  le hub `ground_is_enabled` (21 lectures — pas une simple marche), `refinery_region_priority`
+  (alias d'intention), les alias armor (sujets WORK.md vivants).
+- **D** : 8 observations partagées extraites (44 copies inline remplacées par sous-séquence de
+  tokens, sous-arbres équilibrés uniquement) : `french_africa_flank_quiet` (le pavé VIC de 462
+  tokens), `sov_free_of_leningrad_commitment`, `german_soviet_war_running`,
+  `axis_holds_{southern,northern}_sicily` (états 1032/115 vérifiés), `at_war_in_southeast_asia`,
+  `at_war_with_european_axis`, `paris_held_by_own_faction` (855 = Paris, l'ancre RCZ).
+- **B** : deux fusions de conception (`should_ger_hold_festungen` ×5→1,
+  `should_axis_minor_answer_german_support_request` ×4→1). **Deux renoncements documentés** :
+  les `country_owns_*` (le header d'`ownership_triggers` impose un trigger par paire Exclusive —
+  les corps identiques y sont un contrat, pas un doublon) et les 26 `DOCTRINES_SELECT_*`
+  (API `ai_will_do` — sujet outillage replacer).
+
+Vérification : signature identique exigée à la fusion (lot A), sous-arbres exacts (lot D),
+sondages `git show` post-hoc — le corps canonique de `husky_fire` égale l'ancien **modulo
+l'expansion des observations du lot D** : les deux passes composent. Checkers : 0 erreur
+partout ; NUMBER-LEAK 356→352, NOT-MULTI 76→72 (corps dupliqués disparus).
+Bilan net des quatre lots : **environ −110 définitions** et 44 corps raccourcis.
+
