@@ -1,1365 +1,1349 @@
 {
-  "_doc": [
-    "World Ablaze constants registry - read by tools/check_constants.py.",
-    "HOI4 `@` constants are FILE-SCOPED, so the same quantity is declared in several files, mirrored from",
-    "engine defines / building data, and copied into the savegame-analysis tables. Each `group` below is",
-    "one such must-match contract: `owner` is the authoritative declaration, every `mirrors` entry must",
-    "carry the same value. `governs` says what the number does, so a future reader knows what breaks",
-    "when the copies disagree.",
-    "Member kinds: pdx_const {file,name} = `@NAME = v` | pdx_global {file,name} = `set_variable = { global.NAME = v }`",
-    "| pdx_block_key {file,block,key} = `block = { key = v }` (dotted key walks sub-blocks) | lua_define {file,name}",
-    "| py_assign {file,name} | py_literal_has {file,name,value} (dict key / sequence item / tuple-item[0] present)",
-    "| regex {file,pattern} (all group-1 captures must agree).",
-    "policy: strict (default, ERROR on drift) | advisory (INFO on drift - conventionally equal, may diverge on purpose).",
-    "independent_paths: files whose @ names collide with other files by coincidence (per-country MIO data), never a contract.",
-    "dead_allowlist: declarations that are intentionally unread in their file (state the reason)."
-  ],
-  "scan_roots": [
-    "common",
-    "events"
-  ],
-  "independent_paths": [
-    "common/military_industrial_organization/*"
-  ],
-  "dead_allowlist": [],
-  "groups": [
-    {
-      "id": "pc_alloc_fraction",
-      "governs": "share of the reconstructed civ pool WA_AI_PC_assign_factories may fund per pass; the floored civ gates WA_AI_PC_has_project_civs_16/_20/_31 must judge at the SAME fraction or they refuse projects the fill would pay for (Fix 90; the affordability gate WA_AI_PC_can_afford_project that also read it was deleted by Fix 90b)",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.fraction",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_ALLOC_FRACTION"
-        }
-      ]
-    },
-    {
-      "id": "pc_stable_base_fraction",
-      "governs": "floor on the PC allocation base as a share of TOTAL civs (breaks the 0.35^n decay once the vanilla queue absorbs the pool); the floored civ gates in WA_AI_CONSTRUCTION_triggers.txt and the wa_debug.9 debug copy mirror it",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.stable_base_fraction",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_STABLE_BASE_FRACTION"
-        }
-      ]
-    },
-    {
-      "id": "pc_alloc_hard_cap_fraction",
-      "governs": "PC allocation can never exceed this share of total civs",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.hard_cap_fraction",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_ALLOC_HARD_CAP_FRACTION"
-        }
-      ]
-    },
-    {
-      "id": "pc_stall_cancel_weeks",
-      "governs": "weeks a project may sit at 0 factories before the stall sweep cancels it",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.stall_cancel_weeks",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_STALL_CANCEL_WEEKS"
-        }
-      ]
-    },
-    {
-      "id": "pc_aging_lane_weeks",
-      "governs": "stalled weeks before a project qualifies for the Fix 41 overtake lane",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.aging_lane_weeks",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_AGING_LANE_WEEKS"
-        }
-      ]
-    },
-    {
-      "id": "pc_max_civs_per_project",
-      "governs": "the per-project civ clamp in the PC fill (one 'slot' = this many civs); the wa_debug.9 debug copy of the deleted affordability gate asks for one full slot of headroom",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.alloc.max_civs_per_project",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_assign",
-          "name": "_PC_MAX_PER_PROJECT"
-        }
-      ]
-    },
-    {
-      "id": "engine_civ_factories_per_line",
-      "governs": "engine cap on civs per construction line - the divisor that turns civs into 'lines the country can feed' in the breadth-first standard queue",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_AI_CONSTRUCTION_queue_functions.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_BF_CIVS_PER_LINE"
-        }
-      ]
-    },
-    {
-      "id": "engine_airbase_capacity_per_level",
-      "governs": "plane capacity per air-base level - the air-basing builders convert plane deficits into levels with it",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NBuildings.AIRBASE_CAPACITY_MULT"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.air.capacity_per_level",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "engine_army_leader_cost",
-      "governs": "command-power cost per existing leader when the AI recruits generals (mirrors the engine define)",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NPolitics.ARMY_LEADER_COST"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_AI_leader_recruitment_effects.txt",
-          "kind": "regex",
-          "pattern": "multiply_temp_variable = \\{ WA_AI_recruit_cost = (\\d+) \\}"
-        }
-      ]
-    },
-    {
-      "id": "pc_band_rail_war",
-      "governs": "Fix 41 priority band: wartime railway segments (x1.1 high-route multiplier applies on top)",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.rail_war",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 1000
-        }
-      ]
-    },
-    {
-      "id": "pc_band_rail_prewar",
-      "governs": "Fix 41 priority band: pre-war railway preparation",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.rail_prewar",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 500
-        }
-      ]
-    },
-    {
-      "id": "pc_band_legacy_max",
-      "governs": "highest priority a post-Fix-41 build can write (rail-war x1.1); anything above is a legacy pre-Fix-41 value the allocator clamps",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.legacy_max",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 1100
-        },
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "regex",
-          "pattern": "if prio > (\\d+):\\s*\\n\\s*return \"LEGACY!\""
-        }
-      ]
-    },
-    {
-      "id": "pc_band_air_front",
-      "governs": "Fix 85 priority band: theatre air bases where the builder's own divisions stand",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.air_front",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 350
-        }
-      ]
-    },
-    {
-      "id": "pc_band_air_basing",
-      "governs": "Fix 47 priority band: air bases while the hosted air force outgrows its basing",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.air_basing",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 300
-        }
-      ]
-    },
-    {
-      "id": "pc_band_strategic",
-      "governs": "priority band of the three shortage-driven refinery families",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.strategic",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 250
-        }
-      ]
-    },
-    {
-      "id": "pc_band_default",
-      "governs": "default priority band (radar, supply lines, MIC/CIC, air bases at rest)",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.prio.default",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_BANDS",
-          "value": 100
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_rail",
-      "governs": "PC building/strategy type id of railway projects (WA_AI_PC_type_id 13); the savegame reader labels it 'rail'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.rail",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 13
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_port",
-      "governs": "PC building type id of naval-base projects (14); the savegame reader labels it 'port'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.port",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 14
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_corridor",
-      "governs": "PC strategy tag of theatre-corridor logistics projects (Fix 95: rails, depots and ports queued by WA_AI_PC_railway_corridor_pass, 27); the savegame reader labels it 'corridor'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.corridor",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 27
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_uk_air",
-      "governs": "strategy tag of WA_AI_build_uk_air_hosting_capacity (scoped queue budget, Fix 47); savegame reader label 'uk_air'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.uk_air",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 20
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_theatre_air",
-      "governs": "strategy tag of WA_AI_build_theatre_air_bases; savegame reader label 'theatre_air'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.theatre_air",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 21
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_islands",
-      "governs": "strategy tag of WA_AI_fortify_strategic_islands (Fix 90); savegame reader label 'islands'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.islands",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 23
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_supply_line",
-      "governs": "strategy tag of WA_AI_build_supply_line (Fix 90b) - building type 1, budget @AI_PC_QMAX_SUPPLY_LINE scoped so resource infra (25) and supply lines stop counting each other; savegame reader label 'supply_line'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.supply_line",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 24
-        }
-      ]
-    },
-    {
-      "id": "pc_type_id_inf_resource",
-      "governs": "strategy tag of WA_AI_priority_queue_INF_resource (Fix 90b) - building type 1, budget @AI_PC_QMAX_INF_RESOURCE scoped; savegame reader label 'inf_resource'",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.type_id.inf_resource",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
-          "kind": "py_literal_has",
-          "name": "_PC_TYPE_ID",
-          "value": 25
-        }
-      ]
-    },
-    {
-      "id": "recovery_min_states_hatch",
-      "policy": "advisory",
-      "governs": "the '20 states = the army is still real' escape hatch shared by the railway eligibility filter (Fix 43), AIFC eligibility and the posture 'army still operational' test - conventionally one number",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_railway.eligibility.recovery_min_states",
-        "file": "common/script_constants/wa_ai_railway.txt"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_aifc.eligibility.recovery_min_states",
-          "file": "common/script_constants/wa_ai_aifc.txt"
-        },
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_posture.alive.min_states",
-          "file": "common/script_constants/wa_ai_posture.txt"
-        },
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_posture.delegate.min_states",
-          "file": "common/script_constants/wa_ai_posture.txt"
-        }
-      ]
-    },
-    {
-      "id": "delegate_floor_manpower",
-      "policy": "advisory",
-      "governs": "the 150k own-manpower floor: the posture weakened-army brake and the Commonwealth delegate force floor are conventionally one number, decoupled so retuning the brake does not silently move the handoff",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_posture.manpower.min_own_mp",
-        "file": "common/script_constants/wa_ai_posture.txt"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_posture.delegate.min_mp",
-          "file": "common/script_constants/wa_ai_posture.txt"
-        }
-      ]
-    },
-    {
-      "id": "air_queue_max",
-      "policy": "advisory",
-      "governs": "concurrent air-base projects per builder: theatre air deliberately matches the UK hosting value",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_pc.qmax.uk_air",
-        "file": "common/script_constants/wa_ai_pc.txt"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.qmax.theatre_air",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "state_max_fuel_silo",
-      "governs": "shared-slot state cap of fuel silos; the [silo-breadth] committed-level test (built + queued < cap) reads the script copy",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "fuel_silo",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_SILO_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_synthetic_refinery",
-      "governs": "shared-slot state cap of synthetic refineries; the Fix 81 committed-level test (built + queued < cap) reads the script copy",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "synthetic_refinery",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_REF_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_steel_refinery",
-      "governs": "state cap of steel refineries (Fix 81 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "steel_refinery",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_SR_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_hydro_steel_refinery",
-      "governs": "state cap of hydro steel refineries (Fix 81 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "hydro_steel_refinery",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_HSR_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_aluminium_refinery",
-      "governs": "state cap of aluminium refineries (Fix 81 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "aluminium_refinery",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_AR_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_hydro_aluminium_refinery",
-      "governs": "state cap of hydro aluminium refineries (Fix 81 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "hydro_aluminium_refinery",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_HAR_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_industrial_complex",
-      "governs": "state cap of civilian factories (Fix 88 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "industrial_complex",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_CIC_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_arms_factory",
-      "governs": "state cap of military factories (Fix 88 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "arms_factory",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_MIC_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "state_max_dockyard",
-      "governs": "state cap of dockyards (Fix 88 committed-level test)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "dockyard",
-        "key": "level_cap.state_max"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
-          "kind": "pdx_const",
-          "name": "@WA_AI_NIC_STATE_MAX"
-        }
-      ]
-    },
-    {
-      "id": "cost_rail_way",
-      "governs": "PC is a shadow construction system that pays THIS table, not the engine's price - an under-estimate is free industry for the AI; railway cost is charged once per province connection (Fix 73) and used to score routes",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "rail_way",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.railway",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_infrastructure",
-      "governs": "PC shadow price of infrastructure",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "infrastructure",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.infrastructure",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_air_base",
-      "governs": "PC shadow price of air bases (base; per-level component lives in WA_AI_PC_get_building_cost)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "air_base",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.air_base",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_anti_air",
-      "governs": "PC shadow price of anti-air",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "anti_air_building",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.anti_air",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_radar",
-      "governs": "PC shadow price of radar (base)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "radar_station",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.radar",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_arms_factory",
-      "governs": "PC shadow price of military factories",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "arms_factory",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.military_factory",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_industrial_complex",
-      "governs": "PC shadow price of civilian factories",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "industrial_complex",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.civilian_factory",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_dockyard",
-      "governs": "PC shadow price of dockyards",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "dockyard",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.dockyard",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_synthetic_refinery",
-      "governs": "PC shadow price of synthetic refineries",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "synthetic_refinery",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.synthetic_refinery",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_hydro_steel_refinery",
-      "governs": "PC shadow price of hydro steel mills",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "hydro_steel_refinery",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.hydro_steel_mill",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_hydro_aluminium_refinery",
-      "governs": "PC shadow price of hydro aluminium smelters",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "hydro_aluminium_refinery",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.hydro_aluminium_smelter",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_steel_refinery",
-      "governs": "PC shadow price of steel mills",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "steel_refinery",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.steel_mill",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_aluminium_refinery",
-      "governs": "PC shadow price of aluminium smelters",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "aluminium_refinery",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.aluminium_smelter",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_naval_base",
-      "governs": "PC shadow price of naval bases at level 0 (Fix 72) and the railway route scorer's port base cost. DERIVED FROM THIS, and NOT checked by anything: constant:wa_ai_railway.corridor.port_break_even_segments = 20 (Fix 107) is this value divided by supply.port_per_level, over cost_railway divided by supply.railway_per_level. Re-derive it BY HAND if this price, cost_railway, or either flow-per-level changes - the checker only enforces equality groups, so a derived constant left stale silently picks the wrong lever forever.",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "naval_base",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.naval_base",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_supply_node",
-      "governs": "PC shadow price of a supply hub (Fix 95, PC building type 17, flat - supply_node has one level)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "supply_node",
-        "key": "base_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.supply_node",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_naval_base_per_level",
-      "governs": "naval-base per-level cost taper (negative) used by the railway route scorer",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "naval_base",
-        "key": "per_level_extra_cost"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_railway.cost.naval_base_per_level",
-          "file": "common/script_constants/wa_ai_railway.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_conversion_mil_to_civ",
-      "governs": "PC shadow price of a mil->civ conversion = base_cost_conversion of the TARGET building (industrial_complex)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "industrial_complex",
-        "key": "base_cost_conversion"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.conversion_mil_to_civ",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "cost_conversion_civ_to_mil",
-      "governs": "PC shadow price of a civ->mil conversion = base_cost_conversion of the TARGET building (arms_factory)",
-      "owner": {
-        "file": "common/buildings/00_buildings.txt",
-        "kind": "pdx_block_key",
-        "block": "arms_factory",
-        "key": "base_cost_conversion"
-      },
-      "mirrors": [
-        {
-          "kind": "script_constant",
-          "path": "wa_ai_pc.cost.conversion_civ_to_mil",
-          "file": "common/script_constants/wa_ai_pc.txt"
-        }
-      ]
-    },
-    {
-      "id": "engine_railway_flow_base",
-      "governs": "constant term of the engine railway supply ladder (flow = base + per_level x level). The AI converts between railway level and supply with this exact ladder (WA_AI_PC_calculate_railway_supply / _supply_to_target_railway / _supply_to_railway_level in railway_helpers), so a retuned define with a stale mirror makes every corridor and land-war route size against a ladder the engine no longer uses. See documentation/WA_AI_LOGISTICS_MODEL.md.",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NSupply.RAILWAY_BASE_FLOW"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_railway.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_railway.supply.railway_base"
-        }
-      ]
-    },
-    {
-      "id": "engine_railway_flow_per_level",
-      "governs": "per-level term of the engine railway supply ladder (L1=12 .. L5=44). Same readers and same failure mode as engine_railway_flow_base; it also anchors the derived constants wa_ai_railway.supply.home_port_target_supply (44 = L5 railway) and .port_max_useful_level (9, the port level that matches a L5 railway), which are NOT mirrors and must be re-derived by hand if this changes.",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_railway.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_railway.supply.railway_per_level"
-        }
-      ]
-    },
-    {
-      "id": "engine_naval_flow_per_level",
-      "governs": "per-level term of the engine naval-node supply ladder (port flow = 0 + 5 x level, L10 = 50), read by WA_AI_PC_calculate_port_supply / _supply_to_target_port. This define - NOT NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT (= 3) - is the supply flow cap of a port: user ruling 2026-08-17, recorded in documentation/WA_AI_LOGISTICS_MODEL.md section 4. Do not repoint this mirror at the 3. Added 2026-08-18, correcting the namespace in the sentence above without changing the ruling: the live key is NDefines.NBuildings.SUPPLY_PORT_LEVEL_THROUGHPUT and its 3 is vanilla's. WA's NDefines.NCountry copy bound nothing at all and has been removed.",
-      "owner": {
-        "file": "common/defines/05_defines.lua",
-        "kind": "lua_define",
-        "name": "NDefines.NSupply.NAVAL_FLOW_PER_LEVEL"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_railway.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_railway.supply.port_per_level"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_oil",
-      "governs": "civilian factories per unit of oil imported; its inverse is the trade quantum (quantum 20), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_oil, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "oil",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.oil"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_aluminium",
-      "governs": "civilian factories per unit of aluminium imported; its inverse is the trade quantum (quantum 10), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_aluminium, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "aluminium",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.aluminium"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_rubber",
-      "governs": "civilian factories per unit of rubber imported; its inverse is the trade quantum (quantum 10), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_rubber, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "rubber",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.rubber"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_tungsten",
-      "governs": "civilian factories per unit of tungsten imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_tungsten, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "tungsten",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.tungsten"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_steel",
-      "governs": "civilian factories per unit of steel imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_steel, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "steel",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.steel"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_chromium",
-      "governs": "civilian factories per unit of chromium imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_chromium, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "chromium",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.chromium"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_coal",
-      "governs": "civilian factories per unit of coal imported; its inverse is the trade quantum (quantum 100), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_coal, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "coal",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.coal"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_bauxite",
-      "governs": "civilian factories per unit of bauxite imported; its inverse is the trade quantum (quantum 32), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_bauxite, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "bauxite",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.bauxite"
-        }
-      ]
-    },
-    {
-      "id": "resource_cic_iron",
-      "governs": "civilian factories per unit of iron imported; its inverse is the trade quantum (quantum 25), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_iron, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
-      "owner": {
-        "file": "common/resources/00_resources.txt",
-        "kind": "pdx_block_key",
-        "block": "iron",
-        "key": "cic"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.cic.iron"
-        }
-      ]
-    },
-    {
-      "id": "trade_law_min_export_free_trade",
-      "governs": "share of available resources the free_trade trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
-      "owner": {
-        "file": "common/ideas/_trade.txt",
-        "kind": "pdx_block_key",
-        "block": "free_trade",
-        "key": "modifier.min_export"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.min_export.free_trade"
-        }
-      ]
-    },
-    {
-      "id": "trade_law_min_export_export_focus",
-      "governs": "share of available resources the export_focus trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
-      "owner": {
-        "file": "common/ideas/_trade.txt",
-        "kind": "pdx_block_key",
-        "block": "export_focus",
-        "key": "modifier.min_export"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.min_export.export_focus"
-        }
-      ]
-    },
-    {
-      "id": "trade_law_min_export_limited_exports",
-      "governs": "share of available resources the limited_exports trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
-      "owner": {
-        "file": "common/ideas/_trade.txt",
-        "kind": "pdx_block_key",
-        "block": "limited_exports",
-        "key": "modifier.min_export"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.min_export.limited_exports"
-        }
-      ]
-    },
-    {
-      "id": "trade_law_min_export_closed_economy",
-      "governs": "share of available resources the closed_economy trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
-      "owner": {
-        "file": "common/ideas/_trade.txt",
-        "kind": "pdx_block_key",
-        "block": "closed_economy",
-        "key": "modifier.min_export"
-      },
-      "mirrors": [
-        {
-          "file": "common/script_constants/wa_ai_resource.txt",
-          "kind": "script_constant",
-          "path": "wa_ai_resource.min_export.closed_economy"
-        }
-      ]
-    },
-    {
-      "id": "truck_stock_starve_floor",
-      "governs": "the motorized (truck) stock bar below which the AI production floors stay on ([uk-truck-supply]); must equal the lend-lease motorized `starve` bar so the production floor never switches off while the country still counts as truck-starving",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_lend_lease.motorized.starve",
-        "file": "common/script_constants/wa_ai_lend_lease.txt"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_PRODUCTION_ground.txt",
-          "kind": "regex",
-          "pattern": "motorized_equipment < (\\d+) \\} # registry: truck_stock_starve_floor"
-        }
-      ]
-    },
-    {
-      "id": "expeditionary_fitness_mil_factory_floor",
-      "policy": "advisory",
-      "governs": "the military-factory band: fitness floor > 10 (owner 2026-08-27, raised from 5 - ETH at 8 factories campaigned abroad) vs trains-no-divisions cap < 5 (unchanged). The 5-9 band is DELIBERATE: trains freely at home, not sent abroad. Advisory because the two values now differ on purpose; the group stays so both sites remain listed together - re-read this ruling before moving either number",
-      "owner": {
-        "file": "common/scripted_triggers/WA_AI_MILITARY_triggers.txt",
-        "kind": "regex",
-        "pattern": "num_of_military_factories > (\\d+)"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt",
-          "kind": "regex",
-          "pattern": "num_of_military_factories < (\\d+)"
-        }
-      ]
-    },
-    {
-      "id": "engine_max_railway_level",
-      "governs": "engine cap on railway level (NDefines.NSupply.MAX_RAILWAY_LEVEL, install 00_defines.lua:4263 - vanilla 5, NOT rebound by 05_defines). The [rail-corridors] cheat builds corridors AT this cap and stamps the same number into the PC railway mirror arrays; the generated @ and the generator's emission must agree, and both need a re-read if the engine define ever changes",
-      "owner": {
-        "file": "common/scripted_effects/WA_AI_RAIL_CORRIDOR_data.txt",
-        "kind": "pdx_const",
-        "name": "@WA_RAIL_CORRIDOR_LEVEL"
-      },
-      "mirrors": [
-        {
-          "file": "tools/gen_rail_corridors.py",
-          "kind": "regex",
-          "pattern": "@WA_RAIL_CORRIDOR_LEVEL = (\\d+)"
-        }
-      ]
-    },
-    {
-      "id": "leader_token_pool_last_index",
-      "governs": "number of character-template tokens declared per role in history/general/WA_AI_leader_pool.txt; the recruit gates in WA_AI_leader_recruitment_effects.txt refuse to mint an index past it, because only a token declared in a parsed file resolves when the savegame is reloaded",
-      "owner": {
-        "kind": "script_constant",
-        "path": "wa_ai_leaders.pool.last_index",
-        "file": "common/script_constants/wa_ai_leaders.txt"
-      },
-      "mirrors": [
-        {
-          "file": "history/general/WA_AI_leader_pool.txt",
-          "kind": "regex",
-          "pattern": "token_base = WA_AI_gen_admiral_(\\d+)\\n(?:[^\\n]*\\n){5}\\n\\}"
-        }
-      ]
-    },
-    {
-      "id": "ger_mechanization_manpower_bar",
-      "governs": "[mech-window] deployed-army-manpower bar that opens Germany's mechanization window early; the harness probe must test the same bar the gate uses",
-      "owner": {
-        "file": "common/scripted_triggers/WA_AI_CONFIG.txt",
-        "kind": "regex",
-        "pattern": "has_army_manpower = \\{ size > (\\d+) \\}"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
-          "kind": "regex",
-          "pattern": "has_army_manpower = \\{ size > (\\d+) \\}"
-        }
-      ]
-    },
-    {
-      "id": "armor_budget_ramp_boundary_1939",
-      "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1939 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
-      "owner": {
-        "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
-        "kind": "regex",
-        "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1939 \\}"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
-          "kind": "regex",
-          "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1939 \\}"
-        }
-      ]
-    },
-    {
-      "id": "armor_budget_ramp_boundary_1940",
-      "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1940 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
-      "owner": {
-        "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
-        "kind": "regex",
-        "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1940 \\}"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
-          "kind": "regex",
-          "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1940 \\}"
-        }
-      ]
-    },
-    {
-      "id": "armor_budget_ramp_boundary_1941",
-      "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1941 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
-      "owner": {
-        "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
-        "kind": "regex",
-        "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1941 \\}"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
-          "kind": "regex",
-          "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1941 \\}"
-        }
-      ]
-    },
-    {
-      "id": "armor_budget_ramp_boundary_total",
-      "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_total rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
-      "owner": {
-        "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
-        "kind": "regex",
-        "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_total \\}"
-      },
-      "mirrors": [
-        {
-          "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
-          "kind": "regex",
-          "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_total \\}"
-        }
-      ]
+ "_doc": [
+  "World Ablaze constants registry - read by tools/check_constants.py.",
+  "HOI4 `@` constants are FILE-SCOPED, so the same quantity is declared in several files, mirrored from",
+  "engine defines / building data, and copied into the savegame-analysis tables. Each `group` below is",
+  "one such must-match contract: `owner` is the authoritative declaration, every `mirrors` entry must",
+  "carry the same value. `governs` says what the number does, so a future reader knows what breaks",
+  "when the copies disagree.",
+  "Member kinds: pdx_const {file,name} = `@NAME = v` | pdx_global {file,name} = `set_variable = { global.NAME = v }`",
+  "| pdx_block_key {file,block,key} = `block = { key = v }` (dotted key walks sub-blocks) | lua_define {file,name}",
+  "| py_assign {file,name} | py_literal_has {file,name,value} (dict key / sequence item / tuple-item[0] present)",
+  "| regex {file,pattern} (all group-1 captures must agree).",
+  "policy: strict (default, ERROR on drift) | advisory (INFO on drift - conventionally equal, may diverge on purpose).",
+  "independent_paths: files whose @ names collide with other files by coincidence (per-country MIO data), never a contract.",
+  "dead_allowlist: declarations that are intentionally unread in their file (state the reason)."
+ ],
+ "scan_roots": [
+  "common",
+  "events"
+ ],
+ "independent_paths": [
+  "common/military_industrial_organization/*"
+ ],
+ "dead_allowlist": [],
+ "groups": [
+  {
+   "id": "pc_alloc_fraction",
+   "governs": "share of the reconstructed civ pool WA_AI_PC_assign_factories may fund per pass; the floored civ gates WA_AI_PC_has_project_civs_16/_20/_31 must judge at the SAME fraction or they refuse projects the fill would pay for (Fix 90; the affordability gate WA_AI_PC_can_afford_project that also read it was deleted by Fix 90b)",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.fraction",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_ALLOC_FRACTION"
     }
-  ]
+   ]
+  },
+  {
+   "id": "pc_stable_base_fraction",
+   "governs": "floor on the PC allocation base as a share of TOTAL civs (breaks the 0.35^n decay once the vanilla queue absorbs the pool); the floored civ gates in WA_AI_CONSTRUCTION_triggers.txt and the wa_debug.9 debug copy mirror it",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.stable_base_fraction",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_STABLE_BASE_FRACTION"
+    }
+   ]
+  },
+  {
+   "id": "pc_alloc_hard_cap_fraction",
+   "governs": "PC allocation can never exceed this share of total civs",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.hard_cap_fraction",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_ALLOC_HARD_CAP_FRACTION"
+    }
+   ]
+  },
+  {
+   "id": "pc_stall_cancel_weeks",
+   "governs": "weeks a project may sit at 0 factories before the stall sweep cancels it",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.stall_cancel_weeks",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_STALL_CANCEL_WEEKS"
+    }
+   ]
+  },
+  {
+   "id": "pc_aging_lane_weeks",
+   "governs": "stalled weeks before a project qualifies for the Fix 41 overtake lane",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.aging_lane_weeks",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_AGING_LANE_WEEKS"
+    }
+   ]
+  },
+  {
+   "id": "pc_max_civs_per_project",
+   "governs": "the per-project civ clamp in the PC fill (one 'slot' = this many civs); the wa_debug.9 debug copy of the deleted affordability gate asks for one full slot of headroom",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.alloc.max_civs_per_project",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_assign",
+     "name": "_PC_MAX_PER_PROJECT"
+    }
+   ]
+  },
+  {
+   "id": "engine_civ_factories_per_line",
+   "governs": "engine cap on civs per construction line - the divisor that turns civs into 'lines the country can feed' in the breadth-first standard queue",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NProduction.MAX_CIV_FACTORIES_PER_LINE"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_AI_CONSTRUCTION_queue_functions.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_BF_CIVS_PER_LINE"
+    }
+   ]
+  },
+  {
+   "id": "engine_airbase_capacity_per_level",
+   "governs": "plane capacity per air-base level - the air-basing builders convert plane deficits into levels with it",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NBuildings.AIRBASE_CAPACITY_MULT"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.air.capacity_per_level",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "engine_army_leader_cost",
+   "governs": "command-power cost per existing leader when the AI recruits generals (mirrors the engine define)",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NPolitics.ARMY_LEADER_COST"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_AI_leader_recruitment_effects.txt",
+     "kind": "regex",
+     "pattern": "multiply_temp_variable = \\{ WA_AI_recruit_cost = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "pc_band_rail_war",
+   "governs": "Fix 41 priority band: wartime railway segments (x1.1 high-route multiplier applies on top)",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.rail_war",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 1000
+    }
+   ]
+  },
+  {
+   "id": "pc_band_rail_prewar",
+   "governs": "Fix 41 priority band: pre-war railway preparation",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.rail_prewar",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 500
+    }
+   ]
+  },
+  {
+   "id": "pc_band_legacy_max",
+   "governs": "highest priority a post-Fix-41 build can write (rail-war x1.1); anything above is a legacy pre-Fix-41 value the allocator clamps",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.legacy_max",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 1100
+    },
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "regex",
+     "pattern": "if prio > (\\d+):\\s*\\n\\s*return \"LEGACY!\""
+    }
+   ]
+  },
+  {
+   "id": "pc_band_air_front",
+   "governs": "Fix 85 priority band: theatre air bases where the builder's own divisions stand",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.air_front",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 350
+    }
+   ]
+  },
+  {
+   "id": "pc_band_air_basing",
+   "governs": "Fix 47 priority band: air bases while the hosted air force outgrows its basing",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.air_basing",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 300
+    }
+   ]
+  },
+  {
+   "id": "pc_band_strategic",
+   "governs": "priority band of the three shortage-driven refinery families",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.strategic",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 250
+    }
+   ]
+  },
+  {
+   "id": "pc_band_default",
+   "governs": "default priority band (radar, supply lines, MIC/CIC, air bases at rest)",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.prio.default",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_BANDS",
+     "value": 100
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_rail",
+   "governs": "PC building/strategy type id of railway projects (WA_AI_PC_type_id 13); the savegame reader labels it 'rail'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.rail",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 13
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_port",
+   "governs": "PC building type id of naval-base projects (14); the savegame reader labels it 'port'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.port",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 14
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_corridor",
+   "governs": "PC strategy tag of theatre-corridor logistics projects (Fix 95: rails, depots and ports queued by WA_AI_PC_railway_corridor_pass, 27); the savegame reader labels it 'corridor'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.corridor",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 27
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_uk_air",
+   "governs": "strategy tag of WA_AI_build_uk_air_hosting_capacity (scoped queue budget, Fix 47); savegame reader label 'uk_air'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.uk_air",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 20
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_theatre_air",
+   "governs": "strategy tag of WA_AI_build_theatre_air_bases; savegame reader label 'theatre_air'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.theatre_air",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 21
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_islands",
+   "governs": "strategy tag of WA_AI_fortify_strategic_islands (Fix 90); savegame reader label 'islands'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.islands",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 23
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_supply_line",
+   "governs": "strategy tag of WA_AI_build_supply_line (Fix 90b) - building type 1, budget @AI_PC_QMAX_SUPPLY_LINE scoped so resource infra (25) and supply lines stop counting each other; savegame reader label 'supply_line'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.supply_line",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 24
+    }
+   ]
+  },
+  {
+   "id": "pc_type_id_inf_resource",
+   "governs": "strategy tag of WA_AI_priority_queue_INF_resource (Fix 90b) - building type 1, budget @AI_PC_QMAX_INF_RESOURCE scoped; savegame reader label 'inf_resource'",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.type_id.inf_resource",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "file": ".claude/skills/wa-savegame-analysis/scripts/savegame.py",
+     "kind": "py_literal_has",
+     "name": "_PC_TYPE_ID",
+     "value": 25
+    }
+   ]
+  },
+  {
+   "id": "recovery_min_states_hatch",
+   "policy": "advisory",
+   "governs": "the '20 states = the army is still real' escape hatch shared by the railway eligibility filter (Fix 43), AIFC eligibility and the posture 'army still operational' test - conventionally one number",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_railway.eligibility.recovery_min_states",
+    "file": "common/script_constants/wa_ai_railway.txt"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_aifc.eligibility.recovery_min_states",
+     "file": "common/script_constants/wa_ai_aifc.txt"
+    },
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_posture.alive.min_states",
+     "file": "common/script_constants/wa_ai_posture.txt"
+    },
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_posture.delegate.min_states",
+     "file": "common/script_constants/wa_ai_posture.txt"
+    }
+   ]
+  },
+  {
+   "id": "delegate_floor_manpower",
+   "policy": "advisory",
+   "governs": "the 150k own-manpower floor: the posture weakened-army brake and the Commonwealth delegate force floor are conventionally one number, decoupled so retuning the brake does not silently move the handoff",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_posture.manpower.min_own_mp",
+    "file": "common/script_constants/wa_ai_posture.txt"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_posture.delegate.min_mp",
+     "file": "common/script_constants/wa_ai_posture.txt"
+    }
+   ]
+  },
+  {
+   "id": "air_queue_max",
+   "policy": "advisory",
+   "governs": "concurrent air-base projects per builder: theatre air deliberately matches the UK hosting value",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_pc.qmax.uk_air",
+    "file": "common/script_constants/wa_ai_pc.txt"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.qmax.theatre_air",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "state_max_fuel_silo",
+   "governs": "shared-slot state cap of fuel silos; the [silo-breadth] committed-level test (built + queued < cap) reads the script copy",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "fuel_silo",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_SILO_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_synthetic_refinery",
+   "governs": "shared-slot state cap of synthetic refineries; the Fix 81 committed-level test (built + queued < cap) reads the script copy",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "synthetic_refinery",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_REF_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_steel_refinery",
+   "governs": "state cap of steel refineries (Fix 81 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "steel_refinery",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_SR_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_hydro_steel_refinery",
+   "governs": "state cap of hydro steel refineries (Fix 81 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "hydro_steel_refinery",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_HSR_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_aluminium_refinery",
+   "governs": "state cap of aluminium refineries (Fix 81 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "aluminium_refinery",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_AR_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_hydro_aluminium_refinery",
+   "governs": "state cap of hydro aluminium refineries (Fix 81 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "hydro_aluminium_refinery",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_HAR_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_industrial_complex",
+   "governs": "state cap of civilian factories (Fix 88 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "industrial_complex",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_CIC_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_arms_factory",
+   "governs": "state cap of military factories (Fix 88 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "arms_factory",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_MIC_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "state_max_dockyard",
+   "governs": "state cap of dockyards (Fix 88 committed-level test)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "dockyard",
+    "key": "level_cap.state_max"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt",
+     "kind": "pdx_const",
+     "name": "@WA_AI_NIC_STATE_MAX"
+    }
+   ]
+  },
+  {
+   "id": "cost_rail_way",
+   "governs": "PC is a shadow construction system that pays THIS table, not the engine's price - an under-estimate is free industry for the AI; railway cost is charged once per province connection (Fix 73) and used to score routes",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "rail_way",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.railway",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_infrastructure",
+   "governs": "PC shadow price of infrastructure",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "infrastructure",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.infrastructure",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_air_base",
+   "governs": "PC shadow price of air bases (base; per-level component lives in WA_AI_PC_get_building_cost)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "air_base",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.air_base",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_anti_air",
+   "governs": "PC shadow price of anti-air",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "anti_air_building",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.anti_air",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_radar",
+   "governs": "PC shadow price of radar (base)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "radar_station",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.radar",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_arms_factory",
+   "governs": "PC shadow price of military factories",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "arms_factory",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.military_factory",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_industrial_complex",
+   "governs": "PC shadow price of civilian factories",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "industrial_complex",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.civilian_factory",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_dockyard",
+   "governs": "PC shadow price of dockyards",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "dockyard",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.dockyard",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_synthetic_refinery",
+   "governs": "PC shadow price of synthetic refineries",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "synthetic_refinery",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.synthetic_refinery",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_hydro_steel_refinery",
+   "governs": "PC shadow price of hydro steel mills",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "hydro_steel_refinery",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.hydro_steel_mill",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_hydro_aluminium_refinery",
+   "governs": "PC shadow price of hydro aluminium smelters",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "hydro_aluminium_refinery",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.hydro_aluminium_smelter",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_steel_refinery",
+   "governs": "PC shadow price of steel mills",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "steel_refinery",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.steel_mill",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_aluminium_refinery",
+   "governs": "PC shadow price of aluminium smelters",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "aluminium_refinery",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.aluminium_smelter",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_naval_base",
+   "governs": "PC shadow price of naval bases at level 0 (Fix 72) and the railway route scorer's port base cost. DERIVED FROM THIS, and NOT checked by anything: constant:wa_ai_railway.corridor.port_break_even_segments = 20 (Fix 107) is this value divided by supply.port_per_level, over cost_railway divided by supply.railway_per_level. Re-derive it BY HAND if this price, cost_railway, or either flow-per-level changes - the checker only enforces equality groups, so a derived constant left stale silently picks the wrong lever forever.",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "naval_base",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.naval_base",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_supply_node",
+   "governs": "PC shadow price of a supply hub (Fix 95, PC building type 17, flat - supply_node has one level)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "supply_node",
+    "key": "base_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.supply_node",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_naval_base_per_level",
+   "governs": "naval-base per-level cost taper (negative) used by the railway route scorer",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "naval_base",
+    "key": "per_level_extra_cost"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_railway.cost.naval_base_per_level",
+     "file": "common/script_constants/wa_ai_railway.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_conversion_mil_to_civ",
+   "governs": "PC shadow price of a mil->civ conversion = base_cost_conversion of the TARGET building (industrial_complex)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "industrial_complex",
+    "key": "base_cost_conversion"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.conversion_mil_to_civ",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "cost_conversion_civ_to_mil",
+   "governs": "PC shadow price of a civ->mil conversion = base_cost_conversion of the TARGET building (arms_factory)",
+   "owner": {
+    "file": "common/buildings/00_buildings.txt",
+    "kind": "pdx_block_key",
+    "block": "arms_factory",
+    "key": "base_cost_conversion"
+   },
+   "mirrors": [
+    {
+     "kind": "script_constant",
+     "path": "wa_ai_pc.cost.conversion_civ_to_mil",
+     "file": "common/script_constants/wa_ai_pc.txt"
+    }
+   ]
+  },
+  {
+   "id": "engine_railway_flow_base",
+   "governs": "constant term of the engine railway supply ladder (flow = base + per_level x level). The AI converts between railway level and supply with this exact ladder (WA_AI_PC_calculate_railway_supply / _supply_to_target_railway / _supply_to_railway_level in railway_helpers), so a retuned define with a stale mirror makes every corridor and land-war route size against a ladder the engine no longer uses. See documentation/WA_AI_LOGISTICS_MODEL.md.",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NSupply.RAILWAY_BASE_FLOW"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_railway.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_railway.supply.railway_base"
+    }
+   ]
+  },
+  {
+   "id": "engine_railway_flow_per_level",
+   "governs": "per-level term of the engine railway supply ladder (L1=12 .. L5=44). Same readers and same failure mode as engine_railway_flow_base; it also anchors the derived constants wa_ai_railway.supply.home_port_target_supply (44 = L5 railway) and .port_max_useful_level (9, the port level that matches a L5 railway), which are NOT mirrors and must be re-derived by hand if this changes.",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NSupply.RAILWAY_FLOW_PER_LEVEL"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_railway.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_railway.supply.railway_per_level"
+    }
+   ]
+  },
+  {
+   "id": "engine_naval_flow_per_level",
+   "governs": "per-level term of the engine naval-node supply ladder (port flow = 0 + 5 x level, L10 = 50), read by WA_AI_PC_calculate_port_supply / _supply_to_target_port. This define - NOT NDefines.NCountry.SUPPLY_PORT_LEVEL_THROUGHPUT (= 3) - is the supply flow cap of a port: user ruling 2026-08-17, recorded in documentation/WA_AI_LOGISTICS_MODEL.md section 4. Do not repoint this mirror at the 3. Added 2026-08-18, correcting the namespace in the sentence above without changing the ruling: the live key is NDefines.NBuildings.SUPPLY_PORT_LEVEL_THROUGHPUT and its 3 is vanilla's. WA's NDefines.NCountry copy bound nothing at all and has been removed.",
+   "owner": {
+    "file": "common/defines/05_defines.lua",
+    "kind": "lua_define",
+    "name": "NDefines.NSupply.NAVAL_FLOW_PER_LEVEL"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_railway.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_railway.supply.port_per_level"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_oil",
+   "governs": "civilian factories per unit of oil imported; its inverse is the trade quantum (quantum 20), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_oil, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "oil",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.oil"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_aluminium",
+   "governs": "civilian factories per unit of aluminium imported; its inverse is the trade quantum (quantum 10), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_aluminium, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "aluminium",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.aluminium"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_rubber",
+   "governs": "civilian factories per unit of rubber imported; its inverse is the trade quantum (quantum 10), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_rubber, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "rubber",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.rubber"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_tungsten",
+   "governs": "civilian factories per unit of tungsten imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_tungsten, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "tungsten",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.tungsten"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_steel",
+   "governs": "civilian factories per unit of steel imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_steel, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "steel",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.steel"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_chromium",
+   "governs": "civilian factories per unit of chromium imported; its inverse is the trade quantum (quantum 16), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_chromium, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "chromium",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.chromium"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_coal",
+   "governs": "civilian factories per unit of coal imported; its inverse is the trade quantum (quantum 100), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_coal, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "coal",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.coal"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_bauxite",
+   "governs": "civilian factories per unit of bauxite imported; its inverse is the trade quantum (quantum 32), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_bauxite, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "bauxite",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.bauxite"
+    }
+   ]
+  },
+  {
+   "id": "resource_cic_iron",
+   "governs": "civilian factories per unit of iron imported; its inverse is the trade quantum (quantum 25), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_iron, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "owner": {
+    "file": "common/resources/00_resources.txt",
+    "kind": "pdx_block_key",
+    "block": "iron",
+    "key": "cic"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.cic.iron"
+    }
+   ]
+  },
+  {
+   "id": "trade_law_min_export_free_trade",
+   "governs": "share of available resources the free_trade trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
+   "owner": {
+    "file": "common/ideas/_trade.txt",
+    "kind": "pdx_block_key",
+    "block": "free_trade",
+    "key": "modifier.min_export"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.min_export.free_trade"
+    }
+   ]
+  },
+  {
+   "id": "trade_law_min_export_export_focus",
+   "governs": "share of available resources the export_focus trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
+   "owner": {
+    "file": "common/ideas/_trade.txt",
+    "kind": "pdx_block_key",
+    "block": "export_focus",
+    "key": "modifier.min_export"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.min_export.export_focus"
+    }
+   ]
+  },
+  {
+   "id": "trade_law_min_export_limited_exports",
+   "governs": "share of available resources the limited_exports trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
+   "owner": {
+    "file": "common/ideas/_trade.txt",
+    "kind": "pdx_block_key",
+    "block": "limited_exports",
+    "key": "modifier.min_export"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.min_export.limited_exports"
+    }
+   ]
+  },
+  {
+   "id": "trade_law_min_export_closed_economy",
+   "governs": "share of available resources the closed_economy trade law sends to the world market. Read by WA_AI_check_resource_needs (Fix 102) to estimate the offered export share. BASE VALUE ONLY - leader traits, national ideas and dynamic modifiers shift min_export by up to +/-0.3 and nothing in script exposes the shifted value, so every reader is an estimator.",
+   "owner": {
+    "file": "common/ideas/_trade.txt",
+    "kind": "pdx_block_key",
+    "block": "closed_economy",
+    "key": "modifier.min_export"
+   },
+   "mirrors": [
+    {
+     "file": "common/script_constants/wa_ai_resource.txt",
+     "kind": "script_constant",
+     "path": "wa_ai_resource.min_export.closed_economy"
+    }
+   ]
+  },
+  {
+   "id": "expeditionary_fitness_mil_factory_floor",
+   "policy": "advisory",
+   "governs": "the military-factory band: fitness floor > 10 (owner 2026-08-27, raised from 5 - ETH at 8 factories campaigned abroad) vs trains-no-divisions cap < 5 (unchanged). The 5-9 band is DELIBERATE: trains freely at home, not sent abroad. Advisory because the two values now differ on purpose; the group stays so both sites remain listed together - re-read this ruling before moving either number",
+   "owner": {
+    "file": "common/scripted_triggers/WA_AI_MILITARY_triggers.txt",
+    "kind": "regex",
+    "pattern": "num_of_military_factories > (\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt",
+     "kind": "regex",
+     "pattern": "num_of_military_factories < (\\d+)"
+    }
+   ]
+  },
+  {
+   "id": "engine_max_railway_level",
+   "governs": "engine cap on railway level (NDefines.NSupply.MAX_RAILWAY_LEVEL, install 00_defines.lua:4263 - vanilla 5, NOT rebound by 05_defines). The [rail-corridors] cheat builds corridors AT this cap and stamps the same number into the PC railway mirror arrays; the generated @ and the generator's emission must agree, and both need a re-read if the engine define ever changes",
+   "owner": {
+    "file": "common/scripted_effects/WA_AI_RAIL_CORRIDOR_data.txt",
+    "kind": "pdx_const",
+    "name": "@WA_RAIL_CORRIDOR_LEVEL"
+   },
+   "mirrors": [
+    {
+     "file": "tools/gen_rail_corridors.py",
+     "kind": "regex",
+     "pattern": "@WA_RAIL_CORRIDOR_LEVEL = (\\d+)"
+    }
+   ]
+  },
+  {
+   "id": "leader_token_pool_last_index",
+   "governs": "number of character-template tokens declared per role in history/general/WA_AI_leader_pool.txt; the recruit gates in WA_AI_leader_recruitment_effects.txt refuse to mint an index past it, because only a token declared in a parsed file resolves when the savegame is reloaded",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_leaders.pool.last_index",
+    "file": "common/script_constants/wa_ai_leaders.txt"
+   },
+   "mirrors": [
+    {
+     "file": "history/general/WA_AI_leader_pool.txt",
+     "kind": "regex",
+     "pattern": "token_base = WA_AI_gen_admiral_(\\d+)\\n(?:[^\\n]*\\n){5}\\n\\}"
+    }
+   ]
+  },
+  {
+   "id": "ger_mechanization_manpower_bar",
+   "governs": "[mech-window] deployed-army-manpower bar that opens Germany's mechanization window early; the harness probe must test the same bar the gate uses",
+   "owner": {
+    "file": "common/scripted_triggers/WA_AI_CONFIG.txt",
+    "kind": "regex",
+    "pattern": "has_army_manpower = \\{ size > (\\d+) \\}"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "has_army_manpower = \\{ size > (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "armor_budget_ramp_boundary_1939",
+   "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1939 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
+   "owner": {
+    "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
+    "kind": "regex",
+    "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1939 \\}"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1939 \\}"
+    }
+   ]
+  },
+  {
+   "id": "armor_budget_ramp_boundary_1940",
+   "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1940 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
+   "owner": {
+    "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
+    "kind": "regex",
+    "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1940 \\}"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1940 \\}"
+    }
+   ]
+  },
+  {
+   "id": "armor_budget_ramp_boundary_1941",
+   "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_1941 rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
+   "owner": {
+    "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
+    "kind": "regex",
+    "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_1941 \\}"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_1941 \\}"
+    }
+   ]
+  },
+  {
+   "id": "armor_budget_ramp_boundary_total",
+   "governs": "[armor-budget-ramp] the calendar boundary that opens the armor_budget_total rung. The console harness RE-TYPES the ladder (harness contract rule 4), so the two copies of each boundary date must agree or section C reports a false FAIL against section D.",
+   "owner": {
+    "file": "common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt",
+    "kind": "regex",
+    "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abg_total = constant:wa_ai_production\\.army_composition\\.armor_budget_total \\}"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "date > ([\\d.]+) \\} set_temp_variable = \\{ _abt_budget = constant:wa_ai_production\\.army_composition\\.armor_budget_total \\}"
+    }
+   ]
+  }
+ ]
 }
