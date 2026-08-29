@@ -614,22 +614,100 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   its cavalry. Known cost, owner-accepted: on timeout (~1942.1) 30 divisions leave the fronts
   mid-war; their equipment returns to stock. Probe: post-resolution SOV save has zero divisions
   on the cavalry template (AI) and `politics` shows the mission resolved.
+- **Campaign `6f52600d` verdict (2026-08-29, BHU observer, 118 monthly saves 1936.2-1945.11,
+  historical difficulty, `wa_tlm_version = 34`, first campaign carrying Changes 1-5): the CHAIN
+  works, the MISSION timed out.** MEASURED: mission still `active` with `days=0` at 1942.1.1,
+  `re_enable_cooldown` at 1942.2, and no +100 armour-mastery step in the doctrine ledger (positive
+  control: ENG +53 the same month) — TIMEOUT, not complete. Bars: fielded support chassis peaked
+  **9 078** (1941.8) vs 10 000; plain lights **4 911** (1941.6) vs 5 000; armor divisions 63 > 29
+  met. Conversion PASSED: brigada 21 → 0 by 1941.9 while the MIX park rose 15 → 62 (flag 15001,
+  latch stamped once 1938.4.1, never rewritten); the pure shape never fielded. Post-run conversion
+  PASSED: flag 15005 by 1942.3, medium+heavy park 6 → 92 divisions (1942.6 → 1945.10) on the
+  MEC_FINAL 9+6 shape; budget handoff agrees (light 0 / medium 17 at 1942.3). Industry followed
+  then over-corrected: support line 0 → 58 factories (1940.9) → 38 (1942.1), terminated by 1942.9;
+  the medium ramp lagged 18 months (30 factories 1941.6-1942.9, 84 at 1943.6, heavy took the freed
+  capacity first). Cavalry cleanup (Change 5) was a NO-OP: the template left the save between
+  1941.6 and 1941.7 (pre-timeout attrition/decommission), so the `has_template` guard was false —
+  goal met by another path, not a defect. DERIVED causes of the miss: (1) at 150 supports/division
+  the 10k bar needs ~68 filled divisions and the army peaked at 62 — equipment was NOT binding
+  (stock 10 184 at 1941.6); (2) the division surge started only with the 1940 budget rung and the
+  light share was diluted to 8 in 1941 when medium/heavy opened mid-run (MEASURED
+  `wa_ai_armor_budget`: 10 → 8 → 0); (3) the Change 3 math counted ~3 550 supports in infantry —
+  the carrying template (`Strelkovaya Diviziya`) was replaced by 1941.3 and that contribution
+  evaporated. Residues watched, NOT admitted (owner decision owed): 9 divisions stranded on
+  degraded light-support shapes at 1945.10 (strength 50-60 vs 400-600 for the mediums, conversion
+  tail 3.5 years); a 24-division "Light Cavalry template A" burst 1942.2-1942.6 in the re-target
+  window.
+- Change 6 (owner order 2026-08-29 "dans l'idéal, l'ia doit réussir la mission avant barbarossa —
+  implémente"): two calibration levers, from the arithmetic above, neither touching the mission
+  bars (owner ruling: the mission stays as written) nor the force values (62 fielded vs want ~8
+  proves the force already pushes past want).
+  - MIX composition 6/3/6 → **7/3/5** (175 supports + 90 lights per division): the 10k bar crosses
+    at ~59 filled divisions — the count this campaign reached by mid-1941 — instead of ~68. The
+    two TRANSITION_MIX rungs (15004/15005) follow to 7/3/5 so their `replace_at_match 0.8` keeps
+    matching the park at ~1.0; a mid-campaign 6/3/6 division matches the new target at 14/15 ≈
+    0.93, so parked saves walk up by ordinary field upgrade. Cap interplay: at 175/div the fielded
+    cap closes at ~57 divisions — same shutdown lever, comment on the constant updated. RS
+    unchanged (4+4 on 15 battalions).
+  - Armor-budget light floor, section 2b of `WA_AI_ARMOR_BUDGET_reconcile`: while the run is open
+    the light slot floors at `constant:wa_ai_production.army_composition.tank_park_light_floor`
+    (= 15, the 1940 rung) and infantry pays the difference — kills both the early-rung brake
+    (5/10 pre-1940) and the 1941 dilution. Gate = new DECISION trigger
+    `WA_AI_PRODUCTION_should_floor_tank_park_budget` = the build-force gate MINUS the fielded-cap
+    term, deliberately: the cap must stop BUILDING, but dropping the WANT at the cap re-arms the
+    decommission race on the fielded park (the want→0 inversion this subject already prices). No
+    cap term = no flap; engage at role-open + release at run-close = 2 extra transitions per
+    campaign, inside the reconcile's entry bound. The file header's "never a second budget lever"
+    sentence now names this one gated exception. `WA_TEST_armor_budget` re-types the floor
+    (contract rule 4, new `park-floor-add` field in the expect log) so V2/V3 stay honest on the
+    park country.
+  - ASSUMED, named: that the pre-1940 surge brake IS the budget rung — the coincidence (rung
+    10→15 and the factory ramp 8→58 both landing in 1940) is DERIVED, not pinned. If the next
+    campaign still shows the surge waiting for 1940 with the floor active from 1936, the brake is
+    elsewhere (training slots / deployment cadence) and the next lever is not a bigger share.
+  - Reviews 2026-08-29 (lessons CONCERNS + architecture CONCERNS), repairs applied:
+    (1) `tank_park_light_floor = 15` reworded as an INDEPENDENT value calibrated to the park —
+    the equality with `armor_budget_1940` is coincidence, not derivation, stated on the constant
+    (the alternative, a registry mirror, would force the floor to follow every ramp retune);
+    (2) the harness now re-types the GATE from its four terms instead of calling the shipped
+    trigger, so a gate defect surfaces as a C/D mismatch; (3) early-success walk added below;
+    (4) RS-grid reachability discharged empirically below.
+  - Early-success walk (lessons req. — no gate term reads mission resolution; monthly reconcile
+    cadence): t0 mission completes early (say 1941.4) → complete_effect fires, cavalry cleanup
+    runs, floor still armed; t1..run-close (≤ 9 pulses) → light want holds 15, which maps to a
+    division want BELOW the ~57-division fielded park (measured this campaign: want ~8-10 ≈
+    unbuilt while fielded 62), and the build force + production line are already stopped by their
+    own cap term — so the overshoot builds ZERO extra divisions; the floor only prevents the
+    want-collapse decommission race, which is its purpose. t2 = 1942.1.1 window close → floor
+    releases in the same pulse the light role closes; one retirement set, as in the timeout case.
+    Bound: the early-success branch emits no additional entries at all.
+  - RS-grid reachability, discharged empirically (lessons req.): campaign `6f52600d` MEASURED the
+    engine field-upgrading 92 divisions onto the 9+6 MEC_FINAL shape (15 battalions, 5+5 = 10
+    regimental supports) and 62 onto the three-type 6/3/6 MIX (8 RS) from 8+1 brigades — both
+    strictly harder cases than one greedy mot→support edit from 6/3/6 to 7/3/5 under the same
+    8 RS (fewer RS than the 9+6 precedent, same battalion count, match 14/15 ≈ 0.93). Any grid
+    rule that forbade 7/3/5+4+4 would have forbidden what the campaign measured working.
+  - Checkers after repairs: `check_constants` / `check_ai_layers` / `check_templates` /
+    `check_worklist` all exit 0.
 - Verification — owner live check: `tag SOV` then `imgui show ai_templates` (install doc,
   Tips section) on the 1940.3 save — the light_armor role must show the STARTER→30_MOT chain with
-  "Tankovaya brigada" as best match. Then `imgui show ai_division_production`: light_armor
-  `Being Built` > 0 while Current (59) > Wanted — the build_army-forces-past-want assumption's
-  killing measurement. If Being Built stays 0, the payload is wrong, not the enable: probe the
-  enable first (lessons rule silently-OFF) — the strategy block must appear armed in
-  `imgui show ai-strategy`.
-- Verification — campaign probe: a SOV save ≥ 3 months after the template flag arms: divisions on
-  the 8+1 shape falling toward 0, `num_equipment_in_armies@light_tank_support_chassis` above
-  9 500 (yesterday's ceiling) and crossing 10 000 before 1942; zero NEW divisions built on the
-  STARTER shape.
-- Closed when: a campaign save shows ≥ 1 former brigade on the 9+6 shape AND fielded support
-  chassis > 9 500.
-- Out of scope, one line: mission bars 2–3 (5 000 plain light tanks, 30 armor divisions) stay
-  unreachable under the light-support-owns-the-role design — mission-side alignment is a separate
-  owner decision, not admitted.
+  "Tankovaya brigada" as best match. The build_army-forces-past-want assumption is SETTLED by
+  campaign `6f52600d` (62 fielded against want ~8): no console read owed on it any more.
+- Verification — owner console, Change 6: `event wa_abg.1 SOV` on any pre-1942 SOV save reads
+  `park-floor-add` > 0 in the expect line, `light=15`, and all four verdicts at 1. Control: the
+  same command on a non-park country reads `park-floor-add=0` with verdicts unchanged.
+- Verification — campaign probe (updated for Change 6): divisions on the 8+1 shape falling toward
+  0, the MIX park on the 7/3/5 shape, `num_equipment_in_armies@light_tank_support_chassis`
+  crossing 10 000 and the MISSION resolving as COMPLETE (gone from `active_timed_decision` with
+  the +100 armour-mastery step in the doctrine ledger) BEFORE Barbarossa; zero NEW divisions
+  built on the STARTER shape.
+- Closed when: a historical-difficulty campaign shows SOV completing `SOV_the_greatest_tank_army`
+  before 1941.6, with former brigades fielded on the 7/3/5 MIX shape. (Supersedes the pre-Change-3
+  criterion "≥ 1 former brigade on the 9+6 shape AND fielded support > 9 500", which the pure
+  shape can never satisfy under historical difficulty — the MIX is what arms there.)
+- Out of scope note SUPERSEDED by campaign `6f52600d`: bar 3 (30 armor divisions) was MET (63) and
+  bar 2 (5 000 plain lights) peaked 98% under the MIX design — both reachable; mission-side
+  alignment is no longer needed.
 
 ### armor-budget-ramp — PARKED (2026-08-29)
 - PARKED state: code SHIPPED 2026-08-29, owner console run STILL OWED (Verification lines below
