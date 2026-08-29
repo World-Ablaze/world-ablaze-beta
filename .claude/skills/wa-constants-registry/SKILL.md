@@ -120,3 +120,12 @@ without it, reconstruct the purpose from `git log -S`, write it down, then decid
 - `wa-ai-systems` — the impact-analysis checklist this checker is one line of.
 - `wa-lessons-learned` — the incidents behind rules 1 and 2 (`references/lessons-log.md`, "Constants and file boundaries").
 - `.claude/agents/wa-architecture-reviewer.md` — runs the checker as part of a pre-ship review.
+
+## FORBIDDEN context, measured: `date > constant:`
+
+MEASURED 2026-08-29 (`WA_TEST_pdx_semantics`, engine 1.19.2): a script constant CANNOT carry a
+date. The file loads, but `date > constant:<cat>.<g>.<k>` reads TRUE for past AND future dates -
+a gate that silently stops gating. The declaration layer therefore has TWO vehicles: script
+constants for NUMBERS, and a named `WA_AI_CONFIG*` trigger holding the literal for DATES
+(`WA_AI_CONFIG_naval_treaty_era_expired` is the shape). Never put a date-shaped value in
+`common/script_constants/`.

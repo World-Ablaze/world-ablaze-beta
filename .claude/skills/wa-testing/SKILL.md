@@ -309,3 +309,13 @@ false while its value triggers read true, do NOT edit the effect — re-fire it 
 `wa_iso.3` (fires the real effect under suspicion — repoint its one call as needed). Output in
 `logs/game.log` under `SCOPE ISOLATION`. If the effect works from here but not from its home file,
 the home file is the fault and the harness gets rehomed, not debugged.
+
+## The `explain` harness pattern (layers refactor)
+
+Every migrated system ships `WA_TEST_explain_<system>` (contract v1, own event file): it journals
+the verdict of EACH layer separately (L1 declarations / L2 observations / L3 decisions) so "why
+is this strategy armed" reads off the log. Read it back with
+`python tools/read_harness_log.py --marker "EXPLAIN <SYS>" --interpret <sys> --errors` - the
+interpreter names the blocking layer without a human opening game.log; a harness whose
+interpreter is not registered in `INTERPRETERS` is not an explain. First instance:
+`common/scripted_effects/WA_TEST_explain_naval.txt`.

@@ -139,3 +139,11 @@ Required before shipping (only if VERDICT != OK):
 Keep it under 45 lines. Cite the rule letter/number and the file the change touches so the main
 agent can grep. If nothing applies, say `VERDICT: OK` and list the two or three rules you ruled
 out, so the main agent knows the check happened.
+
+## Layers rulebook (added 2026-08-29)
+
+The 4-layer model is a structural rulebook this agent checks against: `documentation/WA_AI_LAYERS.md`
+(frontier tests, named exceptions) enforced by `python tools/check_ai_layers.py` (run it; exit 0
+required, `--update-baseline` only with a justified count change in the same commit). A change
+that adds a raw engine term to an `ai_strategy` gate, reads CONFIG from layer 4, puts a date in a
+script constant, or compares `difficulty` raw outside CONFIG is a CONFLICT.

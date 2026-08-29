@@ -1682,3 +1682,21 @@ ENG fallback). Owner rule: RAJ garrisons Kuwait and Aden to relieve British divi
 - Probe: with RAJ available - INCLUDING while JAP is still neutral, the window where RAJ's engine
   areadef park competes hardest - saves show RAJ divisions physically standing in 656/659 and ENG's
   contingent there at or below its 0.02 floors; with RAJ dead/unavailable, ENG back at 0.075 on Aden.
+
+## 24. Couches techniques x echelons de portee (layers refactor 2026-08-29)
+
+Two four-part models coexist and are ORTHOGONAL; never conflate their vocabulary:
+
+- **Echelons de portee** (this document): Default / Region / Faction / Country - WHO a strategy
+  file speaks for. Unchanged by the layers refactor.
+- **Couches techniques** (`documentation/WA_AI_LAYERS.md`): declaration / observation / decision /
+  consumption - WHERE a fact lives. Every `allowed`/`enable` block of every echelon now names a
+  layer-3 gate trigger instead of carrying raw engine terms; the gate bodies moved VERBATIM to
+  `common/scripted_triggers/WA_AI_MILITARY_<DOMAIN>_gate_triggers.txt` (FRONT / INVASION /
+  THEATRE / DIPLOMACY / MISC), one trigger per strategy, named for the strategy's intent.
+
+A Country file (echelon) contains consumption-layer blocks (couche) whose `allowed = { tag = X }`
+addressing stays in place; only the arming conditions moved. The control panel
+(`WA_AI_MILITARY_triggers.txt`) keeps the behavioural SWITCHES; the `_gate_triggers` files hold
+1:1 gates - do not merge the two roles. Diagnosis: `event wa_explain_naval.1` shows the pattern;
+`python tools/check_ai_layers.py` holds the discipline (ratchet).

@@ -118,3 +118,14 @@ You cannot run HOI4 from the shell, so pick the strongest check the change allow
 | Technology or prospecting `ai_will_do` | Run the replacer in dry-run, inspect the diff, confirm nested modifiers and indentation survived. |
 | AI outcome behaviour | Built-in test bundles in `tests/`; results land in the HOI4 user directory under `logs/tests/tests_<timestamp>.log`. |
 | Localisation / UI | In-game only. No tooling catches a missing loc key. |
+
+## Where does my new rule go? (layers model)
+
+Since the layers refactor (2026-08-29), that question has one owner:
+`documentation/WA_AI_LAYERS.md` - the four technical layers (declaration / observation /
+decision / consumption), the three frontier tests, and the named exceptions. Short form: a VALUE
+(tag list, date, threshold) goes to layer 1 (`WA_AI_CONFIG*.txt` or `common/script_constants/`);
+what the AI CONSIDERS TRUE goes to a `_is_`/`_has_` trigger; WHEN it acts to a `_should_`/`_can_`
+trigger; an `ai_strategy` gate block only NAMES a decision trigger. `python tools/check_ai_layers.py`
+enforces it mechanically. A raw `difficulty` comparison outside CONFIG is always wrong
+([difficulty-mapping] - the value order is not the button order).

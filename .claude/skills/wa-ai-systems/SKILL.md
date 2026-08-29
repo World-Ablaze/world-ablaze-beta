@@ -198,3 +198,15 @@ If a rule would require duplicating a block per country, that is the signal to a
 - `log = "..."` with `[This.GetName]` / `[GetYear]` interpolation is the codebase's logging idiom; output lands in the HOI4 user directory `logs/game.log` — useful for **local** runs only.
 - **Anything that must be verifiable from a cloud test campaign goes through WA_TLM** (`documentation/WA_TLM_TELEMETRY_SYSTEM.md`, effects in `common/scripted_effects/WA_TLM_core.txt`): a reserved, write-only `WA_TLM_*` variable namespace read out of savegames by the analysis agents (`savegame.py tlm`). Standing metrics are `WA_TLM_<system>_<metric>`; per-fix probes are `WA_TLM_r<NN>_*` keyed to their checklist item. The doc's §7 is the author checklist: register the metric, zero-init it, increment counters only on *verified* effect (never on code-path entry), pair stamps as `_first_t`/`_last_t`. Do not invent new ad hoc `*_dbg_*` families — the existing ones are legacy that retire with their checklist items. Gameplay/AI logic must never *read* a `WA_TLM_` value.
 - **Run a diagnostic before implementing a fix.** In this codebase the first hypothesis about an AI misbehaviour is usually wrong — the scoping and control rules (puppets, controllers, landmasses) are subtler than they look. Confirm what the AI actually sees before changing what it does.
+
+## The four technical layers (2026-08-29)
+
+All WA_AI code follows the layer model of `documentation/WA_AI_LAYERS.md`: 1 DECLARATION
+(`WA_AI_CONFIG*.txt`, `common/script_constants/wa_ai_*`), 2 OBSERVATION (`WA_AI_<SYS>_is_/_has_`),
+3 DECISION (`WA_AI_<SYS>_should_/_can_`), 4 CONSUMPTION (`common/ai_strategy/`, effects, events)
+which names layer-3 triggers only. Gate triggers live in per-system files
+(`WA_AI_NAVAL_triggers.txt`, `WA_AI_MILITARY_<DOMAIN>_gate_triggers.txt`,
+`WA_AI_PRODUCTION_*_triggers.txt`). Conformity is enforced by `python tools/check_ai_layers.py`
+(ratchet baselines in `tools/ai_layers_baseline.json` - generated, never hand-edited); current
+counts come from the checker's report, not from any document. Each migrated system ships a
+`WA_TEST_explain_<system>` harness read back by `tools/read_harness_log.py`.

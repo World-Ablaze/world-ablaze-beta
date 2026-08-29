@@ -236,3 +236,16 @@ Hidden AI background events still need `option = {}`. `is_triggered_only = yes` 
 - Is every shared number a `constant:` (script constant), every `@` single-file, and does `python tools/check_constants.py` exit 0?
 - Do braces balance? (See the PowerShell one-liner in `wa-orientation`.)
 - If the file is in a `replace_path` folder, is it complete and parseable — nothing accidentally deleted?
+
+## Measured engine semantics (1.19.2, harness WA_TEST_pdx_semantics, 2026-08-29)
+
+1. **`if` with a false `limit` is VACUOUSLY TRUE.** Inside an `AND` that is harmless; inside an
+   `OR` it satisfies the whole OR - an `if` can never narrow an OR. Write the intent as an
+   explicit `AND = { <condition> <then> }` member instead. (An `else = { always = no }` guard
+   exists in the wild - pathfinding - but its trigger-context semantics is UNMEASURED, probe q1e owed.)
+2. **`NOT = { A B }` is a NOR** - "none of these" - as the mod's 71 such sites intend. Caveat:
+   the probe set cannot yet distinguish NOR from "only the first child is read" (q2e owed);
+   `NOT = { AND = { A B } }` remains the only unambiguous "not both".
+3. **A date cannot live in a script constant** - `date > constant:` is silently always-true.
+   Vehicle for a shared date: a named CONFIG trigger. Details:
+   `documentation/PDXSCRIPT_LANGUAGE_NOTES.md`, section *Measured Engine Semantics (1.19.2.0)*.
