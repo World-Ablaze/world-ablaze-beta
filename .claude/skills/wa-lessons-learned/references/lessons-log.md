@@ -2467,3 +2467,48 @@ process caveats (stale process, and the absence of a load-time hook).
   `WA_AI_TEMPLATES_armored_light.txt` (5104). Engine boundary, ASSUMED: whether a role with a flag
   pointing at no entry is merely unbuildable or is also dropped from the ratio denominator - the ENG
   reading fits the denominator KEEPING it, i.e. the share is wasted rather than redistributed.
+### A collapsed `expandedWindow` is still drawn - park it above its own height or the list bleeds into the window
+
+- **Symptom:** two stray unit icons painted over the two name fields at the top of the division
+  designer (owner screenshots 2026-08-29). They moved with the `divisions` dropdown, they were real
+  subunit art (heavy infantry, then cavalry on another template), and they changed identity with the
+  template list. Nothing in the `.gui` declares an icon at those coordinates, and the whole header
+  block is byte-identical to vanilla 1.19.2, which does not show them.
+- **Real cause, MEASURED:** a `dropDownBoxType`'s `expandedWindow` carries TWO positions - `position`
+  (parked, i.e. closed) and `show_position` (open). The parked window is still DRAWN; it is hidden
+  only by sitting above the box. WA had enlarged three of them from 260/325 to 400 px without
+  moving `position`, so the bottom of the parked list re-entered the visible area. With
+  `position = { y = -300 }`, `size.height = 400` and `slotsize.height = 50`, rows 7 and 8 land at
+  relative y 3 and 53 - exactly on the collapsed box and on the field below it. Each row is a
+  `designer_division_entry`, which draws its template's `GFX_unit_*_icon_medium`.
+- **Rule:** `position.y <= -size.height` for every `expandedWindow`. Growing `size.height` without
+  moving `position.y` by the same amount IS the bug. `show_position` is independent - the open list
+  does not move, so there is no cost to parking further away.
+- **Detection:** for each `expandedWindow`, compute `position.y + size.height`; anything above 0
+  pokes into the window by that many pixels. Live: change the dropdown's `x` - stray art that is
+  really the parked list moves with it.
+- **Evidence:** `interface/divisiondesignerview.gui` l.909 / l.1481 / l.1618, parked at -410 on
+  2026-08-29; the vanilla 1.19.2 pairs were -160/260 and -300/325, which clear the box by 5 px.
+
+### In a `.gui`, z-order is declaration order - an element declared before a container passes UNDER everything that container draws
+
+- **Symptom:** the exile/colonial flag in the division designer looked dimmed and half-swallowed by
+  its frame, while the division symbol a few pixels away was crisp. Moving the flag only changed
+  which part of it was swallowed.
+- **Real cause, MEASURED:** `GFX_division_icon_bg` is a 96x45 panel whose interior alpha is ~180/255
+  - SEMI-transparent, not opaque - and it is declared inside `non_hq_view`, a sibling container
+  roughly 500 lines AFTER `colonial_force_flag` in the same parent. Paint order follows declaration
+  order, so the panel was painted over the flag and darkened it by ~70%. `div_templ_symbol_button`
+  is declared after the panel INSIDE that container, which is why the symbol stayed bright. The
+  frame was never the culprit.
+- **Rule:** to raise an element above a sibling container, MOVE ITS DECLARATION after that container
+  in the same parent. Name and position stay identical, so the C++ still resolves it by name. There
+  is no z-index attribute.
+- **Detection:** art that looks TINTED rather than clipped means a later sibling with a non-opaque
+  background covers it. Read the alpha channel of the suspected panel before concluding - "opaque
+  hides, transparent is harmless" is false for anything in between.
+- **Evidence:** `interface/divisiondesignerview.gui` - both `colonial_force_flag*` icons moved to the
+  end of `countrydivisiondesignerview` on 2026-08-29. Separate finding from the same session, worth
+  keeping: `GFX_flag_small` is a `maskedShieldType` drawn at its overlay size (26x21, of which 20x17
+  is flag), larger than either frame opening (colonial 19x13, exile 16x11), so it needs `scale` -
+  no position alone can make it fit.

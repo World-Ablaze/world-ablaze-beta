@@ -140,3 +140,5 @@ triages from this file first.
 - A 08-27 Negative garrison never empties existing areadef; catcher buffer moves, same-target entries sum · grep:"does NOT empty existing area-defence"
 - F 08-27 Delegate availability measured in-theatre, never by total num_divisions · grep:"bar on TOTAL"
 - F 08-27 Equipment-capability gates read MIL tiers, never stockpile; ENG closes by tag ruling · grep:"reads industry, not stockpile"
+- A 08-29 Park an expandedWindow at y <= -height; a parked list is still drawn · grep:"park it above its own height"
+- A 08-29 .gui z-order is declaration order; move the element after the container · grep:"z-order is declaration order"
