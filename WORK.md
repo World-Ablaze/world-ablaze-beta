@@ -532,6 +532,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     holds 15002-15005 only while the majority term is true. Owner console run decides assumption
     (a) — the decommission-vs-conversion race has a measured lost precedent, so SHIPPED-UNTESTED
     until observed.
+- Change 5 (owner order 2026-08-29 "ajoute un nettoyage de ces divisions passives"): AI-only
+  cavalry cleanup in the mission itself (`common/decisions/SOV_factions.txt`, complete_effect +
+  timeout_effect): `delete_unit_template_and_units` on "Kavaleriyskaya Diviziya" with
+  `disband = yes` (refunds equipment+manpower — MEASURED effects_documentation.md:3493), gated
+  `is_ai` + `has_template`. Order matters and is free: the effect fires AFTER the availability
+  bars passed, so the cavalry's 2 250 fielded lights still count at the test. A human SOV keeps
+  its cavalry. Known cost, owner-accepted: on timeout (~1942.1) 30 divisions leave the fronts
+  mid-war; their equipment returns to stock. Probe: post-resolution SOV save has zero divisions
+  on the cavalry template (AI) and `politics` shows the mission resolved.
 - Verification — owner live check: `tag SOV` then `imgui show ai_templates` (install doc,
   Tips section) on the 1940.3 save — the light_armor role must show the STARTER→30_MOT chain with
   "Tankovaya brigada" as best match. Then `imgui show ai_division_production`: light_armor
