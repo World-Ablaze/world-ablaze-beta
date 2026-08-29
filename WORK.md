@@ -255,6 +255,45 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `light_armor` — for GER, `Light Tank template E` and its 8 divisions. That decommission is
   ALREADY what HEAD does: `813099474` closes light on the same date with or without this change.
   What changes is that the freed role gets a successor instead of the country being left empty.
+- **EXTENDED 2026-08-29 (owner order, save 1941.4.9): the DIVISION half â€” conversion instead of
+  abandonment.** Symptom, MEASURED (owner screenshot, `imgui show ai-templates` + division
+  production, GER 1941.4.9): light-armor divisions frozen post-boundary, medium built NEW
+  (current 6 / wanted 38), no light row in the wanted table. Cause, MEASURED (script): the 8
+  LIGHT_MEDIUM transition templates (5109â€“5116, `replace_with` â†’ medium at
+  `replace_at_match = 0.8` â€” the mod's only division-conversion mechanism) all sat behind
+  `use_light_armor_templates`, which contains `NOT = { switch_from_light_to_medium_armor }` â€”
+  the boundary that says "go medium" killed the only path there. Second gap: every transition
+  rung required `use_light_td_armor`, so a TD-less country could never converge even pre-boundary.
+  Fix: (a) new `WA_AI_TEMPLATES_should_convert_light_to_medium_armor` (post-boundary window:
+  switch + light unlocked + medium templates live + NOT light-support-owns + NOT early-expansion)
+  and `WA_AI_TEMPLATES_can_use_light_transition_templates` (OR of pre-boundary pair /
+  conversion window); the 8 transition rungs re-gate onto the OR; (b) TD-less rungs 5122
+  (mech) / 5121 (mot) added below 5109, conversion-window ONLY so the pre-boundary ladder is
+  byte-identical in behaviour; new templates `..._LIGHT_MEDIUM_ARMOR_30_MOT/_30_MEC` follow the
+  74-template shape rules, `replace_with` â†’ `GENERIC_MEDIUM_ARMOR_30_MEC` like 5109/5113.
+  RS reachability (lessons designer-deadlock rule): 5121/5122 copy 5100/5101's column structure
+  battalion-for-battalion (15 line battalions, RS 5+5) with 3 tank battalions swapped medium â€”
+  the RS shape is the one the live default light ladder already fields, not a new layout.
+  Parked saves, MEASURED (`WA_AI_misc_on_actions.txt:274` monthly `calculate_templates`; the
+  chain clears and re-sets the flag every pass): a save already past the boundary with the flag
+  at 0 â€” the 1941.4.9 symptom save â€” re-enters the window on its FIRST monthly pulse under this
+  build. Retroactive, no migration needed.
+  Boundary-pulse walk (lessons reviewer required this table; monthly pulse cadence). Lessons
+  MEASURED baseline: decommission = template frozen (never recruited) and DELETED at zero
+  divisions; fielded divisions are never disbanded.
+
+  | t | event | if engine upgrades want-0 roles | if it does not |
+  | --- | --- | --- | --- |
+  | t0 (first pulse â‰¥ boundary) | flag 0â†’5121-5122/5109-5116; enable-set change re-runs the one-template-per-role pass | old light template captured by the light role, transition target armed | same capture, target armed but idle |
+  | t1 (days-weeks) | field upgrade toward the transition target (needs medium tanks in stock), `replace_with` flips each division to the medium template at 0.8 match | divisions become medium, leave the light role | divisions stay frozen on the old template = HEAD behaviour |
+  | t2 (steady) | monthly recalc idempotent (terms monotone: date, techs) | light role empties, transition template deleted at zero divisions (lessons rule) â€” clean end state | enabled no-op target persists; count frozen, same as HEAD |
+
+  The honest failure mode is the right column, NOT "inert": the transition template itself sits
+  in a want-0 role and may be decommissioned before converting â€” never worse than HEAD (whose
+  divisions are already frozen), but conversion is UNPROVEN until the owner console run.
+  Reviews 2026-08-29: lessons CONCERNS (this table, RS note and the parked-save line are its
+  three required repairs) + architecture CONCERNS (verification lines below extended to cover
+  the `conv` harness row); both required-before-ship lists are discharged in this entry.
 - `role_ratio` entry burst, DERIVED at the real cadence (monthly reconcile, `armor_budget_ramp`
   rung 1940 = 15). Per country, not map-wide — `role_ratio` entries are per-country persistent
   strategies:
@@ -297,8 +336,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   in 1940.6 reads `handoff: era-boundary=1 admits-medium=1 medium-unlocked=1` and
   `coverage: use-armor-templates=1 armour-template-flags-carried=1`. Control: the same command on
   a 1936 minor reads `use-armor-templates=0` and `flags-carried=0`, which is not a defect.
+  For the conversion half: `event wa_test_tmpl.1 GER` on any post-1940 save (the 1941.4.9 symptom
+  save is ideal) reads `conv : window=1 trans=5xxx` (trans=0 is the defect), and the
+  `imgui show ai-templates` light role shows the `->` arrow on a LIGHT_MEDIUM template; one month
+  later the light-armor division count has moved toward the medium role (the want-0-upgrade
+  ASSUMED settled live).
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
-  `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940.
+  `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
+  and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
+  divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones.
 
 ### armor-budget-ramp — SHIPPED-UNTESTED (2026-08-29)
 - Scope: owner order 2026-08-29 — the armour share of the wanted-division mix must grow with the

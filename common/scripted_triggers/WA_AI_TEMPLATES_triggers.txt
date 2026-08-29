@@ -302,6 +302,28 @@ WA_AI_TEMPLATES_switch_from_light_to_medium_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [armor-class-handoff] The DIVISION half of the handoff: the boundary closes the light class,
+# but the fielded light divisions still need a path INTO the medium class. This window keeps the
+# LIGHT_MEDIUM transition templates selectable after the switch (their replace_with flips each
+# division onto the medium template at 0.8 match), so conversion replaces abandonment. Assumes
+# the engine still upgrades a role whose role_ratio want is 0; false = divisions freeze as before.
+WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
+	WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
+	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	NOT = { WA_AI_TEMPLATES_light_support_armor_owns_light_role = yes }
+	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+}
+
+# [armor-class-handoff] Gate of the transition rungs in the light ladder: open pre-boundary
+# (light and medium classes both live) and post-boundary through the conversion window above.
+WA_AI_TEMPLATES_can_use_light_transition_templates = {
+	OR = {
+		WA_AI_TEMPLATES_use_light_armor_templates = yes
+		WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+	}
+}
+
 WA_AI_TEMPLATES_use_mechanized_td_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_mechanized_td_unlocked = yes
