@@ -2007,6 +2007,49 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
 
+### eng-minelaying — PARKED (2026-08-30)
+- Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
+  the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
+- Scope: owner request 2026-08-30 (Discord, joueur 156): the UK must minelay around the home
+  island; he added the "Black Swan Mine Layer" on_research variant (`5e179dfb6`) and asked for an
+  ENG goal file under `ai_navy/goals`. Intended behaviour: the ENG AI lays mines in home waters.
+- Symptom, MEASURED (script, both trees read): the chain was broken in four independent places —
+  1. NO `role_ratio naval_mine_layer` anywhere in WA `common/ai_strategy`: vanilla gives it to
+     every major (install `default.txt:280`, `ENG.txt:1041`) and the replace_path dropped them
+     all, so the minelayer role had zero production share and the AI never built the designs
+     `ai_equipment/ENG_naval.txt:3874` declares;
+  2. the fleet template referenced `Minelaying_1` while the task force is `MineLaying_1`
+     (WA-introduced case mismatch; vanilla is consistent both sides);
+  3. `MineLaying_1` accepts only `destroyer role = 4` while ENG's minelayer designs sit on
+     frigate hulls (unit type `frigate`, `ship_frigate.txt:8`) and a submarine — no match;
+  4. goal `generic_mine_laying` at priority 1–8 against WA's convoy protection 15–30 /
+     invasion defense 15–25 / dominance 10–20 — mining scores last, fleets never reach it.
+- Fix applied 2026-08-30 (5 changes + 1 induced, `# [eng-minelaying]` comments):
+  `WA_DEFAULT_production_navy_main_focus_on_minelayers` (`role_ratio naval_mine_layer 5`, gate
+  `WA_AI_PRODUCTION_should_build_minelayers` — renamed from the unconsumed
+  `_main_focus_on_minelayers` for the layer checker; ENG-only via
+  `WA_AI_CONFIG_focus_on_minelayers`); new `goals_ENG.txt` (mines_planting 10–18) paired with
+  `blocked_for = { ENG }` on the generic goal (vanilla pattern); new `MineLayingFrigate_1` task
+  force + fleet template; case typo fixed; `role_icon_index = 4` on the on_research variant
+  (`naval_eng.txt`, engine default is 'auto'). Both design paths carry role 4 — ai_equipment
+  `mine_layer_light` already had it (`ENG_naval.txt:3909`).
+- Displacement, DERIVED (lessons-reviewer requirement): ENG role_ratio sum 157 → 162, so
+  minelayers take ~3% of dockyards (~3 of ~100), proportionally from every role; convoy floors
+  (`equipment_production_min_factories`) are forced lines, unaffected.
+- Deliberate scope cut, recorded: vanilla gave the ratio to ALL majors; here ENG only, per the
+  owner ("Not every country needs to prioritize it"). Every other navy stays at 0 minelayer
+  share by design, not by gap.
+- Reviews 2026-08-30: architecture CONCERNS (its blocking point, +1 LAYER4-NON-DECISION, closed
+  by the gate rename — `check_ai_layers` 0 ERROR, DATE-LEAK baseline tightened 130→120 for the
+  drop inherited from `5e179dfb6`); lessons CONCERNS (all three required lines are the three
+  bullets above). `check_constants` errors are pre-existing `@advisor_*` debt in
+  `common/characters/`, untouched here.
+- ASSUMED until live: the task force `role = 4` filter matches the design's `role_icon_index`
+  (systematic vanilla correlation, no in-game measurement yet).
+- Closed when: owner live check (`tag ENG` + `imgui show ai_navy`) shows a `mines_planting`
+  objective armed in home waters with `MineLayingFrigate_1` filled, and a campaign save shows an
+  ENG minelayer production line plus mines actually present in North Sea / Channel regions.
+
 ### division-target-scaling — PARKED (2026-08-28)
 - Parked 2026-08-28 (WIP limit, `armor-role-budget` enters - its Change 2 moved there
   wholesale). State at parking: Change 1 shipped, unverified.
