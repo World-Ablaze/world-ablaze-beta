@@ -172,6 +172,75 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### dday-mulberry — SHIPPED-UNTESTED (2026-08-31)
+- SHIPPED-UNTESTED: >40-line change to the `WA_AI_invasions` Mulberry events; new harness
+  `WA_TEST_mulberry.txt` + `events/wa_test_mulberry.txt` (contract v1). Owed: owner runs
+  `tag USA` → `event wa_mulb.1` (header must read `1 1 1 1 0`), then `event wa_mulb.3`
+  (control: expects the "no Mulberry A target recorded" log line) on a throwaway save, and
+  pastes both outputs here.
+- Scope: owner task 2026-08-31. Intended behaviour: every D-Day variant that lands gets its
+  artificial-harbour (Mulberry) logistics on its own coast; the harbour is dismantled ~120
+  days later; a real port is never overwritten or demolished by the script.
+- Symptom, MEASURED (campaign 5ee2d112, saves 1944.6/7/8): USA `wa_ai_dday_variant = 95`
+  (Aquitaine); lodgement 45/57 Biscay provinces at 1944.7, 11 at 1944.8; naval-base levels
+  byte-identical across the three saves — no base appeared anywhere; provinces 3579/13851
+  (Normandy Mulberry pair) carry no naval_base entry; USA/ENG hold no `.101_flag`/`.102_flag`.
+  Nuance for the collapse attribution: the lodgement DID hold captured Bordeaux (lvl 6) and La
+  Rochelle (lvl 5) at 1944.7 — "no port logistics" is precisely "no Mulberry fired", not "no
+  port provinces".
+- Cause, MEASURED (`events/WA_AI_invasions.txt`): the Mulberry pair `.101`/`.102` hardcoded
+  Normandy (state 15 prov 3579 / state 1016 prov 13851) and was scheduled live only by variant
+  88; variants 89/90/95 carried the calls commented out (a hardcoded-Normandy fire would have
+  placed the harbour on the wrong coast). The legacy `.2`/`.34` chains also call the pair but
+  have no live scheduler (their KDE calls are commented). Continuation of the 2026-08-16
+  "re-adding an event family means re-adding its call site" lesson: the re-add wired the pair
+  into two dead chains plus one variant of four.
+- Fix (`[dday-mulberry]`): `.101`/`.102` genericized — the scheduling variant records its coast
+  in `global.WA_AI_mulberry_a/b_state|prov` before firing; placement waits for state control as
+  before (retry 3d, give-up 45d), places naval_base level 5 via meta_effect (numbers-only
+  rendering, validated pattern), and latches the placed coordinates into separate
+  `global.WA_AI_mulberry_*_placed_*` variables; `.100` dismantles ONLY the latches (both, from
+  either scheduler) and zeroes them; the give-up path zeroes the un-placed target. All four
+  variants schedule live now (88: 15/3579 + 1016/13851 unchanged; 89: 14/6572 + 30/11616;
+  90: 7/68 + 6/6446; 95: 19/6621 + 23/11600). Every chosen province is base-free in
+  `history/states` (MEASURED) — 3552 Brest/9737 Bordeaux/6657 La Rochelle etc. all carry real
+  bases and are deliberately NOT used, so placement (level 5) and dismantle (level 0) can never
+  rewrite a real port that existed at start.
+- Dismantle walk at the real cadence: t0 landing — targets recorded, `.101` (USA) / `.102`
+  (ENG) fire. t1 state flips at L+k (k ≤ 45; else give-up at L+45 zeroes the target, no latch,
+  no `.100`) — harbour placed on the next 3-day tick, latch written, `.100` scheduled at
+  place+120. t2 place+120 — the FIRST `.100` to fire (either country) dismantles BOTH latched
+  harbours (B up to ~48 days early when placements were staggered — the old Normandy `.100`
+  had exactly this both-at-once behaviour) and zeroes the latches; the second `.100` is a
+  no-op. Dead-tag branch: one scheduler annexed inside the window → the other's `.100` still
+  clears both; BOTH dead → level-5 harbours persist — accepted residue, identical to the old
+  design's (its `.100` was also only scheduled by these two countries). Re-roll overwrite (the
+  reviewers' hazard): a later chain overwrites TARGETS, never LATCHES, so a pending `.100`
+  still dismantles the province it placed.
+- Review deviations, recorded: (a) province ids are literals at the scheduler sites, not reads
+  of `_invasion_state_provinces` — the arrays are rebuilt 3× per variant with different content
+  and the Mulberry pick is constrained (base-free), so an index read would silently break on
+  reorder; the literal sits 4 lines from its array with the constraint named (mine covers the
+  drift concern because the pair is adjacent and commented; index-coupling adds a silent
+  failure mode). (b) No new WA_TLM: the probe reads existing save-visible state — the
+  `global.WA_AI_mulberry_*` variables and the map's naval_base levels — and the TLM honesty
+  rule cuts the other way (these are gameplay state read by `.100`, so they must NOT be
+  telemetry). (c) `check_constants.py` still carries the 6 PRE-EXISTING `@advisor_*` errors
+  (ENG.txt/GER.txt characters) noted under `aifc-revived-tag-residue`; nothing new from this
+  subject (level 5 / 120 / 45 / 3 are single-file literals, province ids are payload).
+- Not cured by this fix (self-arming lesson): campaigns whose 1944 variant already rolled and
+  landed (5ee2d112 included) get no harbour retroactively — the scheduler fires at the landing,
+  which is in their past. Only campaigns reaching D-Day under this build are covered.
+- Probe (campaign, next run reaching 1944): read `wa_ai_dday_variant` on USA; at landing+2
+  monthly saves the variant's A province (88→3579, 89→6572, 90→68, 95→6621) reads naval_base
+  level 5 and `global.WA_AI_mulberry_a_placed_prov` matches it; by landing+6 months the
+  harbour reads level 0 again with both latches zeroed. Failed-beachhead campaigns instead
+  show targets zeroed and no latch ~45 days after the landing.
+- Closed when: one campaign whose D-Day variant is NOT 88 shows the variant's own-coast
+  harbour placed (level 5 at the recorded province) while the lodgement lives, and dismantled
+  after ~120 days — the 5ee2d112 signature (variant 95, zero naval-base delta on the whole
+  Biscay coast) absent.
+
 ### aifc-revived-tag-residue — SHIPPED-UNTESTED (2026-08-31)
 - SHIPPED-UNTESTED: >40-line change to `WA_AI_AIFC_armor_reconcile`
   (`common/scripted_effects/WA_AI_AIFC_helpers.txt`), a harnessed `WA_AI_*` effect on the weekly
@@ -502,8 +571,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
   divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones.
 
-### light-support-conversion — SHIPPED-UNTESTED (2026-08-29)
-- SHIPPED-UNTESTED: Changes 3-4 touch `WA_AI_TEMPLATES_effects.txt` (harnessed system); the owner
+### light-support-conversion — PARKED (2026-08-31)
+- Parked 2026-08-31 (WIP limit, `dday-mulberry` enters on an owner task). State at parking:
+  SHIPPED-UNTESTED — chosen for parking as the most-verified of the armor cluster: its exit-rung
+  repair shares the mechanism the `armor-class-handoff` conversion chain PASSED live 2026-08-29.
+  Still owed when unparked: the console runs in the Verification lines (wa_abg.1
+  lsmix/conv-window, the two imgui reads).
+- SHIPPED-UNTESTED (pre-parking): Changes 3-4 touch `WA_AI_TEMPLATES_effects.txt` (harnessed system); the owner
   console runs owed are listed in the Verification lines (wa_abg.1 lsmix/conv-window, the two
   imgui reads).
 - Exit rungs repaired 2026-08-29 by the `armor-class-handoff` session, after its live stall

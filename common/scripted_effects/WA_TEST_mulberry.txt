@@ -1,0 +1,79 @@
+############################################################################################################
+#	[dday-mulberry] Mulberry harness. harness-contract: v1 (wa-testing SKILL).
+#	Fired from events/wa_test_mulberry.txt (recipe in its header) - never from wa_events_test.txt.
+#	Independent walk: the (variant, state, province) table below is a deliberate literal duplicate
+#	of the scheduler sites in events/WA_AI_invasions.txt - when the two disagree, one of them is
+#	the bug, and sharing a source would hide it.
+############################################################################################################
+WA_TEST_MULBERRY_report = {
+	log = "MULBERRY TEST ==================================================================="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _mb_e1_ = 0 }
+	set_temp_variable = { _mb_e2_ = 0 }
+	set_temp_variable = { _mb_e3_ = 0 }
+	set_temp_variable = { _mb_e4_ = 0 }
+	set_temp_variable = { _mb_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _mb_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _mb_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _mb_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _mb_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _mb_e5_ = 1 } }
+	log = "  scope : always=[?_mb_e1_|.0]  I-am-ROOT=[?_mb_e2_|.0]  I-am-THIS=[?_mb_e3_|.0]  ROOT-scope-usable=[?_mb_e4_|.0]  control-false=[?_mb_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	# --- system state on the firing country + globals -----------------------------------------
+	log = "  variant : WA_AI_dday_variant=[?WA_AI_dday_variant|.0] (0 = not rolled on this tag; the roll lives on USA)"
+	set_temp_variable = { _mb_f101_ = 0 }
+	set_temp_variable = { _mb_f102_ = 0 }
+	if = { limit = { has_country_flag = WA_AI_invasions.101_flag } set_temp_variable = { _mb_f101_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_invasions.102_flag } set_temp_variable = { _mb_f102_ = 1 } }
+	log = "  flags   : 101_flag=[?_mb_f101_|.0]  102_flag=[?_mb_f102_|.0] (placement chains started on this tag)"
+	log = "  target A: state=[?global.WA_AI_mulberry_a_state|.0] prov=[?global.WA_AI_mulberry_a_prov|.0]   placed A: state=[?global.WA_AI_mulberry_a_placed_state|.0] prov=[?global.WA_AI_mulberry_a_placed_prov|.0]"
+	log = "  target B: state=[?global.WA_AI_mulberry_b_state|.0] prov=[?global.WA_AI_mulberry_b_prov|.0]   placed B: state=[?global.WA_AI_mulberry_b_placed_state|.0] prov=[?global.WA_AI_mulberry_b_placed_prov|.0]"
+
+	# --- independent walk: naval_base at every variant's Mulberry province ----------------------
+	# base>0 on a row whose harbour was never placed = a real port grew there (placement would
+	# rewrite it); base>4 after a landing on that row's variant = the Mulberry is up.
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 15 = { any_province_building_level = { province = { id = 3579 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 15 = { any_province_building_level = { province = { id = 3579 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v88 A Normandy  state 15   prov 3579  : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 1016 = { any_province_building_level = { province = { id = 13851 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 1016 = { any_province_building_level = { province = { id = 13851 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v88 B Normandy  state 1016 prov 13851 : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 14 = { any_province_building_level = { province = { id = 6572 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 14 = { any_province_building_level = { province = { id = 6572 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v89 A Brittany  state 14   prov 6572  : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 30 = { any_province_building_level = { province = { id = 11616 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 30 = { any_province_building_level = { province = { id = 11616 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v89 B Loire     state 30   prov 11616 : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 7 = { any_province_building_level = { province = { id = 68 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 7 = { any_province_building_level = { province = { id = 68 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v90 A Holland   state 7    prov 68    : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 6 = { any_province_building_level = { province = { id = 6446 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 6 = { any_province_building_level = { province = { id = 6446 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v90 B Vlaandrn  state 6    prov 6446  : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 19 = { any_province_building_level = { province = { id = 6621 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 19 = { any_province_building_level = { province = { id = 6621 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v95 A Aquitaine state 19   prov 6621  : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	set_temp_variable = { _mb_l0_ = 0 }
+	set_temp_variable = { _mb_l4_ = 0 }
+	if = { limit = { 23 = { any_province_building_level = { province = { id = 11600 } building = naval_base level > 0 } } } set_temp_variable = { _mb_l0_ = 1 } }
+	if = { limit = { 23 = { any_province_building_level = { province = { id = 11600 } building = naval_base level > 4 } } } set_temp_variable = { _mb_l4_ = 1 } }
+	log = "  v95 B Poitou    state 23   prov 11600 : base>0=[?_mb_l0_|.0] base>4=[?_mb_l4_|.0]"
+	log = "MULBERRY TEST END ==============================================================="
+}

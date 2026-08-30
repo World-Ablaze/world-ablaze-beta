@@ -1,0 +1,59 @@
+############################################################################################################
+#	[dday-mulberry] Mulberry harness events - own file, own namespace (harness-contract v1;
+#	never home harness events in wa_events_test.txt).
+#
+#	RECIPE (owner console, observer game or throwaway save):
+#	  1. tag USA  then  event wa_mulb.1   -> passive report: scope header (expect 1 1 1 1 0),
+#	     rolled variant, target/placed globals, naval_base state at all 8 candidate provinces.
+#	     Repeat as ENG for the B-side flags. Non-destructive, safe on any save.
+#	  2. event wa_mulb.2 (as USA, on a save where the D-Day landing has begun) -> fires the real
+#	     placement events .101/.102 on the current tag. If the target state is allied-controlled
+#	     the harbour appears at level 5 (re-run wa_mulb.1 to read it); otherwise the retry chain
+#	     starts. PLACES REAL BUILDINGS - throwaway save only.
+#	  3. event wa_mulb.3 -> known-false control: zeroes the Mulberry A TARGET, then fires .101.
+#	     Expected: game.log line "fired with no Mulberry A target recorded - nothing placed" and
+#	     no building change. DESTROYS the recorded A target - run last, do not save afterwards.
+#	  Output: logs/game.log under "MULBERRY TEST".
+############################################################################################################
+add_namespace = wa_mulb
+
+# Passive report.
+country_event = {
+	id = wa_mulb.1
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_MULBERRY_report = yes
+	}
+}
+
+# Live probe: fire the real placement chain on the current tag.
+country_event = {
+	id = wa_mulb.2
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		log = "MULBERRY TEST: firing WA_AI_invasions.101/.102 on [Root.GetName]"
+		country_event = { id = WA_AI_invasions.101 }
+		country_event = { id = WA_AI_invasions.102 }
+	}
+}
+
+# Known-false control: a fired .101 with no recorded target must place nothing.
+country_event = {
+	id = wa_mulb.3
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		log = "MULBERRY TEST: control - zeroing Mulberry A target, firing WA_AI_invasions.101 (expect the no-target log, no placement)"
+		set_variable = { global.WA_AI_mulberry_a_state = 0 }
+		set_variable = { global.WA_AI_mulberry_a_prov = 0 }
+		country_event = { id = WA_AI_invasions.101 }
+	}
+}
