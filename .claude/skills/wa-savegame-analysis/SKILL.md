@@ -173,6 +173,31 @@ loss counts, and `efficiency=` on ~96 % of regional entries (ASSUMED omitted whe
 bulky (a stitched monthly curve alone is ~70 rows) — **run it in a subagent**; verified against
 `navy` on `1ac7e4ea` 1944.6 (GER raid=100, ENG escort=101, byte-equal).
 
+Eighth companion: `losses.py TAG[,TAG…]|ALL <save>… [--pairs] [--limit N]` — **manpower
+losses over time, beside army size and the free manpower pool.** The source is the war
+ledger: every `war_relation={}` block carries `first_casualties`/`second_casualties` —
+integer manpower counters, **cumulative PER WAR** (8 of 8 series non-decreasing across
+5 saves of `2d7b1b60`; GER–SOV reads 6 401 197 / 7 390 083 at 1945.8). Direction is
+**DERIVED from magnitude, not an engine document**: `first_casualties` = losses OF the
+tag named `first=` (four lopsided wars concur — SOV 7.39M vs GER 6.40M, CHI 3.25M vs
+JAP 1.50M, POL 278k vs GER 31k, FRA 770k vs GER 145k). Three traps it closes: the
+block is hosted on **one arbitrary side** (GER hosts GER–SOV, ENG hosts ENG–GER), so
+every country is scanned and sides keyed on `first=`/`second=`; the nested
+`war_score_*/casualties` key is a **score in points** (≈ own losses / 2000, divisor
+not universal — POL/FRA fit ≈/8000), never men; and **a peace DELETES its war's
+ledger** (the SOV-hosted Winter War block is gone by 1941.9; the 1941 FIN-hosted block
+restarts from zero), so a country total can DROP between saves — the tool names the
+vanished pair instead of printing a silent smaller number, and "losses ever" is not
+recoverable from one late save: pass the campaign series and read the per-save `d=`
+deltas as the flow. Context columns for the losses-vs-forces comparison: `divs`
+(units-only division count, byte-equal to `army` and its two gauges on `2d7b1b60`
+1943.1) and `mp_pool` (`manpower={ratio=}` — **ASSUMED** the free pool; it is the only
+shallow manpower scalar in a country block). What no save carries: the combat-vs-
+attrition split of a counter, and any per-battle land loss (live `combat` blocks are
+transient and read 0). A few tags without `--pairs` is ~1 line per tag per save (fine
+inline); `ALL` or `--pairs` (one row per war, 25+ for a 1941 major) belongs in a
+subagent.
+
 Bare filenames resolve against the default save dir: `~\Documents\Paradox Interactive\Hearts of Iron IV\save games`. Files are 60–150MB / ~4.4M lines — never Read one, never load one into memory, and don't trust shell `grep` here (the rtk proxy mangles its output; the script or a streaming Python one-liner is the reliable path).
 
 ## Save formats
