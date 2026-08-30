@@ -108,40 +108,15 @@ WA_AI_pp_advisor_prio = {
 	NOT = { has_idea_with_trait = silent_workhorse }
 }
 
-WA_wait_for_barb = {
-	if = {
-		limit = {
-			SOV = { is_ai = yes }
-		}
-		OR = { 
-			has_war = yes
-			AND = {
-				has_war = no
-				date > 1940.10.1
-				date < 1941.2.1
-			}
-			AND = {
-				has_war = no
-				date > 1941.10.1
-				date < 1942.2.1
-			}
-			AND = {
-				has_war = no
-				date > 1942.10.1
-				date < 1943.2.1
-			}
-			date > 1944.1.1
-			NOT = {
-				GER = {
-					focus_progress  = {
-						focus = GER_eastern_lebensraum
-						progress > 0
-					}
-				}
-			}
-			NOT = {
-				GER = { has_completed_focus = GER_eastern_lebensraum }
-			}
-		}
+# [sov-wait-for-barb] AI SOV defers long peacetime focuses (fleet programs, Far East diplomacy)
+# while a German attack could open mid-focus; assumes a running focus whose available goes
+# false is paused, not cancelled (unmeasured), so the windows stay generous rather than tight.
+# A human player is never gated.
+WA_AI_SOV_can_start_long_focus = {
+	OR = {
+		is_ai = no
+		has_war = yes
+		WA_AI_CONFIG_barbarossa_launch_window_closed = yes
+		NOT = { WA_AI_CONFIG_GER_is_pursuing_barbarossa = yes }
 	}
 }

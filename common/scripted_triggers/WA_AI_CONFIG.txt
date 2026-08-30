@@ -922,6 +922,28 @@ WA_AI_CONFIG_RAILWAY_GER_to_SOV_window = {
 	has_completed_focus = GER_danzig_or_war
 }
 
+# [sov-wait-for-barb] Germany is on the Barbarossa path and the attack is still coming. Exits
+# release readers when the cue can no longer be trusted: GER beaten (exists/capitulated), or a
+# HUMAN GER sitting on the completed focus without declaring — only an AI GER, which declares
+# within days of completion, keeps the completed branch. The in-progress branch is self-bounded
+# by the focus length. False on ahistorical no-barb paths; readers must not wait on false.
+WA_AI_CONFIG_GER_is_pursuing_barbarossa = {
+	GER = {
+		exists = yes
+		has_capitulated = no
+		OR = {
+			focus_progress = {
+				focus = GER_eastern_lebensraum
+				progress > 0
+			}
+			AND = {
+				is_ai = yes
+				has_completed_focus = GER_eastern_lebensraum
+			}
+		}
+	}
+}
+
 # ============================================================================
 # MILITARY ALLOCATION CONFIGURATIONS
 # ============================================================================
@@ -1533,6 +1555,28 @@ WA_AI_CONFIG_after_1943 = {
 # partagent une intention (alors nommer la fenetre) ou doivent etre eclates par intention.
 WA_AI_CONFIG_before_1943_7 = {
 	date < 1943.7.1
+}
+
+# 1 reader: WA_AI_SOV_can_start_long_focus
+# [sov-wait-for-barb] the months in which a German attack on the SOV cannot OPEN before a long
+# focus finishes: the three winter lulls, then permanently from autumn 1943. Bounds assume WA's
+# Barbarossa fires in a spring-summer window; if that timing moves, these bounds move with it.
+WA_AI_CONFIG_barbarossa_launch_window_closed = {
+	OR = {
+		AND = {
+			date > 1940.10.1
+			date < 1941.2.1
+		}
+		AND = {
+			date > 1941.10.1
+			date < 1942.2.1
+		}
+		AND = {
+			date > 1942.10.1
+			date < 1943.2.1
+		}
+		date > 1943.10.1
+	}
 }
 
 # 10 readers: should_allies_italy_invasion_execute, should_chi_war_with_jap_3, should_eng_germany_is_winning, should_jap_protect_our_expansion, should_sov_japan_tehran, PRODUCTION_USA_should_produce_for_lend_lease ...
