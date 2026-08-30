@@ -631,6 +631,33 @@ this as an invasion target") suggests it reaches beyond missions, unverified; an
 with the front forming (in `15176ce6` both brakes were on and no front formed; in `24933fb9` neither
 was). Both are the campaign probe's job.
 
+---
+
+**[east-africa-stand-down] (2026-08-31, campaign `5ee2d112`) - the faction-wide conquest drive
+retires against a rump.**
+
+MEASURED on the BHU run: ENG→Eritrea and USA→Eritrea engine naval-invasion orders stayed live 18
+months (1941.12.19→1943.6) against a 1-2 province ITS remnant, and were the faction's ONLY invasion
+orders at 1942.9 and 1943.6 — while Egypt fell to Italy and 11 Allied tags held 34-52 divisions in
+East Africa against a 4-8 division Axis rump. The anglo-major `conquer ITS 500` + `contain ITS 200`
+block (`WA_AI_MILITARY_ALLIES_war_against_ITA_central_africa_DIPLOMACY`) had no release short of
+annexation: its gate read only `country_exists` / `has_war_with` / `east_africa_enemy_held`.
+
+The gate now also requires `WA_AI_MILITARY_east_africa_enemy_is_substantial`
+(`WA_AI_MILITARY_triggers.txt`, with the East-Africa family): at least 2 of the 7 AOI core states
+enemy-controlled, OR one enemy massing more than `@WA_AI_EA_RUMP_ARMY_BAR` (8) divisions in the
+theatre. Strength is PER ENEMY — `num_divisions_in_states` cannot sum across countries; the
+realistic AOI population is ITA/ITS only (GER is barred by the §12 abandon brakes), and a split
+force that matters re-arms the territorial limb when it retakes a second state. The Fix 132
+scenario stays covered: 12 divisions massed in one state read substantial, so the drive holds
+through a counter-landing. Division of labour, by design: the local contested family (Fix 132
+ownership widening, untouched) finishes the mop-up; only the faction-wide strategic
+invasion-targeting drive retires. Deliberately NOT touched: the `east_africa_theatre_contested`
+OWNER limb has the same rump hole on the FRONT/THEATRE side — a separate subject. Flap at the
+2-state / 9-division boundary is accepted (t-walk in WORK.md `east-africa-stand-down`); ASSUMED
+(engine boundary, probe-owned): removing `conquer`/`contain` actually retires the standing engine
+invasion orders.
+
 ## 13. The 1936 Ethiopian war - AI Italy attacks the mission's states, on every aggressive rule (Fix 98, 2026-08-17)
 
 Campaign `0edbc955`: Italy lost the war by the `ETH_push_into_ethiopia_mission` timeout (100 days from 1936.5.1; success =

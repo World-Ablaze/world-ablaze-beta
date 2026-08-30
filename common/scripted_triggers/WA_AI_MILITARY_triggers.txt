@@ -1963,6 +1963,7 @@ WA_AI_MILITARY_east_africa_theatre_contested = {
 
 # An enemy at war with ROOT holds ground of the AOI core (Eritrea, the Somalias, Ethiopia) - the
 # "there is something to conquer in East Africa" half, independent of whether we already stand there.
+# [east-africa-stand-down] same 7-state AOI list as east_africa_enemy_is_substantial below - re-cut together.
 WA_AI_MILITARY_east_africa_enemy_held = {
 	OR = {
 		550 = { CONTROLLER = { has_war_with = ROOT } }
@@ -1972,6 +1973,36 @@ WA_AI_MILITARY_east_africa_enemy_held = {
 		271 = { CONTROLLER = { has_war_with = ROOT } }
 		909 = { CONTROLLER = { has_war_with = ROOT } }
 		910 = { CONTROLLER = { has_war_with = ROOT } }
+	}
+}
+
+@WA_AI_EA_RUMP_ARMY_BAR = 8	# above this many divisions in the AOI, one enemy is a field army, not a rump
+
+# [east-africa-stand-down] the AOI enemy is worth a faction-wide conquest drive: a multi-state
+# position, or one enemy massing a field army there. Read by the ALLIES conquer/contain gate so the
+# drive retires against a rump while the contested family finishes the mop-up. ROOT-relative,
+# enable-block use only (has_war_with = ROOT dies inside country iterators). Strength is PER ENEMY,
+# not summed - a split force re-arms via the territorial limb once it retakes a second state.
+WA_AI_MILITARY_east_africa_enemy_is_substantial = {
+	OR = {
+		# territorial: still a campaign, not a mop-up - at least 2 AOI core states enemy-controlled
+		count_triggers = {
+			amount = 2
+			550 = { CONTROLLER = { has_war_with = ROOT } }
+			559 = { CONTROLLER = { has_war_with = ROOT } }
+			268 = { CONTROLLER = { has_war_with = ROOT } }
+			269 = { CONTROLLER = { has_war_with = ROOT } }
+			271 = { CONTROLLER = { has_war_with = ROOT } }
+			909 = { CONTROLLER = { has_war_with = ROOT } }
+			910 = { CONTROLLER = { has_war_with = ROOT } }
+		}
+		# strength: a massed enemy force stands in the theatre even with no state currently held
+		any_enemy_country = {
+			num_divisions_in_states = {
+				count > @WA_AI_EA_RUMP_ARMY_BAR
+				states = { 550 559 268 269 271 909 910 }
+			}
+		}
 	}
 }
 

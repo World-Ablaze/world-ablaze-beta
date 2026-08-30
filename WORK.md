@@ -172,8 +172,69 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### armor-class-handoff — SHIPPED-UNTESTED (2026-08-29)
-- SHIPPED-UNTESTED: it changes the ENTRY GATE of a system that has a `WA_TEST_armor_budget`
+### aifc-revived-tag-residue — SHIPPED-UNTESTED (2026-08-31)
+- SHIPPED-UNTESTED: >40-line change to `WA_AI_AIFC_armor_reconcile`
+  (`common/scripted_effects/WA_AI_AIFC_helpers.txt`), a harnessed `WA_AI_*` effect on the weekly
+  on_action chain. Owed: owner fires `event wa_aifc.1 ITA` on any campaign save and pastes the
+  `armor :` lines here — books print and no pending line reads `target-exists=1`.
+- Scope: owner task 2026-08-31. Intended behaviour: a tag annexed while carrying AIFC
+  armour-steering entries and later revived never keeps a stale `front_armor_score` bias — every
+  emitted boost/suppress is eventually exactly negated.
+- Symptom, MEASURED (campaign 5ee2d112, BHU observer, saves 1942.12→1943.11, wa_tlm v34 build):
+  `aifc.py` CLOSURE MISMATCH on ITA — "ETH: ledger NET +250, book expects -150" — stable across 4
+  consecutive monthly saves. DERIVED arithmetic: stale +400 boost from the 1936-37 Italo-Ethiopian
+  war (ETH annexed → cancel skipped, book cleared anyway) + live -150 suppress installed when the
+  revived ETH re-entered the war. ITA armour steering permanently biased toward East Africa.
+- Cause, MEASURED (both retirement sites in `WA_AI_AIFC_armor_reconcile`): the negation is emitted
+  only under `exists = yes` while the tracking book is erased unconditionally — once the book
+  forgets a dead tag, no later reconcile can emit the owed cancel. The header's KNOWN GAP claimed
+  "rare and self-correcting"; false for a revived tag, header corrected.
+- Fix (`[aifc-revived-tag-residue]`, additive): two persistent debt books,
+  `WA_AI_AIFC_armor_pending_boost` / `_pending_supp` — ids copied VERBATIM from the live books
+  (same engine-encoded country refs, never re-derived). The two skip sites append instead of
+  dropping; a sweep at the head of every weekly reconcile (section 0b, rebuild idiom like section
+  2) emits the owed cancel for any id whose tag exists again and re-parks the rest. Sweep is
+  unconditional — the debt is independent of steering state, and a cancel toward a revived
+  non-enemy is behaviourally inert (its purpose is ledger arithmetic). Emissions route through the
+  existing emitters, so `WA_TLM_r67_aifc_arm_entries_n` counts them like any emission.
+- t0/t1/t2 at the real cadence (weekly reconcile, runs for every is_ai country incl. ineligible —
+  FIX 68 lifted it out of the capitulation gate): t0 = tag annexed, retirement tick parks the
+  debt. t1 = tag revives (gap unbounded, debt waits). t2 = first weekly reconcile ≤7 days after
+  revival: cancel emitted, NET returns to book expectation; a revived war enemy gets its fresh
+  -150 in the same tick (sweep runs before the install sections). Stale-bias window after
+  revival: ≤1 week (was: forever). Residue accepted, in writing: (a) a tag that never revives
+  parks its id forever — a handful of ids, save-visible, harness-checked; (b) residue accrued on
+  PRE-pending builds is UNRECOVERABLE — script cannot read the engine's persistent_strategy list,
+  so campaigns like 5ee2d112 keep their bias when resumed; only deaths occurring under this build
+  are tracked.
+- Reviews 2026-08-31: lessons CONCERNS + architecture CONCERNS, required repairs all applied —
+  pre-fix-residue disposition written (above + `aifc.py` mismatch wording distinguishes legacy
+  residue), verbatim-encoding rule and the ASSUMED emission-gate rationale (GetTag toward a dead
+  id unverified) stated in the header, campaign measurement dropped from the code comment (rule
+  7), registry groups `aifc_armor_boost_magnitude` / `aifc_armor_suppress_magnitude` tie the
+  ±400/±150 emitter literals to `aifc.py` BOOST/SUPPRESS (meta_effect runtime text cannot read
+  constants — validated-context exception).
+- Companion changes: `aifc.py` decodes the pending books, folds them into the closure expectation
+  (+400 / -150 per pending id), prints them, and alarms on PENDING+ACTIVE on the same tag
+  (impossible when the sweep works — section 0b drains before sections 1/3 install);
+  `WA_TEST_aifc.txt` section E dumps books + pending with per-id `target-exists` flags.
+- Checker note: `check_constants.py` carries 6 PRE-EXISTING errors (`@advisor_1/2/3` declared with
+  different values in `common/characters/ENG.txt` vs `GER.txt`) — not this subject's, left for an
+  owner-admitted fix; the two new aifc groups verify OK.
+- Probe (campaign): `aifc.py` closure OK on every live tag of every major; any annex→revive pair
+  (SCW, Ethiopia, Balkans) shows the dead tag parked in pending while dead and drained within one
+  save of revival; the PENDING+ACTIVE alarm never fires.
+- Closed when: a campaign begun on this build that contains an annex→revive pair shows closure OK
+  on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
+  signature absent.
+
+### armor-class-handoff — PARKED (2026-08-31)
+- Parked 2026-08-31 (WIP limit, `aifc-revived-tag-residue` enters on an owner task). State at
+  parking: SHIPPED-UNTESTED — but the most-verified of the four candidates: the conversion chain
+  PASSED live twice (owner runs 2026-08-29) and its remaining exits are mostly campaign probes.
+  Still owed when unparked: the handoff-half console read (`event wa_abg.1 GER` in 1940.6) and the
+  campaign reads in the Closed-when line.
+- SHIPPED-UNTESTED (pre-parking): it changes the ENTRY GATE of a system that has a `WA_TEST_armor_budget`
   harness, so the owner console run is owed before TESTED. Paste `event wa_abg.1 GER` output here.
 - Scope: owner request 2026-08-29, from the question "pourquoi GER fait pas de chars moyens sur
   la save 29 juin 40". Intended behaviour: a country whose armour layer is switched on always
@@ -2614,6 +2675,7 @@ OPEN with a session of its own.
 | `analysis-tooling` | TESTED, parked 2026-08-27 (slot freed for `can-transit-attrition`, owner admission). All three tools shipped+validated (comp rungs v33 F9-booted; aifc.py DEAD-TAG banner; plans.py --invasions) | comp gauges floored to 0 under 5 armour divisions; aifc.py printed dead tags as live churn; type-3 targets unreadable | v33 campaign probe: a major with 1-4 armour divisions reads `comp_armor` = that count, and `tlm` never reports comp_* FROZEN on live majors |
 | commonwealth-handoff | OPEN (parked 2026-08-27, owner order - WIP limit; exemption lever live since 2026-08-25) | Handoff inverts: availability bars read TOTAL divisions, not in-theatre (24933fb9: RAJ reads available with 3 div in East Africa on 76 total, ENG back-fills 14); every bar single-threshold, flap lever documented in the block (git history of this file) | Delegate missions armed and manned (R72 legs), Indian army in East Africa/El Alamein, no dominion dockyard nailed by an unbuildable design |
 | `aoi-border-garrison` | OPEN, both legs shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `aifc-traction`). Leg 1: `AXIS_abandon_east_africa` FRONT/THEATRE retargeted off region 17 (corridor {380,381} + s.r. 217), new `_colony_THEATRE` -200 gated `NOT owns_east_africa_colony`, ITA buffer widened to {550,559,271,909,910}, family gate extracted. Leg 2 (sea reinforcement): buffer ratio 0.10→0.20, trigger `east_africa_sea_route_hostile` (Suez 923), `owner_cut_off_THEATRE` -200, `naval_avoid_region` +1000 on the 5 Red-Sea/Indian-Ocean lanes. Campaign `24933fb9`: colony holds 37 months vs 2 pre-fix; (b) PASS (EA front orders manned), (d) PASS (0 GER div), (c) marginal FAIL (1-2 strays, Kurdufan buffer leak order 9607 unexplained), (a) FAIL as written / PASS on buffer population (43-57 % border). OWED: F9 boot (new ai_strategy blocks), owner imgui (cut-off gate armed/released vs Suez), §12 telemetry re-instrumentation before next scoring | ITA 9/9 AOI divisions pinned to {550,559} port buffer, zero EA front orders for ITA and ITS (`15176ce6` 1940.9-10); leg 2: AOI grows 9→11-23 by 1943 by sea past the Allied navy (`24933fb9`; ITS never released, growth = external) — engine never refuses the route (`MAX_ALLOWED_NAVAL_DANGER 80` vs ceiling 50) | (a) >= half AOI divisions in border states {271,909,910,550}, (b) EA front order for the AOI holder, (c) zero ITA/ITS div in 217/380/381, (d) zero GER div in AOI, (e) no sea growth while Suez hostile (~0.20 prepositioned at entry), (f) reinforcement resumes once the Axis takes Suez. Full record: git log `[aoi-border-garrison]` + this file's history |
+| `east-africa-stand-down` | SHIPPED 2026-08-31, parked same day (WIP limit; owner-requested subject). Gate `WA_AI_MILITARY_should_allies_war_against_ita_central_africa_diplomacy` gains `WA_AI_MILITARY_east_africa_enemy_is_substantial` (>= 2 of the 7 AOI core states enemy-controlled OR one enemy > `@WA_AI_EA_RUMP_ARMY_BAR` = 8 divisions in theatre); anglo-major `conquer ITS 500`/`contain ITS 200` now retires on a rump via `abort_when_not_enabled`. Reviews: architecture OK, lessons CONCERNS repaired (per-enemy strength documented — split 6+6 force stands down until it retakes a 2nd state, realistic AOI population is ITA/ITS only since GER is brake-barred; 7-state list cross-commented; ROOT-relative header). Flap walk: t0 rump at <= 1 state / <= 8 div per enemy → enable false, drive aborts (enable re-read cadence ASSUMED sub-weekly); t1 enemy retakes a 2nd state or masses > 8 in one tag → re-arms next evaluation (Fix-132 counter-landing: 12 div = armed); t2 worst case one abort/re-add cycle per boundary crossing, cost = a re-created invasion order — accepted, a re-arm against a re-expanding enemy is correct. ASSUMED (engine boundary): dropping conquer/contain retires standing engine invasion orders — the probe owns it. Doc §12 updated. Sibling rump hole in `east_africa_theatre_contested` OWNER limb deliberately untouched (separate subject) | ENG→Eritrea + USA→Eritrea naval-invasion orders live 18 months (USA order 47 created 1941.12.19, both present to 1943.6) against a 1-2 province ITS rump — the ONLY Allied invasion orders at 1942.9 and 1943.6 while Egypt fell; 11 Allied tags 34-52 div in East Africa vs a 4-8 div Axis rump, Egypt+Libya+Levant never > 13 Allied div (`5ee2d112`, BHU cloud observer) | A campaign where ITS falls to <= 1 AOI core state shows the ENG/USA invasion orders against ITS DISAPPEARING between consecutive monthly saves within ~2 months of the reduction (order-disappearance via `plans.py --invasions`, never `starting_date`), AND the drive armed earlier in the same campaign while ITS held >= 2 states (control: the East-Africa campaign is still fought and won); regression tell = an EA counter-landing > 8 div faces a re-armed drive |
 | `aifc-closure-eth` | MEASURED 2026-08-27, never opened (found during the `aifc-traction` sweep) | ITA carries a `CLOSURE MISMATCH` on ETH — ledger NET +250 vs book -150 — on 8 consecutive quarterly saves, 1943.10→1945.10 (`24933fb9`): the +400 boost was never cancelled when ETH was annexed, a later -150 suppression stacked on top; the `WA_AI_AIFC_helpers.txt` KNOWN GAP's "rare and self-correcting" does NOT self-correct in 25 months | The armour reconcile retires/cancels book entries on annexed or dead tags (or the residual is bounded with a t0/t1/t2 table and accepted in writing); a campaign shows no ledger-vs-book mismatch persisting past 2 reconciles |
 | `minor-expeditionary-fitness` | SHIPPED-UNTESTED, parked 2026-08-27 (owner order). Shipped: fitness floor `WA_AI_MILITARY_is_fit_for_expeditionary_front` (> 5 MIL; raised to > 10 on 2026-08-27, owner order on the ETH-at-8 symptom — trains cap kept at < 5, registry group `expeditionary_fitness_mil_factory_floor` now advisory, the 5-9 band trains at home but stays home) + CAPS `unfit_army_stays_home` -100 (`e958ef934`); the two ALLIES pulls (`europe_first`, `east_africa_contested_FRONT`) fitness-gated 2026-08-25; lend-lease gate `WA_AI_LEND_LEASE_recipient_is_worth_equipping` (fitness OR `home_threatened`, homeland hatch owner-ruled) on both recipient paths; 2026-08-27 `WA_AI_PRODUCTION_trains_no_divisions` (< 5 MIL + > 4 div + no civil war -> build suppression, merged [rk-no-divisions], registry group `expeditionary_fitness_mil_factory_floor`). Diagnosis settled: H1 KILLED (owner imgui MEASURED, entry armed at -100), live cause H2 (-100 under-sized vs ALLIES +150/+75 pulls, cross-area summing still ASSUMED) + H3 (buffer/no-order divisions out of any front_unit_request's reach). Campaign `24933fb9`: leg (a) materially improved (1944.6 12/12 NEP home; 1941.6 window still violated, 6/10 in Egypt/Libya). OWED: console harness (FROM.FROM state_trigger), F9 boot (`trains_no_divisions` block), lend-lease harness run (`wa_test.300`/`301`) | NEP at 1 arms factory holds front orders across the Sahel/Horn for 4.5 years, 9-13 of its 12-16 divisions out of region (`8f9b5653`); ETH at 8 factories behaves identically = the > 5 gate misses the owner's rule | (a) NEP/BHU divisions never beyond their own neighbourhood, (b) no country at <= 10 MILs fronting beyond its neighbourhood AND every no-civil-war < 5-MIL country deployed <= 8 div sustained after 6 months at war (NEP flattens; ETH-class control at >= 5 MILs still grows), (c) RAJ/AST/CAN theatres still manned once NZL/SAF are held back. Full record: git log `[minor-expeditionary-fitness]` + this file's history |
 | `fra-battle-of-france` | OPEN, fix shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `lend-lease-observability`). Shipped: `FRA_homeland_invaded_recall_colonials_THEATRE` (area_priority -90 NA/med/middle_east, gated `home_threatened`), Alpine pair `FRA_alpine_front_FRONT`/`_THEATRE` (+100 south_france, gated `any_enemy_country = is_italian_homeland_power`), `FRA_defense_of_the_colonies_FRONT` re-armed to -5000 release, no-op `FRA_ignore_garrisons_until_invasion_start` deleted; spec SS25; reviews applied; F9 boot OK. Campaign `24933fb9` NOT CHECKED — `surrender_progress` not serialised and the gate window falls between monthly saves (ITA declares 1940.6.11, FRA dead by 1940.7.1); symptom near-vacuous this run (FRA 3/121 div in NA+Corsica). ASSUMED stated: garrison -5000 release semantics; colonial channel of the ~20 div | Owner report (ironman `feedback_save`, so owner figure not save-MEASURED): FRA garrisons North Africa/Corsica (~20 div) during the Battle of France while the Italian border sits open | A non-ironman Battle-of-France save (mid-June, or the console harness) shows (a) FRA NA+Corsica division count falling once `surrender_progress > 0.05`, (b) >= 2 FRA divisions on the south_france fronts while an Italian homeland power is an enemy, (c) Maginot/fall_rot nets unchanged |
