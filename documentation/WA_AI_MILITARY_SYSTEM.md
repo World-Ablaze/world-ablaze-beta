@@ -650,11 +650,23 @@ theatre. Strength is PER ENEMY — `num_divisions_in_states` cannot sum across c
 realistic AOI population is ITA/ITS only (GER is barred by the §12 abandon brakes), and a split
 force that matters re-arms the territorial limb when it retakes a second state. The Fix 132
 scenario stays covered: 12 divisions massed in one state read substantial, so the drive holds
-through a counter-landing. Division of labour, by design: the local contested family (Fix 132
-ownership widening, untouched) finishes the mop-up; only the faction-wide strategic
-invasion-targeting drive retires. Deliberately NOT touched: the `east_africa_theatre_contested`
-OWNER limb has the same rump hole on the FRONT/THEATRE side — a separate subject. Flap at the
-2-state / 9-division boundary is accepted (t-walk in WORK.md `east-africa-stand-down`); ASSUMED
+through a counter-landing.
+
+**[east-africa-proportionality] (2026-08-31, owner order) — the faction-wide +150 retires too.**
+Supersedes the division of labour above (which reserved the contested_FRONT family at full pull for
+the mop-up): that reservation assumed the mop-up needed the mass, and `5ee2d112` refuted it — 34-52
+Allied divisions sat on a 4-8 division rump for 14 months, and the blocker was the never-executed
+Massawa assault, not division count. `should_allies_east_africa_contested_front` now also requires
+`east_africa_enemy_is_substantial`. Mop-up carriers at the stood-down state (net front_unit_request
+on the alias): RAJ delegate **+100** (own Country gate), committed minors **+60**, fit uncommitted
+members 0 (exec front_control untouched, fronts still execute), sink-armed members **−100** — they
+used to net +50 through their own sink, so the tier change also closes that leak. Boundary walk:
+at the 2-state / 9-division crossing the +150 aborts in one evaluation and re-arms on a second
+state retaken or >8 divisions massed by one enemy; cost per crossing is ASSUMED (engine
+re-request semantics of an aborted `front_unit_request`, never measured) and probe-owned. The
+`east_africa_theatre_contested` OWNER limb keeps its rump hole (separate subject — it gates
+presence, no longer mass). Flap t-walk and the multi-rump probe (several enemies each ≤ 8
+divisions summing higher read as rump) live in WORK.md `east-africa-proportionality`; ASSUMED
 (engine boundary, probe-owned): removing `conquer`/`contain` actually retires the standing engine
 invasion orders.
 
