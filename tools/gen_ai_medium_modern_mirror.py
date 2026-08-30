@@ -230,6 +230,17 @@ WA_medium_armor_modern_role = {
 \t\t\t\t\t\t\t\t\t# every front_armor_score entry in the mod was inert.
 \tupgrade_prio = {
 \t\tbase = 100
+\t\t# [dead-role-entry] The engine's role-entry lottery gives full weight to an entry whose
+\t\t# targets are all disabled, turning it into a permanent army-XP sink. This entry's enables
+\t\t# all key on modern-range (+500) values, reachable only while the modern latch is set.
+\t\tmodifier = {
+\t\t\tfactor = 0
+\t\t\tNOT = { has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }
+\t\t}
+\t\tmodifier = {
+\t\t\tfactor = 0
+\t\t\tNOT = { has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE }
+\t\t}
 \t}
 """
 

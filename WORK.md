@@ -1120,6 +1120,43 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `role_ratio id = modern_armor` entry in any `persistent_strategy` block.
 - Closed when: the harness reads 1/1/1/1 on GER post-1943 AND a campaign shows German medium
   divisions mounting the modern chassis before 1945.
+- ADDENDUM 2026-08-30, tester report (156) + campaign `2d7b1b60` + owner-run `imgui show
+  ai_templates`: two defects found in the shipped design, fixes prepared this session (working
+  tree, not yet committed).
+  - Defect A, MEASURED: the ladder validates component slots at the MEDIUM tier, then +500
+    promotes them one tier up unvalidated. USA (modern chassis researched 1944.3, zero modern
+    SPG/TD/SPAA techs through 1945.8) got 6616, whose 4 battalions + both regimental supports +
+    2 divisional companies were unbuildable; the engine converged on an 11-battalion 22w
+    "Modern Tank F" (28 divisions by 1945.8, match capped at 11/15 = 0.733). Fix: nine
+    `WA_AI_TEMPLATES_use_*_armor_tiered` wrappers validate each slot at the tier the mirror will
+    field; USA-shaped tech now lands on 6611 (all slots buildable). Emitted-value/declared-twin
+    join re-verified: 19/19 both files. Tier offset registered
+    (`templates_modern_tier_offset`, registry).
+  - Defect B, MEASURED (imgui, 1944.3): both `role = medium_armor` entries sit in the engine's
+    role-entry lottery; the entry with ZERO enabled targets drew pick 17.2% vs 0.17% for the
+    live one — a permanent army-XP sink (engine doc: max one role-level entry per role). Fix:
+    `[dead-role-entry]` prio guards — factor 0 on the medium entry once the modern latch is set
+    (and when no flag), on the mirror entry without the latch (generator-emitted), and on each
+    light entry without its own flag. Mitigation, not restoration of one-entry-per-role.
+  - Verification: (1) DONE, MEASURED (owner screenshot 2026-08-30, `2d7b1b60` 1944.3 save with
+    the fix loaded): `WA_medium_armor_modern_role (prio: 0, weight: 0, pick: 0%)` and
+    `WA_light_support_armor_role` idem — trigger modifiers ARE honored in role-level
+    `upgrade_prio` and prio 0 leaves the lottery; live medium entry unchanged (arrow on 6116,
+    match 1). (2) DONE, MEASURED (owner screenshot 2026-08-30, same campaign run past 1944.4.1
+    with the fix): arrow on `..._MODERN_ARMOR_30_MEC_MEDIUM_SPG_MEDIUM_SPAA` (6611), best match
+    0.7 and free to reach 1; medium entry flipped to prio 0 / pick 0% — the guard works in both
+    directions. (3) DONE (owner console 2026-08-30, `event wa_test_tmpl.2 USA`, 1944.4.3):
+    `armour: ... medium used=1 set=1 ...` on pre AND post, line-for-line identical — role wanted,
+    template answers, no missing claim guard. Full paste:
+    `pre/post: foot: infantry used=1 set=1 | mountaineers used=0 set=0 | marines used=1 set=1 /`
+    `armour: light used=0 set=1 | medium used=1 set=1 | heavy used=0 set=0 | light_support used=0 set=0 /`
+    `conv: window=1 trans=5122 / other: motorized used=0 set=0 | mechanized used=1 set=1 | suppression used=1 set=1`.
+  - Ship-time effect on already-latched campaigns, DERIVED: monthly recalc rewrites 6616 → 6611;
+    one within-role retarget, then the 28 "Modern Tank F" divisions (11/15 = 0.733 vs 6611) can
+    finish converting on buildable slots — the parked degenerate state heals instead of persisting.
+  - Gate note: `check_constants` exit 1 from 6 pre-existing `@advisor_*` errors
+    (`common/characters/ENG.txt`/`GER.txt`, commit `5e179dfb6`, unrelated files) — parked for the
+    owner as its own candidate subject; this change adds zero findings.
 
 ### swi-militia — PARKED (2026-08-29)
 - PARKED state: code SHIPPED 2026-08-28, owner console run STILL OWED (the Verification lines
