@@ -33,6 +33,7 @@
 
 WA_AI_available_AIR = {
 	ROOT = { has_full_control_of_state = PREV }
+	is_demilitarized_zone = no # [dmz-build-loss] air_base is disabled_in_dmz (see WA_AI_available_MIC)
 
 	free_building_slots = { building = air_base size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
@@ -43,6 +44,7 @@ WA_AI_available_AIR = {
 # Used by WA_AI_build_uk_air_hosting_capacity.
 WA_AI_available_AIR_allied = {
 	CONTROLLER = { is_in_faction_with = ROOT }
+	is_demilitarized_zone = no # [dmz-build-loss] air_base is disabled_in_dmz (see WA_AI_available_MIC)
 
 	free_building_slots = { building = air_base size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
@@ -91,6 +93,7 @@ WA_AI_available_INF = {
 
 WA_AI_available_AA = {
 	ROOT = { has_full_control_of_state = PREV }
+	is_demilitarized_zone = no # [dmz-build-loss] anti_air_building is disabled_in_dmz (see WA_AI_available_MIC)
 
 	free_building_slots = { building = anti_air_building size > 0 include_locked = no }
 	free_building_slots = { building = infrastructure size < 10 include_locked = no } # not impassable
@@ -117,7 +120,13 @@ WA_AI_available_CIC = {
 
 # [pc-queue] arms_factory at the [refineries] state-cap standard (file header): built < cap and
 # committed < cap while the TTL flag is live. Hard-coded state sites go through WA_AI_add_MIC.
+# [dmz-build-loss] arms_factory is disabled_in_dmz = yes (00_buildings.txt): the engine silently
+# drops add_building_construction into a demilitarized state while free_building_slots still
+# reports slots there, so the walk must skip DMZ states. Fact is gone if the flag is removed.
+# radar_station / industrial_complex / refineries / fuel_silo do NOT carry the flag — their
+# availability triggers deliberately have no DMZ term.
 WA_AI_available_MIC = {
+	is_demilitarized_zone = no
 	check_variable = { building_level@arms_factory < @WA_AI_MIC_STATE_MAX }
 	OR = {
 		NOT = { has_state_flag = WA_AI_committed_MIC_recent }
@@ -130,6 +139,7 @@ WA_AI_available_MIC = {
 # [pc-queue] dockyard at the [refineries] state-cap standard (file header): built < cap and
 # committed < cap while the TTL flag is live. Hard-coded state sites go through WA_AI_add_NIC.
 WA_AI_available_NIC = {
+	is_demilitarized_zone = no # [dmz-build-loss] dockyard is disabled_in_dmz (see WA_AI_available_MIC)
 	check_variable = { building_level@dockyard < @WA_AI_NIC_STATE_MAX }
 	OR = {
 		NOT = { has_state_flag = WA_AI_committed_NIC_recent }

@@ -2007,6 +2007,59 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
 
+### dmz-build-loss — PARKED (2026-08-30)
+- Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
+  the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
+- Scope: owner report 2026-08-30 (Discord, joueur 156) + owner order "applique le fix". Intended
+  behaviour: the shared-slot construction walk never targets a state where the building cannot
+  legally land.
+- Symptom, MEASURED (player report): GER's WA_AI_C.0 bootstrap fires `WA_AI_queue_MIC` 100×,
+  only ~58 mils appear; CIC/REF/SILO after it land fine.
+- Cause: `arms_factory` (and dockyard, air_base, anti_air_building) is `disabled_in_dmz = yes`
+  (`common/buildings/00_buildings.txt:134`), GER starts with 5 demilitarized Rhineland states
+  (42/51/799/800/801, cleared by the remilitarization focus `germany.txt:7680`), two of them
+  infra-10 at the top of `WA_AI_shared_slot_scores`, and no WA_AI construction trigger checked
+  `is_demilitarized_zone`. ASSUMED (engine): `add_building_construction` of a disabled_in_dmz
+  building into a DMZ state is a silent no-op — corroborated by the MIC-only fingerprint and by
+  a tier-machine simulation reproducing 53/100 landed.
+- Fix applied 2026-08-30: `is_demilitarized_zone = no` added to `WA_AI_available_MIC/NIC/AIR/
+  AIR_allied/AA` (`common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`, `# [dmz-build-loss]`
+  comments; the MIC anchor names the 00_buildings.txt dependency and radar/CIC/REF/SILO as
+  deliberate exclusions) AND to the four `WA_AI_queue_FORT_CITIES/FORT_BORDER/CFORT_BASES/
+  CFORT_COAST` limits (`WA_AI_CONSTRUCTION_queue_functions.txt` — bunker/coastal_bunker are
+  disabled_in_dmz and the `WA_AI_forts_constructed_*` counters would inflate on dropped adds,
+  same idiom). `check_ai_layers.py` 0 ERROR; `check_constants.py` errors are pre-existing
+  `@advisor_*` debt in `common/characters/{ENG,GER}.txt`, untouched here (recorded, needs its
+  own owner-requested subject to fix or waive).
+- Reviews 2026-08-30: architecture CONCERNS (its two in-tree items were a stale read mid-edit —
+  all five terms + the anchor were already landed; the @advisor exit-0 point recorded above),
+  lessons CONFLICT resolved as follows: idiom copies FORT/CFORT fixed in the same change (this
+  entry); the PC copy is an explicit closing criterion below (its correct form is per-type — a
+  blanket DMZ term in `WA_AI_PC_can_build_project` would also block CIC/REF/infra projects that
+  ARE legal in a DMZ, so it needs the type→building map, not this change's one-liner); the
+  phantom-committed residual gets its t0/t1/t2 table below instead of the bare word "persists".
+- Phantom-committed walk (residual on saves that ran the PRE-fix build; a fresh game on this
+  build writes no phantom at all). Cadences: monthly C.10 pulses, TTL 1000 days, completion
+  moves a level queued→built. Reference state: GER 51, built ~3, phantom committed ~13:
+  - t0 (pre-fix burst): committed = built+10, TTL flag live; engine dropped the adds (DMZ);
+    loading the fix mid-save makes the DMZ term skip the state entirely from the next pulse.
+  - t1 (remilitarization, ~1936.3 historical, possibly never ahistorical): DMZ term passes;
+    committed still +10 but < 45 → the state is AVAILABLE, not blocked. Only `depth_ok` reads
+    10 ≥ 3 → tier C/D (a preference), so the state is deprioritized yet still placeable in
+    big bursts.
+  - t1→t2: each completed level raises built, shrinking the gap by 1; any 1000-day add-free
+    window lapses the TTL and the next add rebases committed = built. Depth preference recovers
+    gradually; at no point is any state hard-blocked.
+  - t2 (TTL lapse or gap absorbed): committed honest again (`WA_TLM_sq_rebase_down_n` counts
+    the lapse path); behaviour normal.
+- Closed when: (1) an observer game on this build shows GER's day-1 construction queue holding
+  ~100 queued mils (owner count, or `WA_TLM_sq_adds_by_type^1` ≈ 100 with the in-game queue
+  matching), with zero of them in states 42/51/799/800/801 before remilitarization; AND (2) the
+  PC copy of the idiom is closed: `WA_AI_PC_can_build_project` (or
+  `WA_AI_PC_building_slot_available_for_type`) refuses a DMZ state for the PC types whose
+  building is disabled_in_dmz (rocket_site, rail_way/supply via the railway queue), verified by
+  grep + one console read.
+
 ### eng-minelaying — PARKED (2026-08-30)
 - Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
   the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
