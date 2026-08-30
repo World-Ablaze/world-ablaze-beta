@@ -172,7 +172,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### dday-mulberry — SHIPPED-UNTESTED (2026-08-31)
+### dday-mulberry — TESTED (2026-08-31)
+- TESTED 2026-08-31, owner console (save 1944.6.1, post-refactor build): `wa_mulb.1` header
+  `1 1 1 1 0`, all 8 provinces base-free; `wa_mulb.3` control PASSED —
+  `[01:07:37][1944.06.01.02] 2:00, 1 June, 1944 United States of America: WA_AI_invasions.101
+  fired with no Mulberry A target recorded - nothing placed`. The false branch is proven; the
+  placement branch and dismantle remain campaign-probe territory (below). error.log of the
+  failing pre-refactor session not read — the inline-meta_effect cause stays ASSUMED.
 - SHIPPED-UNTESTED: >40-line change to the `WA_AI_invasions` Mulberry events; new harness
   `WA_TEST_mulberry.txt` + `events/wa_test_mulberry.txt` (contract v1). Owner ran wa_mulb.1 +
   wa_mulb.3 on 2026-08-31 (save 1944.6.1, this build, variant 95 rolled, landing not yet
@@ -190,10 +196,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   ever used meta_effect in common/scripted_effects. Repair: the three bodies moved to
   `common/scripted_effects/WA_AI_MULBERRY_effects.txt` (`WA_AI_MULBERRY_run_a/_run_b/
   _dismantle`), events are one-line callers, if/else replaced by complementary ifs, and
-  placement/give-up/dismantle each log a line. NOW OWED for TESTED (full game restart — new
-  scripted-effect file): `tag USA` → `event wa_mulb.3`, unpause a few seconds, grep
-  "no Mulberry A target" (must be present) — plus the failing session's error.log lines
-  mentioning WA_AI_invasions/meta_effect to pin the ASSUMED cause for the lessons log.
+  placement/give-up/dismantle each log a line. The post-restart re-run passed (see the TESTED
+  bullet at the top).
 - Scope: owner task 2026-08-31. Intended behaviour: every D-Day variant that lands gets its
   artificial-harbour (Mulberry) logistics on its own coast; the harbour is dismantled ~120
   days later; a real port is never overwritten or demolished by the script.
