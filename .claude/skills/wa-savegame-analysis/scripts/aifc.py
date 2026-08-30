@@ -18,11 +18,16 @@ ENCODINGS (decode rules, save-proven 2026-08-17 campaign 0edbc955):
                      hold PLAIN map ids and their _ref twins hold the encoded form.
 
 THE CLOSURE TEST (the payload, not a footnote): the ledger's NET per tag must equal
-the book exactly - boost tag +400, each suppressed tag -150, everything else 0.
-A nonzero NET on a tag outside the book is a RESIDUAL: expected on annexed/dead
-tags (the reconcile skips the negation for a tag that no longer exists - documented
-KNOWN GAP in WA_AI_AIFC_helpers.txt), an alarm on a live one. A book tag whose NET
-is not its expected value is a MISMATCH and always an alarm.
+the book exactly - boost tag +400, each suppressed tag -150, PLUS +400 per entry in
+wa_ai_aifc_armor_pending_boost and -150 per entry in wa_ai_aifc_armor_pending_supp
+(the [aifc-revived-tag-residue] debt books: cancels owed to tags that were dead at
+retirement, emitted by the weekly sweep once the tag exists again; builds from
+2026-08-31 on). A nonzero NET on a tag outside book+pending is a RESIDUAL: expected
+on dead tags of PRE-pending builds (the old reconcile dropped the debt - the
+historical KNOWN GAP), an alarm on a live one. A book tag whose NET is not its
+expected value is a MISMATCH and always an alarm. A pending id on a LIVE tag is an
+alarm too (the sweep drains within a week of revival) unless the save caught that
+one week.
 
   ai section  force_concentration_target={ target=<prov> from=<prov> progress=<f> }
               - one block per ACTIVE engine AIFC push, present ONLY on a country
@@ -253,11 +258,20 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True
     boost = dec_country(boost_v) if boost_v is not None else None
     supp = [dec_country(v) or f"<{v}>"
             for v in arr(varz, "wa_ai_aifc_armor_suppressed")]
+    pend_b = [dec_country(v) or f"<{v}>"
+              for v in arr(varz, "wa_ai_aifc_armor_pending_boost")]
+    pend_s = [dec_country(v) or f"<{v}>"
+              for v in arr(varz, "wa_ai_aifc_armor_pending_supp")]
     if boost or supp:
         print(f"  armor book: boost={boost or '-'}  "
               f"suppressed({len(supp)})={','.join(supp) if supp else '-'}")
     else:
         print("  armor book: empty (steering off, no sector, or mid-lapse)")
+    if pend_b or pend_s:
+        # [aifc-revived-tag-residue] cancels owed to tags dead at retirement; the
+        # weekly sweep emits them when the tag exists again. Normal on dead tags.
+        print(f"  pending cancels: boost(-400 owed)={','.join(pend_b) or '-'}  "
+              f"supp(+150 owed)={','.join(pend_s) or '-'}")
 
     # -- active engine push (force_concentration_target blocks) --
     # Present ONLY on a country whose AIFC has a live plan right now. The save
@@ -291,6 +305,18 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True
             expected[boost] = float(BOOST)
         for t in supp:
             expected[t] = expected.get(t, 0.0) + SUPPRESS
+        # [aifc-revived-tag-residue] pending debts: the engine still carries the
+        # stale entry, so it belongs in the expectation until the sweep emits.
+        for t in pend_b:
+            expected[t] = expected.get(t, 0.0) + BOOST
+        for t in pend_s:
+            expected[t] = expected.get(t, 0.0) + SUPPRESS
+        # a tag in BOTH a pending and an active book is impossible if the sweep
+        # works: section 0b drains pending before sections 1/3 install. Alarm.
+        both = (set(pend_b) | set(pend_s)) & (set(supp) | ({boost} if boost else set()))
+        if both:
+            print("  !! PENDING+ACTIVE on the same tag - the revival sweep did not "
+                  "fire before an install: " + " ".join(sorted(both)))
         mism = [(t, net.get(t, 0.0), want) for t, want in expected.items()
                 if abs(net.get(t, 0.0) - want) > 0.5]
         resid = sorted((t, v) for t, v in net.items()
@@ -300,8 +326,11 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True
               + ("  <- accumulation is churn: read wa_tlm_r67 below"
                  if len(ledger) > 3 * max(len(pairs), 1) else ""))
         if mism:
-            print(f"  !! CLOSURE MISMATCH ({len(mism)}) - book and ledger disagree "
-                  "on a LIVE entry, this is an alarm:")
+            print(f"  !! CLOSURE MISMATCH ({len(mism)}) - book+pending and ledger "
+                  "disagree, an alarm on any campaign started on a pending-books "
+                  "build; on a campaign begun BEFORE 2026-08-31 a dead-then-revived "
+                  "tag's mismatch is LEGACY residue (debt predates the books, "
+                  "unrecoverable - script cannot read the engine ledger):")
             for t, got, want in mism[:limit or None]:
                 print(f"     {t}: ledger NET {got:+.0f}, book expects {want:+.0f}")
         else:
@@ -309,8 +338,10 @@ def report(tag, varz, ledger, order, date, show_ledger, limit, trend, alive=True
                   f"({len(expected)} tracked entries all at expected NET)")
         if resid:
             shown = resid if limit == 0 else resid[:limit]
-            print(f"  residuals ({len(resid)}, NET!=0 outside the book - expected "
-                  "on annexed/dead tags, KNOWN GAP): "
+            print(f"  residuals ({len(resid)}, NET!=0 outside book+pending - "
+                  "expected on dead tags of pre-pending builds (legacy KNOWN GAP); "
+                  "on a pending-books campaign a dead tag should sit in pending "
+                  "instead, and a LIVE residual is an alarm): "
                   + "  ".join(f"{t} {v:+.0f}" for t, v in shown)
                   + ("  ..." if len(resid) > len(shown) else ""))
         if show_ledger:

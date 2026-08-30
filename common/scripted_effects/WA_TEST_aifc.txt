@@ -5,7 +5,8 @@
 #	human can read WHICH stage zeroes out (eligibility / candidate collection / expeditionary pass /
 #	feasibility floor / main-enemy election by per-enemy pad-band sums). Written for the "USA holds
 #	0 sectors in 47 war months" diagnosis; also the owner-run test for the anchor feasibility floor
-#	(constant:wa_ai_aifc.selection.min_pad) and the sum election.
+#	(constant:wa_ai_aifc.selection.min_pad) and the sum election. Section E dumps the armour
+#	steering books, including the [aifc-revived-tag-residue] pending-cancel debt ledgers.
 #
 #	Recipe: events/wa_test_aifc.txt header. Fire `event wa_aifc.1 USA` from ANY tag - do NOT tag
 #	into the country under test (tag-switching makes it human). Output: logs/game.log, "AIFC SECTOR TEST".
@@ -283,6 +284,49 @@ WA_TEST_AIFC_report = {
 	else = {
 		log = "  sum   : no enemy elected (no floor-eligible candidate) - shipped selection writes NO sector"
 	}
+	############################################################
+	# E. Armour steering books ([aifc-revived-tag-residue])
+	############################################################
+	# Read-only state dump: the reconcile's live books and the pending-cancel debt books (cancels
+	# owed to tags that were dead at retirement). target-exists=1 on a pending line is the DEFECT:
+	# the weekly sweep must emit the owed cancel on the first tick where the tag exists again.
+
+	if = {
+		limit = { has_variable = WA_AI_AIFC_armor_boost }
+		var:WA_AI_AIFC_armor_boost = {
+			log = "  armor : boost target = [This.GetName]"
+		}
+	}
+	else = {
+		log = "  armor : boost target = none"
+	}
+	set_temp_variable = { _aifct_supn = 0 }
+	set_temp_variable = { _aifct_pbn = 0 }
+	set_temp_variable = { _aifct_psn = 0 }
+	if = {
+		limit = { check_variable = { WA_AI_AIFC_armor_suppressed^num > 0 } }
+		set_temp_variable = { _aifct_supn = WA_AI_AIFC_armor_suppressed^num }
+	}
+	if = {
+		limit = { check_variable = { WA_AI_AIFC_armor_pending_boost^num > 0 } }
+		set_temp_variable = { _aifct_pbn = WA_AI_AIFC_armor_pending_boost^num }
+	}
+	if = {
+		limit = { check_variable = { WA_AI_AIFC_armor_pending_supp^num > 0 } }
+		set_temp_variable = { _aifct_psn = WA_AI_AIFC_armor_pending_supp^num }
+	}
+	log = "  armor : suppressed=[?_aifct_supn|.0]  pending-boost-cancels=[?_aifct_pbn|.0]  pending-suppress-cancels=[?_aifct_psn|.0]"
+	for_each_loop = { array = WA_AI_AIFC_armor_pending_boost value = _aifct_pid
+		set_temp_variable = { _aifct_pex = 0 }
+		if = { limit = { var:_aifct_pid = { exists = yes } } set_temp_variable = { _aifct_pex = 1 } }
+		log = "  armor : pending boost-cancel  id=[?_aifct_pid]  target-exists=[?_aifct_pex|.0]  (1 = DEFECT, sweep failed)"
+	}
+	for_each_loop = { array = WA_AI_AIFC_armor_pending_supp value = _aifct_pid
+		set_temp_variable = { _aifct_pex = 0 }
+		if = { limit = { var:_aifct_pid = { exists = yes } } set_temp_variable = { _aifct_pex = 1 } }
+		log = "  armor : pending suppress-cancel  id=[?_aifct_pid]  target-exists=[?_aifct_pex|.0]  (1 = DEFECT, sweep failed)"
+	}
+
 	log = "  read  : elig 0 -> gate; cand_total 0 -> no land contact; anchor-eligible 0 with cand_total > 0 -> the feasibility floor (or all pads 0) - and for an expeditionary power check ally-states-with-5+div first"
 	log = "=== AIFC SECTOR TEST END === [Root.GetName]"
 

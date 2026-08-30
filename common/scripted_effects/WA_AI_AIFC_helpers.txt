@@ -572,8 +572,10 @@ WA_AI_AIFC_score_state = {
 #	There is no remove_ai_strategy, and front_armor_score entries are additive per id - so an entry is
 #	"retired" by adding its exact negation, and the books must track what is currently applied:
 #
-#		WA_AI_AIFC_armor_boost        country id currently holding the +400 entry (absent = none)
-#		WA_AI_AIFC_armor_suppressed   array of country ids currently holding a -150 entry
+#		WA_AI_AIFC_armor_boost           country id currently holding the +400 entry (absent = none)
+#		WA_AI_AIFC_armor_suppressed      array of country ids currently holding a -150 entry
+#		WA_AI_AIFC_armor_pending_boost   ids owed a -400 cancel that could not be emitted (tag dead)
+#		WA_AI_AIFC_armor_pending_supp    ids owed a +150 cancel that could not be emitted (tag dead)
 #
 #	WA_AI_AIFC_armor_reconcile runs every weekly tick (end of WA_AI_AIFC_update_sector) and diffs the
 #	books against the desired state. Unchanged entries are NOT touched - a stable sector against a
@@ -620,10 +622,16 @@ WA_AI_AIFC_score_state = {
 #	cadence. That is what the WA_TLM_r67_aifc_arm_* counters below are for - mean episode length is
 #	lapse_wk / retire_n. Do not ship a grace window before reading them (checklist R67).
 #
-#	KNOWN GAP: a tracked country that ceases to exist (annexed) cannot receive the negation entry -
-#	the emitter is skipped and its live entry goes stale. If that tag later revives into a war with
-#	ROOT it carries a stale +-400/150 bias until the next enemy change reconciles it. Rare and
-#	self-correcting; noted here so nobody hunts it as a mystery.
+#	[aifc-revived-tag-residue] a tracked country that ceases to exist (annexed) cannot receive the
+#	negation entry (ASSUMED: GetTag toward a dead country id is unverified - the exists gate on every
+#	emission stays), so its cancel is OWED, not skipped: the id waits in the pending books and the
+#	negation is emitted on the first weekly tick where the tag exists again (sweep at the head of the
+#	reconcile). Without the pending books a revived tag carried the stale bias permanently. Pending
+#	ids are VERBATIM copies of the book entries (engine-encoded country refs) - never re-derive one
+#	from another route, or var: resolution and GetTag break. Script cannot read the engine's
+#	persistent_strategy list, so residue accrued on saves from builds BEFORE the pending books is
+#	unrecoverable - only fresh deaths are tracked. A tag that never revives parks its id forever;
+#	the arrays hold a handful of ids and the sweep over them is ~free.
 #
 #	VALUES are literals inside the meta_effect text blocks (runtime-compiled text does not see
 #	file-scoped @constants). BOOST = 400, SUPPRESS = -150 - the same band the removed ai_strategy
@@ -690,7 +698,8 @@ WA_AI_AIFC_armor_cancel_suppress = {
 #	Reconcile applied armour steering against the current sector
 #	ROOT = country scope
 #	Reads:  WA_AI_AIFC_sector_enemy (absent = no sector), WA_AI_AIFC_armor_steering_enabled
-#	Writes: WA_AI_AIFC_armor_boost, WA_AI_AIFC_armor_suppressed, and front_armor_score entries on ROOT
+#	Writes: WA_AI_AIFC_armor_boost, WA_AI_AIFC_armor_suppressed, WA_AI_AIFC_armor_pending_boost,
+#	        WA_AI_AIFC_armor_pending_supp, and front_armor_score entries on ROOT
 ############################################################################################################
 
 WA_AI_AIFC_armor_reconcile = {
@@ -738,6 +747,48 @@ WA_AI_AIFC_armor_reconcile = {
 	}
 
 	############################################################
+	# 0b. Pending cancels - negations owed to tags that were dead
+	#     when their retirement was due
+	############################################################
+	# [aifc-revived-tag-residue] emission requires a live tag (GetTag), so a cancel skipped at
+	# retirement is a DEBT, not a no-op: the engine still carries the entry. Swept BEFORE section 1
+	# so a revived tag is clean in the same tick a fresh entry may be installed on it. Rebuild
+	# idiom, same reason as section 2. Both arrays are empty for virtually every country.
+
+	clear_temp_array = _aifc_pend_old
+	for_each_loop = { array = WA_AI_AIFC_armor_pending_boost value = _aifc_pid_v
+		add_to_temp_array = { _aifc_pend_old = _aifc_pid_v }
+	}
+	clear_array = WA_AI_AIFC_armor_pending_boost
+	for_each_loop = { array = _aifc_pend_old value = _aifc_pid_v
+		if = {
+			limit = { var:_aifc_pid_v = { exists = yes } }
+			set_temp_variable = { _aifc_armor_id = _aifc_pid_v }
+			WA_AI_AIFC_armor_cancel_boost = yes
+		}
+		else = {
+			add_to_array = { WA_AI_AIFC_armor_pending_boost = _aifc_pid_v }
+		}
+	}
+
+	clear_temp_array = _aifc_pend_old
+	for_each_loop = { array = WA_AI_AIFC_armor_pending_supp value = _aifc_pid_v
+		add_to_temp_array = { _aifc_pend_old = _aifc_pid_v }
+	}
+	clear_array = WA_AI_AIFC_armor_pending_supp
+	for_each_loop = { array = _aifc_pend_old value = _aifc_pid_v
+		if = {
+			limit = { var:_aifc_pid_v = { exists = yes } }
+			set_temp_variable = { _aifc_armor_id = _aifc_pid_v }
+			WA_AI_AIFC_armor_cancel_suppress = yes
+		}
+		else = {
+			add_to_array = { WA_AI_AIFC_armor_pending_supp = _aifc_pid_v }
+		}
+	}
+	clear_temp_array = _aifc_pend_old
+
+	############################################################
 	# 1. Boost target changed - retire the old, install the new
 	############################################################
 
@@ -749,6 +800,10 @@ WA_AI_AIFC_armor_reconcile = {
 			if = {
 				limit = { var:_aifc_armor_id = { exists = yes } }
 				WA_AI_AIFC_armor_cancel_boost = yes
+			}
+			else = {
+				# [aifc-revived-tag-residue] dead tag: the -400 is owed, park it for the sweep
+				add_to_array = { WA_AI_AIFC_armor_pending_boost = _aifc_cur }
 			}
 			clear_variable = WA_AI_AIFC_armor_boost
 		}
@@ -794,12 +849,15 @@ WA_AI_AIFC_armor_reconcile = {
 					}
 				}
 			}
-			# Retire: emit the negation (skipped for an annexed tag - see KNOWN GAP above) and
-			# do not re-add to the books.
+			# Retire: emit the negation and do not re-add to the books. A dead tag cannot
+			# receive it - park the debt for the revival sweep ([aifc-revived-tag-residue]).
 			set_temp_variable = { _aifc_armor_id = _aifc_sid_v }
 			if = {
 				limit = { var:_aifc_sid_v = { exists = yes } }
 				WA_AI_AIFC_armor_cancel_suppress = yes
+			}
+			else = {
+				add_to_array = { WA_AI_AIFC_armor_pending_supp = _aifc_sid_v }
 			}
 		}
 		else = {
