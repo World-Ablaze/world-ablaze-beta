@@ -1046,12 +1046,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
 
-### modern-chassis-tier — PARKED (2026-08-29)
-- PARKED 2026-08-29 for the WIP limit, owner's choice, NOT because it is verified: the code is
-  shipped and the console run is still owed. Parked rather than another subject because its
-  verification is the SAME command as `armor-class-handoff` — `event wa_abg.1 <TAG>`, whose
-  section B2 prints the chassis tier — so one owner run still covers both. Paste that output and
-  it unparks straight to TESTED.
+### modern-chassis-tier — PARKED (2026-08-30)
+- PARKED for the WIP limit (owner's standing choice from 2026-08-29), NOT because unverified.
+  Commit `2dd063da1` (2026-08-30: tiered slot validation + dead-role-entry guards, ADDENDUM
+  below) ships on top of the 2026-08-29 code; the addendum's own harness run
+  (`wa_test_tmpl.2 USA`) and both imgui measurements are DONE and pasted there. Still owed from
+  the 2026-08-29 ship: `event wa_abg.1 <TAG>`, whose section B2 prints the chassis tier — the
+  SAME command as `armor-class-handoff`, so one owner run still covers both. Paste it and this
+  unparks straight to TESTED.
 - Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
   tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
   a WEIGHT CLASS of division, not a chassis generation — a medium division that reaches the
