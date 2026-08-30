@@ -183,6 +183,17 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (the fired event processes after the firing one). STILL OWED for TESTED: that one grep line
   from the same game.log — present = control validated; absent = `.101` did not run, a real
   defect.
+- Control run FAILED 2026-08-31 → repair shipped: after unpause the queued `.101` ran
+  (`101_flag=1` in the re-run report, MEASURED) but the no-target log NEVER printed — the
+  event executed its first if and dropped the rest. ASSUMED cause (error.log read owed):
+  `meta_effect` inline in an events/ file desyncs the event body at load; the repo had only
+  ever used meta_effect in common/scripted_effects. Repair: the three bodies moved to
+  `common/scripted_effects/WA_AI_MULBERRY_effects.txt` (`WA_AI_MULBERRY_run_a/_run_b/
+  _dismantle`), events are one-line callers, if/else replaced by complementary ifs, and
+  placement/give-up/dismantle each log a line. NOW OWED for TESTED (full game restart — new
+  scripted-effect file): `tag USA` → `event wa_mulb.3`, unpause a few seconds, grep
+  "no Mulberry A target" (must be present) — plus the failing session's error.log lines
+  mentioning WA_AI_invasions/meta_effect to pin the ASSUMED cause for the lessons log.
 - Scope: owner task 2026-08-31. Intended behaviour: every D-Day variant that lands gets its
   artificial-harbour (Mulberry) logistics on its own coast; the harbour is dismantled ~120
   days later; a real port is never overwritten or demolished by the script.

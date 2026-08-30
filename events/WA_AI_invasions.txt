@@ -259,48 +259,10 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = { check_variable = { global.WA_AI_mulberry_a_placed_prov > 0 } }
-			set_temp_variable = { _mulb_state_ = global.WA_AI_mulberry_a_placed_state }
-			set_temp_variable = { _mulb_prov_ = global.WA_AI_mulberry_a_placed_prov }
-			meta_effect = {
-				text = {
-					[MULB_STATE] = {
-						set_building_level = {
-							type = naval_base
-							province = { id = [MULB_PROV] }
-							level = 0
-							instant_build = yes
-						}
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-				MULB_PROV = "[?_mulb_prov_]"
-			}
-			set_variable = { global.WA_AI_mulberry_a_placed_state = 0 }
-			set_variable = { global.WA_AI_mulberry_a_placed_prov = 0 }
-		}
-		if = {
-			limit = { check_variable = { global.WA_AI_mulberry_b_placed_prov > 0 } }
-			set_temp_variable = { _mulb_state_ = global.WA_AI_mulberry_b_placed_state }
-			set_temp_variable = { _mulb_prov_ = global.WA_AI_mulberry_b_placed_prov }
-			meta_effect = {
-				text = {
-					[MULB_STATE] = {
-						set_building_level = {
-							type = naval_base
-							province = { id = [MULB_PROV] }
-							level = 0
-							instant_build = yes
-						}
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-				MULB_PROV = "[?_mulb_prov_]"
-			}
-			set_variable = { global.WA_AI_mulberry_b_placed_state = 0 }
-			set_variable = { global.WA_AI_mulberry_b_placed_prov = 0 }
-		}
+		# [dday-mulberry] body lives in WA_AI_MULBERRY_effects.txt - meta_effect is only
+		# proven in scripted_effects, and inline in this file the event silently dropped
+		# everything past its first if.
+		WA_AI_MULBERRY_dismantle = yes
 	}
 }
 
@@ -318,65 +280,8 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.101_flag }
-			}
-			set_country_flag = WA_AI_invasions.101_flag
-		}
-
-		set_temp_variable = { _mulb_state_ = global.WA_AI_mulberry_a_state }
-		set_temp_variable = { _mulb_prov_ = global.WA_AI_mulberry_a_prov }
-		set_temp_variable = { _mulb_ok_ = 0 }
-		if = {
-			limit = { check_variable = { _mulb_prov_ > 0 } }
-			meta_effect = {
-				text = {
-					if = {
-						limit = { [MULB_STATE] = { is_controlled_by_ROOT_or_ally = yes } }
-						set_temp_variable = { _mulb_ok_ = 1 }
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-			}
-		}
-		else = {
-			log = "[GetDateText] [Root.GetName]: WA_AI_invasions.101 fired with no Mulberry A target recorded - nothing placed"
-		}
-
-		if = {
-			limit = { check_variable = { _mulb_ok_ = 1 } }
-			meta_effect = {
-				text = {
-					[MULB_STATE] = {
-						set_building_level = {
-							type = naval_base
-							province = { id = [MULB_PROV] }
-							level = 5
-							instant_build = yes
-						}
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-				MULB_PROV = "[?_mulb_prov_]"
-			}
-			set_variable = { global.WA_AI_mulberry_a_placed_state = _mulb_state_ }
-			set_variable = { global.WA_AI_mulberry_a_placed_prov = _mulb_prov_ }
-			country_event = { id = WA_AI_invasions.100 days = 120 }
-		}
-		else_if = {
-			limit = {
-				check_variable = { _mulb_prov_ > 0 }
-				NOT = { has_country_flag = { flag = WA_AI_invasions.101_flag days > 45 } }
-			}
-			country_event = { id = WA_AI_invasions.101 days = 3 }
-		}
-		else_if = {
-			limit = { check_variable = { _mulb_prov_ > 0 } }
-			# Beachhead failed: retire the un-placed target so nothing later reads it.
-			set_variable = { global.WA_AI_mulberry_a_state = 0 }
-			set_variable = { global.WA_AI_mulberry_a_prov = 0 }
-		}
+		# [dday-mulberry] body lives in WA_AI_MULBERRY_effects.txt - see the .100 note.
+		WA_AI_MULBERRY_run_a = yes
 	}
 }
 
@@ -390,65 +295,8 @@ country_event = {
 	is_triggered_only = yes
 
 	immediate = {
-		if = {
-			limit = {
-				NOT = { has_country_flag = WA_AI_invasions.102_flag }
-			}
-			set_country_flag = WA_AI_invasions.102_flag
-		}
-
-		set_temp_variable = { _mulb_state_ = global.WA_AI_mulberry_b_state }
-		set_temp_variable = { _mulb_prov_ = global.WA_AI_mulberry_b_prov }
-		set_temp_variable = { _mulb_ok_ = 0 }
-		if = {
-			limit = { check_variable = { _mulb_prov_ > 0 } }
-			meta_effect = {
-				text = {
-					if = {
-						limit = { [MULB_STATE] = { is_controlled_by_ROOT_or_ally = yes } }
-						set_temp_variable = { _mulb_ok_ = 1 }
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-			}
-		}
-		else = {
-			log = "[GetDateText] [Root.GetName]: WA_AI_invasions.102 fired with no Mulberry B target recorded - nothing placed"
-		}
-
-		if = {
-			limit = { check_variable = { _mulb_ok_ = 1 } }
-			meta_effect = {
-				text = {
-					[MULB_STATE] = {
-						set_building_level = {
-							type = naval_base
-							province = { id = [MULB_PROV] }
-							level = 5
-							instant_build = yes
-						}
-					}
-				}
-				MULB_STATE = "[?_mulb_state_]"
-				MULB_PROV = "[?_mulb_prov_]"
-			}
-			set_variable = { global.WA_AI_mulberry_b_placed_state = _mulb_state_ }
-			set_variable = { global.WA_AI_mulberry_b_placed_prov = _mulb_prov_ }
-			country_event = { id = WA_AI_invasions.100 days = 120 }
-		}
-		else_if = {
-			limit = {
-				check_variable = { _mulb_prov_ > 0 }
-				NOT = { has_country_flag = { flag = WA_AI_invasions.102_flag days > 45 } }
-			}
-			country_event = { id = WA_AI_invasions.102 days = 3 }
-		}
-		else_if = {
-			limit = { check_variable = { _mulb_prov_ > 0 } }
-			# Beachhead failed: retire the un-placed target so nothing later reads it.
-			set_variable = { global.WA_AI_mulberry_b_state = 0 }
-			set_variable = { global.WA_AI_mulberry_b_prov = 0 }
-		}
+		# [dday-mulberry] body lives in WA_AI_MULBERRY_effects.txt - see the .100 note.
+		WA_AI_MULBERRY_run_b = yes
 	}
 }
 
