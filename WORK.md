@@ -1046,12 +1046,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
 
-### modern-chassis-tier — PARKED (2026-08-29)
-- PARKED 2026-08-29 for the WIP limit, owner's choice, NOT because it is verified: the code is
-  shipped and the console run is still owed. Parked rather than another subject because its
-  verification is the SAME command as `armor-class-handoff` — `event wa_abg.1 <TAG>`, whose
-  section B2 prints the chassis tier — so one owner run still covers both. Paste that output and
-  it unparks straight to TESTED.
+### modern-chassis-tier — PARKED (2026-08-30)
+- PARKED for the WIP limit (owner's standing choice from 2026-08-29), NOT because unverified.
+  Commit `2dd063da1` (2026-08-30: tiered slot validation + dead-role-entry guards, ADDENDUM
+  below) ships on top of the 2026-08-29 code; the addendum's own harness run
+  (`wa_test_tmpl.2 USA`) and both imgui measurements are DONE and pasted there. Still owed from
+  the 2026-08-29 ship: `event wa_abg.1 <TAG>`, whose section B2 prints the chassis tier — the
+  SAME command as `armor-class-handoff`, so one owner run still covers both. Paste it and this
+  unparks straight to TESTED.
 - Scope: owner request 2026-08-28, design validated before implementation. Germany fielded medium
   tank divisions on the Panzer IV to the end of every campaign. Intended behaviour: a tank role is
   a WEIGHT CLASS of division, not a chassis generation — a medium division that reaches the
@@ -1120,6 +1122,43 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `role_ratio id = modern_armor` entry in any `persistent_strategy` block.
 - Closed when: the harness reads 1/1/1/1 on GER post-1943 AND a campaign shows German medium
   divisions mounting the modern chassis before 1945.
+- ADDENDUM 2026-08-30, tester report (156) + campaign `2d7b1b60` + owner-run `imgui show
+  ai_templates`: two defects found in the shipped design, fixes prepared this session (working
+  tree, not yet committed).
+  - Defect A, MEASURED: the ladder validates component slots at the MEDIUM tier, then +500
+    promotes them one tier up unvalidated. USA (modern chassis researched 1944.3, zero modern
+    SPG/TD/SPAA techs through 1945.8) got 6616, whose 4 battalions + both regimental supports +
+    2 divisional companies were unbuildable; the engine converged on an 11-battalion 22w
+    "Modern Tank F" (28 divisions by 1945.8, match capped at 11/15 = 0.733). Fix: nine
+    `WA_AI_TEMPLATES_use_*_armor_tiered` wrappers validate each slot at the tier the mirror will
+    field; USA-shaped tech now lands on 6611 (all slots buildable). Emitted-value/declared-twin
+    join re-verified: 19/19 both files. Tier offset registered
+    (`templates_modern_tier_offset`, registry).
+  - Defect B, MEASURED (imgui, 1944.3): both `role = medium_armor` entries sit in the engine's
+    role-entry lottery; the entry with ZERO enabled targets drew pick 17.2% vs 0.17% for the
+    live one — a permanent army-XP sink (engine doc: max one role-level entry per role). Fix:
+    `[dead-role-entry]` prio guards — factor 0 on the medium entry once the modern latch is set
+    (and when no flag), on the mirror entry without the latch (generator-emitted), and on each
+    light entry without its own flag. Mitigation, not restoration of one-entry-per-role.
+  - Verification: (1) DONE, MEASURED (owner screenshot 2026-08-30, `2d7b1b60` 1944.3 save with
+    the fix loaded): `WA_medium_armor_modern_role (prio: 0, weight: 0, pick: 0%)` and
+    `WA_light_support_armor_role` idem — trigger modifiers ARE honored in role-level
+    `upgrade_prio` and prio 0 leaves the lottery; live medium entry unchanged (arrow on 6116,
+    match 1). (2) DONE, MEASURED (owner screenshot 2026-08-30, same campaign run past 1944.4.1
+    with the fix): arrow on `..._MODERN_ARMOR_30_MEC_MEDIUM_SPG_MEDIUM_SPAA` (6611), best match
+    0.7 and free to reach 1; medium entry flipped to prio 0 / pick 0% — the guard works in both
+    directions. (3) DONE (owner console 2026-08-30, `event wa_test_tmpl.2 USA`, 1944.4.3):
+    `armour: ... medium used=1 set=1 ...` on pre AND post, line-for-line identical — role wanted,
+    template answers, no missing claim guard. Full paste:
+    `pre/post: foot: infantry used=1 set=1 | mountaineers used=0 set=0 | marines used=1 set=1 /`
+    `armour: light used=0 set=1 | medium used=1 set=1 | heavy used=0 set=0 | light_support used=0 set=0 /`
+    `conv: window=1 trans=5122 / other: motorized used=0 set=0 | mechanized used=1 set=1 | suppression used=1 set=1`.
+  - Ship-time effect on already-latched campaigns, DERIVED: monthly recalc rewrites 6616 → 6611;
+    one within-role retarget, then the 28 "Modern Tank F" divisions (11/15 = 0.733 vs 6611) can
+    finish converting on buildable slots — the parked degenerate state heals instead of persisting.
+  - Gate note: `check_constants` exit 1 from 6 pre-existing `@advisor_*` errors
+    (`common/characters/ENG.txt`/`GER.txt`, commit `5e179dfb6`, unrelated files) — parked for the
+    owner as its own candidate subject; this change adds zero findings.
 
 ### swi-militia — PARKED (2026-08-29)
 - PARKED state: code SHIPPED 2026-08-28, owner console run STILL OWED (the Verification lines
@@ -2006,6 +2045,102 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+### dmz-build-loss — PARKED (2026-08-30)
+- Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
+  the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
+- Scope: owner report 2026-08-30 (Discord, joueur 156) + owner order "applique le fix". Intended
+  behaviour: the shared-slot construction walk never targets a state where the building cannot
+  legally land.
+- Symptom, MEASURED (player report): GER's WA_AI_C.0 bootstrap fires `WA_AI_queue_MIC` 100×,
+  only ~58 mils appear; CIC/REF/SILO after it land fine.
+- Cause: `arms_factory` (and dockyard, air_base, anti_air_building) is `disabled_in_dmz = yes`
+  (`common/buildings/00_buildings.txt:134`), GER starts with 5 demilitarized Rhineland states
+  (42/51/799/800/801, cleared by the remilitarization focus `germany.txt:7680`), two of them
+  infra-10 at the top of `WA_AI_shared_slot_scores`, and no WA_AI construction trigger checked
+  `is_demilitarized_zone`. ASSUMED (engine): `add_building_construction` of a disabled_in_dmz
+  building into a DMZ state is a silent no-op — corroborated by the MIC-only fingerprint and by
+  a tier-machine simulation reproducing 53/100 landed.
+- Fix applied 2026-08-30: `is_demilitarized_zone = no` added to `WA_AI_available_MIC/NIC/AIR/
+  AIR_allied/AA` (`common/scripted_triggers/WA_AI_CONSTRUCTION_triggers.txt`, `# [dmz-build-loss]`
+  comments; the MIC anchor names the 00_buildings.txt dependency and radar/CIC/REF/SILO as
+  deliberate exclusions) AND to the four `WA_AI_queue_FORT_CITIES/FORT_BORDER/CFORT_BASES/
+  CFORT_COAST` limits (`WA_AI_CONSTRUCTION_queue_functions.txt` — bunker/coastal_bunker are
+  disabled_in_dmz and the `WA_AI_forts_constructed_*` counters would inflate on dropped adds,
+  same idiom). `check_ai_layers.py` 0 ERROR; `check_constants.py` errors are pre-existing
+  `@advisor_*` debt in `common/characters/{ENG,GER}.txt`, untouched here (recorded, needs its
+  own owner-requested subject to fix or waive).
+- Reviews 2026-08-30: architecture CONCERNS (its two in-tree items were a stale read mid-edit —
+  all five terms + the anchor were already landed; the @advisor exit-0 point recorded above),
+  lessons CONFLICT resolved as follows: idiom copies FORT/CFORT fixed in the same change (this
+  entry); the PC copy is an explicit closing criterion below (its correct form is per-type — a
+  blanket DMZ term in `WA_AI_PC_can_build_project` would also block CIC/REF/infra projects that
+  ARE legal in a DMZ, so it needs the type→building map, not this change's one-liner); the
+  phantom-committed residual gets its t0/t1/t2 table below instead of the bare word "persists".
+- Phantom-committed walk (residual on saves that ran the PRE-fix build; a fresh game on this
+  build writes no phantom at all). Cadences: monthly C.10 pulses, TTL 1000 days, completion
+  moves a level queued→built. Reference state: GER 51, built ~3, phantom committed ~13:
+  - t0 (pre-fix burst): committed = built+10, TTL flag live; engine dropped the adds (DMZ);
+    loading the fix mid-save makes the DMZ term skip the state entirely from the next pulse.
+  - t1 (remilitarization, ~1936.3 historical, possibly never ahistorical): DMZ term passes;
+    committed still +10 but < 45 → the state is AVAILABLE, not blocked. Only `depth_ok` reads
+    10 ≥ 3 → tier C/D (a preference), so the state is deprioritized yet still placeable in
+    big bursts.
+  - t1→t2: each completed level raises built, shrinking the gap by 1; any 1000-day add-free
+    window lapses the TTL and the next add rebases committed = built. Depth preference recovers
+    gradually; at no point is any state hard-blocked.
+  - t2 (TTL lapse or gap absorbed): committed honest again (`WA_TLM_sq_rebase_down_n` counts
+    the lapse path); behaviour normal.
+- Closed when: (1) an observer game on this build shows GER's day-1 construction queue holding
+  ~100 queued mils (owner count, or `WA_TLM_sq_adds_by_type^1` ≈ 100 with the in-game queue
+  matching), with zero of them in states 42/51/799/800/801 before remilitarization; AND (2) the
+  PC copy of the idiom is closed: `WA_AI_PC_can_build_project` (or
+  `WA_AI_PC_building_slot_available_for_type`) refuses a DMZ state for the PC types whose
+  building is disabled_in_dmz (rocket_site, rail_way/supply via the railway queue), verified by
+  grep + one console read.
+
+### eng-minelaying — PARKED (2026-08-30)
+- Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
+  the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
+- Scope: owner request 2026-08-30 (Discord, joueur 156): the UK must minelay around the home
+  island; he added the "Black Swan Mine Layer" on_research variant (`5e179dfb6`) and asked for an
+  ENG goal file under `ai_navy/goals`. Intended behaviour: the ENG AI lays mines in home waters.
+- Symptom, MEASURED (script, both trees read): the chain was broken in four independent places —
+  1. NO `role_ratio naval_mine_layer` anywhere in WA `common/ai_strategy`: vanilla gives it to
+     every major (install `default.txt:280`, `ENG.txt:1041`) and the replace_path dropped them
+     all, so the minelayer role had zero production share and the AI never built the designs
+     `ai_equipment/ENG_naval.txt:3874` declares;
+  2. the fleet template referenced `Minelaying_1` while the task force is `MineLaying_1`
+     (WA-introduced case mismatch; vanilla is consistent both sides);
+  3. `MineLaying_1` accepts only `destroyer role = 4` while ENG's minelayer designs sit on
+     frigate hulls (unit type `frigate`, `ship_frigate.txt:8`) and a submarine — no match;
+  4. goal `generic_mine_laying` at priority 1–8 against WA's convoy protection 15–30 /
+     invasion defense 15–25 / dominance 10–20 — mining scores last, fleets never reach it.
+- Fix applied 2026-08-30 (5 changes + 1 induced, `# [eng-minelaying]` comments):
+  `WA_DEFAULT_production_navy_main_focus_on_minelayers` (`role_ratio naval_mine_layer 5`, gate
+  `WA_AI_PRODUCTION_should_build_minelayers` — renamed from the unconsumed
+  `_main_focus_on_minelayers` for the layer checker; ENG-only via
+  `WA_AI_CONFIG_focus_on_minelayers`); new `goals_ENG.txt` (mines_planting 10–18) paired with
+  `blocked_for = { ENG }` on the generic goal (vanilla pattern); new `MineLayingFrigate_1` task
+  force + fleet template; case typo fixed; `role_icon_index = 4` on the on_research variant
+  (`naval_eng.txt`, engine default is 'auto'). Both design paths carry role 4 — ai_equipment
+  `mine_layer_light` already had it (`ENG_naval.txt:3909`).
+- Displacement, DERIVED (lessons-reviewer requirement): ENG role_ratio sum 157 → 162, so
+  minelayers take ~3% of dockyards (~3 of ~100), proportionally from every role; convoy floors
+  (`equipment_production_min_factories`) are forced lines, unaffected.
+- Deliberate scope cut, recorded: vanilla gave the ratio to ALL majors; here ENG only, per the
+  owner ("Not every country needs to prioritize it"). Every other navy stays at 0 minelayer
+  share by design, not by gap.
+- Reviews 2026-08-30: architecture CONCERNS (its blocking point, +1 LAYER4-NON-DECISION, closed
+  by the gate rename — `check_ai_layers` 0 ERROR, DATE-LEAK baseline tightened 130→120 for the
+  drop inherited from `5e179dfb6`); lessons CONCERNS (all three required lines are the three
+  bullets above). `check_constants` errors are pre-existing `@advisor_*` debt in
+  `common/characters/`, untouched here.
+- ASSUMED until live: the task force `role = 4` filter matches the design's `role_icon_index`
+  (systematic vanilla correlation, no in-game measurement yet).
+- Closed when: owner live check (`tag ENG` + `imgui show ai_navy`) shows a `mines_planting`
+  objective armed in home waters with `MineLayingFrigate_1` filled, and a campaign save shows an
+  ENG minelayer production line plus mines actually present in North Sea / Channel regions.
 
 ### division-target-scaling — PARKED (2026-08-28)
 - Parked 2026-08-28 (WIP limit, `armor-role-budget` enters - its Change 2 moved there
