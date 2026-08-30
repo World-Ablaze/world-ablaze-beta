@@ -2046,6 +2046,128 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
 
+### sov-cutting-corners-module — PARKED (2026-08-30)
+- Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is
+  DONE and **COMMITTED + PUSHED 2026-08-31** (owner order "garde tel quel, commit et push";
+  mechanism owner-live-tested through 3 rerun iterations, latch decision ratified). Remaining:
+  the campaign probe in the Verification line below.
+- Scope: owner request 2026-08-30 (Discord, Uncharted: "AI doesnt use this tank module, we
+  created a NS for them to represent it"; owner: "We can now make the AI build tanks with this
+  module"; Uncharted: "then lets do it"). Intended behaviour: SOV AI designs tanks WITH the
+  `cutting_corners` module once `SOV_pc_of_tank_industry` grants it, and the compensating spirit
+  `SOV_cheap_construction_ai` (soviet.txt:12530, −20% armor cost / −10% reliability map-wide) is
+  retired — no double bonus.
+- Symptom, MEASURED (campaign `5ee2d112`, 117 monthly saves, local run 2026-08-30): focus
+  completes 1942.6.11 (tech grant stamp `cutting_corners level=1 date="1942.6.11.1"`); spirit on
+  from 1942.7; `cutting_corners` as a module in ANY variant slot: **0 occurrences at 1942.7 and
+  still 0 at 1945.10** — unlocked 40 months, never mounted. Sound negative: variant module
+  loadouts ARE serialised (SOV `tank_sov_medium_chassis_3_3` carries its slots in the registry).
+- Why it never mounts, DERIVED: no `ai_equipment` design lists the module — the AI designer only
+  places modules its design blocks name (`common/ai_equipment/SOV_tank.txt` has no
+  `cutting_corners` anywhere). Engine gate for a clean fix, MEASURED (install
+  `common/ai_equipment/_documentation.md`): a design's `enable = { <triggers> }` must all be true
+  for the design to be usable → duplicate design gated `enable = { has_tech = cutting_corners }`.
+- **Rerun iteration 1 (2026-08-30, owner) — FAILED, twin-design pattern KILLED.** Harness was an
+  enable-gated `_cc` twin of the T-34 (42) design (priority 20 vs 10, match_value 3500 vs 3000).
+  MEASURED on the rerun autosave (1942.7→1942.11, same campaign id): module in a variant slot
+  still 0; army XP 820 (not binding); no parse error on the design (error.log clean, ai_equipment
+  DB reloaded in-run at 1942.9.2); and the AI DID create 3 new tank designs in the window (T-70,
+  T-34 (40), BT-7M) — all for chassis with NO existing variant. DERIVED: the designer backfills
+  variant-less types but does not create a second, better-matching variant for a type that
+  already has one; a higher-priority twin targeting the same type is invisible to it.
+- **Iteration 2 harness (working tree, current):** twin removed; `medium_tank_6` edited IN PLACE —
+  `special_type_slot_2 = cutting_corners` in its own target_variant (+ allowed_modules). The
+  fielded T-34 (42) variant no longer matches any enabled medium design. One variable: does the
+  AI redesign on mismatch? Slot validity MEASURED: chassis slot_2 accepts `tank_special_module`
+  (tank_chassis.txt:22405), `module_count_limit` allows 1.
+- Rerun protocol iteration 2 (owner, this working tree): load the rerun autosave (1942.11) or
+  `1942.7_Jul.hoi4`, observe, run ≥ 2 game months, save. Probe unchanged: SOV variant of
+  `tank_sov_medium_chassis_3_3` with `special_type_slot_2=cutting_corners` in `equipments={}`,
+  medium line pointing at it. Production is safe meanwhile — lines reference the existing
+  variant, not the design.
+- **Iteration 2 verdict (owner, 2026-08-30): redesign-on-mismatch WORKS — at ~1000 console XP.**
+  The AI created the module-carrying variant once XP was huge; at natural XP (56-820) it never
+  did. Cause chain: the XP-spend auction (MEASURED, install `00_defines.lua:2507` comment —
+  desires accumulate daily, XP goes to the highest accumulated desire, which then resets) is
+  rigged by WA's overrides `05_defines.lua:1549-1550`: `DESIRE_USE_XP_TO_UPDATE_LAND_TEMPLATE
+  = 100.0`/day vs `DESIRE_USE_XP_TO_UPGRADE_LAND_EQUIPMENT = 0.1`/day (vanilla 2.0 / 1.0; the
+  0.1 block is inherited byte-identical from Expert AI `EAI_defines.lua:113`). Variant creation
+  loses every auction by ~3 orders of magnitude; only a massive XP dump exhausts the rivals.
+  Amplifier: `SOV.txt` arms `land_xp_spend_priority id=division_template value=100` in two
+  windows. Cutoffs are NOT the blocker (`DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_LAND = 50`,
+  reserve 25). ASSUMED (engine): the exact additive/multiplicative scale of `value=` on desire.
+- **Iteration 3 (owner, 2026-08-30): PASS at natural XP** — with the desire lever armed
+  (`land_xp_spend_priority id=equipment_variant value=200`, token+id validated install
+  `_documentation.md:623-632`; peer evidence workshop mod 3572308827 uses it at 25), the AI
+  re-created the T-34 (42) variant WITH the module, no console XP. Mechanism proven end to end.
+- **Generalisation SHIPPED to working tree 2026-08-30** (uncommitted):
+  - `common/ai_equipment/SOV_tank.txt`: 39 wartime designs converted to enable-EXCLUSIVE pairs
+    (plain design gains `NOT = { has_tech = cutting_corners }`; generated `_cc` twin carries the
+    module in a chassis-validated free special slot, same priority/match_value, WA_EQUIPGEN
+    markers stripped from twins). Generated by scratchpad script with per-chassis slot oracle
+    (slot must accept `tank_special_module`; archetype fallback). 9 full-loadout designs have no
+    free slot and no twin (T-44, T-44-100, LTTB, PT-76, ZSU-37, SU-122-44, IS-7/8/8m). One
+    header comment documents the pattern (rule 7).
+  - `common/ai_strategy/SOV.txt`: the desire lever block ships as
+    `SOV_variant_creation_after_cutting_corners` — **owner-tuned config, the one iteration 3
+    actually ran: `value = 500` + `has_war = yes`** (my draft said 200/no-war; the tree is the
+    truth). ASSUMED (engine): the value's scale vs the 0.1/day define; measured working.
+    Peace window walked: tech implies the focus fired at war; if SOV later at peace the lever
+    disarms and REdesigns wait, but a newly unlocked chassis still creates its variant from the
+    only enabled (`_cc`) design — MEASURED that design creation happens under the starved
+    0.1/day regime (baseline campaign created 5 designs by 1943.6 with no lever).
+  - `common/national_focus/soviet.txt`: `add_ideas = SOV_cheap_construction_ai` removed from the
+    focus (module + spirit together would be the cheat the NS was created to avoid).
+  - `common/ideas/soviet.txt`: the spirit's cancel gains `has_tech = cutting_corners` — running
+    campaigns drop it on load (tech and idea were always granted by the same focus instant).
+  - Checks: braces 0 / no BOM on all four; `check_ai_layers` 0 ERROR; `check_worklist` 0 ERROR;
+    `check_constants` has 6 PRE-EXISTING `@advisor_*` errors in `common/characters/ENG|GER.txt`
+    (untouched by this subject, flagged to owner). Architecture + lessons reviewers dispatched
+    2026-08-30, verdicts pending.
+- Residuals, stated (reviews 2026-08-30: architecture CONCERNS + lessons CONCERNS, all required
+  repairs discharged in this entry):
+  - Post-focus at war, the equipment_variant desire (500) competes with template desire
+    (100/day) for SOV army XP — accepted; it also carries every future `_cc` design (T-34 85 on)
+    created WITH the module at type unlock.
+  - Redesign delay: fires on the engine's 7-day equipment pass once army XP ≥ 50 (both values
+    MEASURED live in `05_defines.lua:1502/:1561`, not vanilla inherits; module add cost 5 XP).
+    If SOV sits under 50 XP at focus completion the delay is OPEN-ENDED until XP accrues — it
+    degrades to "no module yet", never a stall: the production line kept producing the old
+    variant through every rerun window (MEASURED, 1942.11 autosave: 40-factory medium line
+    unchanged while no matching design existed).
+  - Twin coverage PROVEN on the generated file: 39 `NOT`-gates = 39 `_cc` twins = 39 `has_tech`
+    terms, and the 9 no-free-slot designs carry NO gate — no role is ever left design-less
+    behind the focus (the engine auto-designs an empty role outside every gate, the lessons
+    trap this rule exists for).
+  - Commit hygiene: the dirty `interface/*.gui` files in this tree belong to another subject —
+    commit separately, never under this slug.
+- **Trigger refactor (owner order 2026-08-31: "les blocs enable doivent avoir un trigger séparé
+  identique"):** the three gates now read ONE scripted trigger,
+  `WA_AI_EQUIPMENT_should_mount_cutting_corners` (`WA_AI_EQUIPMENT_triggers.txt`, tag-free:
+  `has_tech = cutting_corners` + `has_war = yes`) — 39 plain designs `NOT`, 39 `_cc` twins
+  positive, the SOV.txt desire lever positive; verified 79+1+1 uses, braces 0, layers/worklist
+  0 ERROR. ASSUMED (engine): a scripted trigger resolves inside an ai_equipment `enable`
+  block — WA precedent exists in `priority.modifier` (`GER_naval.txt:1980`), none yet in
+  `enable`; the campaign probe catches the silent-failure case (design never enabled → no
+  redesign ever → probe FAILS visibly).
+- **Peace-churn closed with a PERMANENT latch (owner order 2026-08-31: no reverse redesigns of
+  ~30 old chassis at 5 XP each when peace comes).** The shared trigger now reads only
+  `has_country_flag = WA_AI_EQUIPMENT_cc_latched`; the flag is set once by the monthly
+  `WA_AI_EQUIPMENT_update_context_flags` (small additive block, the file's own positive-latch
+  discipline) when the tech first meets a war — monotone by construction, so a later peace
+  never re-enables the plain designs. Costs one month of lag between focus completion and the
+  gates flipping (monthly cadence; the focus fires mid-war, the war lasts years). Running
+  campaigns latch on their first monthly pulse. Side effect stated: the desire lever also stays
+  armed at peace post-latch — harmless, the desire only has something to buy when a new chassis
+  needs its (`_cc`) design, which is wanted; ASSUMED the engine does not burn XP on a no-op
+  spend. Fail-safe direction preserved: no pulse (human player) → flag absent → plain designs
+  stay enabled = status quo.
+- Verification owed (campaign probe): post-focus save shows a SOV `tank_sov_*` variant with
+  `special_type_slot_N=cutting_corners` in `equipments={}` AND `SOV_cheap_construction_ai`
+  absent from SOV ideas. Then move to SHIPPED-UNTESTED/TESTED per process.
+- Closed when: a campaign save post-focus shows SOV tank variants carrying `cutting_corners` in
+  production AND the spirit absent from SOV's ideas.
+
 ### dmz-build-loss — PARKED (2026-08-30)
 - Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
   the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
