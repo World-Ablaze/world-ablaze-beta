@@ -177,7 +177,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   campaign `0700e591`, save at 1940.6.1, Historical Normal). One subject for the three legs of
   one intended behaviour: during the Battle of France the Commonwealth stands in Egypt / East
   Africa / the Gulf at the right size — not in France, not on the French side of the Maghreb,
-  not seven divisions deep in Kuwait. Code in the working tree, not yet committed.
+  not seven divisions deep in Kuwait. Code committed + pushed 2026-08-31 (`4d11dbe1d`).
 - Symptom, MEASURED (save_demo, plans.py --where + order dump): RAJ 6 front divisions in
   Île-de-France/Picardie/Provence and 4 at Gabès (+ AST 1) with the bulwark gate CLOSED
   (difficulty=normal → Historical); RAJ Kuwait scripted order carried 6 scheduled divisions
