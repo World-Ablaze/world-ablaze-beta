@@ -209,13 +209,9 @@ WA_AI_TEMPLATES_use_armor_templates = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
-# [armor-role-budget] Light-support armour is a FINITE RUN, owner rule 2026-08-28, with the two
-# ends on DIFFERENT levers: the 1942 date closes the ROLE here (want -> 0, which is what retires the
-# divisions), while the fielded cap closes only the PRODUCTION LINE
-# (WA_AI_PRODUCTION_build_light_support_armor) so reaching 10k stops building without scrapping what
-# is already built. Deliberately NOT gated on WA_AI_TEMPLATES_switch_from_light_to_medium_armor:
-# that fires at the era boundary (1940.1.1, SOV 1941.1.1 - WA_AI_CONFIG_switch_from_light_to_medium_armor)
-# and would end the run two years early. The `date < 1942.1.1` below IS the end of the run.
+# [historical-tank-park] The ordinary handoff closes this role only after the mission's live run
+# state ends. Before the handoff, the role remains available so a country without a medium target
+# cannot lose all armour templates.
 # [armor-class-handoff] This trigger LOST a tag term when WA_AI_CONFIG_TEMPLATES_focus_on_light_armor
 # was deleted, so the run is open to any country holding a light-support chassis, not only the five
 # tags that term listed. That widening is the intent already stated by
@@ -227,6 +223,10 @@ WA_AI_TEMPLATES_use_light_support_armor_templates = {
 	WA_AI_TEMPLATES_has_light_support_armor_unlocked = yes
 	WA_AI_CONFIG_before_global_war_begins = yes
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+	OR = {
+		NOT = { WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes }
+		WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
+	}
 }
 
 # [historical-tank-park] Does this country's light-support run use the MIXED composition (support
@@ -1691,7 +1691,7 @@ WA_AI_TEMPLATES_has_heavy_assault_unlocked = {
 		has_tech = sov_heavy_assault_tank_7
 		has_tech = sov_heavy_assault_tank_9
 	}
-} 
+}
 
 # Modern Assault Equipment
 WA_AI_TEMPLATES_has_modern_assault_unlocked = {
