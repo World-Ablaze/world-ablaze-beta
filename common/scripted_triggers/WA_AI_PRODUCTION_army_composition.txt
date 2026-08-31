@@ -102,30 +102,33 @@ WA_AI_PRODUCTION_build_army_expeditionary_mechanization = {
 	}
 }
 
-# [historical-tank-park] One question: must this country force-build its light-role tank park past
-# engine desire. Composes the run gate (light-support templates open, hard end 1942) and the
-# fielded-cap gate (strict > 10000), so the force stops the same evaluation either closes; the
-# fielded cap is also the mission bar, so completion and shutdown are the same measurement.
-# Never stacks with the early-expansion override: the run gate it composes excludes it
-# (WA_AI_TEMPLATES_use_light_support_armor_templates carries the NOT).
-# Payload is WA_AI_PRODUCTION_DEFAULT_historical_tank_park.
-WA_AI_PRODUCTION_should_build_historical_tank_park = {
-	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+# [historical-tank-park] The live run state, deliberately independent of templates: templates
+# consume it to decide whether the normal light-to-medium handoff may close the light role.
+WA_AI_PRODUCTION_should_continue_historical_tank_park = {
 	WA_AI_DIFFICULTY_is_historical = yes
 	WA_AI_CONFIG_pursues_historical_tank_park = yes
-	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+	NOT = { any_enemy_country = { is_major = yes } }
 	NOT = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes }
+	if = {
+		limit = { tag = SOV }
+		has_active_mission = SOV_the_greatest_tank_army
+	}
+}
+
+# [historical-tank-park] Force-build the mission only while its live run state and template are
+# both open. Payload is WA_AI_PRODUCTION_DEFAULT_historical_tank_park.
+WA_AI_PRODUCTION_should_build_historical_tank_park = {
+	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
+	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 }
 
 # [light-support-conversion] Gate of the armor-budget light floor (WA_AI_ARMOR_BUDGET_reconcile
-# section 2b). Same terms as the build force above MINUS the fielded-cap term, on purpose: the
-# cap must stop BUILDING, but dropping the WANT at the cap re-arms the decommission race on the
-# fielded park. The floor holds until the run window itself closes (the 1942 date, or the chassis
-# leaving the template gate).
+# section 2b). It shares the force-build run state so the fielded cap or major-war exit removes
+# both the +500 force and the light-role floor.
 WA_AI_PRODUCTION_should_floor_tank_park_budget = {
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
-	WA_AI_DIFFICULTY_is_historical = yes
-	WA_AI_CONFIG_pursues_historical_tank_park = yes
+	WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
 	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 }
 
