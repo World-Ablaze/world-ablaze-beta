@@ -3607,29 +3607,37 @@ WA_AI_MILITARY_western_bulwark_accepts_guests = {
 
 # COUNTRY scope. The gate's BRAKE audience: the overseas member (capital outside Europe) the bulwark
 # is currently refusing. Exists because a closed gate only withholds the +150 boosts - engine default
-# assignment still routes a total-commitment released army onto the only live European fronts (owner
-# report 2026-08-27: RAJ divisions in BEL/HOL mid-battle of France). European-capital members are
-# excluded so the veto can never reach a country defending its own or a neighbour's homeland.
-# ASSUMED: front_unit_request -100 fully vetoes a front (E2/documentation.info prose, no save proof);
-# no European member's capital leaves Europe before fall_of_france opens the gate (an exile capital
-# off-continent would flip that member into this audience for the remaining window).
+# assignment still routes a total-commitment released army onto the only live European fronts.
+# TWO exclusions carry the ECONOMY.md 2.4 escape hatch, and a veto-class value needs both: a
+# European-capital member is defending its own or a neighbour's homeland, and a member of the
+# bulwark's own BLOC has a non-European capital yet is standing on ITS OWN colonial ground - which
+# the colonial leg of this brake would otherwise veto it off.
+# ASSUMED: no European member's capital leaves Europe before fall_of_france opens the gate (an exile
+# capital off-continent would flip that member into this audience for the remaining window). The
+# -100 floor is PRESSURE, not a ban: it suppresses engine default assignment without emptying a
+# front, so a target that must be empty needs a stronger lever than this value.
 WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
 	WA_AI_CONFIG_is_in_allies = yes
 	has_war = yes
 	NOT = { capital_scope = { is_on_continent = europe } }
+	NOT = { WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc = yes }
 	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
 }
 
-# STATE scope (read from the brake's state_trigger leg). African ground the western bulwark
-# currently CONTROLS - the French side of any North/West-African front. Controller, not owner:
-# the moment the ground changes hands (Vichy, an Axis conqueror, Torch) it leaves this set, and
-# the brake's own enable already stands the whole block down once the gate opens.
-# [bof-commonwealth-posture] exists because north_africa is one ai_area Morocco->Egypt and an
-# area key cannot veto the French side without vetoing Egypt.
-WA_AI_MILITARY_is_western_bulwark_african_ground = {
-	is_on_continent = africa
+# STATE scope (read from the brake's state_trigger leg). Colonial ground the western bulwark's
+# BLOC controls - the Maghreb and the Levant mandate, its two theatres an Allied guest can walk
+# into. Controller, not owner: ground that changes hands (Vichy, an Axis conqueror, Torch) leaves
+# the set by itself. Bounded to those two continents on purpose - the metropole is covered by the
+# brake's five area keys, and the bloc's Asian/American colonies are ground a guest may have to
+# defend. Exists because north_africa is one ai_area Morocco->Egypt, so an area key cannot veto
+# the French side without vetoing Egypt.
+WA_AI_MILITARY_is_western_bulwark_colonial_ground = {
+	OR = {
+		is_on_continent = africa
+		is_on_continent = middle_east
+	}
 	CONTROLLER = {
-		WA_AI_CONFIG_MILITARY_is_western_european_bulwark = yes
+		WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc = yes
 	}
 }
 

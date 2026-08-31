@@ -1665,17 +1665,33 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   (`FACTION_ALLIES_FRONT.txt`) puts `front_unit_request -100` on `benelux`/`north_france`/`france`/
   `west_france`/`south_france` for the audience trigger
   `WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark` (allies member, at war, capital outside
-  Europe, gate closed). **The African leg ([bof-commonwealth-posture], 2026-08-31, save_demo
-  1940.6.1: RAJ 4 + AST 1 front divisions at Gabès):** a sixth entry in the same block,
-  `state_trigger = { WA_AI_MILITARY_is_western_bulwark_african_ground = yes }` at -100 - African
-  states the bulwark CONTROLS - because `north_africa` is one ai_area Morocco->Egypt and an area
-  key cannot brake the French side without braking Egypt. Controller-keyed, so Vichy/Torch ground
-  leaves the set by itself, and the whole block still stands down when the gate opens. The RAJ
-  Country veto also gained its missing `benelux` entry (`COUNTRY_RAJ_FRONT.txt`). This is NOT the counter-bid the 2026-08-25 ruling forbids: during the brake
+  Europe, gate closed). **The colonial leg ([bof-commonwealth-posture], 2026-08-31):** a sixth
+  entry in the same block, `state_trigger = { WA_AI_MILITARY_is_western_bulwark_colonial_ground
+  = yes }` at -100 - non-European states the bulwark's BLOC controls - because `north_africa` is
+  one ai_area Morocco->Egypt and an area key cannot brake the French side without braking Egypt.
+  Controller-keyed, so Vichy/Torch ground leaves the set by itself, and the whole block still
+  stands down when the gate opens. The RAJ Country veto also gained its missing `benelux` entry
+  (`COUNTRY_RAJ_FRONT.txt`).
+  **BLOC, not the bulwark tag - the correction campaign `a2ad5f20` forced (2026-08-31).** The
+  first version read `CONTROLLER = { _is_western_european_bulwark }`, i.e. `original_tag = FRA`,
+  and covered essentially nothing: MEASURED over the ten Maghreb states in five Battle-of-France
+  saves, the split is **FRM 4 / FRN 3 / FRT 2 / FRA 1** - the empire is held by FRA's SUBJECTS,
+  and Gabès (665, the one state the dominions actually concentrated on, 5-7 divisions in every
+  pre-fall save) is FRT. The Levant mandate is FRS, same shape. `_is_western_european_bulwark_bloc`
+  (CONFIG) adds `OVERLORD = { _is_western_european_bulwark }` so the test follows the archetype
+  rather than naming a second tag, and the state term became `NOT = { is_on_continent = europe }`
+  so the Levant is covered too and no metropolitan state is vetoed twice by area AND state key.
+  **The general rule: a colonial-ground test must ask about the BLOC. Naming the metropole's tag
+  is the French twin of the Italy-flip lesson.** This is NOT the counter-bid the 2026-08-25 ruling forbids: during the brake
   window every positive on those five areas is enable-gated off by the same trigger (or off by
   date/flag), so the -100 never nets against a live bid - it suppresses the engine default only. The
   European-capital exclusion is the ECONOMY.md 2.4 escape hatch: no member defending its own or a
-  neighbour's homeland (BEL/HOL/FRA/ENG/POL) can be vetoed.
+  neighbour's homeland (BEL/HOL/FRA/ENG/POL) can be vetoed. **A second exclusion was required by
+  the colonial leg (2026-08-31):** the bulwark's own colonial subjects have NON-European capitals
+  (FRM 461, FRT 458, FRS 554 — MEASURED) and sit in the Allies through their overlord, so they
+  passed the audience and the colonial leg would have vetoed them off their own soil — the exact
+  starvation shape ECONOMY.md 2.4 rule 4 names. `_is_overseas_guest_refused_by_bulwark` therefore
+  also excludes `WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc`.
 - Residual, stated: while the gate is closed, the whole `europe_first` block is down, so its
   `north_africa +75` does not reach EGYPT either; the Egypt cover in that window is the anglo-major
   `ALLIES_war_against_ITA_north_africa_THEATRE` +100 and `ALLIES_theatre_boost_north_africa` (id
