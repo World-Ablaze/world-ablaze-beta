@@ -1663,8 +1663,8 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   live European fronts through engine default assignment on the flat area_priority baseline, with no
   CAPS veto applying to a fit, home-safe member. `WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark`
   (`FACTION_ALLIES_FRONT.txt`) puts `front_unit_request -100` on European ground — one
-  `state_trigger = { WA_AI_MILITARY_is_european_ground }` since 2026-08-31, replacing the five
-  french area keys it shipped with — for the audience trigger
+  `state_trigger = { WA_AI_MILITARY_is_european_ground_barred_to_guests }` since 2026-08-31,
+  replacing the five french area keys it shipped with — for the audience trigger
   `WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark` (allies member, at war, capital outside
   Europe, gate closed). **The colonial leg ([bof-commonwealth-posture], 2026-08-31):** a sixth
   entry in the same block, `state_trigger = { WA_AI_MILITARY_is_western_bulwark_colonial_ground
@@ -1716,9 +1716,20 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   a negative `garrison` is that it stops new assignment without emptying an existing order, and
   nothing measures `front_unit_request` either way — so the claim is "no new dominion front in
   Europe", not "the existing one vanishes". If a campaign shows the order surviving, the remaining
-  lever is a `put_unit_buffers` catcher (the §23 mechanism). Accepted risk, recorded: on an
-  ahistorical branch where France survives and keeps a disjointed-government idea indefinitely, the
-  leg vetoes guests off all European ground with no bound — wider than the french keys ever were.
+  lever is a `put_unit_buffers` catcher (the §23 mechanism).
+  **The Sea Lion carve-out is what makes a continent key safe.** The British Isles are European
+  ground, so without it the leg would veto the entire Commonwealth off the defence of Britain — the
+  §2.4 starvation shape, and the compound of the accepted risk below. The trigger therefore excludes
+  soil the mission owner **OWNS** — its islands plus Malta, Gibraltar and Cyprus, not the Isles
+  alone. Owner and never controller: an invader flips the controller and a landing is exactly when
+  the dominions must be free to fight there, while ground the owner merely OCCUPIES (a liberated
+  bridgehead, an occupied Norway) must stay barred — a controller-based carve-out un-bars precisely
+  the continental soil the gate exists to protect. On the historical path
+  `fall_of_france` has already opened the gate before any landing, so this is insurance for the
+  ahistorical branch, not the common case.
+  Accepted risk, recorded and now narrower: on an ahistorical branch where France survives and keeps
+  a disjointed-government idea indefinitely, guests stay barred from CONTINENTAL European ground
+  with no bound — British soil excepted, which is the case that would have starved a real defence.
 - Probe: pre-fall saves show zero RAJ/dominion divisions holding a FRONT ORDER whose path lies in
   France, the Benelux or the Rhine (`plans.py --fronts` + `--armies`, not a `--where` headcount);
   zero Commonwealth divisions on bulwark-bloc-controlled North-African states while FRA still holds

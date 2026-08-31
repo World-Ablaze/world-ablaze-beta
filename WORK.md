@@ -281,8 +281,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `france` and **`germany`**, and NO block in `common/ai_strategy/` put a negative
   `front_unit_request` on `germany` for a dominion. **Fix, after the owner asked whether the Raj
   could simply be kept out of Norway and Tunisia too — it can, and that is the better question:
-  the five french area keys are REPLACED by one `state_trigger = { WA_AI_MILITARY_is_european_ground }`
-  at -100.** An enumerated area list is always one theatre short — the measured leaks were a Rhine
+  the five french area keys are REPLACED by one
+  `state_trigger = { WA_AI_MILITARY_is_european_ground_barred_to_guests }` at -100.** An enumerated area list is always one theatre short — the measured leaks were a Rhine
   front in `germany` and Norway staging in `scandinavia`, neither named, and the Winter-War
   expedition to Finland is the same shape waiting to happen — and a per-state test also settles a
   front whose path straddles two areas, which was the open engine question. One targeting key, so
@@ -303,8 +303,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (`plans.py --fronts` + `--armies`), which is the thing the brake can actually control.
 - **(f) walk of the european leg — prevented is not evacuated, and the honest claim is weaker than
   "4 of 7 disappear".** t0, the block arms (guest at war, gate closed): the -100 lands on every
-  European state at the front. t1, next AI front-reassignment tick: the request for those fronts is
-  suppressed, so no NEW dominion division is asked for. t2, next monthly save: **whether RAJ's
+  European state at the front **except soil the mission owner OWNS** — its islands, Malta,
+  Gibraltar, Cyprus — which stays defensible by the whole Commonwealth. t1, next AI
+  front-reassignment tick: the request for those fronts is suppressed, so no NEW dominion division
+  is asked for. t2, next monthly save: **whether RAJ's
   existing Army-10 Rhine order dissolves or merely stops being reinforced is UNKNOWN** — the
   lessons-log rule for the sibling case (`garrison` negative) is that a negative PREVENTS, it does
   not EVACUATE, and there is no measurement either way for `front_unit_request`. So the defensible
@@ -313,12 +315,45 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   refused guest at home (the §23 mechanism, MEDIUM risk, not shipped). **ASSUMED, source-labelled:**
   "-100 is a full veto" is `WA_AI_MILITARY_ECONOMY.md` §3 E2, a NORMATIVE repo rule, not an engine
   measurement — nothing in the log settles it empirically.
+- **Sea Lion carve-out (owner catch 2026-08-31, "ajouter une exception pour le royaume uni en cas
+  de sea lion" — and the trigger renamed with it).** The British Isles ARE European ground, so the
+  continent key as first written would have vetoed the whole Commonwealth off the defence of
+  Britain: the ECONOMY 2.4 starvation shape, reachable precisely by compounding it with risk (1)
+  below. `_is_european_ground` → `_is_european_ground_barred_to_guests`, now excluding
+  `WA_AI_MILITARY_is_mission_owner_soil`. The old name was also simply wrong — it read as a
+  geography fact while the trigger encodes a policy. On the historical path `fall_of_france` opens
+  the gate long before any landing, so this is insurance for the ahistorical branch, not the common
+  case. **OWNER only, and the CONTROLLER disjunct was dropped in review**: the first draft carved
+  out ground the mission owner merely OCCUPIES, which un-barred an ENG-occupied Norway or a
+  liberated bridgehead — the exact continental soil the gate exists to keep guests off, reachable
+  in the very branch this insurance targets. Owner survives an occupation, which is the case that
+  matters. Verified rather than assumed (the trap that made the colonial leg inert): the British
+  home states read `owner = ENG` in `history/states` and ENG 9/9 by state and 46/46 by province in
+  the 1940.6 save — no subject-tag layer like the Maghreb's FRM/FRN/FRT. The carved set is the
+  owner's whole European holding, **not the Isles alone**: Malta 116 and Gibraltar 118 are
+  `owner = ENG` (MEASURED), and the review adds Cyprus 183 — a Levant-theatre state the colonial
+  leg's `middle_east` bound does not reach. Two residuals accepted: an ANNEXED Britain (owner no
+  longer the mission owner) would leave guests barred from liberating it, and a non-British guest
+  owning European soil — a US bridgehead on the ahistorical branch — is vetoed off its own ground;
+  the trigger header names both as the assumption to watch. The only script path that ends the
+  carve-out is the REN release (`common/decisions/GER.txt:6146-6169`, `transfer_state` 119-133),
+  whose `controls_state` precondition means Britain is already lost end to end before it fires.
+  Two deliberate choices, recorded so they are not silently "fixed": **(i) the rejected generic.**
+  The bulwark bloc test one commit earlier uses `OVERLORD = { archetype }` because it asks a
+  COUNTRY-scope question ("is this country in the bulwark's bloc"); this one asks a STATE-scope
+  identity question ("is this soil the mission owner's"), and every member of the brake's audience
+  is that owner's subject, so the archetype is equivalent and shorter. The asymmetry is intended.
+  **(ii) Irish soil is NOT carved out** — states 113/134/135 read `owner = IRE`, so a guest stays
+  barred there, which is the brake's intent: Ireland is not the mission owner's ground. Also
+  deliberate: the sibling `_is_western_bulwark_colonial_ground` keeps a geography-shaped name
+  because its body IS a geography-plus-ownership fact, where this one carries a policy carve-out.
 - **Accepted risks, recorded rather than bounded (both raised by the lessons review).** (1) The
   european leg's only exits are France-shaped (`fall_of_france` / capitulated / out of faction /
   disjointed idea shed / non-historical difficulty). On an ahistorical branch where France SURVIVES
-  and keeps a disjointed-government idea indefinitely, overseas guests stay vetoed off all European
-  ground with no bound — wider than the five french keys ever were. One-line fix if it bites: add a
-  calendar or "bulwark no longer at war" limb to `_western_bulwark_accepts_guests`. (2) Leg B's camp
+  and keeps a disjointed-government idea indefinitely, overseas guests stay vetoed off CONTINENTAL
+  European ground with no bound — British soil now excepted, which was the dangerous half. One-line
+  fix if the rest bites: add a calendar or "bulwark no longer at war" limb to
+  `_western_bulwark_accepts_guests`. (2) Leg B's camp
   test has no path for a masser that is ideologically aligned but NEUTRALITY-ruled with its camp
   polling under 0.45 — the Nationalist-Spain shape from the lessons log, where fascism never passed
   neutrality. Its wargoal limbs are blocked too, so such a masser arms no surge at all.
