@@ -1053,20 +1053,29 @@ WA_AI_MILITARY_italian_power_shares_german_ideology = {
 WA_AI_MILITARY_western_bulwark_is_collapsing = {
 	FRA = {
 		exists = yes
-		surrender_progress > 0
+		surrender_progress > 0.4
 	}
 }
 
-# The verdict below is the owner's rule of 2026-08-21, kept literally: the Italian and German powers
-# share an ideology group, AND either the western bulwark is coming apart or the calendar has passed
-# 1940.8.1. The date is an OR fallback, never the only path (AGENTS.md design principle 1) - it can
-# only make the tripwire arm EARLIER in a world where France does not fall, and removing it would
-# leave the dynamic term standing on its own.
+# The tripwire verdict: the Italian and German powers share an ideology group, AND one of three
+# warnings - the western bulwark is coming apart, the German power is AT WAR with the bulwark
+# ([bof-commonwealth-posture], the widening recorded in WA_AI_MILITARY_SYSTEM.md section 20: the
+# collapse limb alone gave days of warning on a historical timeline; the war limb gives months),
+# or the calendar has passed 1940.8.1. The date is an OR fallback, never the only path (AGENTS.md
+# design principle 1) - it can only make the tripwire arm EARLIER in a world where France does not
+# fall, and removing it would leave the dynamic terms standing on their own.
 WA_AI_MILITARY_italian_entry_likely = {
 	WA_AI_MILITARY_italian_power_shares_german_ideology = yes
 	OR = {
 		WA_AI_MILITARY_western_bulwark_is_collapsing = yes
-		date > 1940.8.1
+		any_country = {
+			WA_AI_CONFIG_MILITARY_is_western_european_bulwark = yes
+			has_capitulated = no
+			any_enemy_country = {
+				WA_AI_CONFIG_MILITARY_is_german_homeland_power = yes
+			}
+		}
+		date > 1940.9.1
 	}
 }
 
@@ -1171,6 +1180,16 @@ WA_AI_MILITARY_gulf_approach_massed = {
 			controls_state = 292
 		}
 		WA_AI_MILITARY_gulf_approach_massing = yes
+		# [bof-commonwealth-posture] the masser must also MEAN it - without this term a NEUTRAL
+		# Gulf state's peacetime home army arms the surge tier. Assumes any real Gulf threat
+		# (a coup government, a German thrust) carries a war, wargoal or justification against
+		# ENG before the surge is needed; the watch tier and _imminent's pre-war guard still
+		# pre-position either way.
+		OR = {
+			has_war_with = ENG
+			has_wargoal_against = ENG
+			is_justifying_wargoal_against = ENG
+		}
 	}
 }
 
@@ -3599,6 +3618,19 @@ WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
 	has_war = yes
 	NOT = { capital_scope = { is_on_continent = europe } }
 	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
+}
+
+# STATE scope (read from the brake's state_trigger leg). African ground the western bulwark
+# currently CONTROLS - the French side of any North/West-African front. Controller, not owner:
+# the moment the ground changes hands (Vichy, an Axis conqueror, Torch) it leaves this set, and
+# the brake's own enable already stands the whole block down once the gate opens.
+# [bof-commonwealth-posture] exists because north_africa is one ai_area Morocco->Egypt and an
+# area key cannot veto the French side without vetoing Egypt.
+WA_AI_MILITARY_is_western_bulwark_african_ground = {
+	is_on_continent = africa
+	CONTROLLER = {
+		WA_AI_CONFIG_MILITARY_is_western_european_bulwark = yes
+	}
 }
 
 # ==== shared observations extracted by the factorisation pass (lot D) ====

@@ -172,7 +172,91 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### dday-mulberry — TESTED (2026-08-31)
+### bof-commonwealth-posture — OPEN (2026-08-31)
+- Scope: owner order 2026-08-31 ("Implémente A, B et C" on the save_demo Discord report,
+  campaign `0700e591`, save at 1940.6.1, Historical Normal). One subject for the three legs of
+  one intended behaviour: during the Battle of France the Commonwealth stands in Egypt / East
+  Africa / the Gulf at the right size — not in France, not on the French side of the Maghreb,
+  not seven divisions deep in Kuwait. Code in the working tree, not yet committed.
+- Symptom, MEASURED (save_demo, plans.py --where + order dump): RAJ 6 front divisions in
+  Île-de-France/Picardie/Provence and 4 at Gabès (+ AST 1) with the bulwark gate CLOSED
+  (difficulty=normal → Historical); RAJ Kuwait scripted order carried 6 scheduled divisions
+  (the 0.15 surge tier — IRQ, neutral, no wargoal, holds 3 divisions in Dhi Qar, which is all
+  `gulf_approach_massed` asked); ENG scripted a 0.10 garrison of state 309 = SURINAME under a
+  `# middle_east` comment (order created 1940.5.12, 2 divisions scheduled); the Italian-entry
+  tripwire (§20) armed only days before the declaration (collapse limb) at ratios 0.06/0.04.
+- Leg A (France/Maghreb): `benelux` added to the RAJ Country veto
+  (`WA_AI_MILITARY_COUNTRY_RAJ_FRONT.txt`, its measured hole); African leg added to the faction
+  brake — `state_trigger = { WA_AI_MILITARY_is_western_bulwark_african_ground = yes }` at -100
+  (new STATE-scope observation trigger: `is_on_continent = africa` + CONTROLLER is the bulwark
+  archetype) in `WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark`. ASSUMED (stated in
+  the brake's own header since 2026-08-27): -100 fully suppresses engine default assignment —
+  save_demo shows RAJ on French fronts WITH the brake armed, so either the reporter's build
+  ("WA Beta GITHUB", revision unverifiable from the save) predates the 27/08 brake or -100 is
+  not a full veto. Owner imgui (`imgui show ai-strategy` on RAJ during a BoF) settles which;
+  if the brake was armed and beaten, the value needs escalation, not more areas.
+- Leg B (Gulf/Caribbean): Suriname `ai_strategy` block DELETED from
+  `WA_AI_MILITARY_COUNTRY_ENG_THEATRE.txt` (nothing else pools its order 7; intended state
+  unrecoverable). `WA_AI_MILITARY_gulf_approach_massed` gained an intent term (war OR wargoal
+  OR justifying against ENG) — the 0.15 surge tier no longer arms on a neutral's peacetime
+  army; ratio deliberately NOT lowered (the 0.15 sizing encodes the measured 1941 Kuwait fall,
+  1 guard vs 7). Deviation from the tier author's design, named: their "massing alone is the
+  reason" now requires intent; mine covers their 1941 case because the coup path carries
+  war/wargoal before the surge matters, and the 0.05 watch + `_imminent` (massing kept there)
+  still pre-position. (f) timeline at real cadences (per lessons review, the historical shape
+  MEASURED on `8c0fea4c`): t0 pre-coup — watch 0.05 ≈ 2 div standing in 656, `_imminent`
+  armed; t1 coup→hostility (historical Golden Square: coup 1941.4, war 1941.5.2; worst case a
+  wargoal-less event war = surge arms only at t_war) — surge 0.15 arms, ~5 more divisions
+  travel from India/Levant ≈ 4-8 weeks; t2 the measured fall took ≥ 3 months after t1 (state
+  656 friendly at 1941.4.28, GER-controlled only by 1941.9.20) — arrival window ≥ fall window
+  even in the worst case, floor never empty. ASSUMED, not save-decidable: WA's coup path
+  actually produces a wargoal/war (an ahistorical masser that never justifies gets no surge
+  ever — the probe line below watches for exactly that). Residual accepted: ENG's ~1 division
+  in Kuwait is an ENGINE areadef order (Kuwait/Abu Dhabi/Qatar) — no script writes it, not
+  addressable without an ENG-wide garrison suppressor.
+- Leg C (pre-positioning): third OR limb in `WA_AI_MILITARY_italian_entry_likely` — the German
+  homeland power (new CONFIG archetype `WA_AI_CONFIG_MILITARY_is_german_homeland_power`) at war
+  with a non-capitulated bulwark — the §20 recorded widening, giving ~10 months of warning on a
+  historical timeline instead of days; tripwire ratios 0.06/0.04 → 0.12/0.10 (owner rule:
+  pre-positioned, not merely non-empty). Escape hatches unchanged (`NOT home_threatened`,
+  audience ENG+RAJ, release on Italian entry). Two OWNER live working-tree tweaks made in
+  parallel during the same session were preserved and folded in:
+  `western_bulwark_is_collapsing` bar `surrender_progress > 0` → `> 0.4`, and the tripwire
+  date fallback `1940.8.1` → `1940.9.1` — both compatible (the new war limb arms earlier than
+  either, and `italian_entry_likely` is the collapse trigger's ONLY consumer — grep 2026-08-31).
+- Regression risks, stated: (1) leg C parks ~14 ENG+RAJ divisions in Africa from late 1939 —
+  if ENG home defence thins before `home_threatened` trips, the ratios come back down; (2) leg
+  A's state_trigger brake covers ALL bulwark-controlled African ground incl. West Africa and
+  Djibouti — intended (guests have no business there pre-fall), released with the gate; if
+  Italy enters BEFORE France falls, the East-Africa faction +150 (area-keyed) and this -100
+  (state_trigger-keyed) meet on FRA-controlled Somaliland fronts and cross-target summing is
+  ASSUMED (the ai-strategy-window note: whether the engine sums across targeting keys is
+  unresolved); (3) leg B may arm the Kuwait surge days later than before on the 1941 coup path
+  (intent term) — the watch floor holds the gap, (f) table above. ASSUMED throughout (carried
+  from the brake's own 2026-08-27 header): front_unit_request -100 fully vetoes engine default
+  assignment — save_demo shows it beaten or absent; the owner imgui check below settles it.
+  Tripwire buffers got `subtract_fronts_from_need = no` (lessons review): the default lets live
+  front demand eat a yielding buffer, which during the BoF is the whole pre-position.
+- Probe (next campaign reaching 1940.6 on this build): pre-fall saves show zero RAJ/dominion
+  divisions on metropolitan-France/benelux fronts AND zero on FRA-controlled African states;
+  tripwire buffers 9617/9618 exist from ~1939.9 with ENG+RAJ divisions standing in
+  551/1096/549/1100/269/659 and 452/960 during the BoF; RAJ Kuwait order carries ≤3 scheduled
+  divisions while IRQ is neutral; no ENG order on state 309. Surge-side probe (lessons review):
+  on any save where a non-aligned power both CONTROLS an approach state and masses >2 divisions
+  in one AND is at war/holds a wargoal vs ENG, the RAJ Kuwait order must read the 0.15 sizing —
+  a surge disarmed in that cell is the narrowing over-shooting. Owner imgui (once, any BoF
+  save): `imgui show ai-strategy` on RAJ — `overseas_guests_wait_for_bulwark` and
+  `RAJ_unit_distribution` listed in Active strategies while RAJ still fronts in France would
+  prove -100 is not a veto and the value needs escalation, not more areas.
+- Closed when: one campaign (historical difficulty, unbranched) shows all four probe lines
+  PASS at a save between 1940.4 and the Italian declaration, and the owner confirms the
+  Battle-of-France report symptoms gone (or re-reports with a new save).
+
+### dday-mulberry — PARKED (2026-08-31)
+- PARKED 2026-08-31 by the agent, not by an owner decision, only to admit
+  `bof-commonwealth-posture` under the WIP limit — move it back to OPEN in one line if that is
+  the wrong pick. State preserved below: TESTED 2026-08-31; remaining exit = the campaign probe
+  in its Closed-when line (and the one owed game.log grep line noted in the TESTED bullet).
 - TESTED 2026-08-31, owner console (save 1944.6.1, post-refactor build): `wa_mulb.1` header
   `1 1 1 1 0`, all 8 provinces base-free; `wa_mulb.3` control PASSED —
   `[01:07:37][1944.06.01.02] 2:00, 1 June, 1944 United States of America: WA_AI_invasions.101
