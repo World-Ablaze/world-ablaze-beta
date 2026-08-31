@@ -22,7 +22,7 @@ This is the **single source of truth** for which domain file every `ai_strategy`
 | `naval_convoy_raid_region` | NAVAL | `WA_AI_NAVAL_*` | Sea regions where convoy raiding should be emphasised. |
 | `naval_dominance` | NAVAL | `WA_AI_NAVAL_*` | Sea-region or AI-area naval dominance objective. |
 | `naval_mission_threshold` | NAVAL | `WA_AI_NAVAL_*` | Generic naval mission threshold tuning. |
-| `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. |
+| `naval_invasion_dominance_weight` | NAVAL | `WA_AI_NAVAL_*` | Fleet emphasis on supremacy along active invasion paths. First use 2026-08-31: `WA_AI_NAVAL_DEFAULT.txt` `invasion_path_supremacy`, value 50, every belligerent (`[naval-invasion-dominance]`). |
 | `naval_invasion_support_priority` | NAVAL | `WA_AI_NAVAL_*` | Ranks sea regions for invasion support. **Real but undocumented** (string present in `hoi4.exe` 1.19.2; absent from both editions of `documentation.info`). **Zero uses in WA** - see the unused-lever note below. |
 | `strike_force_home_base` | NAVAL | `WA_AI_NAVAL_*` | Designates a base as fleet home. |
 | `strategic_air_importance` | NAVAL / AIR | `WA_AI_NAVAL_*` (sea-facing) or `_AIR` (land-theatre-facing) | Strategic air emphasis per strategic region. |

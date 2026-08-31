@@ -2546,3 +2546,29 @@ process caveats (stale process, and the absence of a load-time hook).
   `d898e2105` (light FINAL chain, owner-confirmed live PASS same day), `e5c497d2f` (light-support
   twin); install `common/ai_templates/_documentation.md` replace-with section; vanilla
   `common/ai_templates/generic.txt` era chain.
+
+### meta_effect inline in an events/ file silently drops the rest of the event body
+
+- **Date:** 2026-08-31 (`dday-mulberry` harness control run, save 1944.6.1)
+- **Symptom:** `WA_AI_invasions.101`, rewritten with `meta_effect` blocks directly inside its
+  `immediate`, executed its FIRST `if` (the country flag was set, MEASURED in the `wa_mulb.1`
+  re-run) and produced nothing else - the following `else` log never printed, no error at fire
+  time, no crash. The event looked live and was three-quarters dead.
+- **Cause:** ASSUMED (error.log of the failing session not read): the events/ parser desyncs on
+  the inline `meta_effect { text = { [TOKEN] = ... } }` block at load and swallows the remainder
+  of the event body. The behavioural half is MEASURED both ways: inline in `events/` the body
+  after the first if never ran; the same logic moved verbatim into
+  `common/scripted_effects/WA_AI_MULBERRY_effects.txt` (with the events reduced to one-line
+  callers) printed the expected branch log on the very next run (`1386cf6ea`). The repo had
+  only ever used meta_effect in `common/scripted_effects/` - 16 files, zero in `events/`.
+- **Rule:** never put `meta_effect` / `meta_trigger` inline in an `events/` file. Put the body
+  in a scripted effect and have the event call it - which is editing rule 3 anyway. More
+  generally: when an event demonstrably executes its prefix but not its suffix with no runtime
+  error, suspect a LOAD-time parse desync inside the body (BOM lesson class), not the runtime
+  state, and bisect by moving code out of the file rather than by adding logs to it.
+- **Detection:** a flag/variable written by the top of an immediate is set while a log/effect
+  lower in the same immediate never fires; the construct sits in a folder where the repo has no
+  other instance of it (grep the token across `events/` vs `common/scripted_effects/`).
+- **Evidence:** WORK.md `dday-mulberry` (control run FAILED then PASSED bullets); commits
+  `a0fe44a81` (inline, broken) -> `1386cf6ea` (scripted-effect bodies, working); game.log
+  excerpts pasted in the subject.
