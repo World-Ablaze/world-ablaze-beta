@@ -1662,8 +1662,9 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   Gating the positives is not enough: a total-commitment released army (§23) still reaches the only
   live European fronts through engine default assignment on the flat area_priority baseline, with no
   CAPS veto applying to a fit, home-safe member. `WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark`
-  (`FACTION_ALLIES_FRONT.txt`) puts `front_unit_request -100` on `benelux`/`north_france`/`france`/
-  `west_france`/`south_france` for the audience trigger
+  (`FACTION_ALLIES_FRONT.txt`) puts `front_unit_request -100` on European ground — one
+  `state_trigger = { WA_AI_MILITARY_is_european_ground }` since 2026-08-31, replacing the five
+  french area keys it shipped with — for the audience trigger
   `WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark` (allies member, at war, capital outside
   Europe, gate closed). **The colonial leg ([bof-commonwealth-posture], 2026-08-31):** a sixth
   entry in the same block, `state_trigger = { WA_AI_MILITARY_is_western_bulwark_colonial_ground
@@ -1698,10 +1699,31 @@ France, and ~14 Commonwealth divisions lined up on the French side of North Afri
   447), both untouched. Ahistorical difficulty: gate always open, brake never arms, behaviour
   unchanged - if the owner's reported game ran non-historical difficulty, the symptom persists there
   by the standing owner ruling (non-historical never waits); flag to the owner if it recurs.
-- Probe: pre-fall saves show zero RAJ/dominion divisions in metropolitan France AND on the
-  `benelux`/BEL/HOL fronts, and zero Commonwealth divisions on FRA-owned North-African states while
-  FRA still holds the idea; the BEF deploys only after the idea is gone; post-fall behaviour
-  identical to pre-gate campaigns.
+- **Why the leg is one CONTINENT key and not a list of areas, and why the probe below must count
+  FRONTS, not divisions (2026-08-31, campaign `a2ad5f20`).** Seven dominion sightings on
+  French/Belgian soil during the Battle of France decompose into exactly three kinds, and only one
+  is a posture problem: **a front** — RAJ's Army 10 held a Rhine front whose path runs
+  Alsace-Lorraine (area `france`) + Moselland/Baden/Württemberg (area `germany`), an area the brake
+  did not name; **transit** — three divisions standing in France or Belgium whose army orders point
+  at Norway or Tunisia, two of them on German-controlled ground, which no `ai_strategy` type can
+  forbid (nothing stops a division crossing a province); and **a garrison elsewhere** — one division
+  on the Egyptian tripwire order (9618, states {452, 960}) sitting at the Marseille port en route,
+  i.e. §20 working. Divisions of the last two kinds appear in any monthly save and are not evidence
+  the brake failed. An enumerated area list is always one theatre short — `germany` here, Norway
+  (`scandinavia`) next, the Winter-War expedition to Finland after that — so the five french keys
+  were replaced by `is_on_continent = europe`, which also settles per state and so removes the
+  straddling-front question entirely. **Prevented is not evacuated (ASSUMED):** the sibling rule for
+  a negative `garrison` is that it stops new assignment without emptying an existing order, and
+  nothing measures `front_unit_request` either way — so the claim is "no new dominion front in
+  Europe", not "the existing one vanishes". If a campaign shows the order surviving, the remaining
+  lever is a `put_unit_buffers` catcher (the §23 mechanism). Accepted risk, recorded: on an
+  ahistorical branch where France survives and keeps a disjointed-government idea indefinitely, the
+  leg vetoes guests off all European ground with no bound — wider than the french keys ever were.
+- Probe: pre-fall saves show zero RAJ/dominion divisions holding a FRONT ORDER whose path lies in
+  France, the Benelux or the Rhine (`plans.py --fronts` + `--armies`, not a `--where` headcount);
+  zero Commonwealth divisions on bulwark-bloc-controlled North-African states while FRA still holds
+  the idea; the BEF deploys only after the idea is gone; post-fall behaviour identical to pre-gate
+  campaigns.
 
 ## 25. France fights the Battle of France, not the empire ([fra-battle-of-france], 2026-08-27)
 
@@ -1734,11 +1756,26 @@ ENG fallback). Owner rule: RAJ garrisons Kuwait and Aden to relieve British divi
   drives `COUNTRY_RAJ_THEATRE_kuwait_standing_watch` (`put_unit_buffers` 656 ratio 0.02, order 9209).
   The moment the Gulf approach is threatened the sized mission tiers take over.
   **`gulf_approach_massed` gained an intent term ([bof-commonwealth-posture], 2026-08-31)**: the
-  masser must also be at war with ENG, hold a wargoal, or be justifying one. Without it a NEUTRAL
-  Iraq's peacetime home army (save_demo 1940.6.1: IRQ 3 divisions in Dhi Qar, no wargoal) armed the
-  0.15 surge tier from May 1940 and put ~7 scheduled RAJ divisions on Kuwait during the Battle of
-  France. The 0.05 watch tier and `_imminent` (unchanged, massing still counts there) keep the
-  pre-war floor.
+  masser must also be at war with ENG, hold a wargoal, be justifying one, **or sit in an enemy's
+  ideological camp** (`WA_AI_MILITARY_is_in_an_enemy_ideological_camp`). Without any such term a
+  NEUTRAL Iraq's peacetime home army (IRQ 3 divisions in Dhi Qar, no wargoal) armed the 0.15 surge
+  tier from May 1940 and put ~7 scheduled RAJ divisions on Kuwait during the Battle of France. The
+  0.05 watch tier and `_imminent` (unchanged, massing still counts there) keep the pre-war floor.
+
+  **Why the wargoal limbs cannot carry this alone — MEASURED, and it is a general lesson about
+  client states.** Iraq can never hold a wargoal against Britain: `IRQ_anglo_iraq_treaty`
+  (`common/ideas/iraq.txt`) carries `rule = { can_not_declare_war = yes }`, and the focus
+  `IRQ_the_habbaniya_incident` fires `irq_armor.805`, which removes the idea and calls
+  `declare_war_on` with `generator = { 656 }` **in the same tick**. Kuwait is not coveted; the war
+  is fabricated around it. So `has_wargoal_against` / `is_justifying_wargoal_against` are
+  structurally unreachable — not merely late — and every "did it lose the guarantee / join a
+  faction / lose the treaty idea" tell changes on the war day itself, at zero lead.
+  The ideological camp is the only signal with real lead: on campaign `a2ad5f20` Iraq's fascism
+  popularity ran 33 % (1940.9) → 43.15 % (1941.1) → 55.15 % (1941.3), the government flipped
+  ~1941.3.20, and the war came 1941.4.24 — so the 0.45 bar (the same bar `IRQ_seize_power` is
+  gated on) arms the surge roughly two months ahead, against ~35 days for the government flip.
+  **Neutrality is not enumerated in that trigger**: it is the absence of a camp, and including it
+  would read every neutral neighbour's home army as hostile — the original false positive.
 - Aden: was a flat ENG buffer (0.075, order 6 inside `ENG_protect_home_THEATRE`). Now a delegated
   mission: `ENG_aden_guard_active` (at war + 659 in friendly hands, no threat term - the Red Sea
   watch is continuous), delegate verdict `RAJ_aden_guard_available` (Kuwait-shaped) + wrapper

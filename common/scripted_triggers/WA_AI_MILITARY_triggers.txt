@@ -1163,6 +1163,31 @@ WA_AI_MILITARY_gulf_approach_imminent = {
 	}
 }
 
+# PREV-relative: the scope is the enquired third country. The Gulf family's pre-war tell, because a
+# client state under a treaty carrying `can_not_declare_war` holds no wargoal until the tick it
+# declares - the wargoal limbs alone arm the surge only once the border is lost. Each limb needs the
+# camp to be an ENEMY's and NOT the mission owner's own, or the owner's ideology inverts the test and
+# every neighbour sharing it reads hostile. Neutrality is no camp at all, so it is not enumerated.
+WA_AI_MILITARY_is_in_an_enemy_ideological_camp = {
+	OR = {
+		AND = {
+			OR = { has_government = fascism   fascism > 0.45 }
+			ENG = { any_enemy_country = { has_government = fascism } }
+			NOT = { ENG = { has_government = fascism } }
+		}
+		AND = {
+			OR = { has_government = communism   communism > 0.45 }
+			ENG = { any_enemy_country = { has_government = communism } }
+			NOT = { ENG = { has_government = communism } }
+		}
+		AND = {
+			OR = { has_government = democratic   democratic > 0.45 }
+			ENG = { any_enemy_country = { has_government = democratic } }
+			NOT = { ENG = { has_government = democratic } }
+		}
+	}
+}
+
 # The SIZE question, asked at ENG scope so the verdict is invariant across the three call paths.
 # True when the imminent-threat holder is not merely present but has a force on the approach.
 WA_AI_MILITARY_gulf_approach_massed = {
@@ -1181,14 +1206,15 @@ WA_AI_MILITARY_gulf_approach_massed = {
 		}
 		WA_AI_MILITARY_gulf_approach_massing = yes
 		# [bof-commonwealth-posture] the masser must also MEAN it - without this term a NEUTRAL
-		# Gulf state's peacetime home army arms the surge tier. Assumes any real Gulf threat
-		# (a coup government, a German thrust) carries a war, wargoal or justification against
-		# ENG before the surge is needed; the watch tier and _imminent's pre-war guard still
-		# pre-position either way.
+		# Gulf state's peacetime home army arms the surge tier. The ideological limb is what
+		# carries the pre-war case: a treaty idea with `can_not_declare_war` makes the wargoal
+		# limbs unreachable for a client state right up to the declaration, so they alone would
+		# arm the surge only once the border was already lost.
 		OR = {
 			has_war_with = ENG
 			has_wargoal_against = ENG
 			is_justifying_wargoal_against = ENG
+			WA_AI_MILITARY_is_in_an_enemy_ideological_camp = yes
 		}
 	}
 }
@@ -3613,9 +3639,10 @@ WA_AI_MILITARY_western_bulwark_accepts_guests = {
 # bulwark's own BLOC has a non-European capital yet is standing on ITS OWN colonial ground - which
 # the colonial leg of this brake would otherwise veto it off.
 # ASSUMED: no European member's capital leaves Europe before fall_of_france opens the gate (an exile
-# capital off-continent would flip that member into this audience for the remaining window). The
-# -100 floor is PRESSURE, not a ban: it suppresses engine default assignment without emptying a
-# front, so a target that must be empty needs a stronger lever than this value.
+# capital off-continent would flip that member into this audience for the remaining window). Also
+# ASSUMED, and the open question when a guest is still seen on braked ground: which area the engine
+# matches a front to when its path straddles two - a veto only reaches the area the front resolves
+# to, and a division walking through to a garrison elsewhere is not on a front at all.
 WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
 	WA_AI_CONFIG_is_in_allies = yes
 	has_war = yes
@@ -3624,13 +3651,22 @@ WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
 	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
 }
 
+# STATE scope (read from the brake's state_trigger leg). European ground - every theatre an overseas
+# guest can be pulled onto while the bulwark refuses it, named by continent rather than by a list of
+# ai_areas so a theatre nobody enumerated (Scandinavia, Finland, the Balkans) cannot be the next
+# hole. Also settles per state, so a front straddling two areas has no ambiguous match. The audience
+# already excludes European-capital members and the bulwark's own bloc, so no defender is reached.
+WA_AI_MILITARY_is_european_ground = {
+	is_on_continent = europe
+}
+
 # STATE scope (read from the brake's state_trigger leg). Colonial ground the western bulwark's
 # BLOC controls - the Maghreb and the Levant mandate, its two theatres an Allied guest can walk
 # into. Controller, not owner: ground that changes hands (Vichy, an Axis conqueror, Torch) leaves
-# the set by itself. Bounded to those two continents on purpose - the metropole is covered by the
-# brake's five area keys, and the bloc's Asian/American colonies are ground a guest may have to
-# defend. Exists because north_africa is one ai_area Morocco->Egypt, so an area key cannot veto
-# the French side without vetoing Egypt.
+# the set by itself. Bounded to those two continents on purpose - Europe is covered by the brake's
+# european leg, and the bloc's Asian/American colonies are ground a guest may have to defend.
+# Exists because north_africa is one ai_area Morocco->Egypt, so an area key cannot veto the French
+# side without vetoing Egypt.
 WA_AI_MILITARY_is_western_bulwark_colonial_ground = {
 	OR = {
 		is_on_continent = africa

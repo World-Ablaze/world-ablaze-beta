@@ -225,7 +225,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the archetype instead of naming a second tag; the state trigger is renamed
   `_is_western_bulwark_colonial_ground` and its geographic term widened from
   `is_on_continent = africa` to `NOT = { is_on_continent = europe }`, which picks up the Levant
-  and keeps the metropole to the five area keys so no state is vetoed twice. Verified before
+  and keeps the metropole to the european leg so no state is vetoed twice. Verified before
   writing, not assumed: `relations 1940.5_May --tag FRA` lists subjects **FRC FRI FRJ FRM FRN FRO
   FRP FRS FRT FRV FRW**, and `control 554,680,677,901,553,665,458 1940.5_May` reads FRS 4 / FRT 2
   / TUR 1 — so both theatres resolve through OVERLORD.
@@ -252,15 +252,89 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   unreachable by it — this is what closes the R34 exit concern. Residual, accepted: while the
   bulwark still stands, a guest wanting to defend the bloc's Djibouti or Levant ground is refused,
   which is the rule the brake exists to state.
-- STILL OPEN after v2 (not addressed by this repair, both owner decisions): the Kuwait surge has
-  no pre-war signal in the Iraq case (leg B bullet above, three options), and `-100` is measured
-  NOT to be a full veto (1-3 dominion divisions remain in France/Benelux with both brakes armed).
-- **Leg A1 (benelux) — PARTIAL, and "-100 is a full veto" is FALSIFIED.** Dominion presence in
-  metropolitan France/Benelux is down to **1-3 divisions per save** (RAJ Moselland + Alsace-Lorraine
-  1940.3/1940.5, RAJ Vlaanderen + Provence 1940.6, AST Nord-Pas-de-Calais 1940.6) but never zero,
-  with both the Country -100 and the Faction -100 armed on those areas. Confirms the lessons-log
-  rule the reviewer cited: same-type entries SUM and -100 is not absolute. Escalating the value is
-  the lever if the owner wants zero; the owner imgui check below is still the cleaner settle.
+- **Leg B closed 2026-08-31 (owner order: "le signal idéologique avec le délai le plus long").**
+  The premise the lessons review called CONFLICT is now not merely falsified but explained:
+  **Iraq can NEVER hold a wargoal against ENG.** MEASURED in script — `IRQ_anglo_iraq_treaty`
+  (`common/ideas/iraq.txt`) carries `rule = { can_not_declare_war = yes }`, and the focus
+  `IRQ_the_habbaniya_incident` (`common/national_focus/iraq.txt`, `ai_will_do` 100 gated
+  `date > 1941.3.11`) fires `irq_armor.805`, which removes the idea and `declare_war_on ENG` with
+  `generator = { 656 }` in the SAME tick. Kuwait is not coveted — the war is fabricated around it.
+  Every alternative tell (faction membership, loss of the ENG guarantee, loss of the treaty idea,
+  the habbaniya flag) changes on the war day at **zero lead**; MEASURED campaign chain:
+  `IRQ_dreams_of_iraq` 1940.4.4 → fascism 33 % (1940.9) → 43.15 % (1941.1) → 55.15 % (1941.3) →
+  government flips ~1941.3.20 → war 1941.4.24. Fix: `_gulf_approach_massed`'s intent OR gains
+  `WA_AI_MILITARY_is_in_an_enemy_ideological_camp` — the masser already governs by, or polls above
+  0.45 for, the ideology of a power ENG is fighting. That is the longest-lead signal available
+  (~2 months vs ~35 days for the government flip alone), it is tag-free and setup-agnostic, and
+  0.45 is the same bar the seizure of power is itself gated on. **Neutrality is deliberately not
+  enumerated** (unlike the Italian-entry pair, which asks whether two named majors align): it is
+  the absence of a camp, and enumerating it would re-create the original false positive by reading
+  every neutral neighbour's home army as hostile. Verification for the next campaign: on a save
+  between the 0.45 crossing and the Iraqi declaration, RAJ's Kuwait order carries the 0.15 sizing
+  (~7 divisions), and before that crossing it still carries 1-3.
+- **Leg A1 re-diagnosed and extended 2026-08-31 (owner order: "je veux 0 sur la période voulue").**
+  The earlier reading — "-100 is not a full veto" — was WRONG, or at least unproven: the residual
+  has a simpler cause. MEASURED per-division attribution (`plans.py --where/--armies/--fronts/
+  --oob`, 4 saves, closure test 12/12 PASS, no army-group inheritance, `NO_ORDER`/`UNATTACHED`
+  absent): the 7 sightings are **4 front + 3 not-a-front**. The 4 are ONE order — RAJ Army 10,
+  front instance 68, path Alsace-Lorraine + **Moselland + Baden + Württemberg**, i.e. straddling
+  `france` and **`germany`**, and NO block in `common/ai_strategy/` put a negative
+  `front_unit_request` on `germany` for a dominion. **Fix, after the owner asked whether the Raj
+  could simply be kept out of Norway and Tunisia too — it can, and that is the better question:
+  the five french area keys are REPLACED by one `state_trigger = { WA_AI_MILITARY_is_european_ground }`
+  at -100.** An enumerated area list is always one theatre short — the measured leaks were a Rhine
+  front in `germany` and Norway staging in `scandinavia`, neither named, and the Winter-War
+  expedition to Finland is the same shape waiting to happen — and a per-state test also settles a
+  front whose path straddles two areas, which was the open engine question. One targeting key, so
+  no double-count and no value past the E2 floor. **Deliberately NOT mirrored into the RAJ Country
+  veto**: that block's gate is `has_war = yes` alone, so it would be permanent and would keep
+  Indian divisions out of Europe in 1944-45; the faction brake stands down at `fall_of_france`.
+  The Tunisia half of the owner's question is already carried by the colonial leg (Gabès is FRT).
+  The other 3 sightings are unreachable by ANY front lever and are not defects:
+  AST Nord-Pas-de-Calais + RAJ Vlaanderen are on **Norway** army orders (and both states are
+  German-controlled at that date), CAN Provence is on a **Tunisia** order, and the RAJ Provence
+  "buffer" is assigned to our OWN Egyptian tripwire (order 9618, states {452,960}) sitting at the
+  Marseille port en route — cutting it would re-open the Libyan frontier §20 exists to man.
+  Bucket (d) expeditionary lending is EMPTY with a positive control (JAP←PGC 6-9 divisions lent in
+  the same campaign, so the mechanism is live and the dominions simply never entered it).
+- **Literal zero is not reachable and the probe was wrong to ask for it.** A division crossing a
+  province cannot be forbidden by any `ai_strategy` type, so a `--where` headcount will always show
+  transit. The probe now counts FRONT ORDERS whose path lies in France/Benelux/the Rhine
+  (`plans.py --fronts` + `--armies`), which is the thing the brake can actually control.
+- **(f) walk of the european leg — prevented is not evacuated, and the honest claim is weaker than
+  "4 of 7 disappear".** t0, the block arms (guest at war, gate closed): the -100 lands on every
+  European state at the front. t1, next AI front-reassignment tick: the request for those fronts is
+  suppressed, so no NEW dominion division is asked for. t2, next monthly save: **whether RAJ's
+  existing Army-10 Rhine order dissolves or merely stops being reinforced is UNKNOWN** — the
+  lessons-log rule for the sibling case (`garrison` negative) is that a negative PREVENTS, it does
+  not EVACUATE, and there is no measurement either way for `front_unit_request`. So the defensible
+  prediction is "no new dominion front in Europe", not "the existing one vanishes"; if the campaign
+  probe shows the order surviving, the remaining lever is a `put_unit_buffers` catcher parking the
+  refused guest at home (the §23 mechanism, MEDIUM risk, not shipped). **ASSUMED, source-labelled:**
+  "-100 is a full veto" is `WA_AI_MILITARY_ECONOMY.md` §3 E2, a NORMATIVE repo rule, not an engine
+  measurement — nothing in the log settles it empirically.
+- **Accepted risks, recorded rather than bounded (both raised by the lessons review).** (1) The
+  european leg's only exits are France-shaped (`fall_of_france` / capitulated / out of faction /
+  disjointed idea shed / non-historical difficulty). On an ahistorical branch where France SURVIVES
+  and keeps a disjointed-government idea indefinitely, overseas guests stay vetoed off all European
+  ground with no bound — wider than the five french keys ever were. One-line fix if it bites: add a
+  calendar or "bulwark no longer at war" limb to `_western_bulwark_accepts_guests`. (2) Leg B's camp
+  test has no path for a masser that is ideologically aligned but NEUTRALITY-ruled with its camp
+  polling under 0.45 — the Nationalist-Spain shape from the lessons log, where fascism never passed
+  neutrality. Its wargoal limbs are blocked too, so such a masser arms no surge at all.
+- Open engine question, ASSUMED, owner-settleable in one screenshot: which area the engine matches
+  a front to when its path straddles two (now moot for this leg, since it targets per state). `tag RAJ` + `imgui show ai-strategy` mid-battle — if the
+  Rhine front already resolved to `france`, the `-100` was reaching it all along, the new `germany`
+  entry is a no-op, and the only remaining lever is a `put_unit_buffers` catcher parking the
+  refused guest at home (the mechanism §23 proved on CAN; MEDIUM risk, unresolved two-order
+  arbitration, not shipped).
+- **Leg A1 (benelux) — PARTIAL.** Dominion presence in metropolitan France/Benelux is down to
+  **1-3 divisions per save** (RAJ Moselland + Alsace-Lorraine 1940.3/1940.5, RAJ Vlaanderen +
+  Provence 1940.6, AST Nord-Pas-de-Calais 1940.6) but never zero, with both the Country -100 and
+  the Faction -100 armed. **RETRACTED 2026-08-31, same day:** this bullet first read that as
+  "`-100 is a full veto` is FALSIFIED". The per-division attribution below shows the residual is
+  ground the vetoes never named (`germany`) plus transit, so the strength of -100 is UNTESTED by
+  this campaign, not disproven. Nothing here supports escalating the value.
 - Unrelated anomalies surfaced by the same pass, NOT admitted as subjects (one line each, per the
   admission rule): Axis held **Marsa Matruh 1943.2-1944.1** (14 months) and Libya was not cleared
   until 1945.6-10 — far downstream of a 1939-40 positioning change, cause unknown; **SAF drops 6→1
