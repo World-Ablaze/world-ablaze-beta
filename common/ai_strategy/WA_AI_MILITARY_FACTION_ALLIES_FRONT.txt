@@ -61,10 +61,11 @@ WA_AI_MILITARY_ALLIES_southeast_asia_sink = {
 #          in BEL/HOL mid-battle of France).
 # range:   -100 (E2 floor, full veto)
 # policy:  Additive per area; escape hatch (WA_AI_MILITARY_ECONOMY.md 2.4): the audience trigger
-#          excludes every European-capital member, so the veto can never reach a homeland defender;
-#          a dead, capitulated, fallen or out-of-faction bulwark opens the gate and this brake
-#          stands down with it. On non-historical difficulty the gate is always open, so the brake
-#          never arms there.
+#          excludes every European-capital member AND every member of the bulwark's own bloc, so
+#          the veto can never reach a homeland defender - including a colonial subject standing on
+#          its own ground, which the colonial leg below would otherwise cover; a dead, capitulated,
+#          fallen or out-of-faction bulwark opens the gate and this brake stands down with it. On
+#          non-historical difficulty the gate is always open, so the brake never arms there.
 # domain:  FRONT
 WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark = {
 	enable = {
@@ -72,29 +73,26 @@ WA_AI_MILITARY_ALLIES_overseas_guests_wait_for_bulwark = {
 	}
 	abort_when_not_enabled = yes
 
+	# [bof-commonwealth-posture] ONE state key instead of the five french area keys this block
+	# shipped with. An enumerated list is always one theatre short - the measured leaks were a
+	# Rhine front in `germany` and Norway staging in `scandinavia`, neither named - and an area
+	# key cannot settle a front whose path straddles two areas, which a per-state test does.
+	# The trigger carves out soil the mission owner OWNS, so its own islands and stations are
+	# defended by the whole Commonwealth however long the bulwark keeps refusing guests.
 	ai_strategy = {
 		type = front_unit_request
-		area = benelux
+		state_trigger = { WA_AI_MILITARY_is_european_ground_barred_to_guests = yes }
 		value = -100
 	}
+	# [bof-commonwealth-posture] the colonial leg. The european leg above covers Europe only,
+	# and the guests the gate refused line up on the bulwark bloc's colonial ground
+	# instead - the Maghreb and the Levant mandate, both held by its subjects. north_africa is
+	# ONE area Morocco->Egypt, so an area key cannot brake the French side without braking
+	# Egypt; a state_trigger can. The bloc itself is out of the audience, so this never vetoes
+	# a colonial subject off its own soil.
 	ai_strategy = {
 		type = front_unit_request
-		area = north_france
-		value = -100
-	}
-	ai_strategy = {
-		type = front_unit_request
-		area = france
-		value = -100
-	}
-	ai_strategy = {
-		type = front_unit_request
-		area = west_france
-		value = -100
-	}
-	ai_strategy = {
-		type = front_unit_request
-		area = south_france
+		state_trigger = { WA_AI_MILITARY_is_western_bulwark_colonial_ground = yes }
 		value = -100
 	}
 }

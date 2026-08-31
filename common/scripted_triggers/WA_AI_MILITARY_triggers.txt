@@ -1053,20 +1053,29 @@ WA_AI_MILITARY_italian_power_shares_german_ideology = {
 WA_AI_MILITARY_western_bulwark_is_collapsing = {
 	FRA = {
 		exists = yes
-		surrender_progress > 0
+		surrender_progress > 0.4
 	}
 }
 
-# The verdict below is the owner's rule of 2026-08-21, kept literally: the Italian and German powers
-# share an ideology group, AND either the western bulwark is coming apart or the calendar has passed
-# 1940.8.1. The date is an OR fallback, never the only path (AGENTS.md design principle 1) - it can
-# only make the tripwire arm EARLIER in a world where France does not fall, and removing it would
-# leave the dynamic term standing on its own.
+# The tripwire verdict: the Italian and German powers share an ideology group, AND one of three
+# warnings - the western bulwark is coming apart, the German power is AT WAR with the bulwark
+# ([bof-commonwealth-posture], the widening recorded in WA_AI_MILITARY_SYSTEM.md section 20: the
+# collapse limb alone gave days of warning on a historical timeline; the war limb gives months),
+# or the calendar has passed 1940.8.1. The date is an OR fallback, never the only path (AGENTS.md
+# design principle 1) - it can only make the tripwire arm EARLIER in a world where France does not
+# fall, and removing it would leave the dynamic terms standing on their own.
 WA_AI_MILITARY_italian_entry_likely = {
 	WA_AI_MILITARY_italian_power_shares_german_ideology = yes
 	OR = {
 		WA_AI_MILITARY_western_bulwark_is_collapsing = yes
-		date > 1940.8.1
+		any_country = {
+			WA_AI_CONFIG_MILITARY_is_western_european_bulwark = yes
+			has_capitulated = no
+			any_enemy_country = {
+				WA_AI_CONFIG_MILITARY_is_german_homeland_power = yes
+			}
+		}
+		date > 1940.9.1
 	}
 }
 
@@ -1154,6 +1163,31 @@ WA_AI_MILITARY_gulf_approach_imminent = {
 	}
 }
 
+# PREV-relative: the scope is the enquired third country. The Gulf family's pre-war tell, because a
+# client state under a treaty carrying `can_not_declare_war` holds no wargoal until the tick it
+# declares - the wargoal limbs alone arm the surge only once the border is lost. Each limb needs the
+# camp to be an ENEMY's and NOT the mission owner's own, or the owner's ideology inverts the test and
+# every neighbour sharing it reads hostile. Neutrality is no camp at all, so it is not enumerated.
+WA_AI_MILITARY_is_in_an_enemy_ideological_camp = {
+	OR = {
+		AND = {
+			OR = { has_government = fascism   fascism > 0.45 }
+			ENG = { any_enemy_country = { has_government = fascism } }
+			NOT = { ENG = { has_government = fascism } }
+		}
+		AND = {
+			OR = { has_government = communism   communism > 0.45 }
+			ENG = { any_enemy_country = { has_government = communism } }
+			NOT = { ENG = { has_government = communism } }
+		}
+		AND = {
+			OR = { has_government = democratic   democratic > 0.45 }
+			ENG = { any_enemy_country = { has_government = democratic } }
+			NOT = { ENG = { has_government = democratic } }
+		}
+	}
+}
+
 # The SIZE question, asked at ENG scope so the verdict is invariant across the three call paths.
 # True when the imminent-threat holder is not merely present but has a force on the approach.
 WA_AI_MILITARY_gulf_approach_massed = {
@@ -1171,6 +1205,17 @@ WA_AI_MILITARY_gulf_approach_massed = {
 			controls_state = 292
 		}
 		WA_AI_MILITARY_gulf_approach_massing = yes
+		# [bof-commonwealth-posture] the masser must also MEAN it - without this term a NEUTRAL
+		# Gulf state's peacetime home army arms the surge tier. The ideological limb is what
+		# carries the pre-war case: a treaty idea with `can_not_declare_war` makes the wargoal
+		# limbs unreachable for a client state right up to the declaration, so they alone would
+		# arm the surge only once the border was already lost.
+		OR = {
+			has_war_with = ENG
+			has_wargoal_against = ENG
+			is_justifying_wargoal_against = ENG
+			WA_AI_MILITARY_is_in_an_enemy_ideological_camp = yes
+		}
 	}
 }
 
@@ -3588,17 +3633,59 @@ WA_AI_MILITARY_western_bulwark_accepts_guests = {
 
 # COUNTRY scope. The gate's BRAKE audience: the overseas member (capital outside Europe) the bulwark
 # is currently refusing. Exists because a closed gate only withholds the +150 boosts - engine default
-# assignment still routes a total-commitment released army onto the only live European fronts (owner
-# report 2026-08-27: RAJ divisions in BEL/HOL mid-battle of France). European-capital members are
-# excluded so the veto can never reach a country defending its own or a neighbour's homeland.
-# ASSUMED: front_unit_request -100 fully vetoes a front (E2/documentation.info prose, no save proof);
-# no European member's capital leaves Europe before fall_of_france opens the gate (an exile capital
-# off-continent would flip that member into this audience for the remaining window).
+# assignment still routes a total-commitment released army onto the only live European fronts.
+# TWO exclusions carry the ECONOMY.md 2.4 escape hatch, and a veto-class value needs both: a
+# European-capital member is defending its own or a neighbour's homeland, and a member of the
+# bulwark's own BLOC has a non-European capital yet is standing on ITS OWN colonial ground - which
+# the colonial leg of this brake would otherwise veto it off.
+# ASSUMED: no European member's capital leaves Europe before fall_of_france opens the gate (an exile
+# capital off-continent would flip that member into this audience for the remaining window). Also
+# ASSUMED, and the open question when a guest is still seen on braked ground: which area the engine
+# matches a front to when its path straddles two - a veto only reaches the area the front resolves
+# to, and a division walking through to a garrison elsewhere is not on a front at all.
 WA_AI_MILITARY_is_overseas_guest_refused_by_bulwark = {
 	WA_AI_CONFIG_is_in_allies = yes
 	has_war = yes
 	NOT = { capital_scope = { is_on_continent = europe } }
+	NOT = { WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc = yes }
 	NOT = { WA_AI_MILITARY_western_bulwark_accepts_guests = yes }
+}
+
+# STATE scope. Soil the mission owner OWNS - in Europe that is its islands plus its stations
+# (Malta, Gibraltar, Cyprus), not the Isles alone. Owner, never controller: an invader flips the
+# controller, and a landing is exactly when the guests must be free to fight there, while ground
+# the owner merely OCCUPIES must stay barred. Assumes every guest in the brake's audience is that
+# owner's subject; the day one is not - a US bridgehead owning European soil - it is vetoed off
+# its own ground and this needs generalising to "the guest's own side".
+WA_AI_MILITARY_is_mission_owner_soil = {
+	OWNER = { WA_AI_CONFIG_MILITARY_is_british_mission_owner = yes }
+}
+
+# STATE scope (read from the brake's european leg). European ground a REFUSED GUEST is barred from -
+# named by continent rather than by a list of ai_areas so a theatre nobody enumerated (Scandinavia,
+# Finland, the Balkans) cannot be the next hole, and settled per state so a front straddling two
+# areas has no ambiguous match. The mission owner's own soil is never barred: a dominion defending
+# it is doing home defence, not imposing on a bulwark that has refused it.
+WA_AI_MILITARY_is_european_ground_barred_to_guests = {
+	is_on_continent = europe
+	NOT = { WA_AI_MILITARY_is_mission_owner_soil = yes }
+}
+
+# STATE scope (read from the brake's state_trigger leg). Colonial ground the western bulwark's
+# BLOC controls - the Maghreb and the Levant mandate, its two theatres an Allied guest can walk
+# into. Controller, not owner: ground that changes hands (Vichy, an Axis conqueror, Torch) leaves
+# the set by itself. Bounded to those two continents on purpose - Europe is covered by the brake's
+# european leg, and the bloc's Asian/American colonies are ground a guest may have to defend.
+# Exists because north_africa is one ai_area Morocco->Egypt, so an area key cannot veto the French
+# side without vetoing Egypt.
+WA_AI_MILITARY_is_western_bulwark_colonial_ground = {
+	OR = {
+		is_on_continent = africa
+		is_on_continent = middle_east
+	}
+	CONTROLLER = {
+		WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc = yes
+	}
 }
 
 # ==== shared observations extracted by the factorisation pass (lot D) ====
