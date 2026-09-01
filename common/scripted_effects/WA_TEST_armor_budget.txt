@@ -97,6 +97,9 @@ WA_TEST_ABG_report = {
 	if = { limit = { WA_AI_PRODUCTION_light_support_armor_line_off = yes } set_temp_variable = { _abt_lsoff = 1 } }
 	set_temp_variable = { _abt_lscapped = 0 }
 	if = { limit = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes } set_temp_variable = { _abt_lscapped = 1 } }
+	set_temp_variable = { _abt_ltcap = constant:wa_ai_production.army_composition.light_armor_fielded_cap }
+	set_temp_variable = { _abt_ltcapped = 0 }
+	if = { limit = { WA_AI_PRODUCTION_light_armor_at_fielded_cap = yes } set_temp_variable = { _abt_ltcapped = 1 } }
 
 	# [historical-tank-park] Mixed-composition latch vs live trigger: latched is what the enables
 	# read (flag value 15001), live is what the latch would decide today - divergence after a
@@ -111,7 +114,7 @@ WA_TEST_ABG_report = {
 
 	log = "  tmpl  : light=[?_abt_tl|.0]  light-support=[?_abt_tls|.0]  medium=[?_abt_tm|.0]  light-to-medium-switch=[?_abt_tsw|.0]  heavy=[?_abt_th|.0]  modern=[?_abt_tmo|.0]"
 	log = "  lsrun : has-support-chassis=[?_abt_lschassis|.0]  owns-light-role=[?_abt_lsowns|.0]  fielded=[?_abt_lsfield|.0](cap [?_abt_lscap|.0], reached=[?_abt_lscapped|.0])  before-1942=[?_abt_lsdate|.0]"
-	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0]  conv-window=[?_abt_lsconv|.0]  (latched drives the enables; conv-window=1 = park converting to medium)"
+	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0](cap [?_abt_ltcap|.0], reached=[?_abt_ltcapped|.0])  conv-window=[?_abt_lsconv|.0]  (latched drives the enables; conv-window=1 = park converting to medium)"
 	log = "  lsline: chassis-line-ON=[?_abt_lsline|.0]  chassis-line-OFF=[?_abt_lsoff|.0]  (exactly one must be 1 once the chassis is unlocked; both 0 = the country has no support chassis)"
 	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  (both 1 = the two light templates are enabled at once, which the exclusivity is supposed to prevent)"
 
@@ -379,7 +382,7 @@ WA_TEST_ABG_report = {
 	else_if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_xh = _abt_rem } }
 
 	# [light-support-conversion] Same tank-park light floor as the shipped effect, RE-TYPED
-	# (contract rule 4) INCLUDING the gate - spelled from its six terms rather than calling
+	# (contract rule 4) INCLUDING the gate - spelled from its eight terms rather than calling
 	# WA_AI_PRODUCTION_should_floor_tank_park_budget, so a gate defect shows as a C/D mismatch
 	# instead of reproducing in the expect walk.
 	set_temp_variable = { _abt_floor = 0 }
@@ -391,6 +394,8 @@ WA_TEST_ABG_report = {
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
 			NOT = { any_enemy_country = { is_major = yes } }
 			NOT = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes }
+			NOT = { WA_AI_PRODUCTION_light_armor_at_fielded_cap = yes }
+			has_active_mission = SOV_the_greatest_tank_army
 			WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 			check_variable = { _abt_xl < constant:wa_ai_production.army_composition.tank_park_light_floor }
 		}
