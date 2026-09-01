@@ -77,6 +77,9 @@ WA_AI_PC_CORRIDOR_define_north_africa = {
 	clear_temp_array = corridor_node_depot_
 	clear_temp_array = corridor_node_port_
 	clear_temp_array = corridor_node_fwdport_
+	# [levant-iraq] 0 = the band is decided by the node list alone (an enemy-held node = rail_war).
+	# North Africa keeps that rule: its holders prepare in peace, which is the rail_prewar case.
+	set_temp_variable = { _corridor_war_band_ = 0 }
 
 	# node                                          depot  port   fwdport
 	add_to_temp_array = { corridor_node_prov_ = 7132 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 1 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Oran         (459) - port wanted (naval_base 6), western entry
@@ -100,4 +103,43 @@ WA_AI_PC_CORRIDOR_define_north_africa = {
 	add_to_temp_array = { corridor_node_prov_ = 5078 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# hub 5078     (960 Libyan Plateau)
 	add_to_temp_array = { corridor_node_prov_ = 11967 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Marsa Matruh (452)
 	add_to_temp_array = { corridor_node_prov_ = 4076 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Alexandria   (447)
+}
+
+# [levant-iraq] The Jordan approach to Iraq - Ma'an 7151 -> Amman 4017 -> Ruwaished 4440, the
+# Jordanian border province with Iraq. Purpose: while the holder of Jordan is at war with the
+# Iraqi power, put a supply hub on the last friendly province before the Iraqi border and connect
+# it to the rail the Levant already has. Owner order 2026-09-01; the gate is
+# WA_AI_PC_corridor_theatre_live_levant_iraq (WA_AI_CONSTRUCTION_triggers.txt) and it closes on
+# the Iraqi power's capitulation.
+#
+# Map facts (2026-09-01, map/railways.txt + map/supply_nodes.txt + the generated province graph):
+# ALL THREE NODES ARE IN STATE 455 (Jordan), and so is every province the pathfinder can put
+# between them - 7151-10089-4017 and 4017-4591-4574-1544-4440. That is load-bearing: PC admission
+# is scoped to the state of a segment's FIRST province, so every segment of this corridor is
+# scoped to one state with one controller and the pathfinder/admission mismatch that forced the
+# 13481 junction into the North Africa list cannot arise here.
+#   7151  supply node, railed L1 to 4017 via 10089 (map/railways.txt:1095) - the anchor on the
+#         existing Levant network; Palestine reaches it over 4111-1074-7170-7151 and 7170-7176.
+#   4017  supply node, railed L1 - forced junction, so the hop to 4440 leaves from the Jordanian
+#         railhead instead of a route the sizer would have to pay for twice.
+#   4440  land / arid (map/definition.csv:4441), NO supply node and NO railway at start; its only
+#         Jordanian neighbour is 1544. Neighbours 13831 / 13832 are state 675 (Iraq) - this is the
+#         border province, which is why the depot goes here and not one province back.
+# No port node: the corridor is entirely inland.
+# No node inside Iraq, deliberately - the owner asked for a depot on 4440 fed from the Levant, not
+# for rail laid into Iraq. The war band therefore cannot come from an enemy-held node and is
+# declared here instead (_corridor_war_band_ = 1).
+WA_AI_PC_CORRIDOR_define_levant_iraq = {
+	clear_temp_array = corridor_node_prov_
+	clear_temp_array = corridor_node_depot_
+	clear_temp_array = corridor_node_port_
+	clear_temp_array = corridor_node_fwdport_
+	# [levant-iraq] 1 = rail_war whatever the node list says. This corridor only exists while its
+	# gate reads a live war, so the prewar band would price a wartime measure as preparation.
+	set_temp_variable = { _corridor_war_band_ = 1 }
+
+	# node                                          depot  port   fwdport
+	add_to_temp_array = { corridor_node_prov_ = 7151 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Ma'an       (455) - existing hub + rail, the Levant anchor
+	add_to_temp_array = { corridor_node_prov_ = 4017 }	add_to_temp_array = { corridor_node_depot_ = 0 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Amman       (455) - existing hub + rail, forced junction
+	add_to_temp_array = { corridor_node_prov_ = 4440 }	add_to_temp_array = { corridor_node_depot_ = 1 }	add_to_temp_array = { corridor_node_port_ = 0 }	add_to_temp_array = { corridor_node_fwdport_ = 0 }	# Ruwaished   (455) - depot wanted, Iraqi border
 }

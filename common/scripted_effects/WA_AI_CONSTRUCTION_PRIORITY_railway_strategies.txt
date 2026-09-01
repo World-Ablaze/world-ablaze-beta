@@ -1220,14 +1220,17 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 #	(railway_core) does the pathfinding, admission, validation and telemetry.
 #
 #	ROOT = builder country (country scope).
+#	<<< _corridor_id_                          [levant-iraq] which corridor to select, constant:wa_ai_pc.corridor_id.*
+#	                                           (north_africa / levant_iraq). Set by the caller before every call.
 #	>>> corridor_ran_                          1 = the theatre gate passed and the arrays are meaningful
 #	>>> arr:corridor_route_start_ / _end_       province pairs (consecutive nodes both "ours")
 #	>>> arr:corridor_route_level_ / _prio_      per route
 #	>>> arr:corridor_hub_prov_ / _kind_ / _prio_ hubs to build at a node we hold: kind 17 = supply hub,
 #	                                            14 = naval base
 #
-#	The corridor is SYMMETRIC and tag-free; the priority band is rail_war when any node is enemy-held,
-#	rail_prewar otherwise (the owner of Libya / Egypt / Tunisia preparing in peace).
+#	The corridor is SYMMETRIC and tag-free; the priority band is rail_war when any node is enemy-held
+#	or when the corridor's define declares _corridor_war_band_ = 1, rail_prewar otherwise (the owner of
+#	Libya / Egypt / Tunisia preparing in peace).
 #	Sequencing emerges from control: Mechili<->Tobruk is never requested before Mechili is held.
 #	Cadence and level are constant:wa_ai_railway.corridor.*.
 #
@@ -1258,8 +1261,20 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 	set_temp_variable = { corridor_reach_ = 0 }
 	set_temp_variable = { corridor_orphan_ = 0 }
 
-	### Corridor data (one corridor today; a second theatre = a second define + a second block below)
-	WA_AI_PC_CORRIDOR_define_north_africa = yes
+	### Corridor data, selected by _corridor_id_ (set by the caller, WA_AI_PC_railway_corridor_pass).
+	### [levant-iraq] A new theatre = a new define here, a new id in the gate dispatch below, a new
+	### call in the pass, and a row in the doc's "Theatre corridors" table. Nothing else in this
+	### effect is corridor-specific: an unknown id defines no nodes, so the classification loop runs
+	### over an empty list, _corridor_claim_n_ stays 0 and the pass is silent - the correct null.
+	if = { limit = { check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.north_africa } } WA_AI_PC_CORRIDOR_define_north_africa = yes }
+	else_if = { limit = { check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.levant_iraq } } WA_AI_PC_CORRIDOR_define_levant_iraq = yes }
+	else = {
+		clear_temp_array = corridor_node_prov_
+		clear_temp_array = corridor_node_depot_
+		clear_temp_array = corridor_node_port_
+		clear_temp_array = corridor_node_fwdport_
+		set_temp_variable = { _corridor_war_band_ = 0 }
+	}
 
 	### Classify every node once: ours (ROOT may build) / our charge (ROOT should pay) / enemy-held
 	set_temp_variable = { _corridor_hostile_n_ = 0 }
@@ -1299,7 +1314,20 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 	if = {
 		limit = {
 			check_variable = { _corridor_claim_n_ > 0 }
-			WA_AI_PC_corridor_theatre_live_north_africa = yes
+			# [levant-iraq] one theatre gate per corridor id. AND-pairs, never an `if` with a limit:
+			# an `if` whose limit is false is VACUOUSLY TRUE inside a trigger, which would arm every
+			# corridor for every id (wa-pdxscript, and the defect measured in the rail-corridor cheat
+			# on 2026-09-01).
+			OR = {
+				AND = {
+					check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.north_africa }
+					WA_AI_PC_corridor_theatre_live_north_africa = yes
+				}
+				AND = {
+					check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.levant_iraq }
+					WA_AI_PC_corridor_theatre_live_levant_iraq = yes
+				}
+			}
 		}
 		set_temp_variable = { corridor_ran_ = 1 }
 
@@ -1308,9 +1336,18 @@ WA_AI_PC_railway_STRATEGY_theatre_corridor = {
 		### if missing"). Must run here: it reads corridor_node_ours_, just filled by the loop above.
 		WA_AI_PC_corridor_compute_sizing = yes
 
-		### Band: war when an enemy holds a node of this corridor, preparation otherwise
+		### Band: war when an enemy holds a node of this corridor, preparation otherwise.
+		### [levant-iraq] second term: a corridor whose own gate IS a war gate declares
+		### _corridor_war_band_ = 1 in its define, because its node list can be entirely behind our
+		### own lines and would then price a wartime measure as peacetime preparation. North Africa
+		### declares 0, so its band is decided exactly as before.
 		if = {
-			limit = { check_variable = { _corridor_hostile_n_ > 0 } }
+			limit = {
+				OR = {
+					check_variable = { _corridor_hostile_n_ > 0 }
+					check_variable = { _corridor_war_band_ = 1 }
+				}
+			}
 			set_temp_variable = { _corridor_prio_ = constant:wa_ai_pc.prio.rail_war }
 		}
 		else = {

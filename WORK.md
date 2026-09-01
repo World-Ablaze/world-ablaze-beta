@@ -716,338 +716,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### armor-class-handoff — SHIPPED-UNTESTED (2026-09-01)
-- Unparked 2026-09-01 on an owner task (the May-1941 two-medium-templates report; MIS addendum
-  below). Was parked 2026-08-31 (WIP limit, `aifc-revived-tag-residue` entered on an owner task);
-  state at parking: SHIPPED-UNTESTED — the conversion chain PASSED live twice (owner runs
-  2026-08-29) and its remaining exits are mostly campaign probes.
-  Still owed: the handoff-half console read (`event wa_abg.1 GER` in 1940.6), the
-  campaign reads in the Closed-when line, and the MIS console read in the addendum below.
-- SHIPPED-UNTESTED (pre-parking): it changes the ENTRY GATE of a system that has a `WA_TEST_armor_budget`
-  harness, so the owner console run is owed before TESTED. Paste `event wa_abg.1 GER` output here.
-- Scope: owner request 2026-08-29, from the question "pourquoi GER fait pas de chars moyens sur
-  la save 29 juin 40". Intended behaviour: a country whose armour layer is switched on always
-  holds at least one armour template — the light class is never closed before the medium class
-  can open, and no tag list can gate the medium class shut.
-- Symptom, MEASURED (`GER_1940_06_29_02.hoi4`, 1940.6.29, build ≥ `d86d5f5b9`): **3 countries on
-  the whole map hold any `WA_*_ARMOR_TEMPLATE` flag** — ENG (heavy+medium), FRA (heavy), SOV
-  (light-support+heavy). GER, ITA, JAP, USA and every minor hold none. GER's
-  `wa_ai_armor_budget_medium` = 15 against `_light` = 0: the role budget wants 15% armour that
-  no template can train. Its 8 armour divisions are `history/` leftovers (`Light Tank template
-  E`), and its medium line runs at 15 factories = exactly the
-  `WA_AI_PRODUCTION_DEFAULT_tank_floor_medium` floor, because
-  `equipment_variant_production_factor` multiplies a need no template creates. 127 medium
-  chassis sit in the stockpile with nothing to mount them.
-- Cause, MEASURED (`813099474`, uncharted85, 2026-08-28): the light-era boundary moved 1941.1.1
-  → 1940.1.1 while the medium gate went from `OR = { DIVISIONS_focus_on_medium ; date > 1941.1.1 }`
-  — a universal date fallback — to a closed 7-entry OR of tag/tech literals with none. GER needs
-  `ger_medium_tank_chassis_2_3` (Panzer III L) and holds `..._2_2`. Two dates for one handoff,
-  moving in opposite directions, and every country outside the 7 entries could never field a
-  medium division at all (AGENTS.md principle 1: no generic fallback; principle 2: `has_tech =
-  ger_*` is a tag list in a tech costume).
-- Their intent, quoted, and why this replaces it rather than reverting: the commit message is
-  `"AI now uses multiple tank templates"` and the change's own shape says the rest — the
-  `_TEMPLATES_` family exists so the TEMPLATE layer can ask "is the chassis good enough to field
-  a division on" separately from the `_DIVISIONS_` family's "which chassis does the doctrine
-  push", read by production and research. **Mine covers it because** the accelerator half of
-  their list is kept verbatim — a tech leader still mounts mediums before the era boundary, which
-  is the behaviour they added — and only its role changes: with
-  `WA_AI_CONFIG_switch_from_light_to_medium_armor` as the last OR term the list can accelerate but
-  never gate. Reverting would have thrown away that acceleration.
-- Single source of truth (the owner's criterion for this session): the era boundary is now ONE
-  literal, `WA_AI_CONFIG_switch_from_light_to_medium_armor`, and both sides of the handoff derive
-  from it — `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` closes light,
-  `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` opens medium. Net −1 trigger, −2 encodings.
-  `date` has no validated `constant:` context (registry skill), so the derivation IS the
-  mechanism; there is no script-constant form available.
-- Commit hygiene, MEASURED and repaired: a CONCURRENT session committing the same two paths at
-  04:45 swept this subject's trigger edits into `6654f729f` ("fix(templates): motorised tech gate
-  read a tech the majors cannot have"), whose message described none of them. On the owner's
-  instruction (unpushed, other session finished) that commit was split: `8d0b2e1c6` re-creates
-  the motorised fix alone, with its original author and date, and this subject's ship carries the
-  armour work. The split was hunk-classified mechanically, not by hand — 2 hunks theirs, 6 mine,
-  none mixed — and the rebuild of base + all hunks was asserted byte-equal to the `6654f729f`
-  blobs before anything was written.
-- Changed:
-  - `WA_AI_CONFIG.txt`: `_TEMPLATES_focus_on_medium_armor` → `_TEMPLATES_admits_medium_armor`,
-    same 7 entries plus the boundary as a final OR term. `_TEMPLATES_focus_on_light_armor`
-    DELETED (both readers go). `_TEMPLATES_focus_on_heavy_armor` untouched — heavy is optional,
-    a country without it keeps medium, so it cannot open a gap.
-  - `WA_AI_TEMPLATES_triggers.txt`: `switch_from_light_to_medium_armor` gains
-    `has_medium_armor_unlocked` — a HANDOFF, not a cliff. `use_light_armor_templates` and
-    `use_light_support_armor_templates` lose the deleted term; `use_medium_armor_templates` and
-    `use_medium_support_armor_templates` take the renamed one.
-  - Comment repaired (AGENTS rule 7, comments drift): the `[armor-role-budget]` header on
-    `use_light_support_armor_templates` said the switch "fires 1941.1.1 for every country";
-    `813099474` made it 1940.1.1 for non-SOV and the header had gone stale in a day.
-- Widening, stated because the deletion causes it: `use_light_support_armor_templates` loses a
-  tag term, so the finite light-support run is open to any country holding a light-support
-  chassis. Today those techs are `sov_light_tank_support_chassis_*` only, so it is a no-op, and
-  the widening is the intent already written into
-  `WA_AI_TEMPLATES_light_support_armor_owns_light_role` ("a second country researching one takes
-  the light slot the same way, which is the intent, not a leak"). A generic support chassis would
-  make it a real behaviour change.
-- Handoff walk at the real cadence (monthly template pulse). LIGHT / MEDIUM = the flag carried.
-
-  | Country class | 1939.12 | 1940.1 | 1941.1 | 1942.1 |
-  | --- | --- | --- | --- | --- |
-  | GER-like (light + medium unlocked, not in the accelerator list) — HEAD today | light | **none** | **none** | **none** |
-  | GER-like — after this change | light | medium | medium | medium |
-  | Minor with light only, no medium tech — HEAD today | light | **none** | **none** | **none** |
-  | Minor with light only — after this change | light | light | light | light |
-  | SOV (boundary 1941.1.1, light-support owns the light role) | light-support | light-support | light-support + medium | medium |
-
-  The GER-like `none` row IS the measured symptom. The minor row is a hole that predates
-  `813099474` (the old boundary produced it at 1941.1.1 instead) and is closed here as well.
-- Decommission window (lessons rule: a change to which `ai_template` target is enabled is a
-  decommission hazard). At the 1940.1 pulse the light flag clears and the medium flag sets in the
-  SAME `WA_AI_TEMPLATES_calculate_all_templates` pass, so the engine decommissions whatever held
-  `light_armor` — for GER, `Light Tank template E` and its 8 divisions. That decommission is
-  ALREADY what HEAD does: `813099474` closes light on the same date with or without this change.
-  What changes is that the freed role gets a successor instead of the country being left empty.
-- **EXTENDED 2026-08-29 (owner order, save 1941.4.9): the DIVISION half — conversion instead of
-  abandonment.** Symptom, MEASURED (owner screenshot, `imgui show ai-templates` + division
-  production, GER 1941.4.9): light-armor divisions frozen post-boundary, medium built NEW
-  (current 6 / wanted 38), no light row in the wanted table. Cause, MEASURED (script): the 8
-  LIGHT_MEDIUM transition templates (5109–5116, `replace_with` → medium at
-  `replace_at_match = 0.8` — the mod's only division-conversion mechanism) all sat behind
-  `use_light_armor_templates`, which contains `NOT = { switch_from_light_to_medium_armor }` —
-  the boundary that says "go medium" killed the only path there. Second gap: every transition
-  rung required `use_light_td_armor`, so a TD-less country could never converge even pre-boundary.
-  Fix: (a) new `WA_AI_TEMPLATES_should_convert_light_to_medium_armor` (post-boundary window:
-  switch + light unlocked + medium templates live + NOT light-support-owns + NOT early-expansion)
-  and `WA_AI_TEMPLATES_can_use_light_transition_templates` (OR of pre-boundary pair /
-  conversion window); the 8 transition rungs re-gate onto the OR; (b) TD-less rungs 5122
-  (mech) / 5121 (mot) added below 5109, conversion-window ONLY so the pre-boundary ladder is
-  byte-identical in behaviour; new templates `..._LIGHT_MEDIUM_ARMOR_30_MOT/_30_MEC` follow the
-  74-template shape rules, `replace_with` → the plain 30-width medium matching their infantry
-  (mot rungs 5109/5121 → `GENERIC_MEDIUM_ARMOR_30_MOT`, mech rungs 5113/5122 → `_30_MEC`;
-  retargeted in the medium-name-swap addendum below).
-  RS reachability (lessons designer-deadlock rule): 5121/5122 copy 5100/5101's column structure
-  battalion-for-battalion (15 line battalions, RS 5+5) with 3 tank battalions swapped medium —
-  the RS shape is the one the live default light ladder already fields, not a new layout.
-  Parked saves, MEASURED (`WA_AI_misc_on_actions.txt:274` monthly `calculate_templates`; the
-  chain clears and re-sets the flag every pass): a save already past the boundary with the flag
-  at 0 — the 1941.4.9 symptom save — re-enters the window on its FIRST monthly pulse under this
-  build. Retroactive, no migration needed.
-  Boundary-pulse walk (lessons reviewer required this table; monthly pulse cadence). Lessons
-  MEASURED baseline: decommission = template frozen (never recruited) and DELETED at zero
-  divisions; fielded divisions are never disbanded.
-
-  | t | event | if engine upgrades want-0 roles | if it does not |
-  | --- | --- | --- | --- |
-  | t0 (first pulse ≥ boundary) | flag 0→5121-5122/5109-5116; enable-set change re-runs the one-template-per-role pass | old light template captured by the light role, transition target armed | same capture, target armed but idle |
-  | t1 (days-weeks) | field upgrade toward the transition target (needs medium tanks in stock), `replace_with` flips each division to the medium template at 0.8 match | divisions become medium, leave the light role | divisions stay frozen on the old template = HEAD behaviour |
-  | t2 (steady) | monthly recalc idempotent (terms monotone: date, techs) | light role empties, transition template deleted at zero divisions (lessons rule) — clean end state | enabled no-op target persists; count frozen, same as HEAD |
-
-  The honest failure mode is the right column, NOT "inert": the transition template itself sits
-  in a want-0 role and may be decommissioned before converting — never worse than HEAD (whose
-  divisions are already frozen), but conversion is UNPROVEN until the owner console run.
-  Reviews 2026-08-29: lessons CONCERNS (this table, RS note and the parked-save line are its
-  three required repairs) + architecture CONCERNS (verification lines below extended to cover
-  the `conv` harness row); both required-before-ship lists are discharged in this entry.
-- `role_ratio` entry burst, DERIVED at the real cadence (monthly reconcile, `armor_budget_ramp`
-  rung 1940 = 15). Per country, not map-wide — `role_ratio` entries are per-country persistent
-  strategies:
-
-  | Pulse | Books before | Entries emitted |
-  | --- | --- | --- |
-  | t0 Dec-1939 | light 10, inf 10 | 0 |
-  | t1 Jan-1940 (HEAD) | → light 0, inf 0 | 2 |
-  | t1 Jan-1940 (after) | → light 0, medium 15, inf 15 | 3 |
-  | t2 Feb-1940 | unchanged | 0 |
-
-  **+1 entry per country, once.** The Jan-1940 pulse was already a rung transition, so this rides
-  a burst the ramp's header already bounds (~9 transitions × 5 slots × 2, under 100 per country).
-  All terms are monotone (`has_tech`, `original_tag`, `date >`), so no flap: the accelerator needs
-  no latch. The pre-existing flicker risk is in the inherited parent
-  `WA_AI_TEMPLATES_use_armor_templates` (`num_of_military_factories > 150`), unchanged here.
-- Probe (standing, WA_TLM v34, `[armor-class-handoff]`): `WA_TLM_armor_enabled` /
-  `_roles_open` / `_gap` / `_gap_n` / `_gap_first_t` / `_gap_t` / `_last_t`, monthly, all AI
-  (`WA_TLM_sample_armor_templates`). The invariant is `enabled = 1` with `roles_open = 0`.
-  Standing under §3.8 criterion 3 — a system-health invariant, not the mechanism of one fix.
-  Second signal: `wa_ai_armor_budget_*` must be non-zero on any country reading `gap = 1`.
-  Registry + reading rule: `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §5 and §6f.
-- Harness (contract rule 4): `WA_TEST_armor_budget.txt` section B1b re-types the handoff from its
-  own terms — `era-boundary / admits-medium / medium-unlocked / light-unlocked` plus a
-  `coverage:` line printing `use-armor-templates` against the count of armour flags carried. `1`
-  and `0` on that line is the defect, in one row.
-- Recorded, NOT admitted as a subject (admission rule — no MEASURED symptom yet): 16 tags can
-  reach `has_medium_armor_unlocked` (ast bel can cze eng fra ger hun ita jap nzl pol sov spr swe
-  usa) and only 11 have a `common/ai_equipment/<TAG>_tank.txt`. AST, BEL, CAN, NZL and SPR can
-  now hold a medium template with no design behind it. **ASSUMED** that this leaves the line
-  unfillable rather than falling back to a generic design — there is no `generic_tank.txt`, only
-  `generic_naval.txt`. Pre-existing exposure (the old `date > 1941.1.1` fallback reached the same
-  five tags a year later); this change moves it 12 months earlier. The probe will name it if it
-  matters.
-- **ADDENDUM 2026-08-29 (owner request): medium-name swap.** MEASURED: `_30_MEC` (flag 6100) held
-  motorized content, `_30_MOT` (6101) mechanized — names inverted vs content; the calculator
-  ladder (mechanized → 6101, fallback → 6100) matched CONTENT, so the defect was the NAME.
-  Blame: at `cbfe633b9` names matched content; `d7e227e49` swapped the two contents and the
-  calculator but truncated the names in place (`_MEC_MOT`→`_MEC`, `_MOT_MOT`→`_MOT`) — drift,
-  not intent (lessons reviewer: no recorded deliberate inversion). Fix: names swapped (flags and
-  content stay put), mot rungs 5109/5121 retargeted `replace_with` → `_30_MOT` (same physical
-  block as before, renamed), mech rungs 5113/5122 keep `_30_MEC` which now IS the mechanized
-  6101 block — before this, their `replace_with` named a block whose enable flag (6100) a
-  mechanized country never carries. **ASSUMED** the engine honours the target's enable flag in
-  `replace_with`: under that reading this repairs a dead conversion pointer for mechanized
-  countries; under the other reading (enable ignored) they were converting into the MOTORIZED
-  medium and now convert into the mechanized one — a live behaviour change either way, covered
-  by the existing `conv` harness row and the conversion closing criterion below. Modern mirror
-  regenerated (`gen_ai_medium_modern_mirror.py`, 6600/6601 follow). Recorded, NOT admitted
-  (same class, no MEASURED symptom): mot rungs 5110/5111/5112 (`armored_light.txt:567/602/635`)
-  still `replace_with` mechanized-only targets (6102/6110-family / a `_MEC` light rung) that a
-  motorized country never enables — same dead-pointer class, untouched.
-- Verification, script-level, DONE: `python tools/check_templates.py` 0 ERROR 0 WARN (this is the
-  join-key diff the lessons reviewer asked for — VALUE-NO-TEMPLATE / TEMPLATE-NO-VALUE over the
-  medium ladder and its generated +500 mirror). `check_constants.py`, `check_worklist.py`,
-  `check_skill_refs.py` all exit 0.
-- Verification OWED to the owner, in an observer game, before TESTED: `event wa_abg.1 GER`
-  in 1940.6 reads `handoff: era-boundary=1 admits-medium=1 medium-unlocked=1` and
-  `coverage: use-armor-templates=1 armour-template-flags-carried=1`. Control: the same command on
-  a 1936 minor reads `use-armor-templates=0` and `flags-carried=0`, which is not a defect.
-  For the conversion half: `event wa_test_tmpl.1 GER` on any post-1940 save (the 1941.4.9 symptom
-  save is ideal) reads `conv : window=1 trans=5xxx` (trans=0 is the defect), and the
-  `imgui show ai-templates` light role shows the `->` arrow on a LIGHT_MEDIUM template; one month
-  later the light-armor division count has moved toward the medium role (the want-0-upgrade
-  ASSUMED settled live).
-- Conversion half console run DONE 2026-08-29 (owner, GER save 1943.8.30, campaign build with
-  `06c485bfa` loaded): header `1 1 1 1 0`, `armour: light used=0 set=1 | medium used=1 set=1 |
-  heavy used=1 set=1`, **`conv : window=1 trans=5116`**, no `used=1 set=0` on any line — the
-  script half of the conversion is TESTED. Same session, owner imgui: medium role arrow on
-  `GENERIC_MODERN_ARMOR_30_MEC_MODERN_SPG_MODERN_TD_MODERN_SPAA` — the medium→modern +500 tier
-  is armed and in-role on a live campaign (MEASURED). STILL OPEN before the subject's conversion
-  claim closes: the want-0-upgrade ASSUMED — owner lets the save run ~1 month and reads whether
-  `light_armor current` (11.6 at 1943.8.30) falls as divisions cross to medium/modern; and the
-  original `event wa_abg.1 GER` run for the handoff half remains owed.
-- Field-upgrade valves opened 2026-08-29 (owner order "pousse les deux leviers", after his own
-  hypothesis on the GER 1940.12.8 save — window armed, arrow on transition 5113, divisions still
-  not converting). The comment TEXT on `NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS` is MEASURED
-  ("Ai will avoid upgrading units in the field ... if it takes longer than this"); the veto
-  BEHAVIOUR — and whether its deficit estimate counts training-queue demand (22 wanted medium
-  divisions vs ~750 tanks for the 5 conversions, DERIVED) — is ASSUMED, comment-derived, no
-  save has shown the veto firing. Changed in `05_defines.lua`: `UPGRADES_DEFICIT_LIMIT_DAYS`
-  90 → 365, `UPGRADE_PERCENTAGE_OF_FORCES` 0.25 → 0.5. GLOBAL, accepted in writing. The 365 is
-  NOT a bound on anything real: it bounds the engine's decision-time ESTIMATE only — the actual
-  understrength duration is UNBOUNDED (gate loosened, not a budget), and the fix's own premise
-  (queue consumes production forever) can keep the estimate above 365 too, i.e. a silent no-op
-  is a live outcome; GER's Dec-1940 medium-tank output/month is unmeasured, so no honest
-  fill-time table can be written — the probe below is what will write it. Probe (extended per
-  lessons review): on the 1940.12.8 save run ~2 months and read (1) `light_armor current` falls
-  below 5.0 — conversion fired; (2) unchanged — veto still binding or estimate still > 365,
-  next lever = throttle new-division training during the window, NOT a bigger number; (3) a
-  front-stability read (GER front average strength / org in the division list) so the paid cost
-  of understrength conversions is observed, not assumed.
-- Replace-with chain repaired 2026-08-29 (third conversion ship). Owner live run KILLED the
-  time and equipment rivals (`ale 20000`, Dec-1940→Apr-1941, no switch) and MEASURED the stall
-  point: imgui shows targeted = transition 5113, best match `Light Tank template B` at 0.8125 —
-  the first switch condition (replace_at_match 0.8) is MET. Cause, MEASURED
-  (install `_documentation.md:108` + vanilla `generic.txt`): the switch also requires
-  match(best, replace_with target) ≥ target_min_match, WA's 0.6, against a CROSS-ROLE-GROUP
-  pointer at a pure-medium composition the hybrid matches at ~0.2-0.35 (DERIVED) — and vanilla
-  never chains across roles (its light→medium→modern chain lives inside ONE role,
-  target_min_match 0.5, replace_at_match 1.5 = prio-driven). Fix, the vanilla shape: two FINAL
-  templates in the light role (`LIGHT_MEDIUM_ARMOR_30_MOT_FINAL`/`_30_MEC_FINAL`, pure-medium
-  compositions copied battalion-for-battalion from `GENERIC_MEDIUM_ARMOR_30_MOT/30_MEC`),
-  enabled by the window triggers (no flag value — no calculator writes them), placed last so
-  the flag-selected transition stays targeted first; all 10 transition rungs' replace_with
-  retargeted onto their same-role FINAL twin by motorization; target_min_match 0.6 → 0.4
-  (hybrid vs FINAL ≈ 8/15 line battalions ≈ 0.53 nominal, match formula unknown, margin taken).
-  Positive side-finding recorded: the first hop (old light composition → hybrid) DID fire on a
-  want-negative role — the want-0-upgrade ASSUMED of the valves bullet is settled TRUE for the
-  upgrade half. New ASSUMED, the remaining exit: once a division reaches the FINAL composition
-  the medium role captures it by best match (garrison-header mechanism); FINAL == medium target
-  composition, so the tie-break is unknown — accepted residue: divisions fight as full mediums
-  even if still classified light_armor. Reviews (third round): lessons CONCERNS + architecture
-  CONCERNS, repairs applied — header trimmed to 5 lines, the 0.8/0.4 pair documented as one
-  10-copy knob at its first rung (`@` unvalidated in ai_templates, comment chosen over it), and
-  the walks below. Enable-flip walk (lessons req. 1): on a running post-boundary save the FINAL
-  pair first enables at build load, the same evaluation where the transition rungs are already
-  enabled; the targeted template either stays the transition (ASSUMED first-in-order preference,
-  no install-doc citation exists) or becomes the FINAL — and BOTH readings deliver the intended
-  compositions, the second merely skips the hybrid step; the fresh-lettered-copy decommission
-  cost is bounded by the established fact that fielded divisions are never disbanded. Cadence
-  walk at the weekly re-target (`DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7`): t0 build load, FINALs
-  enabled, target = transition, divisions at hybrid 0.8125; t1 first weekly pass, switch fires
-  if match(hybrid, FINAL) ≥ 0.4 (≈0.53 nominal, ASSUMED formula — if the arrow stays on 5113,
-  read the FINAL's match value in the same imgui line before touching the knob); t2+ divisions
-  walk to 9-medium composition, medium-role capture (ASSUMED) reclassifies them — and the light
-  role's share meanwhile builds NOTHING either way (budget holds light at ≤ 0 post-boundary, the
-  want-negative reading on the owner's Dec-1940 save). Owed greedy-grid check (lessons req. 2):
-  no script-side verification exists for column restacking hybrid→FINAL; the probe below is the
-  measurement. Capture signal (architecture req. 3): division census — the converted divisions'
-  template appears under the MEDIUM role group in imgui (or `plans.py --templates` shows them on
-  a 9-medium template) rather than under light. Probe: same save, run forward — arrow moves
-  5113 → `_30_MEC_FINAL` within a week, compositions reach 9-medium, then the capture signal.
-- **Conversion chain PASSED live 2026-08-29 (owner, same Apr-1941 save on `d898e2105`)**: "la
-  flèche est passée sur FINAL, et les templates se sont améliorés". The switch fires and
-  fielded compositions climb — the two chained ASSUMED (in-group replace_with switch, greedy
-  reachability from the hybrid) are settled TRUE. Still open for a campaign read: the
-  medium-role capture signal and the front-strength cost. Same repair applied the same day to
-  the light-support exit rungs (see `light-support-conversion`), whose replace_with pointed
-  cross-group at the medium templates — the exact stall this chain measured.
-- **ADDENDUM 2026-09-01 (owner report, May-1941 screenshots): the FINAL exit — MIS instead of
-  pure.** The residue accepted on 2026-08-29 ("divisions fight as full mediums even if still
-  classified light_armor") is MEASURED as the owner's defect. Campaign `4aeb8327` (Bhutan cloud,
-  saves 1940.3→1941.5), by division-id identity: the 7 divisions on "Medium Tank template J"
-  (8 med + 6 mech + 1 mot, converging on the pure MEC FINAL) are exactly the 7 ex-"Light Tank
-  template A" divisions of 1940.3; the 4 on "template G" (5 med + 3 med-inf-support + 6 mech,
-  converging on 6109) are disjoint new raises. GER flags: light 5113, medium 6109, byte-constant
-  14 months. The medium role's capture never fires — its target (6/3/6) does not resemble the
-  pure 9+6 FINAL — so the country keeps two competing medium templates and the AI desire counts
-  the ex-lights as `light_armor` (owner screenshot: 8 light / 2 medium wanted 0 / 39).
-- MIS fix, shipped this entry: (a) new OBSERVATION trigger `WA_AI_TEMPLATES_is_medium_mis_family`
-  (`WA_MEDIUM_ARMOR_TEMPLATE` ∈ 6105-6110, the values sharing the 6 med + 3 mis + 6 mech line
-  shape); (b) 5 MIS twin rungs `5213/5214/5215/5216/5222` (= 51xx + 100, compositions identical
-  to their originals) whose `replace_with` targets the new
-  `GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS` — composition copied battalion-for-battalion from
-  medium 6105; each twin sits one branch above its original in the light calculator ladder,
-  claimed-guarded, gated on a precomputed `_mis_family`; (c) the medium calculator now runs
-  BEFORE the light one in `calculate_all_templates` (the light MIS branches read the medium flag
-  written the same pass — before the swap they read last month's); (d) the pure MEC FINAL gains
-  an era-chain hop `replace_with -> FINAL_MIS` at the same 0.8/0.4 knob (lessons repair 1: the
-  proven switch mechanism, not the ASSUMED capture, moves divisions already parked on the pure
-  FINAL; for a non-family country FINAL_MIS is disabled and the pointer inert — DERIVED from the
-  vanilla era-chain shape that the engine honours the destination's enable); (e) `wa_test_tmpl`
-  trans decoder extended to the 52xx values (it would have printed the defect signature
-  `trans=0` on a healthy MIS country); (f) `WA_AI_DIVISION_TEMPLATES.md` synced. MOT side
-  untouched by design: no MOT medium variant carries inf support, a MOT-rung country's medium
-  target is 6100 = pure, no gap.
-- Parked-division walk (lessons repair 1, weekly retarget `DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7`
-  + monthly calculator): t0 = first monthly pulse with the family armed — light flag moves
-  51xx→52xx, FINAL_MIS enables, pure FINAL stays enabled with its hop; t1 = first weekly pass —
-  a division at the pure-FINAL composition matches its own target ≥ 0.8 (it converged there) and
-  the hop needs match vs the MIS target ≥ 0.4 (nominal 12/15 = 0.8, 2× margin), so the switch
-  fires on the proven mechanism; t2+ = field-upgrade 9+6 → 6/3/6, then the medium-role capture
-  (still ASSUMED, tie-break unknown) reclassifies — if it never fires, the composition goal is
-  met but the desire still counts the divisions `light_armor`; that residual is what the campaign
-  probe reads.
-- Residuals, stated: modern-tier (66xx) and non-MIS medium families (6100-6104, 6111-6116) keep
-  the pure FINAL = status quo, excluded by exact values so no template mounts battalions its
-  country cannot build; the light-support twin file has the same pure exit
-  (`LIGHT_SUPPORT_ARMOR_TRANSITION_*_FINAL`) — same defect class, owned by
-  `light-support-conversion`, untouched this session.
-- Reviews 2026-09-01: lessons CONCERNS — 3 repairs discharged (the era-chain hop above; the MIS
-  console read added to the verification line; exact-value reader grep: `WA_TLM_core:670` and
-  `WA_TEST_armor_budget:81` are presence-only and tolerant, `WA_TEST_templates` decoder was the
-  one intolerant reader and is extended). Architecture CONFLICT was issued against a transient
-  mid-edit state (post-ladder rewrite); its req 1-2 are void in the final in-ladder guarded-branch
-  structure, req 3 = the shared trigger, req 4 = the doc sync, both done. `check_templates.py`
-  0 ERROR 0 WARN; `check_constants` / `check_ai_layers` / `check_worklist` / `check_skill_refs`
-  all exit 0.
-- Verification OWED (MIS half), owner console: on a save where GER holds medium 6105-6110 and the
-  conversion window is open, `event wa_test_tmpl.1 GER` reads `conv : window=1 trans=52xx`
-  (a 51xx read on a family country is the defect), and `imgui show ai-templates` shows the light
-  role's arrow reaching `..._30_MEC_FINAL_MIS`; on the May-1941-style parked case, the pure-FINAL
-  divisions' arrow moves to FINAL_MIS within a week of load.
-- Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
-  `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
-  and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
-  divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones;
-  and (MIS half) a campaign where a major's medium flag sits in 6105-6110 shows its ex-light
-  divisions on a 6 med + 3 inf-support + 6 mech composition — not a pure 9+6 — and at most one
-  medium template family shape in `plans.py --templates`.
-
 ### light-support-conversion — PARKED (2026-08-31)
 - Parked 2026-08-31 (WIP limit, `dday-mulberry` enters on an owner task). State at parking:
   SHIPPED-UNTESTED — chosen for parking as the most-verified of the armor cluster: its exit-rung
@@ -2659,6 +2327,101 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
 
+### levant-iraq-corridor — SHIPPED-UNTESTED (2026-09-02)
+
+Owner order 2026-09-01: while the holder of Jordan (state 455) is at war with the Iraqi power, that
+holder must use PRIORITY CONSTRUCTION to place a supply depot on province 4440 — the Jordanian
+province bordering Iraq — and connect it to the rail the Levant already has; stop once the Iraqi
+power capitulates.
+
+- Origin (MEASURED, campaign `8c42d288`, 107 monthly saves 1936.2-1944.11): the owner asked whether
+  this already happened for ENG once Iraq joined the Axis. It does not exist. **No WA system places
+  a supply_node anywhere on a Palestine/Jordan → Iraq line**: the PC theatre-corridor family is the
+  only depot builder (`corridor_hub_kind_ = 17`) and its single corridor was North Africa,
+  Oran → Alexandria. The `supply_node` counts of all ten Levant/Iraq states are byte-identical at
+  1936.2 and 1944.11. What DOES exist there is the separate `[rail-corridors]` free-rail cheat,
+  whose corridor 6 laid level-5 track Palestine → Baghdad on **1939.10.1** — 18 months before IRQ
+  joined the Axis (1941.4.24) and across neutral Saudi and Iraqi ground. That cheat's own defect is
+  a different subject (see the end-of-session note in the session log, not admitted here).
+- Shipped (this session, one commit): the PC theatre-corridor family generalised from ONE hard-wired
+  corridor to N. `WA_AI_PC_railway_corridor_pass` is now the interval gate + civ floor + call list;
+  the old body is `WA_AI_PC_railway_corridor_run_one`, called per corridor with `_corridor_id_` and
+  `_corridor_type_id_`. New corridor 2 `levant_iraq` (7151 Ma'an → 4017 Amman → 4440 Ruwaished,
+  depot on 4440 only, no port, no node inside Iraq). New gate
+  `WA_AI_PC_corridor_theatre_live_levant_iraq` = the OWNER of state 291 is at war with ROOT and has
+  not capitulated — tag-free, closes on capitulation / annexation / white peace. New band term
+  `_corridor_war_band_` (NA declares 0 = unchanged; Levant declares 1, because its node list is
+  entirely behind our own lines and the enemy-held-node rule would price a wartime measure as
+  preparation). New `constant:wa_ai_pc.type_id.corridor_levant = 28` + registry group + `savegame.py`
+  `_PC_TYPE_ID` row.
+- **Why one type_id PER CORRIDOR, not one per family.** `run_one` ends with a stale-path validation
+  that cancels every queued project carrying its `_strategy_id` whose target province is not on the
+  routes it just pathfound. Two corridors under one tag would cancel each other's in-flight segments
+  every pass — the regression the first draft of this change would have shipped. The per-tag
+  `queue_max` follows, so the corridors do not compete for one budget either.
+- Map facts the design rests on (MEASURED 2026-09-01, `map/railways.txt`, `map/supply_nodes.txt`,
+  `map/definition.csv`, generated province graph): 4440 is land/arid, has no supply node and no rail,
+  its only Jordanian neighbour is 1544, and its neighbours 13831/13832 are state 675 (Iraq). 7151 and
+  4017 both carry a supply node and are railed to each other at L1 via 10089. **Every node and every
+  intermediate province the pathfinder can pick is inside state 455**, so all segments are
+  admission-scoped to one state and the pathfinder/admission mismatch that forced junction 13481 into
+  the North African list cannot arise. The gap the corridor closes is the four edges
+  4017-4591-4574-1544-4440, all at level 0.
+- **Residual 1 — the corridor is chartered by a WAR and can be cut off mid-build.** t0 the Iraqi
+  power capitulates or is annexed → the gate reads false. t1 at most `corridor.interval_weeks` = 4
+  weeks later, on the next corridor pass, `corridor_ran_` is 0 and nothing new is queued. t2 in-flight
+  type-28 projects are NOT cancelled by that pass — the validator lives inside `run_one`, which the
+  closed gate skips — so they drain through the normal PC allocator or are swept by the 30-week stall
+  sweep. Worst case: a half-paid depot finishes after the war it was for. ACCEPTED — a depot on the
+  Iraqi border is not waste, and cancelling it would need the validator to run on a corridor the gate
+  just switched off, which is the "an empty valid set cancels 100 % of the queue" hazard the pass is
+  explicitly built to avoid.
+- **Residual 2 — two war-band corridors on one builder. NOT bounded by the type_id split, and the
+  word is not used.** Separate tags separate the ADMISSION budget, not the factories: both corridors
+  emit at `prio.rail_war` (1000) into one priority-sorted queue, and `WA_AI_PC_assign_factories` sorts
+  by priority alone, so at a tie insertion order decides. The case that exists is ENG holding Egypt
+  and Jordan while at war with the Iraqi power. t0 the Iraq war opens → corridor 2 arms at band 1000
+  with **zero** contested nodes (`_corridor_war_band_ = 1`), alongside corridor 1 already at 1000
+  because North Africa has enemy-held nodes; ceiling in flight doubles from 8 rails + 8 depots + 8
+  ports to 16 + 16 + 16. t1 +4 weeks (one corridor interval): corridor 2 offers at most 4 rail
+  segments (4017-4591-4574-1544-4440) plus one 10 000-IC `supply_node` at 4440, against corridor 1's
+  ~20-pair list — so the *added* head-of-queue load is small in count but the depot alone is 12.5× a
+  rail segment (800). t2 +12 weeks: with ~1 project admitted per province per pass, the four rail
+  links need ≥ 4 passes ≈ 16 weeks to all be queued, and the depot competes with them the whole time.
+  Consequence, stated plainly rather than called bounded: **for the duration of the Iraq war the
+  lower bands — theatre air 350, air front 300, strategic 250 — get less of that builder's civilian
+  allocation than they did.** Owner-ordered. The campaign probe below reads it (leg (c)).
+- **Two states this subject must never conflate:** *queued* ≠ *built* ≠ *connected*. A `supply_node`
+  admitted at 4440 is not a hub delivering supply — a hub has no level and carries whatever the
+  railway feeding it delivers (LOGISTICS_MODEL §3), and an unconnected forward depot was the visible
+  symptom of Fix 120. The closing criterion therefore asks for the depot AND the four edges.
+- Reviews 2026-09-01, both run on the full diff, both **CONCERNS**, all repairs applied:
+  **lessons** — (1) the `_project_type_id > 0` fallback was written against 0 while an unset temp
+  reads as a scope token; removed, and the tag is now derived ONCE at the entry of `run_one` by
+  equality on `_corridor_id_`, so no site tests an unset temp; (2) `_corridor_id_` / `_corridor_type_id_`
+  zeroing moved OUTSIDE the civ-floor branch; (3) the "bounded budget" claim replaced by Residual 2
+  above; (4) stale cap headers refreshed. **architecture** — (5) all WA_TLM writes of the pass (r95
+  and r103 counters included, not only the gauges) now sit behind `_corridor_id_ = north_africa`, and
+  `r103_corridor_blocked_n` in `railway_helpers` with them, so no existing metric is retargeted;
+  corridor 2 emits none by design, its outcome being directly save-readable. No `wa_tlm_version` bump
+  — no name, unit or semantic changed. (6) `WA_TLM_TELEMETRY_SYSTEM.md` write-site names and scoping
+  updated; (7) the corridor-id enum promoted to `constant:wa_ai_pc.corridor_id.north_africa/levant_iraq`
+  (read in three files); (8) the allocation consequence written into the pass header.
+- Harness: `WA_TEST_levant_corridor.txt` + `events/wa_test_levant_corridor.txt` (contract v1).
+  `tag ENG` then `event wa_lcor.1` = passive report (gate terms, per-node ours/charge/enemy, depot
+  presence with 7151/4017 as the known-true control, per-EDGE rail levels, type-28 queue rows);
+  `wa_lcor.2` forces one corridor-2 pass; `wa_lcor.3` is the known-false control — the same forced
+  pass with an unknown corridor id must queue nothing. **OWNER RUN OWED** — output pasted here moves
+  this to TESTED.
+- **WIP collision, owner arbitration owed**: this makes 5 non-parked subjects against the limit of 4.
+- Closed when: (a) the console harness run shows LIVE=1 for the holder of Jordan while at war with
+  the Iraqi power, type-28 queue rows at the war band, and `wa_lcor.3` queueing nothing; AND (b) a
+  campaign in which the holder of Jordan fights the Iraqi power shows a `supply_node` at province
+  4440 that was absent at 1936.2, with the four edges 4017→4440 rail-continuous
+  (`control 455 --buildings` + `rail.py 4017 4440`); AND (c) the control: North Africa's corridor
+  projects and its `wa_tlm_r107_sizing_*` gauges are unchanged in the same campaign.
+
+
 ## PARKED
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
@@ -3229,6 +2992,7 @@ OPEN with a session of its own.
 
 | Subject | State when parked | Symptom (MEASURED) | Closed when |
 | --- | --- | --- | --- |
+| `armor-class-handoff` | SHIPPED-UNTESTED, parked 2026-09-02 (WIP limit, owner order - slot given to `levant-iraq-corridor`). Was unparked 2026-09-01 on an owner task and re-parked without its console run. Shipped: `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` (the old 7-entry tag/tech OR kept verbatim as an ACCELERATOR, plus `WA_AI_CONFIG_switch_from_light_to_medium_armor` as a final OR term so the list can never gate the medium class shut), `_TEMPLATES_focus_on_light_armor` deleted, `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` gains `has_medium_armor_unlocked` (handoff, not cliff); era boundary is now ONE literal both sides derive from. Reviews applied; commit-hygiene split of `6654f729f` recorded in git. OWED: `event wa_abg.1 GER` in 1940.6 (harness exists, so TESTED needs it), the MIS console read, and the campaign legs below | Campaign `GER_1940_06_29_02.hoi4` (1940.6.29): **3 countries on the whole map hold any `WA_*_ARMOR_TEMPLATE` flag** (ENG, FRA, SOV); GER, ITA, JAP, USA and every minor hold none. GER `wa_ai_armor_budget_medium` = 15 against `_light` = 0 - the role budget wants 15 % armour no template can train; its 8 armour divisions are `history/` leftovers and 127 medium chassis sit unmounted. Cause: the light-era boundary moved 1941.1.1 -> 1940.1.1 while the medium gate lost its universal date fallback for a closed 7-entry OR of tag/tech literals | A campaign save shows **no major with `wa_tlm_armor_gap_n > 1`** and GER holding `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940; AND (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor divisions ending up on medium templates instead of frozen light ones; AND (MIS half) a major whose medium flag sits in 6105-6110 shows its ex-light divisions on a 6 med + 3 inf-support + 6 mech composition, not a pure 9+6, with at most one medium template family shape. Full record: git log `[armor-class-handoff]` + this file's history |
 | `analysis-tooling` | TESTED, parked 2026-08-27 (slot freed for `can-transit-attrition`, owner admission). All three tools shipped+validated (comp rungs v33 F9-booted; aifc.py DEAD-TAG banner; plans.py --invasions) | comp gauges floored to 0 under 5 armour divisions; aifc.py printed dead tags as live churn; type-3 targets unreadable | v33 campaign probe: a major with 1-4 armour divisions reads `comp_armor` = that count, and `tlm` never reports comp_* FROZEN on live majors |
 | commonwealth-handoff | OPEN (parked 2026-08-27, owner order - WIP limit; exemption lever live since 2026-08-25) | Handoff inverts: availability bars read TOTAL divisions, not in-theatre (24933fb9: RAJ reads available with 3 div in East Africa on 76 total, ENG back-fills 14); every bar single-threshold, flap lever documented in the block (git history of this file) | Delegate missions armed and manned (R72 legs), Indian army in East Africa/El Alamein, no dominion dockyard nailed by an unbuildable design |
 | `aoi-border-garrison` | OPEN, both legs shipped 2026-08-27, parked 2026-08-27 (WIP limit, owner choice — slot given to `aifc-traction`). Leg 1: `AXIS_abandon_east_africa` FRONT/THEATRE retargeted off region 17 (corridor {380,381} + s.r. 217), new `_colony_THEATRE` -200 gated `NOT owns_east_africa_colony`, ITA buffer widened to {550,559,271,909,910}, family gate extracted. Leg 2 (sea reinforcement): buffer ratio 0.10→0.20, trigger `east_africa_sea_route_hostile` (Suez 923), `owner_cut_off_THEATRE` -200, `naval_avoid_region` +1000 on the 5 Red-Sea/Indian-Ocean lanes. Campaign `24933fb9`: colony holds 37 months vs 2 pre-fix; (b) PASS (EA front orders manned), (d) PASS (0 GER div), (c) marginal FAIL (1-2 strays, Kurdufan buffer leak order 9607 unexplained), (a) FAIL as written / PASS on buffer population (43-57 % border). OWED: F9 boot (new ai_strategy blocks), owner imgui (cut-off gate armed/released vs Suez), §12 telemetry re-instrumentation before next scoring | ITA 9/9 AOI divisions pinned to {550,559} port buffer, zero EA front orders for ITA and ITS (`15176ce6` 1940.9-10); leg 2: AOI grows 9→11-23 by 1943 by sea past the Allied navy (`24933fb9`; ITS never released, growth = external) — engine never refuses the route (`MAX_ALLOWED_NAVAL_DANGER 80` vs ceiling 50) | (a) >= half AOI divisions in border states {271,909,910,550}, (b) EA front order for the AOI holder, (c) zero ITA/ITS div in 217/380/381, (d) zero GER div in AOI, (e) no sea growth while Suez hostile (~0.20 prepositioned at entry), (f) reinforcement resumes once the Axis takes Suez. Full record: git log `[aoi-border-garrison]` + this file's history |

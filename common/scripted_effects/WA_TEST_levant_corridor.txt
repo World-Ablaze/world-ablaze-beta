@@ -1,0 +1,121 @@
+############################################################################################################
+#	[levant-iraq] Theatre-corridor 2 (Jordan -> Iraq) harness. harness-contract: v1 (wa-testing SKILL).
+#	Fired from events/wa_test_levant_corridor.txt (recipe in its header) - never from wa_events_test.txt.
+#	Independent walk: every predicate below is a literal duplicate of the shipped gate / node tests,
+#	never a call to them - when the two disagree, one of them is the bug and a shared helper would
+#	hide exactly that.
+############################################################################################################
+
+WA_TEST_LEVANT_CORRIDOR_report = {
+	log = "LEVANT CORRIDOR TEST ==========================================================="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _lc_e1_ = 0 }
+	set_temp_variable = { _lc_e2_ = 0 }
+	set_temp_variable = { _lc_e3_ = 0 }
+	set_temp_variable = { _lc_e4_ = 0 }
+	set_temp_variable = { _lc_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _lc_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _lc_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _lc_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _lc_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _lc_e5_ = 1 } }
+	log = "  scope : always=[?_lc_e1_|.0]  I-am-ROOT=[?_lc_e2_|.0]  I-am-THIS=[?_lc_e3_|.0]  ROOT-scope-usable=[?_lc_e4_|.0]  control-false=[?_lc_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	# --- THE GATE, term by term ---------------------------------------------------------------
+	# Duplicate of WA_AI_PC_corridor_theatre_live_levant_iraq. A 0 in the composite is worth
+	# nothing without the terms: the whole point of printing three of them is that the shipped
+	# gate is one boolean and a 0 can come from either half or from the state being ownerless.
+	291 = { OWNER = { log = "  iraq  : owner of state 291 (Baghdad) = [This.GetName]" } }
+	set_temp_variable = { _lc_g_cap_ = 0 }
+	set_temp_variable = { _lc_g_war_ = 0 }
+	set_temp_variable = { _lc_g_all_ = 0 }
+	if = { limit = { 291 = { OWNER = { has_capitulated = yes } } } set_temp_variable = { _lc_g_cap_ = 1 } }
+	if = { limit = { 291 = { OWNER = { has_war_with = ROOT } } } set_temp_variable = { _lc_g_war_ = 1 } }
+	if = { limit = { 291 = { OWNER = { has_capitulated = no  has_war_with = ROOT } } } set_temp_variable = { _lc_g_all_ = 1 } }
+	log = "  gate  : owner_capitulated=[?_lc_g_cap_|.0]  owner_at_war_with_me=[?_lc_g_war_|.0]  ->  LIVE=[?_lc_g_all_|.0]  (LIVE=1 means the corridor pass acts for me)"
+
+	# --- THE NODES: permission and payment, per province --------------------------------------
+	# Duplicates of WA_AI_PC_corridor_node_is_ours / _is_my_charge, written out per node so a
+	# node that silently drops out of the corridor is visible as a row, not as a missing route.
+	set_temp_variable = { _lc_node_ = 7151 }
+	WA_TEST_LEVANT_CORRIDOR_node_row = yes
+	set_temp_variable = { _lc_node_ = 4017 }
+	WA_TEST_LEVANT_CORRIDOR_node_row = yes
+	set_temp_variable = { _lc_node_ = 4440 }
+	WA_TEST_LEVANT_CORRIDOR_node_row = yes
+
+	# --- GROUND TRUTH: what is actually on the map --------------------------------------------
+	# The depot is the deliverable. 7151 and 4017 carry one at game start and are the KNOWN-TRUE
+	# controls for this reading: a run where all three print 0 is measuring nothing.
+	set_temp_variable = { _lc_d7151_ = 0 }
+	set_temp_variable = { _lc_d4017_ = 0 }
+	set_temp_variable = { _lc_d4440_ = 0 }
+	if = { limit = { 455 = { any_province_building_level = { province = { id = 7151 } building = supply_node level > 0 } } } set_temp_variable = { _lc_d7151_ = 1 } }
+	if = { limit = { 455 = { any_province_building_level = { province = { id = 4017 } building = supply_node level > 0 } } } set_temp_variable = { _lc_d4017_ = 1 } }
+	if = { limit = { 455 = { any_province_building_level = { province = { id = 4440 } building = supply_node level > 0 } } } set_temp_variable = { _lc_d4440_ = 1 } }
+	log = "  depots: 7151=[?_lc_d7151_|.0] 4017=[?_lc_d4017_|.0] (both 1 at game start - the control) | 4440=[?_lc_d4440_|.0]  <== THE DELIVERABLE"
+
+	# Rail, per EDGE, from the PC ledger the corridor itself reads. Per-province levels are not a
+	# connection: two railed provinces with no line between them read as rail on both and as no
+	# route at all. 0 on an edge = BREAK there.
+	log = "  rail A: 7151-10089=[?global.WA_AI_PC_railway_connection_level_7151^10089|.0]  10089-4017=[?global.WA_AI_PC_railway_connection_level_10089^4017|.0]   (railed L1 at game start - the control)"
+	log = "  rail B: 4017-4591=[?global.WA_AI_PC_railway_connection_level_4017^4591|.0]  4591-4574=[?global.WA_AI_PC_railway_connection_level_4591^4574|.0]  4574-1544=[?global.WA_AI_PC_railway_connection_level_4574^1544|.0]  1544-4440=[?global.WA_AI_PC_railway_connection_level_1544^4440|.0]   (all 0 at game start - the gap this corridor closes)"
+
+	# --- THE QUEUE: what this corridor has actually asked for ---------------------------------
+	# type_id 28 is this corridor's own tag; anything under 27 belongs to North Africa and must
+	# not appear here. A LIVE gate with an empty queue and a BREAK on rail B is the failure the
+	# harness exists to catch.
+	set_temp_variable = { _lc_q_n_ = 0 }
+	for_each_loop = { array = WA_AI_PC_queue value = _lc_q_p_
+		if = {
+			limit = { check_variable = { WA_AI_PC_type_id^_lc_q_p_ = constant:wa_ai_pc.type_id.corridor_levant } }
+			add_to_temp_variable = { _lc_q_n_ = 1 }
+			set_temp_variable = { _lc_q_bt_ = WA_AI_PC_building_type^_lc_q_p_ }
+			set_temp_variable = { _lc_q_tp_ = WA_AI_PC_target_province^_lc_q_p_ }
+			set_temp_variable = { _lc_q_pr_ = WA_AI_PC_priority^_lc_q_p_ }
+			log = "  queue : building_type=[?_lc_q_bt_|.0] (13 rail / 17 depot)  target_province=[?_lc_q_tp_|.0]  priority=[?_lc_q_pr_|.0] (1000/1100 = war band, 500 = prewar)"
+		}
+	}
+	log = "  queue : [?_lc_q_n_|.0] project(s) tagged corridor_levant (type_id 28) on [Root.GetName]"
+	log = "LEVANT CORRIDOR TEST ==========================================================="
+}
+
+# THIS = ROOT = the firing country. Input: _lc_node_ (a corridor node province id).
+# One printed row per node: may I build here (permission), should I pay (payment), is it held by
+# an enemy. The three terms of each predicate are written out inline, in the shipped order.
+WA_TEST_LEVANT_CORRIDOR_node_row = {
+	set_temp_variable = { _lc_n_ours_ = 0 }
+	set_temp_variable = { _lc_n_chrg_ = 0 }
+	set_temp_variable = { _lc_n_host_ = 0 }
+	if = {
+		limit = {
+			any_country = {
+				exists = yes
+				OR = { tag = ROOT  is_subject_of = ROOT  is_in_faction_with = ROOT }
+				controls_province = var:_lc_node_
+			}
+		}
+		set_temp_variable = { _lc_n_ours_ = 1 }
+	}
+	if = {
+		limit = {
+			any_country = {
+				exists = yes
+				OR = {
+					tag = ROOT
+					is_subject_of = ROOT
+					AND = { is_in_faction_with = ROOT  WA_AI_PC_country_cannot_fund_own_logistics = yes }
+				}
+				controls_province = var:_lc_node_
+			}
+		}
+		set_temp_variable = { _lc_n_chrg_ = 1 }
+	}
+	if = {
+		limit = { any_country = { has_war_with = ROOT  controls_province = var:_lc_node_ } }
+		set_temp_variable = { _lc_n_host_ = 1 }
+	}
+	log = "  node  : prov=[?_lc_node_|.0]  ours=[?_lc_n_ours_|.0]  my_charge=[?_lc_n_chrg_|.0]  enemy_held=[?_lc_n_host_|.0]   (a hop needs ours on BOTH ends and my_charge on at least one; a hub needs my_charge alone)"
+}
