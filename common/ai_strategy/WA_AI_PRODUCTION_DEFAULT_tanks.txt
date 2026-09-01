@@ -8,6 +8,15 @@
 # Main strategy types used:
 # - equipment_production_min_factories_archetype: minimum factories for archetype
 # - equipment_variant_production_factor: production factor for specific variant
+#
+# [armor-prod-category] PARITY RULE: every specialised variant of a class (TD, assault gun, SPAA,
+# SPG, infantry support) carries the SAME factor as its chassis, and a class focus applies to the
+# whole class: light 45, medium 150, heavy 60, modern 90, focus +50 / +75 / +75. Literals on
+# purpose - `@` in an ai_strategy payload is unverified (no vanilla or Expert AI file uses it) and
+# `constant:` is not resolved there (wa-constants-registry). The engine's need is already
+# proportional to the template (150 medium chassis against 12 SPAA per division); a smaller factor
+# on a variant distorts that ratio a second time. Assumes the factor scales the engine's perceived
+# need (documentation.info); ASSUMED a variant no template needs multiplies zero and costs nothing.
 # ============================================================================
 
 # ============================================================================
@@ -25,7 +34,7 @@ WA_AI_PRODUCTION_build_light_armor_td = {
 	enable = { WA_AI_PRODUCTION_build_light_armor_td = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = light_tank_destroyer_chassis value = 30 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_tank_destroyer_chassis value = 45 }
 }
 
 WA_AI_PRODUCTION_build_light_armor_assault = {
@@ -63,14 +72,14 @@ WA_AI_PRODUCTION_build_light_armor_spg = {
 	enable = { WA_AI_PRODUCTION_build_light_armor_spg = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = light_tank_artillery_chassis value = 25 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_tank_artillery_chassis value = 45 }
 }
 
 WA_AI_PRODUCTION_build_light_armor_spaa = {
 	enable = { WA_AI_PRODUCTION_build_light_armor_spaa = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = light_spaa_tank_chassis value = 15 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_spaa_tank_chassis value = 45 }
 }
 
 # ============================================================================
@@ -81,11 +90,12 @@ WA_AI_PRODUCTION_build_medium_armor = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor = yes }
 	abort_when_not_enabled = yes
 
-	# [armor-prod-category] Per-VARIANT push on the medium chassis, stacking on the armor
-	# category factor below (ASSUMED additive - no engine doc states the combination rule).
-	# 150 = +150% on the engine's perceived needed factories (documentation.info: value 50 turns
-	# 10 needed into 15). Assumes the medium line is demand-bound; if a save shows tank lines
-	# under their requested factories, the bound moved to allocation and this number is inert.
+	# [armor-prod-category] +150% on the engine's perceived needed factories, stacking on the armor
+	# category factor below (ASSUMED additive - no engine doc states the combination rule). Under a
+	# saturated factory pool the lines already run under their requested factories; ASSUMED the
+	# engine then serves lines in list order and a larger request lifts a line's rank. Refuted if
+	# a post-change save shows the variant lines still under their requested factories while the
+	# chassis is served - then the bound is allocation and this lever is spent.
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 150 }
 }
 
@@ -93,35 +103,35 @@ WA_AI_PRODUCTION_build_medium_armor_td = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor_td = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_destroyer_chassis value = 60 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_destroyer_chassis value = 150 }
 }
 
 WA_AI_PRODUCTION_build_medium_armor_assault = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor_assault = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = medium_assault_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_assault_tank_chassis value = 150 }
 }
 
 WA_AI_PRODUCTION_build_medium_armor_inf_support = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor_inf_support = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = medium_infantry_support_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_infantry_support_tank_chassis value = 150 }
 }
 
 WA_AI_PRODUCTION_build_medium_armor_spg = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor_spg = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_artillery_chassis value = 35 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_artillery_chassis value = 150 }
 }
 
 WA_AI_PRODUCTION_build_medium_armor_spaa = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor_spaa = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = medium_spaa_tank_chassis value = 25 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_spaa_tank_chassis value = 150 }
 }
 
 # ============================================================================
@@ -133,35 +143,34 @@ WA_AI_PRODUCTION_build_heavy_armor = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_chassis value = 60 }
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_assault_tank_chassis value = 45 }
 }
 
 WA_AI_PRODUCTION_build_heavy_armor_td = {
 	enable = { WA_AI_PRODUCTION_build_heavy_armor_td = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_destroyer_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_destroyer_chassis value = 60 }
 }
 
 WA_AI_PRODUCTION_build_heavy_armor_assault = {
 	enable = { WA_AI_PRODUCTION_build_heavy_armor_assault = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_assault_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_assault_tank_chassis value = 60 }
 }
 
 WA_AI_PRODUCTION_build_heavy_armor_inf_support = {
 	enable = { WA_AI_PRODUCTION_build_heavy_armor_inf_support = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_infantry_support_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_infantry_support_tank_chassis value = 60 }
 }
 
 WA_AI_PRODUCTION_build_heavy_armor_spg = {
 	enable = { WA_AI_PRODUCTION_build_heavy_armor_spg = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_artillery_chassis value = 30 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_artillery_chassis value = 60 }
 }
 
 # ============================================================================
@@ -179,35 +188,37 @@ WA_AI_PRODUCTION_build_modern_armor_td = {
 	enable = { WA_AI_PRODUCTION_build_modern_armor_td = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_destroyer_chassis value = 60 }
+	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_destroyer_chassis value = 90 }
 }
 
 WA_AI_PRODUCTION_build_modern_armor_assault = {
 	enable = { WA_AI_PRODUCTION_build_modern_armor_assault = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = modern_assault_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = modern_assault_tank_chassis value = 90 }
 }
 
+# Left commented on purpose: WA_AI_TEMPLATES_has_modern_inf_support_unlocked is an empty OR (no
+# modern infantry-support tech exists), so arming this would push an archetype nobody can build.
 #WA_AI_PRODUCTION_build_modern_armor_inf_support = {
 #	enable = { WA_AI_PRODUCTION_build_modern_armor_inf_support = yes }
 #	abort_when_not_enabled = yes
 #
-#	ai_strategy = { type = equipment_variant_production_factor id = modern_infantry_support_tank_chassis value = 45 }
+#	ai_strategy = { type = equipment_variant_production_factor id = modern_infantry_support_tank_chassis value = 90 }
 #}
 
 WA_AI_PRODUCTION_build_modern_armor_spg = {
 	enable = { WA_AI_PRODUCTION_build_modern_armor_spg = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_artillery_chassis value = 35 }
+	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_artillery_chassis value = 90 }
 }
 
 WA_AI_PRODUCTION_build_modern_armor_spaa = {
 	enable = { WA_AI_PRODUCTION_build_modern_armor_spaa = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = modern_spaa_tank_chassis value = 25 }
+	ai_strategy = { type = equipment_variant_production_factor id = modern_spaa_tank_chassis value = 90 }
 }
 
 # ============================================================================
@@ -238,13 +249,20 @@ WA_AI_PRODUCTION_build_mechanized_aa = {
 # ============================================================================
 # ARMOR FOCUS STRATEGIES
 # ============================================================================
-# These strategies boost production of the preferred armor type based on doctrine
+# These strategies boost production of the preferred armor CLASS based on doctrine - the chassis
+# and every variant of the class together (parity rule, file header), so a focus never re-opens
+# the chassis-over-variant gap it used to create (+75 on the medium chassis alone).
 
 WA_AI_PRODUCTION_focus_on_light_armor = {
 	enable = { WA_AI_PRODUCTION_focus_on_light_armor = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = light_tank_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_tank_destroyer_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_assault_tank_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_infantry_support_tank_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_tank_artillery_chassis value = 50 }
+	ai_strategy = { type = equipment_variant_production_factor id = light_spaa_tank_chassis value = 50 }
 	#ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = -35 } #Light armor templates involve mediums aswell!
 	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_chassis value = -75 }
 }
@@ -255,6 +273,11 @@ WA_AI_PRODUCTION_focus_on_medium_armor = {
 
 	ai_strategy = { type = equipment_variant_production_factor id = light_tank_chassis value = -35 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_destroyer_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_assault_tank_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_infantry_support_tank_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_artillery_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = medium_spaa_tank_chassis value = 75 }
 }
 
 WA_AI_PRODUCTION_focus_on_heavy_armor = {
@@ -263,7 +286,10 @@ WA_AI_PRODUCTION_focus_on_heavy_armor = {
 
 	ai_strategy = { type = equipment_variant_production_factor id = light_tank_chassis value = -35 }
 	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_chassis value = 75 }
-	ai_strategy = { type = equipment_variant_production_factor id = heavy_assault_tank_chassis value = 45 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_destroyer_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_assault_tank_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_infantry_support_tank_chassis value = 75 }
+	ai_strategy = { type = equipment_variant_production_factor id = heavy_tank_artillery_chassis value = 75 }
 }
 
 # ============================================================================

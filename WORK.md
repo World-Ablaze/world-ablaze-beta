@@ -277,9 +277,61 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `ai_strategy` block, parses only at launch). If the campaign shows tank lines running BELOW
   their requested factories, the bound is allocation, not demand, and lever A is the wrong tool —
   that reading brings back a floor, this time on the `armor` category rather than one chassis.
-- Closed when: a post-change campaign shows a major at ~500 military factories running ~140 of
-  them on the armour category (chassis + specialised variants) by mid-1941, and the 1941-42 tank
-  share of military lines rises against the 16.8 % / 16.7 % baseline of `4aeb8327`.
+- **ADDENDUM 2026-09-02 (owner: "les stratégies de production ne suivent pas le besoin" —
+  variants first).** MEASURED, campaign `8c42d288` (63 monthly saves 1939.9→1944.11, 7 majors,
+  save parse — Armour Ledger): the MAIN chassis runs full or in surplus (GER medium
+  fielded/need 0.89 with stockpile 1.2× need, light 0.96 / stock 2×; USA medium 0.97; JAP
+  0.91) while EVERY specialised variant of EVERY major sits in field deficit — GER StuG 0.56,
+  light SPAA 0.41, medium SPAA 0.57, medium TD 0.66; ENG medium SPAA 0.30; USA medium SPAA
+  0.45; ITA medium SPAA 0.52; JAP medium SPG 0.21. Correction to the previous addendum:
+  `stock.py` sums stockpile + divisions + training queue; GER 1942.1 real stockpile of medium
+  chassis is 479 (fielded 3 267 of 3 268 need, 516 in training), not 4 131 — the medium line
+  was full, the variants starved. Two causes, MEASURED in code: (1) the variant factors were a
+  fraction of the chassis factor (medium 150 +75 focus against SPAA 25 / StuG 45 / TD 60 /
+  light SPAA 15), so the engine's template-proportional need was distorted a second time toward
+  the chassis; (2) the variant gates read the armour ROLE — `build_light_armor_spaa` required
+  `use_light_armor_templates`, false for everyone after 1940.1.1
+  (`WA_AI_CONFIG_switch_from_light_to_medium_armor`), while the medium templates 6104 / 6106 /
+  6109 / 6111 / 6112 / 6115 carry a LIGHT SPAA / SPG / infantry-support company — GER 1942.1
+  on 6109 had no armed strategy for the SPAA its template demanded (2 factories, fill 0.15).
+- Change (this entry, owner-directed: existing triggers + weights, no scripted computation, no
+  factory floor): **parity rule** in `WA_AI_PRODUCTION_DEFAULT_tanks.txt` — every variant of a
+  class carries its chassis factor (light 45, medium 150, heavy 60, modern 90), the three
+  `focus_on_<class>_armor` blocks apply to the whole class (chassis + variants) instead of the
+  chassis alone, and the duplicate heavy-assault line inside `build_heavy_armor` is dropped (it
+  stacked to 90 with `build_heavy_armor_assault`). Values stay literals: `@` inside an
+  `ai_strategy` payload is unverified (no vanilla or Expert AI file uses it) and `constant:` is
+  not resolved there — parity is a stated rule in the file header, checked by eye.
+  The modern infantry-support block stays commented as before:
+  `WA_AI_TEMPLATES_has_modern_inf_support_unlocked` is an empty `OR` (no modern infantry-support
+  tech exists, MEASURED `WA_AI_TEMPLATES_triggers.txt:1654`), so arming it would push an
+  archetype nobody can build. Vanilla's own uses of this factor type sit in −100..60 (MEASURED,
+  install `common/ai_strategy/*.txt`); WA now stacks up to 150 + 75 + 60 on the medium class —
+  ASSUMED the engine honours the > 100 regime, nothing recorded either way.
+  **Component gates** in `WA_AI_PRODUCTION_tanks.txt` — the 19 variant triggers read
+  `WA_AI_TEMPLATES_use_<class>_<variant>_armor`, the very term the template ladders use (armour
+  templates on + unlock), never the role. One narrowing to name: the assault-gun component
+  triggers close on ANY lower-class SPG unlock (`WA_AI_TEMPLATES_triggers.txt:409`, `:416-417` —
+  medium assault off once light OR medium SPG is researched, heavy assault off on light / medium /
+  heavy SPG), where the old production gate closed only on the same-class SPG; this follows the
+  template, which stops fielding the assault gun at the same point, so gate = demand. Chassis
+  triggers, the light-support run, the category +60, mechanized blocks and floors: unchanged.
+  DERIVED from `documentation.info` (factor = % of perceived need): a factor on an archetype no
+  fielded template needs multiplies zero — the wider gates cost nothing.
+- ASSUMED: `max_military_factories = 75` on every armour archetype (`tank_chassis.txt`) caps a
+  line's request whatever the factor — the medium chassis already sat at 75 requested on
+  `8c42d288` 1942.1, so the parity raise moves the VARIANTS, not the chassis; category and
+  variant factors stack additively; under a saturated factory pool the
+  engine serves lines in list order (GER 1942.1 StuG 8 of 11 requested, list position 13) — a
+  larger variant request raises the variants' rank in that arbitration, which is the only
+  save-visible mechanism left for them; if the next campaign shows variant lines still under
+  their requested factories, the bound is allocation and this lever is spent.
+- Verification OWED: boot test (ai_strategy parses at launch); next cloud campaign, Armour
+  Ledger on its saves — every variant of GER/ENG/USA/ITA/JAP with need > 0 reaches
+  fielded/need > 0.8 within 24 months of first need while the main chassis stays > 0.85; GER
+  1942: StuG and SPAA lines at or above their requested factories.
+- Closed when: the campaign reading above holds on one cloud campaign, plus the original
+  criterion (a major at ~500 military factories running ~140 on the armour category by mid-1941).
 
 ### bof-commonwealth-posture — OPEN (2026-08-31)
 - **Campaign `a2ad5f20` scored 2026-08-31** (cloud, BHU observer, 117 monthly saves 1936.2-1945.10,
