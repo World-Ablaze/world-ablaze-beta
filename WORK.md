@@ -172,6 +172,64 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-prod-war-floor — OPEN (2026-09-01)
+- Scope: owner request 2026-09-01 ("les pays investissent trop peu sur leurs besoins blindés —
+  augmente le focus industriel sur la prod de matos, pas le besoin en divisions"). Intended
+  behaviour: a country at war whose armour role is open keeps a wartime-sized share of its
+  military industry on the medium-tank line instead of letting the engine's deficit heuristic
+  pull it onto small arms.
+- Symptom, MEASURED (campaign `4aeb8327`, GER, production-line parse + `stock.py` + `tlm`):
+  tank lines fully funded in all three saves (`active = requested` — the bound is the engine's
+  perceived NEED, not allocation); tank factories FALL 76 (1941.5) → 61 (1941.9) while
+  military lines grow 492 → 518 and small-arms lines surge 106 → 156 — the pull lands exactly
+  at Barbarossa's opening; tank share 15.4 % → 11.8 % of military lines; fielded armour 10 of
+  220 divisions (4.5 %) against a 20 % role budget; the peace floor (15, band 150-399) does
+  not bind (GER runs 46-59 above it).
+- Change (this entry): wartime floor tiers — `WA_AI_PRODUCTION_tank_min_factories_medium_war`
+  (150-249, floor **30**), `_medium_high_war` (250-399, floor **45**), `_large_war` (400+,
+  floor **60**); peace triggers gain `NOT = { has_war = yes }` so tiers are exclusive. The
+  medium band is split at 250 (lessons repair) so no floor exceeds ~20 % of its band's low
+  edge — `equipment_production_min_factories_archetype` ignores availability (vendored
+  `documentation.info`), which is also why the small band (<150) keeps its single 5-factory
+  floor at war. During a small-arms deficit the floor outbids the deficit heuristic by design —
+  that is its purpose — and coexists with the infantry-12/truck-10 floors: worst case at a
+  band's low edge, all floors together hold ≤ ~35 % of the military base. Plus
+  `equipment_variant_production_factor medium_tank_chassis` **75 → 150** in
+  `WA_AI_PRODUCTION_build_medium_armor`. ASSUMED (doc-stated only, `documentation.info:485-493`;
+  the lessons log records that file's prose being wrong once on production semantics): value =
+  % increase of the perceived needed factories, and stacking with `focus_on_medium_armor`'s
+  +75 on the same id is additive (225 total). Owner verification below is what upgrades this.
+- Cadence walk (war-start flip): t0 declaration of war — peace tier's enable goes false
+  (`abort_when_not_enabled` retires it), war tier arms the same evaluation; t1 next engine
+  production reallocation — medium line ≥ 45/60, the 59→46 slide becomes impossible while the
+  floor binds; t2 peace — tiers swap back, floor returns to 15/30. A major ground under 150
+  military factories falls out of both upper bands into the small tier automatically (band
+  terms unchanged), so a capitulating industry is never forced to hold 45 tank factories.
+- Ratchet, justified widening: `check_ai_layers --update-baseline` raised
+  LAYER4-NON-DECISION 330→333 and NUMBER-LEAK 351→356 — the war twins copy the shape and
+  band literals of the six frozen-debt floor triggers beside them; renaming only the twins or
+  extracting bands only for them would split the family's style without retiring its debt.
+- Stockpile interplay, ACCEPTED surplus: the medium stock already grows (1.7k→3.1k) while
+  training pace limits fielding, and a need-blind floor plus a bigger factor will grow it
+  faster. Accepted because (a) while wanted divisions ≫ fielded (39 vs 15, ≈14k tanks of
+  unfilled demand at ~600/division) the "surplus" is a real queue buffer — equipment on hand
+  is what lets the engine put more divisions in training at once; (b) once the gap closes, the
+  war floor's residual (30-60 factories) is wartime attrition-replacement capacity. If a
+  campaign shows a five-digit medium stock with the wanted-gap closed, the floor is feeding a
+  pile nobody drains — that reading retires or shrinks the war tiers.
+- Verification OWED, owner (upgrades the ASSUMED factor semantics): live game with a
+  medium-focus major, `imgui show ai-division-production` / production tab — the medium line's
+  requested factories visibly jump when the 150 build loads vs the 75 build, confirming the
+  engine honours the value and the +75 stack. Campaign probe (floors/factors do not serialise,
+  production lines do): a save with a major at war shows its medium-tank-chassis line(s) at
+  ≥ its band floor (30 / 45 / 60), and across the war-opening saves the tank-factory total no
+  longer dips below the floor; secondary read: tank share of military lines rises vs the
+  4aeb8327 baseline (15.4 % / 11.8 % / 13.4 % at 1941.5/1941.9/1942.1). Boot test owed with
+  the next batch (new ai_strategy blocks parse only at launch).
+- Closed when: a post-change campaign crossing a major war start shows no major's medium-tank
+  factory count dropping below its band floor while at war, and the 1941-style tank share
+  holds or rises instead of falling at the war's opening.
+
 ### bof-commonwealth-posture — OPEN (2026-08-31)
 - **Campaign `a2ad5f20` scored 2026-08-31** (cloud, BHU observer, 117 monthly saves 1936.2-1945.10,
   unbranched, difficulty normal = Historical). **BUILD CONFIRMED LIVE by positive control**: ENG's
@@ -1261,7 +1319,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   four verdicts at 1 with `budget=` reading the rung for that year; and a 1939 GER window shows
   wanted `light_armor` near 10% of the wanted total with infantry `Being Built` above 0.
 
-### armor-ladder-integrity — SHIPPED-UNTESTED (2026-08-29)
+### armor-ladder-integrity — PARKED (2026-09-01)
+- Parked 2026-09-01 (WIP limit, `armor-prod-war-floor` enters on an owner task). State at
+  parking: SHIPPED-UNTESTED, waiting only on the owner console runs in its verification line;
+  no code work pending.
 - SHIPPED-UNTESTED as of the flattening ship below: it rewrites seven calculators inside an
   effect an on_action calls, which is exactly the size of change the owner console-test rule
   covers. Owed: `event wa_test_tmpl.1 <TAG>` and `event wa_test_tmpl.2 <TAG>` output pasted here.
