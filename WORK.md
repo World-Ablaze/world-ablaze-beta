@@ -172,7 +172,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### armor-prod-war-floor — OPEN (2026-09-01)
+### armor-prod-category — OPEN (2026-09-01)
+- Slug renamed from `armor-prod-war-floor` on the owner's 2026-09-01 instruction to drop the
+  chassis floors: the subject's mechanism is now the `armor` CATEGORY demand factor, and the
+  code markers read `[armor-prod-category]`. Everything below the rename is the original
+  measurement chain, kept because it is what motivated the change.
 - Scope: owner request 2026-09-01 ("les pays investissent trop peu sur leurs besoins blindés —
   augmente le focus industriel sur la prod de matos, pas le besoin en divisions"). Intended
   behaviour: a country at war whose armour role is open keeps a wartime-sized share of its
@@ -226,9 +230,56 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   longer dips below the floor; secondary read: tank share of military lines rises vs the
   4aeb8327 baseline (15.4 % / 11.8 % / 13.4 % at 1941.5/1941.9/1942.1). Boot test owed with
   the next batch (new ai_strategy blocks parse only at launch).
-- Closed when: a post-change campaign crossing a major war start shows no major's medium-tank
-  factory count dropping below its band floor while at war, and the 1941-style tank share
-  holds or rises instead of falling at the war's opening.
+- **ADDENDUM 2026-09-01 (owner, screenshot GER 1 June 1941): floors dropped, category factor in.**
+  New MEASURED evidence changes what the lever must be. GER at 498/498 military factories, all
+  allocated: guns 249, tanks **85**, planes 164. Its tank lines REQUEST 107 and are served 85
+  (Panzer III L 60/75, Panzer IV F 21/26, StuG 3, Flakpanzer 1, Panzerjäger 0/1, a second
+  Pz III L line 0/1). Two separate gaps against the owner's 140-factory target: the demand is
+  33 short, and 22 more are lost in the allocation because the pool is saturated. DERIVED, and
+  it retires the previous entry's lever: the war floor for the 400+ band was 60 on
+  `medium_tank_chassis` while GER already ran 81 (Panzer III + Panzer IV are both medium
+  chassis) — a **no-op for the country it was written for**.
+- Cause of the allocation half, MEASURED (script): the air strategies carry TWO levers — a
+  category `equipment_production_factor` (25-100 on fighter / cas / interceptor /
+  tactical_bomber) AND a per-variant factor (100-200 on airframes) — while
+  `WA_AI_PRODUCTION_DEFAULT_tanks.txt` carried only the per-variant factor. Tanks competed with
+  one weapon out of two.
+- Change (this entry): **lever A only, floors removed.** New OBSERVATION-free gate
+  `WA_AI_PRODUCTION_armor_category_push` (tanks enabled + `use_armor_templates`, no industrial
+  bands — a factor scales the engine's own need, so it needs none) driving
+  `WA_AI_PRODUCTION_DEFAULT_armor_category_push`:
+  `ai_strategy = { type = equipment_production_factor id = armor value = 60 }`. `armor` is an
+  equipment CATEGORY (`common/script_enums.txt:132`), so one entry covers every chassis plus the
+  assault-gun / TD / SPAA / infantry-support variants — exactly the owner's "chars / variantes
+  spécialisées" scope. DELETED with it: all six `medium_tank_chassis` floors (peace 5/15/30 and
+  the war tiers 30/45/60 shipped hours earlier) and their six band triggers. The
+  `mechanized_equipment` floors are untouched — they are not a tank chassis.
+- **REGRESSION RISK, stated because the deletion causes it (AGENTS principle 3e).** The floors
+  existed for a measured failure: campaign `9be92c89`, USA slid 116 → 25 tank factories on a
+  GROWING industrial base and JAP ran 2-4, because tank archetypes had ranking factors but no
+  minimum allocation. Nothing now protects that case: a factor multiplies a need the engine
+  computes, so a country whose computed need collapses to near zero gets 60 % of near zero.
+  The owner accepted this trade explicitly ("en retirant les planchers chassis"). The probe
+  below is what would catch a recurrence; restoring the peace tier is a one-block revert.
+- Stacking, ASSUMED: the category factor (60) and the per-variant `medium_tank_chassis` factor
+  (150, kept from the previous entry) apply to the same lines. No engine doc states whether a
+  category and a variant factor sum, multiply, or one wins. `documentation.info` is the only
+  source for the factor semantics at all, and the lessons log records that file's prose being
+  wrong once on production semantics.
+- Ratchet: `check_ai_layers --update-baseline` LOWERED LAYER4-NON-DECISION 333 → **328** and
+  NUMBER-LEAK 356 → **347** — below where both sat before the war-floor entry (330 / 351),
+  because six band triggers with their `num_of_military_factories` literals are gone and the
+  one replacement trigger carries none.
+- Verification OWED (unchanged in kind, new in target): the owner's own reading is the criterion
+  — GER at ~500 military factories should show **~140 factories on tanks + specialised variants**
+  in the production window, against the 85 measured at 1 June 1941. Save-side: the tank lines'
+  `active` and `requested` totals, per class, at 1941.1 / 1941.7 / 1942.1. Boot test owed (new
+  `ai_strategy` block, parses only at launch). If the campaign shows tank lines running BELOW
+  their requested factories, the bound is allocation, not demand, and lever A is the wrong tool —
+  that reading brings back a floor, this time on the `armor` category rather than one chassis.
+- Closed when: a post-change campaign shows a major at ~500 military factories running ~140 of
+  them on the armour category (chassis + specialised variants) by mid-1941, and the 1941-42 tank
+  share of military lines rises against the 16.8 % / 16.7 % baseline of `4aeb8327`.
 
 ### bof-commonwealth-posture — OPEN (2026-08-31)
 - **Campaign `a2ad5f20` scored 2026-08-31** (cloud, BHU observer, 117 monthly saves 1936.2-1945.10,

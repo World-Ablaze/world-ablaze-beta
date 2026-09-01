@@ -81,11 +81,11 @@ WA_AI_PRODUCTION_build_medium_armor = {
 	enable = { WA_AI_PRODUCTION_build_medium_armor = yes }
 	abort_when_not_enabled = yes
 
-	# [armor-prod-war-floor] 150 = +150% on the engine's perceived needed factories
-	# (documentation.info: value 50 turns 10 needed into 15) — the lever that scales WITH need,
-	# paired with the war floors below that hold when need reads low. Assumes the medium line is
-	# demand-bound (lines fully funded); if lines ever sit under their requested factories, the
-	# bound has moved and this number no longer addresses it.
+	# [armor-prod-category] Per-VARIANT push on the medium chassis, stacking on the armor
+	# category factor below (ASSUMED additive - no engine doc states the combination rule).
+	# 150 = +150% on the engine's perceived needed factories (documentation.info: value 50 turns
+	# 10 needed into 15). Assumes the medium line is demand-bound; if a save shows tank lines
+	# under their requested factories, the bound moved to allocation and this number is inert.
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 150 }
 }
 
@@ -267,59 +267,33 @@ WA_AI_PRODUCTION_focus_on_heavy_armor = {
 }
 
 # ============================================================================
-# FACTORY FLOORS
+# ARMOR CATEGORY DEMAND
 # ============================================================================
-# The role_ratio system creates armor/mech division WANTS, but nothing below
-# guaranteed the factories to fill them - the engine's demand heuristic let USA
-# collapse to 25 tank factories while wanting 345 armor divisions (9be92c89).
-# Floors mirror what WA_AI_PRODUCTION_DEFAULT_ground.txt already does for
-# infantry (12) and trucks (10). Banded by industrial size; gated on the same
-# template triggers that open the armor/mech roles.
+# [armor-prod-category] The one lever that covers chassis AND their specialised variants
+# (assault gun, TD, SPAA, infantry support) - `armor` is an equipment CATEGORY
+# (common/script_enums.txt), so it needs no per-archetype entry. It scales the engine's own
+# perceived need, the same weapon the air strategies already use per category, and it stacks
+# on the per-variant factors above. Assumes the tank lines are DEMAND-bound: a save showing
+# tank lines running under their requested factories means the bound moved to allocation and
+# this number no longer addresses it.
 
-WA_AI_PRODUCTION_DEFAULT_tank_floor_small = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_small = yes }
+WA_AI_PRODUCTION_DEFAULT_armor_category_push = {
+	enable = { WA_AI_PRODUCTION_armor_category_push = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 5 }
+	ai_strategy = { type = equipment_production_factor id = armor value = 60 }
 }
 
-WA_AI_PRODUCTION_DEFAULT_tank_floor_medium = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_medium = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 15 }
-}
-
-WA_AI_PRODUCTION_DEFAULT_tank_floor_large = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_large = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 30 }
-}
-
-# [armor-prod-war-floor] War tiers of the floors above, exclusive with them (the peace
-# triggers carry NOT has_war). They hold the medium line through the wartime small-arms pull;
-# each floor stays under ~20% of its band's low edge.
-WA_AI_PRODUCTION_DEFAULT_tank_floor_medium_war = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_medium_war = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 30 }
-}
-
-WA_AI_PRODUCTION_DEFAULT_tank_floor_medium_high_war = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_medium_high_war = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 45 }
-}
-
-WA_AI_PRODUCTION_DEFAULT_tank_floor_large_war = {
-	enable = { WA_AI_PRODUCTION_tank_min_factories_large_war = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis value = 60 }
-}
+# ============================================================================
+# FACTORY FLOORS - MECHANIZED ONLY
+# ============================================================================
+# The role_ratio system creates mech division WANTS, but nothing below guaranteed the
+# factories to fill them. Mirrors what WA_AI_PRODUCTION_DEFAULT_ground.txt already does for
+# infantry (12) and trucks (10). Banded by industrial size; gated on the template trigger that
+# opens the mech role.
+# [armor-prod-category] Tank chassis carry NO floor: the armor category factor above is their
+# only lever. A floor is need-blind (it ignores what is available), so re-adding one under the
+# category factor would force allocation on top of a raised demand and double-count.
 
 WA_AI_PRODUCTION_DEFAULT_mech_floor_small = {
 	enable = { WA_AI_PRODUCTION_mech_min_factories_small = yes }
