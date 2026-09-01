@@ -1352,8 +1352,8 @@ NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_NAVY_MAX_CONSUMPTION = 60 	 		--
 NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted fuel buffers for AI (in thousands)
 
 -- [division-target-scaling] WA's overall balance makes vanilla division targets unattainable; stale if AI countries stop reaching their sustainable deployment ceiling.
-NDefines.NAI.WANTED_UNITS_WEIGHT_FRONTS_WANT = 0.1									-- Weight of front needs when computing final nr wanted units
-NDefines.NAI.WANTED_UNITS_WEIGHT_FACTORIES = 0.11									-- Weight of military factories when computing final nr wanted units
+NDefines.NAI.WANTED_UNITS_WEIGHT_FRONTS_WANT = 0.09									-- Weight of front needs when computing final nr wanted units
+NDefines.NAI.WANTED_UNITS_WEIGHT_FACTORIES = 0.10									-- Weight of military factories when computing final nr wanted units
 NDefines.NAI.WANTED_UNITS_WEIGHT_MANPOWER = 0.07									-- Weight of manpower availability when computing final nr wanted units
 NDefines.NAI.WANTED_UNITS_MANPOWER_DIVISOR  = 17250 								-- Normalizing divisor for AI manpower. (for each x max available manpower, they want one division). This has been adjusted to WA division manpower.
 -- NDefines.NAI.WANTED_UNITS_MIN_DEFENCE_FACTOR = 0.5                        			-- Factor on units required for min defence
