@@ -319,8 +319,10 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 		WA_AI_TEMPLATES_calculate_mountaineer_template = yes
 		WA_AI_TEMPLATES_calculate_mechanized_template = yes
 		WA_AI_TEMPLATES_calculate_light_support_armor_template = yes
-		WA_AI_TEMPLATES_calculate_light_armor_template = yes
+		# [armor-class-handoff] medium BEFORE light: the light calculator's MIS redirect reads
+		# the WA_MEDIUM_ARMOR_TEMPLATE flag this same pass writes.
 		WA_AI_TEMPLATES_calculate_medium_armor_template = yes
+		WA_AI_TEMPLATES_calculate_light_armor_template = yes
 		WA_AI_TEMPLATES_calculate_heavy_armor_template = yes
 	}
 }
@@ -536,6 +538,16 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	set_temp_variable = { _template_type_code = 4 }
 	set_temp_variable = { _template_value = 0 }
 	set_temp_variable = { _template_claimed = 0 }
+	# [armor-class-handoff] _mis_family: each MEC transition rung yields to its MIS twin
+	# (52xx = 51xx + 100 — unrelated to the +100 motorized-hospital mirror of the infantry
+	# ladder; replace_with -> the inf-support FINAL), so conversion ends on the medium role's
+	# own composition instead of a pure 9+6 no enabled medium target matches. Reads the
+	# WA_MEDIUM_ARMOR_TEMPLATE flag, hence medium-before-light in calculate_all_templates.
+	set_temp_variable = { _mis_family = 0 }
+	if = {
+		limit = { WA_AI_TEMPLATES_is_medium_mis_family = yes }
+		set_temp_variable = { _mis_family = 1 }
+	}
 	# 20 width, for a country whose expected terrain is marsh or mountain.
 	if = {
 		limit = {
@@ -559,6 +571,20 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
+			check_variable = { _mis_family = 1 }
+			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_spg_armor = yes
+			WA_AI_TEMPLATES_use_light_spaa_armor = yes
+		}
+		set_temp_variable = { _template_value = 5216 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
 			WA_AI_TEMPLATES_use_medium_armor_templates = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
@@ -567,6 +593,20 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 			WA_AI_TEMPLATES_use_light_spaa_armor = yes
 		}
 		set_temp_variable = { _template_value = 5116 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			check_variable = { _mis_family = 1 }
+			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
+		}
+		set_temp_variable = { _template_value = 5215 }
 		set_temp_variable = { _template_claimed = 1 }
 	}
 	if = {
@@ -585,6 +625,19 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
+			check_variable = { _mis_family = 1 }
+			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+			WA_AI_TEMPLATES_use_light_assault_armor = yes
+		}
+		set_temp_variable = { _template_value = 5214 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
 			WA_AI_TEMPLATES_use_medium_armor_templates = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
@@ -592,6 +645,18 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 			WA_AI_TEMPLATES_use_light_assault_armor = yes
 		}
 		set_temp_variable = { _template_value = 5114 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			check_variable = { _mis_family = 1 }
+			WA_AI_TEMPLATES_can_use_light_transition_templates = yes
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_use_light_td_armor = yes
+		}
+		set_temp_variable = { _template_value = 5213 }
 		set_temp_variable = { _template_claimed = 1 }
 	}
 	if = {
@@ -654,6 +719,16 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	# destroyers - every transition rung above requires one, so without these a TD-less army
 	# stayed stranded on its light templates after the switch. Conversion window only: the
 	# pre-boundary ladder is unchanged.
+	if = {
+		limit = {
+			check_variable = { _template_claimed = 0 }
+			check_variable = { _mis_family = 1 }
+			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_use_mechanized_templates = yes
+		}
+		set_temp_variable = { _template_value = 5222 }
+		set_temp_variable = { _template_claimed = 1 }
+	}
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }

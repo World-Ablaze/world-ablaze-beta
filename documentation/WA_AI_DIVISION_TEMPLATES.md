@@ -64,6 +64,16 @@ The garrison family (`9000-9999`, type code `8`) was removed on 2026-08-19 toget
 `role = garrison` entry, its `role_ratio` share and its flag. Both range and code are free.
 See the header of `common/ai_templates/WA_AI_TEMPLATES_garrison.txt` before reusing either.
 
+Light-armor conversion values ([armor-class-handoff]): `5109-5122` are the light→medium
+transition rungs, and `5213-5222` (= `51xx + 100`) their MIS twins, selected by the light
+calculator when `WA_AI_TEMPLATES_is_medium_mis_family` holds — i.e. the medium role targets the
+6/3/6 inf-support family (`6105-6110`). A twin's `replace_with` points at
+`..._LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS` (composition = medium `6105`) instead of the pure 9+6
+FINAL, and the pure MEC FINAL carries an era-chain hop onto the MIS FINAL for divisions already
+parked on it, so the conversion ends on the composition the medium role actually targets.
+Because the light calculator reads `WA_MEDIUM_ARMOR_TEMPLATE`, the medium calculator runs
+BEFORE the light one in `WA_AI_TEMPLATES_calculate_all_templates` — keep that ordering.
+
 Suppression ([suppression-templates], 2026-08-27): `WA_AI_TEMPLATES_use_suppression_templates` is no
 longer `always = yes` - it needs a war or controlled non-core ground, so neutral minors stop
 spending army XP designing an occupation-garrison template. The role's XP draw weight dropped

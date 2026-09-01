@@ -607,12 +607,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### armor-class-handoff — PARKED (2026-08-31)
-- Parked 2026-08-31 (WIP limit, `aifc-revived-tag-residue` enters on an owner task). State at
-  parking: SHIPPED-UNTESTED — but the most-verified of the four candidates: the conversion chain
-  PASSED live twice (owner runs 2026-08-29) and its remaining exits are mostly campaign probes.
-  Still owed when unparked: the handoff-half console read (`event wa_abg.1 GER` in 1940.6) and the
-  campaign reads in the Closed-when line.
+### armor-class-handoff — SHIPPED-UNTESTED (2026-09-01)
+- Unparked 2026-09-01 on an owner task (the May-1941 two-medium-templates report; MIS addendum
+  below). Was parked 2026-08-31 (WIP limit, `aifc-revived-tag-residue` entered on an owner task);
+  state at parking: SHIPPED-UNTESTED — the conversion chain PASSED live twice (owner runs
+  2026-08-29) and its remaining exits are mostly campaign probes.
+  Still owed: the handoff-half console read (`event wa_abg.1 GER` in 1940.6), the
+  campaign reads in the Closed-when line, and the MIS console read in the addendum below.
 - SHIPPED-UNTESTED (pre-parking): it changes the ENTRY GATE of a system that has a `WA_TEST_armor_budget`
   harness, so the owner console run is owed before TESTED. Paste `event wa_abg.1 GER` output here.
 - Scope: owner request 2026-08-29, from the question "pourquoi GER fait pas de chars moyens sur
@@ -876,10 +877,67 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   medium-role capture signal and the front-strength cost. Same repair applied the same day to
   the light-support exit rungs (see `light-support-conversion`), whose replace_with pointed
   cross-group at the medium templates — the exact stall this chain measured.
+- **ADDENDUM 2026-09-01 (owner report, May-1941 screenshots): the FINAL exit — MIS instead of
+  pure.** The residue accepted on 2026-08-29 ("divisions fight as full mediums even if still
+  classified light_armor") is MEASURED as the owner's defect. Campaign `4aeb8327` (Bhutan cloud,
+  saves 1940.3→1941.5), by division-id identity: the 7 divisions on "Medium Tank template J"
+  (8 med + 6 mech + 1 mot, converging on the pure MEC FINAL) are exactly the 7 ex-"Light Tank
+  template A" divisions of 1940.3; the 4 on "template G" (5 med + 3 med-inf-support + 6 mech,
+  converging on 6109) are disjoint new raises. GER flags: light 5113, medium 6109, byte-constant
+  14 months. The medium role's capture never fires — its target (6/3/6) does not resemble the
+  pure 9+6 FINAL — so the country keeps two competing medium templates and the AI desire counts
+  the ex-lights as `light_armor` (owner screenshot: 8 light / 2 medium wanted 0 / 39).
+- MIS fix, shipped this entry: (a) new OBSERVATION trigger `WA_AI_TEMPLATES_is_medium_mis_family`
+  (`WA_MEDIUM_ARMOR_TEMPLATE` ∈ 6105-6110, the values sharing the 6 med + 3 mis + 6 mech line
+  shape); (b) 5 MIS twin rungs `5213/5214/5215/5216/5222` (= 51xx + 100, compositions identical
+  to their originals) whose `replace_with` targets the new
+  `GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS` — composition copied battalion-for-battalion from
+  medium 6105; each twin sits one branch above its original in the light calculator ladder,
+  claimed-guarded, gated on a precomputed `_mis_family`; (c) the medium calculator now runs
+  BEFORE the light one in `calculate_all_templates` (the light MIS branches read the medium flag
+  written the same pass — before the swap they read last month's); (d) the pure MEC FINAL gains
+  an era-chain hop `replace_with -> FINAL_MIS` at the same 0.8/0.4 knob (lessons repair 1: the
+  proven switch mechanism, not the ASSUMED capture, moves divisions already parked on the pure
+  FINAL; for a non-family country FINAL_MIS is disabled and the pointer inert — DERIVED from the
+  vanilla era-chain shape that the engine honours the destination's enable); (e) `wa_test_tmpl`
+  trans decoder extended to the 52xx values (it would have printed the defect signature
+  `trans=0` on a healthy MIS country); (f) `WA_AI_DIVISION_TEMPLATES.md` synced. MOT side
+  untouched by design: no MOT medium variant carries inf support, a MOT-rung country's medium
+  target is 6100 = pure, no gap.
+- Parked-division walk (lessons repair 1, weekly retarget `DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7`
+  + monthly calculator): t0 = first monthly pulse with the family armed — light flag moves
+  51xx→52xx, FINAL_MIS enables, pure FINAL stays enabled with its hop; t1 = first weekly pass —
+  a division at the pure-FINAL composition matches its own target ≥ 0.8 (it converged there) and
+  the hop needs match vs the MIS target ≥ 0.4 (nominal 12/15 = 0.8, 2× margin), so the switch
+  fires on the proven mechanism; t2+ = field-upgrade 9+6 → 6/3/6, then the medium-role capture
+  (still ASSUMED, tie-break unknown) reclassifies — if it never fires, the composition goal is
+  met but the desire still counts the divisions `light_armor`; that residual is what the campaign
+  probe reads.
+- Residuals, stated: modern-tier (66xx) and non-MIS medium families (6100-6104, 6111-6116) keep
+  the pure FINAL = status quo, excluded by exact values so no template mounts battalions its
+  country cannot build; the light-support twin file has the same pure exit
+  (`LIGHT_SUPPORT_ARMOR_TRANSITION_*_FINAL`) — same defect class, owned by
+  `light-support-conversion`, untouched this session.
+- Reviews 2026-09-01: lessons CONCERNS — 3 repairs discharged (the era-chain hop above; the MIS
+  console read added to the verification line; exact-value reader grep: `WA_TLM_core:670` and
+  `WA_TEST_armor_budget:81` are presence-only and tolerant, `WA_TEST_templates` decoder was the
+  one intolerant reader and is extended). Architecture CONFLICT was issued against a transient
+  mid-edit state (post-ladder rewrite); its req 1-2 are void in the final in-ladder guarded-branch
+  structure, req 3 = the shared trigger, req 4 = the doc sync, both done. `check_templates.py`
+  0 ERROR 0 WARN; `check_constants` / `check_ai_layers` / `check_worklist` / `check_skill_refs`
+  all exit 0.
+- Verification OWED (MIS half), owner console: on a save where GER holds medium 6105-6110 and the
+  conversion window is open, `event wa_test_tmpl.1 GER` reads `conv : window=1 trans=52xx`
+  (a 51xx read on a family country is the defect), and `imgui show ai-templates` shows the light
+  role's arrow reaching `..._30_MEC_FINAL_MIS`; on the May-1941-style parked case, the pure-FINAL
+  divisions' arrow moves to FINAL_MIS within a week of load.
 - Closed when: a campaign save shows **no major with `wa_tlm_armor_gap_n > 1`**, and GER holding
   `WA_MEDIUM_ARMOR_TEMPLATE` with medium-tank divisions in `plans.py --templates` by mid-1940;
   and (conversion half) a campaign crossing 1940 shows a major's pre-boundary light-armor
-  divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones.
+  divisions ending up on medium templates in `plans.py --templates` instead of frozen light ones;
+  and (MIS half) a campaign where a major's medium flag sits in 6105-6110 shows its ex-light
+  divisions on a 6 med + 3 inf-support + 6 mech composition — not a pure 9+6 — and at most one
+  medium template family shape in `plans.py --templates`.
 
 ### light-support-conversion — PARKED (2026-08-31)
 - Parked 2026-08-31 (WIP limit, `dday-mulberry` enters on an owner task). State at parking:
@@ -1311,7 +1369,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
   simulation).
 
-### mech-window — SHIPPED-UNTESTED (2026-08-29)
+### mech-window — PARKED (2026-09-01)
+- Parked 2026-09-01 (WIP limit, `armor-class-handoff` re-enters on an owner task — the May-1941
+  two-medium-templates report). State at parking: SHIPPED-UNTESTED, waiting only on the owner
+  console run in its verification line; no code work pending.
 - Scope: owner request 2026-08-29 after a tester report. Intended behaviour: a country that reaches
   mechanization through the INDUSTRIAL branch does not flip its armour templates from motorised to
   mechanized until its army has stopped expanding. Germany specifically: not before 1.6M men
