@@ -26,8 +26,24 @@ WA_AI_PRODUCTION_army_composition_is_enabled = {
 # templates because WA_light_support_armor_role declares role = light_armor.
 
 WA_AI_PRODUCTION_build_army_light_armor = {
-	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+	# [historical-tank-park] The Soviet temporary corps is recruitable from 1936, then the whole
+	# light role closes once its historical park is complete. Ahistorical SOV keeps the normal path.
+	NOT = {
+		AND = {
+			WA_AI_DIFFICULTY_is_historical = yes
+			WA_AI_CONFIG_pursues_historical_tank_park = yes
+			NOT = { WA_AI_PRODUCTION_should_continue_historical_tank_park = yes }
+		}
+	}
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	OR = {
+		NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+		AND = {
+			WA_AI_CONFIG_pursues_historical_tank_park = yes
+			WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+		}
+	}
 	OR = {
 		WA_AI_TEMPLATES_use_light_armor_templates = yes
 		WA_AI_TEMPLATES_use_light_support_armor_templates = yes
@@ -118,12 +134,25 @@ WA_AI_PRODUCTION_should_continue_historical_tank_park = {
 	}
 }
 
-# [historical-tank-park] Force-build the mission only while its live run state and template are
-# both open. Payload is WA_AI_PRODUCTION_DEFAULT_historical_tank_park.
+# [historical-tank-park] Force-build the mission for its entire live run. Template selection is
+# independent state and must not withdraw the mission's 500 light-role desire mid-run. Payload is
+# WA_AI_PRODUCTION_DEFAULT_historical_tank_park.
 WA_AI_PRODUCTION_should_build_historical_tank_park = {
 	WA_AI_PRODUCTION_army_composition_is_enabled = yes
 	WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
-	WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+}
+
+# [historical-tank-park] The 500 light-role force lasts for the live mission, not merely until
+# either chassis bar is full. Keep the existing major-war exit: this is a pre-war historical push.
+WA_AI_PRODUCTION_should_force_historical_tank_park = {
+	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	WA_AI_DIFFICULTY_is_historical = yes
+	WA_AI_CONFIG_pursues_historical_tank_park = yes
+	NOT = { any_enemy_country = { is_major = yes } }
+	if = {
+		limit = { tag = SOV }
+		has_active_mission = SOV_the_greatest_tank_army
+	}
 }
 
 # [light-support-conversion] Gate of the armor-budget light floor (WA_AI_ARMOR_BUDGET_reconcile

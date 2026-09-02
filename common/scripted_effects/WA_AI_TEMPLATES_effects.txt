@@ -139,6 +139,15 @@ WA_AI_TEMPLATES_calculate_templates = {
 			WA_AI_TEMPLATES_ensure_correct_spirits = yes
 			# Still block templates this tick (spirits will be ready next check)
 			WA_AI_TEMPLATES_block_all_templates = yes
+			# [historical-tank-park] Preserve SOV's exact starting corps target during the
+			# one-tick doctrine-spirit setup block; it must be trainable from game start.
+			if = {
+				limit = {
+					WA_AI_CONFIG_pursues_historical_tank_park = yes
+					WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
+				}
+				WA_AI_TEMPLATES_calculate_light_support_armor_template = yes
+			}
 		}
 		else = {
 			WA_AI_TEMPLATES_calculate_all_templates = yes
@@ -301,6 +310,12 @@ WA_AI_TEMPLATES_remove_wrong_army_spirits = {
 }
 
 WA_AI_TEMPLATES_calculate_all_templates = {
+	# [historical-tank-park] SOV needs its exact 1936 corps target before its 1938 mobile focus;
+	# every other template remains behind the normal focus-admission gate below.
+	if = {
+		limit = { WA_AI_CONFIG_pursues_historical_tank_park = yes }
+		WA_AI_TEMPLATES_calculate_light_support_armor_template = yes
+	}
 	if = {
 		limit = {
 			# Ensure certain focuses have been completed for free template design
@@ -1328,8 +1343,25 @@ WA_AI_TEMPLATES_calculate_suppression_template = {
 WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 	set_temp_variable = { _template_type_code = 14 }
 	set_temp_variable = { _template_value = 0 }
+	# [historical-tank-park] Latch the exact 1936 Soviet corps target while its finite park is
+	# active. The same value remains after completion so its replace_with can take it to 30_MOT_MIX.
 	if = {
 		limit = {
+			WA_AI_CONFIG_pursues_historical_tank_park = yes
+			WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
+		}
+		set_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+	}
+	if = {
+		limit = {
+			WA_AI_CONFIG_pursues_historical_tank_park = yes
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+		}
+		set_temp_variable = { _template_value = 15006 }
+	}
+	if = {
+		limit = {
+			check_variable = { _template_value = 0 }
 			WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 		}
 		# [historical-tank-park] Composition is LATCHED at first arming: 15000 = pure, 15001 =
@@ -1356,7 +1388,10 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 	# transition rung whose replace_with is the medium ENTRY final. MOT vs MEC follows the same
 	# mechanized branch the medium calculator uses (6100 vs 6101), pure vs MIX follows the latch.
 	else_if = {
-		limit = { WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes }
+		limit = {
+			check_variable = { _template_value = 0 }
+			WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes
+		}
 		set_temp_variable = { _template_value = 15002 }
 		if = {
 			limit = {

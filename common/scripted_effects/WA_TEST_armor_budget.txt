@@ -56,8 +56,15 @@ WA_TEST_ABG_report = {
 	if = { limit = { WA_AI_CONFIG_early_game_army_expansion_override = yes } set_temp_variable = { _abt_expand = 1 } }
 	set_temp_variable = { _abt_armortpl = 0 }
 	if = { limit = { WA_AI_TEMPLATES_use_armor_templates = yes } set_temp_variable = { _abt_armortpl = 1 } }
+	set_temp_variable = { _abt_parkcontinue = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_continue_historical_tank_park = yes } set_temp_variable = { _abt_parkcontinue = 1 } }
+	set_temp_variable = { _abt_parkforce = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_force_historical_tank_park = yes } set_temp_variable = { _abt_parkforce = 1 } }
+	set_temp_variable = { _abt_lightrole = 0 }
+	if = { limit = { WA_AI_PRODUCTION_build_army_light_armor = yes } set_temp_variable = { _abt_lightrole = 1 } }
 
 	log = "  gates : is_ai=[?_abt_ai|.0]  composition-enabled=[?_abt_comp|.0]  trains-no-divisions=[?_abt_nodiv|.0]  early-expansion-override=[?_abt_expand|.0]  use-armor-templates=[?_abt_armortpl|.0]"
+	log = "  park  : continues=[?_abt_parkcontinue|.0]  force-500=[?_abt_parkforce|.0]  light-role-open=[?_abt_lightrole|.0]"
 
 	############################################################
 	# B. Template layer - which tank templates the country may design
@@ -81,6 +88,28 @@ WA_TEST_ABG_report = {
 	if = { limit = { has_country_flag = WA_LIGHT_ARMOR_TEMPLATE } set_temp_variable = { _abt_fl = 1 } }
 	set_temp_variable = { _abt_fls = 0 }
 	if = { limit = { has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE } set_temp_variable = { _abt_fls = 1 } }
+	set_temp_variable = { _abt_lstemp = 0 }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15006 } } set_temp_variable = { _abt_lstemp = 1 } }
+	set_temp_variable = { _abt_lsmission = 0 }
+	if = { limit = { has_active_mission = SOV_the_greatest_tank_army } set_temp_variable = { _abt_lsmission = 1 } }
+	# [historical-tank-park] Retype the two identical Soviet source targets. The active target has
+	# no replace_with; after the mission, the conversion target owns the replace_with chain.
+	set_temp_variable = { _abt_lssourceactive = 0 }
+	if = {
+		limit = {
+			has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15006 }
+			has_active_mission = SOV_the_greatest_tank_army
+		}
+		set_temp_variable = { _abt_lssourceactive = 1 }
+	}
+	set_temp_variable = { _abt_lssourceconvert = 0 }
+	if = {
+		limit = {
+			has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15006 }
+			NOT = { has_active_mission = SOV_the_greatest_tank_army }
+		}
+		set_temp_variable = { _abt_lssourceconvert = 1 }
+	}
 
 	# Light-support run state - the two ends of the finite run, printed even when it is shut.
 	set_temp_variable = { _abt_lschassis = 0 }
@@ -116,7 +145,7 @@ WA_TEST_ABG_report = {
 	log = "  lsrun : has-support-chassis=[?_abt_lschassis|.0]  owns-light-role=[?_abt_lsowns|.0]  fielded=[?_abt_lsfield|.0](cap [?_abt_lscap|.0], reached=[?_abt_lscapped|.0])  before-1942=[?_abt_lsdate|.0]"
 	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0](cap [?_abt_ltcap|.0], reached=[?_abt_ltcapped|.0])  conv-window=[?_abt_lsconv|.0]  (latched drives the enables; conv-window=1 = park converting to medium)"
 	log = "  lsline: chassis-line-ON=[?_abt_lsline|.0]  chassis-line-OFF=[?_abt_lsoff|.0]  (exactly one must be 1 once the chassis is unlocked; both 0 = the country has no support chassis)"
-	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  (both 1 = the two light templates are enabled at once, which the exclusivity is supposed to prevent)"
+	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  sov-temporary-15006=[?_abt_lstemp|.0]  sov-tank-mission-active=[?_abt_lsmission|.0]  temporary-source-active=[?_abt_lssourceactive|.0]  temporary-source-convert=[?_abt_lssourceconvert|.0]  (temporary=1 + mission=1 requires active=1, convert=0)"
 
 	############################################################
 	# B1b. [armor-class-handoff] The light-to-medium HANDOFF, re-typed from its own terms.
