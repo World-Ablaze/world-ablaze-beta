@@ -172,6 +172,55 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### hq-role-capture — SHIPPED-UNTESTED (2026-09-02)
+- Scope: owner question 2026-09-02 ("pourquoi l'IA allemande considere qu'elle a 15 divisions de
+  chars lourds ?"). Intended behaviour: an army-HQ division template is never counted as a combat
+  role, so the AI's Current-vs-Wanted gap for a real combat role reflects the divisions it fields.
+- Symptom, MEASURED (campaign `eaf1d1ea`, saves `GER_1942_08_26_01` and `GER_1943_12_09_22`, owner
+  `imgui show ai_division_production` + `plans.py --templates`): GER `heavy_armor` Current = 15.0 at
+  1942.8 and 19.0 at 1943.12, equal to its army-HQ division count on both dates, while every real
+  tank division sat in `light_armor` / `medium_armor`. Same save 1943.12: SOV reads `heavy_armor`
+  4.0 = its 4 real Heavy Tank G divisions, correct.
+- Cause, MEASURED (save `division_template` blocks carry a `role="..."` key):
+  a template stores a role ONLY when the AI designed it. Every history-authored template - the AOK,
+  the SS divisions, the 20-width infantry, the Airborne - stores NONE, and the engine classifies
+  those at runtime. Full 1943.12 GER reconciliation: stored roles give infantry 153 / light 7 /
+  medium 11 / mountaineers 13 / heavy 0; the runtime pass adds +44 to infantry, +5 to mountaineers
+  (SS Gebirgsjager) and **+19 to heavy_armor (the AOK)**, and leaves 16 unclassified (Motorized 6,
+  SS Motorized 6, SS Kavallerie 4). 184 + 84 = 268 = `Nr Active Divisions`. The runtime rule itself
+  is an ENGINE BOUNDARY - not in any readable file.
+- FAILED first attempt, recorded so it is not retried: adding the `hq_role` that WA's
+  `replace_path="common/ai_templates"` drops (vanilla `generic.txt` `hq_generic`) CANNOT work. The
+  AI never designs an `is_army_hq` template, so nothing ever stores `role="hq_role"` - the owner's
+  `imgui show ai_templates` reads "There is no existing template with correct role" on GER AND SOV.
+  The role declaration is kept anyway (vanilla declares it, its purpose there is undocumented, and
+  `upgrade_prio 0` makes it free); its header now states this measured limit.
+- Change (Option B, owner-ordered 2026-09-02): every army-HQ template in
+  `history/general/taog_hq_template.txt` now carries FOUR line battalions - the Soviet shape, the
+  one the runtime classifier does NOT put in a combat role. 14 blocks rewritten (7 countries x the
+  motorized/infantry halves): USA 2->4, SOV 4->4, GER 1->4, ENG 2->4, FRA 3->4, JAP 2->4,
+  generic fallback 2->4. Per-country support flavour untouched. `WA_AI_TEMPLATES_hq.txt` target
+  count aligned 2 -> 4 for consistency.
+- Impact analysis. Reach: every TAOG country with an army HQ, historical and ahistorical alike -
+  the gate stays `WA_AI_CONFIG_DIVISIONS_uses_motorized_hq`, no tag or date added. Cost, STATED:
+  an HQ division goes from 1-3 to 4 line battalions, so its manpower and equipment bill rises
+  (`hq_motorized` = 1200 manpower, 2 combat width each) - GER pays 3 extra battalions x 19 HQs.
+  That is the price of the fix and must be read in the next campaign, not assumed negligible.
+- Residual risk, ASSUMED: GER's HQ differs from SOV's in TWO ways, line count (1 vs 4) and support
+  count (3 vs 1). This change equalises only the first. If GER still reports a non-zero
+  `heavy_armor` Current with no heavy tank division, the support set is the remaining lever.
+- Verification, owner-reported PASS 2026-09-02 ("ca a marche") - reported verbally, the panel
+  numbers were NOT pasted, so the subject stays SHIPPED-UNTESTED until reading (3) below (which
+  is save-visible and needs no console) is attached. Readings still owed:
+  (1) `imgui show ai_division_production` GER - `heavy_armor` Current equals the number of divisions
+  whose template actually contains `heavy_armor` battalions (0 or 2, not 19);
+  (2) same screen on one infantry-HQ country for the `hq_infantry` branch;
+  (3) a save shows every `is_army_hq` template with four line battalions and no `role=` key -
+  save-visible, no console needed;
+  (4) boot test - the history file parses only at launch.
+- Closed when: readings (1)-(4) are pasted here and pass, OR (1) fails and the support-set lever
+  ships under this slug, OR the owner accepts a written no-fix ruling.
+
 ### armor-prod-category — OPEN (2026-09-01)
 - Slug renamed from `armor-prod-war-floor` on the owner's 2026-09-01 instruction to drop the
   chassis floors: the subject's mechanism is now the `armor` CATEGORY demand factor, and the
@@ -712,7 +761,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   after ~120 days — the 5ee2d112 signature (variant 95, zero naval-base delta on the whole
   Biscay coast) absent.
 
-### aifc-revived-tag-residue — SHIPPED-UNTESTED (2026-08-31)
+### aifc-revived-tag-residue — PARKED (2026-08-31)
+- PARKED 2026-09-02 to keep WORK.md inside the 4-subject WIP limit when `hq-role-capture`
+  opened (owner choice). State on parking: code SHIPPED, the owner console-harness run below
+  is still OWED and unchanged — unpark it when that run happens.
 - SHIPPED-UNTESTED: >40-line change to `WA_AI_AIFC_armor_reconcile`
   (`common/scripted_effects/WA_AI_AIFC_helpers.txt`), a harnessed `WA_AI_*` effect on the weekly
   on_action chain. Owed: owner fires `event wa_aifc.1 ITA` on any campaign save and pastes the
