@@ -247,15 +247,29 @@ WA_AI_PC_railway = {
 #	THEATRE CORRIDOR PASS ([na-corridor])
 #	ROOT = builder country. Called every weekly pulse from WA_AI_PC_railway (so it inherits the
 #	on_weekly gate: is_ai, exists, WA_AI_PC_country_can_build_own_logistics). Own interval counter,
-#	own scoped project budget (type_id corridor), own stale-path validation. Selection lives in
+#	own scoped project budget, own stale-path validation. Selection lives in
 #	WA_AI_PC_railway_STRATEGY_theatre_corridor (railway_strategies); node data in
 #	WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt; the hub helper in railway_helpers.
+#
+#	[levant-iraq] This effect is now the interval gate, the industrial floor and the CALL LIST; one
+#	corridor's work is WA_AI_PC_railway_corridor_run_one, called once per corridor id with that
+#	corridor's own PC type_id. Everything below about budget, cadence and validation is per corridor.
 #
 #	A separate pass, not four more routes in the main batch: the main pass runs every 8 weeks at war,
 #	one type-13 project is one level on one hop and the province-duplicate guard admits one project
 #	per province per pass, so a 20-hop route to level 1 takes ~24 weeks - the CADENCE bounds it, not
 #	the civ pool. It also leaves the main pass's route cap and skip gate untouched by construction.
-#	Cost: at most corridor.max_routes_per_run pathfinds per pass per eligible builder.
+#	Cost: at most corridor.max_routes_per_run pathfinds per CORRIDOR per pass per eligible builder.
+#
+#	[levant-iraq] ALLOCATION CONSEQUENCE, stated because nothing else states it. Separate type_ids
+#	give each corridor its own ADMISSION budget; they do NOT give it its own factories. A corridor
+#	whose define declares _corridor_war_band_ = 1 admits up to queue_max rails plus its depots at
+#	constant:wa_ai_pc.prio.rail_war with NO contested node, i.e. at the head of a priority-sorted
+#	queue, so for a builder running two war-band corridors at once (ENG holding Egypt and Jordan
+#	while at war with the Iraqi power is the case that exists) the lower bands - theatre air 350,
+#	air front 300, strategic 250 - wait until one of the two corridors is finished or its gate
+#	closes. Owner-ordered and accepted; the closing criterion of [levant-iraq] in WORK.md carries
+#	the t0/t1/t2 reading that bounds it.
 #
 #	Stale-path validation is pinned to type_id corridor and fed the provinces of THIS pass's
 #	successful paths plus the node provinces of its hubs. It is SKIPPED when routes were requested
@@ -284,319 +298,29 @@ WA_AI_PC_railway_corridor_pass = {
 		if = {
 			limit = { num_of_civilian_factories > _corridor_min_civs_ }
 
-			WA_AI_PC_railway_STRATEGY_theatre_corridor = yes
+			### [levant-iraq] ONE PASS PER CORRIDOR, each with its own type_id. The tag is what keeps
+			### them apart: WA_AI_PC_railway_corridor_run_one ends with a stale-path validation that
+			### cancels every queued project of ITS tag whose target province is not on the routes it
+			### just pathfound, so two corridors sharing a tag would cancel each other every pass. The
+			### per-tag budget (constant:wa_ai_railway.corridor.queue_max) follows from the same split.
+			### Order is therefore not load-bearing. A third corridor = a third id + a third type_id.
+			###
+			### The tag is NOT set here: run_one derives it from the id at its own entry, so there is
+			### one derivation site and no call site can hand the helpers an id and a tag that
+			### disagree.
+			set_temp_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.north_africa }
+			WA_AI_PC_railway_corridor_run_one = yes
 
-			if = {
-				limit = { check_variable = { corridor_ran_ = 1 } }
-
-				clear_temp_array = _valid_provinces
-				set_temp_variable = { _corridor_routes_done_ = 0 }
-				set_temp_variable = { _corridor_routes_ok_ = 0 }
-				set_temp_variable = { _corridor_seg_admitted_ = 0 }
-				set_temp_variable = { _corridor_depot_admitted_ = 0 }
-				set_temp_variable = { _corridor_port_admitted_ = 0 }
-				set_temp_variable = { _corridor_port_raised_ = 0 }
-				# [na-corridor] total provinces on the chains actually pathfound this pass. It is the N of the
-				# port-vs-rail arbitration (LOGISTICS_MODEL section 11.7) - the WHOLE chain, not one hop,
-				# because the chain is in series and a point at the far end costs a level on every link.
-				set_temp_variable = { _corridor_chain_len_ = 0 }
-
-				### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
-				###
-				### [na-corridor] CONNECT PHASE. The binding constraint here is ADMISSION, not funding:
-				### the pass walks the node list west to east and admits until corridor.queue_max is
-				### full, so the rear hops claim the whole budget before the head hops are ever
-				### offered, and a project that is never admitted never gets a price. Pricing a level-0
-				### segment into a connect band was tried on its own and left the queue full of
-				### upgrades to already-railed rear edges while the head hops stayed BREAK.
-				### So the pass runs two phases over ONE set of pathfinds:
-				###   phase 0  pathfind every route, collect its segments and each segment's RAW map level
-				###   phase A  admit ONLY segments at map level 0, target level 1 - connect the chain
-				###   phase B  only if phase A admitted nothing: admit the rest at the sizing target
-				### One admission path, not a second strategy. A segment the controller gate refuses
-				### never counts as admitted, so a permanently blocked hop (a corridor leg across
-				### neutral ground) cannot hold the corridor's upgrades hostage for ever - the failure
-				### mode a naive "no upgrades while any hop is BREAK" rule would have shipped.
-				clear_temp_array = _cseg_a_
-				clear_temp_array = _cseg_b_
-				clear_temp_array = _cseg_tgt_
-				clear_temp_array = _cseg_prio_
-				clear_temp_array = _cseg_state_
-				clear_temp_array = _cseg_lvl_
-
-				set_temp_variable = { _corridor_max_minus_one_ = constant:wa_ai_railway.corridor.max_routes_per_run }
-				subtract_from_temp_variable = { _corridor_max_minus_one_ = 1 }
-				for_each_loop = { array = corridor_route_end_ index = _cr_i_ value = _cr_end_ break = _cr_b_
-					if = {
-						limit = { check_variable = { _corridor_routes_done_ > _corridor_max_minus_one_ } }
-						set_temp_variable = { _cr_b_ = 1 }
-					}
-					else = {
-						set_temp_variable = { _pathfind_prov_start = corridor_route_start_^_cr_i_ }
-						set_temp_variable = { _pathfind_prov_end = _cr_end_ }
-						set_temp_variable = { _pathfind_prov_type = 2 }
-						set_temp_variable = { _pathfind_prov_allow_partial = 0 }
-						WA_AI_PATHFIND_PROV_get_path = yes
-						add_to_temp_variable = { _corridor_routes_done_ = 1 }
-						if = {
-							limit = { check_variable = { pathfind_prov_success_ = 1 } }
-							add_to_temp_variable = { _corridor_routes_ok_ = 1 }
-							# [na-corridor] segments on this route = provinces - 1.
-							add_to_temp_variable = { _corridor_chain_len_ = pathfind_prov_path_^num }
-							subtract_from_temp_variable = { _corridor_chain_len_ = 1 }
-							for_each_loop = { array = pathfind_prov_path_ index = _cp_i_ value = _cp_v_ break = _cp_b_
-								add_to_temp_array = { _valid_provinces = _cp_v_ }
-								set_temp_variable = { _cp_next_ = _cp_i_ }
-								add_to_temp_variable = { _cp_next_ = 1 }
-								if = {
-									limit = { check_variable = { _cp_next_ < pathfind_prov_path_^num } }
-									set_temp_variable = { _cseg_next_prov_ = pathfind_prov_path_^_cp_next_ }
-									set_temp_variable = { _corridor_seg_state_ = global.WA_AI_MAP_province_state_id^_cp_v_ }
-									if = {
-										limit = { check_variable = { _corridor_seg_state_ > 0 } }
-										# RAW map level of this connection - the same global ledger the
-										# helper reads, seeded at startup from the generated map data
-										# and moved only at completion. 0 = there is no railway here.
-										meta_effect = {
-											text = {
-												set_temp_variable = { _cseg_this_lvl_ = global.WA_AI_PC_railway_connection_level_[x]^[y] }
-											}
-											x = "[?_cp_v_]"
-											y = "[?_cseg_next_prov_]"
-										}
-										add_to_temp_array = { _cseg_a_ = _cp_v_ }
-										add_to_temp_array = { _cseg_b_ = _cseg_next_prov_ }
-										add_to_temp_array = { _cseg_tgt_ = corridor_route_level_^_cr_i_ }
-										add_to_temp_array = { _cseg_prio_ = corridor_route_prio_^_cr_i_ }
-										add_to_temp_array = { _cseg_state_ = _corridor_seg_state_ }
-										add_to_temp_array = { _cseg_lvl_ = _cseg_this_lvl_ }
-									}
-								}
-							}
-						}
-					}
-				}
-
-				### Phase A - CONNECT. Every collected segment with no railway at all, target level 1.
-				set_temp_variable = { _corridor_connect_admitted_ = 0 }
-				for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
-					if = {
-						limit = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } }
-						set_temp_variable = { _project_province_id = _cs_a_ }
-						set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
-						# Target 1, not the sizing target: connect the whole chain first, raise it
-						# afterwards. Without this clamp the same unrailed segment is re-requested
-						# every pass until it reaches the sizing target, so ONE hop can hold several
-						# connect-band projects while the next hop has none.
-						set_temp_variable = { _project_target_level = 1 }
-						set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
-						set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
-						set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
-						set_temp_variable = { _railway_family_ = 1 }
-						var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
-						if = {
-							limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
-							add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
-							add_to_temp_variable = { _corridor_connect_admitted_ = 1 }
-						}
-					}
-				}
-
-				### Phase B - RAISE. Only when the connect phase found nothing to admit: either the
-				### chain is whole, or every remaining hole was refused by the controller gate and is
-				### not ours to build.
-				if = {
-					limit = { check_variable = { _corridor_connect_admitted_ = 0 } }
-					for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
-						if = {
-							limit = { NOT = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } } }
-							set_temp_variable = { _project_province_id = _cs_a_ }
-							set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
-							set_temp_variable = { _project_target_level = _cseg_tgt_^_cs_i_ }
-							set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
-							set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
-							set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
-							set_temp_variable = { _railway_family_ = 1 }
-							var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
-							if = {
-								limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
-								add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
-							}
-						}
-					}
-				}
-				# Belt and braces: the helper latches-and-zeroes this on entry, but a segment call
-				# skipped by the state-mapping guard would leave a 1 behind for the main pass.
-				set_temp_variable = { _railway_family_ = 0 }
-
-				# [na-corridor] the collection arrays are this pass's working set and nothing
-				# downstream reads them. Cleared here as well as on entry so they do not travel
-				# with the rest of the weekly effect chain (editing rule 9).
-				clear_temp_array = _cseg_a_
-				clear_temp_array = _cseg_b_
-				clear_temp_array = _cseg_tgt_
-				clear_temp_array = _cseg_prio_
-				clear_temp_array = _cseg_state_
-				clear_temp_array = _cseg_lvl_
-
-				### Hubs: depots / ports at nodes we hold
-				for_each_loop = { array = corridor_hub_prov_ index = _ch_i_ value = _ch_prov_ break = _ch_b_
-					set_temp_variable = { _hub_prov_ = _ch_prov_ }
-					set_temp_variable = { _hub_kind_ = corridor_hub_kind_^_ch_i_ }
-					set_temp_variable = { _hub_prio_ = corridor_hub_prio_^_ch_i_ }
-					# [na-corridor] the level this hub should reach, read from its OWN slot of the parallel
-					# array the strategy filled. Never inherited: the loop re-sets it every iteration,
-					# so a port with no computed target cannot pick up the previous port's.
-					set_temp_variable = { _hub_target_level_ = corridor_hub_target_^_ch_i_ }
-					if = { limit = { check_variable = { _hub_target_level_ < 1 } }
-						set_temp_variable = { _hub_target_level_ = 1 }
-					}
-					# [na-corridor] - port-vs-rail arbitration (LOGISTICS_MODEL section 11.7). Raising a port
-					# buys 5 supply for a flat constant:wa_ai_pc.cost.naval_base; raising the rail buys 8
-					# for constant:wa_ai_pc.cost.railway PER LINK of the chain. Below the break-even the
-					# rail is both cheaper per point and far faster to deliver (8 segments may be in
-					# flight at once, a port is one per province and one level per completion), so the
-					# port falls back to level 1 = place it if it is missing, nothing more.
-					if = {
-						limit = {
-							check_variable = { _hub_kind_ = 14 }
-							check_variable = { _corridor_chain_len_ < constant:wa_ai_railway.corridor.port_break_even_segments }
-						}
-						set_temp_variable = { _hub_target_level_ = 1 }
-					}
-					add_to_temp_array = { _valid_provinces = _ch_prov_ }
-					WA_AI_PC_corridor_start_hub = yes
-					if = {
-						limit = { check_variable = { corridor_hub_admitted_ = 1 } }
-						if = {
-							limit = { check_variable = { _hub_kind_ = 17 } }
-							add_to_temp_variable = { _corridor_depot_admitted_ = 1 }
-						}
-						else = {
-							add_to_temp_variable = { _corridor_port_admitted_ = 1 }
-							# [na-corridor] a RAISE is a port admitted at a target above 1, i.e. one that
-							# existed already. Kept apart from _port_admitted_ so the probe can tell
-							# "the new lever fired" from "the old place-if-missing branch fired".
-							if = { limit = { check_variable = { _hub_target_level_ > 1 } }
-								add_to_temp_variable = { _corridor_port_raised_ = 1 }
-							}
-						}
-					}
-				}
-
-				# tlm r95_corridor_*: counters, one per project the corridor pass ADMITTED (the queue
-				# grew across WA_AI_PC_start_project - never per request: queue_max, the
-				# province-duplicate guard and the controller test all refuse silently), split rail
-				# segments / depots / ports, with first_t / last_t stamps. "Built" is NOT this counter -
-				# read the map (railway connection level, supply_node / naval_base at the node).
-				if = {
-					limit = {
-						OR = {
-							check_variable = { _corridor_seg_admitted_ > 0 }
-							check_variable = { _corridor_depot_admitted_ > 0 }
-							check_variable = { _corridor_port_admitted_ > 0 }
-						}
-					}
-					add_to_variable = { WA_TLM_r95_corridor_seg_n = _corridor_seg_admitted_ }
-					add_to_variable = { WA_TLM_r95_corridor_depot_n = _corridor_depot_admitted_ }
-					add_to_variable = { WA_TLM_r95_corridor_port_n = _corridor_port_admitted_ }
-					if = { limit = { check_variable = { WA_TLM_r95_corridor_first_t = 0 } }
-						set_variable = { WA_TLM_r95_corridor_first_t = global.WA_TLM_clock }
-					}
-					set_variable = { WA_TLM_r95_corridor_last_t = global.WA_TLM_clock }
-				}
-
-				# tlm r103_corridor_*: did splitting PERMISSION from PAYMENT change what this builder
-				# can reach, and did that turn into admitted rail?
-				#   _reach   GAUGE, resampled every pass: hops requestable only because both ends are
-				#            ours and exactly one is our charge. Sampled state, so a gauge - a counter
-				#            here would be a code-path count.
-				#   _orphan  GAUGE: hops both ends ours and NEITHER our charge - both ends are then held
-				#            by partners that CAN fund, so a transient reading is normal and means "this
-				#            hop belongs to someone else". The signal is _orphan high WHILE the hop stays
-				#            unbuilt on the map: a defect of the owner's pass, not of ours.
-				#   _seg_n   counter, VERIFIED EFFECT: rail segments actually admitted (queue grew) on a
-				#            pass the widening contributed to. Never per request.
-				set_variable = { WA_TLM_r103_corridor_reach = corridor_reach_ }
-				set_variable = { WA_TLM_r103_corridor_orphan = corridor_orphan_ }
-				if = {
-					limit = {
-						check_variable = { corridor_reach_ > 0 }
-						check_variable = { _corridor_seg_admitted_ > 0 }
-					}
-					add_to_variable = { WA_TLM_r103_corridor_seg_n = _corridor_seg_admitted_ }
-					if = { limit = { check_variable = { WA_TLM_r103_corridor_first_t = 0 } }
-						set_variable = { WA_TLM_r103_corridor_first_t = global.WA_TLM_clock }
-					}
-					set_variable = { WA_TLM_r103_corridor_last_t = global.WA_TLM_clock }
-				}
-
-				# tlm r107_sizing_* [na-corridor]: what did the sizing model SEE and DECIDE this pass?
-				#   _presence  GAUGE: the demand proxy over our side's divisions in the corridor states.
-				#              NOT a division count - a bucket ladder that over-reads a dispersed army
-				#              (WA_AI_PC_corridor_compute_sizing header).
-				#   _demand    GAUGE: _presence x supply_per_division x target_ratio, in supply points.
-				#   _inject    GAUGE: what our corridor ports can put in, in supply points.
-				#              **-1 = the cap was deliberately NOT applied** (we hold no corridor port,
-				#              or ROOT's capital sits on the corridor and it is fed overland). 0 would
-				#              conflate that with "our ports inject nothing", which is a different fact.
-				#   _rail_tgt  GAUGE: the level every hop was asked for this pass, after floor and cap.
-				#              The MAP validates this one - `rail.py --corridor` reads the built minimum
-				#              and the two must converge within a few build durations; diverging is the
-				#              signal that the model asked and nothing was delivered.
-				#   _chain     GAUGE: provinces on the chains pathfound this pass = the N of the
-				#              port-vs-rail arbitration. Not derivable from the four above, and the only
-				#              way to read WHY the port lever did or did not fire.
-				#   _raise_n   counter, VERIFIED EFFECT: ports admitted at a target ABOVE 1, i.e. a real
-				#              raise of an existing port. Counts only where the queue grew.
-				set_variable = { WA_TLM_r107_sizing_presence = corridor_presence_ }
-				set_variable = { WA_TLM_r107_sizing_demand = corridor_demand_ }
-				set_variable = { WA_TLM_r107_sizing_inject = corridor_inject_ }
-				set_variable = { WA_TLM_r107_sizing_rail_tgt = corridor_rail_tgt_ }
-				set_variable = { WA_TLM_r107_sizing_chain = _corridor_chain_len_ }
-				if = {
-					limit = { check_variable = { _corridor_port_raised_ > 0 } }
-					add_to_variable = { WA_TLM_r107_port_raise_n = _corridor_port_raised_ }
-				}
-				if = { limit = { check_variable = { WA_TLM_r107_sizing_first_t = 0 } }
-					set_variable = { WA_TLM_r107_sizing_first_t = global.WA_TLM_clock }
-				}
-				set_variable = { WA_TLM_r107_sizing_last_t = global.WA_TLM_clock }
-
-				### Stale-path validation, pinned to the corridor tag.
-				# Only when the cancel set is COMPLETE: every requested route was pathfound this pass
-				# (a route cap smaller than the list cancels the in-progress segments of the routes it
-				# skipped - hence corridor.max_routes_per_run = the whole list) AND at least one
-				# succeeded, or none was requested (the hub-only / nodes-lost case, where the hub
-				# provinces are the valid set and every rail is legitimately stale).
-				if = {
-					limit = {
-						check_variable = { _corridor_routes_done_ = corridor_route_end_^num }
-						OR = {
-							check_variable = { _corridor_routes_done_ = 0 }
-							check_variable = { _corridor_routes_ok_ > 0 }
-						}
-					}
-					set_temp_variable = { _strategy_id = constant:wa_ai_pc.type_id.corridor }
-					WA_AI_PC_validate_queued_provincial_projects = yes
-				}
-				else = {
-					clear_temp_array = _valid_provinces
-				}
-
-				# The last start call above may have been a hub (14/17); put the shared project temps
-				# back on the rail family so nothing downstream reads a hub's type.
-				# _project_queue_max / _project_priority are deliberately NOT restored: they stay
-				# corridor-valued for the rest of this weekly chain, and every downstream PC caller
-				# sets its own before start_project - inheriting them is never relied upon.
-				set_temp_variable = { _project_building_type = constant:wa_ai_pc.type_id.rail }
-				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
-
-				if = { limit = { has_country_flag = WA_AI_construction_logging }
-					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: routes ok=[?_corridor_routes_ok_] done=[?_corridor_routes_done_] requested=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num], admitted seg=[?_corridor_seg_admitted_] connect=[?_corridor_connect_admitted_] depot=[?_corridor_depot_admitted_] port=[?_corridor_port_admitted_]"
-				}
-			}
+			set_temp_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.levant_iraq }
+			WA_AI_PC_railway_corridor_run_one = yes
 		}
+
+		# Chain hygiene (editing rule 9): both temps are read by railway_helpers on every corridor
+		# start call, and a leaked tag would follow the rest of the weekly chain. Zeroed OUTSIDE the
+		# civ-floor branch on purpose - a pass that fails the floor must leave the same state behind
+		# as one that ran, not whatever the branch happened not to write.
+		set_temp_variable = { _corridor_id_ = 0 }
+		set_temp_variable = { _corridor_type_id_ = 0 }
 	}
 }
 
@@ -686,5 +410,360 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 	### Set success flag if we have targets
 	if = { limit = { check_variable = { railway_end_provinces_^num > 0 } }
 		set_temp_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
+	}
+}
+
+############################################################################################################
+#	[levant-iraq] ONE corridor, start to finish: select (strategy), pathfind, admit, validate, report.
+#	Extracted verbatim from WA_AI_PC_railway_corridor_pass when the pass gained a second corridor -
+#	the pass above is now the interval gate, the industrial floor and the per-corridor call list.
+#
+#	ROOT = builder country.
+#	<<< _corridor_id_       which corridor (1 = north_africa, 2 = levant_iraq) - passed straight to
+#	                        WA_AI_PC_railway_STRATEGY_theatre_corridor, which owns the id table.
+#	<<< _corridor_type_id_  this corridor's PC tag. Read by WA_AI_PC_start_railway_project and
+#	                        WA_AI_PC_corridor_start_hub for the project tag and the scoped budget,
+#	                        and used here as the stale-path validator's _strategy_id. Per corridor,
+#	                        never shared - see the dispatcher's note above.
+############################################################################################################
+
+WA_AI_PC_railway_corridor_run_one = {
+	# [levant-iraq] the ONE derivation of the corridor's PC tag, done before anything can read it.
+	# Written as equality on the id, never as a `> 0` test on the tag: an UNSET temp reads as a
+	# scope token rather than 0, so a `> 0` guard passes and would tag projects with garbage.
+	# An unknown id therefore lands on corridor 1's tag - harmless, because the strategy's define
+	# ladder gives an unknown id an EMPTY node list and nothing is ever queued under it.
+	set_temp_variable = { _corridor_type_id_ = constant:wa_ai_pc.type_id.corridor }
+	if = {
+		limit = { check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.levant_iraq } }
+		set_temp_variable = { _corridor_type_id_ = constant:wa_ai_pc.type_id.corridor_levant }
+	}
+
+	WA_AI_PC_railway_STRATEGY_theatre_corridor = yes
+
+	if = {
+		limit = { check_variable = { corridor_ran_ = 1 } }
+
+		clear_temp_array = _valid_provinces
+		set_temp_variable = { _corridor_routes_done_ = 0 }
+		set_temp_variable = { _corridor_routes_ok_ = 0 }
+		set_temp_variable = { _corridor_seg_admitted_ = 0 }
+		set_temp_variable = { _corridor_depot_admitted_ = 0 }
+		set_temp_variable = { _corridor_port_admitted_ = 0 }
+		set_temp_variable = { _corridor_port_raised_ = 0 }
+		# [na-corridor] total provinces on the chains actually pathfound this pass. It is the N of the
+		# port-vs-rail arbitration (LOGISTICS_MODEL section 11.7) - the WHOLE chain, not one hop,
+		# because the chain is in series and a point at the far end costs a level on every link.
+		set_temp_variable = { _corridor_chain_len_ = 0 }
+
+		### Routes: consecutive node pairs both ours - full paths only (no frontier ports in the desert)
+		###
+		### [na-corridor] CONNECT PHASE. The binding constraint here is ADMISSION, not funding:
+		### the pass walks the node list west to east and admits until corridor.queue_max is
+		### full, so the rear hops claim the whole budget before the head hops are ever
+		### offered, and a project that is never admitted never gets a price. Pricing a level-0
+		### segment into a connect band was tried on its own and left the queue full of
+		### upgrades to already-railed rear edges while the head hops stayed BREAK.
+		### So the pass runs two phases over ONE set of pathfinds:
+		###   phase 0  pathfind every route, collect its segments and each segment's RAW map level
+		###   phase A  admit ONLY segments at map level 0, target level 1 - connect the chain
+		###   phase B  only if phase A admitted nothing: admit the rest at the sizing target
+		### One admission path, not a second strategy. A segment the controller gate refuses
+		### never counts as admitted, so a permanently blocked hop (a corridor leg across
+		### neutral ground) cannot hold the corridor's upgrades hostage for ever - the failure
+		### mode a naive "no upgrades while any hop is BREAK" rule would have shipped.
+		clear_temp_array = _cseg_a_
+		clear_temp_array = _cseg_b_
+		clear_temp_array = _cseg_tgt_
+		clear_temp_array = _cseg_prio_
+		clear_temp_array = _cseg_state_
+		clear_temp_array = _cseg_lvl_
+
+		set_temp_variable = { _corridor_max_minus_one_ = constant:wa_ai_railway.corridor.max_routes_per_run }
+		subtract_from_temp_variable = { _corridor_max_minus_one_ = 1 }
+		for_each_loop = { array = corridor_route_end_ index = _cr_i_ value = _cr_end_ break = _cr_b_
+			if = {
+				limit = { check_variable = { _corridor_routes_done_ > _corridor_max_minus_one_ } }
+				set_temp_variable = { _cr_b_ = 1 }
+			}
+			else = {
+				set_temp_variable = { _pathfind_prov_start = corridor_route_start_^_cr_i_ }
+				set_temp_variable = { _pathfind_prov_end = _cr_end_ }
+				set_temp_variable = { _pathfind_prov_type = 2 }
+				set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+				WA_AI_PATHFIND_PROV_get_path = yes
+				add_to_temp_variable = { _corridor_routes_done_ = 1 }
+				if = {
+					limit = { check_variable = { pathfind_prov_success_ = 1 } }
+					add_to_temp_variable = { _corridor_routes_ok_ = 1 }
+					# [na-corridor] segments on this route = provinces - 1.
+					add_to_temp_variable = { _corridor_chain_len_ = pathfind_prov_path_^num }
+					subtract_from_temp_variable = { _corridor_chain_len_ = 1 }
+					for_each_loop = { array = pathfind_prov_path_ index = _cp_i_ value = _cp_v_ break = _cp_b_
+						add_to_temp_array = { _valid_provinces = _cp_v_ }
+						set_temp_variable = { _cp_next_ = _cp_i_ }
+						add_to_temp_variable = { _cp_next_ = 1 }
+						if = {
+							limit = { check_variable = { _cp_next_ < pathfind_prov_path_^num } }
+							set_temp_variable = { _cseg_next_prov_ = pathfind_prov_path_^_cp_next_ }
+							set_temp_variable = { _corridor_seg_state_ = global.WA_AI_MAP_province_state_id^_cp_v_ }
+							if = {
+								limit = { check_variable = { _corridor_seg_state_ > 0 } }
+								# RAW map level of this connection - the same global ledger the
+								# helper reads, seeded at startup from the generated map data
+								# and moved only at completion. 0 = there is no railway here.
+								meta_effect = {
+									text = {
+										set_temp_variable = { _cseg_this_lvl_ = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+									}
+									x = "[?_cp_v_]"
+									y = "[?_cseg_next_prov_]"
+								}
+								add_to_temp_array = { _cseg_a_ = _cp_v_ }
+								add_to_temp_array = { _cseg_b_ = _cseg_next_prov_ }
+								add_to_temp_array = { _cseg_tgt_ = corridor_route_level_^_cr_i_ }
+								add_to_temp_array = { _cseg_prio_ = corridor_route_prio_^_cr_i_ }
+								add_to_temp_array = { _cseg_state_ = _corridor_seg_state_ }
+								add_to_temp_array = { _cseg_lvl_ = _cseg_this_lvl_ }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		### Phase A - CONNECT. Every collected segment with no railway at all, target level 1.
+		set_temp_variable = { _corridor_connect_admitted_ = 0 }
+		for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
+			if = {
+				limit = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } }
+				set_temp_variable = { _project_province_id = _cs_a_ }
+				set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
+				# Target 1, not the sizing target: connect the whole chain first, raise it
+				# afterwards. Without this clamp the same unrailed segment is re-requested
+				# every pass until it reaches the sizing target, so ONE hop can hold several
+				# connect-band projects while the next hop has none.
+				set_temp_variable = { _project_target_level = 1 }
+				set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
+				set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
+				set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
+				set_temp_variable = { _railway_family_ = 1 }
+				var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
+				if = {
+					limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
+					add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
+					add_to_temp_variable = { _corridor_connect_admitted_ = 1 }
+				}
+			}
+		}
+
+		### Phase B - RAISE. Only when the connect phase found nothing to admit: either the
+		### chain is whole, or every remaining hole was refused by the controller gate and is
+		### not ours to build.
+		if = {
+			limit = { check_variable = { _corridor_connect_admitted_ = 0 } }
+			for_each_loop = { array = _cseg_a_ index = _cs_i_ value = _cs_a_ break = _cs_b_
+				if = {
+					limit = { NOT = { check_variable = { _cseg_lvl_^_cs_i_ < 1 } } }
+					set_temp_variable = { _project_province_id = _cs_a_ }
+					set_temp_variable = { _project_connect_id = _cseg_b_^_cs_i_ }
+					set_temp_variable = { _project_target_level = _cseg_tgt_^_cs_i_ }
+					set_temp_variable = { _project_priority = _cseg_prio_^_cs_i_ }
+					set_temp_variable = { _corridor_seg_state_ = _cseg_state_^_cs_i_ }
+					set_temp_variable = { _corridor_q_before_ = WA_AI_PC_queue^num }
+					set_temp_variable = { _railway_family_ = 1 }
+					var:_corridor_seg_state_ = { WA_AI_PC_start_railway_project = yes }
+					if = {
+						limit = { check_variable = { WA_AI_PC_queue^num > _corridor_q_before_ } }
+						add_to_temp_variable = { _corridor_seg_admitted_ = 1 }
+					}
+				}
+			}
+		}
+		# Belt and braces: the helper latches-and-zeroes this on entry, but a segment call
+		# skipped by the state-mapping guard would leave a 1 behind for the main pass.
+		set_temp_variable = { _railway_family_ = 0 }
+
+		# [na-corridor] the collection arrays are this pass's working set and nothing
+		# downstream reads them. Cleared here as well as on entry so they do not travel
+		# with the rest of the weekly effect chain (editing rule 9).
+		clear_temp_array = _cseg_a_
+		clear_temp_array = _cseg_b_
+		clear_temp_array = _cseg_tgt_
+		clear_temp_array = _cseg_prio_
+		clear_temp_array = _cseg_state_
+		clear_temp_array = _cseg_lvl_
+
+		### Hubs: depots / ports at nodes we hold
+		for_each_loop = { array = corridor_hub_prov_ index = _ch_i_ value = _ch_prov_ break = _ch_b_
+			set_temp_variable = { _hub_prov_ = _ch_prov_ }
+			set_temp_variable = { _hub_kind_ = corridor_hub_kind_^_ch_i_ }
+			set_temp_variable = { _hub_prio_ = corridor_hub_prio_^_ch_i_ }
+			# [na-corridor] the level this hub should reach, read from its OWN slot of the parallel
+			# array the strategy filled. Never inherited: the loop re-sets it every iteration,
+			# so a port with no computed target cannot pick up the previous port's.
+			set_temp_variable = { _hub_target_level_ = corridor_hub_target_^_ch_i_ }
+			if = { limit = { check_variable = { _hub_target_level_ < 1 } }
+				set_temp_variable = { _hub_target_level_ = 1 }
+			}
+			# [na-corridor] - port-vs-rail arbitration (LOGISTICS_MODEL section 11.7). Raising a port
+			# buys 5 supply for a flat constant:wa_ai_pc.cost.naval_base; raising the rail buys 8
+			# for constant:wa_ai_pc.cost.railway PER LINK of the chain. Below the break-even the
+			# rail is both cheaper per point and far faster to deliver (8 segments may be in
+			# flight at once, a port is one per province and one level per completion), so the
+			# port falls back to level 1 = place it if it is missing, nothing more.
+			if = {
+				limit = {
+					check_variable = { _hub_kind_ = 14 }
+					check_variable = { _corridor_chain_len_ < constant:wa_ai_railway.corridor.port_break_even_segments }
+				}
+				set_temp_variable = { _hub_target_level_ = 1 }
+			}
+			add_to_temp_array = { _valid_provinces = _ch_prov_ }
+			WA_AI_PC_corridor_start_hub = yes
+			if = {
+				limit = { check_variable = { corridor_hub_admitted_ = 1 } }
+				if = {
+					limit = { check_variable = { _hub_kind_ = 17 } }
+					add_to_temp_variable = { _corridor_depot_admitted_ = 1 }
+				}
+				else = {
+					add_to_temp_variable = { _corridor_port_admitted_ = 1 }
+					# [na-corridor] a RAISE is a port admitted at a target above 1, i.e. one that
+					# existed already. Kept apart from _port_admitted_ so the probe can tell
+					# "the new lever fired" from "the old place-if-missing branch fired".
+					if = { limit = { check_variable = { _hub_target_level_ > 1 } }
+						add_to_temp_variable = { _corridor_port_raised_ = 1 }
+					}
+				}
+			}
+		}
+
+		# [levant-iraq] ALL WA_TLM WRITES OF THIS PASS ARE CORRIDOR 1 (north_africa) ONLY.
+		# Every one of these names - the r95/r103 counters as much as the r103/r107 gauges - is read by
+		# the docs and by past campaign scoring as a North Africa reading. Letting a second corridor sum
+		# into a counter or overwrite a gauge would RETARGET the metric rather than extend it: a metric
+		# means one thing for the life of its name (WA_TLM doc).
+		# Corridor 2 therefore emits NO telemetry, deliberately - its outcome is directly save-readable
+		# (a supply_node at its depot node, rail levels on its edges), so a gauge would only add a second
+		# source of truth for what the map already answers. A corridor that needs one takes its OWN
+		# metric names, never these.
+		if = {
+			limit = { check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.north_africa } }
+			# tlm r95_corridor_*: counters, one per project the corridor pass ADMITTED (the queue
+			# grew across WA_AI_PC_start_project - never per request: queue_max, the
+			# province-duplicate guard and the controller test all refuse silently), split rail
+			# segments / depots / ports, with first_t / last_t stamps. "Built" is NOT this counter -
+			# read the map (railway connection level, supply_node / naval_base at the node).
+			if = {
+				limit = {
+					OR = {
+						check_variable = { _corridor_seg_admitted_ > 0 }
+						check_variable = { _corridor_depot_admitted_ > 0 }
+						check_variable = { _corridor_port_admitted_ > 0 }
+					}
+				}
+				add_to_variable = { WA_TLM_r95_corridor_seg_n = _corridor_seg_admitted_ }
+				add_to_variable = { WA_TLM_r95_corridor_depot_n = _corridor_depot_admitted_ }
+				add_to_variable = { WA_TLM_r95_corridor_port_n = _corridor_port_admitted_ }
+				if = { limit = { check_variable = { WA_TLM_r95_corridor_first_t = 0 } }
+					set_variable = { WA_TLM_r95_corridor_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r95_corridor_last_t = global.WA_TLM_clock }
+			}
+
+			# tlm r103_corridor_*: did splitting PERMISSION from PAYMENT change what this builder
+			# can reach, and did that turn into admitted rail?
+			#   _reach   GAUGE, resampled every pass: hops requestable only because both ends are
+			#            ours and exactly one is our charge. Sampled state, so a gauge - a counter
+			#            here would be a code-path count.
+			#   _orphan  GAUGE: hops both ends ours and NEITHER our charge - both ends are then held
+			#            by partners that CAN fund, so a transient reading is normal and means "this
+			#            hop belongs to someone else". The signal is _orphan high WHILE the hop stays
+			#            unbuilt on the map: a defect of the owner's pass, not of ours.
+			#   _seg_n   counter, VERIFIED EFFECT: rail segments actually admitted (queue grew) on a
+			#            pass the widening contributed to. Never per request.
+				set_variable = { WA_TLM_r103_corridor_reach = corridor_reach_ }
+				set_variable = { WA_TLM_r103_corridor_orphan = corridor_orphan_ }
+			if = {
+				limit = {
+					check_variable = { corridor_reach_ > 0 }
+					check_variable = { _corridor_seg_admitted_ > 0 }
+				}
+				add_to_variable = { WA_TLM_r103_corridor_seg_n = _corridor_seg_admitted_ }
+				if = { limit = { check_variable = { WA_TLM_r103_corridor_first_t = 0 } }
+					set_variable = { WA_TLM_r103_corridor_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r103_corridor_last_t = global.WA_TLM_clock }
+			}
+
+			# tlm r107_sizing_* [na-corridor]: what did the sizing model SEE and DECIDE this pass?
+			#   _presence  GAUGE: the demand proxy over our side's divisions in the corridor states.
+			#              NOT a division count - a bucket ladder that over-reads a dispersed army
+			#              (WA_AI_PC_corridor_compute_sizing header).
+			#   _demand    GAUGE: _presence x supply_per_division x target_ratio, in supply points.
+			#   _inject    GAUGE: what our corridor ports can put in, in supply points.
+			#              **-1 = the cap was deliberately NOT applied** (we hold no corridor port,
+			#              or ROOT's capital sits on the corridor and it is fed overland). 0 would
+			#              conflate that with "our ports inject nothing", which is a different fact.
+			#   _rail_tgt  GAUGE: the level every hop was asked for this pass, after floor and cap.
+			#              The MAP validates this one - `rail.py --corridor` reads the built minimum
+			#              and the two must converge within a few build durations; diverging is the
+			#              signal that the model asked and nothing was delivered.
+			#   _chain     GAUGE: provinces on the chains pathfound this pass = the N of the
+			#              port-vs-rail arbitration. Not derivable from the four above, and the only
+			#              way to read WHY the port lever did or did not fire.
+			#   _raise_n   counter, VERIFIED EFFECT: ports admitted at a target ABOVE 1, i.e. a real
+			#              raise of an existing port. Counts only where the queue grew.
+				set_variable = { WA_TLM_r107_sizing_presence = corridor_presence_ }
+				set_variable = { WA_TLM_r107_sizing_demand = corridor_demand_ }
+				set_variable = { WA_TLM_r107_sizing_inject = corridor_inject_ }
+				set_variable = { WA_TLM_r107_sizing_rail_tgt = corridor_rail_tgt_ }
+				set_variable = { WA_TLM_r107_sizing_chain = _corridor_chain_len_ }
+				if = { limit = { check_variable = { WA_TLM_r107_sizing_first_t = 0 } }
+					set_variable = { WA_TLM_r107_sizing_first_t = global.WA_TLM_clock }
+				}
+				set_variable = { WA_TLM_r107_sizing_last_t = global.WA_TLM_clock }
+			if = {
+				limit = { check_variable = { _corridor_port_raised_ > 0 } }
+				add_to_variable = { WA_TLM_r107_port_raise_n = _corridor_port_raised_ }
+			}
+		}
+
+		### Stale-path validation, pinned to the corridor tag.
+		# Only when the cancel set is COMPLETE: every requested route was pathfound this pass
+		# (a route cap smaller than the list cancels the in-progress segments of the routes it
+		# skipped - hence corridor.max_routes_per_run = the whole list) AND at least one
+		# succeeded, or none was requested (the hub-only / nodes-lost case, where the hub
+		# provinces are the valid set and every rail is legitimately stale).
+		if = {
+			limit = {
+				check_variable = { _corridor_routes_done_ = corridor_route_end_^num }
+				OR = {
+					check_variable = { _corridor_routes_done_ = 0 }
+					check_variable = { _corridor_routes_ok_ > 0 }
+				}
+			}
+			# [levant-iraq] THIS corridor's tag, never a shared one: the validator cancels every
+			# queued project carrying _strategy_id whose target province is not in _valid_provinces,
+			# and _valid_provinces holds only the routes and hubs of the corridor just processed.
+			set_temp_variable = { _strategy_id = _corridor_type_id_ }
+			WA_AI_PC_validate_queued_provincial_projects = yes
+		}
+		else = {
+			clear_temp_array = _valid_provinces
+		}
+
+		# The last start call above may have been a hub (14/17); put the shared project temps
+		# back on the rail family so nothing downstream reads a hub's type.
+		# _project_queue_max / _project_priority are deliberately NOT restored: they stay
+		# corridor-valued for the rest of this weekly chain, and every downstream PC caller
+		# sets its own before start_project - inheriting them is never relied upon.
+		set_temp_variable = { _project_building_type = constant:wa_ai_pc.type_id.rail }
+		set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.rail }
+
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY CORRIDOR: routes ok=[?_corridor_routes_ok_] done=[?_corridor_routes_done_] requested=[?corridor_route_end_^num] hubs=[?corridor_hub_prov_^num], admitted seg=[?_corridor_seg_admitted_] connect=[?_corridor_connect_admitted_] depot=[?_corridor_depot_admitted_] port=[?_corridor_port_admitted_]"
+		}
 	}
 }

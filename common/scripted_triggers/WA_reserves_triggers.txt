@@ -5,6 +5,10 @@
 # Provides reusable triggers for recruitment and deployment decisions.
 ############################################################################################################
 
+# [reserve-undersized-army] Field-army manpower a continental war needs; below it the bank
+# is spent. File-scoped on purpose - WA_reserves_should_deploy_undersized_army is its only reader.
+@RESERVES_UNDERSIZED_ARMY_MANPOWER = 3000000
+
 ############################################################################################################
 # MAIN ELIGIBILITY TRIGGERS
 ############################################################################################################
@@ -273,6 +277,20 @@ WA_reserves_deployment_complete = {
 		NOT = { check_variable = { ROOT.reserves > 0 } }
 		has_country_flag = reserves_finished_1
 	}
+}
+
+############################################################################################################
+# UNDERSIZED ARMY OVERRIDE
+############################################################################################################
+
+# [reserve-undersized-army] COUNTRY scope; sole reader: the two deploy_reserves_infantry vetoes
+# (common/decisions/_reserves.txt) - it is the ONLY way out of both. The bank is a strategic
+# reserve for the continental war: held while the field army is big enough to fight it, spent
+# once it is not. Assumes the archetype's industry can equip what the dump fields.
+WA_reserves_should_deploy_undersized_army = {
+	WA_AI_CONFIG_is_reserve_undersized_dumper = yes
+	WA_AI_CONFIG_after_barbarossa_buildup_begins = yes
+	has_army_manpower = { size < @RESERVES_UNDERSIZED_ARMY_MANPOWER }
 }
 
 ############################################################################################################

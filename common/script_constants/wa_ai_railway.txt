@@ -124,8 +124,14 @@ wa_ai_railway = {
 		# RE-DERIVE BY HAND, nothing checks it (noted on cost_naval_base in tools/constants_registry.json).
 		port_break_even_segments = 20	# at or above this many provinces on the chain, raise the PORT; below, the RAIL
 		queue_max          = 8	# concurrent corridor projects per builder PER BUILDING TYPE (WA_AI_PC_start_project filters
-		                    	# building_type before the type_id budget): 8 rails + 8 depots + 8 ports at most, tag corridor, [equipment-selection] scoped
-		max_routes_per_run = 20	# pathfinds per corridor pass = the whole node-pair list of the largest corridor (21 nodes ->
+		                    	# building_type before the type_id budget) AND [levant-iraq] PER CORRIDOR TAG, since each
+		                    	# corridor carries its own constant:wa_ai_pc.type_id.*: 8 rails + 8 depots + 8 ports per
+		                    	# corridor, so the ceiling is 8 x building types x CORRIDORS in flight, not 8 x building types.
+		                    	# What this key does NOT separate is the country's FACTORY ALLOCATION: two corridors at the
+		                    	# same band bid into one priority-sorted queue. [equipment-selection] scoped
+		max_routes_per_run = 20	# pathfinds PER CORRIDOR per pass ([levant-iraq]; the counter is reset inside
+		                    	# WA_AI_PC_railway_corridor_run_one, so the cost of a pass is this x corridors) = the
+		                    	# whole node-pair list of the largest corridor (21 nodes ->
 		                    	# 20 pairs, North Africa: the western arm Oran..Tunis from [na-corridor], plus the inland
 		                    	# junction 13481 between Tobruk and 5078 from [commonwealth-handoff]). NOT a rotating
 		                    	# window: the pass validates every corridor project against the routes it pathfound, so a

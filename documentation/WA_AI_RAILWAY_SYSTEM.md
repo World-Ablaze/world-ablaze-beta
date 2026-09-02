@@ -354,17 +354,63 @@ the arm south through the level-1 Batna branch (`map/railways.txt:1152`).
 pass validates every corridor project against the routes it pathfound *this pass*, so a cap below the
 pair count cancels the paid-for progress of the routes it skipped, every pass, for ever.
 
+### [levant-iraq] (2026-09-01) — more than one corridor, and the Jordan approach to Iraq
+
+**The family is now N corridors.** `WA_AI_PC_railway_corridor_pass` is the interval gate, the
+industrial floor and the **call list**; one corridor's work is `WA_AI_PC_railway_corridor_run_one`,
+called once per corridor id with `_corridor_id_` (which define and which theatre gate) and
+`_corridor_type_id_` (that corridor's PC tag) set by the dispatcher and zeroed after the last call.
+
+**One PC `type_id` per corridor is load-bearing, not bookkeeping.** `run_one` ends with a stale-path
+validation that cancels *every queued project carrying its `_strategy_id`* whose target province is
+not on the routes it just pathfound. Two corridors under one tag would therefore cancel each other's
+in-flight segments on every pass — the same failure the `max_routes_per_run` note above describes,
+one level up. The per-tag `queue_max` follows from the same split, so the corridors do not compete
+for one budget either. **A third corridor takes a third id and a third `type_id`** (`wa_ai_pc.txt`,
+`savegame.py` `_PC_TYPE_ID`, `tools/constants_registry.json`).
+
+**Corridor 2 — `levant_iraq`, Ma'an 7151 → Amman 4017 → Ruwaished 4440.** Owner order: while the
+holder of Jordan is at war with the Iraqi power, put a depot on the last friendly province before
+the Iraqi border and connect it to the rail the Levant already has; stop when that power
+capitulates. Map facts (2026-09-01): 7151 and 4017 both carry a supply node and are railed to each
+other at level 1 via 10089; 4440 is land/arid with **no** supply node and **no** railway, its only
+Jordanian neighbour is 1544, and its neighbours 13831/13832 are state 675 (Iraq). **Every node and
+every intermediate province the pathfinder can pick is in state 455**, so all segments are
+admission-scoped to one state and the pathfinder/admission mismatch that forced junction 13481 into
+the North African list cannot arise here.
+
+Two things this corridor does *not* have, both deliberate: **no node inside Iraq** (the owner asked
+for a depot fed from the Levant, not for rail laid into Iraq) and **no port** (it is inland).
+
+**Gate** — `WA_AI_PC_corridor_theatre_live_levant_iraq`: the **OWNER of state 291 (Baghdad)** is at
+war with ROOT and has not capitulated. Ownership rather than control, so occupying Baghdad does not
+close the gate before the war is decided; it closes on capitulation, on annexation (the owner
+becomes the annexer, who is not at war with itself) and on a white peace. Tag-free: any holder of
+Jordan fighting any holder of Baghdad gets the same corridor.
+
+**Band.** This corridor's node list is entirely behind our own lines, so `_corridor_hostile_n_` is 0
+and the enemy-held-node rule would price a wartime measure as peacetime preparation. The define
+declares `_corridor_war_band_ = 1` and the band rule gained an OR term; North Africa declares 0 and
+its band is decided exactly as before.
+
+**Telemetry.** The r103 `reach`/`orphan` and the five r107 `sizing_*` names are **GAUGES** — sampled
+state, last writer wins — and every documented reading of them is a North Africa reading, so they
+are pinned to corridor 1. The `r95_corridor_*` counters and `r107_port_raise_n` are per-project and
+stay unguarded: "the corridor pass admitted N projects" is still true when the corridors sum into
+them. A corridor that needs its own gauge takes its own metric names (WA_TLM doc §7).
+
 **Files.**
 
 | Layer | File | What |
 |---|---|---|
-| data | `WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt` | `WA_AI_PC_CORRIDOR_define_north_africa` fills `corridor_node_prov_` / `_depot_` / `_port_`. Pure data. A second theatre = a second define. |
+| data | `WA_AI_CONSTRUCTION_PRIORITY_corridor_data.txt` | `WA_AI_PC_CORRIDOR_define_north_africa` and `WA_AI_PC_CORRIDOR_define_levant_iraq` fill `corridor_node_prov_` / `_depot_` / `_port_` / `_fwdport_` and declare `_corridor_war_band_`. Pure data. A second theatre = a second define. |
 | strategy | `railway_strategies.txt` `WA_AI_PC_railway_STRATEGY_theatre_corridor` | classifies every node (ours / enemy-held), applies the theatre gate, publishes routes (`corridor_route_*`) and hubs (`corridor_hub_*`) for this pass |
-| core | `railway_core.txt` `WA_AI_PC_railway_corridor_pass` | own interval counter, civ floor, pathfinding (type 2, **no partial**), segment admission through `WA_AI_PC_start_railway_project` with `_railway_family_ = 1`, hubs through `WA_AI_PC_corridor_start_hub`, stale-path validation pinned to `type_id` corridor, `WA_TLM_r95_corridor_*` |
+| core | `railway_core.txt` `WA_AI_PC_railway_corridor_pass` | interval counter, civ floor, and the per-corridor call list (`_corridor_id_` / `_corridor_type_id_`) |
+| core | `railway_core.txt` `WA_AI_PC_railway_corridor_run_one` | ONE corridor: pathfinding (type 2, **no partial**), segment admission through `WA_AI_PC_start_railway_project` with `_railway_family_ = 1`, hubs through `WA_AI_PC_corridor_start_hub`, stale-path validation pinned to **this corridor's** `type_id`, `WA_TLM_r95_corridor_*` |
 | helpers | `railway_helpers.txt` `WA_AI_PC_corridor_start_hub` | queues a supply hub (PC type 17, new in Fix 95 part 1) or a naval base (14) at a named province, idempotent on the building's existence |
-| triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` (→ `WA_AI_PC_is_corridor_side_holder`) / `_is_my_charge` (→ `WA_AI_PC_is_logistics_build_partner`) / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` | province-level control tests over `any_country`; permission vs payment split (Fix 103); theatre gate = AIR contested trigger OR no enemy on any node (preparation) |
+| triggers | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_corridor_node_is_ours` (→ `WA_AI_PC_is_corridor_side_holder`) / `_is_my_charge` (→ `WA_AI_PC_is_logistics_build_partner`) / `_is_hostile` / `WA_AI_PC_corridor_theatre_live_north_africa` / `WA_AI_PC_corridor_theatre_live_levant_iraq` | province-level control tests over `any_country`; permission vs payment split (Fix 103); NA theatre gate = AIR contested trigger OR no enemy on any node (preparation); Levant gate = the owner of Baghdad is at war with ROOT and standing. **One gate per corridor, dispatched as `OR = { AND = {id, gate} … }` — never as `if = { limit = { id = N } gate }`, which is vacuously TRUE for every other id** |
 | admission | `WA_AI_CONSTRUCTION_triggers.txt` `WA_AI_PC_state_controller_allows_admission` | the three-term controller gate `WA_AI_PC_start_project` applies, extracted verbatim by Fix 103 so the corridor selector and the `blocked_n` probe agree with it by construction instead of by comment. **`selector ⊆ admission ⊆ validity`** — the lane / air-lane / fill / completion tests at `PRIORITY_core.txt` `:494`, `:627`, `:743`, `:1069` deliberately carry a fourth term `ROOT = { is_subject_of = PREV }` and must not be folded into this trigger |
-| constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level_floor` 2 / `rail_level_cap` 4 (Fix 107), `queue_max` 8 per building type, `max_routes_per_run` 19 = the whole pair list, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27, `cost.supply_node` | |
+| constants | `wa_ai_railway.txt` `corridor.*` (`interval_weeks` 4, `rail_level_floor` 2 / `rail_level_cap` 4 (Fix 107), `queue_max` 8 per building type **per corridor tag**, `max_routes_per_run` = the whole pair list **of the largest corridor**, applied per corridor, so the validator's cancel set is always complete); `wa_ai_pc.txt` `type_id.corridor` 27 (north_africa) and `type_id.corridor_levant` 28, `cost.supply_node` | |
 
 **Rules the engine applies — no tag, no date, no side (the corridor is symmetric):**
 

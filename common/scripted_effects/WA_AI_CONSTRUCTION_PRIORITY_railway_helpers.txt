@@ -901,7 +901,9 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 
 WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _project_connect_id, _project_target_level, _project_priority
 	# Optional input: _railway_family_ (temp, [na-corridor]) - 1 = the segment belongs to a THEATRE
-	# CORRIDOR: tagged constant:wa_ai_pc.type_id.corridor, budgeted by
+	# CORRIDOR: tagged with [levant-iraq]'s _corridor_type_id_ (that corridor's own
+	# constant:wa_ai_pc.type_id.*, derived once at the entry of WA_AI_PC_railway_corridor_run_one,
+	# the only caller that sets _railway_family_), budgeted by
 	# constant:wa_ai_railway.corridor.queue_max under scoped queue_max. Absent / 0 = the rail family
 	# (type_id rail, budget routes.queue_full).
 	# LATCHED AND ZEROED HERE, at the top, before any early return: it is a chain temp, the corridor
@@ -973,9 +975,15 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 		# that never happened. THIS = state, ROOT = builder (both call sites scope into the state),
 		# the scope WA_AI_PC_state_controller_allows_admission requires - the same trigger the
 		# executor calls, so probe and gate cannot drift. Corridor family only.
+		# [levant-iraq] corridor 1 only, like every other corridor WA_TLM name: the metric is read as
+		# a North Africa refusal count and a second corridor summing into it would retarget it, not
+		# extend it. Corridor 2 gets no blocked_n by design - its three nodes and every province
+		# between them are in ONE state, so the province/state scope mismatch this counter exists to
+		# expose cannot arise there.
 		if = {
 			limit = {
 				check_variable = { _rail_family_latched_ = 1 }
+				check_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.north_africa }
 				NOT = { WA_AI_PC_state_controller_allows_admission = yes }
 			}
 			ROOT = { add_to_variable = { WA_TLM_r103_corridor_blocked_n = 1 } }
@@ -987,7 +995,12 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 			limit = { check_variable = { _rail_family_latched_ = 1 } }
 			# [na-corridor] theatre-corridor segment - own tag, own scoped budget, so the corridor
 			# neither eats the land-war family's budget nor is refused because that family is full.
-			set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.corridor }
+			# [levant-iraq] the tag is PER CORRIDOR (two corridors under one tag cancel each other's
+			# queue - see WA_AI_PC_railway_corridor_run_one). CONTRACT: _corridor_type_id_ is derived
+			# at the entry of run_one, which is the only caller that sets _railway_family_ = 1, so it
+			# is always written before this line. Deliberately NO `> 0` fallback: an UNSET temp reads
+			# as a scope token, not as 0, so such a guard passes and tags the project with garbage.
+			set_temp_variable = { _project_type_id = _corridor_type_id_ }
 			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.corridor.queue_max }
 			set_temp_variable = { _project_queue_max_scoped = 1 }
 		}
@@ -1542,7 +1555,9 @@ WA_AI_PC_corridor_start_hub = {
 			if = {
 				limit = { check_variable = { _hub_wanted_ = 1 } }
 				set_temp_variable = { _project_building_type = _hub_kind_ }
-				set_temp_variable = { _project_type_id = constant:wa_ai_pc.type_id.corridor }
+				# [levant-iraq] per-corridor tag, same contract as the segment site: derived at the
+				# entry of run_one, the only caller of this effect. No unset-temp fallback.
+				set_temp_variable = { _project_type_id = _corridor_type_id_ }
 				set_temp_variable = { _project_province_id = _hub_prov_ }
 				set_temp_variable = { _project_connect_id = 0 }
 				set_temp_variable = { _project_priority = _hub_prio_ }

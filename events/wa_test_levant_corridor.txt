@@ -1,0 +1,74 @@
+############################################################################################################
+#	[levant-iraq] Theatre-corridor 2 (Jordan -> Iraq) harness events - own file, own namespace
+#	(harness-contract v1; never home harness events in wa_events_test.txt).
+#
+#	RECIPE (owner console, observer game or throwaway save):
+#	  1. tag ENG  then  event wa_lcor.1   -> passive report. Read in this order:
+#	     - scope header, expect 1 1 1 1 0. Anything else: STOP, nothing below is a measurement.
+#	     - "gate": LIVE=1 means the corridor acts for this tag. Before 1941 it is 0 by design.
+#	     - "node" rows: 7151 / 4017 / 4440 need ours=1 and my_charge=1 on the holder of Jordan.
+#	     - "depots": 7151 and 4017 are the KNOWN-TRUE control (both 1 from game start). 4440 is
+#	       the deliverable and is 0 until the corridor builds it.
+#	     - "rail A" is the game-start control (L1). "rail B" is the gap: 0 0 0 0 until it builds.
+#	     Non-destructive, safe on any save. Fire it as the holder of Jordan - on an unrelated tag
+#	     ours / my_charge read 0 and that is the correct null, not a failure.
+#	  2. event wa_lcor.2 -> forces ONE corridor-2 pass on the current tag immediately instead of
+#	     waiting for the 4-week counter, then re-reports. Expect, with LIVE=1: queue rows tagged
+#	     type_id 28 at priority 1000/1100 (war band), building_type 17 on province 4440 and 13 on
+#	     the rail-B edges. QUEUES REAL PC PROJECTS - throwaway save only.
+#	  3. event wa_lcor.3 -> known-false control: the same forced pass with an UNKNOWN corridor id.
+#	     Expected: the strategy's else-branch clears the node list, so nothing is classified,
+#	     nothing is queued and the re-report shows the same queue count as before. A queue that
+#	     GROWS here means the id dispatch is not selecting - the vacuous-trigger failure this
+#	     harness exists to catch. Also throwaway save only.
+#	  Output: logs/game.log under "LEVANT CORRIDOR TEST".
+############################################################################################################
+add_namespace = wa_lcor
+
+# Passive report.
+country_event = {
+	id = wa_lcor.1
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_LEVANT_CORRIDOR_report = yes
+	}
+}
+
+# Live probe: force one corridor-2 pass on the current tag, then re-report.
+country_event = {
+	id = wa_lcor.2
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		log = "LEVANT CORRIDOR TEST: forcing one corridor-2 pass on [Root.GetName]"
+		set_temp_variable = { _corridor_id_ = constant:wa_ai_pc.corridor_id.levant_iraq }
+		# the tag is NOT set here - run_one derives it from the id, one derivation site
+		WA_AI_PC_railway_corridor_run_one = yes
+		set_temp_variable = { _corridor_id_ = 0 }
+		set_temp_variable = { _corridor_type_id_ = 0 }
+		WA_TEST_LEVANT_CORRIDOR_report = yes
+	}
+}
+
+# Known-false control: an unknown corridor id must define no nodes and queue nothing.
+country_event = {
+	id = wa_lcor.3
+	hidden = yes
+
+	is_triggered_only = yes
+
+	immediate = {
+		log = "LEVANT CORRIDOR TEST: known-false control - forcing a pass with corridor id 99 on [Root.GetName] (expect no queue growth)"
+		set_temp_variable = { _corridor_id_ = 99 }
+		# the tag is NOT set here - run_one derives it from the id, one derivation site
+		WA_AI_PC_railway_corridor_run_one = yes
+		set_temp_variable = { _corridor_id_ = 0 }
+		set_temp_variable = { _corridor_type_id_ = 0 }
+		WA_TEST_LEVANT_CORRIDOR_report = yes
+	}
+}
