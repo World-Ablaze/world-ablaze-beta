@@ -221,7 +221,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: readings (1)-(4) are pasted here and pass, OR (1) fails and the support-set lever
   ships under this slug, OR the owner accepts a written no-fix ruling.
 
-### armor-prod-category — OPEN (2026-09-01)
+### armor-prod-category — PARKED (2026-09-04)
+- Parked 2026-09-04 (WIP limit, `modern-chassis-tier` re-enters). Code SHIPPED `eefd8b5ea`; its only
+  exit is the campaign probe below (three post-fix runs read so far: `d8467fcf`, `5de66942`,
+  `5d2a391c` — variants up on GER/SOV/JAP/ITA, run-to-run noise ±0.1-0.3, no verdict yet). Unpark
+  when a run is scored against the Closed-when line.
 - Slug renamed from `armor-prod-war-floor` on the owner's 2026-09-01 instruction to drop the
   chassis floors: the subject's mechanism is now the `armor` CATEGORY demand factor, and the
   code markers read `[armor-prod-category]`. Everything below the rename is the original
@@ -905,6 +909,17 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   template and moves the light-support divisions through the rung's field-upgrade path, as
   `6f52600d` measured for the MIX rungs. Steps 1 (`wa_abg.1` conv-value line) and 3 (one-month
   re-read, no fall-back to 15006) still owed; division movement needs a save 4-8 weeks later.
+- Owner console 2026-09-04, same save run to 1943.3.24: `wa_abg.1 SOV` reads `conv-window=1
+  conv-value=15008  majority-LS=1  containing-LS=1  sov-temporary-15006=0`, verdicts 1 1 1 1 —
+  step 1 PASS (the majority tie did not bite). **New defect, owner-observed: the light-support
+  divisions turn into HEAVY divisions.** Cause (MEASURED imgui + files): the FINAL's best existing
+  match is "Heavy Tank template A" (0.7353) — heavy target 7105 is 9 heavy + 6 mec, RS 5+5 and the
+  same support set as the 9 medium + 6 mec MEC_FINAL, while SOV's medium target 6111 is 7 medium +
+  3 SPG + 5 mec, RS 3+3, other supports; the engine copies the best match as the field-upgrade
+  destination (DERIVED from the install doc: "copy of the best matching template"). Same class of
+  fault the light chain fixed with FINAL_MIS: a FINAL whose composition is not the medium role's
+  CURRENT target is captured by whichever template is nearest, here the heavy one. Fix design owed
+  to the owner (per-medium-value mirror of rung + FINAL, generated).
 - Verification — campaign probe, Change 7: a historical-difficulty SOV save ≥ 12 months after
   the mission resolution shows the light-support division count falling toward 0 and former park
   divisions on the 9 medium + 6 mot/mec shapes; `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` reads
