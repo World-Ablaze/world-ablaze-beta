@@ -898,6 +898,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `_44_TEMPORARY_TRANSITION_*`, best match ≥ 0.8, and within 7 days the arrow on the FINAL.
   Second read ONE MONTH after the first 15007/15008 reading (let the save run): `conv-value`
   still 15007/15008 — a fall-back to 15006 with `containing-LS=1` is the flap, the defect.
+- Owner imgui read 2026-09-04 (save 1943.1 of `5de66942` reloaded on `cb5e1977f`): both
+  `_44_TEMPORARY_TRANSITION_MOT/MEC` listed, arrow on `TRANSITION_MEC_FINAL` (flag 15008, the
+  rung -> FINAL switch fired within the pass), `Best (all)` = `Best (role)` = "Heavy Tank template
+  A" at 0.7353 — step 2 PASS. DERIVED: the engine builds the FINAL shape by copying that heavy
+  template and moves the light-support divisions through the rung's field-upgrade path, as
+  `6f52600d` measured for the MIX rungs. Steps 1 (`wa_abg.1` conv-value line) and 3 (one-month
+  re-read, no fall-back to 15006) still owed; division movement needs a save 4-8 weeks later.
 - Verification — campaign probe, Change 7: a historical-difficulty SOV save ≥ 12 months after
   the mission resolution shows the light-support division count falling toward 0 and former park
   divisions on the 9 medium + 6 mot/mec shapes; `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` reads
