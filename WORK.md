@@ -1588,7 +1588,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   sits at net ~0 by trade and never opens it — so an importer seeds on `NOT
   WA_AI_RESOURCE_is_major_shortage_chromium` (new OBSERVATION trigger over the existing counter,
   `WA_AI_RESOURCE_NEEDS_triggers.txt`; 3 = the counter ceiling, three bad ~2-day readings in a
-  row). Production gates read the same component triggers, so an unmountable component is never
+  row). Existence bar `constant:wa_ai_production.army_composition.variant_component_seed_stock` =
+  100 (owner 2026-09-04: not 0, so captured stock or a trickle line cannot hold the mount once the
+  seed is gone). Production gates read the same component triggers, so an unmountable component is never
   pushed either. No line is cut anywhere: a shortage stops NEW components from being mounted and
   (addendum a) new modern variants from being researched; running lines keep running.
 - Seed window, DERIVED (monthly calculate vs ~2-day counter vs line-to-first-unit): t0 monthly
