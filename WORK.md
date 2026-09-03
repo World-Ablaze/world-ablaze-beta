@@ -1546,8 +1546,67 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
 
-### modern-chassis-tier — PARKED (2026-08-30)
-- PARKED for the WIP limit (owner's standing choice from 2026-08-29), NOT because unverified.
+### modern-chassis-tier — SHIPPED-UNTESTED (2026-09-04)
+- **ADDENDUM 2026-09-04 (owner ruling, reverses the 2026-08-28 "every component one tier up"):
+  the hull steps up, the variants stay on what the country stocks; modern variants are researched
+  only while their chromium draw is absorbable.** Unparked for this (the WIP slot freed by
+  `aifc-revived-tag-residue` parking). MEASURED, campaigns `5de66942` and `5d2a391c` (monthly saves,
+  Armour Ledger + `armor_extract.py`): the month GER's medium template takes the +500 twin
+  (6611 → 6616, 1944.10) the component need moves to modern TD / SPAA / SPG (1 769 / 396 / 1 278)
+  and NOTHING is ever fielded — 0 in armies for twelve months with 55-91 factories on the modern
+  TD line, then 0 factories in the next run — while the medium variants' stock sits idle (medium
+  SPG 3 057 → 3 578, medium SPAA 437 → 451, need 0-36). Cause on the production side, MEASURED
+  `1945.1_Jan.hoi4` GER lines: every modern line short of chromium (`tank_ger_modern_chassis_td_1`
+  chromium 0/69, SPG 0/64 + tungsten 66/126, hull 0/102). MEASURED `x_tank_chassis.txt`: every
+  country's modern TD / SPAA / SPG chassis carries chromium 2-4 (GER 2, USA/SOV/JAP/POL 3, HUN 3,
+  ITA 2); the GER medium variants carry chromium 2 as well — the difference is the STOCK, not the
+  recipe.
+- Change: (A) `tools/gen_ai_medium_modern_mirror.py` — `TIER_UP` maps the hull only
+  (`medium_armor_battalion_line` → modern, engineer / maintenance tank companies follow); every
+  TD / SPAA / SPG / assault / infantry-support component maps to itself, `NAME_SHIFT` emptied,
+  header rewritten; `WA_AI_TEMPLATES_armored_medium_modern.txt` regenerated. (B) the nine
+  `WA_AI_TEMPLATES_use_<tier>_<component>_armor_tiered` triggers are their plain component
+  trigger (names kept — 30 ladder readers, and the seam where a future re-tiering lands).
+  (C) `WA_AI_RESEARCH_needs_modern_{tank_destroyers, assault, infantry_support,
+  self_propelled_guns, self_propelled_aa}` gain `WA_AI_EQUIPMENT_can_absorb_chromium_shock_small`
+  — the existing constructibility latch (two consecutive months of net chromium > 5 outside
+  overextension, held 180 days, `WA_AI_EQUIPMENT_update_context_flags`, monthly for every AI).
+  MEASURED it discriminates: GER carries `chr_small_ok` / `chr_large_ok` at 1943.7 and no `chr_*`
+  flag at 1945.1; SOV carries `chr_small_ok` at 1945.1. `needs_modern_armor` (the hull) is NOT
+  gated — owner scope is the variants. Importer branch, stated: `resource@chromium` is the
+  retained domestic surplus, so a pure chromium importer sits near 0 and never opens
+  `chr_small_ok` — it never researches a modern variant, and under (A) loses nothing by it.
+- Consequence, stated: under (A) no AI template ever mounts a modern variant, so (C) only stops
+  research slots being spent on techs the AI cannot feed; a country that CAN feed them still
+  researches them and still fields the medium variant. If the owner wants "modern variants when
+  affordable", that is the tiered-trigger seam (B) reading the same latch — not done, not asked.
+- Cadence walk (template flip on a live campaign): t0 next monthly calculate — the twin value is
+  unchanged (same +500), only its composition changed, so the engine sees a different target
+  template under the same flag → one field-upgrade pass per division toward medium components.
+  ASSUMED: no decommission pass (flag value and template names unchanged — the lessons log
+  covers a flag FIRST setting, not a composition change under the same name); ASSUMED the
+  upgrade completes — the medium variant stock is there, but the same twin still mounts the
+  modern HULL the country cannot feed (MEASURED `1945.1` hull line chromium 0/102), and whether
+  the engine's 90-day deficit valve (`UPGRADES_DEFICIT_LIMIT_DAYS`) is judged per template, hull
+  included, is not known — if it is, the hull blocks the upgrade the variants would allow. The
+  owed `imgui show ai_templates` arrow on a post-1944.10 save settles it. t1 production: modern
+  variant need drops to 0, the parity factors on modern archetypes multiply zero; medium variant
+  need returns and the medium lines re-open from stock. Regression risk: a country holding NO
+  medium variant stock and a modern one (none observed) loses nothing — the medium archetype is
+  what it researched first.
+- Verification OWED: (0) owner console `imgui show ai_templates` on GER, post-1944.10 save: the
+  arrow on the medium-armour divisions must point at the twin with medium component slots and the
+  field upgrade must be running, not refused; (1) owner console `event wa_test_tmpl.2 GER` on a save after 1944.10 — the
+  harness prints the per-role used/set pairs and the pre/post parity of one calculation pass
+  (`WA_TEST_templates.txt`): `medium used=1 set=1`, pre = post, no orphan flag — it proves the
+  twin value is still answered, not the composition; (2) composition is a static-file fact:
+  `python tools/gen_ai_medium_modern_mirror.py --dry-run` unchanged, `check_templates.py` clean on
+  the mirror, boot test (`error.log` clean of `WA_AI_TEMPLATES_GENERIC_MODERN_ARMOR`); (3) next
+  cloud campaign: GER modern TD / SPAA / SPG need = 0 after the twin, medium SPG / SPAA
+  fielded/need > 0.8 with stock falling, and `ger_modern_td_tank_1` NOT researched while
+  `WA_AI_EQUIPMENT_chr_small_ok` is absent.
+- Closed when: the campaign reading above holds on one cloud campaign.
+- Previous state (kept): PARKED for the WIP limit (owner's standing choice from 2026-08-29), NOT because unverified.
   Commit `2dd063da1` (2026-08-30: tiered slot validation + dead-role-entry guards, ADDENDUM
   below) ships on top of the 2026-08-29 code; the addendum's own harness run
   (`wa_test_tmpl.2 USA`) and both imgui measurements are DONE and pasted there. Still owed from
