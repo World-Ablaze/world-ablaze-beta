@@ -1576,6 +1576,48 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   gated — owner scope is the variants. Importer branch, stated: `resource@chromium` is the
   retained domestic surplus, so a pure chromium importer sits near 0 and never opens
   `chr_small_ok` — it never researches a modern variant, and under (A) loses nothing by it.
+- **ADDENDUM 2026-09-04 b (owner: "les templates convertis que si le matériel a commencé la
+  production (donc stock)"; a line CUT on shortage was proposed, objected to by the owner —
+  "je ne veux pas couper les lignes de prod en cas de pénurie" — and reverted before commit).**
+  (E) COMPONENT SEED, templates: the 19 `WA_AI_TEMPLATES_use_<class>_<component>_armor` triggers
+  gain `OR { num_equipment@A > 0 ; num_equipment_in_armies@A > 0 ; chromium headroom latch ;
+  NOT major chromium shortage }` — a component is mounted once it EXISTS or is AFFORDABLE. The
+  seed is needed because the engine derives its need from the template: a stock-only rule never
+  starts (no need → no line → no stock). Two reachable seeds by design: the headroom latch
+  (`resource@chromium > 5` two months running, 180-day hold) is a PRODUCER reading — an importer
+  sits at net ~0 by trade and never opens it — so an importer seeds on `NOT
+  WA_AI_RESOURCE_is_major_shortage_chromium` (new OBSERVATION trigger over the existing counter,
+  `WA_AI_RESOURCE_NEEDS_triggers.txt`; 3 = the counter ceiling, three bad ~2-day readings in a
+  row). Production gates read the same component triggers, so an unmountable component is never
+  pushed either. No line is cut anywhere: a shortage stops NEW components from being mounted and
+  (addendum a) new modern variants from being researched; running lines keep running.
+- Seed window, DERIVED (monthly calculate vs ~2-day counter vs line-to-first-unit): t0 monthly
+  calculate mounts the component (seed true, stock 0) — `_template_value` moves one rung (e.g.
+  6114 → 6116 for medium TD, `WA_AI_TEMPLATES_effects.txt:957-983`), which is the same event
+  class as any tech-unlock rung change the ladder already makes, ASSUMED same decommission
+  cost; t0+days the engine opens the line; the line's own draw can push the counter to 3 within
+  ~6 days, but the seed is re-read only at the NEXT monthly calculate, by which time the line
+  has produced its first units (ASSUMED weeks, not months — a 1-2 factory line on a 11-14 IC
+  chassis) and the stock / in-armies terms hold the mount. Failure mode if the first unit is
+  slower than a month: one unmount/remount cycle at monthly cadence, bounded by the counter
+  falling back once the line stops. Attrition end: stock 0 and in-armies 0 with the seed false →
+  the component leaves at the next calculate — one rung change, no flap (nothing re-seeds it).
+- Replay on `5d2a391c` (MEASURED inputs): GER latch open 1943.1-1943.11, counter pinned at 3 from
+  1943.12; under (E) medium SPG / SPAA / TD stay mounted on stock + in-armies (SPG 2 356 stock vs
+  need 1 482, SPAA 521 vs 384, TD 311 + 222 in armies vs 1 257), nothing new is seeded after
+  1943.12, and no line is cut.
+- NOT done, owner to decide: "empêcher de produire la variante améliorée" during a shortage is
+  the `production_upgrade_desire_offset` layer, whose `id` is a per-country equipment TYPE
+  (`tank_usa_heavy_chassis_5`), not an archetype — the equipment evaluator's KEEP_OLD /
+  SWITCH_CONDITIONAL blocks (`WA_AI_PRODUCTION_COUNTRY_USA_TANKS.txt`, gated on
+  `WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small`) are that mechanism, generated per country
+  by `tools/equipment_evaluator`; GER's generated file carries only heavy / modern hull entries
+  today. A generic archetype-level form does not exist in the engine.
+- Verification OWED (adds to the list above): next cloud campaign — after the twin, GER medium
+  variants keep fielded/need ≥ 0.8 on stock; a country whose chromium counter reaches 3 mounts no
+  NEW variant component that month (the `use_*` flip is visible as the medium value staying put);
+  an importer (ITA / JAP) still mounts its first TD / SPAA when its counter reads < 3.
+  Console: `event wa_test_tmpl.2 GER` on a 1945 save — `medium used=1 set=1`, pre = post.
 - Consequence, stated: under (A) no AI template ever mounts a modern variant, so (C) only stops
   research slots being spent on techs the AI cannot feed; a country that CAN feed them still
   researches them and still fields the medium variant. If the owner wants "modern variants when
