@@ -365,10 +365,32 @@ WA_AI_TEMPLATES_can_use_light_transition_templates = {
 # the park; the majority term retires the window together with the park itself. Same engine
 # assumption as the light window: the engine still upgrades a role whose role_ratio want is 0.
 WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = {
-	has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+	# [light-support-conversion] Two memories of a run: the composition latch (15000/15001 path)
+	# and the temporary-corps latch (15006 path). The temporary path never writes the first one,
+	# so without the second the window was unreachable for the historical park.
+	OR = {
+		has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+		has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+	}
 	NOT = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes }
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
-	has_template_ai_majority_unit = light_support_armor_battalion_line
+	# Park still fielded. The temporary corps fields 6 support / 6 mot shapes where the majority
+	# vote ties, so that path retires on the containing test instead (same-role templates only,
+	# no infantry template carries a support battalion after 1941).
+	OR = {
+		has_template_ai_majority_unit = light_support_armor_battalion_line
+		AND = {
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			has_template_containing_unit = light_support_armor_battalion_line
+		}
+	}
+	# The temporary corps stays on its mission target while the mission counts it.
+	NOT = {
+		AND = {
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			WA_AI_PRODUCTION_historical_tank_park_mission_is_active = yes
+		}
+	}
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 

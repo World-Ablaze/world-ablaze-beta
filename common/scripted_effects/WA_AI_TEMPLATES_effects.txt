@@ -1352,10 +1352,14 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 		}
 		set_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
 	}
+	# [light-support-conversion] 15006 yields to the conversion window: emitted here it is non-zero
+	# before the else_if below, and every branch under it needs 0 - without this term the
+	# temporary park can never reach a medium rung.
 	if = {
 		limit = {
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
 			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			NOT = { WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes }
 		}
 		set_temp_variable = { _template_value = 15006 }
 	}
@@ -1393,7 +1397,22 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 			WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes
 		}
 		set_temp_variable = { _template_value = 15002 }
+		# [light-support-conversion] The temporary (15006) park converts through its own rungs,
+		# whose target is the 1936 corps shape it was built toward - the MIX rungs target 7/3/5
+		# and would not match it at 0.8. Tested BEFORE the MIX latch: both latches can coexist
+		# when a pulse precedes the mission, and the temporary corps must win that pulse.
 		if = {
+			limit = {
+				has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+				WA_AI_TEMPLATES_use_mechanized_templates = yes
+			}
+			set_temp_variable = { _template_value = 15008 }
+		}
+		else_if = {
+			limit = { has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched }
+			set_temp_variable = { _template_value = 15007 }
+		}
+		else_if = {
 			limit = {
 				has_country_flag = WA_AI_TEMPLATES_light_support_mixed
 				WA_AI_TEMPLATES_use_mechanized_templates = yes

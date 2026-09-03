@@ -2572,3 +2572,27 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** WORK.md `dday-mulberry` (control run FAILED then PASSED bullets); commits
   `a0fe44a81` (inline, broken) -> `1386cf6ea` (scripted-effect bodies, working); game.log
   excerpts pasted in the subject.
+
+### A value-first branch ahead of a template calculator's else_if chain hides the whole chain
+
+- **Date:** 2026-09-02 (`light-support-conversion` Change 7, campaign `5de66942`, owner imgui 1943.1)
+- **Symptom:** the Soviet historical tank park held `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE = 15006` on
+  every monthly save from 1936.2 to 1945.12 and 31 divisions were still on light-support shapes
+  in 1945.12; the conversion rungs 15002-15005 and their medium FINALs, shipped three days
+  earlier and reviewed twice, never armed once. `check_templates.py` was green: every value
+  had a template and every template a value.
+- **Cause:** MEASURED in the script. `42206fcb6` added an `if` that emits 15006 BEFORE the
+  existing `if ... else_if` pair; both of those require `_template_value = 0`, and the first
+  of them was the only writer of the latch the window trigger reads. One branch placed ahead
+  of the chain turned the chain into dead code without touching a line of it, and without
+  any join-key mismatch for the checker to see.
+- **Rule:** the join-key diff (values emitted vs values enabled) is necessary, not sufficient.
+  When a calculator gains a branch, walk the ORDER: list every branch that can set the value,
+  in file order, and for each later branch state which earlier branch leaves the value at 0
+  for it. A branch that no state reaches is the defect, whatever the checker says. The same
+  walk applies to any `if / else_if` ladder gated on a temp variable being unset.
+- **Detection:** cross-save `flags` trend — one flag value constant for years while the
+  design says the value must move; then `imgui show ai_templates` (arrow never leaves the
+  same target) and the harness window bit (`conv-window=0` with the park still fielded).
+- **Evidence:** WORK.md `light-support-conversion` Change 7; scratchpad
+  `light_to_medium_diagnosis.md` (six boxes); `42206fcb6` (the branch), the fix commit.

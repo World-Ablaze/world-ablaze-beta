@@ -382,7 +382,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the campaign reading above holds on one cloud campaign, plus the original
   criterion (a major at ~500 military factories running ~140 on the armour category by mid-1941).
 
-### bof-commonwealth-posture — OPEN (2026-08-31)
+### bof-commonwealth-posture — PARKED (2026-09-02)
+- Parked 2026-09-02 (WIP limit, `light-support-conversion` re-enters on an owner order; parked by the
+  agent as the oldest OPEN subject with no console run pending — owner may swap). State at parking:
+  OPEN — campaign `a2ad5f20` scored, Leg C PASS, Leg B mechanism PASS / Kuwait unsolved (options a-c
+  owed to the owner), Leg A FAIL with root cause measured (Maghreb held by FRM/FRN/FRT subjects)
+  and repair unshipped; the `imgui show ai-strategy` ENG sizing read is still owed.
 - **Campaign `a2ad5f20` scored 2026-08-31** (cloud, BHU observer, 117 monthly saves 1936.2-1945.10,
   unbranched, difficulty normal = Historical). **BUILD CONFIRMED LIVE by positive control**: ENG's
   `protect_home_THEATRE` siblings (102 orders on 118/116/336) present while state 309 appears in
@@ -820,8 +825,87 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### light-support-conversion — PARKED (2026-08-31)
-- Parked 2026-08-31 (WIP limit, `dday-mulberry` enters on an owner task). State at parking:
+### light-support-conversion — SHIPPED-UNTESTED (2026-09-02)
+- **Change 7 (owner order 2026-09-02 "vas-y, corrige : rends la fenêtre de conversion joignable
+  sous 15006") — the temporary-corps path reaches the medium conversion window.** Diagnosis
+  (six boxes, scratchpad `light_to_medium_diagnosis.md`), campaign `5de66942` (BHU observer,
+  1936.2-1945.12, build carrying `42206fcb6`): MEASURED `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE = 15006`
+  on all 14 sampled SOV saves, `WA_AI_TEMPLATES_light_support_composition_latched` ABSENT on all,
+  31-40 divisions on light-support shapes (tid 1487, 6 LS + 3 L + 6 mot) from 1941.1 to 1945.12,
+  medium 0 in 1945.12 while SOV stocked 9 144 medium chassis (1945.1) and fielded 33 modern +
+  15 heavy. Owner live read 1943.1.1: `imgui show ai_templates` arrow on
+  `_44_TEMPORARY_CONVERT`, best match 0.85186 < replace_at 0.9, replace_with = `30_MOT_LIGHT_MIX`;
+  `wa_abg.1 SOV`: `conv-window=0`, `sov-temporary-15006=1`, `light-role-open=0`, verdicts 1 1 1 1.
+  Cause (script lines): the 15006 branch of `WA_AI_TEMPLATES_calculate_light_support_armor_template`
+  ran before the 15000/15001 branch (sole writer of the composition latch) and before the conversion
+  `else_if`, both of which require `_template_value = 0`; the window trigger required that latch;
+  and under 15006 no enabled target pointed at a medium FINAL (CONVERT → MIX, MIX no replace_with).
+  Rungs 15002-15005 were dead code for the historical park since `42206fcb6`.
+  - `WA_AI_TEMPLATES_effects.txt`: the 15006 branch yields to
+    `WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor`; the conversion branch emits
+    **15008** (temporary latch + mechanized) / **15007** (temporary latch) ahead of the MIX/pure
+    values — exclusive by construction, the temporary path never writes the MIX latch.
+  - `WA_AI_TEMPLATES_triggers.txt`: the window accepts EITHER latch; the park-fielded term is
+    `has_template_ai_majority_unit` OR (temporary latch AND `has_template_containing_unit`) — the
+    corps shape 6 LS / 3 L / 6 mot ties the majority vote (the tie ASSUMED in Change 4 is now a
+    live risk, sidestepped); guard NOT (temporary latch AND `has_active_mission =
+    SOV_the_greatest_tank_army`) — reviews turned the literal into ONE observation trigger,
+    `WA_AI_PRODUCTION_historical_tank_park_mission_is_active` (`WA_AI_PRODUCTION_army_composition.txt`),
+    now read by the window, the three corps enables and the two run-state gates.
+  - `WA_AI_TEMPLATES_armored_light_support.txt`: rungs
+    `WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_MOT` (15007) / `_MEC`
+    (15008), target = the shape the corps FIELDS, 6 LS / 3 L / 6 mot (tid 1487, 31 divisions in
+    1945.12) — not the 12/6/4 it was built toward (lessons reviewer: a rung target that is not the
+    fielded shape lets the designer drift divisions toward it while the switch waits, and 12/6/4
+    shares 4 of 22 = 0.18 with the MOT FINAL, under the 0.3 bar). Arithmetic: fielded → rung
+    match 1.0 ≥ 0.8; fielded → MOT FINAL 6 mot of 15 = 0.4 ≥ min_match 0.3; fielded → MEC FINAL
+    shares no battalion by that count, but the identical hop (6/3/6 mot MIX → 9 M + 6 mec
+    MEC_FINAL under 15005) is MEASURED live in campaign `6f52600d` (62 → 92 divisions), so the
+    engine score is not the naive share — precedent, not arithmetic, carries the MEC case.
+    replace_with = the existing same-group `TRANSITION_MOT_FINAL` / `_MEC_FINAL`, min_match 0.3;
+    FINAL enables gain 15007/15008.
+  - `WA_TEST_armor_budget.txt`: lsmix line gains `conv-value` / `majority-LS` / `containing-LS`.
+  - Timeline (monthly calculator, 7-day engine re-selection): t0 = mission over + medium usable →
+    next pulse emits 15007/15008, CONVERT/MIX/44_TEMPORARY disabled by flag-value equality, rung +
+    FINAL enabled; t1 ≤ 7 days: rung targeted, 0.85 ≥ 0.8 → arrow to the FINAL (match(best,
+    FINAL) ≥ 0.3 ASSUMED — same knob as the light chain that converted GER 1940.7 → 1944.1 in this
+    campaign); t1-blocked row: if the deficit valve holds the switch for a pass, the rung target
+    IS the fielded shape, so the designer has nothing to edit toward — match stays 1.0 / 0.4, no
+    drift; t2 = park empties; the window lingers open while any template still contains a
+    support battalion (harmless: only the FINAL is enabled) — ASSUMED that
+    `has_template_containing_unit` still sees an emptied or decommissioned template; if it does
+    not, the window closes a month early → 15006 → CONVERT/MIX enabled at match < 0.9 (inert),
+    and if it reads true again the flag flaps 15006 ↔ 15007 monthly: each 15007 month re-arms the
+    rung + FINAL for the divisions still on LS shapes, each 15006 month is today's status quo —
+    a slower conversion, never a worse state. Closes on engine template deletion
+    (ASSUMED timing) → 15006 re-emitted with CONVERT/MIX enabled and nothing to match. Residual:
+    if emptied templates are never deleted, the flag holds 15007/15008 for good — the light chain
+    carries the same residual (GER flag 5116 to 1945.12 with zero light divisions from 1944.1).
+  - Positive controls from the same campaign (DERIVED): a role at want 0 still field-upgrades
+    (GER budget_light 0 from 1940.7, 7 divisions on the transition shape by 1940.7, 0 light
+    residue by 1944.1) and the medium role captures the FINAL shape (GER 6M+3MIS+6mec divisions
+    became modern after the medium flag moved to 6611 — no light-role template carries modern).
+  - Reviews 2026-09-02: architecture CONCERNS (campaign readings stripped from code comments;
+    mission literal → named trigger; join-key line extended), lessons CONCERNS (rung target →
+    fielded shape with the min_match arithmetic; containing-unit claim labelled ASSUMED with the
+    flap row and the second console read) — all applied.
+  - Checkers: `check_templates` (no VALUE/TEMPLATE mismatch; 4 pre-existing HQ slot errors
+    untouched), `check_constants`, `check_ai_layers`, `check_worklist` exit 0.
+- Verification — owner console, Change 7: `event wa_abg.1 SOV` on a post-mission save
+  (1943.1 of `5de66942`): `conv-window=1`, `conv-value=15007` or `15008`, `containing-LS=1`, all
+  four verdicts 1. Control: the same command on a pre-1942 SOV save reads `conv-window=0`,
+  `conv-value=0`, `sov-temporary-15006=1`. Then `imgui show ai_templates`: arrow on
+  `_44_TEMPORARY_TRANSITION_*`, best match ≥ 0.8, and within 7 days the arrow on the FINAL.
+  Second read ONE MONTH after the first 15007/15008 reading (let the save run): `conv-value`
+  still 15007/15008 — a fall-back to 15006 with `containing-LS=1` is the flap, the defect.
+- Verification — campaign probe, Change 7: a historical-difficulty SOV save ≥ 12 months after
+  the mission resolution shows the light-support division count falling toward 0 and former park
+  divisions on the 9 medium + 6 mot/mec shapes; `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` reads
+  15007/15008 while any template still carries a support battalion, never 15006 with
+  `containing-LS=1` after the mission.
+- Was parked 2026-08-31 (WIP limit, `dday-mulberry` entered on an owner task); unparked
+  2026-09-02 on the owner order above, slot freed by parking `bof-commonwealth-posture`. State at the
+  2026-08-31 parking:
   SHIPPED-UNTESTED — chosen for parking as the most-verified of the armor cluster: its exit-rung
   repair shares the mechanism the `armor-class-handoff` conversion chain PASSED live 2026-08-29.
   Still owed when unparked: the console runs in the Verification lines (wa_abg.1
@@ -964,7 +1048,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     light_support, the MIX park's window never opens and it decommissions as today (bounded to
     status quo, visible in the harness conv-window bit).
   - Join-key diff (lessons requirement, run by hand): calculator emissions for code 14 are
-    exactly {0-clear, 15000, 15001, 15002, 15003, 15004, 15005}; declared enables are 15000
+    exactly {0-clear, 15000, 15001, 15002, 15003, 15004, 15005} (Change 7 adds 15006,
+    15007, 15008 — enables: TEMPORARY / _CONVERT / 30_MOT_LIGHT_MIX on 15006, the two TEMPORARY
+    rungs + FINALs on 15007/15008); declared enables are 15000
     (STARTER + pure final), 15001 (STARTER_MIX + MIX final), 15002-15005 (the 4 rungs). No
     emission without a declared entry; the conversion branch sets its base value as a direct
     effect first, so no path leaves the trigger open with no value.
@@ -1086,7 +1172,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the +100 armour-mastery step in the doctrine ledger) BEFORE Barbarossa; zero NEW divisions
   built on the STARTER shape.
 - Closed when: a historical-difficulty campaign shows SOV completing `SOV_the_greatest_tank_army`
-  before 1941.6, with former brigades fielded on the 7/3/5 MIX shape. (Supersedes the pre-Change-3
+  before 1941.6, with former brigades fielded on the 7/3/5 MIX shape. Change 7 adds: the same campaign,
+  ≥ 12 months after the mission resolves, fields 0 divisions on light-support shapes and the
+  former park on medium shapes. (Supersedes the pre-Change-3
   criterion "≥ 1 former brigade on the 9+6 shape AND fielded support > 9 500", which the pure
   shape can never satisfy under historical difficulty — the MIX is what arms there.)
 - Out of scope note SUPERSEDED by campaign `6f52600d`: bar 3 (30 armor divisions) was MET (63) and
