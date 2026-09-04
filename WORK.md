@@ -172,6 +172,97 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### ger-barb-doctrine-catchup — SHIPPED-UNTESTED (2026-09-04)
+- Owner order 2026-09-04: "add a cheat for GER AI : when 4 months before historical barb date, it
+  should have completed all land doctrines of tier 1 : if not, give mastery to finish them, so
+  that it can unlock the focuses to add mastery to tier 2 before the barb start".
+- Intended behaviour: from 1941.2.22 an AI Germany holds every tier-1 land doctrine track
+  (`tier_1_infantry`, `tier_1_artillery`, `tier_1_armour`) complete within weeks, so the mastery
+  its spring-1941 focuses grant (`WA_add_mastery_*` cascades to the first INCOMPLETE track) lands
+  on tier 2. `tier_1_operations` is NOT part of the target: MEASURED its subdoctrines require
+  `has_completed_track = tier_3_armour` (`operations_subdoctrines.txt`), a late track with a
+  tier-1 name.
+- Symptom (MEASURED, campaign `bd2612e8`, monthly saves, GER on `auftragstaktik`): at 1941.3
+  `tier_1_artillery` 159.5/200 mastery (1 of 2 rewards) and `tier_1_armour` 182/200 (1 of 2);
+  both complete only by 1942.1; tier 0 all complete, `tier_1_infantry` complete since 1941.1.
+  Daily mastery gain Jan-Jun 1941 reads 0 to 0.002 on every land track (peacetime stall,
+  ASSUMED cause: training weighted 0.03). `mastery_bank` = 0 everywhere (WA `MASTERY_BANK_MAX
+  = 0`). Doctrine state lives in the save's top-level `doctrine={ countries={...} }` block,
+  entries unkeyed, index = `countries={}` order + 1 (reproduce: scratchpad `doctrine_extract.py`,
+  subagent reading 2026-09-04).
+- Shipped 2026-09-04: CONFIG window
+  `WA_AI_CONFIG_after_barbarossa_doctrine_deadline` (date > 1941.2.22); OBSERVATION trigger
+  `WA_AI_DOCTRINES_has_completed_land_tier_1` (`WA_AI_DOCTRINES_land.txt`); effect
+  `WA_AI_DOCTRINES_complete_land_tier_1` (new `WA_AI_DOCTRINES_effects.txt`): one step per land
+  line per call - finish tier 0 (`add_mastery` 200, or `set_sub_doctrine` if the track is
+  empty), else assign the tier-1 subdoctrine the existing `WA_AI_LAND_DOCTRINES_SELECT_*`
+  triggers prefer, else `add_mastery` 200 on tier 1; event `ger_armor.1001` (`events/WA_AI_GER.txt`,
+  MTTH 1 day, repeating, 7-day cooldown flag `WA_AI_DOCTRINES_catchup_cooldown`, gate = tag GER +
+  `is_ai` + `WA_AI_CONFIG_securities_enabled` + the window + NOT the observation trigger); harness
+  `wa_doc.1 <TAG>` / `wa_doc.2 <TAG>` (`WA_TEST_doctrines.txt`, `events/wa_test_doctrines.txt`).
+- Gate decision (owner, 2026-09-04): new CONFIG class `WA_AI_CONFIG_securities_enabled` =
+  Historical Normal + both Hard buttons - a "security" keeps the WW2 sequence on track, unlike a
+  `cheats_enabled` assist (Hard only, e.g. `ger_armor.1000` Sealion). Off only on Historical Easy
+  and Competitive Normal.
+  No `is_historical_focus_on` gate: on an ahistorical path the catch-up is harmless (principle 1).
+- Timeline at the real cadence. MEASURED `05_defines.lua:87` `EVENT_PROCESS_OFFSET = 7`: MTTH
+  events are checked every 7 days per country, and the cooldown flag lasts 7 days, so a pulse is
+  7 OR 14 days apart (ASSUMED flag-expiry edge at the check tick). 200 mastery per pulse, 2
+  rewards x 100 per track (DERIVED from `DEFAULT_REWARD_MASTERY = 100`, not overridden; MEASURED
+  `tier_1_artillery` 159.5 mastery = 1 reward and tier-0 tracks 200 = 2 rewards agree):
+
+  | pulse | best (7 d) | worst (14 d) | worst case per line (tier 0 empty) | measured bd2612e8 case |
+  | --- | --- | --- | --- | --- |
+  | 1 | <= 1941.3.1 | <= 1941.3.1 | tier 0 subdoctrine assigned | art +200 -> done, arm +200 -> done, inf skipped |
+  | 2 | 1941.3.8 | 1941.3.15 | tier 0 +200 -> complete | trigger reads done, event stops |
+  | 3 | 1941.3.15 | 1941.3.29 | tier 1 subdoctrine assigned | - |
+  | 4 | 1941.3.22 | 1941.4.12 | tier 1 +200 -> complete | - |
+
+  Lines advance in parallel; worst case done by ~1941.4.19 (first check up to 7 days after
+  1941.2.22, then 3 x 14 days), ~9 weeks before 1941.6.22. If the reward cost were higher than
+  100 (ASSUMED define), each extra 200 costs one more pulse - still done by May. The event
+  re-evaluates `has_completed_track` every pulse, so nothing is over-added. The date of the first
+  tier-2-relevant GER mastery focus on bd2612e8 is NOT measured (no focus timeline pulled); the
+  assist only needs to finish before it.
+- Reviews 2026-09-04: architecture CONCERNS, applied - effect header cut to 5 lines, the
+  unconditional `log =` lines justified in the header (<= 12 per campaign, read by the harness;
+  not gated on `WA_AI_logging` on purpose), timeline redone at 7/14-day pulses. Lessons CONCERNS,
+  applied - harness recipe says tag into a real non-GER country first (08-27 addendum: the
+  observer context poisons country-valued triggers), the "twice" expectation reworded (one pulse
+  for an assigned line, two for an empty one), event comment says why Country layer and not an
+  archetype. Both reviewers: `set_sub_doctrine` bypassing a tier-1 `available` stays ASSUMED
+  until the wa_doc.2 closure on an EMPTY line; on bd2612e8 all three lines were assigned, so the
+  shipped path there is `add_mastery` only. Noted, not done: `WA_AI_DOCTRINES_*` has no row in
+  AGENTS.md "Generic Systems" (meta-work, owner call).
+- Impact analysis. New files + additive appends only; no existing trigger/effect/strategy
+  modified. Readers of the new CONFIG window: 1 (the event). Readers of the new observation
+  trigger: the event and the harness. `WA_AI_LAND_DOCTRINES_SELECT_*` are READ, not changed (their
+  own readers = the subdoctrine `ai_will_do`). Non-GER countries: never reach the event. Human
+  GER: `is_ai = no`. Regression risk: a GER that had NOT chosen tier-1 subdoctrines would have
+  them chosen by the SELECT triggers (its own preference logic) - MEASURED on bd2612e8 GER had all
+  three assigned by 1941.1, so on that path only `add_mastery` runs. Cost: 200 army XP worth of
+  mastery per line, no XP spent.
+- **ASSUMED** (engine, not save-observable): `set_sub_doctrine` bypasses `xp_cost` and
+  `available` (doc: "activate (unlock and assign)"); an MTTH event without `fire_only_once`
+  re-fires while its trigger holds; `has_completed_track` = every reward unlocked (the same
+  reading `WA_add_mastery_*` already relies on); `add_mastery` on a track with 1 reward left and
+  +200 unlocks the reward and completes the track in one tick.
+- Verification (owner console, harness contract): load a Historical Normal/Hard GER-AI save dated
+  1941.2.23-1941.6 (bd2612e8 `1941.3_Mar.hoi4` qualifies unless it ran Easy; the `gate` line
+  tells): `event wa_doc.1 GER` must read `scope : 1 1 1 1 0`, then `gate : is-GER=1 is_ai=1
+  securities-enabled=1 after-deadline=1`, and `art t1 done=0` / `arm t1 done=0` on the 1941.3 save.
+  Then `event wa_doc.2 GER` once: `art t1 done=1  arm t1 done=1`, VERDICT `tier1-all-done=1
+  trigger-says-done=1 gate-open=0`, and `logs/game.log` carries two
+  `[ger-barb-doctrine-catchup] ... +200 mastery tier_1_*` lines. Control: the same on a 1941.1
+  save reads `after-deadline=0 gate-open=0`; on a Historical Easy save `securities-enabled=0
+  gate-open=0`.
+  `tier1-all-done` != `trigger-says-done` = the observation trigger is wrong, stop.
+- Campaign probe (Historical Normal/Hard run): in the `doctrine` save block, GER `tier_1_*` tracks read
+  `rewards=2` on the first save after 1941.3.1; a tier-2 track shows mastery > 0 from a focus
+  after that date.
+- Closed when: the harness reading above is pasted here, then one Historical Normal/Hard campaign save
+  after 1941.3 with all three GER tier-1 tracks at `rewards=2`.
+
 ### sov-light-support-retire — SHIPPED-UNTESTED (2026-09-04)
 - Owner order 2026-09-04: "quand la mission greatest tank army est terminée ou qu'on est en 1942,
   un event pour l'IA soviétique pour supprimer les divisions de light support" — sweep every

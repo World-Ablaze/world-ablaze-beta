@@ -1,0 +1,133 @@
+############################################################################################################
+#	World Ablaze - LAND DOCTRINE TRACKS console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[ger-barb-doctrine-catchup] Instrument for the tier-1 land doctrine assist
+#	(common/scripted_effects/WA_AI_DOCTRINES_effects.txt, event ger_armor.1001). Track completion
+#	and subdoctrine assignment are engine state that a savegame does not name track by track, so
+#	the only way to see whether the assist has anything left to do - and whether its gate is open -
+#	is to print both.
+#
+#	Recipe: events/wa_test_doctrines.txt header. `tag FRA` (any real country other than GER, never
+#	the observer, never GER itself), then `event wa_doc.1 GER`. Output: logs/game.log, "LAND DOCTRINE TEST".
+#
+#	Section B reads the nine tracks straight from the engine triggers (has_completed_track /
+#	has_subdoctrine_in_track), never through the shipped effect or its observation trigger
+#	(contract rule 4): `tier1-all-done` in the VERDICT line is re-derived here from the three
+#	tier-1 readings, and `trigger-says-done` is the shipped WA_AI_DOCTRINES_has_completed_land_tier_1.
+#	When the two disagree the fault is in one of them, not hidden between them.
+#
+#	READ THE VERDICT LINE AT THE BOTTOM. `tier1-all-done` and `trigger-says-done` must agree;
+#	`gate-open` must read 1 exactly when the assist is meant to be pulsing.
+############################################################################################################
+
+WA_TEST_DOC_report = {
+
+	log = "=== LAND DOCTRINE TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _doc_e1_ = 0 }
+	set_temp_variable = { _doc_e2_ = 0 }
+	set_temp_variable = { _doc_e3_ = 0 }
+	set_temp_variable = { _doc_e4_ = 0 }
+	set_temp_variable = { _doc_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _doc_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _doc_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _doc_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _doc_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _doc_e5_ = 1 } }
+	log = "  scope : always=[?_doc_e1_|.0]  I-am-ROOT=[?_doc_e2_|.0]  I-am-THIS=[?_doc_e3_|.0]  ROOT-scope-usable=[?_doc_e4_|.0]  control-false=[?_doc_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file before editing a line of this effect.)"
+
+	############################################################
+	# A. Gate - the terms of ger_armor.1001's trigger
+	############################################################
+
+	set_temp_variable = { _doc_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _doc_ai = 1 } }
+	set_temp_variable = { _doc_cheats = 0 }
+	if = { limit = { WA_AI_CONFIG_securities_enabled = yes } set_temp_variable = { _doc_cheats = 1 } }
+	set_temp_variable = { _doc_deadline = 0 }
+	if = { limit = { WA_AI_CONFIG_after_barbarossa_doctrine_deadline = yes } set_temp_variable = { _doc_deadline = 1 } }
+	set_temp_variable = { _doc_cooldown = 0 }
+	if = { limit = { has_country_flag = WA_AI_DOCTRINES_catchup_cooldown } set_temp_variable = { _doc_cooldown = 1 } }
+	set_temp_variable = { _doc_ger = 0 }
+	if = { limit = { tag = GER } set_temp_variable = { _doc_ger = 1 } }
+	set_temp_variable = { _doc_trigdone = 0 }
+	if = { limit = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } set_temp_variable = { _doc_trigdone = 1 } }
+
+	log = "  gate  : is-GER=[?_doc_ger|.0]  is_ai=[?_doc_ai|.0]  securities-enabled=[?_doc_cheats|.0]  after-deadline=[?_doc_deadline|.0]  cooldown-flag=[?_doc_cooldown|.0]  trigger-says-done=[?_doc_trigdone|.0]"
+
+	############################################################
+	# B. Tracks - engine triggers only (independent of the shipped effect)
+	############################################################
+
+	set_temp_variable = { _doc_c0i = 0 }
+	if = { limit = { has_completed_track = tier_0_infantry } set_temp_variable = { _doc_c0i = 1 } }
+	set_temp_variable = { _doc_s0i = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_0_infantry } set_temp_variable = { _doc_s0i = 1 } }
+	set_temp_variable = { _doc_c1i = 0 }
+	if = { limit = { has_completed_track = tier_1_infantry } set_temp_variable = { _doc_c1i = 1 } }
+	set_temp_variable = { _doc_s1i = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_1_infantry } set_temp_variable = { _doc_s1i = 1 } }
+	set_temp_variable = { _doc_c2i = 0 }
+	if = { limit = { has_completed_track = tier_2_infantry } set_temp_variable = { _doc_c2i = 1 } }
+	set_temp_variable = { _doc_s2i = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_2_infantry } set_temp_variable = { _doc_s2i = 1 } }
+	log = "  inf   : t0 done=[?_doc_c0i|.0] sub=[?_doc_s0i|.0]   t1 done=[?_doc_c1i|.0] sub=[?_doc_s1i|.0]   t2 done=[?_doc_c2i|.0] sub=[?_doc_s2i|.0]"
+
+	set_temp_variable = { _doc_c0a = 0 }
+	if = { limit = { has_completed_track = tier_0_artillery } set_temp_variable = { _doc_c0a = 1 } }
+	set_temp_variable = { _doc_s0a = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_0_artillery } set_temp_variable = { _doc_s0a = 1 } }
+	set_temp_variable = { _doc_c1a = 0 }
+	if = { limit = { has_completed_track = tier_1_artillery } set_temp_variable = { _doc_c1a = 1 } }
+	set_temp_variable = { _doc_s1a = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_1_artillery } set_temp_variable = { _doc_s1a = 1 } }
+	set_temp_variable = { _doc_c2a = 0 }
+	if = { limit = { has_completed_track = tier_2_artillery } set_temp_variable = { _doc_c2a = 1 } }
+	set_temp_variable = { _doc_s2a = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_2_artillery } set_temp_variable = { _doc_s2a = 1 } }
+	log = "  art   : t0 done=[?_doc_c0a|.0] sub=[?_doc_s0a|.0]   t1 done=[?_doc_c1a|.0] sub=[?_doc_s1a|.0]   t2 done=[?_doc_c2a|.0] sub=[?_doc_s2a|.0]"
+
+	set_temp_variable = { _doc_c0r = 0 }
+	if = { limit = { has_completed_track = tier_0_armour } set_temp_variable = { _doc_c0r = 1 } }
+	set_temp_variable = { _doc_s0r = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_0_armour } set_temp_variable = { _doc_s0r = 1 } }
+	set_temp_variable = { _doc_c1r = 0 }
+	if = { limit = { has_completed_track = tier_1_armour } set_temp_variable = { _doc_c1r = 1 } }
+	set_temp_variable = { _doc_s1r = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_1_armour } set_temp_variable = { _doc_s1r = 1 } }
+	set_temp_variable = { _doc_c2r = 0 }
+	if = { limit = { has_completed_track = tier_2_armour } set_temp_variable = { _doc_c2r = 1 } }
+	set_temp_variable = { _doc_s2r = 0 }
+	if = { limit = { has_subdoctrine_in_track = tier_2_armour } set_temp_variable = { _doc_s2r = 1 } }
+	log = "  arm   : t0 done=[?_doc_c0r|.0] sub=[?_doc_s0r|.0]   t1 done=[?_doc_c1r|.0] sub=[?_doc_s1r|.0]   t2 done=[?_doc_c2r|.0] sub=[?_doc_s2r|.0]"
+
+	############################################################
+	# C. Verdict - re-derived from section B, then compared with the gate
+	############################################################
+
+	set_temp_variable = { _doc_alldone = 0 }
+	if = {
+		limit = {
+			check_variable = { _doc_c1i = 1 }
+			check_variable = { _doc_c1a = 1 }
+			check_variable = { _doc_c1r = 1 }
+		}
+		set_temp_variable = { _doc_alldone = 1 }
+	}
+	set_temp_variable = { _doc_gate = 0 }
+	if = {
+		limit = {
+			check_variable = { _doc_ger = 1 }
+			check_variable = { _doc_ai = 1 }
+			check_variable = { _doc_cheats = 1 }
+			check_variable = { _doc_deadline = 1 }
+			check_variable = { _doc_cooldown = 0 }
+			check_variable = { _doc_alldone = 0 }
+		}
+		set_temp_variable = { _doc_gate = 1 }
+	}
+	log = "  VERDICT: tier1-all-done=[?_doc_alldone|.0]  trigger-says-done=[?_doc_trigdone|.0]  gate-open=[?_doc_gate|.0]   (done and says-done must agree; gate-open=1 means ger_armor.1001 pulses within a day)"
+}

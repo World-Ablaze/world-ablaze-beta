@@ -1,0 +1,137 @@
+# WORLD ABLAZE - AI DOCTRINES effects (CONSUMPTION layer). Scripted assists on the land doctrine
+# tracks (common/doctrines/tracks/). Country scope. Subdoctrine choice reuses the
+# WA_AI_LAND_DOCTRINES_SELECT_* triggers, so an assisted country ends on its own preference.
+
+# Mastery added to one incomplete track per pulse. A tier-0/1 land subdoctrine carries 2
+# rewards at NDefines.NDoctrines.DEFAULT_REWARD_MASTERY = 100 each, so one pulse finishes a
+# track; the caller re-pulses until has_completed_track reads yes, so a higher reward cost only
+# costs one more pulse. Only this file reads it (AGENTS.md rule 10).
+@WA_AI_DOCTRINES_catchup_mastery_per_pulse = 200
+
+# [ger-barb-doctrine-catchup] One step per land line per call towards a complete tier-1 track:
+# finish tier 0, then assign the SELECT-preferred tier-1 subdoctrine, then finish tier 1 - one
+# else_if rung per call because a tier-1 subdoctrine is only `available` once tier 0 is complete.
+# tier_1_operations is left alone (its subdoctrines need tier_3_armour). Rejected: WA_add_mastery_*
+# (cascades into tier 2/3). Logs unconditionally: at most 12 lines per campaign, read by the harness.
+WA_AI_DOCTRINES_complete_land_tier_1 = {
+	set_temp_variable = { _doc_amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse }
+
+	### INFANTRY
+	if = {
+		limit = { NOT = { has_completed_track = tier_0_infantry } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_0_infantry }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_0_infantry }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_0_infantry"
+		}
+		else = {
+			set_sub_doctrine = trench_warfare
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned trench_warfare (tier_0_infantry was empty)"
+		}
+	}
+	else_if = {
+		limit = { NOT = { has_completed_track = tier_1_infantry } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_1_infantry }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_1_infantry }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_1_infantry"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_decisive_strategy = yes }
+			set_sub_doctrine = decisive_strategy
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned decisive_strategy (tier_1_infantry was empty)"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_advanced_squad_tactics = yes }
+			set_sub_doctrine = advanced_squad_tactics
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned advanced_squad_tactics (tier_1_infantry was empty)"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_large_front_operations = yes }
+			set_sub_doctrine = large_front_operations
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned large_front_operations (tier_1_infantry was empty)"
+		}
+		else = {
+			# No SELECT trigger true for this country: take the first option rather than stall.
+			set_sub_doctrine = decisive_strategy
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned decisive_strategy by default (no SELECT trigger true for tier_1_infantry)"
+		}
+	}
+
+	### ARTILLERY
+	if = {
+		limit = { NOT = { has_completed_track = tier_0_artillery } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_0_artillery }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_0_artillery }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_0_artillery"
+		}
+		else = {
+			set_sub_doctrine = pre_assault_bombardment
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned pre_assault_bombardment (tier_0_artillery was empty)"
+		}
+	}
+	else_if = {
+		limit = { NOT = { has_completed_track = tier_1_artillery } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_1_artillery }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_1_artillery }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_1_artillery"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_massed_artillery = yes }
+			set_sub_doctrine = massed_artillery
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned massed_artillery (tier_1_artillery was empty)"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_zeroing_artillery = yes }
+			set_sub_doctrine = zeroing_artillery
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned zeroing_artillery (tier_1_artillery was empty)"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_quick_fire = yes }
+			set_sub_doctrine = quick_fire
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned quick_fire (tier_1_artillery was empty)"
+		}
+		else = {
+			set_sub_doctrine = massed_artillery
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned massed_artillery by default (no SELECT trigger true for tier_1_artillery)"
+		}
+	}
+
+	### ARMOUR
+	if = {
+		limit = { NOT = { has_completed_track = tier_0_armour } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_0_armour }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_0_armour }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_0_armour"
+		}
+		else = {
+			set_sub_doctrine = tank_warfare
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned tank_warfare (tier_0_armour was empty)"
+		}
+	}
+	else_if = {
+		limit = { NOT = { has_completed_track = tier_1_armour } }
+		if = {
+			limit = { has_subdoctrine_in_track = tier_1_armour }
+			add_mastery = { amount = @WA_AI_DOCTRINES_catchup_mastery_per_pulse track = tier_1_armour }
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] +[?_doc_amount|.0] mastery tier_1_armour"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_combined_warfare = yes }
+			set_sub_doctrine = combined_warfare
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned combined_warfare (tier_1_armour was empty)"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_frontal_tanks = yes }
+			set_sub_doctrine = frontal_tanks
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned frontal_tanks (tier_1_armour was empty)"
+		}
+		else = {
+			set_sub_doctrine = combined_warfare
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned combined_warfare by default (no SELECT trigger true for tier_1_armour)"
+		}
+	}
+}
