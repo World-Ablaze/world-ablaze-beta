@@ -40,6 +40,20 @@
 #	             nearly empty manpower pool while our own faction has deep reserves. Consumers execute
 #	             with execution_type = careful - bleed them, do not lunge.
 #	0 (hold)     Neither case, or the hard brake (critically low equipment / collapsing / no fuel).
+#	3 (careful)  [posture-v3] Strong on paper, outnumbered where the line runs: the pairwise ratio
+#	             passes but the front-local count reads our side under local.inferior x theirs.
+#	             Consumers execute with execution_type = careful + manual pokes - hold the
+#	             initiative without lunging into a wall.
+#	4 (pursuit)  [posture-v3] The enemy is collapsing (near capitulation AND army broken, or a
+#	             hollow line): rush, whatever the sky says. Consumers execute rush + manual.
+#
+#	[posture-v3]: the front-local scan ALWAYS runs (skipping it when the pairwise ratio passed sent a
+#	globally strong army balanced into local inferiority), its ladder has no cap (a cap compressed
+#	every dense front to 1:1), armoured AND mechanised divisions carry a fixed +50 % mobile weight
+#	(an armour-only bonus decayed with the stack size), the dry-enemy test is per fielded division,
+#	and two levels exist above the old pair (3 careful, 4 pursuit). Verbose per-enemy diagnostics
+#	are written only while the country carries the harness flag WA_TEST_posture_verbose
+#	(events/wa_test_posture.txt) - never read by gameplay code.
 #
 #	SECONDARY INPUTS (both formerly listed as deferred extensions, now implemented)
 #	------------------------------------------------------------------------------
@@ -56,10 +70,6 @@
 #	inferiority (< AIR_INFERIOR) vetoes level 1. The grind is deliberately exempt from the air veto -
 #	infantry attrition works without the sky (China vs Japan is the type case).
 #
-#	Deliberately NOT modelled in this version, to keep the weekly cost bounded (extend here if wanted):
-#		- scripted per-front local superiority scan (fighting_army_strength_ratio already covers
-#		  expeditionary armies wherever they stand, which was the main gap)
-#
 #	NOTE ON STALE PER-ENEMY VARIABLES: WA_AI_MILITARY_posture_vs_<TAG> lingers after a peace. Every
 #	consumer must therefore also gate on has_war_with = <TAG>. Documented at each consumer.
 #	Since [aifc] the entries ARE retracted for current enemies whenever the posture is reset (peace,
@@ -67,45 +77,12 @@
 #	stands: it is what makes the surviving post-peace entries inert.
 ############################################################################################################
 
-### FIX 55 (2026-08-13, campaign 02bd4445) - MIN_EQ is a cliff, so it now has hysteresis.
-###	Both level 1 and level 2 gate on WA_AI_fielded_eq_ratio > MIN_EQ, and the two blocks that
-###	consume the result - WA_AI_MILITARY_ALLIES_exec_vs_germany (posture 1) and _grind_vs_germany
-###	(posture 2) in common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt - both carry
-###	abort_when_not_enabled = yes. So a single crossing of one threshold retracts EVERY
-###	front_control ... execute_order = yes the western Allies hold against Germany, at once.
-###	In 02bd4445 that is exactly what happened: ENG's ratio went 0.947 (1945.8) -> 0.887 (1945.9),
-###	posture_vs_GER fell 2 -> 0, and 13 metropolitan French states flipped inside that one month
-###	with NO battle behind it (Allied divisions in France 130 -> 121, German 132 -> 123). The
-###	unordered front was then rolled up: -105 Allied divisions over four months against -9 German.
-###	It is reversible - ENG recovered to 0.915 by 1946.1, posture returned to 2 - which is what
-###	identifies the gate rather than the fighting as the cause.
-###	Aggravating condition, deliberately NOT changed here: enemy air supremacy vetoes level 1
-###	outright (_post_air_state = -1), and the Luftwaffe held ~2:1 over France for the whole
-###	liberation, so ENG was riding the level-2 grind alone with no fallback under it.
-###	The fix is the minimum that covers the observed case: 0.887 clears MIN_EQ_HOLD, so a country
-###	already attacking keeps its orders while it recovers, and one that is not attacking still has
-###	to earn the full 0.9 to start. Do NOT collapse the two constants back into one.
-
-### FIX 83 (2026-08-15, campaign af003548) - the FRONT-LOCAL ratio is a cliff too, so it now has hysteresis.
-###	[offensive-posture] gave the equipment gate an enter/hold pair and left the front-local branch as a single
-###	bar: LOCAL_RATIO = 1.5 both to start executing AND to keep executing. That is the D-Day rollback
-###	mechanism on af003548, and it is not the equipment cliff: ENG and USA both read
-###	posture_vs_GER 1 (1944.7) -> 0 (1944.8) -> 0 (1944.9) -> 1 (1944.10) with fielded_eq_ratio
-###	never below 0.930, the pairwise ratio hopeless as always for a coalition member (USA 107 vs
-###	GER 291 divisions), and the global air veto not firing (GER 14 109 x 0.4 = 5 644 < ENG ~8 900).
-###	What moved was the LOCAL count: 121 Allied vs 95 German divisions in France at 1944.8 = 1.27,
-###	under 1.5, the month Germany reinforced Normandy 26 -> 95 -> 142 divisions from an already-
-###	quiet Eastern front. Both western majors dropped every front_control ... execute_order = yes
-###	against Germany at once (abort_when_not_enabled), the unordered beachhead went 6 states ->
-###	2 in a month, and stayed on those 2 states for 20 of the next 22 months.
-###	Same shape as [offensive-posture], same minimal remedy: a country ALREADY executing against this enemy
-###	keeps its orders while its side still outweighs the enemy across the line by LOCAL_RATIO_HOLD;
-###	one that is not yet executing still has to earn the full LOCAL_RATIO to start. 1.1 is "still
-###	ahead on the ground" - at 1944.9's 82 vs 142 (0.58) the hold band correctly releases too, so
-###	this does not order attacks into a counter-offensive that has already overturned the count.
-###	Do NOT collapse the two constants back into one, and do not lower LOCAL_RATIO itself: the
-###	entry bar was tuned so a 1939 France does not attack into the Westwall on a marginal count.
-###	Probe: WA_TLM_r51_local_hold_* (checklist R51).
+### [offensive-posture] the equipment gate is an enter/hold PAIR (enter.min_eq / enter.min_eq_hold): a
+### single bar retracted every front_control execute at once (abort_when_not_enabled) the week a
+### country dipped under it, and the unordered front was rolled up. Do NOT collapse the pair.
+### [landing-freeze] the front-local ratio is a pair too (local.ratio / local.ratio_hold): a single bar
+### retracted the western execute orders the month the enemy reinforced the shared line. Same rule.
+### Probe: WA_TLM_r51_local_hold_* (checklist R51).
 
 ### Posture constants: constant:wa_ai_posture.* in common/script_constants/wa_ai_posture.txt since
 ### 2026-08-16 (enter.* / local.* / manpower.* / xr.* / air.* read here; brake.* / alive.* in the
@@ -117,7 +94,7 @@
 @WA_AI_POSTURE_EXEC_RATIO = 0.85		# fighting-strength ratio vs enemy to execute (engine favours defenders)
 @WA_AI_POSTURE_EXEC_RATIO_HOLLOW = 0.7	# lower bar when the enemy's army is badly under-equipped
 @WA_AI_POSTURE_GRIND_RATIO = 0.5		# never grind below this fighting-strength ratio - that is suicide, not attrition
-### xr.veto = 1/manpower.grind_mp_edge: the break-even exchange the 4x pool edge can still pay for.
+### xr.veto = 1/manpower.grind_mp_edge: the break-even exchange the 2x per-division pool edge can still pay for.
 
 
 ############################################################################################################
@@ -152,6 +129,12 @@ WA_AI_MILITARY_update_posture = {
 			clr_country_flag = WA_AI_AIFC_hold_the_line
 		}
 
+		### The loops below name their own break variable and it is reset here: the shared `break`
+		### temp leaks across effects, and this effect runs after the construction strategies in the
+		### same weekly block (lessons log, "The shared break temp variable leaks").
+		set_temp_variable = { _post_break_ = 0 }
+		set_temp_variable = { break = 0 }
+
 		### Casualty exchange-rate input: weekly delta of our own losses. casualties_k is monotonic
 		### and frozen at peace, so the baseline needs no staleness handling for the peace case; weeks
 		### skipped by the hard brake fold into the next delta, which then reads as a multi-week
@@ -175,11 +158,14 @@ WA_AI_MILITARY_update_posture = {
 		set_temp_variable = { _post_own_air = num_deployed_planes }
 		add_to_temp_variable = { _post_own_air = num_equipment@small_fighter_airframe }
 
-		### Faction manpower pool (thousands), for the attrition edge test. Own pool counts too.
+		### Faction manpower pool (thousands) and fielded divisions, for the attrition edge test.
+		### [posture-v3] the edge is per fielded division, so an enemy sitting on occupied-territory
+		### manpower is compared to what its army actually consumes. Own pool counts too.
 		### Temp variables are context-global across scope changes (established AIFC-helpers idiom),
-		### so members add into the shared accumulator directly.
+		### so members add into the shared accumulators directly.
 
 		set_temp_variable = { _post_faction_mp_k = manpower_k }
+		set_temp_variable = { _post_faction_div = num_divisions }
 
 		every_country = {
 			limit = {
@@ -189,6 +175,13 @@ WA_AI_MILITARY_update_posture = {
 			}
 
 			add_to_temp_variable = { _post_faction_mp_k = manpower_k }
+			add_to_temp_variable = { _post_faction_div = num_divisions }
+		}
+
+		set_temp_variable = { _post_faction_mp_per_div = _post_faction_mp_k }
+		if = {
+			limit = { check_variable = { _post_faction_div > 0 } }
+			divide_temp_variable = { _post_faction_mp_per_div = _post_faction_div }
 		}
 
 		### Per-enemy verdicts. Minors are skipped: front execution targets majors and
@@ -217,17 +210,43 @@ WA_AI_MILITARY_update_posture = {
 				divide_temp_variable = { _post_enemy_eq = num_target_equipment_in_armies_k@infantry_equipment }
 			}
 
-			# Enemy manpower state for the attrition test, read here where the scope is cheap.
+			# [posture-v3] Enemy manpower per fielded division (thousands of men): the relative dry
+			# test. An absolute pool bar never fires against a major living on occupied-territory
+			# manpower; what the grind needs is an enemy that cannot replace its losses, i.e. a pool
+			# small for its army.
+			set_temp_variable = { _post_enemy_div = num_divisions }
+			set_temp_variable = { _post_enemy_mp_per_div = manpower_k }
+			if = {
+				limit = { check_variable = { _post_enemy_div > 0 } }
+				divide_temp_variable = { _post_enemy_mp_per_div = _post_enemy_div }
+			}
 			set_temp_variable = { _post_enemy_dry = 0 }
 			if = {
 				limit = {
 					NOT = { conscription_ratio < 0.99 }		# at maximum mobilization for their laws
-					has_manpower < constant:wa_ai_posture.manpower.grind_enemy_mp
+					check_variable = { _post_enemy_mp_per_div < constant:wa_ai_posture.manpower.grind_enemy_mp_per_div }
 				}
 				set_temp_variable = { _post_enemy_dry = 1 }
 			}
-			set_temp_variable = { _post_enemy_mp_edge = manpower_k }
+			set_temp_variable = { _post_enemy_mp_edge = _post_enemy_mp_per_div }
 			multiply_temp_variable = { _post_enemy_mp_edge = constant:wa_ai_posture.manpower.grind_mp_edge }
+
+			# [posture-v3] Enemy collapsing: near capitulation AND a capability term that discriminates on
+			# the enemy's own population - the absolute army bars for a major (control-panel trigger,
+			# THIS = the enemy), or for any enemy a pool too small for its army, or a hollow line.
+			# Never surrender_progress alone. Feeds the pursuit level below.
+			set_temp_variable = { _post_enemy_collapsing = 0 }
+			if = {
+				limit = {
+					surrender_progress > constant:wa_ai_posture.brake.surrender_hard
+					OR = {
+						WA_AI_MILITARY_posture_enemy_army_is_broken = yes
+						check_variable = { _post_enemy_mp_per_div < constant:wa_ai_posture.manpower.grind_enemy_mp_per_div }
+						check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
+					}
+				}
+				set_temp_variable = { _post_enemy_collapsing = 1 }
+			}
 
 			# Front-local ground weight vs this enemy: divisions actually standing on the shared
 			# contact line, both sides, nothing global. THIS = the enemy here. Two passes anchored on
@@ -235,27 +254,51 @@ WA_AI_MILITARY_update_posture = {
 			# those. "Our side" = ROOT plus faction/subject-relation countries at war with this enemy
 			# - a neutral faction member adds nothing (the 1939 USA must not unlock a 1939 French
 			# offensive). Counting is banded (divisions_in_state has no numeric getter) via
-			# WA_AI_MILITARY_posture_count_state_divs; armour counts double as a quality proxy.
-			# Known simplification: enemy-side counting sees only THIS enemy's divisions - a
-			# co-belligerent stacking the same states is measured by its own per-enemy verdict.
-			# Cost gate: skipped entirely when the pairwise exec ratio already passes.
+			# WA_AI_MILITARY_posture_count_state_divs; armoured and mechanised divisions carry a
+			# fixed mobile-quality weight. Known simplification: enemy-side counting sees only THIS
+			# enemy's divisions - a co-belligerent stacking the same states is measured by its own
+			# per-enemy verdict.
+			# [posture-v3] ALWAYS scanned: skipping it when the pairwise ratio passed is how a globally
+			# strong country was told to execute balanced into local inferiority. Level 3 below is the
+			# case it now catches.
 
 			set_temp_variable = { _post_local_friendly = 0 }
 			set_temp_variable = { _post_local_enemy = 0 }
 
-			if = {
+			save_event_target_as = WA_AI_posture_enemy
+
+			clear_temp_array = _post_enemy_front
+			clear_temp_array = _post_our_front
+
+			# Pass 1: the enemy's front states - controlled by them OR by a subject of theirs at war with
+			# us, touching our side. every_controlled_state never includes subject territory (lessons
+			# log), and an eastern line runs through puppet-held states: without the subject walk the
+			# enemy's divisions standing on its puppets' soil never enter the count.
+			every_controlled_state = {
 				limit = {
-					NOT = {
-						ROOT = { fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO } }
+					check_variable = { _post_enemy_front^num < constant:wa_ai_posture.local.max_states }
+					any_neighbor_state = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								AND = {
+									has_war_with = event_target:WA_AI_posture_enemy
+									OR = {
+										is_in_faction_with = ROOT
+										is_subject_of = ROOT
+										ROOT = { is_subject_of = PREV }
+									}
+								}
+							}
+						}
 					}
 				}
 
-				save_event_target_as = WA_AI_posture_enemy
-
-				clear_temp_array = _post_enemy_front
-				clear_temp_array = _post_our_front
-
-				# Pass 1: the enemy's front states - controlled by them, touching our side.
+				WA_AI_PC_get_state_id = yes
+				add_to_temp_array = { _post_enemy_front = state_id_ }
+			}
+			every_subject_country = {
+				limit = { has_war_with = ROOT }
 				every_controlled_state = {
 					limit = {
 						check_variable = { _post_enemy_front^num < constant:wa_ai_posture.local.max_states }
@@ -277,84 +320,94 @@ WA_AI_MILITARY_update_posture = {
 					}
 
 					WA_AI_PC_get_state_id = yes
-					add_to_temp_array = { _post_enemy_front = state_id_ }
+					if = {
+						limit = { NOT = { is_in_array = { _post_enemy_front = state_id_ } } }
+						add_to_temp_array = { _post_enemy_front = state_id_ }
+					}
 				}
+			}
 
-				# Pass 2: our contact states - our-side controlled neighbours of those front states.
-				for_each_loop = { array = _post_enemy_front value = _post_ef
+			# Pass 2: our contact states - our-side controlled neighbours of those front states.
+			for_each_loop = { array = _post_enemy_front value = _post_ef break = _post_break_
 
-					var:_post_ef = {
-						every_neighbor_state = {
-							limit = {
-								CONTROLLER = {
-									OR = {
-										tag = ROOT
-										AND = {
-											has_war_with = event_target:WA_AI_posture_enemy
-											OR = {
-												is_in_faction_with = ROOT
-												is_subject_of = ROOT
-												ROOT = { is_subject_of = PREV }
-											}
+				var:_post_ef = {
+					every_neighbor_state = {
+						limit = {
+							CONTROLLER = {
+								OR = {
+									tag = ROOT
+									AND = {
+										has_war_with = event_target:WA_AI_posture_enemy
+										OR = {
+											is_in_faction_with = ROOT
+											is_subject_of = ROOT
+											ROOT = { is_subject_of = PREV }
 										}
 									}
 								}
 							}
+						}
 
-							WA_AI_PC_get_state_id = yes
-							if = {
-								limit = { NOT = { is_in_array = { _post_our_front = state_id_ } } }
-								add_to_temp_array = { _post_our_front = state_id_ }
-							}
+						WA_AI_PC_get_state_id = yes
+						if = {
+							limit = { NOT = { is_in_array = { _post_our_front = state_id_ } } }
+							add_to_temp_array = { _post_our_front = state_id_ }
 						}
 					}
 				}
+			}
 
-				# Enemy divisions across the line (we are already in the enemy's scope).
-				set_temp_variable = { _post_accum = 0 }
-				for_each_loop = { array = _post_enemy_front value = _cnt_state
+			# Enemy divisions across the line (we are already in the enemy's scope).
+			set_temp_variable = { _post_accum = 0 }
+			for_each_loop = { array = _post_enemy_front value = _cnt_state break = _post_break_
+				WA_AI_MILITARY_posture_count_state_divs = yes
+			}
+			set_temp_variable = { _post_local_enemy = _post_accum }
+
+			# Our side's divisions on the contact states: ROOT plus the same coalition set.
+			set_temp_variable = { _post_accum = 0 }
+			ROOT = {
+				for_each_loop = { array = _post_our_front value = _cnt_state break = _post_break_
 					WA_AI_MILITARY_posture_count_state_divs = yes
 				}
-				set_temp_variable = { _post_local_enemy = _post_accum }
-
-				# Our side's divisions on the contact states: ROOT plus the same coalition set.
-				set_temp_variable = { _post_accum = 0 }
-				ROOT = {
-					for_each_loop = { array = _post_our_front value = _cnt_state
-						WA_AI_MILITARY_posture_count_state_divs = yes
-					}
-				}
-				every_country = {
-					limit = {
-						NOT = { tag = ROOT }
-						has_capitulated = no
-						has_war_with = event_target:WA_AI_posture_enemy
-						OR = {
-							is_in_faction_with = ROOT
-							is_subject_of = ROOT
-							ROOT = { is_subject_of = PREV }
-						}
-					}
-
-					for_each_loop = { array = _post_our_front value = _cnt_state
-						WA_AI_MILITARY_posture_count_state_divs = yes
-					}
-				}
-				set_temp_variable = { _post_local_friendly = _post_accum }
-
-				clear_temp_array = _post_enemy_front
-				clear_temp_array = _post_our_front
 			}
+			every_country = {
+				limit = {
+					NOT = { tag = ROOT }
+					has_capitulated = no
+					has_war_with = event_target:WA_AI_posture_enemy
+					OR = {
+						is_in_faction_with = ROOT
+						is_subject_of = ROOT
+						ROOT = { is_subject_of = PREV }
+					}
+				}
+
+				for_each_loop = { array = _post_our_front value = _cnt_state break = _post_break_
+					WA_AI_MILITARY_posture_count_state_divs = yes
+				}
+			}
+			set_temp_variable = { _post_local_friendly = _post_accum }
+
+			clear_temp_array = _post_enemy_front
+			clear_temp_array = _post_our_front
 
 			set_temp_variable = { _post_local_edge = _post_local_enemy }
 			multiply_temp_variable = { _post_local_edge = constant:wa_ai_posture.local.ratio }
-			# [landing-freeze] the hold bar - see the constants header. Both edges are 0 when the local
-			# scan was skipped (pairwise ratio already passes), and 0 > 0 is false, so neither
-			# branch can fire off an unscanned line.
+			# [landing-freeze] the hold bar - see the constants header. Every edge is 0 when the line
+			# has no enemy front state (no land contact), and 0 > 0 is false, so no local branch can
+			# fire off an empty line.
 			set_temp_variable = { _post_local_edge_hold = _post_local_enemy }
 			multiply_temp_variable = { _post_local_edge_hold = constant:wa_ai_posture.local.ratio_hold }
 			set_temp_variable = { _post_local_grind_floor = _post_local_enemy }
 			multiply_temp_variable = { _post_local_grind_floor = constant:wa_ai_posture.local.grind_ratio }
+			# [posture-v3] below this our side is locally OUTNUMBERED: a pairwise pass still executes,
+			# but carefully (level 3). Enter/hold pair (a single bar would flip balanced <-> careful
+			# weekly around it).
+			set_temp_variable = { _post_local_edge_inferior = _post_local_enemy }
+			multiply_temp_variable = { _post_local_edge_inferior = constant:wa_ai_posture.local.inferior }
+			set_temp_variable = { _post_local_edge_inferior_hold = _post_local_enemy }
+			multiply_temp_variable = { _post_local_edge_inferior_hold = constant:wa_ai_posture.local.inferior_hold }
 
 			# Enemy weekly casualty delta, baseline stored per observer (on ROOT, tag-substituted).
 			# The enemy's casualties variable is global across all their fronts - a deliberate proxy;
@@ -430,17 +483,69 @@ WA_AI_MILITARY_update_posture = {
 				set_temp_variable = { _post_air_state = -1 }
 			}
 
-			### Level 1 - execute: we can win the battles.
-
+			# [posture-v3] The verdict inputs as flags, so the level ladder below reads as the design
+			# does. Pairwise = the engine's quality-weighted estimate of ROOT vs this enemy's whole
+			# fighting army (the bar drops to the hollow bar when their line is hollow or we own the
+			# sky); local = our side outweighs them across the contact line ([landing-freeze] enter at
+			# local.ratio, hold at local.ratio_hold while already executing against this enemy);
+			# inferior = they outweigh us there. PREV is the enemy country here, the same tag
+			# substitution the write site below uses.
+			set_temp_variable = { _post_pairwise_ok = 0 }
 			if = {
 				limit = {
-					# No plan execution into enemy air supremacy - the battles are not winnable
-					# whatever the ground ratio says.
-					NOT = { check_variable = { _post_air_state = -1 } }
 					ROOT = {
-						# [offensive-posture] hysteresis. Entering an offensive costs MIN_EQ; holding one already
-						# under way costs only MIN_EQ_HOLD. PREV is the enemy country here, the same
-						# tag substitution the write site below uses.
+						OR = {
+							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO }
+							AND = {
+								OR = {
+									check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
+									check_variable = { _post_air_state = 1 }
+								}
+								fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW }
+							}
+						}
+					}
+				}
+				set_temp_variable = { _post_pairwise_ok = 1 }
+			}
+			set_temp_variable = { _post_local_ok = 0 }
+			if = {
+				limit = {
+					OR = {
+						check_variable = { _post_local_friendly > _post_local_edge }
+						AND = {
+							ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 } }
+							check_variable = { _post_local_friendly > _post_local_edge_hold }
+						}
+					}
+				}
+				set_temp_variable = { _post_local_ok = 1 }
+			}
+			# Local inferiority is read against a MAJOR only: the level-3 case is a coalition strong on
+			# paper facing a major's massed line; against a minor a pairwise pass executes balanced as
+			# before (a scripted opening against a minor must not be turned careful by a thin start).
+			set_temp_variable = { _post_local_inferior = 0 }
+			if = {
+				limit = {
+					is_major = yes
+					check_variable = { _post_local_enemy > 0 }
+					OR = {
+						check_variable = { _post_local_friendly < _post_local_edge_inferior }
+						AND = {
+							ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 3 } }
+							check_variable = { _post_local_friendly < _post_local_edge_inferior_hold }
+						}
+					}
+				}
+				set_temp_variable = { _post_local_inferior = 1 }
+			}
+			# Own capability bars, shared by every offensive level: [offensive-posture] hysteresis
+			# (entering costs MIN_EQ, holding one already under way only MIN_EQ_HOLD) and the
+			# manpower floor.
+			set_temp_variable = { _post_bars_ok = 0 }
+			if = {
+				limit = {
+					ROOT = {
 						OR = {
 							check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
 							AND = {
@@ -449,55 +554,54 @@ WA_AI_MILITARY_update_posture = {
 							}
 						}
 						has_manpower > constant:wa_ai_posture.manpower.min_own_mp
-						OR = {
-							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO }
-							AND = {
-								# The lower bar applies when the enemy's line is hollow OR we own the sky.
-								OR = {
-									check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
-									check_variable = { _post_air_state = 1 }
-								}
-								fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW }
-							}
-							# Front-local branch: our side's divisions on the shared contact line
-							# outweigh the enemy divisions across it, so every member on that front
-							# joins the push - the pairwise ratio compares one country against the
-							# enemy's whole fighting army and no coalition member but the largest
-							# could ever pass it against a major.
-							# [landing-freeze] enter at LOCAL_RATIO, hold at LOCAL_RATIO_HOLD while already
-							# executing against this enemy - same enter/hold shape as the [offensive-posture]
-							# equipment pair above. PREV is the enemy, as at the write site.
-							OR = {
-								check_variable = { _post_local_friendly > _post_local_edge }
-								AND = {
-									check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
-									check_variable = { _post_local_friendly > _post_local_edge_hold }
-								}
-							}
-						}
+					}
+				}
+				set_temp_variable = { _post_bars_ok = 1 }
+			}
+
+			### Level 4 - pursuit: the enemy is collapsing; run, whatever the sky says.
+
+			if = {
+				limit = {
+					check_variable = { _post_bars_ok = 1 }
+					check_variable = { _post_enemy_collapsing = 1 }
+				}
+				set_temp_variable = { _post_level = 4 }
+			}
+
+			### Level 1 - execute: we can win the battles. Level 3 - execute carefully: strong on
+			### paper, outnumbered where the line actually runs.
+
+			else_if = {
+				limit = {
+					# No plan execution into enemy air supremacy - the battles are not winnable
+					# whatever the ground ratio says.
+					NOT = { check_variable = { _post_air_state = -1 } }
+					check_variable = { _post_bars_ok = 1 }
+					OR = {
+						check_variable = { _post_pairwise_ok = 1 }
+						check_variable = { _post_local_ok = 1 }
 					}
 				}
 				set_temp_variable = { _post_level = 1 }
+				if = {
+					limit = {
+						check_variable = { _post_local_inferior = 1 }
+						NOT = { check_variable = { _post_local_ok = 1 } }
+					}
+					set_temp_variable = { _post_level = 3 }
+				}
 
 				# tlm: WA_TLM_r51_local_hold_n / _first_t / _last_t - consumer: checklist R51.
 				# Counts a level-1 verdict that ONLY the [landing-freeze] hold band delivered: the local count is
 				# inside (edge_hold, edge], the entry we are holding was > 0, and no other level-1 route
-				# was open - the local scan only runs when the pairwise EXEC_RATIO branch failed (see the
-				# cost gate above), so the remaining route to exclude is the hollow/air-lowered pairwise
-				# bar. VERIFIED effect: without the hold band this observation would have read 0.
+				# was open (the pairwise branch, hollow bar included, failed). VERIFIED effect: without the
+				# hold band this observation would have read 0.
 				if = {
 					limit = {
 						NOT = { check_variable = { _post_local_friendly > _post_local_edge } }
 						check_variable = { _post_local_friendly > _post_local_edge_hold }
-						NOT = {
-							AND = {
-								OR = {
-									check_variable = { _post_enemy_eq < constant:wa_ai_posture.enter.hollow_eq }
-									check_variable = { _post_air_state = 1 }
-								}
-								ROOT = { fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_EXEC_RATIO_HOLLOW } }
-							}
-						}
+						NOT = { check_variable = { _post_pairwise_ok = 1 } }
 					}
 					ROOT = {
 						add_to_variable = { WA_TLM_r51_local_hold_n = 1 }
@@ -509,8 +613,8 @@ WA_AI_MILITARY_update_posture = {
 				}
 			}
 
-			### Level 2 - attrition grind: the enemy is out of men, we are not. Worth pressing even
-			### at odds that fail the level-1 bar, but never below GRIND_RATIO.
+			### Level 2 - attrition grind: the enemy is out of men for its army, we are not. Worth
+			### pressing even at odds that fail the level-1 bar, but never below GRIND_RATIO.
 
 			else_if = {
 				limit = {
@@ -520,28 +624,18 @@ WA_AI_MILITARY_update_posture = {
 					OR = {
 						AND = {
 							check_variable = { _post_enemy_dry = 1 }
-							check_variable = { _post_faction_mp_k > _post_enemy_mp_edge }
+							check_variable = { _post_faction_mp_per_div > _post_enemy_mp_edge }
 						}
 						# A measured favourable exchange rate substitutes for the dry-pool test:
 						# the ledger projection is unnecessary when the front is already proving it.
 						check_variable = { _post_xr_signal = 1 }
 					}
-					ROOT = {
-						# [offensive-posture] same hysteresis as level 1 - see the comment there.
-						OR = {
-							check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq }
-							AND = {
-								check_variable = { WA_AI_MILITARY_posture_vs_@PREV > 0 }
-								check_variable = { WA_AI_fielded_eq_ratio > constant:wa_ai_posture.enter.min_eq_hold }
-							}
-						}
-						has_manpower > constant:wa_ai_posture.manpower.min_own_mp
-						OR = {
-							fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_GRIND_RATIO }
-							# Local floor: a member too small to pass the pairwise floor still grinds
-							# when its side of the contact line outweighs the enemy's on the ground.
-							check_variable = { _post_local_friendly > _post_local_grind_floor }
-						}
+					check_variable = { _post_bars_ok = 1 }
+					OR = {
+						ROOT = { fighting_army_strength_ratio = { tag = PREV ratio > @WA_AI_POSTURE_GRIND_RATIO } }
+						# Local floor: a member too small to pass the pairwise floor still grinds
+						# when its side of the contact line outweighs the enemy's on the ground.
+						check_variable = { _post_local_friendly > _post_local_grind_floor }
 					}
 				}
 				set_temp_variable = { _post_level = 2 }
@@ -574,11 +668,13 @@ WA_AI_MILITARY_update_posture = {
 				# lt50 is a subset of lt100. Their share of post_exec_xr_n says where a level-1 veto
 				# threshold should sit, if one is wanted at all. If lt100 is near zero across a
 				# campaign the defect is theoretical and no fix is warranted.
-				# lt25 specifically counts observations that WOULD already have fired the existing
-				# constant:wa_ai_posture.xr.veto bar, had that bar applied to level 1.
+				# the lt50 bucket counts observations that WOULD already fire the constant:wa_ai_posture.xr.veto
+				# bar (0.5 since [posture-v3]), had that bar applied to level 1; lt25 is the older 0.25 bar.
 				########################################################################################
+				# [posture-v3] levels 1 AND 3 are both executions (balanced / careful) and both carry the
+				# exchange-rate question; level 4 (pursuit) is not counted here (no metric yet, proposed).
 				if = {
-					limit = { check_variable = { _post_level = 1 } }
+					limit = { OR = { check_variable = { _post_level = 1 } check_variable = { _post_level = 3 } } }
 					add_to_variable = { WA_TLM_post_exec_n = 1 }
 					if = {
 						limit = { check_variable = { _post_xr_valid = 1 } }
@@ -592,7 +688,7 @@ WA_AI_MILITARY_update_posture = {
 							add_to_variable = { WA_TLM_post_exec_xr_lt50 = 1 }
 						}
 						if = {
-							limit = { check_variable = { _post_xr < constant:wa_ai_posture.xr.veto } }
+							limit = { check_variable = { _post_xr < 0.25 } }
 							add_to_variable = { WA_TLM_post_exec_xr_lt25 = 1 }
 						}
 					}
@@ -605,6 +701,29 @@ WA_AI_MILITARY_update_posture = {
 				# whatever the level, so a present-and-0 counter is distinguishable from a code path
 				# that never ran.
 				set_variable = { WA_TLM_post_last_t = global.WA_TLM_clock }
+
+				# [posture-v3] verbose per-enemy diagnostics for the console harness (events/wa_test_posture.txt):
+				# written only while the country carries WA_TEST_posture_verbose, never read by gameplay code.
+				# The two casualty deltas and the exchange rate are what point 4 of the owner order asked to see.
+				if = {
+					limit = { has_country_flag = WA_TEST_posture_verbose }
+					set_variable = { WA_TEST_post_lf_@PREV = _post_local_friendly }
+					set_variable = { WA_TEST_post_le_@PREV = _post_local_enemy }
+					set_variable = { WA_TEST_post_pair_@PREV = _post_pairwise_ok }
+					set_variable = { WA_TEST_post_own_d_@PREV = _post_own_cas_delta }
+					set_variable = { WA_TEST_post_en_d_@PREV = _post_enemy_cas_delta }
+					set_variable = { WA_TEST_post_xrv_@PREV = _post_xr_valid }
+					if = {
+						limit = { check_variable = { _post_xr_valid = 1 } }
+						set_variable = { WA_TEST_post_xr_@PREV = _post_xr }
+					}
+					set_variable = { WA_TEST_post_xrs_@PREV = _post_xr_signal }
+					set_variable = { WA_TEST_post_air_@PREV = _post_air_state }
+					set_variable = { WA_TEST_post_dry_@PREV = _post_enemy_dry }
+					set_variable = { WA_TEST_post_mpd_@PREV = _post_enemy_mp_per_div }
+					set_variable = { WA_TEST_post_col_@PREV = _post_enemy_collapsing }
+					set_variable = { WA_TEST_post_eeq_@PREV = _post_enemy_eq }
+				}
 			}
 
 			if = {
@@ -676,9 +795,12 @@ WA_AI_MILITARY_clear_posture = {
 #	divisions_in_state exposes no numeric getter, only threshold triggers, so the count is approximated
 #	by a descending ladder - the same technique as the AIFC density checks. The early size > 0 gate
 #	keeps the common case (country has nothing in this state) at one trigger evaluation.
-#	Armoured divisions are then counted again with extra weight: a rough quality proxy so a militia
-#	horde does not read as equal to a tank army. Full quality weighting stays the job of the pairwise
-#	fighting_army_strength_ratio branch.
+#	[posture-v3] The ladder has NO cap (a cap compressed every dense front to 1:1 and made the entry
+#	bar unreachable against a stacked enemy); each rung's value is the band's midpoint. Armoured AND
+#	mechanised divisions add a fixed +50 % on top of the all-types count (an armour-only bonus decayed
+#	with the stack size). Full quality weighting stays the job of the pairwise
+#	fighting_army_strength_ratio branch. ASSUMED: a division's type for `divisions_in_state type =`
+#	is its template's majority battalion type (mechanized exists as a WA unit type).
 ############################################################################################################
 
 WA_AI_MILITARY_posture_count_state_divs = {
@@ -688,19 +810,37 @@ WA_AI_MILITARY_posture_count_state_divs = {
 		if = {
 			limit = { PREV = { divisions_in_state = { state = PREV size > 0 } } }
 
-			if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 20 } } } add_to_temp_variable = { _post_accum = 24 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 12 } } } add_to_temp_variable = { _post_accum = 16 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 8 } } }  add_to_temp_variable = { _post_accum = 10 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 5 } } }  add_to_temp_variable = { _post_accum = 7 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  add_to_temp_variable = { _post_accum = 4 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 1 } } }  add_to_temp_variable = { _post_accum = 2 } }
+			if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 100 } } } add_to_temp_variable = { _post_accum = 110 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 80 } } }  add_to_temp_variable = { _post_accum = 90 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 60 } } }  add_to_temp_variable = { _post_accum = 70 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 50 } } }  add_to_temp_variable = { _post_accum = 55 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 40 } } }  add_to_temp_variable = { _post_accum = 45 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } }  add_to_temp_variable = { _post_accum = 35 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 25 } } }  add_to_temp_variable = { _post_accum = 27 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 20 } } }  add_to_temp_variable = { _post_accum = 22 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 16 } } }  add_to_temp_variable = { _post_accum = 18 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 12 } } }  add_to_temp_variable = { _post_accum = 14 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 8 } } }   add_to_temp_variable = { _post_accum = 10 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 5 } } }   add_to_temp_variable = { _post_accum = 7 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }   add_to_temp_variable = { _post_accum = 4 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 1 } } }   add_to_temp_variable = { _post_accum = 2 } }
 			else    = { add_to_temp_variable = { _post_accum = 1 } }
 
-			# Armour counts double - each armoured division adds a second point on top of the
-			# all-types count above.
-			if      = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 5 } } } add_to_temp_variable = { _post_accum = 6 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 2 } } } add_to_temp_variable = { _post_accum = 3 } }
-			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 0 } } } add_to_temp_variable = { _post_accum = 1 } }
+			# Mobile quality, +50 % per armoured division (band midpoints halved).
+			if      = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 20 } } } add_to_temp_variable = { _post_accum = 12 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 12 } } } add_to_temp_variable = { _post_accum = 8 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 8 } } }  add_to_temp_variable = { _post_accum = 5 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 5 } } }  add_to_temp_variable = { _post_accum = 3 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 2 } } }  add_to_temp_variable = { _post_accum = 2 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 0 } } }  add_to_temp_variable = { _post_accum = 1 } }
+
+			# ... and per mechanised division (a mechanised army read as plain infantry before).
+			if      = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 20 } } } add_to_temp_variable = { _post_accum = 12 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 12 } } } add_to_temp_variable = { _post_accum = 8 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 8 } } }  add_to_temp_variable = { _post_accum = 5 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 5 } } }  add_to_temp_variable = { _post_accum = 3 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 2 } } }  add_to_temp_variable = { _post_accum = 2 } }
+			else_if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 0 } } }  add_to_temp_variable = { _post_accum = 1 } }
 		}
 	}
 }

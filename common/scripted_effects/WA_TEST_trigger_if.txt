@@ -1,0 +1,88 @@
+############################################################################################################
+#	[trigger-if] console harness: what does a TRIGGER-context `if` evaluate to when its limit FAILS?
+#	Claim under test (DERIVED from two campaigns, never read in an engine file): a failed-limit `if`
+#	contributes TRUE, so inside an OR it makes the whole predicate true. That is the mechanism behind
+#	WA_AI_RAIL_CORRIDOR_state_is_friendly reading every non-subject controller as friendly.
+#	Recipe: events/wa_test_trigger_if.txt (tag GER, event wa_test_trigif.1). harness-contract: v1 (wa-testing SKILL).
+#	Every probe below is `if = { limit = { <trigger under test> } set 1 }` in EFFECT context; only the
+#	inner `if` (inside the limit) is the trigger-context `if` being measured.
+############################################################################################################
+
+WA_TEST_TRIGIF_report = {
+	log = "=== TRIGGER-IF TEST [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _ti_e1_ = 0 }
+	set_temp_variable = { _ti_e2_ = 0 }
+	set_temp_variable = { _ti_e3_ = 0 }
+	set_temp_variable = { _ti_e4_ = 0 }
+	set_temp_variable = { _ti_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _ti_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _ti_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _ti_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _ti_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _ti_e5_ = 1 } }
+	log = "  scope : always=[?_ti_e1_|.0]  I-am-ROOT=[?_ti_e2_|.0]  I-am-THIS=[?_ti_e3_|.0]  ROOT-scope-usable=[?_ti_e4_|.0]  control-false=[?_ti_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### PART A - synthetic triggers. Expected under the claim: A1=1 A2=1 A3=0 A4=1 A5=1 A6=0 A7=0 A8=1
+	set_temp_variable = { _ti_a1_ = 0 }
+	set_temp_variable = { _ti_a2_ = 0 }
+	set_temp_variable = { _ti_a3_ = 0 }
+	set_temp_variable = { _ti_a4_ = 0 }
+	set_temp_variable = { _ti_a5_ = 0 }
+	set_temp_variable = { _ti_a6_ = 0 }
+	set_temp_variable = { _ti_a7_ = 0 }
+	set_temp_variable = { _ti_a8_ = 0 }
+	# A1: limit FAILS, body true  -> claim says 1 (body never read)
+	if = { limit = { if = { limit = { always = no } always = yes } } set_temp_variable = { _ti_a1_ = 1 } }
+	# A2: limit FAILS, body FALSE -> THE measurement. 1 = vacuous TRUE (claim). 0 = failed limit reads FALSE (claim refuted)
+	if = { limit = { if = { limit = { always = no } always = no } } set_temp_variable = { _ti_a2_ = 1 } }
+	# A3: limit passes, body false -> 0 (proves the body is evaluated when the limit passes)
+	if = { limit = { if = { limit = { always = yes } always = no } } set_temp_variable = { _ti_a3_ = 1 } }
+	# A4: limit passes, body true -> 1 (positive control)
+	if = { limit = { if = { limit = { always = yes } always = yes } } set_temp_variable = { _ti_a4_ = 1 } }
+	# A5: the CORRIDOR SHAPE - OR of a false term and a failed-limit if with a false body. 1 = the bug
+	if = { limit = { OR = { always = no  if = { limit = { always = no } always = no } } } set_temp_variable = { _ti_a5_ = 1 } }
+	# A6: the PROPOSED FIX shape - same if, terminal else = { always = no }. Expected 0
+	if = { limit = { if = { limit = { always = no } always = no } else = { always = no } } set_temp_variable = { _ti_a6_ = 1 } }
+	# A7: the fix inside the OR. Expected 0
+	if = { limit = { OR = { always = no  if = { limit = { always = no } always = no } else = { always = no } } } set_temp_variable = { _ti_a7_ = 1 } }
+	# A8: failed-limit if inside an AND with a true sibling. Claim says 1 (vacuous member does not break the AND)
+	if = { limit = { AND = { always = yes  if = { limit = { always = no } always = no } } } set_temp_variable = { _ti_a8_ = 1 } }
+	log = "  A synthetic : A1(fail,true)=[?_ti_a1_|.0]  A2(fail,false)=[?_ti_a2_|.0]  A3(pass,false)=[?_ti_a3_|.0]  A4(pass,true)=[?_ti_a4_|.0]"
+	log = "                A5(OR corridor shape)=[?_ti_a5_|.0]  A6(fix: else always=no)=[?_ti_a6_|.0]  A7(fix in OR)=[?_ti_a7_|.0]  A8(in AND)=[?_ti_a8_|.0]"
+	log = "                expected under the claim: 1 1 0 1 | 1 0 0 1.   A2=0 refutes the claim.   A3 must be 0 or the inner if is not evaluated at all."
+
+	### PART B - the SHIPPED trigger, anchor = the firing country. Any save, any date.
+	### B1 = state 64 (S. Brandenburg) - expected 1 when the anchor controls it (sanity, not the measurement).
+	### B2 = a state picked at run time whose controller is AT WAR with the anchor, in no faction with it,
+	###      and not a subject -> expected 0 by DESIGN; 1 = the shipped predicate calls a hostile non-subject
+	###      friendly (the corridor-7 bug, reproduced on live code). VOID when no such state exists.
+	set_temp_variable = { _ti_b1_ = 0 }
+	set_temp_variable = { _ti_b2_ = 0 }
+	set_temp_variable = { _ti_b2_state_ = 0 }
+	set_temp_variable = { _rc_anchor = THIS.id }
+	64 = { CONTROLLER = { log = "  B shipped   : state 64 controller = [This.GetName]" } }
+	if = { limit = { 64 = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes } } set_temp_variable = { _ti_b1_ = 1 } }
+	random_state = {
+		limit = {
+			CONTROLLER = {
+				NOT = { tag = ROOT }
+				is_subject = no
+				NOT = { is_in_faction_with = ROOT }
+				has_war_with = ROOT
+			}
+		}
+		set_temp_variable = { _ti_b2_state_ = THIS.id }
+		CONTROLLER = { log = "  B shipped   : B2 picked state [PREV.GetName] (id [PREV.GetID]) controlled by [This.GetName] - at war with the anchor, no faction, not a subject" }
+	}
+	if = { limit = { check_variable = { _ti_b2_state_ > 0 } }
+		if = { limit = { var:_ti_b2_state_ = { WA_AI_RAIL_CORRIDOR_state_is_friendly = yes } } set_temp_variable = { _ti_b2_ = 1 } }
+		log = "  B shipped   : anchor=[This.GetName]  B1 state 64 friendly=[?_ti_b1_|.0] (expect 1 if anchor controls it)   B2 friendly=[?_ti_b2_|.0] (expect 0; 1 = BUG reproduced on live code)"
+	}
+	else = {
+		log = "  B shipped   : anchor=[This.GetName]  B1 state 64 friendly=[?_ti_b1_|.0]   B2 VOID - no state controlled by a non-subject enemy outside the anchor's faction on this save"
+	}
+	log = "=== TRIGGER-IF TEST END ==="
+}

@@ -1,0 +1,83 @@
+############################################################################################################
+#	WA_TEST - Pacific garrison share cap ([usa-pacific-hoard]), console-driven.
+#
+#	Fired by wa_uph.1 (one country, run it as USA) in events/wa_test_usa_pacific_hoard.txt.
+#	Read the recipe there, not here.
+#
+#	Prints, for the country under test: the raw facts the cap reads (army size, the constant, the
+#	one-way latch flag, the two live war terms), an INDEPENDENT walk of the two-ocean large-army
+#	fact, then the shipped triggers' own verdicts beside it. A disagreement between the two halves
+#	localises the fault to one of them. Write-nothing-but-the-log.
+############################################################################################################
+
+# ROOT = country under test.
+WA_TEST_usa_pacific_hoard_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | USA PACIFIC HOARD TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _uph_e1_ = 0 }
+	set_temp_variable = { _uph_e2_ = 0 }
+	set_temp_variable = { _uph_e3_ = 0 }
+	set_temp_variable = { _uph_e4_ = 0 }
+	set_temp_variable = { _uph_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _uph_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _uph_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _uph_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _uph_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _uph_e5_ = 1 } }
+	log = "  scope : always=[?_uph_e1_|.0]  I-am-ROOT=[?_uph_e2_|.0]  I-am-THIS=[?_uph_e3_|.0]  ROOT-scope-usable=[?_uph_e4_|.0]  control-false=[?_uph_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag USA then event wa_iso.3 - before editing a line of this effect.)"
+
+	### Raw facts (DECLARATION + engine getters)
+	set_temp_variable = { _uph_div_ = num_divisions }
+	set_temp_variable = { _uph_bar_ = constant:wa_ai_theatre.usa_pacific.cap_min_div }
+	set_temp_variable = { _uph_latched_ = 0 }
+	if = { limit = { has_country_flag = WA_AI_pacific_share_cap_latched } set_temp_variable = { _uph_latched_ = 1 } }
+	log = "  facts : num_divisions=[?_uph_div_|.0]  cap_min_div=[?_uph_bar_|.0]  latched=[?_uph_latched_|.0]"
+	if = {
+		limit = { is_ai = no }
+		log = "  WARN  : this country is HUMAN (you tagged it) - the monthly latch runs in the is_ai block, so latched can never turn 1 here. Fire the event with a target tag from the observer instead (event wa_uph.1 USA)."
+	}
+
+	### Independent walk of the two-ocean large-army fact (duplicates the shipped terms, shares no helper)
+	set_temp_variable = { _uph_i_size_ = 0 }
+	set_temp_variable = { _uph_i_pac_ = 0 }
+	set_temp_variable = { _uph_i_eur_ = 0 }
+	if = { limit = { check_variable = { _uph_div_ > _uph_bar_ } } set_temp_variable = { _uph_i_size_ = 1 } }
+	if = {
+		limit = {
+			OR = {
+				has_war_with = JAP
+				any_enemy_country = { has_war_with = ROOT OR = { original_tag = JAP capital_scope = { is_on_continent = asia } } }
+			}
+		}
+		set_temp_variable = { _uph_i_pac_ = 1 }
+	}
+	if = {
+		limit = { any_enemy_country = { has_capitulated = no capital_scope = { is_on_continent = europe } } }
+		set_temp_variable = { _uph_i_eur_ = 1 }
+	}
+	log = "  indep : size-over-bar=[?_uph_i_size_|.0]  pacific-risk=[?_uph_i_pac_|.0]  enemy-in-europe=[?_uph_i_eur_|.0]   (cap expected = latched AND pacific-risk AND enemy-in-europe)"
+
+	### Shipped verdicts (the code under test)
+	set_temp_variable = { _uph_s_cap_ = 0 }
+	set_temp_variable = { _uph_s_full_ = 0 }
+	set_temp_variable = { _uph_s_capd_ = 0 }
+	set_temp_variable = { _uph_s_low_ = 0 }
+	set_temp_variable = { _uph_s_phi_ = 0 }
+	set_temp_variable = { _uph_s_phic_ = 0 }
+	set_temp_variable = { _uph_s_home_ = 0 }
+	if = { limit = { WA_AI_MILITARY_home_threatened = yes } set_temp_variable = { _uph_s_home_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_is_two_ocean_war_with_large_army = yes } set_temp_variable = { _uph_s_cap_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_usa_buffer_pacific = yes } set_temp_variable = { _uph_s_full_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_usa_buffer_pacific_capped = yes } set_temp_variable = { _uph_s_capd_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_usa_buffer_pacific_low_army = yes } set_temp_variable = { _uph_s_low_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_usa_buffer_philippines = yes } set_temp_variable = { _uph_s_phi_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_usa_buffer_philippines_capped = yes } set_temp_variable = { _uph_s_phic_ = 1 } }
+	log = "  ship  : two_ocean_large_army=[?_uph_s_cap_|.0]  gate full=[?_uph_s_full_|.0] capped=[?_uph_s_capd_|.0] low_army=[?_uph_s_low_|.0]  philippines full=[?_uph_s_phi_|.0] capped=[?_uph_s_phic_|.0]  home_threatened=[?_uph_s_home_|.0]"
+	log = "          (PASS shape: full+capped never both 1; when two_ocean_large_army=1 only the capped pair may read 1; when 0 the capped pair reads 0)"
+	log = "=========================================================================================="
+}

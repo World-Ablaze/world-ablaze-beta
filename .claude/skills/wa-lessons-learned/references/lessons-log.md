@@ -446,7 +446,15 @@ explicit branch per member or a terminal `else = { always = no }` - and adding t
 to an existing ladder is a BEHAVIOUR CHANGE for every country on an unlisted member (here: it
 would silently freeze USA's laws). Audit before "cleaning up".
 
-**Evidence:** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
+**Evidence (MEASURED on the engine, 2026-09-04):** owner console harness `WA_TEST_trigger_if`
+(`tag GER`, `event wa_test_trigif.1`, 1.19.2, 1944.6): `if = { limit = { always = no } always = no }`
+reads TRUE (A2=1), inside an OR with a false sibling reads TRUE (A5=1), inside an AND reads TRUE
+(A8=1); the same `if` with `else = { always = no }` reads FALSE (A6=0, A7=0). Second victim:
+`WA_AI_RAIL_CORRIDOR_state_is_friendly` (commit `70f33ae1d`) - corridors 4/5/7 spawned over
+neutral/enemy ground in campaign `5d2a391c`. **Rule for OR/AND members too, not only ladders:**
+any trigger-context `if` needs its terminal `else = { always = no }`.
+
+**Evidence (original):** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
 vacuous path; `WA_AI_LAW_triggers.txt:15-22` ladder, `:1097` gate; the real ramp limiter was the
 2% law + `conscription_ratio >= 0.99` wait at `:1111`).
 
@@ -2367,6 +2375,12 @@ process caveats (stale process, and the absence of a load-time hook).
   pure-capability alternative recorded here so it is not re-proposed. ASSUMED: whether
   `num_of_military_factories` counts occupied MILs (install doc says only "check amount of
   military factories"); benign direction - captured MILs do produce.
+- **Superseded in part 2026-09-04 (`[eng-reserve-partner]`, owner order):** the ENG carve-out now
+  has a RELIEF (`WA_reserves_is_materiel_limit_relieved`): the bank opens once a materiel partner
+  (`WA_AI_CONFIG_is_reserve_materiel_partner` = USA) is in the faction, or once the field army is
+  under 1 M men after 1941. MEASURED on `5d2a391c`: ENG's 40 banked divisions never deployed in 45
+  months. The rule above (industry proxy, never stockpile) stands; only the "closed for the war"
+  consequence for ENG is gone, and ENG division counts are non-comparable across that commit.
 - **Evidence:** WORK.md `[reserve-quality]` v2 calibration table (`24933fb9`: RAJ 22 MIL/50 div,
   CAN 15/14, ENG 134/31, USA 340/7; stocks RAJ 53k vs CAN 11.6k);
   `common/scripted_triggers/WA_reserves_triggers.txt` (tier OR),
@@ -2572,3 +2586,53 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** WORK.md `dday-mulberry` (control run FAILED then PASSED bullets); commits
   `a0fe44a81` (inline, broken) -> `1386cf6ea` (scripted-effect bodies, working); game.log
   excerpts pasted in the subject.
+
+### A value-first branch ahead of a template calculator's else_if chain hides the whole chain
+
+- **Date:** 2026-09-02 (`light-support-conversion` Change 7, campaign `5de66942`, owner imgui 1943.1)
+- **Symptom:** the Soviet historical tank park held `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE = 15006` on
+  every monthly save from 1936.2 to 1945.12 and 31 divisions were still on light-support shapes
+  in 1945.12; the conversion rungs 15002-15005 and their medium FINALs, shipped three days
+  earlier and reviewed twice, never armed once. `check_templates.py` was green: every value
+  had a template and every template a value.
+- **Cause:** MEASURED in the script. `42206fcb6` added an `if` that emits 15006 BEFORE the
+  existing `if ... else_if` pair; both of those require `_template_value = 0`, and the first
+  of them was the only writer of the latch the window trigger reads. One branch placed ahead
+  of the chain turned the chain into dead code without touching a line of it, and without
+  any join-key mismatch for the checker to see.
+- **Rule:** the join-key diff (values emitted vs values enabled) is necessary, not sufficient.
+  When a calculator gains a branch, walk the ORDER: list every branch that can set the value,
+  in file order, and for each later branch state which earlier branch leaves the value at 0
+  for it. A branch that no state reaches is the defect, whatever the checker says. The same
+  walk applies to any `if / else_if` ladder gated on a temp variable being unset.
+- **Detection:** cross-save `flags` trend — one flag value constant for years while the
+  design says the value must move; then `imgui show ai_templates` (arrow never leaves the
+  same target) and the harness window bit (`conv-window=0` with the park still fielded).
+- **Evidence:** WORK.md `light-support-conversion` Change 7; scratchpad
+  `light_to_medium_diagnosis.md` (six boxes); `42206fcb6` (the branch), the fix commit.
+
+### The field-upgrade destination is the FINAL's best EXISTING match, not the FINAL
+
+- **Date:** 2026-09-04 (`light-support-conversion` Change 8, owner imgui + harness on `5de66942` 1943.3)
+- **Symptom:** the light-support conversion rung switched correctly onto its 9 medium + 6 mec
+  FINAL, and the Soviet light-support divisions turned into HEAVY divisions.
+- **Cause:** MEASURED (imgui `Best (all) = Best (role) = "Heavy Tank template A" 0.7353`) plus the
+  install doc ("make a copy of the best matching template"): when the arrow lands on a FINAL,
+  the engine copies the fielded template that best matches the FINAL and moves the converting
+  divisions onto that copy. The heavy target (9 heavy + 6 mec, RS 5+5, the same support set)
+  is nearer to a pure 9+6 medium FINAL than the medium role's own target (7 M + 3 SPG + 5 mec,
+  RS 3+3, SPG supports). Support companies and regimental supports weigh in the score; the
+  battalion type alone does not decide it.
+- **Rule:** a conversion FINAL is safe only when its composition IS the destination role's
+  CURRENT target, so the best existing match is that role's own template. The destination
+  target is a flag value and `replace_with` is static, so it takes one (rung, FINAL) pair per
+  destination value (built and parked: `tools/gen_ai_armor_conversion_finals.py` on branch
+  `parked/armor-conversion-finals` — the owners judged the ~9 000 generated lines a massive
+  complexity increase against the dynamic principles and ACCEPTED the side effect for now: a
+  country holding medium + heavy may see converting light divisions land on a heavy template).
+- **Detection:** `imgui show ai_templates` on the converting role: `Best (all)` for the FINAL
+  names a template of another class, or matches under ~0.9. In a save: divisions of the
+  converting role appearing on the OTHER class's battalions (`plans.py --templates`).
+- **Evidence:** WORK.md `light-support-conversion` (Change 7 defect + Change 8 decision); the heavy
+  target `WA_AI_TEMPLATES_armored_heavy.txt` value 7105 vs medium 6111; the per-value generator on
+  branch `parked/armor-conversion-finals` (`e26ab824f`), parked by owner order pending a decision.

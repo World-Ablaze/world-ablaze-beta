@@ -9,6 +9,12 @@ hand-maintained copy would desynchronise the first time someone edits one varian
 ladder, and the failure is silent - the country carries a flag value no ai_template answers, so it
 keeps its 1936 template for the rest of the campaign.
 
+ONLY THE CHASSIS STEPS UP. The TD / SPAA / SPG / assault / infantry-support components keep the
+tier the country already researches, builds and STOCKS: bumping them moves the whole variant demand
+onto modern archetypes a chromium-starved country cannot feed while its medium variants sit idle
+in the stockpile (measurements: WORK.md [modern-chassis-tier]). The tank-chassis support companies
+(engineer / maintenance) follow the hull; recon stays light.
+
 Source : common/ai_templates/WA_AI_TEMPLATES_armored_medium.txt   (hand-maintained)
 Output : common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt   (GENERATED, do not edit)
 
@@ -34,35 +40,33 @@ DST = REPO / "common" / "ai_templates" / "WA_AI_TEMPLATES_armored_medium_modern.
 
 TIER_OFFSET = 500
 
-# Every unit token the medium templates may contain, and what it becomes one chassis tier up.
+# Every unit token the medium templates may contain, and what it becomes in the modern twin.
 # A token missing from this table is a hard error: it means the medium ladder gained a component
-# whose modern-tier answer nobody has decided, and guessing it silently is how a mirror rots.
+# whose modern-twin answer nobody has decided, and guessing it silently is how a mirror rots.
 TIER_UP = {
-    # medium tier -> modern tier
+    # the hull is the only thing that steps up
     "medium_armor_battalion_line": "modern_armor_battalion_line",
-    "medium_assault_gun_battalion_line": "modern_assault_gun_battalion_line",
-    "medium_assault_gun_company_divisional": "modern_assault_gun_company_divisional",
-    # no modern_assault_gun_company_regimental exists in common/units/armor_sp_assault.txt,
-    # so the regimental assault company stays at the medium tier. Checked 2026-08-28.
+    # variant components keep their tier (module docstring)
+    "medium_assault_gun_battalion_line": "medium_assault_gun_battalion_line",
+    "medium_assault_gun_company_divisional": "medium_assault_gun_company_divisional",
     "medium_assault_gun_company_regimental": "medium_assault_gun_company_regimental",
-    "medium_infantry_support_armor_battalion_line": "modern_infantry_support_armor_battalion_line",
-    "medium_infantry_support_company_divisional": "modern_infantry_support_company_divisional",
-    "medium_self_propelled_anti_air_company_divisional": "modern_self_propelled_anti_air_company_divisional",
-    "medium_self_propelled_gun_battalion_line": "modern_self_propelled_gun_battalion_line",
-    "medium_self_propelled_gun_company_divisional": "modern_self_propelled_gun_company_divisional",
-    "medium_self_propelled_gun_company_regimental": "modern_self_propelled_gun_company_regimental",
-    "medium_tank_destroyer_battalion_line": "modern_tank_destroyer_battalion_line",
-    "medium_tank_destroyer_company_divisional": "modern_tank_destroyer_company_divisional",
-    "medium_tank_destroyer_company_regimental": "modern_tank_destroyer_company_regimental",
-    # light tier -> medium tier
-    "light_assault_gun_battalion_line": "medium_assault_gun_battalion_line",
-    "light_assault_gun_company_divisional": "medium_assault_gun_company_divisional",
-    "light_assault_gun_company_regimental": "medium_assault_gun_company_regimental",
-    "light_infantry_support_armor_battalion_line": "medium_infantry_support_armor_battalion_line",
-    "light_self_propelled_anti_air_company_divisional": "medium_self_propelled_anti_air_company_divisional",
-    "light_self_propelled_gun_battalion_line": "medium_self_propelled_gun_battalion_line",
-    "light_self_propelled_gun_company_divisional": "medium_self_propelled_gun_company_divisional",
-    "light_self_propelled_gun_company_regimental": "medium_self_propelled_gun_company_regimental",
+    "medium_infantry_support_armor_battalion_line": "medium_infantry_support_armor_battalion_line",
+    "medium_infantry_support_company_divisional": "medium_infantry_support_company_divisional",
+    "medium_self_propelled_anti_air_company_divisional": "medium_self_propelled_anti_air_company_divisional",
+    "medium_self_propelled_gun_battalion_line": "medium_self_propelled_gun_battalion_line",
+    "medium_self_propelled_gun_company_divisional": "medium_self_propelled_gun_company_divisional",
+    "medium_self_propelled_gun_company_regimental": "medium_self_propelled_gun_company_regimental",
+    "medium_tank_destroyer_battalion_line": "medium_tank_destroyer_battalion_line",
+    "medium_tank_destroyer_company_divisional": "medium_tank_destroyer_company_divisional",
+    "medium_tank_destroyer_company_regimental": "medium_tank_destroyer_company_regimental",
+    "light_assault_gun_battalion_line": "light_assault_gun_battalion_line",
+    "light_assault_gun_company_divisional": "light_assault_gun_company_divisional",
+    "light_assault_gun_company_regimental": "light_assault_gun_company_regimental",
+    "light_infantry_support_armor_battalion_line": "light_infantry_support_armor_battalion_line",
+    "light_self_propelled_anti_air_company_divisional": "light_self_propelled_anti_air_company_divisional",
+    "light_self_propelled_gun_battalion_line": "light_self_propelled_gun_battalion_line",
+    "light_self_propelled_gun_company_divisional": "light_self_propelled_gun_company_divisional",
+    "light_self_propelled_gun_company_regimental": "light_self_propelled_gun_company_regimental",
     # tank-chassis support companies follow the main chassis
     "engineer_med_tank_battalion_divisional": "engineer_mod_tank_battalion_divisional",
     "maintenance_med_tank_company_divisional": "maintenance_mod_tank_company_divisional",
@@ -100,20 +104,9 @@ SETTING_KEYS = {"base", "custom_icon", "reinforce_prio"}
 # Icon of the modern-chassis divisions, matching what the retired modern role used.
 MODERN_ICON = "109"
 
-# Name-suffix shift, applied after GENERIC_MEDIUM_ARMOR_ -> GENERIC_MODERN_ARMOR_.
-# Longest first so MEDIUM_INF_SUPPORT is not eaten by a shorter key.
-NAME_SHIFT = [
-    ("MEDIUM_INF_SUPPORT", "MODERN_INF_SUPPORT"),
-    ("MEDIUM_ASSAULT", "MODERN_ASSAULT"),
-    ("MEDIUM_SPAA", "MODERN_SPAA"),
-    ("MEDIUM_SPG", "MODERN_SPG"),
-    ("MEDIUM_TD", "MODERN_TD"),
-    ("LIGHT_INF_SUPPORT", "MEDIUM_INF_SUPPORT"),
-    ("LIGHT_ASSAULT", "MEDIUM_ASSAULT"),
-    ("LIGHT_SPAA", "MEDIUM_SPAA"),
-    ("LIGHT_SPG", "MEDIUM_SPG"),
-    ("LIGHT_TD", "MEDIUM_TD"),
-]
+# Name-suffix shift, applied after GENERIC_MEDIUM_ARMOR_ -> GENERIC_MODERN_ARMOR_. Empty since the
+# components no longer step up: the suffix names the components, and they are unchanged.
+NAME_SHIFT: list[tuple[str, str]] = []
 
 BLOCK_OPEN = re.compile(r"^\t(WA_AI_TEMPLATES_GENERIC_\w+) = \{$")
 ENABLE = re.compile(
@@ -214,7 +207,8 @@ HEADER = """\
 # Generator : tools/gen_ai_medium_modern_mirror.py  (run with --dry-run first)
 ############################################################################################################
 # [modern-chassis-tier] The modern-CHASSIS tier of the MEDIUM weight class. Same role, same ladder,
-# every component one tier up; values are the medium values + 500. The selector adds that offset
+# the hull one tier up and every other component UNCHANGED (the variants stay on the archetypes the
+# country already stocks); values are the medium values + 500. The selector adds that offset
 # when WA_AI_TEMPLATES_modern_chassis_owns_medium_role is true, so a medium value with no twin here
 # leaves the country holding a flag no template answers - which is why this file is generated.
 #

@@ -1,0 +1,113 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_FRONT_posture
+# [posture-v3] the consumers of the weekly offensive-posture verdict, one Default-layer family for
+# EVERY AI country. It replaces the three tag-shaped faction pairs (ALLIES/AXIS/CHINA_FRONT exec +
+# grind): a faction without a pair (the Comintern) consumed no verdict at all. Calculus and levels:
+# common/scripted_effects/WA_AI_MILITARY_posture_effects.txt; switches: WA_AI_MILITARY_posture_triggers.txt.
+# Priority tiers (documentation/WA_AI_MILITARY_SYSTEM.md section 6.1): 340 execute/careful, 350
+# pursuit - above the CHINA_FRONT careful-exec blocks (320/330) exactly as the deleted CHINA pair
+# (340) was, below the 500/10000 brakes of DEFAULT_FRONT_control. Ownership (section 6.2): the
+# family yields to a live Country-layer scripted opening (WA_AI_MILITARY_country_owns_front_control_scripted_opening).
+############################################################################################################
+# Phase 6 split: every ai_strategy in this file has type ∈ { force_concentration_front_factor, force_concentration_target_weight, front_armor_score, front_control, front_unit_request, garrison }.
+# Canonical domain: FRONT. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
+
+# purpose: execute battle plans against every enemy the posture calculus rated level 1 (we can win
+#          the battles), plus enemies too small for a verdict (a non-major on <= 4 states never
+#          gets one - the German puppet population; see WA_AI_MILITARY_posture_has_execute_target).
+#          Stale per-enemy variables linger after a peace: has_war_with = ROOT in the
+#          country_trigger is what keeps them inert.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 340; mutually exclusive with the careful and pursuit
+#          blocks below by posture level (the calculus emits exactly one level per enemy);
+#          outranks the CHINA_FRONT careful-exec blocks (320/330), outranked by the level-500/10000
+#          emergency stops in DEFAULT_FRONT_control.
+# domain:  FRONT
+WA_AI_MILITARY_DEFAULT_FRONT_posture_execute = {
+	enable = {
+		WA_AI_MILITARY_should_posture_execute = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			OR = {
+				AND = {
+					is_major = no
+					NOT = { num_of_controlled_states > 4 }
+				}
+				ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 1 } }
+			}
+		}
+		ratio = 0.2
+		priority = 340
+		ordertype = front
+		execution_type = balanced
+		execute_order = yes
+	}
+}
+
+# purpose: careful execution against every enemy rated level 2 (attrition grind: the enemy is out of
+#          men for its army and we are not, or the front already proves a favourable exchange) or
+#          level 3 (strong on paper, outnumbered where the line runs): bleed and poke, do not lunge.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 340; mutually exclusive with the execute block above and
+#          the pursuit block below by posture level.
+# domain:  FRONT
+WA_AI_MILITARY_DEFAULT_FRONT_posture_careful = {
+	enable = {
+		WA_AI_MILITARY_should_posture_careful = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = {
+				OR = {
+					check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 }
+					check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 3 }
+				}
+			}
+		}
+		ratio = 0.2
+		priority = 340
+		ordertype = front
+		execution_type = careful
+		execute_order = yes
+		manual_attack = yes
+	}
+}
+
+# purpose: pursuit against every enemy rated level 4 (near capitulation with a broken army or a
+#          hollow line): rush the collapse before it re-forms.
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 350 (above the two blocks above, below the 500/10000
+#          emergency stops); mutually exclusive with them by posture level.
+# domain:  FRONT
+WA_AI_MILITARY_DEFAULT_FRONT_posture_pursuit = {
+	enable = {
+		WA_AI_MILITARY_should_posture_pursuit = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		country_trigger = {
+			has_war_with = ROOT
+			has_capitulated = no
+			ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 4 } }
+		}
+		ratio = 0.2
+		priority = 350
+		ordertype = front
+		execution_type = rush
+		execute_order = yes
+		manual_attack = yes
+	}
+}

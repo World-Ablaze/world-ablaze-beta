@@ -967,6 +967,24 @@ WA_AI_MILITARY_update_pacific_phase_latch = {
 	}
 }
 
+# [usa-pacific-hoard] one-way latch for the large-army half of the Pacific share cap (owner order
+# 2026-09-04). Protects the Pacific garrison family from swapping blocks on every re-crossing of
+# the division bar (four blocks, all abort_when_not_enabled: a swap retracts and re-creates the
+# orders); assumes an army that once passed the bar keeps needing the capped family. How to tell
+# that is gone: a shrunken two-ocean army starving its island line under the capped ratios - the
+# lever is then a clearing branch with hysteresis, not a lower bar. Cleared by nothing. Anglo-major
+# gated like the phase latch. Consumer: WA_AI_MILITARY_is_two_ocean_war_with_large_army.
+WA_AI_MILITARY_update_pacific_share_cap_latch = {
+	if = {
+		limit = {
+			WA_AI_CONFIG_MILITARY_is_anglo_major = yes
+			NOT = { has_country_flag = WA_AI_pacific_share_cap_latched }
+			has_army_size = { size > constant:wa_ai_theatre.usa_pacific.cap_min_div }
+		}
+		set_country_flag = WA_AI_pacific_share_cap_latched
+	}
+}
+
 WA_AI_update_industry_overextension = {
 
 	### trip signal: sustained max need AND still short after imports

@@ -365,10 +365,32 @@ WA_AI_TEMPLATES_can_use_light_transition_templates = {
 # the park; the majority term retires the window together with the park itself. Same engine
 # assumption as the light window: the engine still upgrades a role whose role_ratio want is 0.
 WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = {
-	has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+	# [light-support-conversion] Two memories of a run: the composition latch (15000/15001 path)
+	# and the temporary-corps latch (15006 path). The temporary path never writes the first one,
+	# so without the second the window was unreachable for the historical park.
+	OR = {
+		has_country_flag = WA_AI_TEMPLATES_light_support_composition_latched
+		has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+	}
 	NOT = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes }
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
-	has_template_ai_majority_unit = light_support_armor_battalion_line
+	# Park still fielded. The temporary corps fields 6 support / 6 mot shapes where the majority
+	# vote ties, so that path retires on the containing test instead (same-role templates only,
+	# no infantry template carries a support battalion after 1941).
+	OR = {
+		has_template_ai_majority_unit = light_support_armor_battalion_line
+		AND = {
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			has_template_containing_unit = light_support_armor_battalion_line
+		}
+	}
+	# The temporary corps stays on its mission target while the mission counts it.
+	NOT = {
+		AND = {
+			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			WA_AI_PRODUCTION_historical_tank_park_mission_is_active = yes
+		}
+	}
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
@@ -377,24 +399,58 @@ WA_AI_TEMPLATES_use_mechanized_td_armor = {
 	WA_AI_TEMPLATES_has_mechanized_td_unlocked = yes
 }
 
+# [modern-chassis-tier] COMPONENT SEED, every use_<class>_<component>_armor below: a component is
+# mounted once its archetype EXISTS (more than variant_component_seed_stock in the stockpile or in
+# armies - a handful of captured or trickle-built chassis must not seed it) or is AFFORDABLE. Affordable has two
+# reachable forms: the chromium headroom latch (a producer with net margin > 5, 180-day hold) OR
+# no installed chromium shortage (an importer sits at net ~0 by trade and can never open the
+# latch, but reads shortage 0 while imports cover its lines). The seed is what starts the line -
+# the engine derives its need from the template, so a stock-only rule never starts. Once the
+# first unit exists the stock / in-armies terms hold the mount, so a shortage that the line's own
+# draw creates retires the component by attrition, never by a template flip. Assumes every variant
+# archetype draws chromium (x_tank_chassis.txt); a chromium-free variant is seeded the same way.
 WA_AI_TEMPLATES_use_light_td_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_td_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@light_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@light_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_medium_td_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_td_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@medium_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@medium_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_heavy_td_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_heavy_td_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@heavy_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@heavy_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_modern_td_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_modern_td_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@modern_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@modern_tank_destroyer_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_light_assault_armor = {
@@ -406,6 +462,12 @@ WA_AI_TEMPLATES_use_light_assault_armor = {
 	WA_AI_TEMPLATES_has_light_assault_unlocked = yes
 	NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@light_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@light_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_medium_assault_armor = {
@@ -417,6 +479,12 @@ WA_AI_TEMPLATES_use_medium_assault_armor = {
 	WA_AI_TEMPLATES_has_medium_assault_unlocked = yes
 	NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@medium_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@medium_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_heavy_assault_armor = {
@@ -425,12 +493,24 @@ WA_AI_TEMPLATES_use_heavy_assault_armor = {
 	NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
 	NOT = { WA_AI_TEMPLATES_has_heavy_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@heavy_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@heavy_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_modern_assault_armor = {
 	WA_AI_TEMPLATES_use_modern_armor = yes
 	WA_AI_TEMPLATES_has_modern_assault_unlocked = yes
 	NOT = { WA_AI_TEMPLATES_has_modern_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@modern_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@modern_assault_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_light_inf_support_armor = {
@@ -444,6 +524,12 @@ WA_AI_TEMPLATES_use_light_inf_support_armor = {
 	#NOT = { WA_AI_TEMPLATES_has_medium_inf_support_unlocked = yes }
 	#NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	#NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@light_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@light_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_medium_inf_support_armor = {
@@ -456,6 +542,12 @@ WA_AI_TEMPLATES_use_medium_inf_support_armor = {
 	WA_AI_TEMPLATES_has_medium_inf_support_unlocked = yes
 	#NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	#NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@medium_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@medium_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_heavy_inf_support_armor = {
@@ -464,12 +556,24 @@ WA_AI_TEMPLATES_use_heavy_inf_support_armor = {
 	#NOT = { WA_AI_TEMPLATES_has_light_spg_unlocked = yes }
 	#NOT = { WA_AI_TEMPLATES_has_medium_spg_unlocked = yes }
 	#NOT = { WA_AI_TEMPLATES_has_heavy_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@heavy_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@heavy_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_modern_inf_support_armor = {
 	WA_AI_TEMPLATES_use_modern_armor = yes
 	WA_AI_TEMPLATES_has_modern_inf_support_unlocked = yes
 	#NOT = { WA_AI_TEMPLATES_has_modern_spg_unlocked = yes }
+	OR = {
+		check_variable = { num_equipment@modern_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@modern_infantry_support_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_mechanized_spg_armor = {
@@ -480,22 +584,46 @@ WA_AI_TEMPLATES_use_mechanized_spg_armor = {
 WA_AI_TEMPLATES_use_light_spg_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_spg_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@light_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@light_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_medium_spg_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_spg_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@medium_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@medium_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_heavy_spg_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_heavy_spg_unlocked = yes
 	WA_AI_CONFIG_DIVISIONS_use_heavy_self_propelled_gun = yes
+	OR = {
+		check_variable = { num_equipment@heavy_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@heavy_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_modern_spg_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_modern_spg_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@modern_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@modern_tank_artillery_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_mechanized_spaa_armor = {
@@ -506,137 +634,75 @@ WA_AI_TEMPLATES_use_mechanized_spaa_armor = {
 WA_AI_TEMPLATES_use_light_spaa_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_light_spaa_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@light_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@light_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_medium_spaa_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_medium_spaa_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@medium_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@medium_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 WA_AI_TEMPLATES_use_modern_spaa_armor = {
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_TEMPLATES_has_modern_spaa_unlocked = yes
+	OR = {
+		check_variable = { num_equipment@modern_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		check_variable = { num_equipment_in_armies@modern_spaa_tank_chassis > constant:wa_ai_production.army_composition.variant_component_seed_stock }
+		WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+		NOT = { WA_AI_RESOURCE_is_major_shortage_chromium = yes }
+	}
 }
 
 # [modern-chassis-tier] The medium ladder's component slots, validated at the tier the mirror will
-# actually field: the +500 twin swaps every component one tier up (tools/gen_ai_medium_modern_mirror.py),
-# so once the modern chassis owns the role a slot must pass its BUMPED tier, or the twin's target
-# carries components the country cannot build and the engine converges on a gutted division.
+# actually field. The +500 twin steps up the HULL only (tools/gen_ai_medium_modern_mirror.py), so
+# a slot is validated at its own tier whether or not the modern chassis owns the role - each
+# _tiered trigger is its plain component trigger. The names stay: the ladder reads them at 30
+# sites, and the seam is where a future re-tiering lands.
 WA_AI_TEMPLATES_use_light_spg_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_medium_spg_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_light_spg_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_light_spg_armor = yes
 }
 
 WA_AI_TEMPLATES_use_medium_spg_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_modern_spg_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_medium_spg_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_medium_spg_armor = yes
 }
 
 WA_AI_TEMPLATES_use_light_spaa_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_light_spaa_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_light_spaa_armor = yes
 }
 
 WA_AI_TEMPLATES_use_medium_spaa_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_modern_spaa_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_medium_spaa_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_medium_spaa_armor = yes
 }
 
 WA_AI_TEMPLATES_use_medium_td_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_modern_td_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_medium_td_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_medium_td_armor = yes
 }
 
 WA_AI_TEMPLATES_use_light_assault_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_medium_assault_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_light_assault_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_light_assault_armor = yes
 }
 
 WA_AI_TEMPLATES_use_medium_assault_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_modern_assault_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_medium_assault_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_medium_assault_armor = yes
 }
 
 WA_AI_TEMPLATES_use_light_inf_support_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_light_inf_support_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_light_inf_support_armor = yes
 }
 
 WA_AI_TEMPLATES_use_medium_inf_support_armor_tiered = {
-	OR = {
-		AND = {
-			WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
-			WA_AI_TEMPLATES_use_modern_inf_support_armor = yes
-		}
-		AND = {
-			NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
-			WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
-		}
-	}
+	WA_AI_TEMPLATES_use_medium_inf_support_armor = yes
 }
 
 # Gates the infantry / marines / suppression target templates
