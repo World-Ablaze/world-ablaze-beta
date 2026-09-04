@@ -3,16 +3,17 @@
 #
 #	Effects: common/scripted_effects/WA_TEST_posture.txt
 #
-#	CONSOLE, one report:
-#	    tag SOV      (the report runs in the scope of the country under test)
-#	    event wa_post.1
+#	CONSOLE, one report (stay on the observer tag and TARGET the event - never `tag SOV` first: a
+#	tagged country is human, the weekly posture pulse runs inside the on_weekly `is_ai = yes` block,
+#	so its verdicts freeze and the shipped-* diagnostics are never written; the report's own line
+#	`should_update=0` while at war is the tell):
+#	    event wa_post.1 SOV
 #	  Then read logs/game.log and search for "POSTURE TEST".
 #
 #	CONSOLE, weekly reporting (the exchange-rate instrumentation of the owner order, point 4):
-#	    tag SOV
-#	    event wa_post.2        - sets WA_TEST_posture_verbose (the shipped effect then writes its
+#	    event wa_post.2 SOV    - sets WA_TEST_posture_verbose (the shipped effect then writes its
 #	                             per-enemy diagnostics at every weekly pulse) and reports every 7 days
-#	    event wa_post.4        - stops it and clears the flag
+#	    event wa_post.4 SOV    - stops it and clears the flag and the diagnostics
 #	  The "ship" and "xr" lines are what the shipped calculus computed at its LAST weekly pulse, so the
 #	  first tick after wa_post.2 can still read shipped-fresh=0: wait one more tick.
 #

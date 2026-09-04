@@ -351,8 +351,24 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   t1 = the engine re-evaluates enables: the Default family arms on the same per-enemy variables
   the faction pairs read, so no country loses its execute for more than one pulse; t2 = steady.
   No re-swap path exists (the faction blocks are deleted, not gated off).
-- Harness: `tag SOV` then `event wa_post.1`; `event wa_post.2` for the weekly exchange-rate
-  readings (point 4) - owner run owed on the `5d2a391c` 1945.4 fork (SOV, USA, GER).
+- Harness: `event wa_post.1 SOV` from the observer tag; `event wa_post.2 SOV` for the weekly
+  exchange-rate readings (point 4) - never `tag` the country under test (weekly pulse is is_ai-gated).
+- **Owner run 2026-09-04 04:07, fork `5d2a391c` 1945.4.1, fired after `tag SOV`** (`wa_post.1`
+  then `wa_post.2`, pasted): scope `1 1 1 1 0`; own `eq=0.930 manpower_k=1390 divisions=426
+  posture=1 should_update=0 hard_brake=0 still_operational=1 hold_the_line=0`; vs GER `verdict=1
+  divisions=307 manpower_k=576 at-max-conscription=1 surrender>0.45=0 army_broken=0`, independent
+  contact line `enemy=12 ours=13` states, coarse count `enemy=168 ours=224` (1.33: between the 1.0
+  inferiority bar and the 1.5 entry bar, so the level 1 is the pairwise route - consistent);
+  vs ROM `2/2` states, `27 vs 27`; RK Norwegen `0 vs 12`; every other enemy no contact; all
+  verdicts 1; `own states reading armor=8 mechanized=0` (SOV fields no mechanised divisions -
+  the `type = mechanized` probe needs USA). shipped-* all 0 / `shipped-fresh=0` on both runs.
+  Reading: the harness itself PASSES (scope, independent walk, shipped verdicts read); the
+  shipped-side diagnostics are VOID on this run - `should_update=0` while at war = SOV was human
+  (tagged), so the weekly pulse never ran for it; the verdicts printed are the frozen last AI
+  values. Recorded in the recipe and as a WARN line in the report. Stays SHIPPED-UNTESTED until
+  a run fired as `event wa_post.2 SOV` from the observer has produced one weekly series with
+  `shipped-fresh=1`. Also noted: GER `manpower_k=576` on the owner's GER-played fork vs 1 860 on
+  the BHU line (different branch, not a contradiction).
 - Probes (campaign): (i) SOV holds a `front_control` execute vs GER outside the barb window
   (`imgui show ai-strategy` on SOV: `WA_AI_MILITARY_DEFAULT_FRONT_posture_*` listed); (ii) USA
   vs GER reads level 3, not 1, on a save where its France contact count is under the German one
@@ -412,8 +428,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (`plans.py USA <save>`); (ii) churn — the Pacific buffer instance ids stable across the
   consecutive saves after the crossing (`plans.py --oob` + type-5 re-parse); (iii) USA front
   divisions at 1944.9-1945.5 above the `5d2a391c` reading (26-68 of 193-209).
-- Harness: `tag USA` then `event wa_uph.1` (`events/wa_test_usa_pacific_hoard.txt`, contract v1;
-  PASS shape in the event header) — owner run owed.
+- Harness: `event wa_uph.1 USA` from the observer tag (`events/wa_test_usa_pacific_hoard.txt`,
+  contract v1; PASS shape in the event header).
+- **Owner run 2026-09-04 04:07, fork `5d2a391c` 1945.4.1, fired after `tag USA`** (pasted): scope
+  `1 1 1 1 0`; `facts: num_divisions=191 cap_min_div=75 latched=0`; `indep: size-over-bar=1
+  pacific-risk=1 enemy-in-europe=1`; `ship: two_ocean_large_army=0 gate full=1 capped=0 low_army=0
+  philippines full=1 capped=0 home_threatened=0`. Reading: PASS shape for the UNLATCHED state (full
+  family armed, capped family silent, never both) — the cap state itself is not yet observed:
+  `latched=0` because the latch runs in the monthly `is_ai = yes` block and the run happened both
+  mid-month and with USA tagged (human). MEASURED consequence, recorded in the recipe and as a
+  WARN line in the report: never `tag` the country under test; fire `event wa_uph.1 USA` from the
+  observer after the game has crossed a month boundary with USA as AI. Stays SHIPPED-UNTESTED
+  until that second run reads `latched=1 full=0 capped=1`.
 - Proposed, not admitted (outside subject): `_buffer_pacific` (0.54) and `_buffer_pacific_low_army`
   (0.50) still co-fire below 110 divisions in a Pacific-only war (nominal 1.04); the owner's idea
   "buffers sized by distance to the front" is the generic form of this cap — to explore.
