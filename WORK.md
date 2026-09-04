@@ -2028,9 +2028,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Panther lands. The modern slot in `WA_AI_PRODUCTION_armor_budget.txt` is KEPT at target 0 so the
   reconcile emits the exact negation of any entry a pre-change save carries — do not delete it
   before a campaign shows `WA_AI_ARMOR_BUDGET_modern` at 0.
-- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_78` was
-  enabled by `ger_medium_tank_chassis_2_6`, one tech before the chassis it designs;
-  `medium_tank_7` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
+- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_9` was
+  enabled by `ger_medium_tank_chassis_3_3`, one tech before the chassis it designs;
+  `medium_tank_8` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
   IV H; `2_7` was missing from `has_medium_armor_unlocked`.
 - Superseded a collaborator's parallel change (`b19bf6a43` and the commit that moved the six modern
   templates into the medium file, owner decision 2026-08-28 to keep this design instead). Their
