@@ -483,6 +483,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   a stock term; (iii) ENG deployed count at 1942.6 above the `5d2a391c` reading (51).
 - No harness: not a `WA_AI_*` effect (< 40 lines, reserves has no `WA_TEST_*`); the console read is
   `tag ENG` on a 1941+ fork and the decision list (`deploy_reserves_infantry` available).
+- Campaign-probe pass 2026-09-04: NOT SCOREABLE — MEASURED: the newest save on disk of any
+  campaign (`autosave.hoi4`/`GER_1945_04_17_02.hoi4`, mtime 2026-09-04 01:34-01:35) predates fix
+  commits `ff69c088a` (02:58) and `a5fd7920a` (03:56) by ~1h24m; no save anywhere in the 127-file
+  save directory postdates the fix. Probes (i)-(iii) cannot be scored until a new campaign is run
+  past that timestamp.
 - Closed when: probes (i)-(iii) pass on one scored campaign, or the owner accepts a written no-fix
   ruling on (ii).
 
@@ -534,6 +539,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (3) a save shows every `is_army_hq` template with four line battalions and no `role=` key -
   save-visible, no console needed;
   (4) boot test - the history file parses only at launch.
+- Reading (3) PASSED 2026-09-04 (`5d2a391c`, build commit `91c0f4287` confirmed live; `eaf1d1ea`
+  excluded — its last save predates the fix by ~3 minutes): MEASURED at 1944.6, direct read of the
+  top-level `division_templates={}` block — all six checked army-HQ templates (GER
+  Armeeoberkommando, ENG Army HQ, USA Field Army HQ, SOV Shtab Armii, JAP Gun Shireibu, FRA
+  Quartier General d'Armee) carry exactly 4 line battalions and no `role=` key, matching
+  `history/general/taog_hq_template.txt` exactly. Readings (1)(2)(4) (owner
+  `imgui show ai_division_production` + boot test) remain owed.
 - Closed when: readings (1)-(4) are pasted here and pass, OR (1) fails and the support-set lever
   ships under this slug, OR the owner accepts a written no-fix ruling.
 
@@ -699,6 +711,19 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Ledger on its saves — every variant of GER/ENG/USA/ITA/JAP with need > 0 reaches
   fielded/need > 0.8 within 24 months of first need while the main chassis stays > 0.85; GER
   1942: StuG and SPAA lines at or above their requested factories.
+- 4th post-fix reading, 2026-09-04 (`5d2a391c`, build commits `f5c342451`/`4c214b0ad`/`eefd8b5ea`
+  confirmed live): MEASURED GER tank-family production lines (active/requested factories):
+  257/283 @ 1941.1 (459 total mil factories), 151/152 @ 1941.7 (494 total — the ~500-factory
+  bracket the original criterion names), 118/118 @ 1942.1 (548 total), 319/320 @ 1944.6 (655
+  total) — every checkpoint runs at or within 1 factory of its own requested total, i.e. no
+  starved tank-family line on this campaign; GER 1942.1 StuG-analog 38/38, medium SPAA 4/4, both
+  AT requested (satisfies the GER-1942 clause of the `8c42d288` reading verbatim). Criterion (a)
+  (~140 factories on tanks+variants at ~500 total) reads 151/152 at 494 total — above target.
+  Caveat, stated honestly: this is an ALLOCATION proxy (active==requested), not the fielded/need
+  ratio the Closed-when line actually asks for across GER/ENG/USA/ITA/JAP — `military_lines`
+  carries no `num_needed` field, so the Armour Ledger fielded/need metric used in the `8c42d288`
+  addendum was not re-derived this session. Still no verdict: the multi-country
+  fielded/need > 0.8 reading remains the open half of Closed-when.
 - Closed when: the campaign reading above holds on one cloud campaign, plus the original
   criterion (a major at ~500 military factories running ~140 on the armour category by mid-1941).
 
@@ -1240,6 +1265,44 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   fault the light chain fixed with FINAL_MIS: a FINAL whose composition is not the medium role's
   CURRENT target is captured by whichever template is nearest, here the heavy one. Fix design owed
   to the owner (per-medium-value mirror of rung + FINAL, generated).
+- **Change 9 (owner order 2026-09-04 "8/5/5 est le nouveau template stable pour les light support
+  SOV, il doit etre utilise comme point de depart") — the rungs target the shape the park FIELDS
+  in the current campaign.** Symptom, MEASURED (campaign `d1c51a6c`, BHU observer, build carrying
+  `cb5e1977f`, 6 saves 1941.1-1945.8, plans.py as a module): the conversion window is ARMED —
+  `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` = 15007 at 1941.1 then 15008 from 1941.4, unchanged for 43
+  months — and nothing moves. 37 divisions sit on ONE template, tid 1812 `Light Support Tank
+  template F` = 8 light_support_armor / 5 light_armor / 5 infantry_heavy_motorized (18 line
+  battalions), flat from 1941.10 to 1945.8 (296 support battalions). No deployment conveyor on any
+  of the 6 saves carries tid 1812 or any light-support template: the park is never renewed. Its
+  equipment drains — light-support chassis in armies 7 530 (1941.7) -> 858 (1945.8), free stock 0
+  from 1943.1, i.e. 2.9 chassis per battalion.
+  Cause (script line): the rung target was calibrated on the PREVIOUS campaign's fielded shape
+  (`5de66942`, tid 1487 = 6/3/6 — the shape on which the owner's imgui read showed the rung ->
+  FINAL switch fire). This campaign fields 8/5/5. The rung target is a fixed literal; the fielded
+  shape is emergent and changes per campaign, which is the coupling Change 8 was built to remove.
+  - `WA_AI_TEMPLATES_armored_light_support.txt`: both rungs
+    `..._44_TEMPORARY_TRANSITION_MOT` (15007) and `_MEC` (15008) retargeted 6/3/6 -> **8/5/5**;
+    `regimental_support`, `support`, `replace_at_match` 0.8, `replace_with` (same-group FINALs)
+    and `target_min_match` 0.3 untouched; block header rewritten (it stated the old arithmetic).
+  - Margin, DERIVED with the header's own convention (shared battalions over the FINAL's 15): the
+    MOT hop falls from 6 of 15 = 0.40 to **5 of 15 = 0.33**, still >= target_min_match 0.3 but
+    thinner. The MEC hop shares none by that count and rests on the MIX-rung precedent, unchanged.
+  - ASSUMED, unresolved: the engine's own match value between tid 1812 and the rung. No save
+    serialises it; only `imgui show ai_templates` does.
+  - Residual the owner already accepted under Change 8: a country holding medium AND heavy may
+    still see the converted divisions land on a heavy template (the 9+6 FINAL's best existing
+    match). This change moves the FIRST hop only; it does not touch that second-hop defect.
+  - Checkers: `check_constants`, `check_ai_layers`, `check_worklist`, `check_skill_refs` exit 0.
+    `check_templates` exits 1 on the 4 pre-existing HQ slot errors in
+    `WA_AI_TEMPLATES_hq.txt` (file untouched, already recorded under Change 7); no finding on the
+    file changed here. BOM-free, braces balanced.
+  - Reviews: committed on the owner's direct order BEFORE the two reviewer subagents returned —
+    their verdicts are owed and, if either is CONFLICT, this change is amended or reverted.
+- Verification — owner console, Change 9: on a SOV save of the current campaign with
+  `conv-value` 15007/15008, `imgui show ai_templates` shows the arrow on
+  `_44_TEMPORARY_TRANSITION_*` with best match at or near 1.0 (the rung target IS the fielded
+  shape), then within 7 days the arrow on the FINAL. Campaign probe: a save 8-12 weeks later shows
+  the light-support division count falling below 37 for the first time since 1941.10.
 - **Change 8 — built, then PARKED by owner order 2026-09-04.** Per-medium-value generated
   rungs + FINALs for both chains (`tools/gen_ai_armor_conversion_finals.py`, ~9 000 generated
   lines, reviews applied) live on branch `parked/armor-conversion-finals` (`e26ab824f`), not on
@@ -1686,11 +1749,27 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   can_motorize it reads `value=1002`; `event wa_test_tmpl.2 <TAG>` prints pre and post that match
   line for line. Control: `wa_test_tmpl.1` on a 1936 minor before its infantry focus reads
   `admit : ... 0` and every `set=` legitimately 0.
+- Campaign-probe attempt 2026-09-04 (`5d2a391c`, build commits `903bb73ad`/`004c2aa4f`/
+  `ac7a3e78b`/`1785e5a91` confirmed live): FAILED to find a qualifying case — MEASURED JAP/ITA/GER
+  all researched a light tank-destroyer tech by 1944.6-1944.12 (`jap_light_td_tank_3`,
+  `ita_light_td_tank_1/2/4`, `ger_light_td_tank_1/2/4`) but field ZERO light-armour templates at
+  that point (all switched to medium doctrine); one `light_tank_destroyer` battalion appears
+  embedded in a medium-chassis template (JAP) and a cavalry template (GER), never a dedicated
+  light-armour one. POL/HUN/ROM/SOV had not researched light TD tech in either save checked.
+  DERIVED: likely a doctrine-timing gap — `WA_AI_CONFIG_switch_from_light_to_medium_armor`
+  (`date > 1940.1.1`) typically moves majors off light armour before they research light TDs on
+  this campaign's timeline — NOT confirmed as a residual defect in the 5117-5120 fix itself.
+  Closed-when criterion NOT met on this campaign; needs either a minor that keeps light doctrine
+  into its light-TD-tech window, or the owner's own `wa_test_tmpl` harness run.
 - Closed when: a campaign shows a light-armour AI that researched light tank destroyers fielding a
   template that contains them (the 4 -> 0 result above, confirmed in a save rather than in a
   simulation).
 
-### mech-window — PARKED (2026-09-01)
+### mech-window — PARKED (2026-09-04)
+- Re-parked 2026-09-04 by the agent (WIP limit — 6 subjects would otherwise sit above `## PARKED`
+  with the 2026-09-04 scoring pass): its Closed-when criterion is now MET (evidence below), state
+  is CAMPAIGN-OK, but closure into the `## CLOSED` table is an owner decision in every precedent
+  in this file — move it there directly in one line if that call should be made now.
 - Parked 2026-09-01 (WIP limit, `armor-class-handoff` re-enters on an owner task — the May-1941
   two-medium-templates report). State at parking: SHIPPED-UNTESTED, waiting only on the owner
   console run in its verification line; no code work pending.
@@ -1811,13 +1890,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   with `mech-in-armies` NON-ZERO at the flip — zero stock there means the floor never ran and the
   decoupling is inert. Counter-check on the same run: `event wa_abg.1 USA` shows
   `identity-branch=1` and `mechanized=1` regardless of the window.
+- Campaign probe PASSED 2026-09-04 (`5d2a391c`, build commit `e8c83af87` confirmed live): MEASURED
+  GER `WA_LIGHT_ARMOR_TEMPLATE=5100` at 1939.9-1939.10 (no `mechanization_earned` flag,
+  `mechanized_equipment` stock 749→828, non-zero); flag fires 1940.2.1.1, template flips to
+  5215/5213 the same month with the mechanized line funded 8/8-8/9 factories and no collapse of
+  infantry (31/32→37/37) or motorized (28/34→20/20) lines. Counter-check (GER on 5102 from
+  1938.10 pre-fix) already established in the Symptom CONFIRMED bullet above. Console harness
+  (section B3, `event wa_abg.1 GER`) was not separately run by the owner this pass — this closure
+  rests on the campaign-probe criterion alone, which the Closed-when line below does not gate on
+  the harness.
 - Closed when: a campaign save taken during the Polish campaign (1939.9-1939.10) shows GER
   carrying a MOT light-armour value (5100 family, not 5101/5102/5103/5105), no
   `WA_AI_TEMPLATES_mechanization_earned` flag, and a NON-ZERO `mechanized_equipment` stock; and a
   save from 1940.2 or later shows the flip done with no production-line collapse onto mechanized at
   the crossing. Counter-check: the pre-fix reference campaign has GER on 5102 from 1938.10.
+  **MET 2026-09-04 (evidence above).**
 
-### mot-field-hospital — PARKED (2026-08-29)
+### mot-field-hospital — PARKED (2026-09-04)
+- Re-parked 2026-09-04 by the agent (WIP limit — see `mech-window`'s identical note above/below):
+  its Closed-when criterion is now MET (evidence below), state is CAMPAIGN-OK, but closure into
+  the `## CLOSED` table is an owner decision in every precedent in this file.
 - Parked 2026-08-29 (WIP limit, `armor-budget-ramp` enters). State at parking: code SHIPPED
   2026-08-29, unverified. Parked rather than one of the three SHIPPED-UNTESTED subjects because
   its verification owes the owner NOTHING to run now: it has no console harness (33 lines, below
@@ -1863,12 +1955,22 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Who else this reaches (MEASURED, savegames): ITA 111 and JAP 159 owned arms factories at
   1940.6 — neither crosses 300 in that campaign, so the tier is Germany-only in practice. USA /
   ENG / FRA / SOV are already fully motorised by tag and never see the mirror branch.
+- Campaign probe PASSED 2026-09-04 (`5d2a391c`, build commit `67a9c2192` confirmed live): MEASURED
+  at 1941.11 (GER owned arms_factory 308) `WA_INFANTRY_TEMPLATE=1104`, `WA_MOUNTAINEERS_TEMPLATE=
+  2102`, flag `WA_AI_TEMPLATES_motorized_hospital_earned=1`, GER's active infantry template
+  carries `field_hospital_mot_company_divisional`; holds unchanged through 1943.1/1944.6/1945.8.
+  Counter-check clean: ITA and JAP stay on 1004/2002 (horse) through 1944.6, JAP flips only at
+  1945.8 once its own factory count crosses independently. Caveat: the flag's set-date
+  (1940.6.1.1) predates this owned-factory bracket (308 @ 1941.11), so the gate likely reads
+  CONTROLLED not OWNED `num_of_military_factories` — doesn't affect the PASS, just means the true
+  crossing date is earlier than stated here.
 - Closed when: a campaign save taken after GER crosses 300 military factories shows
   `WA_INFANTRY_TEMPLATE = 1104` (or 1103) and `WA_MOUNTAINEERS_TEMPLATE = 2102` (or 2100), the
   flag `WA_AI_TEMPLATES_motorized_hospital_earned` set, and GER infantry divisions carrying
   `field_hospital_mot_company_divisional`. Expected crossing on the current reference campaign:
   ~1941.8 (MEASURED: 300 owned arms factories at 1941.7, 303 at 1941.9).
   Counter-check on the same save: ITA and JAP still on 1003/1004/2000/2002.
+  **MET 2026-09-04 (evidence above).**
 - No console harness: the templates calculator has none, and this change is 33 lines of scripted
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
@@ -1980,6 +2082,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   cloud campaign: GER modern TD / SPAA / SPG need = 0 after the twin, medium SPG / SPAA
   fielded/need > 0.8 with stock falling, and `ger_modern_td_tank_1` NOT researched while
   `WA_AI_EQUIPMENT_chr_small_ok` is absent.
+- Campaign-probe attempt 2026-09-04: NOT SCOREABLE — MEASURED: the `5d2a391c` campaign build
+  (commit `7fafae8b9`, 2026-09-03 17:09) and even the newest branch saves
+  (`GER_1945_04_17_02.hoi4`/`autosave.hoi4`, 2026-09-04 01:34-01:35) predate `9f9106802`/
+  `a7ee778db` (01:38/01:43) — the component-seed half of the ADDENDUM 2026-09-04 b change. No
+  save on disk reflects the full A+B+C+E change set; a new campaign run after 2026-09-04 01:43 is
+  needed.
 - Closed when: the campaign reading above holds on one cloud campaign.
 - Previous state (kept): PARKED for the WIP limit (owner's standing choice from 2026-08-29), NOT because unverified.
   Commit `2dd063da1` (2026-08-30: tiered slot validation + dead-role-entry guards, ADDENDUM
