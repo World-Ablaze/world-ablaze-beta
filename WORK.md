@@ -294,9 +294,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   — DERIVED from two readings (`Medium Tank template H` in `light-support-conversion`, loc
   `light_support_armor_battalion_line` = "Light Support Tank") and from the owner's own
   in-game reading; every light-support shape in the file (12/6/4, 7/3/5, 6/6 tie on the old
-  corps) has support as majority or tie. **ASSUMED**: the letter series stops at Z. MEASURED:
-  `history/units/SOV_1936.txt` holds no `light_support_armor_battalion_line`, so no OOB
-  template escapes the sweep. **ASSUMED**: `has_template` and the delete effect run on the
+  corps) has support as majority or tie. **ASSUMED**: the letter series stops at Z.
+  **CORRECTED 2026-09-04 (same session)**: the earlier MEASURED "no OOB template holds a support
+  battalion" read `SOV_1936.txt`, which is NOT the AI order of battle — AI SOV with No Step Back
+  loads `history/units/SOV_1936_land_nsb_ai.txt` (`history/countries/SOV - Soviet union.txt`
+  `is_ai = yes` branch), where MEASURED `Tankovaya brigada` = 8 LS / 1 mot (21 divisions) and
+  `Mekhanizirovaniy Korpus` = 12 LS / 6 L / 4 mot (4 divisions), plus 1 LS battalion inside each
+  of 86 `Strelkovaya Diviziya`. Both armour names are now in the sweep; the rifle division is
+  left alone (its support battalion leaves when the infantry calculator upgrades it). **ASSUMED**: `has_template` and the delete effect run on the
   training queue too (doc says "a template and its units", no queue caveat).
 - Verification (owner console, harness contract): on a SOV save after the mission resolves
   (or any 1942+ save), `event wa_abg.1 SOV` must read `retired=1  containing-LS=0  majority-LS=0
