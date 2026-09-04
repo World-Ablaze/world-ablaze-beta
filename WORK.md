@@ -3862,6 +3862,17 @@ OPEN with a session of its own.
   rail (`alloc.fraction` 0.4 / the 0.6 override's 30-day life vs the 56-day pass interval),
   `routes.queue_full` 12 (admission, only binding once funding rises), `max_civs_per_project`
   20 (a PC ledger clamp, not an engine limit).
+- Campaign `916b90f6` (cloud BHU observer, 120 monthly saves 1936.2-1945.12, files 2026-09-04
+  20:51-22:18, build MEASURED `wa_tlm_version = 35` + `wa_tlm_pc_stale_kept_n` present from the
+  first save = cut 1 in; cut 2 and `rail-sizing-demand` committed 19:42 / 20:10, before launch —
+  ASSUMED in, not fingerprintable). Probe (2), MEASURED (`tlm GER`): `pc_stale_kept_n` 0 → 2
+  (1945.1) → 3 (1945.12), `pc_stale_n` 0 → 5 → 6 against `pc_built_by_type^13` 88 (1941.9) → 391
+  (1945.12): stale ≤ 2 % of growth — **PASS** on the churn reading, with the caveat that the
+  validator was only exercised from 1945.1 (queue held ≤ 12 `rail` projects the whole war; A
+  never had a stale slot to free). `pc_lost_n = 0` all campaign while states were lost —
+  observation, not this subject. Rail-cache probe (level < 2 edges first) void: no level-0/1
+  edge on any Berlin→hub route in this run. OVERWRITE WARNING: the run reused the
+  `YYYY.M_Mon.hoi4` names and destroyed campaign `5b7c30c6` — no before/after comparison exists.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### rail-sizing-demand — PARKED (2026-09-04)
@@ -3933,6 +3944,28 @@ OPEN with a session of its own.
   `control owner:SOV --buildings` GER rail_way total rising faster than before this commit.
   Tell-tale of over-reach: level-5 edges appearing on routes whose hub state and neighbours
   hold < 20 divisions in `plans.py --where`.
+- Campaign `916b90f6` (same run as above; build ASSUMED to carry this commit). Probe (2)
+  **FAIL on the front reading**, MEASURED (`rail.py 6521 <hub>` on 1941.12 / 1942.6 / 1942.12 /
+  1943.6 / 1943.12 / 1944.6, 10 hubs): the narrowest link of EVERY Berlin→hub route is **3 on all
+  60 cells** — never rose in 30 months. Where the rail went (MEASURED `--path`): the shared trunk
+  west of the 1939 border — Ostmark/Poznan `444-3532-6558` 3 → 4, E. Mazowieckie → Lublin 3 → 5;
+  east of Wilno (`3320 = 3 = 6340`) and Polesie (`560 = 3 = 6579`) every hop is 3 in 1941.12 and
+  still 3 in 1944.6. Volume was not the issue: `pc_built_by_type^13` +303 over the war, rail
+  share of PC completions 60 % → 78 %; 1943.6 queue = 12 `rail` projects (Kharkov, Vitebsk ×3,
+  Nevel ×2 + 6 partial-path routes at band 700 toward Katowice/Těšínsko/Slovakia, 4 of them
+  never funded). Front context (MEASURED `control owner:SOV`): Axis high-water 1942.12 at 16 %
+  of Soviet provinces, Moscow never taken, occupation handed to RUK/RBL by 1943.6 (GER rail on
+  Soviet soil 464 → 211 is the hand-over, Axis total 669 → 672), Pskov/Nevel/Kharkov hubs lost
+  by 1944.6, Soviet reconquest complete 1945.6, SOV inside Germany 1945.12. DERIVED cause: the
+  route min is 3 over ~40 hops per route; each pass admits 12 and the fill funds 4-8, so raising a
+  route's min by one level needs every level-3 hop of it (~4 passes admitted, ~a year funded)
+  before any hub reads 36 — and the level-3 sweep offers same-level hops capital-first, so the
+  shared trunk absorbed the budget while the front hubs changed hands. Half the 1943.6 admission
+  went to dead-end (partial-path) routes. The sizing fix made the target right; it cannot make
+  the rail arrive. Levers for the owner (none taken): funding share for rail (`alloc.fraction` /
+  override life), `max_civs_per_project` 20, partial-path routes barred from admission while a
+  full route's hops are refused, front-first order within a level (the reverse of what
+  irreversibility argues — a rear hop survives a retreat, a front hop is lost with the ground).
 - Closed when: (1) pasted here and passing, then (2) on one campaign; ratio step to 0.7/1.0 is a
   separate owner decision recorded here when taken.
 
