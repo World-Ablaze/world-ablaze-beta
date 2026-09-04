@@ -4001,8 +4001,11 @@ OPEN with a session of its own.
   capacity on a trunk segment is NOT the binding model; if a trunk tooltip ever reads
   used = capacity, add a second parallel trunk (the R2 rule below already allows it).
 - Owner rulings 2026-09-05: (a) railhead = centre of the front by summed distance, 20 %
-  hysteresis; (b) trunk only against an enemy worth it: ≥ 2 accepted frontline hubs AND
-  (`is_major` or ≥ 40 divisions) — Denmark gets no trunk; (c) one railhead by default, a second
+  hysteresis; (b) trunk only against an enemy worth it: ≥ 4 frontline hubs AND
+  (`is_major` or ≥ 40 divisions) — Denmark gets no trunk (owner 2026-09-05: "monte la porte à
+  4 hubs de front"; counted on the frontline CANDIDATES that pass the limit check, before the
+  `routes.max_per_enemy = 4` route cap — counted after it, "≥ 4" would only ever mean "cap
+  reached"); (c) one railhead by default, a second
   only when connecting the far hubs to a new railhead costs less than connecting them to the
   existing spine; routes are computed from the FRONT toward the nearest element of the trunk,
   the trunk being the level-5 network connected to the capital (Paris–Berlin–Minsk at 5 is one
@@ -4043,7 +4046,7 @@ OPEN with a session of its own.
   prefixes share them) and Pskov's min is capped by them → raised to 5 before any hop 11-30
   goes 3→4; Pskov reads 44 after 20 hops of work, not after 60.
 - Constants (new group `wa_ai_railway.spine`, all read in one file each): `trunk_level = 5`,
-  `hysteresis = 0.2`, `capital_weight = 0.25`, `min_hubs = 2`, `min_enemy_divisions = 40`,
+  `hysteresis = 0.2`, `capital_weight = 0.25`, `min_hubs = 4`, `min_enemy_divisions = 40`,
   `max_second_railheads = 1`, `max_walk = 400`. The divisions gate is the one number without
   a measurement behind it — tune after the first campaign.
 - Files: `railway_strategies.txt` (route_start per hub = nearest S element; trunk route;
