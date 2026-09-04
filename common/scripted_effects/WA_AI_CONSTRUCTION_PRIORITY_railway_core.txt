@@ -138,7 +138,8 @@ WA_AI_PC_railway = {
 					###   phase A   segments BELOW land_war.rail_level_floor first, target = floor. The chain is in
 					###             series, so one level-1 hop at the front caps the whole trunk whatever the rear
 					###             reads; a capital-first walk gives the budget to the rear upgrades.
-					###   phase B   the rest, at the sizing target. Unlike the corridor, B ALWAYS runs after A: A takes
+					###   phase B   the rest, at the sizing target, one sweep per map level from the floor up (weakest
+					###             links first). Unlike the corridor, B ALWAYS runs after A: A takes
 					###             only what it needs from the budget, B fills the remainder. A's projects carry their
 					###             route's band + (prio.rail_connect - prio.rail_war), so the fill serves them before
 					###             every rail-war upgrade, this pass's or an earlier one's - insertion order alone
@@ -292,23 +293,33 @@ WA_AI_PC_railway = {
 						}
 					}
 
-					### Phase B - RAISE. Everything at or above the floor, at the sizing target.
+					### Phase B - RAISE, weakest links first: one sweep per RAW map level from the floor up to
+					### rail_level_cap_overland - 1, so every level-2 hop of every route is offered before any
+					### level-3 hop, and so on. The chain is in series: a level-2 link on a target-5 route caps
+					### the whole route at 20 supply whatever the rear reads, and a single route-order sweep
+					### gave the budget to the 3->5 and 4->5 hops nearest the capital while the level-2 links
+					### were refused. Segments already at the overland cap need no call.
 					set_temp_variable = { _rail_rest_admitted_ = 0 }
-					for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
-						if = {
-							limit = { NOT = { check_variable = { _lseg_lvl_^_ls_i_ < constant:wa_ai_railway.land_war.rail_level_floor } } }
-							set_temp_variable = { _project_province_id = _ls_a_ }
-							set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
-							set_temp_variable = { _project_target_level = _lseg_tgt_^_ls_i_ }
-							set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
-							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
-							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
-							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+					set_temp_variable = { _rail_sweep_lvl_ = constant:wa_ai_railway.land_war.rail_level_floor }
+					while_loop_effect = {
+						limit = { check_variable = { _rail_sweep_lvl_ < constant:wa_ai_railway.land_war.rail_level_cap_overland } }
+						for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
 							if = {
-								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
-								add_to_temp_variable = { _rail_rest_admitted_ = 1 }
+								limit = { check_variable = { _lseg_lvl_^_ls_i_ = _rail_sweep_lvl_ } }
+								set_temp_variable = { _project_province_id = _ls_a_ }
+								set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
+								set_temp_variable = { _project_target_level = _lseg_tgt_^_ls_i_ }
+								set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
+								set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
+								set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+								var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+								if = {
+									limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+									add_to_temp_variable = { _rail_rest_admitted_ = 1 }
+								}
 							}
 						}
+						add_to_temp_variable = { _rail_sweep_lvl_ = 1 }
 					}
 					if = { limit = { has_country_flag = WA_AI_construction_logging }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] rest=[?_rail_rest_admitted_]"

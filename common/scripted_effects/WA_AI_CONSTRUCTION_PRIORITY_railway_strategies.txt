@@ -157,7 +157,8 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 #	  _rsize_entry_mode_ = 2  overland from our own capital -> demand decides, no entry cap
 #	  _rsize_entry_mode_ = 1  overseas -> _rsize_entry_supply_ = overseas_entry_supply_ (the sea leg's
 #	                          bottleneck, published by WA_AI_PC_analyze_overseas_supply_chain)
-#	Demand is the ONE frontline hub province, not the whole path: this runs once PER ROUTE (up to
+#	Demand is the frontline hub's AREA - its state plus the neighbouring states that touch the same
+#	enemy ([rail-sizing-demand]) - not the whole path: this runs once PER ROUTE (up to
 #	routes.max_total per execution) while the sizer's presence walk is every_country x states. The
 #	corridor can afford its whole node list only because it sizes once per pass.
 #	Floor/cap are constant:wa_ai_railway.land_war.*, NOT the corridor's pair - the two families share
@@ -166,11 +167,44 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 WA_AI_PC_railway_land_size_this_route = {
 	set_temp_variable = { _rsize_hub_ = supply_hub_province_ }
+	# [rail-sizing-demand] a hub feeds a supply AREA, not its own state: the divisions it must
+	# carry sit in the NEIGHBOURING states that touch the same enemy, so counting the hub's state
+	# alone under-reads the demand and sizes the route at the floor. One province per neighbour
+	# is enough - the sizer resolves provinces to states and deduplicates. ENEMY-controlled
+	# neighbours are included on purpose: our spearhead divisions inside a partly occupied enemy
+	# state draw on this hub, and the presence walk counts our side's divisions only, so the
+	# neighbour's controller adds nothing else. A neighbour across a strait that touches the same
+	# enemy is counted too - one state's worth, upward; accepted.
+	# Assumes: the generated WA_AI_MAP_state_province_ids lists every state; a state with no entry
+	# is simply not counted. THIS = the frontline state; _current_enemy_tag is the enemy the
+	# land-war strategy is processing (same test as the candidate trigger).
+	clear_temp_array = _rsize_nb_prov_
+	every_neighbor_state = {
+		limit = {
+			any_neighbor_state = {
+				OR = {
+					is_controlled_by = var:_current_enemy_tag
+					controller = { is_subject_of = var:_current_enemy_tag }
+				}
+			}
+		}
+		set_temp_variable = { _rsize_nb_first_ = global.WA_AI_MAP_state_province_ids@THIS^0 }
+		if = {
+			limit = { check_variable = { _rsize_nb_first_ > 0 } }
+			add_to_temp_array = { _rsize_nb_prov_ = _rsize_nb_first_ }
+		}
+	}
 	ROOT = {
 		clear_temp_array = _rsize_prov_
 		clear_temp_array = _rsize_ours_
 		add_to_temp_array = { _rsize_prov_ = _rsize_hub_ }
 		add_to_temp_array = { _rsize_ours_ = 1 }
+		# Neighbours carry no entry capacity of their own on a land route (_rsize_ours_ = 0 keeps
+		# the two arrays aligned; the SUM injection mode is not used by this family).
+		for_each_loop = { array = _rsize_nb_prov_ value = _rsize_nb_v_
+			add_to_temp_array = { _rsize_prov_ = _rsize_nb_v_ }
+			add_to_temp_array = { _rsize_ours_ = 0 }
+		}
 		set_temp_variable = { _rsize_floor_ = constant:wa_ai_railway.land_war.rail_level_floor }
 		set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap }
 		# [rail-admission-churn] capital-fed route (overland, no entry cap): the higher cap. The
@@ -180,8 +214,12 @@ WA_AI_PC_railway_land_size_this_route = {
 			set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
 		}
 		WA_AI_PC_rail_size_route = yes
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SIZE: hub [?_rsize_hub_] states=[?_rsize_prov_^num] presence=[?rsize_presence_] demand=[?rsize_demand_] target=[?rsize_rail_tgt_]"
+		}
 		clear_temp_array = _rsize_prov_
 		clear_temp_array = _rsize_ours_
+		clear_temp_array = _rsize_nb_prov_
 	}
 	set_temp_variable = { route_level = rsize_rail_tgt_ }
 }

@@ -217,6 +217,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   loads and `error.log` carries no `ai_equipment` line, then one AI Germany in 1939 fields a
   Panzer III/IV variant (proves the design groups still match). Owner 2026-09-04: "boot OK" -
   the load half PASSES; the Panzer III/IV variant reading is owed from the next scored campaign.
+- Anomalies the convention surfaced (owner 2026-09-04: "on ne devrait pas avoir de v2 pour les
+  chars"), MEASURED against `common/units/equipment` + `common/technologies` (tech -> equipment
+  it enables) - fixed in the working tree: Panzer IV G targeted `tank_ger_medium_chassis_3_3`
+  (= Ausf. H) while its `enable` tech `ger_medium_tank_chassis_3_2` unlocks `_3_2`; Marder III
+  Ausf. M targeted `tank_ger_light_chassis_td_4` (= Ausf. H) while `ger_light_td_tank_4_1`
+  unlocks `_td_4_1`. Both designs were therefore unbuildable until the NEXT chassis tech, then
+  competed with it on the same chassis. Types corrected, keys re-derived by the tool; no `__vN`
+  design left on any tank file. Tool fix in the same pass: a second `apply` kept `__atk` etc.
+  (it had re-derived `__v2` from the already-converted key).
 - Closed when: (1) and (2) hold on the committed tree (DONE, commit below) and one scored campaign
   shows an AI GER Panzer III/IV variant.
 
@@ -2609,9 +2618,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Panther lands. The modern slot in `WA_AI_PRODUCTION_armor_budget.txt` is KEPT at target 0 so the
   reconcile emits the exact negation of any entry a pre-change save carries — do not delete it
   before a campaign shows `WA_AI_ARMOR_BUDGET_modern` at 0.
-- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_78` was
-  enabled by `ger_medium_tank_chassis_2_6`, one tech before the chassis it designs;
-  `medium_tank_7` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
+- Change 5 — the German Panzer III/IV chain (`32dc70cb4`, shippable alone): `medium_tank_9` was
+  enabled by `ger_medium_tank_chassis_3_3`, one tech before the chassis it designs;
+  `medium_tank_8` had no zeroing modifier for `2_7` so the ladder never stepped past the Panzer
   IV H; `2_7` was missing from `has_medium_armor_unlocked`.
 - Superseded a collaborator's parallel change (`b19bf6a43` and the commit that moved the six modern
   templates into the medium file, owner decision 2026-08-28 to keep this design instead). Their
@@ -3806,7 +3815,9 @@ OPEN with a session of its own.
   6556→11477 at level 1) and H + R ≥ 7; a Gomel/Poltava route showing `target=5` if its hub
   state holds > 30 divisions, else `target=4` unchanged. Known-false control: an overseas
   frontline (e.g. a Libyan state for ITA) at level 4 logs `SKIPPED - overseas hub already at
-  the port-fed cap` and no route. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
+  the port-fed cap` and no route. Cut 2 expectation on the 1943.7.19 pass: the first `PC QUEUED`
+  lines are level-2 hops (Wołyn 6520→11543, Kursk 9542→580, Sumy 3520→501), and no 4→5 hop is
+  queued while a level-2 hop of any route was refused. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
   GER > 0 during the GER-SOV war; `wa_tlm_pc_stale_n` ≤ 20 % of `wa_tlm_pc_built_by_type^13`
   growth over the same saves (today 10 stale vs 2 built in one pulse); rail-cache diff between
   consecutive saves raises ≥ 1 edge with level < 2 on the captured trunk before any 3→4 edge of
@@ -3814,7 +3825,116 @@ OPEN with a session of its own.
   > 30 divisions. Tell-tale of over-reach: `pc_built_by_type^14` (ports) rising on GER's
   overseas routes faster than before this commit (D's split failed), or the theatre-air band
   starving > 2 consecutive saves (rail budget now fully spent every pass).
+- Console harness, owner run 2026-09-04 on `barb_supply test.hoi4` resumed (GER, pass of
+  1943.7.19, build with cut 1): `RAILWAY: processed 10/10 routes (0 partial)`; NO `PC VALIDATION`
+  line — the queue held 0 `rail`-tag projects, so A and B were NOT exercised (no stale project to
+  keep or cancel); `RAILWAY ADMISSION: segments=444 head=0 rest=12`; D **PASS** — Orel route
+  `target=5`, Kharkov/Rostov 4, Kursk 3, Pskov/Smolensk/Nevel/Bryansk/N. Donetsk 2. C
+  **INSUFFICIENT**: phase A's only sub-floor hop (Kaluga 352→3226 at level 0) was refused
+  without `PC QUEUED` — budget empty, so the state-scoped admission gate (DERIVED: GER-held
+  province inside a SOV-controlled state, the r103 case) — and phase B spent all 12 slots on the
+  Lublin→Polesie 3→5 / 4→5 upgrades of the FIRST route while the level-2 links Wołyn
+  6520→11543→3470→6593, Kursk 9542→580→3580 and Sumy 3520→501→11397 were refused: the sweep was
+  route-ordered, and every route starts at the capital.
+- Cut 2 (`61157d63e`, same session, owner-ordered C intent "trous d'abord"): phase B is now one
+  sweep per raw map level from the floor up to `rail_level_cap_overland − 1` — all level-2 hops
+  of all routes, then level-3, then level-4. Same call count (each segment offered once);
+  segments at 5 not offered. Expected on the same save: the 12 slots go to the level-2 hops of
+  Wołyn/Kursk/Sumy before any Lublin 4→5.
+- Console harness, owner run 2026-09-04 on the cut-2 build (`barb_supply test.hoi4` resumed,
+  pass of 1943.5.10, together with `rail-sizing-demand`): `RAILWAY: processed 10/10 routes`;
+  `RAILWAY ADMISSION: segments=504 head=0 rest=12`; the 12 `PC QUEUED` are ALL level-2 hops
+  (Grodno 3393→14173, Druskininkai, Vilnius ×3, Aukštaitija ×2, Zemgale, Latgale ×4 — the
+  Pskov route's level-2 run), every level-3 and level-4 hop refused, `PC SKIP DUPLICATE` on
+  the re-offers — C **PASS** (weakest links first). A and B still NOT exercised (no `rail`-tag
+  project in the queue before the pass → no `PC VALIDATION` line); they need the pass AFTER
+  this one (≈ 1943.7.5) on the same save, when the queue holds these 12 and the routes may
+  have moved. D confirmed again (all routes `target=5` under the widened demand).
+- Throughput, DERIVED from the same log and the 1943.5 save, for the owner: the binding
+  constraint is now FUNDING, not admission. `PC_ASSIGN: raw_avail=197 after_alloc_fraction=79`
+  → 79 civs ÷ 20 per project = **4 rail segments funded at a time**, 8 weeks each (100 IC/week
+  at 20 civs on an 800-IC segment) → 0.5 segment-level per week; with the rail override
+  (×0.6, 30-day flag re-armed by this pass) 118 civs → 0.74/week. The east routes on this log
+  hold ≈ 36 level-2 hops, ≈ 60 level-3, 6 level-4 → ≈ 234 segment-levels to reach target 5
+  everywhere = **≈ 6 years at 0.74/week**; the level-2 → 3 pass alone (36) ≈ 49 weeks. Target 5
+  everywhere is therefore a direction, not a reachable state; the weakest-link sweep is what
+  makes each pass useful. Levers, all owner decisions, none taken: PC allocation share for
+  rail (`alloc.fraction` 0.4 / the 0.6 override's 30-day life vs the 56-day pass interval),
+  `routes.queue_full` 12 (admission, only binding once funding rises), `max_civs_per_project`
+  20 (a PC ledger clamp, not an engine limit).
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
+
+### rail-sizing-demand — PARKED (2026-09-04)
+- Parked heading only for the WIP limit (4 OPEN). Real state: **TESTED 2026-09-04** — console
+  harness run by the owner (below) PASSED; campaign probe (2) still owed.
+- Console harness, owner run 2026-09-04 (`barb_supply test.hoi4` resumed, GER, pass of
+  1943.5.10, build `526acd975`): `RAILWAY SIZE:` on all 9 accepted hubs — Pskov `states=4
+  presence=51 demand=63.75 target=5`, Nevel 5/54/67.5/5, Rostov 5/35/43.75/5, Kursk
+  7/92/115/5, Kharkov 4/48/60/5, Orel 6/115/143.75/5, Bryansk 6/110/137.5/5, N. Donetsk
+  6/64/80/5, Smolensk 6/57/71.25/5 — **PASS** (Smolensk/Bryansk/Nevel were `target=2` on the
+  1943.7.19 pass). Every route reads the cap 5: the known-false control (`states` ≥ 2 with
+  `target=2`) did not occur on this front — no thin sector exists here; it stays owed on a
+  campaign save with a quiet front. Cost: 10 routes sized, no visible pulse stall.
+- Intended behaviour: a land-war railway route is sized for the divisions its frontline hub
+  actually feeds, so a hub carrying 35-66 supply of demand is not fed by a level-2 chain.
+- Symptom, MEASURED (owner screenshot, supply map 1943.10.13, same GER campaign as
+  `barb_supply test.hoi4`): centre-front hubs at 20/28 of capacity (rail level 2/3) against
+  29-66 of demand — 29/28 Smolensk, 35/20, 59/28, 66/20, 56/28, 34/28, 21/20. MEASURED (owner
+  console log, pass 1943.7.19): those hubs' routes sized at `target=2` (Smolensk, Bryansk, Nevel,
+  Pskov, N. Donetsk), Kursk 3, Kharkov/Rostov 4, Orel 5.
+- Cause, MEASURED (`WA_AI_PC_railway_land_size_this_route`, `railway_strategies.txt`): the
+  demand count `_rsize_prov_` held ONE province — the hub's — so `WA_AI_PC_rail_size_route`
+  counted divisions in the hub's state only; the presence ladder (≤ 10 div → 2, 16-20 → 3,
+  21-30 → 4, > 30 → 5 after × 2.5 × ratio) then read "≤ 10 divisions" for a hub whose area held
+  ~26. Second term, MEASURED: `corridor.target_ratio = 0.4` sizes every route to the
+  no-attrition floor by design (LOGISTICS_MODEL §11.4), i.e. 40 % of the estimated need — a
+  correctly counted 26-division hub still came out at level 3 (28) against 65 of need.
+  ASSUMED (engine): a supply hub feeds an area spanning several states; it is the only reading
+  that puts 66 of demand on a hub whose own state holds ≤ 10 divisions.
+- Owner rulings 2026-09-04: (1) "oui, il faut compter les états voisins"; (2) "passe le ratio à
+  0.5. on augmentera si les changements du 1) n'augmentent pas assez la demande".
+- Change (one commit, `# [rail-sizing-demand]`): `WA_AI_PC_railway_land_size_this_route` adds,
+  to the hub province, one province of every NEIGHBOURING state that borders the enemy being
+  processed (`every_neighbor_state` + the candidate trigger's own enemy test on
+  `_current_enemy_tag`); `_rsize_ours_` padded with 0 so the arrays stay aligned (the SUM
+  injection mode is not used by this family). New log `RAILWAY SIZE: hub P states=N
+  presence=X demand=D target=T`. `constant:wa_ai_railway.corridor.target_ratio` 0.4 → 0.5.
+- Impact analysis. Callers of the binding: the three sites inside
+  `WA_AI_PC_railway_land_consider_frontline` (land-war family only, all inside the per-enemy
+  loop, so `_current_enemy_tag` is always set). The ratio is SHARED with the corridor family
+  (`WA_AI_PC_rail_size_route` reads it for both): North Africa corridor targets rise by the same
+  25 % under its own floor 2 / cap 4 — accepted, one demand model. Reach: every AI belligerent
+  with a land front, historical and ahistorical (no tag, no date). Cost: `every_country` ×
+  (1 + neighbours ≈ 3-6) `divisions_in_state` tests per route, ≤ 16 routes per 8-week pass.
+  Regression risk, STATED: (i) routes to a hub whose neighbours hold a large parked reserve
+  (not at the front) now size higher — bounded by the cap 5 only (the "borders the enemy"
+  filter passes every enemy-controlled neighbour too, by design: spearhead divisions inside a
+  partly occupied enemy state draw on this hub); (ii) rails never downgrade, so a front that
+  later empties keeps its level — accepted by the cap ruling; (iii) two adjacent hubs count
+  each other's neighbour states, so a dense front sizes both routes at the same (higher)
+  target — intended: the trunk is shared; (iv) a neighbour across a strait touching the same
+  enemy adds one state's presence to a route that does not feed it — upward, one state, accepted
+  (lessons review). The presence index over-reads a dispersed army (sizer header, LOGISTICS_MODEL
+  §11.11) and the widening multiplies the bucket floors paid at the same moment the ratio rises:
+  MEASURE the over-reach tell-tale below before the 0.7 / 1.0 ratio step. Not done (optional,
+  editing rule 3): extracting the enemy-adjacency test shared by the candidate trigger and the
+  sizer into one scripted trigger. DERIVED on the 1943.10 map: Smolensk/Bryansk/Nevel routes go from 2 to
+  4-5, and the July pass's 12 slots (now weakest-link first, `rail-admission-churn`) fill
+  with their level-2/3 hops.
+- Verification, owed to the owner: (1) console — resume `barb_supply test.hoi4` (or the
+  1943.10 save) with `WA_AI_construction_logging` on GER, advance to the pass; expect
+  `RAILWAY SIZE:` lines with `states=` ≥ 2 for every hub that has a neighbour on the front,
+  and `target=` ≥ 3 for Smolensk/Bryansk/Nevel (were 2); known-false control: a hub with
+  `states=` ≥ 2 whose neighbours hold few divisions keeps `target=2` (the widening must not
+  inflate a thin front) — a frontline with a single enemy neighbour is the only `states=1` case
+  and is not the control. (2) campaign
+  probe (save-visible, no new TLM): `rail.py 6521 <hub>` on consecutive saves — the narrowest
+  link of the Smolensk/Bryansk routes rises above 2 within two passes of the front settling;
+  `control owner:SOV --buildings` GER rail_way total rising faster than before this commit.
+  Tell-tale of over-reach: level-5 edges appearing on routes whose hub state and neighbours
+  hold < 20 divisions in `plans.py --where`.
+- Closed when: (1) pasted here and passing, then (2) on one campaign; ratio step to 0.7/1.0 is a
+  separate owner decision recorded here when taken.
 
 ### sov-cutting-corners-module — PARKED (2026-08-30)
 - Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is

@@ -277,7 +277,7 @@ These are known gaps, not oversights to be re-discovered:
 3. The chain is in **series**: useful flow = `min(entry port, every railway hop on the path)`. A level
    above the weakest link buys nothing, and **railways cannot be downgraded** - overbuilding is
    permanent, underbuilding is recoverable. Bias low.
-4. Size against the **0.4 attrition threshold**, not against 100% demand (§8).
+4. Size against `sizing.target_ratio` of the estimated need (0.5, `[rail-sizing-demand]`; the original 0.4 was the attrition threshold of §8), never against 100% demand.
 5. Compare the three substitutes by cost before spending (§7).
 6. On conquered soil, assume **no local supply** (2.5% population factor) (§6).
 
@@ -343,7 +343,7 @@ sector selection, negligible.
 | New constant | Value | Meaning |
 | --- | --- | --- |
 | `sizing.supply_per_division` | **2.5** | average supply need per division. **Calibration knob - user-set placeholder 2026-08-17, to be tuned on campaign results.** |
-| `sizing.target_ratio` | **0.4** | target supply ratio. 0.4 is `SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION` (§8) - the *no-attrition floor*, not an optimum: combat and speed penalties still scale below 1.0. **Second calibration knob.** |
+| `sizing.target_ratio` | **0.5** | share of the estimated need the rail is sized for. The original 0.4 was `SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION` (§8), the *no-attrition floor*; raised one step by `[rail-sizing-demand]` because the AI is meant to advance, not merely avoid attrition — combat and speed penalties still scale below 1.0. **Second calibration knob**; next step is an owner decision after the widened demand count (§11.4, hub state + enemy-bordering neighbours) is measured. |
 
 ### 11.5 Injection capacity
 
