@@ -1201,7 +1201,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     SOV_the_greatest_tank_army`) — reviews turned the literal into ONE observation trigger,
     `WA_AI_PRODUCTION_historical_tank_park_mission_is_active` (`WA_AI_PRODUCTION_army_composition.txt`),
     now read by the window, the three corps enables and the two run-state gates.
-  - `WA_AI_TEMPLATES_armored_light_support.txt`: rungs
+  - `WA_AI_TEMPLATES_armored_light_support.txt` (shape SUPERSEDED by Change 9 below — the
+    6/3/6 target and its majority-vote tie note describe campaign `5de66942` only): rungs
     `WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_MOT` (15007) / `_MEC`
     (15008), target = the shape the corps FIELDS, 6 LS / 3 L / 6 mot (tid 1487, 31 divisions in
     1945.12) — not the 12/6/4 it was built toward (lessons reviewer: a rung target that is not the
@@ -1296,7 +1297,24 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
     `check_templates` exits 1 on the 4 pre-existing HQ slot errors in
     `WA_AI_TEMPLATES_hq.txt` (file untouched, already recorded under Change 7); no finding on the
     file changed here. BOM-free, braces balanced.
-  - Reviews: committed on the owner's direct order BEFORE the two reviewer subagents returned —
+  - Trade, ASSUMED and stated because the change causes it: under the header's own naive
+    convention a park frozen on the OLD 6/3/6 waypoint scores 14 of 18 = 0.78 against the new
+    rung, under `replace_at_match` 0.8 — i.e. this retune buys the current campaign's shape and
+    may cost the previous one's. The convention is known NOT to be the engine's formula (the MEC
+    hop shares zero battalions and converts anyway), so the number bounds nothing; the owner's
+    ruling that 8/5/5 is the stable shape is what settles which park is optimised for.
+  - Two review points carried, not resolved: the park holds 3 support companies against the
+    rung's 4 + 1 regimental, so "captures at 1.0" is ASSUMED, not arithmetic — only
+    `imgui show ai_templates` `Best (role)` confirms it; and the hop now demands 13 armour
+    battalions where the park fields 9, with free light-support stock at 0 since 1943.1, so
+    `UPGRADES_DEFICIT_LIMIT_DAYS` (90) refusing the upgrade is an unmeasured rival explanation
+    for any continued freeze.
+  - Untouched by this change: the owner-observed heavy-capture defect (the FINAL's best existing
+    match is a heavy template). This edit moves the FIRST hop only.
+  - Reviews 2026-09-04: architecture CONCERNS + lessons CONCERNS, no CONFLICT. Header repaired
+    (the 1.0 claim labelled ASSUMED, the 0.33 arithmetic dropped for the MIX precedent that
+    covers both hops); the trade and the two open points are the bullets above. Committed on the
+    owner's direct order BEFORE the reviewers returned —
     their verdicts are owed and, if either is CONFLICT, this change is amended or reverted.
 - Verification — owner console, Change 9: on a SOV save of the current campaign with
   `conv-value` 15007/15008, `imgui show ai_templates` shows the arrow on
