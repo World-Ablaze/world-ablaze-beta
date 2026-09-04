@@ -172,7 +172,83 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### hq-role-capture — SHIPPED-UNTESTED (2026-09-02)
+### coal-prospect-loop — SHIPPED-UNTESTED (2026-09-04)
+- Scope: owner report 2026-09-04 (National-Projects tooltip: GER running 11 "Expand X Coal Basin"
+  at once, 55 civs). Intended behaviour, two levers under one slug: (A) a coal state is prospected
+  at most twice (excavation4 tier, then excavation5 tier) and never again; (B) a supplier prospects
+  for an ally only while that ally is short AFTER its imports — an ally the trade AI parks at ≥ 0
+  is supplied, not needy.
+- Symptom, MEASURED (campaign `5d2a391c`, 117 monthly saves 1936.2-1945.8, `mods=world-ablaze-beta`
+  — DERIVED same build family, hash `80a3` vs local `3eb1`): GER's `coal_prospecting` fires cycle 1
+  in 1941.1 (the month `excavation4` completes), pauses 27 months (flag = 1 needs `excavation5`,
+  `start_year = 1943`), then runs cycles 2-5 BACK-TO-BACK from 1943.8 — state 4's `coal_developed`
+  reads 1 → 4 → 5, the next instance is taken the day the previous completes (flag date 1944.9.7,
+  cycle 5 ≈ 1944.9.8), each cycle 30 d longer (`coal_duration` 60 → 210), each re-adding the
+  state's full coal (E. Rhineland: 5 × 254 = 1270 instead of 508). GER's OWN need is never true:
+  `wa_ai_needs_coal = 0` on all 117 saves, effective coal min +8170 (1936.6) → +17206 (1945.2). Sole
+  weight = the cooperative leg: HUN/ITA/ROM(/FIN/BUL) at `wa_ai_needs_coal = 3` in EVERY save 1941.1
+  → 1944.12, held by the writer's import arm (`resource_imported@coal > 40`), while HUN sits at +81,
+  ROM +9 (supplied). 5 of the 11 targets (Wallonie, Lublin, E. Mazowieckie, Serbia, Upper Bohemia)
+  are RBE/RPO/RSE/RCZ-held at 1945.2 and still counting down — a taken instance is not re-validated
+  (ASSUMED engine; no `cancel_trigger` in the block).
+- Cause (A), MEASURED: of 126 prospecting decisions in `_resource_prospecting.txt`,
+  `coal_prospecting` is the ONLY one whose `remove_effect` increments a flag (`modify_state_flag
+  value = 1`, :114) with no `NOT = { has_state_flag value = N }` stop; the 37 tiered siblings all
+  carry one (`develop_liaotung_iron_ore_deposits` :3533 is the shape it copied, cap dropped).
+  Introduced whole by the upstream squash `ac1dbf19f` (2026-07-06) replacing 16 `fire_only_once`
+  per-state decisions; hand-written (the `ai_will_do` replacer splices only the `ai_will_do` span).
+- Cause (B), MEASURED: `WA_AI_allies_need_<r>` read "ally at needs = 3" and the writer
+  (`WA_AI_misc_effects.txt:566-577`) ratchets any importer above 40/month to 3 — it measures import
+  DEPENDENCE, not unmet need. That leg has legitimate readers (synth research, construction scoring
+  :213, PC admission :158, the overextension brake already pairs a balance term for this reason),
+  so the writer is untouched and the consumer that misread it is fixed.
+- Change: (A) `common/decisions/_resource_prospecting.txt` `coal_prospecting.target_trigger` gains
+  `NOT = { has_state_flag = { flag = coal_developed value > 1 } }` — `>` not `= 2` so a save already
+  at 4-5 stops at its next selection (an instance in flight completes once more, ASSUMED engine).
+  (B) all nine `WA_AI_allies_need_<r>` (`WA_AI_RESOURCE_NEEDS_triggers.txt`) gain
+  `check_variable = { resource@<r> < 0 }` inside `any_other_country` — the ally's effective balance
+  (net minus unmet, i.e. demand its imports do not cover). Owner ruling 2026-09-04: deficit-after-
+  imports semantics, all 9 resources.
+- Impact analysis. Readers of `coal_developed` / `coal_duration`: this decision file and
+  `100_wa_on_actions.txt:98` only. Callers of `WA_AI_allies_need_<r>`: the prospecting `ai_will_do`
+  blocks only (trigger file scope note). Reach: every country with excavation4/5 and an array state
+  (no tag, no date — historical and ahistorical identical). Regression risk, STATED: the coop leg now
+  fires only under market shortage. Sweep MEASURED on `5d2a391c` (4 saves, 895 needs=3 rows, 116
+  faction-legs true today): 48 legs stay (allies ≥ 1 quantum short: USA alu/rubber/chromium −344
+  to −825, GER chromium −314 / iron −95, ITA steel −226 / coal −598, CAN bauxite −85..−115), 68 go
+  false — 37 with every member parked in [0, quantum), 31 with a member in SURPLUS (all 7 oil legs:
+  ENG/SOV/JAP at +61..+941 oil counted as critical). Coal: 3 of 15 legs survive (quantum 100).
+  Bound (f): chatter lives in the sub-quantum band (NEG→PARK flips 12/57 shallow vs 4/66 deep, at
+  6-12-month sampling; the 2-day writer cadence is ASSUMED chattier) and a flicker fires a decision
+  that then runs ≥ 60 d — but every prospecting decision is now capped per state (A here, the 37
+  sibling caps, the 85 one-shots), so the worst case is an early firing of a bounded run, never a
+  loop. Checkers: worklist / constants / ai_layers all exit 0; `0` is a sign test (same file reads
+  `resource@<r> < 0` 9× already), `value > 1` is this decision's own tier count — no constant.
+- Rejected alternative (g), quoted from R65 (`CHECKLIST_R_ARCHIVE.md:1161`, 2026-08-17): "also
+  requiring the ally to be in deficit (`resource@coal < -40`) — the wa-lessons-reviewer showed it
+  would delete the leg rather than narrow it, since importing pushes the ally's balance back toward
+  0." Mine covers it because the leg's own question is "does an ally need help": an ally whose
+  imports park it at ≥ 0 HAS been helped — the objection describes the case the leg must be false
+  on. Measured, it narrows rather than deletes: 48 of 116 legs remain, exactly the allies still ≥ one
+  quantum short after importing. The prior exit line of `prospecting-coop-solvency` ("counters still
+  growing for an importing member (HUN-like)") asserted the opposite and is replaced (row below).
+- Verification, owed to the owner: (1) F9 boot (decision file + trigger file parse only at launch);
+  (2) resume `1945.2_Feb.hoi4` of `5d2a391c` as GER: the decisions tab lists NO `coal_prospecting`
+  target whose state has `coal_developed > 1` once its running instance completes (the 6 GER-held
+  states all read 4-5 → none re-selectable), and the civilian-factory tooltip's National Projects
+  block drains from 11 basins to 0 over the following ~7 months; (3) next campaign probe
+  (save-visible, no console): no state in `global.coal_states_array` carries `coal_developed > 2` or
+  `coal_duration > 120`, AND at least one coal state reaches `coal_developed = 2` (control: cap, not
+  kill); (4) coop probe: a supplier's prospecting counters (`decisions <TAG> --match prospecting`)
+  are flat while every faction member at needs = 3 reads effective ≥ 0, and still climb for a member
+  at effective < 0 with imports > 0 (ITA-1944-like). Tell-tale of over-blocking: an ally at effective
+  < 0 for ≥ 3 saves with a supplier in the faction that never prospects.
+- Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
+  fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
+
+### hq-role-capture — PARKED (2026-09-04)
+- Parked 2026-09-04 (owner decision): slot freed for `coal-prospect-loop`. Readings (1)-(4) below
+  remain owed; nothing else changes. Reopens at the same state (SHIPPED-UNTESTED) when pasted.
 - Scope: owner question 2026-09-02 ("pourquoi l'IA allemande considere qu'elle a 15 divisions de
   chars lourds ?"). Intended behaviour: an army-HQ division template is never counted as a combat
   role, so the AI's Current-vs-Wanted gap for a real combat role reflects the divisions it fields.
@@ -3340,7 +3416,7 @@ OPEN with a session of its own.
 | `convoys` | FAILED / NOT TESTED | Escorts parked (R36); land-coalition convoy arsenal (R79, Fix 115); surplus dockyards (R87, Fix 126); JAP opens no convoy line and GER 2700-hull pile unexplained (QUEUE 15/20) | R36 passes; R79/R87 probes pass; GER pile explained |
 | `pc-queue` | FAILED (R47) | Capitulated country runs no PC (R47, Fix 75); FRA queue deadlocked on pre-armistice projects (QUEUE 17) | R47 probe passes; FRA queue drains in a campaign |
 | `landing-freeze` | FAILED outcome leg (R51) | Landing hysteresis: mechanism passes, outcome fails | R51 outcome leg passes (archive) |
-| `prospecting-coop-solvency` | SHIPPED 2026-08-27, parked same day (WIP limit; F9 boot test OWED) | Owner request: coop prospecting must check the needy ally can IMPORT. GER 1945.7 (`15176ce6`) re-prospects coal on 20 164 effective; sole weight = coop branch; ITA at -1046 imports 0 with 0 civs avail. Shipped: ally-side gate in all 9 `WA_AI_allies_need_<r>` (avail>0 OR `resource_imported@<r>` > 0 — the import leg answers the lessons CONFLICT on saturation collapse). Sweep on the save: 206 needs=3 rows, 176 PASS / 24 live BLOCK, every BLOCK imports 0. ASSUMED: trade preempts construction, so a solvent wanting ally already imports; if solvent-at-0-imports exists (WA-native trade AI incomplete), gate over-blocks | F9 boot passes; a post-fix campaign shows supplier prospecting counters flat while a member sits at needs=3 / 0 avail / 0 imports, AND still growing for an importing member (HUN-like); no report of a buying ally starved |
+| `prospecting-coop-solvency` | SHIPPED 2026-08-27, parked same day (WIP limit; F9 boot test OWED) | Owner request: coop prospecting must check the needy ally can IMPORT. GER 1945.7 (`15176ce6`) re-prospects coal on 20 164 effective; sole weight = coop branch; ITA at -1046 imports 0 with 0 civs avail. Shipped: ally-side gate in all 9 `WA_AI_allies_need_<r>` (avail>0 OR `resource_imported@<r>` > 0 — the import leg answers the lessons CONFLICT on saturation collapse). Sweep on the save: 206 needs=3 rows, 176 PASS / 24 live BLOCK, every BLOCK imports 0. ASSUMED: trade preempts construction, so a solvent wanting ally already imports; if solvent-at-0-imports exists (WA-native trade AI incomplete), gate over-blocks. **2026-09-04: the "still growing for an importing member (HUN-like)" leg of the exit is WITHDRAWN** — `coal-prospect-loop` measured HUN at +81 effective while importing (supplied, not needy) and added the ally-side `resource@<r> < 0` term; the leg's probe (4) now lives there | F9 boot passes; a post-fix campaign shows supplier prospecting counters flat while a member sits at needs=3 / 0 avail / 0 imports; no report of a buying ally starved (the importing-member leg moved to `coal-prospect-loop` probe (4)) |
 | `prospecting-coop` | MIXED (R65 FAILED, R66 PASSED once) | Coal coop leg reads wrong side (R65); `coop_can_supply` is 1 for everyone (QUEUE 0b) | R65 passes; sold-out test exercised |
 | `templates-coverage` | MEASURED (2026-08-18, `2f8cbd51`) | 320 of 334 countries never get a WA infantry template | Criterion to be written at reopen (which tags SHOULD get one) |
 | `front-control` | AUDITED, no fix | 3 real `front_control` collisions; per-field vs whole-block resolution unknown; 4 CHI blocks tie at prio 0 | Engine question answered (test or install doc), collisions resolved or accepted in writing |
