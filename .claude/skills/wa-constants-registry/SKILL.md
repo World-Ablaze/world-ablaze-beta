@@ -51,6 +51,7 @@ Facts to keep in mind:
 | `wa_ai_railway.txt` — railway control panel | `interval`, `eligibility` (Fix 43 hatch), `routes` (incl. `queue_full` = skip threshold = admission cap, Fix 77), `supply`, `cost` (naval-base per-level taper + segment estimate; base prices are `wa_ai_pc.cost.*`) | `railway_core / helpers / strategies`, `WA_AI_CONSTRUCTION_triggers.txt` (eligibility filter, per-enemy budget) |
 | `wa_ai_aifc.txt` | `eligibility`, `selection` (anchor feasibility floor, [aifc-traction]), `sector` | `WA_AI_AIFC_triggers / core / helpers` |
 | `wa_ai_posture.txt` | `enter`, `local`, `manpower`, `brake`, `alive`, `xr`, `air` (three `fighting_army_strength_ratio` bars stay `@` in the effects file — untested context) | `WA_AI_MILITARY_posture_triggers / effects` |
+| `wa_ai_theatre.txt` | `usa_pacific` (`cap_min_div`, the one-way latch bar of the Pacific garrison share cap, `[usa-pacific-hoard]`; the 0.49 budget itself is literal `put_unit_buffers` ratios — `ai_strategy` cannot read a constant) | `WA_AI_misc_effects.txt` (latch), `WA_TEST_usa_pacific_hoard.txt` |
 
 Not yet migrated / still `@` by design: standard-queue constants in `WA_AI_CONSTRUCTION_triggers.txt`
 (`@WA_AI_*_STATE_MAX` mirrors of `00_buildings`, `@WA_AI_QUEUE_DEPTH_*`) and `queue_functions`
