@@ -172,7 +172,73 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### east-front-rail — TESTED (2026-09-04)
+### sov-light-support-retire — SHIPPED-UNTESTED (2026-09-04)
+- Owner order 2026-09-04: "quand la mission greatest tank army est terminée ou qu'on est en 1942,
+  un event pour l'IA soviétique pour supprimer les divisions de light support" — sweep every
+  "Light Support Tank template A..Z", delete template + divisions. Supersedes the conversion
+  route of `light-support-conversion` for the AI Soviet park: the park is deleted, not converted.
+- Intended behaviour: AI SOV fields no light-support division after the mission resolves (either
+  way) or after 1942.1.1, and the light-support role never re-arms afterwards.
+- Shipped 2026-09-04: event `sov_armor.981`
+  (`events/WA_AI_SOV.txt`, trigger = pursues-park archetype + `is_ai` + resolved flag OR
+  `WA_AI_CONFIG_after_global_war_begins`); effect `WA_AI_TEMPLATES_retire_light_support_park`
+  (`WA_AI_TEMPLATES_effects.txt`: sets `WA_AI_TEMPLATES_light_support_park_retired`, clears the
+  temporary latch, 26 guarded `delete_unit_template_and_units ... disband = yes`, re-runs the
+  light-support calculator); the resolved flag `SOV_the_greatest_tank_army_resolved` written by
+  the mission's complete_effect and timeout_effect (`SOV_factions.txt`); retired-flag guard added
+  to `WA_AI_TEMPLATES_use_light_support_armor_templates` and
+  `WA_AI_PRODUCTION_should_continue_historical_tank_park`; harness `wa_abg.1` prints `retired=`.
+- Impact analysis. Readers of the two guarded triggers: `build_army_light_armor`,
+  `should_build/force/floor_tank_park`, the calculator latch (line 1351), the 15006 branch, the
+  startup pre-calc, `should_convert`, the harness. All read "run over" after retirement, which is
+  the state they already handle post-mission. **DERIVED** (calculator walk after the sweep): latch
+  cleared → 15006 off; `use_light_support` off by the guard (the generic pre-1942 branch would
+  otherwise re-arm 15000/15001 when the mission completes before 1942); `should_convert` off
+  (no template contains a support battalion) → `_template_value = 0` → target flag cleared →
+  every light-support target disabled and the role's `upgrade_prio` factor 0. Ahistorical /
+  competitive SOV: latch never set, mission still activates and times out ~1941.12.30 → same
+  sweep, catches any generic light-support template. Non-SOV countries: never carry the flag,
+  no change.
+- **ASSUMED** (engine): the AI names its template copies "<majority-unit name> template <letter>"
+  — DERIVED from two readings (`Medium Tank template H` in `light-support-conversion`, loc
+  `light_support_armor_battalion_line` = "Light Support Tank") and from the owner's own
+  in-game reading; every light-support shape in the file (12/6/4, 7/3/5, 6/6 tie on the old
+  corps) has support as majority or tie. **ASSUMED**: the letter series stops at Z. MEASURED:
+  `history/units/SOV_1936.txt` holds no `light_support_armor_battalion_line`, so no OOB
+  template escapes the sweep. **ASSUMED**: `has_template` and the delete effect run on the
+  training queue too (doc says "a template and its units", no queue caveat).
+- Verification (owner console, harness contract): on a SOV save after the mission resolves
+  (or any 1942+ save), `event wa_abg.1 SOV` must read `retired=1  containing-LS=0  majority-LS=0
+  light-role-open=0  light-support=0` on the lsmix/park lines, and `logs/game.log` carries
+  `[sov-light-support-retire] Soviet Union retired the light-support park`. Control on a 1938
+  save: `retired=0`, sweep not run. `retired=1` with `containing-LS=1` = a name the sweep
+  missed — read it in `imgui show ai_templates` and add it.
+- Reviews 2026-09-04: architecture CONCERNS (applied: retired guard also on
+  `WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor`, so a missed template cannot
+  reopen the role through a conversion rung); lessons CONCERNS, three points: (1) exit for a
+  missed name — proposed re-firing the event daily while `containing-LS=1`; NOT taken, mine
+  covers it because a name outside A..Z is missed by every re-run identically, so the repair is
+  a human reading the name, and the effect now logs a distinct `MISS:` line in game.log when the
+  containing test is still true after the sweep (the harness `retired=1 containing-LS=1` is the
+  second detector); (2) positive control owed, see Verification; (3) regression stated:
+  the 1942.1.1 leg fires mid-Barbarossa and deletes the whole fielded park — MEASURED 31-40 SOV
+  divisions on light-support shapes 1941-1945 on `5de66942` — `disband = yes` refunds equipment
+  and manpower, not front coverage; the superseded conversion route's rationale ("the fielded
+  park converts into the medium class instead of decommissioning", `WA_AI_TEMPLATES_triggers.txt`
+  header of `should_convert`) is set aside by the owner order, not refuted. **Owner acceptance of
+  that mid-war loss owed in one line here.** Also: a save from an older build whose mission
+  resolved before this shipped never carries the resolved flag — the sweep waits for 1942.1.1.
+- Verification, positive control (owner): on the `5de66942` family (park fielded), `imgui show
+  ai_templates` BEFORE the event — paste the name of the 6/3/6 tie-shape template (tid 1487); if
+  it is not "Light Support Tank template <letter>", add that name to the sweep. AFTER `event
+  sov_armor.981 SOV`: no "Light Support Tank" entry and no obsolete lettered copy left.
+- Closed when: the harness reading above is pasted here, then one campaign save after 1942.6 with
+  zero SOV divisions containing `light_support_armor_battalion_line` (savegame probe).
+
+### east-front-rail — PARKED (2026-09-04)
+- Parked 2026-09-04 by the agent to admit the owner's `sov-light-support-retire` order under the
+  WIP limit — move it back to OPEN in one line if that is the wrong pick. State at parking:
+  TESTED (owner harness PASS 2026-09-04), campaign probe owed; nothing else changes.
 - Console harness run by the owner 2026-09-04 (GER, `WA_AI_construction_logging`, pass of
   1942.6.8 on the fixed build) — PASS. Digest of the pasted game.log: `RAILWAY LAND: STARTED
   route_start=6521 (E. Berlin)`; 9 states ACCEPTED (Nikolaev, Zhytomyr, Cherkasy, Bobruysk, Minsk,
