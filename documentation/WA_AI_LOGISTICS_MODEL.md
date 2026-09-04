@@ -465,10 +465,37 @@ each state pays its own bucket floor. The bias is upward, i.e. toward the perman
 without it, a pass where the port lever did not fire is indistinguishable from one where it was not
 considered.
 
+## 12. Ledger speed - what a civilian factory delivers per day (`pc-build-speed`, 2026-09-05)
+
+PC is a shadow construction system: it charges a project's cost against a speed of its own, then spawns
+the building. That speed must be the engine's, or every level and every cap above is sized for a pace
+the AI does not actually build at. `WA_AI_PC_get_build_speed` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`,
+THIS = state, ROOT = builder) models it as:
+
+```
+speed per factory per day = factory_output x (1 + country production_speed modifiers + state_production_speed_buildings_factor)
+                            x (1 + infra_per_level x state infrastructure)      # every PC type except infrastructure
+```
+
+| Term | Value | Source |
+| --- | --- | --- |
+| `factory_output` | 2.5 | `NDefines.NProduction.POWERED_FACTORY_SPEED` (`05_defines.lua`; `BASE_FACTORY_SPEED` is 0.0 here) - registered mirror `wa_ai_pc.speed.factory_output` |
+| country modifiers | e.g. +0.45 (Germany, June 1943 tooltip) | `production_speed_buildings_factor` + the per-type `production_speed_<building>_factor`, category **country** (install `modifiers_documentation.md`) - read on the BUILDER |
+| state modifier | usually 0 | `state_production_speed_buildings_factor`, category **state** - read on the target state |
+| infrastructure | ×1.8 at level 8 | `INFRA_MAX_CONSTRUCTION_COST_EFFECT` = 1.0 (install `00_defines.lua`) over 10 levels = `wa_ai_pc.speed.infra_per_level` 0.1, on every building flagged `infrastructure_construction_effect = yes` in `common/buildings/00_buildings.txt` (every PC type except infrastructure) |
+
+**MEASURED** (owner tooltip, a German railway project, June 1943): 20 factories → 130.5/day = 2.5 × 20 ×
+1.45 × 1.8. **ASSUMED**: the building flag is the engine's switch for the infrastructure line on the
+non-rail types (only the rail tooltip was read). Consequence for sizing: the corridor cadence table
+(`WA_AI_RAILWAY_SYSTEM.md`) and the trunk arithmetic of `WA_AI_RAILWAY_SPINE_SPEC.md` §6 are stated at
+this speed; an economy-fatigue penalty (`production_speed_buildings_factor -0.5` at its worst,
+`00_static_modifiers.txt`) slows the ledger by the same rule.
+
 ## Changelog
 
 | Date | Change |
 | --- | --- |
+| 2026-09-05 | §12 added - the ledger speed model shipped as `pc-build-speed`: country modifiers read on the builder, state modifier on the state, infrastructure multiplier on every flagged type (was factories only, and the modifiers read 0 in state scope). |
 | 2026-08-18 | Three citations corrected. `SUPPLY_FROM_DAMAGED_INFRA` was quoted as 0.01 from a WA line that writes it under the wrong category; the live value is vanilla's **0.15** (`NSupply`). `COMBAT_SUPPLY_LACK_IMPACT` does not exist in 1.19.2 - replaced by the four `COMBAT_SUPPLY_LACK_{ATTACKER,DEFENDER}_{ATTACK,DEFEND}` keys WA does override. `SUPPLY_PORT_LEVEL_THROUGHPUT` lives in `NBuildings`, and WA's dead `NCountry` write is gone; the 5/level ruling is unaffected. |
 | 2026-08-17 | Created while designing corridor dimensioning. Rulings recorded: port flow is 5/level (not the `SUPPLY_PORT_LEVEL_THROUGHPUT = 3` define); hubs have no level; range and throughput are separate failure modes with separate levers; hub supply is additive. |
 | 2026-08-18 | §11 SHIPPED as Fix 107. §11.11 added with the three deviations (no §11.3, break-even 20 not 12, presence index not a division count). Measured trigger: campaign `9d83084c`, every corridor hop at level 2 on all 121 saves. |

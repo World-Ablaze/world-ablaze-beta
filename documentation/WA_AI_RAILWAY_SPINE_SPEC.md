@@ -137,9 +137,19 @@ builder):
 
 | Defect | Fix |
 | --- | --- |
-| `modifier@production_speed_buildings_factor` and the per-type `modifier@production_speed_<type>_factor` are read in STATE scope; the modifiers are category **country** (install `modifiers_documentation.md`) → 0 for every type | read them on the builder: `ROOT.modifier@…` |
+| `modifier@production_speed_buildings_factor` and the per-type `modifier@production_speed_<type>_factor` are read in STATE scope; the modifiers are category **country** (install `modifiers_documentation.md`) → 0 for every type | read them on the builder: inside `ROOT = { … modifier@… }` (shipped form; the scope-prefix read `ROOT.modifier@…` is the same fact) |
 | infrastructure × (1 + 0.1 × level) applied to types 5-12 and 15-16 only | apply to type 13 (rail) — MEASURED on the tooltip; other province/state types (2 air base, 4 radar, 14 naval base, 17 supply node) only after their own tooltip is read |
 | base 2.5/factory/day is a literal | keep; register in `tools/constants_registry.json` if it mirrors a define (`BASE_FACTORY_SPEED` family) |
+
+Shipped 2026-09-05 (`pc-build-speed`, see `WORK.md`): the country family is read inside `ROOT = { }`,
+the STATE-category member `state_production_speed_buildings_factor` is read on the state, and the
+infrastructure multiplier is applied to **every PC type except infrastructure (type 1)** — the mod's
+`common/buildings/00_buildings.txt` flags every other PC building `infrastructure_construction_effect =
+yes` (MEASURED), the rail tooltip confirms one flagged type (MEASURED), and the flag being the engine's
+switch is **ASSUMED** — the harness's known-false control on a non-rail type is where that assumption
+is tested. 2.5 is `constant:wa_ai_pc.speed.factory_output`, registered against
+`NDefines.NProduction.POWERED_FACTORY_SPEED`; 0.1 is `wa_ai_pc.speed.infra_per_level` (DERIVED from
+`INFRA_MAX_CONSTRUCTION_COST_EFFECT` = 1.0 over 10 levels, not registrable as an equality).
 
 **MEASURED** before: 350 IC per weekly pulse at 20 civs (50/day). Expected after, Germany
 June 1943: 7 × 130.5 ≈ 913 per pulse. Consequence: every PC family accelerates by (1 +

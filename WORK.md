@@ -4080,8 +4080,9 @@ OPEN with a session of its own.
 
 ### pc-build-speed — PARKED (2026-09-05)
 - **Build spec: `documentation/WA_AI_RAILWAY_SPINE_SPEC.md` §8.**
-- Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — owner-admitted
-  2026-09-05 ("ajoute la correction des défauts du modèle à la spec"), no code yet.** Companion
+- Parked heading only for the WIP limit (4 OPEN). Real state: **SHIPPED-UNTESTED 2026-09-05** —
+  owner-admitted 2026-09-05 ("ajoute la correction des défauts du modèle à la spec"), code committed
+  the same day, console harness (Verification (1) below) NOT yet run by the owner. Companion
   of `rail-spine-tree`: it is the only lever that shortens the trunk without touching rail cost,
   civs per project or the PC fraction (all three owner-excluded), and it is a model error, not
   a knob.
@@ -4107,25 +4108,50 @@ OPEN with a session of its own.
   refineries); the engine applies it to the railway too (tooltip ×1.80 at infrastructure 8),
   and ASSUMED to every province/state building (to verify per type against the tooltip
   before widening beyond rail: air bases, radars, naval bases, supply hubs).
-- Change (spec): in `WA_AI_PC_get_build_speed`, read the country modifiers on the BUILDER
-  (`ROOT.modifier@…`, ROOT = builder in every call chain — weekly on_action and recursion), and
-  apply the infrastructure multiplier to type 13 (rail) — and to the other province/state
-  types only where the tooltip confirms it. Keep 2.5 as the base (it matches "Factory Output:
-  2.50"; if that number is a define, register it — `tools/constants_registry.json` — rather
-  than leave a literal). Log line under `WA_AI_construction_logging`: `PC SPEED: type=T
-  state=S mods=M infra=I speed=X` once per project per pulse is too chatty — once per
-  `PC_ASSIGN` for the first project only.
-- Impact analysis, owed before code: `WA_AI_PC_get_build_speed` is shared by EVERY PC type
-  (airbases, radars, refineries, ports, hubs, rails, corridors) and by the ETA arithmetic
-  in `WA_AI_PC_update_project_progress`; every PC project on every AI country gets ×(1 +
-  country mods) and, for rail, × infrastructure — faster in a healthy economy, SLOWER under
-  an economy-fatigue penalty (−25 % here). Affordability gates and `savegame.py` `pc` ETA
-  (`eta_d`) read the same speed — check the mirror. Reach: historical and ahistorical alike
-  (no tag, no date). Regression risk, STATED: PC allocation (`alloc.fraction` 0.40) was
-  calibrated with the slow ledger; the same civ share now buys 1.5-2.6× more buildings —
-  the corridor, air-base and refinery families all accelerate, which may reopen the
-  "over-building" readings the caps were set against (LOGISTICS_MODEL rule 3). The owner's
-  ruling is explicit: speed honesty is wanted; retune caps on measurement, not pre-emptively.
+- Change (shipped 2026-09-05, one commit, `# [pc-build-speed]` at every site):
+  `WA_AI_PC_get_build_speed` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`, THIS = state, ROOT =
+  builder) reads the country-category `production_speed_*` modifiers inside `ROOT = { }` (the
+  block form rather than the spec's `ROOT.modifier@…` prefix — same fact, temps are
+  chain-global), adds the one STATE-category member `state_production_speed_buildings_factor`
+  read on the state, and applies the infrastructure multiplier (1 + `infra_per_level` × level) to
+  EVERY PC type except infrastructure (type 1) — MEASURED: the mod's `00_buildings.txt` flags
+  every other PC building `infrastructure_construction_effect = yes`; MEASURED on the rail
+  tooltip for one flagged type; ASSUMED that the flag is the engine's switch for the others
+  (the harness's known-false control on a non-rail type tests it). Publishes `pc_speed_mods_`
+  / `pc_speed_infra_`. Constants: `wa_ai_pc.speed.factory_output = 2.5` registered against
+  `NDefines.NProduction.POWERED_FACTORY_SPEED` (05_defines.lua; BASE is 0.0 in this mod —
+  MEASURED), `wa_ai_pc.speed.infra_per_level = 0.1` (DERIVED: vanilla
+  `INFRA_MAX_CONSTRUCTION_COST_EFFECT` = 1.0 spread over 10 levels; a ratio, not registrable).
+  `WA_AI_PC_assign_factories` logs `PC SPEED: type=T state=S mods=M infra=I speed=X` for the
+  first funded project of each call (under `WA_AI_construction_logging`; the mid-week
+  completion recursion re-enters the allocator, so up to ~10 lines a week, log-only).
+- Impact analysis (AGENTS.md principle 3). Callers of `WA_AI_PC_get_build_speed`, MEASURED by
+  grep: the two sites in `WA_AI_PC_update_project_progress` (ETA pick and progress apply) and
+  the new log site — all reached from the per-country weekly block
+  (`WA_AI_misc_on_actions.txt`) and its own recursion, so ROOT = builder everywhere; no event
+  or WA_TEST caller. Shared by EVERY PC type (air bases, radars, refineries, ports, hubs,
+  rails, corridors, conversions). Every PC project on every AI country gets ×(1 + country +
+  state mods) × (1 + 0.1 × infrastructure) — faster in a healthy economy, SLOWER under an
+  economy-fatigue penalty (MEASURED `00_static_modifiers.txt`: `economy_fatigue_bad_modifier`
+  carries `production_speed_buildings_factor = -0.5`, so the slow side reaches −50 %, not only
+  the −25 % of the June 1943 tooltip). `savegame.py pc` `eta_d` reads the stored
+  `wa_ai_pc_build_time`, which the progress site now writes at the corrected speed — no
+  arithmetic mirror to change (MEASURED, the command has no speed literal). Temp hygiene: the
+  log site overwrites `_project_building_type` / `construction_speed_`; MEASURED no reader
+  follows in the fill, and both recursion callers re-set them before reading. Reach: historical
+  and ahistorical alike (no tag, no date). Regression risk, STATED: PC allocation
+  (`alloc.fraction` 0.40) was calibrated with the slow ledger; the same civ share now buys
+  1.5-2.6× more buildings (DERIVED from the tooltip ratio; up to ×2 more on high-infrastructure
+  German ground for the non-rail types now under the multiplier) — the corridor, air-base and
+  refinery families all accelerate, which may reopen the "over-building" readings the caps were
+  set against (LOGISTICS_MODEL rule 3). The owner's ruling is explicit: speed honesty is
+  wanted; retune caps on measurement, not pre-emptively.
+- Review repairs (lessons + architecture reviewers, same session, both CONCERNS, no CONFLICT):
+  the state-category modifier added (was ignored); the infrastructure type set keyed on the
+  building file's flag instead of a per-type tooltip deferral (the flag is the mod's own
+  statement, the deferral premise was false); 0.1 declared as a constant with its derivation;
+  the spec's `ROOT.modifier@…` wording aligned to the shipped block form; the fatigue figure
+  corrected to the static modifier's −0.5.
 - DERIVED effect on `rail-spine-tree`: trunk Berlin→Minsk 3→5 at 79 civs from ≈ 122 weeks to
   ≈ 50-70 weeks (Reich hops ×2.6, Soviet hops ×1.7-1.9); the prewar trunk fits comfortably
   between 1938 and 1941.6.

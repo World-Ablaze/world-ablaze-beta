@@ -60,70 +60,91 @@ WA_AI_PC_get_new_project_ID = {
 }
 
 ### Dynamic Queue System - Get construction speed for a state
-# THIS = state, _project_building_type >>> construction_speed_
+# THIS = state, ROOT = the BUILDER country (weekly on_action and the progress recursion both keep it),
+# _project_building_type >>> construction_speed_ (per factory per day), pc_speed_mods_ (the country
+# modifier sum, 0.45 = +45 %), pc_speed_infra_ (the state infrastructure multiplier, 1 where not applied)
 WA_AI_PC_get_build_speed = {
+	set_temp_variable = { pc_speed_mods_ = 0 }
+	set_temp_variable = { pc_speed_infra_ = 1 }
+
+	# [pc-build-speed] the production_speed_* modifiers are COUNTRY-category (install
+	# modifiers_documentation.md), so they are read on the builder, never on the state - in state
+	# scope every one of them reads 0 and the ledger runs at the bare factory output whatever the
+	# country's construction bonuses or an economy-fatigue penalty say. Tell it is gone: a
+	# `PC SPEED` line with mods=0 for a country whose construction tooltip shows a non-zero total.
+	ROOT = {
+		# Add building type specific modifiers
+		if = { limit = { check_variable = { _project_building_type = 1 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_infrastructure_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 2 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_air_base_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 3 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_anti_air_building_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 4 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_radar_station_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 5 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_arms_factory_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 6 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_industrial_complex_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 7 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_dockyard_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 8 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_synthetic_refinery_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 11 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_hydro_steel_refinery_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 12 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_hydro_aluminium_refinery_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 15 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_steel_refinery_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 16 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_aluminium_refinery_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 13 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_rail_way_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 14 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_naval_base_factor }
+		}
+		else_if = { limit = { check_variable = { _project_building_type = 17 } }
+			add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_supply_node_factor }
+		}
+
+		# Add general construction speed modifier
+		add_to_temp_variable = { pc_speed_mods_ = modifier@production_speed_buildings_factor }
+	}
+	# The one STATE-category member of the family (install modifiers_documentation.md), read where it
+	# lives: THIS = the target state. The mod writes it from dynamic modifiers and state ideas.
+	add_to_temp_variable = { pc_speed_mods_ = modifier@state_production_speed_buildings_factor }
+
+	# [pc-build-speed] state infrastructure multiplier (1 + infra_per_level x level) on every building
+	# type whose definition carries `infrastructure_construction_effect = yes` in
+	# common/buildings/00_buildings.txt - every PC type except infrastructure itself (type 1), which is
+	# the only unflagged one. Assumes: that flag is the engine's switch for the tooltip line "State
+	# infrastructure: x1.N" (read on a railway project, one flagged type). Gone when: a flagged type's
+	# tooltip shows no such line - then the type set here must follow the tooltips, not the file.
+	if = { limit = { NOT = { check_variable = { _project_building_type = 1 } } }
+		set_temp_variable = { pc_speed_infra_ = infrastructure_level }
+		multiply_temp_variable = { pc_speed_infra_ = constant:wa_ai_pc.speed.infra_per_level }
+		add_to_temp_variable = { pc_speed_infra_ = 1 }
+	}
+
+	# speed = output per factory x (1 + country modifiers) x infrastructure multiplier
 	set_temp_variable = { construction_speed_ = 1 }
-
-	# Add building type specific modifiers
-	if = { limit = { check_variable = { _project_building_type = 1 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_infrastructure_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 2 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_air_base_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 3 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_anti_air_building_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 4 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_radar_station_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 5 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_arms_factory_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 6 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_industrial_complex_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 7 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_dockyard_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 8 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_synthetic_refinery_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 11 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_hydro_steel_refinery_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 12 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_hydro_aluminium_refinery_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 15 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_steel_refinery_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 16 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_aluminium_refinery_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 13 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_rail_way_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 14 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_naval_base_factor }
-	}
-	else_if = { limit = { check_variable = { _project_building_type = 17 } }
-		add_to_temp_variable = { construction_speed_ = modifier@production_speed_supply_node_factor }
-	}
-
-	# Add general construction speed modifier
-	add_to_temp_variable = { construction_speed_ = modifier@production_speed_buildings_factor }
-
-	# Infrastructure effect for factory-type buildings (types 5-12, 15-16)
-	if = { limit = { OR = { AND = { check_variable = { _project_building_type > 4 } check_variable = { _project_building_type < 13 } } check_variable = { _project_building_type = 15 } check_variable = { _project_building_type = 16 } } }
-		set_temp_variable = { _infra_bonus = infrastructure_level }
-		multiply_temp_variable = { _infra_bonus = 0.1 }
-		add_to_temp_variable = { _infra_bonus = 1 }
-		multiply_temp_variable = { construction_speed_ = _infra_bonus }
-	}
-
-	# Base output per factory per day
-	multiply_temp_variable = { construction_speed_ = 2.5 }
+	add_to_temp_variable = { construction_speed_ = pc_speed_mods_ }
+	multiply_temp_variable = { construction_speed_ = pc_speed_infra_ }
+	# Base output per factory per day - the mod's POWERED_FACTORY_SPEED, registered (tools/constants_registry.json)
+	multiply_temp_variable = { construction_speed_ = constant:wa_ai_pc.speed.factory_output }
 }
 
 ### Dynamic Queue System - Get building cost
@@ -306,6 +327,7 @@ WA_AI_PC_assign_factories = {
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: queue=[?WA_AI_PC_queue^num] raw_avail=[?available_factories_]"
 	}
+	set_temp_variable = { _pc_speed_logged_ = 0 }
 
 	# Check for override factor (e.g., during high-priority railway construction)
 	if = { limit = { has_country_flag = WA_AI_PC_override_max_factories_factor }
@@ -720,6 +742,16 @@ WA_AI_PC_assign_factories = {
 				set_temp_variable = { _dbg_state = WA_AI_PC_target_state^_project_id }
 				set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_project_id }
 				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC_ASSIGN: proj=[?_project_id] assigned=[?assign_amount] state=[?_dbg_state] prog=[?_dbg_prog]"
+				# [pc-build-speed] the ledger speed of the FIRST funded project only - one line per pass,
+				# enough to read mods / infra against the construction tooltip of the same project.
+				if = { limit = { check_variable = { _pc_speed_logged_ = 0 } }
+					set_temp_variable = { _pc_speed_logged_ = 1 }
+					set_temp_variable = { _project_building_type = WA_AI_PC_building_type^_project_id }
+					var:WA_AI_PC_target_state^_project_id = {
+						WA_AI_PC_get_build_speed = yes
+					}
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC SPEED: type=[?_project_building_type] state=[?_dbg_state] mods=[?pc_speed_mods_] infra=[?pc_speed_infra_] speed=[?construction_speed_]"
+				}
 			}
 		}
 		else_if = {

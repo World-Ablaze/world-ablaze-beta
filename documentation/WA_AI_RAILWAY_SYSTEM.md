@@ -507,11 +507,19 @@ moves only **at completion**. So a second builder running its pass four weeks la
 `current_level` as unbuilt and queues the hop again.
 
 Segment cost is `constant:wa_ai_pc.cost.railway` = 800 and `_daily_progress = construction_speed_ ×
-assigned_factories` with base speed 1 (`PRIORITY_core.txt:69`), so a segment takes `800 / F` days:
+assigned_factories`, where `construction_speed_` (`WA_AI_PC_get_build_speed`, `[pc-build-speed]`) =
+`speed.factory_output` (2.5) × (1 + the builder's country `production_speed_*` modifiers + the state's
+`state_production_speed_buildings_factor`) × (1 + `speed.infra_per_level` (0.1) × state infrastructure),
+so a segment takes `800 / (F × speed)` days. At mods 0 and infrastructure 0 (speed 2.5):
 
 | F (assigned civs) | 20 (alloc clamp) | 10 | 5 | 1 |
 |---|---|---|---|---|
-| Build time | 5.7 wk | 11.4 wk | 22.9 wk | 114 wk |
+| Build time | 2.3 wk | 4.6 wk | 9.1 wk | 45.7 wk |
+
+On Germany's June-1943 ground (mods +0.45, infrastructure 8 → speed 6.5) the same segment at 20 civs
+takes 0.9 wk; on Soviet ground at infrastructure 2 (speed 4.35) 1.3 wk. Before `pc-build-speed` the
+ledger read the modifiers in state scope (0) and skipped the infrastructure term on rail, i.e. always the
+first table.
 
 Against a 4-week pass and a ~4.35-week monthly save, for N qualifying builders on one hop:
 
