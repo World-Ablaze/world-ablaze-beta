@@ -45,15 +45,15 @@
 # progression tracks are tier_0..tier_3 of artillery / armour / infantry / operations. None of vanilla's
 # doctrine tokens exist here, so none of vanilla's AIFC blocks could ever fire.
 #
-# The ladder below is that system rebuilt on WA's own doctrines. It gates on `has_doctrine` and
-# `has_completed_track`, never on country tags, so it covers every country automatically - including
-# minors, subjects and released nations, which all land on integrated_strategy.
+# WA used to rebuild that ladder on its own doctrines; since [aifc-flat-share] Layer 1 is one flat block
+# with no doctrine or track gate, so it covers every country automatically - including minors, subjects
+# and released nations.
 #
 #
 # LAYER MODEL
 # -----------
-#   Layer 1  DOCTRINE LADDER   force_concentration_factor      how much surplus MAY concentrate
-#   Layer 2  POSTURE           force_concentration_factor      should we concentrate AT ALL right now
+#   Layer 1  FLAT SHARE        force_concentration_factor      how much surplus MAY concentrate (50 % for all)
+#   Layer 2  POSTURE           force_concentration_factor      should we concentrate AT ALL right now (brake only)
 #   Layer 3  SECTOR ENGINE     (scripted, WA_AI_AIFC_core.txt) WHERE the schwerpunkt is
 #   Layer 4  CONSUMPTION       front_factor + target_weight    push there, and NOT elsewhere
 #
@@ -102,7 +102,7 @@
 #
 # VALUE BANDS - stay inside these
 # -------------------------------
-#   force_concentration_factor          -100 (hard off) .. +25   (percentage points on a 15 % base)
+#   force_concentration_factor          -100 (hard off) .. +35   (percentage points on a 15 % base; +35 is the flat share)
 #   force_concentration_front_factor    -100 .. +100             (plain percent; below -100 is meaningless)
 #   force_concentration_target_weight   -100 .. +100             (use -99 for catch-all suppression, see below)
 #
@@ -110,205 +110,32 @@
 # fallback so the AI still has a valid objective on the tick where a sector array is momentarily empty.
 #
 #
-# RESULTING CEILINGS (base 15 % + doctrine + full tracks)
-# -------------------------------------------------------
-#   auftragstaktik (GER)             51 %
-#   deep_battle (SOV)                47 %
-#   bushido (JAP)                    47 %
-#   rapid_decision (ITA)             47 %
-#   overwhelming_firepower (USA)     44 %
-#   integrated_strategy (all minors) 44 %
-#   british_professionalism (ENG)    42 %
-#   noria_tactics (FRA)              39 %   - no doctrine base by design; France holds, it does not lunge
-#   any country, 1936, no tracks     20 %
+# RESULTING SHARE (base 15 % + flat 35)
+# -------------------------------------
+#   every country, any doctrine, any year   50 %   (0 % under hold_the_line)
 #
 ############################################################################################################
 
 
 ############################################################################################################
-# LAYER 1 - DOCTRINE LADDER
+# LAYER 1 - FLAT SHARE
 ############################################################################################################
-# One base block per grand doctrine, then shared increments per completed progression track.
-# noria_tactics deliberately has no base block: France's doctrine is rotation and defence, so it starts
-# at the engine floor and only climbs through the armour/operations tracks.
-############################################################################################################
-
-WA_AI_MILITARY_AIFC_ladder_auftragstaktik = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = auftragstaktik
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 12
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_deep_battle = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = deep_battle
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 8
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_bushido = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = bushido
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 8
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_rapid_decision = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = rapid_decision
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 8
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_overwhelming_firepower = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = overwhelming_firepower
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 5
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_integrated_strategy = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = integrated_strategy
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 5
-	}
-}
-
-WA_AI_MILITARY_AIFC_ladder_british_professionalism = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_doctrine = british_professionalism
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 3
-	}
-}
-
-
-############################################################################################################
-# LAYER 1b - SHARED TRACK INCREMENTS
-############################################################################################################
-# All eight grand doctrines share the same tier_N tracks, so these apply to every country regardless of
-# which doctrine it took. Armour and operations are the two tracks that represent the ability to form and
-# exploit a breakthrough; infantry and artillery deliberately grant nothing here.
-# Note: tier_0_operations does not exist in WA's track set - operations starts at tier 1.
+# [aifc-flat-share] every country may concentrate the same share of a front's surplus: 15 % engine base
+# + 35 = 50 %. Doctrine and progression tracks grant nothing - the doctrine ladder that stood here
+# (auftragstaktik 51 % .. noria_tactics 39 %, 20 % with no tracks) was retired by owner ruling
+# (2026-09-04) so that concentration depends on posture and sector alone, not on research.
+# Assumes the engine sums force_concentration_factor blocks; posture (Layer 2) only brakes, never adds.
 ############################################################################################################
 
-WA_AI_MILITARY_AIFC_track_armour_1 = {
+WA_AI_MILITARY_AIFC_share_flat = {
 	enable = {
 		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_1_armour
 	}
 	abort_when_not_enabled = yes
 
 	ai_strategy = {
 		type = force_concentration_factor
-		value = 4
-	}
-}
-
-WA_AI_MILITARY_AIFC_track_armour_2 = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_2_armour
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 4
-	}
-}
-
-WA_AI_MILITARY_AIFC_track_armour_3 = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_3_armour
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 4
-	}
-}
-
-WA_AI_MILITARY_AIFC_track_operations_1 = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_1_operations
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 4
-	}
-}
-
-WA_AI_MILITARY_AIFC_track_operations_2 = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_2_operations
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 4
-	}
-}
-
-WA_AI_MILITARY_AIFC_track_operations_3 = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		has_completed_track = tier_3_operations
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 4
+		value = 35
 	}
 }
 
@@ -323,15 +150,15 @@ WA_AI_MILITARY_AIFC_track_operations_3 = {
 # rather than mass for a push. Expressed as a situation instead of a permanent global floor, it turns
 # itself back off when the situation improves.
 #
-# "Turns itself back off" is a CONTRACT, not a description - see [aifc]. Both predicates below must have
+# "Turns itself back off" is a CONTRACT, not a description - see [aifc]. The predicate below must have
 # a release condition a country can reach by getting stronger. A gate on surrender_progress does not:
 # it measures VP loss, so a country whose capitulation limit is raised by script can sit above any
 # threshold permanently while its army recovers completely. That is what happened to the USSR in
 # campaign 911bed3c - fc = -100 from ~Dec 1941 to the end of the game, through the entire year it was at
-# 388 divisions and 0.995 fielded equipment. Neither predicate reads surrender_progress any more:
-# hold_the_line defers to the posture system's paired verdict, press_the_advantage keys on that system's
-# published WA_AI_MILITARY_posture aggregate. Definitions and full rationale in
-# common/scripted_triggers/WA_AI_AIFC_triggers.txt - do not add gating conditions to the blocks below.
+# 388 divisions and 0.995 fielded equipment. hold_the_line defers to the posture system's paired verdict.
+# [aifc-flat-share] the former press_the_advantage bonus (+8 on WA_AI_AIFC_posture_offensive) was retired
+# with the doctrine ladder: the share is a flat 50 %, posture can only switch it off. Definitions and full
+# rationale in common/scripted_triggers/WA_AI_AIFC_triggers.txt - do not add gating conditions below.
 ############################################################################################################
 
 WA_AI_MILITARY_AIFC_posture_hold_the_line = {
@@ -341,23 +168,10 @@ WA_AI_MILITARY_AIFC_posture_hold_the_line = {
 	}
 	abort_when_not_enabled = yes
 
-	# -100 on a 15 %..51 % total drives the ratio to zero: no surplus is withheld from the line.
+	# -100 on the 50 % total drives the ratio to zero: no surplus is withheld from the line.
 	ai_strategy = {
 		type = force_concentration_factor
 		value = -100
-	}
-}
-
-WA_AI_MILITARY_AIFC_posture_press_the_advantage = {
-	enable = {
-		WA_AI_AIFC_enabled = yes
-		WA_AI_AIFC_posture_offensive = yes
-	}
-	abort_when_not_enabled = yes
-
-	ai_strategy = {
-		type = force_concentration_factor
-		value = 8
 	}
 }
 
