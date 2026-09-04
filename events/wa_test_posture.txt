@@ -1,0 +1,81 @@
+############################################################################################################
+#	POSTURE - console harness for [posture-v3] (the weekly offensive-posture verdict).
+#
+#	Effects: common/scripted_effects/WA_TEST_posture.txt
+#
+#	CONSOLE, one report:
+#	    tag SOV      (the report runs in the scope of the country under test)
+#	    event wa_post.1
+#	  Then read logs/game.log and search for "POSTURE TEST".
+#
+#	CONSOLE, weekly reporting (the exchange-rate instrumentation of the owner order, point 4):
+#	    tag SOV
+#	    event wa_post.2        - sets WA_TEST_posture_verbose (the shipped effect then writes its
+#	                             per-enemy diagnostics at every weekly pulse) and reports every 7 days
+#	    event wa_post.4        - stops it and clears the flag
+#	  The "ship" and "xr" lines are what the shipped calculus computed at its LAST weekly pulse, so the
+#	  first tick after wa_post.2 can still read shipped-fresh=0: wait one more tick.
+#
+#	WHAT GOOD LOOKS LIKE. SOV vs GER on a 1943-45 save: verdict 1 or 3, indep ours/enemy near 1.0,
+#	pairwise=1; a globally strong country whose contact count is under the enemy's: verdict 3
+#	(pairwise=1 but local ours < enemy). A collapsing
+#	enemy (surrender>0.45=1 AND army_broken=1) reads verdict 4. The independent coarse count and the
+#	shipped local counts must move together (different ladders, same direction) - a disagreement
+#	in DIRECTION is the defect this harness exists to catch. xr: enemy-delta/own-delta over one
+#	week, both in thousands; a valid=1 row with xr under 0.25 is the reading the level-2 veto
+#	acts on - collect several weeks before believing any single one.
+#
+#	Own file, own namespace on purpose (wa-testing SKILL, harness contract v1).
+############################################################################################################
+
+add_namespace = wa_post
+
+# One report, country under test = the event's country.
+country_event = {
+	id = wa_post.1
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_posture_report = yes
+	}
+}
+
+# Weekly reporting ON: set the verbose flag, report now, then every 7 days.
+country_event = {
+	id = wa_post.2
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_posture_clear_diag = yes
+		set_country_flag = WA_TEST_posture_verbose
+		set_country_flag = WA_TEST_posture_weekly
+		WA_TEST_posture_report = yes
+		country_event = { id = wa_post.3 days = 7 }
+	}
+}
+
+# Weekly tick: report and re-arm while the flag stands.
+country_event = {
+	id = wa_post.3
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { has_country_flag = WA_TEST_posture_weekly }
+			WA_TEST_posture_report = yes
+			country_event = { id = wa_post.3 days = 7 }
+		}
+	}
+}
+
+# Weekly reporting OFF.
+country_event = {
+	id = wa_post.4
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		clr_country_flag = WA_TEST_posture_verbose
+		clr_country_flag = WA_TEST_posture_weekly
+		WA_TEST_posture_clear_diag = yes
+	}
+}

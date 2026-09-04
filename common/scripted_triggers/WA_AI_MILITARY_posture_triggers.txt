@@ -8,9 +8,10 @@
 #	as the Allies - even with crushing local superiority in France.
 #
 #	Calculus and publication:  common/scripted_effects/WA_AI_MILITARY_posture_effects.txt
-#	Consumers:                 common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt (exec/grind vs GER, downfall push vs JAP)
-#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_AXIS_FRONT.txt (exec/grind vs SOV)
-#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_CHINA_FRONT_FRONT.txt (exec/grind vs JAP)
+#	Consumers:                 common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_posture.txt ([posture-v3]: one Default-layer
+#	                               execute / careful / pursuit family for EVERY AI country - the former ALLIES/AXIS/
+#	                               CHINA_FRONT exec+grind pairs; the Comintern consumed nothing before)
+#	                           common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_FRONT.txt (downfall push vs JAP)
 #	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_SOV_FRONT.txt (counterattack window vs GER)
 #	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_JAP_FRONT.txt (1944 Ichi-Go vs CHI)
 #	                           common/ai_strategy/WA_AI_MILITARY_COUNTRY_ITA_FRONT.txt (North-Africa offensive vs the
@@ -20,7 +21,7 @@
 #	Cadence:                   on_weekly in common/on_actions/WA_AI_misc_on_actions.txt
 #
 #	Published state (country scope):
-#		var  WA_AI_MILITARY_posture          0 = hold, 1 = execute plans, 2 = attrition grind
+#		var  WA_AI_MILITARY_posture          0 = hold, 1 = execute, 2 = grind, 3 = careful execute, 4 = pursuit
 #		var  WA_AI_MILITARY_posture_vs_<TAG> per-enemy posture level, one variable per major enemy
 #		flag WA_AI_AIFC_hold_the_line        set while the hard brake is on, so AIFC stops concentrating
 #		                                     (this system is the designated writer of that flag - see
@@ -179,6 +180,8 @@ WA_AI_MILITARY_army_still_operational = {
 #	not reach RCZ, which is the case it was written for. Absent variables read as 0, so a too-small
 #	enemy can never satisfy the level-2 test: exec and grind stay mutually exclusive, and the branch
 #	deliberately lives on the EXECUTE trigger only.
+#	[posture-v3] the three faction pairs are gone; the readers are the Default-layer
+#	WA_AI_MILITARY_should_posture_* gates (WA_AI_MILITARY_FRONT_gate_triggers.txt).
 ############################################################################################################
 
 WA_AI_MILITARY_posture_has_execute_target = {
@@ -194,9 +197,40 @@ WA_AI_MILITARY_posture_has_execute_target = {
 	}
 }
 
-WA_AI_MILITARY_posture_has_grind_target = {
+# [posture-v3] careful execution covers level 2 (grind) AND level 3 (strong on paper, locally
+# outnumbered) - one consumer, execution_type = careful + manual pokes. No "too small" branch:
+# an enemy with no published verdict reads 0, never 2 or 3.
+WA_AI_MILITARY_posture_has_careful_target = {
 	any_enemy_country = {
 		has_capitulated = no
-		ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 } }
+		ROOT = {
+			OR = {
+				check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 2 }
+				check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 3 }
+			}
+		}
+	}
+}
+
+# [posture-v3] pursuit: the calculus read the enemy as collapsing (level 4).
+WA_AI_MILITARY_posture_has_pursuit_target = {
+	any_enemy_country = {
+		has_capitulated = no
+		ROOT = { check_variable = { WA_AI_MILITARY_posture_vs_@PREV = 4 } }
+	}
+}
+
+
+# [posture-v3] Is the ENEMY's army broken? THIS = the enemy (inside every_enemy_country). The absolute
+# alive.* bars are calibrated on MAJORS and read "broken" by construction on a minor (a 10-state
+# country never passes min_states), so this trigger applies them to majors only; the effect adds the
+# size-relative terms (pool per fielded division, hollow line) for every enemy. Paired at the call
+# site with surrender_progress > brake.surrender_hard: pursuit needs the VP reading AND a capability term.
+WA_AI_MILITARY_posture_enemy_army_is_broken = {
+	is_major = yes
+	OR = {
+		NOT = { has_army_size = { size > constant:wa_ai_posture.alive.min_div } }
+		NOT = { num_of_controlled_states > constant:wa_ai_posture.alive.min_states }
+		has_manpower < constant:wa_ai_posture.manpower.min_own_mp
 	}
 }

@@ -246,6 +246,129 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
   fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
 
+### posture-v3 — SHIPPED-UNTESTED (2026-09-04)
+- Owner order 2026-09-04 ("vas-y pour les points 1 à 5" on the posture-formula review). Intended
+  behaviour: the weekly offensive-posture verdict counts the whole contact line without a cap,
+  weighs armoured AND mechanised divisions, never sends a globally strong army balanced into local
+  inferiority, can reach the grind against a major, instruments its exchange rate, pursues a
+  collapsing enemy, and is consumed by every AI country (the Comintern included).
+- Symptoms, MEASURED (campaign `5d2a391c`, scratchpad `5d2a391c_effectifs_et_buffers.md` §1.6 and
+  the 12-row limits table of the review): SOV `posture_vs_GER` = 1 on 12/17 quarters with NO
+  consumer (Comintern had no exec/grind pair); USA `posture_vs_GER` = 1 in continuous execution
+  with 59 vs 106 divisions in France at 1944.9 (pairwise pass skipped the local scan); the old
+  ladder capped at 24 points above 20 divisions per state; armour-only bonus x2.5 for three tanks,
+  x1.25 for twenty-four, mechanised invisible (46 % of the 1945 US army); `post_grind_n` SOV = 0
+  all war (GER pool 1.86 M never under the absolute 500 k bar); `post_exec_xr_lt25` at 76-91 % of
+  level-1 weeks against a ~1:1 cumulative ledger (artefact suspected, never instrumented).
+- Change (this commit), five points:
+  1. `WA_AI_MILITARY_posture_count_state_divs` (`WA_AI_MILITARY_posture_effects.txt`): 15-rung
+     all-types ladder with band midpoints up to >100 (no cap), +50 % mobile weight per armoured
+     and per mechanised division (two 6-rung ladders); `local.max_states` 12 → 40. The single-call
+     `num_divisions_in_states` form was REJECTED: its `states = {}` list is literal in every usage
+     (install and WA), the contact set is a runtime array - ASSUMED it cannot take one.
+  2. The local scan always runs (cost gate removed) and its pass 1 also walks the enemy's SUBJECTS'
+     controlled states at war with us (lessons: `every_controlled_state` excludes subject soil - the
+     eastern line runs through RBL/RUK states); new `local.inferior = 1.0` / `inferior_hold = 1.2`
+     (enter/hold pair); verdict inputs as flags (`_post_pairwise_ok`, `_post_local_ok`,
+     `_post_local_inferior`, `_post_bars_ok`); **level 3** = pairwise pass ∧ local inferiority vs a
+     MAJOR ∧ not local_ok; the four loops carry an explicit `break = _post_break_` reset at the head.
+  3. Relative dry test: `manpower.grind_enemy_mp_per_div = 3` (thousands per fielded division,
+     replaces `grind_enemy_mp = 500000`), `grind_mp_edge` 4 → 2 applied to faction pool PER
+     fielded division (`_post_faction_div` accumulated in the faction loop); `xr.veto` follows the
+     edge to 0.5 (recorded coupling 1/edge). **Bar vs the motivating series, DERIVED from
+     `5d2a391c`:** GER 1.86 M / 301 div = 6.2 k per division at 1945.8 (5.2 k at 1944.6) - ABOVE the
+     3 k bar, so the grind vs GER still rests on the exchange-rate route; the bar fires on an enemy
+     that is genuinely bleeding (pool < 3 k per division at maximum mobilisation), which GER was not
+     in that campaign (pool rising). Point 3 makes level 2 reachable, not automatic.
+  4. Verbose per-enemy diagnostics (`WA_TEST_post_*_<TAG>`, written only under the country flag
+     `WA_TEST_posture_verbose`) + harness `WA_TEST_posture.txt` / `events/wa_test_posture.txt`
+     (contract v1; `wa_post.1` report, `.2` weekly on, `.3` tick, `.4` off): own bars, one line
+     per major enemy with the shipped verdict/diagnostics AND an independent coarse contact-line
+     count (own state walk, own ladder, no shared helper).
+  5. **Level 4 pursuit** (`surrender_progress > brake.surrender_hard` ∧ a capability term that
+     discriminates on the enemy's own population: `WA_AI_MILITARY_posture_enemy_army_is_broken`
+     = the absolute alive.* bars for a MAJOR only, or for any enemy a pool under 3 k per fielded
+     division or a hollow line; ignores the air veto) and the
+     consumers moved to `common/ai_strategy/WA_AI_MILITARY_DEFAULT_FRONT_posture.txt` (execute =1
+     balanced 340 / careful =2|3 careful+manual 340 / pursuit =4 rush+manual 350), gates
+     `WA_AI_MILITARY_should_posture_execute/careful/pursuit` (`FRONT_gate_triggers.txt`),
+     `posture_has_grind_target` → `_has_careful_target` (2|3) + `_has_pursuit_target` (4). The
+     six faction blocks `ALLIES/AXIS/CHINA_FRONT_exec|grind_vs_*` are DELETED (their only readers).
+     The family yields (§6.2 ownership, `WA_AI_MILITARY_country_owns_front_control_scripted_opening`,
+     body mirrors the owning gates) to the Country-layer scripted openings of the three countries
+     that had NO faction pair before: JAP's China choreography (`chinese_war_1-4`), ITA's Ethiopian
+     war blocks, SOV's Winter-War / Poland invasion-time rushes - their openings keep their own
+     execution type exactly as before.
+     `WA_TLM_post_exec_n` now counts levels 1 AND 3 (both executions); level 4 has no metric yet.
+  Docs: `WA_AI_MILITARY_SYSTEM.md` §9 (consumers row, levels, a `[posture-v3]` paragraph),
+  `WA_AI_MILITARY_TYPES_REFERENCE.md` (priority ladder note).
+- Impact walk (principle 3): every AI country at war reaches the calculus weekly (unchanged
+  population); consumers now reach EVERY AI country instead of Allies/Axis/China members - the
+  Comintern, neutrals at war, and ahistorical factions gain execute/careful/pursuit blocks at
+  priority 340/350: the tier the deleted CHINA_FRONT pair held (340), so the surviving CHINA_FRONT
+  careful-exec blocks (330 vs JAP, 320 vs collaborators, not posture-gated) stay outranked exactly
+  as before; for Allies/Axis the tier rises from 300 to 340 with NOTHING between 100 and 340 in
+  those files (front_control ladder measured: 10000 / 500 / 330 / 320 / 100 / 0), so their
+  precedence is unchanged. Whether the engine overrides whole blocks or per field when two
+  front_control entries meet is ASSUMED (§6.1.1). Populations the family newly reaches, walked:
+  JAP (own faction, never had a pair) - yields to its China choreography through the ownership
+  trigger, so 1937-45 vs CHI is unchanged, and it gains the family vs USA/ENG/SOV land fronts
+  only outside those windows (never, in practice: `chinese_war_3` holds for the whole China war);
+  ITA 1936 vs ETH - yields to the Ethiopian blocks (the F-item war keeps its scripted rush);
+  SOV vs FIN 1939 and POL 1939 - yields to the invasion-time rushes; SPA/SPR (civil war) - the
+  posture calculus skips enemies under 5 states and both civil-war sides hold far more, so a
+  verdict exists and the family arms at 340 above `SPA_*`/`SPR_*` Country blocks (priority 0):
+  behavioural change ASSUMED small (both sides at level 1 execute balanced where the scripted
+  blocks already said execute) - probe (vi) below. CHINA_FRONT survivors (`careful_exec_vs_japan`
+  330, `_vs_collaborators` 320, not posture-gated) stay under the family at 340 as under the
+  deleted pair.
+  Historical: GER 1941-42 scripted Barbarossa openings (priority 0) were already outranked by the
+  AXIS pair at 300 - unchanged; SOV now executes vs GER whenever its verdict is ≥ 1 (level 1 on
+  12/17 quarters of `5d2a391c`) instead of only inside the 140-day `ai_barb_timer` window;
+  `SOV_counterattack` (Country, priority 0) is now redundant while armed - left in place, one
+  proposed cleanup line below. Ahistorical: a country in no faction at war with a major gets the
+  family for the first time. Regression risks, stated: (a) level 3 makes a globally strong but
+  locally outnumbered attacker careful - it can slow a scripted opening whose local count is
+  thin (mitigation: the openings run at their own execution type only when no posture block is
+  armed; a careful verdict is still `execute_order = yes`); (b) level 4 can rush into a rump the
+  bars misread as broken - both `surrender_hard` AND a capability term are required; (c) the
+  always-on scan costs up to 40 states x 27 rungs x (1 + coalition members) trigger evaluations
+  per enemy per week - ASSUMED negligible at weekly cadence, no measurement; (d) the mobile weight
+  and the taller ladder move the local ratio for every country - a front that used to read 1.0
+  under the cap can now read its true value in either direction.
+- Level 1 ↔ 3 boundary: enter under 1.0, hold until 1.2 (no weekly flip around a single bar).
+- Reviews 2026-09-04: lessons CONFLICT → resolved (subject soil in pass 1 + harness; level-4
+  capability term discriminating per population; `xr.veto` re-coupled at 0.5; explicit `break`;
+  docs; impact walk extended; harness STOP re-fire target, type-token probe, dry-bar table);
+  architecture CONFLICT → resolved (family re-tiered 340/350 above the China
+  careful blocks; dates/campaign ids/measurements stripped from the new code comments and the two
+  FIX history blocks retired into subject-named rules; §6.1 tier table, §9 and the TLM §5 rows
+  updated; `wa_post.2`/`.4` now retract the `WA_TEST_post_*` diagnostics so `shipped-fresh` cannot
+  print a stale week; trigger renamed `_enemy_army_is_broken`); lessons: see below.
+- Bound claim, (f) table for the consumer swap (weekly pulse vs engine `enable` re-evaluation,
+  cadence ASSUMED): t0 = commit loaded, first weekly pulse publishes levels on the new scale (a
+  country holding a stale 2 keeps it one week - level 2 is still a valid careful verdict);
+  t1 = the engine re-evaluates enables: the Default family arms on the same per-enemy variables
+  the faction pairs read, so no country loses its execute for more than one pulse; t2 = steady.
+  No re-swap path exists (the faction blocks are deleted, not gated off).
+- Harness: `tag SOV` then `event wa_post.1`; `event wa_post.2` for the weekly exchange-rate
+  readings (point 4) - owner run owed on the `5d2a391c` 1945.4 fork (SOV, USA, GER).
+- Probes (campaign): (i) SOV holds a `front_control` execute vs GER outside the barb window
+  (`imgui show ai-strategy` on SOV: `WA_AI_MILITARY_DEFAULT_FRONT_posture_*` listed); (ii) USA
+  vs GER reads level 3, not 1, on a save where its France contact count is under the German one
+  (harness `indep` line); (iii) SOV ground recovery faster than the `5d2a391c` reading (8 SOV
+  states in 26 months from the 1943.6 peak) on a scored campaign; (iv) no level-4 verdict against
+  an enemy above `alive.min_div` divisions (harness `army_broken=0` ⇒ verdict ≠ 4); (v) eight
+  weekly `xr` rows on the fork before any level-1 exchange-rate veto is proposed; (vi) the Spanish
+  Civil War outcome and date within the F-item band on the next scored campaign; (vii) the harness
+  `own states reading mechanized` column > 0 for USA on a 1944+ save (the `type = mechanized`
+  assumption) - a 0 there retunes the mobile ladder to `armor` only.
+- Proposed, not admitted: delete `WA_AI_MILITARY_SOV_counterattack` / `_coordinate_offensive`
+  (dead: `coordinate_offensive` has no setter; the counterattack is outranked by the Default
+  family) - legacy-gate trace first; a `WA_TLM_post_pursuit_n` metric (TLM doc §7 process).
+- Closed when: harness output pasted (both the report and one weekly series), and probes
+  (i)-(iv) pass on one scored campaign.
+
 ### usa-pacific-hoard — SHIPPED-UNTESTED (2026-09-04)
 - Owner order 2026-09-04: "à aucun moment, tant que USA est en guerre en Europe et vs le Japon,
   l'armée US ne doit avoir plus de 50 % de son armée (quand au-dessus de 75 divisions) dans le
@@ -996,7 +1119,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### light-support-conversion — SHIPPED-UNTESTED (2026-09-02)
+### light-support-conversion — PARKED (2026-09-04)
+- Parked 2026-09-04 by the agent, not by an owner decision, to admit the owner's `posture-v3`
+  order under the WIP limit — move it back to OPEN in one line if that is the wrong pick. State at
+  parking: SHIPPED-UNTESTED since 2026-09-02 (Change 7 committed, WORK.md updated 2026-09-04 by
+  another session), owner console run owed; nothing else changes.
 - **Change 7 (owner order 2026-09-02 "vas-y, corrige : rends la fenêtre de conversion joignable
   sous 15006") — the temporary-corps path reaches the medium conversion window.** Diagnosis
   (six boxes, scratchpad `light_to_medium_diagnosis.md`), campaign `5de66942` (BHU observer,

@@ -1,0 +1,282 @@
+############################################################################################################
+#	WA_TEST - offensive posture ([posture-v3]), console-driven. harness-contract: v1 (wa-testing SKILL).
+#
+#	Fired by wa_post.1 (one report), wa_post.2 / .3 / .4 (weekly reporting on / tick / off) in
+#	events/wa_test_posture.txt. Read the recipe there, not here.
+#
+#	What it prints for the country under test: its own bars (fielded equipment, manpower, aggregate
+#	posture, hard brake, hold_the_line), then ONE LINE PER MAJOR ENEMY with (a) the shipped per-enemy
+#	verdict and the diagnostics the shipped effect wrote at its last weekly pulse (local counts,
+#	pairwise flag, the two casualty deltas, exchange rate, air, dry, collapsing) and (b) an
+#	INDEPENDENT coarse count of the contact line (own ladder, own state walk, shares no helper with
+#	the code under test). The diagnostics exist only while WA_TEST_posture_verbose is set (wa_post.2);
+#	on a first run they read 0 and `shipped-fresh=0` says so. Write-nothing-but-the-log except the
+#	harness flags.
+############################################################################################################
+
+# ROOT = country under test.
+WA_TEST_posture_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth].[GetDay] | POSTURE TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _pst_e1_ = 0 }
+	set_temp_variable = { _pst_e2_ = 0 }
+	set_temp_variable = { _pst_e3_ = 0 }
+	set_temp_variable = { _pst_e4_ = 0 }
+	set_temp_variable = { _pst_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _pst_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _pst_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _pst_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _pst_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _pst_e5_ = 1 } }
+	log = "  scope : always=[?_pst_e1_|.0]  I-am-ROOT=[?_pst_e2_|.0]  I-am-THIS=[?_pst_e3_|.0]  ROOT-scope-usable=[?_pst_e4_|.0]  control-false=[?_pst_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from events/wa_test_scope_isolation.txt (wa_iso.3, its one call repointed to WA_TEST_posture_report) before editing a line of this effect.)"
+
+	### Own bars (shipped triggers beside the raw facts)
+	set_temp_variable = { _pst_upd_ = 0 }
+	set_temp_variable = { _pst_brk_ = 0 }
+	set_temp_variable = { _pst_op_ = 0 }
+	set_temp_variable = { _pst_htl_ = 0 }
+	set_temp_variable = { _pst_verb_ = 0 }
+	if = { limit = { WA_AI_MILITARY_should_update_posture = yes } set_temp_variable = { _pst_upd_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_posture_hard_brake = yes } set_temp_variable = { _pst_brk_ = 1 } }
+	if = { limit = { WA_AI_MILITARY_army_still_operational = yes } set_temp_variable = { _pst_op_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_AIFC_hold_the_line } set_temp_variable = { _pst_htl_ = 1 } }
+	if = { limit = { has_country_flag = WA_TEST_posture_verbose } set_temp_variable = { _pst_verb_ = 1 } }
+	set_temp_variable = { _pst_mp_ = manpower_k }
+	set_temp_variable = { _pst_div_ = num_divisions }
+	log = "  own   : eq=[?WA_AI_fielded_eq_ratio|.3]  manpower_k=[?_pst_mp_|.0]  divisions=[?_pst_div_|.0]  posture=[?WA_AI_MILITARY_posture|.0]  should_update=[?_pst_upd_|.0]  hard_brake=[?_pst_brk_|.0]  still_operational=[?_pst_op_|.0]  hold_the_line=[?_pst_htl_|.0]  verbose-flag=[?_pst_verb_|.0]"
+	set_temp_variable = { _pst_break_ = 0 }
+	set_temp_variable = { break = 0 }
+	log = "  levels: 0 hold / 1 execute / 2 grind / 3 careful (locally outnumbered) / 4 pursuit.  shipped-* columns are what the weekly pulse wrote LAST (0 until wa_post.2 has been on for a week)."
+
+	### One line per major enemy (same population filter as the shipped effect, duplicated on purpose)
+	every_enemy_country = {
+		limit = {
+			exists = yes
+			has_capitulated = no
+			OR = {
+				is_major = yes
+				num_of_controlled_states > 4
+			}
+		}
+
+		# --- INDEPENDENT coarse count of the contact line (own walk, own ladder, no shared helper) ---
+		save_event_target_as = WA_TEST_posture_enemy
+		clear_temp_array = _pst_ef
+		clear_temp_array = _pst_of
+		every_controlled_state = {
+			limit = {
+				check_variable = { _pst_ef^num < 40 }
+				any_neighbor_state = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							AND = {
+								has_war_with = event_target:WA_TEST_posture_enemy
+								OR = {
+									is_in_faction_with = ROOT
+									is_subject_of = ROOT
+									ROOT = { is_subject_of = PREV }
+								}
+							}
+						}
+					}
+				}
+			}
+			set_temp_variable = { _pst_fp_ = global.WA_AI_MAP_state_province_ids@THIS^0 }
+			set_temp_variable = { _pst_sid_ = global.WA_AI_MAP_province_state_id^_pst_fp_ }
+			add_to_temp_array = { _pst_ef = _pst_sid_ }
+		}
+		every_subject_country = {
+			limit = { has_war_with = ROOT }
+			every_controlled_state = {
+				limit = {
+					check_variable = { _pst_ef^num < 40 }
+					any_neighbor_state = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								AND = {
+									has_war_with = event_target:WA_TEST_posture_enemy
+									OR = {
+										is_in_faction_with = ROOT
+										is_subject_of = ROOT
+										ROOT = { is_subject_of = PREV }
+									}
+								}
+							}
+						}
+					}
+				}
+				set_temp_variable = { _pst_fp_ = global.WA_AI_MAP_state_province_ids@THIS^0 }
+				set_temp_variable = { _pst_sid_ = global.WA_AI_MAP_province_state_id^_pst_fp_ }
+				if = {
+					limit = { NOT = { is_in_array = { _pst_ef = _pst_sid_ } } }
+					add_to_temp_array = { _pst_ef = _pst_sid_ }
+				}
+			}
+		}
+		for_each_loop = { array = _pst_ef value = _pst_e break = _pst_break_
+			var:_pst_e = {
+				every_neighbor_state = {
+					limit = {
+						CONTROLLER = {
+							OR = {
+								tag = ROOT
+								AND = {
+									has_war_with = event_target:WA_TEST_posture_enemy
+									OR = {
+										is_in_faction_with = ROOT
+										is_subject_of = ROOT
+										ROOT = { is_subject_of = PREV }
+									}
+								}
+							}
+						}
+					}
+					set_temp_variable = { _pst_fp_ = global.WA_AI_MAP_state_province_ids@THIS^0 }
+					set_temp_variable = { _pst_sid_ = global.WA_AI_MAP_province_state_id^_pst_fp_ }
+					if = {
+						limit = { NOT = { is_in_array = { _pst_of = _pst_sid_ } } }
+						add_to_temp_array = { _pst_of = _pst_sid_ }
+					}
+				}
+			}
+		}
+		set_temp_variable = { _pst_ie_ = 0 }
+		for_each_loop = { array = _pst_ef value = _pst_c break = _pst_break_
+			WA_TEST_posture_coarse_count = yes
+		}
+		set_temp_variable = { _pst_if_ = 0 }
+		set_temp_variable = { _pst_acc_ = 0 }
+		ROOT = {
+			for_each_loop = { array = _pst_of value = _pst_c break = _pst_break_
+				WA_TEST_posture_coarse_count_root = yes
+			}
+		}
+		every_country = {
+			limit = {
+				NOT = { tag = ROOT }
+				has_capitulated = no
+				has_war_with = event_target:WA_TEST_posture_enemy
+				OR = {
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+					ROOT = { is_subject_of = PREV }
+				}
+			}
+			for_each_loop = { array = _pst_of value = _pst_c break = _pst_break_
+				WA_TEST_posture_coarse_count_root = yes
+			}
+		}
+		set_temp_variable = { _pst_if_ = _pst_acc_ }
+		# type-token probe: contact states where the country under test reads its own armoured /
+		# mechanised divisions through `divisions_in_state type =` - a mechanised army reading 0
+		# everywhere means the token does not type divisions the way the ladder assumes.
+		set_temp_variable = { _pst_arm_st_ = 0 }
+		set_temp_variable = { _pst_mech_st_ = 0 }
+		ROOT = {
+			for_each_loop = { array = _pst_of value = _pst_c break = _pst_break_
+				WA_TEST_posture_type_probe = yes
+			}
+		}
+		set_temp_variable = { _pst_nef_ = _pst_ef^num }
+		set_temp_variable = { _pst_nof_ = _pst_of^num }
+		clear_temp_array = _pst_ef
+		clear_temp_array = _pst_of
+
+		# --- enemy-side facts (shipped trigger beside raw reads) ---
+		set_temp_variable = { _pst_broken_ = 0 }
+		set_temp_variable = { _pst_sur45_ = 0 }
+		set_temp_variable = { _pst_cons_ = 0 }
+		if = { limit = { WA_AI_MILITARY_posture_enemy_army_is_broken = yes } set_temp_variable = { _pst_broken_ = 1 } }
+		if = { limit = { surrender_progress > 0.45 } set_temp_variable = { _pst_sur45_ = 1 } }
+		if = { limit = { NOT = { conscription_ratio < 0.99 } } set_temp_variable = { _pst_cons_ = 1 } }
+		set_temp_variable = { _pst_edv_ = num_divisions }
+		set_temp_variable = { _pst_emp_ = manpower_k }
+
+		# --- shipped verdict and diagnostics, read on ROOT with the enemy as PREV ---
+		ROOT = {
+			set_temp_variable = { _pst_v_ = WA_AI_MILITARY_posture_vs_@PREV }
+			set_temp_variable = { _pst_lf_ = WA_TEST_post_lf_@PREV }
+			set_temp_variable = { _pst_le_ = WA_TEST_post_le_@PREV }
+			set_temp_variable = { _pst_pair_ = WA_TEST_post_pair_@PREV }
+			set_temp_variable = { _pst_od_ = WA_TEST_post_own_d_@PREV }
+			set_temp_variable = { _pst_ed_ = WA_TEST_post_en_d_@PREV }
+			set_temp_variable = { _pst_xrv_ = WA_TEST_post_xrv_@PREV }
+			set_temp_variable = { _pst_xr_ = WA_TEST_post_xr_@PREV }
+			set_temp_variable = { _pst_xrs_ = WA_TEST_post_xrs_@PREV }
+			set_temp_variable = { _pst_air_ = WA_TEST_post_air_@PREV }
+			set_temp_variable = { _pst_dry_ = WA_TEST_post_dry_@PREV }
+			set_temp_variable = { _pst_mpd_ = WA_TEST_post_mpd_@PREV }
+			set_temp_variable = { _pst_col_ = WA_TEST_post_col_@PREV }
+			set_temp_variable = { _pst_eeq_ = WA_TEST_post_eeq_@PREV }
+			set_temp_variable = { _pst_fresh_ = 0 }
+			if = { limit = { has_variable = WA_TEST_post_le_@PREV } set_temp_variable = { _pst_fresh_ = 1 } }
+		}
+		log = "  enemy : [This.GetName]  verdict=[?_pst_v_|.0]  divisions=[?_pst_edv_|.0]  manpower_k=[?_pst_emp_|.0]  at-max-conscription=[?_pst_cons_|.0]  surrender>0.45=[?_pst_sur45_|.0]  army_broken=[?_pst_broken_|.0]"
+		log = "  indep : contact states enemy=[?_pst_nef_|.0] ours=[?_pst_nof_|.0]   coarse count enemy=[?_pst_ie_|.0] ours=[?_pst_if_|.0]   (ours/enemy > 1.5 opens level 1, < 1.0 vs a major is local inferiority)   own states reading armor=[?_pst_arm_st_|.0] mechanized=[?_pst_mech_st_|.0]"
+		log = "  ship  : shipped-fresh=[?_pst_fresh_|.0]  local ours=[?_pst_lf_|.0] enemy=[?_pst_le_|.0]  pairwise=[?_pst_pair_|.0]  air=[?_pst_air_|.0]  enemy_eq=[?_pst_eeq_|.2]  dry=[?_pst_dry_|.0] (mp/div=[?_pst_mpd_|.2]k)  collapsing=[?_pst_col_|.0]"
+		log = "  xr    : own-delta=[?_pst_od_|.2]k  enemy-delta=[?_pst_ed_|.2]k  valid=[?_pst_xrv_|.0]  xr=[?_pst_xr_|.2]  signal=[?_pst_xrs_|.0]   (signal +1 opens the grind, -1 vetoes it; xr = enemy/own weekly losses; -1 delta = no baseline yet)"
+	}
+	log = "=========================================================================================="
+}
+
+# ROOT = country under test. Retracts the per-enemy diagnostics so a later report cannot print a stale
+# week as fresh (`shipped-fresh` reads has_variable). Called by wa_post.2 (start) and wa_post.4 (stop).
+WA_TEST_posture_clear_diag = {
+	every_enemy_country = {
+		ROOT = {
+			clear_variable = WA_TEST_post_lf_@PREV
+			clear_variable = WA_TEST_post_le_@PREV
+			clear_variable = WA_TEST_post_pair_@PREV
+			clear_variable = WA_TEST_post_own_d_@PREV
+			clear_variable = WA_TEST_post_en_d_@PREV
+			clear_variable = WA_TEST_post_xrv_@PREV
+			clear_variable = WA_TEST_post_xr_@PREV
+			clear_variable = WA_TEST_post_xrs_@PREV
+			clear_variable = WA_TEST_post_air_@PREV
+			clear_variable = WA_TEST_post_dry_@PREV
+			clear_variable = WA_TEST_post_mpd_@PREV
+			clear_variable = WA_TEST_post_col_@PREV
+			clear_variable = WA_TEST_post_eeq_@PREV
+		}
+	}
+}
+
+# THIS = the country under test (ROOT), _pst_c = state id. Counts contact states where it reads at
+# least one division of the given type (the ladder's type-token assumption made visible).
+WA_TEST_posture_type_probe = {
+	var:_pst_c = {
+		if = { limit = { PREV = { divisions_in_state = { state = PREV type = armor size > 0 } } } add_to_temp_variable = { _pst_arm_st_ = 1 } }
+		if = { limit = { PREV = { divisions_in_state = { state = PREV type = mechanized size > 0 } } } add_to_temp_variable = { _pst_mech_st_ = 1 } }
+	}
+}
+
+# THIS = the enemy (every_enemy_country scope), _pst_c = state id. Coarse independent ladder into _pst_ie_.
+WA_TEST_posture_coarse_count = {
+	var:_pst_c = {
+		if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 60 } } } add_to_temp_variable = { _pst_ie_ = 70 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } } add_to_temp_variable = { _pst_ie_ = 40 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 16 } } } add_to_temp_variable = { _pst_ie_ = 22 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 8 } } }  add_to_temp_variable = { _pst_ie_ = 12 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  add_to_temp_variable = { _pst_ie_ = 5 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 0 } } }  add_to_temp_variable = { _pst_ie_ = 2 } }
+	}
+}
+
+# THIS = a friendly country, _pst_c = state id. Same coarse ladder into _pst_acc_.
+WA_TEST_posture_coarse_count_root = {
+	var:_pst_c = {
+		if      = { limit = { PREV = { divisions_in_state = { state = PREV size > 60 } } } add_to_temp_variable = { _pst_acc_ = 70 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 30 } } } add_to_temp_variable = { _pst_acc_ = 40 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 16 } } } add_to_temp_variable = { _pst_acc_ = 22 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 8 } } }  add_to_temp_variable = { _pst_acc_ = 12 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 3 } } }  add_to_temp_variable = { _pst_acc_ = 5 } }
+		else_if = { limit = { PREV = { divisions_in_state = { state = PREV size > 0 } } }  add_to_temp_variable = { _pst_acc_ = 2 } }
+	}
+}

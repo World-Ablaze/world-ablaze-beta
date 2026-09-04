@@ -185,8 +185,9 @@ types the engine gives no precedence field at all.
 | --- | --- | --- | --- |
 | `10000` | Default | 1 | `EXEC_no_stockpiles_stop` - emergency stop, must beat everything |
 | `500` | Default | 1 | `EXEC_low_equipment_hold` - equipment brake |
-| `320` - `340` | Faction | 12 | CHINA_FRONT exec/grind and careful-exec posture blocks |
-| `300` | Faction | 4 | ALLIES / AXIS exec/grind posture blocks (§9) |
+| `350` | Default | 1 | `DEFAULT_FRONT_posture_pursuit` - posture level 4 (§9, `[posture-v3]`) |
+| `340` | Default | 2 | `DEFAULT_FRONT_posture_execute` / `_careful` - posture levels 1 / 2-3 (§9); the tier the deleted CHINA_FRONT pair held, so it still outranks the row below |
+| `320` - `330` | Faction | 6 | CHINA_FRONT careful-exec blocks (vs JAP, vs collaborators) - not posture-gated |
 | `100` | Country (18), Faction (20), Region (2) | 40 | ordinary targeted control |
 | `0` (unset) | Country (133), Faction (26) | 159 | everything else |
 
@@ -336,12 +337,12 @@ regardless of local superiority (the 1944 France passivity bug).
 | Thresholds and switches (control panel) | `common/scripted_triggers/WA_AI_MILITARY_posture_triggers.txt` |
 | Weekly calculus and publication | `common/scripted_effects/WA_AI_MILITARY_posture_effects.txt` |
 | Cadence | `on_weekly` in `common/on_actions/WA_AI_misc_on_actions.txt` |
-| Consumers (Faction layer) | `WA_AI_MILITARY_ALLIES_exec_vs_germany` / `_grind_vs_germany` and `WA_AI_MILITARY_ALLIES_downfall_push_FRONT` (ALLIES), `WA_AI_MILITARY_AXIS_exec_vs_sov` / `_grind_vs_sov` (AXIS), `WA_AI_MILITARY_CHINA_FRONT_exec_vs_japan` / `_grind_vs_japan` (CHINA_FRONT). **Since Fix 54 the six exec/grind blocks no longer name an enemy tag** — their `enable` reads `WA_AI_MILITARY_posture_has_execute_target` / `_has_grind_target` and their `front_control` targets a `country_trigger` on the per-enemy verdict, so puppets and ahistorical enemies are covered without a tag list. `downfall_push_FRONT` still names JAP: it is a theatre-specific invasion push, not a generic front executor. Their names are now historical; stage 2 collapses the three pairs into one Default-layer pair. |
+| Consumers (Default layer, `[posture-v3]` 2026-09-04) | `WA_AI_MILITARY_DEFAULT_FRONT_posture_execute` (level 1, balanced), `_posture_careful` (levels 2 and 3, careful + manual pokes), `_posture_pursuit` (level 4, rush) in `WA_AI_MILITARY_DEFAULT_FRONT_posture.txt`, gated by `WA_AI_MILITARY_should_posture_*` (`WA_AI_MILITARY_FRONT_gate_triggers.txt`) on `WA_AI_MILITARY_posture_has_execute/careful/pursuit_target`. **One family for every AI country** - it replaced the three faction pairs (`ALLIES_exec/grind_vs_germany`, `AXIS_exec/grind_vs_sov`, `CHINA_FRONT_exec/grind_vs_japan`): the Comintern had no pair, so the Soviet verdict was computed for three years and consumed by nothing (campaign `5d2a391c`). The `too small for a verdict` branch (a non-major on <= 4 states) lives on the execute block, as before. `WA_AI_MILITARY_ALLIES_downfall_push_FRONT` (Faction) still names JAP: a theatre-specific invasion push, not a generic front executor. |
 | Consumers (Country layer) | `WA_AI_MILITARY_SOV_counterattack` (SOV vs GER), `WA_AI_MILITARY_JAP_chinese_war_4` + the posture-0 fallback in `_chinese_war_3` (JAP vs CHI), `WA_AI_MILITARY_ITA_north_africa_offensive_exec_FRONT` (ITA vs the East-Egypt controller, via `WA_AI_MILITARY_north_africa_offensive_viable`) |
 | Consumers (Default layer) | `WA_AI_MILITARY_EXEC_low_equipment_hold` |
 | Consumers (AIFC) | `WA_AI_AIFC_posture_offensive` reads the `WA_AI_MILITARY_posture` aggregate; `WA_AI_AIFC_posture_defensive` reads the `WA_AI_AIFC_hold_the_line` flag |
 
-Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute, 2 = attrition grind),
+Published state per AI country: `WA_AI_MILITARY_posture` (0 = hold, 1 = execute, 2 = attrition grind, 3 = careful execute, 4 = pursuit - `[posture-v3]`),
 `WA_AI_MILITARY_posture_vs_<TAG>` per major enemy, and the `WA_AI_AIFC_hold_the_line` flag while the hard
 brake is engaged (which also drops AIFC into linear defence). Level 1 keys on
 `fighting_army_strength_ratio` (the engine's quality-weighted estimate) OR on the front-local branch:
@@ -350,8 +351,8 @@ across it by 1.5x to START executing and by 1.1x to KEEP executing once under wa
 `af003548`: the single 1.5 bar retracted every western execute order the month Germany reinforced
 Normandy 26 → 95 divisions against 121 Allied — 1.27 — with the equipment ratio at 0.93+, and the
 unordered beachhead was rolled back 6 → 2 states; the enter/hold pair mirrors Fix 55's equipment
-gate) (banded `divisions_in_state` counting, armour double-weighted; skipped when the
-pairwise ratio already passes). The local branch is load-bearing - the pairwise ratio compares one
+gate) (banded `divisions_in_state` counting - since `[posture-v3]` uncapped, armoured and mechanised
+divisions +50 %, and always scanned). The local branch is load-bearing - the pairwise ratio compares one
 country against the enemy's whole fighting army, so without it no Allied member except the USA ever
 passed vs Germany and the coalition never attacked together (July 1944 diagnosis: ENG at level 1 vs
 every Axis minor, 0 vs GER/ITA/JAP). It is deliberately local rather than a global force sum: global
@@ -385,6 +386,30 @@ Two secondary inputs refine the verdicts (constants at the top of the effects fi
   stockpile. Clear superiority lowers the level-1 bar to the hollow bar; clear inferiority vetoes
   level 1. The grind is exempt from the air veto (infantry attrition works without the sky).
 
+**`[posture-v3]` (2026-09-04, owner order, campaign `5d2a391c`).** Five changes to the calculus and its consumers:
+(1) the front-local scan has no cap - each rung of `WA_AI_MILITARY_posture_count_state_divs` is a band midpoint up to
+100+ divisions per state (it used to read 24 for anything above 20, which compressed every dense front to 1:1 and made the
+1.5 entry bar unreachable against 21+ per state), the scanned front is 40 enemy states instead of 12, and armoured AND
+mechanised divisions carry a fixed +50 % mobile-quality weight (the armour-only +1/+3/+6 read x2.5 for three tanks and
+x1.25 for twenty-four, and left the 46 %-mechanised 1945 US army counted as infantry); (2) the local scan ALWAYS runs, its enemy-side pass now also walks the states a SUBJECT of the enemy controls
+(the eastern line runs through puppet soil), and a pairwise pass against a MAJOR with the local count under
+`local.inferior` (1.0, hold `inferior_hold` 1.2) x the enemy's publishes **level 3 - careful execute** instead of 1
+(the USA executed balanced into 59 vs 106 in France 1944.9); (3) the dry-enemy test is RELATIVE -
+enemy pool per fielded division under `manpower.grind_enemy_mp_per_div` (3 k men) at maximum mobilisation, and the
+faction edge is per fielded division (`grind_mp_edge` 2) - because an absolute 500 k bar never fired against a major
+living on occupied-territory manpower (GER plateaued at 1.86 M with 301 divisions); (4) the exchange rate is instrumented:
+while a country carries `WA_TEST_posture_verbose` the effect writes its two weekly casualty deltas, the ratio, the local
+counts and the flags per enemy, and the console harness `events/wa_test_posture.txt` (`wa_post.2` weekly / `wa_post.4`
+off) prints them beside an independent coarse count - no level-1 veto on the exchange rate ships until those readings
+exist; (5) **level 4 - pursuit** (`execution_type = rush`) when the enemy is past `brake.surrender_hard` AND its army is
+broken (`WA_AI_MILITARY_posture_enemy_army_is_broken`: a MAJOR under `alive.min_div` divisions, or `alive.min_states`, or the
+manpower floor), or for any enemy a pool under `grind_enemy_mp_per_div` per fielded division or a hollow line, and the
+consumers moved to ONE Default-layer family (table above) that yields, through the §6.2 ownership trigger
+`WA_AI_MILITARY_country_owns_front_control_scripted_opening`, to Japan's China choreography, Italy's Ethiopian war and
+the Soviet Winter-War / Poland openings - the countries that had no faction pair before, so their openings keep
+their own execution type. `xr.veto` moved with the pool edge to 0.5 (= 1/`grind_mp_edge`). ASSUMED:
+a division's type for `divisions_in_state type = mechanized` is its template's majority battalion type.
+
 Not every `execute_order = yes` is posture-gated, by design. Scripted historical war openings
 (Barbarossa 1941-42, Japan's 1937-40 China pushes, the southern-expansion timetable), pushes against
 minor enemies (posture publishes no verdict for them), home-territory defence
@@ -396,8 +421,8 @@ calculus would either stall them at war start (no engaged armies yet, so
 Authoring rule: a new `execute_order = yes` block against a major enemy should gate on
 `check_variable = { WA_AI_MILITARY_posture_vs_<TAG> = <level> }` (plus `has_war_with` - per-enemy posture
 variables linger after a peace) rather than re-deriving strength conditions inline. Pair level 1 with
-`execution_type = balanced` and level 2 with `execution_type = careful` + `manual_attack = yes`, as the
-existing Faction-layer pairs do.
+`execution_type = balanced`, levels 2 and 3 with `execution_type = careful` + `manual_attack = yes`, and level 4 with
+`execution_type = rush` + `manual_attack = yes`, as the Default-layer family does (`WA_AI_MILITARY_DEFAULT_FRONT_posture.txt`).
 
 ---
 

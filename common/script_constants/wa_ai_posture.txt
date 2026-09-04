@@ -38,16 +38,17 @@ wa_ai_posture = {
 		              # was @WA_AI_POSTURE_LOCAL_RATIO_HOLD
 		grind_ratio = 1.2	# same comparison as an alternative floor for the grind
 		              # was @WA_AI_POSTURE_LOCAL_GRIND_RATIO
-		max_states  = 12	# cap on enemy front states scanned per enemy (cost bound)
+		max_states  = 40	# cap on enemy front states scanned per enemy (cost bound; [posture-v3] 12 -> 40 so a long front is the front, not a slice)
 		              # was @WA_AI_POSTURE_LOCAL_MAX_STATES
+		inferior    = 1.0	# [posture-v3] our-side count below this many times the enemy count is local INFERIORITY: a pairwise pass then executes carefully (level 3) - vs a MAJOR enemy only
+		inferior_hold = 1.2	# [posture-v3] ...and stays level 3 until our side is back above this many times theirs (enter/hold pair, same rule as ratio/ratio_hold)
 	}
 
 	# Manpower floors and pool comparisons. min_own_mp is read by the effect (never order offensives below)
 	# AND by the trigger file's weakened-army brake test - one number (was two @ names).
 	manpower = {
-		grind_enemy_mp = 500000	# enemy manpower pool below this counts as nearly dry
-		                 # was @WA_AI_POSTURE_GRIND_ENEMY_MP
-		grind_mp_edge  = 4	# our faction pool must be this many times the enemy pool
+		grind_enemy_mp_per_div = 3	# [posture-v3] enemy manpower pool per fielded division (thousands of men) below which the enemy counts as nearly dry (replaces an absolute 500 000 bar that never fired against a major on occupied-territory manpower)
+		grind_mp_edge  = 2	# [posture-v3] our faction pool PER FIELDED DIVISION must be this many times the enemy's (was 4x on absolute pools)
 		                 # was @WA_AI_POSTURE_GRIND_MP_EDGE
 		min_own_mp     = 150000	# never order offensives with our own pool below this; the brake's weakened-army floor
 		                 # was @WA_AI_POSTURE_MIN_OWN_MP, @WA_AI_POSTURE_BRAKE_MIN_MP
@@ -87,7 +88,7 @@ wa_ai_posture = {
 		             # was @WA_AI_POSTURE_XR_MIN_VOLUME
 		grind      = 2	# enemy weekly losses this many times ours unlocks the grind without a dry pool
 		             # was @WA_AI_POSTURE_XR_GRIND
-		veto       = 0.25	# enemy weekly losses below this fraction of ours vetoes the grind (1/grind_mp_edge)
+		veto       = 0.5	# enemy weekly losses below this fraction of ours vetoes the grind (= 1/grind_mp_edge: the break-even exchange the per-division pool edge can still pay for; moved with the edge, 4 -> 2)
 		             # was @WA_AI_POSTURE_XR_VETO
 		clamp      = 25	# ratios above this are stale-baseline noise (war just resumed), not signal
 		             # was @WA_AI_POSTURE_XR_CLAMP
