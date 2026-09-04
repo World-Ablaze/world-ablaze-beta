@@ -11762,6 +11762,141 @@ prospect_for_resources = {
 		}
 	}
 
+	develop_baku_oil_fields = { #229
+
+		icon = oil
+
+		allowed = {
+
+		}
+
+		available = {
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation4
+			}
+			else = {
+				has_tech = excavation4_comp
+			}
+			229 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			num_of_civilian_factories_available_for_projects > 5
+			229 = {
+				NOT = {
+					has_state_flag = {
+						flag = baku_oil_developed
+						value = 2
+					}
+				}
+			}
+		}
+
+		highlight_states = { highlight_state_targets = { state = 229 } }
+
+		visible = {
+			229 = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+					}
+				}
+			}
+			if = {
+				limit = {
+					has_dlc = "Arms Against Tyranny"
+				}
+				has_tech = excavation3
+			}
+			else = {
+				has_tech = excavation3_comp
+			}
+			229 = {
+				NOT = {
+					has_state_flag = {
+						flag = baku_oil_developed
+						value = 2
+					}
+				}
+			}
+		}
+
+		cost = 5
+		days_remove = baku_oil_duration
+		modifier = {
+			civilian_factory_use = 6
+		}
+
+		ai_will_do = {
+			base = 0
+
+			# Reactive: AI needs oil
+			modifier = {
+				add = 10
+				WA_AI_should_prospect_resource_oil = yes
+			}
+
+			# Cooperative: Allies need oil
+			modifier = {
+				add = 5
+				WA_AI_allies_need_oil = yes
+			}
+
+			# Proactive: Strategic exporter boost
+			modifier = {
+				add = 100
+				WA_AI_is_strategic_oil_exporter = yes
+			}
+
+		}
+
+		remove_effect = {
+			add_to_variable = { var = baku_oil_duration value = 30 }
+			229 = {
+				if = {
+					limit = {
+						NOT = {
+							has_state_flag = baku_oil_developed
+						}
+					}
+					set_state_flag = {
+						flag = baku_oil_developed
+						value = 1
+					}
+				}
+				else = {
+					modify_state_flag = {
+						flag = baku_oil_developed
+						value = 1
+					}
+				}
+			}
+			229 = {
+				add_resource = {
+					type = oil
+					amount = 26
+				}
+			}
+		}
+
+		complete_effect = {
+			if = {
+				limit = {
+					check_variable = { var = baku_oil_duration value = 30 compare = less_than }
+				}
+				set_variable = { var = baku_oil_duration value = 15 }
+			}
+		}
+	}
+
 	develop_kazan_oil_fields = { #249
 
 		icon = oil
@@ -11859,7 +11994,7 @@ prospect_for_resources = {
 		}
 
 		remove_effect = {
-			add_to_variable = { var = nejd_oil_duration value = 30 }
+			add_to_variable = { var = kazan_oil_duration value = 30 }
 			249 = {
 				if = {
 					limit = {
