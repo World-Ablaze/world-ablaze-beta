@@ -217,6 +217,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   loads and `error.log` carries no `ai_equipment` line, then one AI Germany in 1939 fields a
   Panzer III/IV variant (proves the design groups still match). Owner 2026-09-04: "boot OK" -
   the load half PASSES; the Panzer III/IV variant reading is owed from the next scored campaign.
+- Anomalies the convention surfaced (owner 2026-09-04: "on ne devrait pas avoir de v2 pour les
+  chars"), MEASURED against `common/units/equipment` + `common/technologies` (tech -> equipment
+  it enables) - fixed in the working tree: Panzer IV G targeted `tank_ger_medium_chassis_3_3`
+  (= Ausf. H) while its `enable` tech `ger_medium_tank_chassis_3_2` unlocks `_3_2`; Marder III
+  Ausf. M targeted `tank_ger_light_chassis_td_4` (= Ausf. H) while `ger_light_td_tank_4_1`
+  unlocks `_td_4_1`. Both designs were therefore unbuildable until the NEXT chassis tech, then
+  competed with it on the same chassis. Types corrected, keys re-derived by the tool; no `__vN`
+  design left on any tank file. Tool fix in the same pass: a second `apply` kept `__atk` etc.
+  (it had re-derived `__v2` from the already-converted key).
 - Closed when: (1) and (2) hold on the committed tree (DONE, commit below) and one scored campaign
   shows an AI GER Panzer III/IV variant.
 

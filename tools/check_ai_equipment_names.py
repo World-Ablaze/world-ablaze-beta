@@ -220,8 +220,12 @@ def target_design_names(g):
         ordinal = 2
         for i, d in enumerate(ds):
             qual = None
+            if "__" in d.name:  # already on the convention: keep its qualifier
+                q = d.name.split("__", 1)[1]
+                if q in QUALIFIERS or re.match(r"^v\d+$", q):
+                    qual = q
             for suf, q in OLD_SUFFIX_TO_QUALIFIER.items():
-                if d.name.endswith(suf):
+                if qual is None and d.name.endswith(suf):
                     qual = q
                     break
             if qual is None and i == 0:
@@ -318,7 +322,9 @@ def rewrite_file(mf, loc):
                 edits.append((d.kspan[0], d.kspan[1], d.new_name))
             if not d.comment and d.type in loc:
                 edits.append((d.body_span[0] + 1, d.body_span[0] + 1, f" # {loc[d.type]}"))
-        # marker ids inside this group's body
+        # marker ids inside this group's body (only when a key actually changes)
+        if g.new_name == g.name and all(d.new_name == d.name for d in g.designs):
+            continue
         body = mf.text[g.body_span[0]:g.body_span[1]]
         for m in MARKER_RE.finditer(body):
             mid = m.group(2)
