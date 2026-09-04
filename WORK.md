@@ -3969,6 +3969,108 @@ OPEN with a session of its own.
 - Closed when: (1) pasted here and passing, then (2) on one campaign; ratio step to 0.7/1.0 is a
   separate owner decision recorded here when taken.
 
+### rail-spine-tree — PARKED (2026-09-05)
+- Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — design agreed with the
+  owner 2026-09-05, no code yet.** Owner-admitted; supersedes the trunk/branch reading of
+  `rail-sizing-demand` and `rail-admission-churn` (both stay as shipped: sizing and
+  weakest-link admission are reused unchanged for the branches).
+- Intended behaviour: a land power at war with an enemy worth it builds ONE railway trunk from
+  its capital to a railhead placed at the centre of that front, then short branches from the
+  trunk to every frontline hub; the trunk is unique (no parallel north/south spines), it is
+  started before the war when the target is known, it outranks the theatre corridors, and the
+  hop raised next is always the one that unblocks the most hubs.
+- Symptom, MEASURED (campaign `916b90f6`, `rail.py` on 6 saves 1941.12-1944.6, 10 hubs): the
+  narrowest link of every Berlin→hub route is 3 on 60/60 cells; the German rail went to the
+  shared trunk west of the 1939 border (Ostmark/Poznan 3→4, Mazowieckie→Lublin 3→5), nothing
+  east of Wilno/Polesie. MEASURED (owner console logs 1943.5 / 1943.6 / 1943.7): the trunk
+  flips between two lines depending on which route is pathfound first in the pass — north
+  Poznan→Warsaw→Białystok→Grodno→Vilnius (May, June) vs south Ostmark→Lublin→Lwów→Polesie
+  (July, with Pskov detoured through Minsk→Vitebsk) — because the pathfinder's ×0.5 for
+  "designated network" provinces is a temp of the current pass only
+  (`WA_AI_pathfinding_effects.txt:726,769`; cost per hop = 1/(level+1)). MEASURED (`pc GER
+  1943.6`): 6 of 12 admitted rail projects were a dead-end stub Katowice→Southern Slovakia at
+  band 700 (partial-path factor), 4 never funded — the fallback of a search toward a far
+  south-eastern hub (Crimea/Odessa, RUK/ROM-held) that exhausted `_pf_max_its = 100`; the
+  partial-path fallback picks the closed node with the HIGHEST cumulative cost
+  (`pathfinding_effects.txt:543-552`, comment says "most progress" and is wrong), not the one
+  nearest the target. MEASURED (`barb_supply test.hoi4` 1943.5): 80 of 80 rail civs on the
+  North Africa corridor while the east had 0 `rail` projects — corridor and land-war share
+  band 1000.
+- Engine reading, owner ruling 2026-09-05: a hub's supply = the MINIMUM level along its rail
+  path (case 1). A single level-5 trunk plus branches suffices. ASSUMED (engine): shared
+  capacity on a trunk segment is NOT the binding model; if a trunk tooltip ever reads
+  used = capacity, add a second parallel trunk (the R2 rule below already allows it).
+- Owner rulings 2026-09-05: (a) railhead = centre of the front by summed distance, 20 %
+  hysteresis; (b) trunk only against an enemy worth it: ≥ 2 accepted frontline hubs AND
+  (`is_major` or ≥ 40 divisions) — Denmark gets no trunk; (c) one railhead by default, a second
+  only when connecting the far hubs to a new railhead costs less than connecting them to the
+  existing spine; routes are computed from the FRONT toward the nearest element of the trunk,
+  the trunk being the level-5 network connected to the capital (Paris–Berlin–Minsk at 5 is one
+  trunk for GER); trunk hops are raised by the number of hubs they unblock, not level by level
+  ("hub served" criterion, 2026-09-05).
+- Algorithm, per enemy, per land-war pass (8 weeks at war; also in PEACE toward the
+  CONFIG-declared target, e.g. `WA_AI_CONFIG_RAILWAY_GER_to_SOV_window`, so the trunk exists
+  on day 1 — lever 1, the only one that adds time instead of factories):
+  0. Gate: enemy passes (b); else the current per-route behaviour (routes from the capital,
+     floor target) — minors keep today's code path.
+  1. Trunk set T = provinces reachable from the capital over rail edges of level ≥
+     `spine.trunk_level` (5), walked on the WA cache `WA_AI_PC_railway_connection_level_*`
+     with the generated adjacency, bounded (`spine.max_walk` provinces). T empty → {capital}.
+  2. Railhead R1: candidates = states with a supply hub held by ROOT / subject / dependent ally,
+     NOT frontline; score = Σ over this enemy's accepted hubs of dist(hub, R) +
+     `spine.capital_weight` × dist(capital, R) − bonus if R ∈ T; keep the previous R1 (per-enemy
+     country variable) unless a candidate beats it by `spine.hysteresis` (0.2). In peace the hub
+     set = the border states of the CONFIG target.
+  3. Trunk route: R1 → nearest element of T (straight-line pick, then A*); target
+     `land_war.rail_level_cap_overland` (5); band `prio.rail_connect` (1100) — lever 2, the
+     trunk outranks the corridors at 1000. R1 ∈ T → no trunk route. S = T ∪ trunk route.
+  4. Second railhead (ruling c): group B = hubs closer to an alternative centre than to R1;
+     R2 = centre of B; kept iff dist(R2, S) + Σ_B dist(h, R2) < Σ_B dist(h, S); at most
+     `spine.max_second_railheads` (1). Its trunk route R2 → nearest element of S, same band.
+  5. Branches: every accepted hub → nearest element of S (∪ R2 route): straight-line pick,
+     then A* — 10-20 hops instead of 50-65, so `_pf_max_its = 100` no longer bites; target =
+     the hub's demand (`rail-sizing-demand`, unchanged).
+  6. Admission, one budget (`routes.queue_full`): (i) trunk hops by VALUE = number of
+     branches attached downstream of the hop whose effective minimum
+     min(trunk prefix min, branch min) equals this hop's level — i.e. the hop is what caps
+     them — descending, ties by level ascending then capital-first; (ii) then branch hops by
+     the existing level sweep (weakest links first); (iii) partial paths are NOT admitted for
+     the land family (lever 3; the fallback keeps its coastal-beachhead use, with its
+     frontier fixed to the closed node of LOWEST heuristic, nearest the target). Phase A
+     (below the floor) stays first for both families.
+  Worked example the criterion must reproduce: trunk Berlin→Minsk 30 hops at 3, branch
+  Warsaw→Pskov already at 5 attached at hop 10: value of hops 1-10 = every branch (all
+  prefixes share them) and Pskov's min is capped by them → raised to 5 before any hop 11-30
+  goes 3→4; Pskov reads 44 after 20 hops of work, not after 60.
+- Constants (new group `wa_ai_railway.spine`, all read in one file each): `trunk_level = 5`,
+  `hysteresis = 0.2`, `capital_weight = 0.25`, `min_hubs = 2`, `min_enemy_divisions = 40`,
+  `max_second_railheads = 1`, `max_walk = 400`. The divisions gate is the one number without
+  a measurement behind it — tune after the first campaign.
+- Files: `railway_strategies.txt` (route_start per hub = nearest S element; trunk route;
+  railhead selection effect `WA_AI_PC_railway_spine_select`, per-enemy railhead memory
+  `WA_AI_PC_spine_railhead@<enemy>`); `railway_core.txt` (phase 0 tags `_lseg_trunk_`, the
+  value computation and the trunk-first admission; partial routes skipped for the land
+  family); a bounded trunk-walk helper in `railway_helpers.txt`; pathfinder fallback frontier
+  fix in `WA_AI_pathfinding_effects.txt` (shared with the corridor's coastal use — impact
+  analysis owed there); constants file. Log lines: `RAILWAY SPINE: enemy=T T=n R1=p R2=p
+  trunk_hops=k`, `RAILWAY TRUNK: hop a->b level=L value=v`.
+- Explicitly NOT in scope, owner-excluded: rail cost, civs per project, PC fraction. The
+  trunk does not build faster than 79 civs × 5 IC/week allow (≈ 0.5 segment-level/week,
+  DERIVED from `PC_ASSIGN` 1943.5); splitting the trunk into sections changes only the
+  order, not the duration — hops are already one project each, and the shared prefix first is
+  what serves the most hubs soonest.
+- Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
+  line per enemy passing the gate, R1 in the centre of the front (Minsk/Gomel area for a
+  Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20
+  hops, the first `PC QUEUED` of the pass on trunk hops in value order, no band-700 stub; a
+  1938 GER save: trunk toward the CONFIG target queued in peace; known-false control: Denmark
+  (or any enemy failing the gate) logs no SPINE line and keeps direct routes. (2) campaign —
+  `rail.py 6521 <hub>` narrowest link rises above 3 on at least one route within 3 passes of
+  the front settling, and the two-spine signature (rail raised on both the Warsaw and the
+  Lublin lines in the same year) is absent; `pc GER --match rail-prewar` shows no 700-band
+  stubs; corridor projects no longer hold 100 % of rail civs while a land front is open.
+- Closed when: (1) pasted here and passing, then (2) on one campaign.
+
 ### sov-cutting-corners-module — PARKED (2026-08-30)
 - Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is
   DONE and **COMMITTED + PUSHED 2026-08-31** (owner order "garde tel quel, commit et push";
