@@ -41,13 +41,29 @@ from .parse_equipment import EquipmentDB
 from .stats import DesignStats, StatModel
 from .technology_graph import TechnologyGraph
 
-# `heavy_strike_bomber_3_1` -> `heavy_strike_bomber`. Trailing numeric suffixes
-# are generation/sub-variant indices; what is left is the design family.
-_FAMILY_SUFFIX_RE = re.compile(r"(?:_\d+)+$")
+# A design family is the airframe's archetype in common/units/equipment (small
+# fighter, fast bomber, medium bomber...): two lines of one role group that are
+# different products, e.g. JAP_light_bomber's Ki-48 (fast_bomber_airframe) next
+# to its Ki-21/Ki-49 (medium_bomber_airframe). Design keys carry no family
+# information - they are the airframe id (documentation/AI_EQUIPMENT_NAMING.md).
 
 
-def design_family(name: str) -> str:
-    return _FAMILY_SUFFIX_RE.sub("", name)
+def airframe_family(airframes, airframe: Optional[str]) -> Optional[str]:
+    """The airframe's archetype (small fighter, fast bomber, medium bomber...),
+    read up the `parent` chain when the leaf does not declare one."""
+    if not airframe:
+        return None
+    cur, seen = airframe, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        af = airframes.get(cur)
+        if af is None:
+            return cur
+        if af.archetype:
+            return af.archetype
+        cur = af.parent
+    return airframe
+
 
 REPORT_STATS = (
     "air_attack", "air_defence", "air_agility", "maximum_speed",
@@ -440,12 +456,14 @@ class Evaluator:
                 f"not a generation step: both designs use `{t.to_airframe}` - "
                 f"these are sibling loadouts, not a supersession")
             return t
-        if year_regression and design_family(old.name) != design_family(new.name):
+        old_family = airframe_family(self.db.airframes, old.airframe)
+        new_family = airframe_family(self.db.airframes, new.airframe)
+        if year_regression and old_family != new_family:
             t.verdict = PARALLEL_VARIANT
             t.flags.append("parallel_family")
             t.notes.append(
-                f"not a generation step: `{design_family(old.name)}` "
-                f"({t.from_year}) -> `{design_family(new.name)}` ({t.to_year}) "
+                f"not a generation step: `{old_family}` "
+                f"({t.from_year}) -> `{new_family}` ({t.to_year}) "
                 f"crosses two parallel families in one design group")
             return t
         if year_regression:

@@ -74,7 +74,7 @@ class ProductionEfficiencyTests(unittest.TestCase):
     def test_sherman_chain_preserves_efficiency(self):
         cfg = load_config()
         rows = evaluate_efficiency_domains(MOD_ROOT, cfg, {"tanks"}, {"USA"})
-        sherman_chain = [r for r in rows if r.group == "USA_medium_tanks"]
+        sherman_chain = [r for r in rows if r.group == "USA_medium_tank"]
         self.assertTrue(sherman_chain)
         self.assertTrue(all(r.retention >= 0.90 for r in sherman_chain))
         self.assertTrue(all(r.policy == "SWITCH_SAFE" for r in sherman_chain))
@@ -82,16 +82,16 @@ class ProductionEfficiencyTests(unittest.TestCase):
     def test_usa_medium_tank_branches_follow_the_technology_tree(self):
         cfg = load_config()
         rows = TankEvaluator(MOD_ROOT, cfg).evaluate({"USA"})
-        pairs = {(r.old, r.new) for r in rows if r.group == "USA_medium_tanks"}
+        pairs = {(r.old, r.new) for r in rows if r.group == "USA_medium_tank"}
         # M3 Lee branches to the Sherman family and the T20 family.  File
         # adjacency must never invent M4A3E8 -> T20.
-        self.assertIn(("medium_tank_2", "medium_tank_3"), pairs)
-        self.assertIn(("medium_tank_2", "medium_tank_6"), pairs)
-        self.assertIn(("medium_tank_6", "medium_tank_7"), pairs)
-        self.assertNotIn(("medium_tank_5", "medium_tank_6"), pairs)
-        self.assertNotIn(("medium_tank_5", "medium_tank_7"), pairs)
-        e8 = next(r for r in rows if r.group == "USA_medium_tanks"
-                  and r.old == "medium_tank_4" and r.new == "medium_tank_5")
+        self.assertIn(("tank_usa_medium_chassis_2", "tank_usa_medium_chassis_3"), pairs)
+        self.assertIn(("tank_usa_medium_chassis_2", "tank_usa_medium_chassis_5"), pairs)
+        self.assertIn(("tank_usa_medium_chassis_5", "tank_usa_medium_chassis_6"), pairs)
+        self.assertNotIn(("tank_usa_medium_chassis_4_2", "tank_usa_medium_chassis_5"), pairs)
+        self.assertNotIn(("tank_usa_medium_chassis_4_2", "tank_usa_medium_chassis_6"), pairs)
+        e8 = next(r for r in rows if r.group == "USA_medium_tank"
+                  and r.old == "tank_usa_medium_chassis_4" and r.new == "tank_usa_medium_chassis_4_2")
         self.assertEqual("SWITCH_CONDITIONAL", e8.verdict)
         self.assertGreater(e8.raw_gain, 0.0)
         self.assertAlmostEqual(e8.raw_gain, e8.adjusted_gain)

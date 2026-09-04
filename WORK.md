@@ -172,7 +172,58 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### ger-barb-doctrine-catchup — SHIPPED-UNTESTED (2026-09-04)
+### ai-equipment-naming — TESTED (2026-09-04)
+- Owner order 2026-09-04: "on a un soucis d'hygiène de code : les entrées ai_equipment comme
+  medium_tank_6 n'ont pas de convention claire de nommage (noms dupliqués entre nations, le nom
+  n'est pas clair, les outils python référencent ces id) - harmonisation + convention propre".
+- Intended behaviour: every `common/ai_equipment/` key documents itself. Group key =
+  `<OWNER>_<role_slug>[_<qualifier>]`; design key = the exact `target_variant.type` it targets
+  (`__<qualifier>` only for a second design on the same type); every design line carries its
+  `# <display name>`. Spec + rationale + rejected alternatives: `documentation/AI_EQUIPMENT_NAMING.md`.
+- Symptom (MEASURED on the pre-migration tree, 29 files / 358 groups / 1736 designs): 316 design
+  keys whose number is not the chassis mark (`ENG medium_tank_6` = `tank_eng_medium_chassis_4`
+  Cavalier); 313/526 keys reused across files; 4 keys defined TWICE inside one group -
+  `SOV_medium_tank_destroyer.medium_tank_destroyer_2` = SU-85 (l.1689) and SU-100 (l.1774) plus
+  its `_cc` twin, `SWE_modern_tanks.modern_tank_1` = IKV Leo and Lansen C, `SWE_heavy_tanks.
+  heavy_tank_1` = EMIL I and Kranvagn (evaluator `by_name` dict kept the last one silently; engine
+  behaviour on the duplicate ASSUMED = one shadowed); 25 groups without the owner-tag prefix;
+  104 group slugs contradicting their role; 724 designs without a display-name comment.
+- Safety of the rename (MEASURED): no reference to any group/design key outside
+  `common/ai_equipment/` in `common/ events/ history/ localisation/`; save `1944.6_Jun.hoi4`
+  (campaign `5b7c30c6`, 5.0 M lines) holds 0 occurrences of any key - variants persist as
+  `(equipment definition, creator, modules)` only, so a running campaign is unaffected.
+- Shipped 2026-09-04 (working tree, uncommitted): `tools/check_ai_equipment_names.py`
+  (audit / plan / apply, span-based rewrite, `WA_EQUIPGEN` marker ids rewritten with the keys);
+  `apply` = 186 group renames + 1736 design renames + 724 comments, 3048 edits, 29 files,
+  insertions == deletions (2324), CRLF/BOM state preserved, post-apply audit 0 errors 0 warnings.
+  AGENTS.md validation row + production-system row; `tools/equipment_evaluator/decide.py`
+  `design_family` (trailing-number regex on the design NAME) replaced by `airframe_family` =
+  the airframe `archetype` from `common/units/equipment` (read up the `parent` chain); the two
+  evaluator test files re-pointed at the new keys.
+- Evaluator regression (MEASURED, `--domain all --all --generate-plan` before vs after, decisions
+  keyed by mapped (country, group, from-type, to-type)): 1663 -> 1665 decisions - the +2 are the
+  SWE heavy/modern chains the duplicate keys had hidden; 1 verdict changed,
+  `ITA_maritime_patrol P.108A -> Z.506` PARALLEL_VARIANT -> SWITCH (the old name families
+  `patrol_N` / `maritime_patrol_N` split what one `medium_bomber` archetype does not; two
+  chain pairs re-routed around it), 2 encodability changes on the same pair; everything else
+  identical. A first attempt with family = parent-lineage root moved 14 verdicts to
+  PARALLEL_VARIANT and was dropped for the archetype reading.
+- Tests: `python -m unittest equipment_evaluator.test_generation
+  equipment_evaluator.test_production_efficiency` = 39 tests, 1 error, identical before and
+  after: `CoverageAuditTests.setUpClass` fails in `config.py:251` (`'NoneType' object has no
+  attribute 'open'`) - pre-existing, not this subject.
+- Verification (closing criterion): (1) `python tools/check_ai_equipment_names.py` exit 0 -
+  DONE; (2) evaluator decision diff as above - DONE; (3) F9 boot test by the owner: the mod
+  loads and `error.log` carries no `ai_equipment` line, then one AI Germany in 1939 fields a
+  Panzer III/IV variant (proves the design groups still match). Owner 2026-09-04: "boot OK" -
+  the load half PASSES; the Panzer III/IV variant reading is owed from the next scored campaign.
+- Closed when: (1) and (2) hold on the committed tree (DONE, commit below) and one scored campaign
+  shows an AI GER Panzer III/IV variant.
+
+### ger-barb-doctrine-catchup — PARKED (2026-09-04)
+- Parked 2026-09-04 on the owner's order ("parke ces deux là") to bring OPEN back under the WIP
+  limit; move it back to OPEN in one line when the harness is played. State at parking:
+  SHIPPED-UNTESTED 2026-09-04 (commit `b049763e0`), owner console harness (GER, `ger_armor.1001`) not yet run, one Historical Normal/Hard campaign save owed afterwards; nothing else changes.
 - Owner order 2026-09-04: "add a cheat for GER AI : when 4 months before historical barb date, it
   should have completed all land doctrines of tier 1 : if not, give mastery to finish them, so
   that it can unlock the focuses to add mastery to tier 2 before the barb start".
@@ -263,7 +314,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the harness reading above is pasted here, then one Historical Normal/Hard campaign save
   after 1941.3 with all three GER tier-1 tracks at `rewards=2`.
 
-### sov-light-support-retire — SHIPPED-UNTESTED (2026-09-04)
+### sov-light-support-retire — PARKED (2026-09-04)
+- Parked 2026-09-04 on the owner's order ("parke ces deux là") to bring OPEN back under the WIP
+  limit; move it back to OPEN in one line when the harness is played. State at parking:
+  SHIPPED-UNTESTED 2026-09-04 (commit `7261d8b94`), owner console harness `wa_abg.1` not yet run, one campaign save after 1942.6 owed afterwards; nothing else changes.
 - Owner order 2026-09-04: "quand la mission greatest tank army est terminée ou qu'on est en 1942,
   un event pour l'IA soviétique pour supprimer les divisions de light support" — sweep every
   "Light Support Tank template A..Z", delete template + divisions. Supersedes the conversion
