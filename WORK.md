@@ -246,6 +246,97 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
   fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
 
+### usa-pacific-hoard — SHIPPED-UNTESTED (2026-09-04)
+- Owner order 2026-09-04: "à aucun moment, tant que USA est en guerre en Europe et vs le Japon,
+  l'armée US ne doit avoir plus de 50 % de son armée (quand au-dessus de 75 divisions) dans le
+  Pacifique". Intended behaviour: a two-ocean US army above 75 divisions keeps at most half of
+  itself in Pacific island garrisons.
+- Symptom, MEASURED (campaign `5d2a391c`, `plans.py USA --where` + type-5 order re-parse): 119 of
+  193 divisions (62 %) under 15 scripted `put_unit_buffers` island orders at 1945.5, 26 on fronts;
+  buffer share 44 % (1943.6) → 62 % (1945.5), instance ids unbroken since 1943.9.13. Cause:
+  `WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_pacific` (11 orders, Σ ratio 0.64, 0.54 non-yielding)
+  + `_buffer_philippines` 0.25, both armed while `WA_AI_MILITARY_pacific_high_risk` (= at war with
+  JAP) holds — nominal 0.89 of the whole army, no cap, no distance term. Evidence: scratchpad
+  `5d2a391c_effectifs_et_buffers.md` §2.
+- Change (this commit): `constant:wa_ai_theatre.usa_pacific.cap_min_div = 75`
+  (`common/script_constants/wa_ai_theatre.txt`, new category); one-way monthly latch
+  `WA_AI_MILITARY_update_pacific_share_cap_latch` (flag `WA_AI_pacific_share_cap_latched`,
+  `has_army_size > constant`, anglo-major gated, `WA_AI_misc_effects.txt`, called from the monthly
+  block of `WA_AI_misc_on_actions.txt`); observation `WA_AI_MILITARY_is_two_ocean_war_with_large_army`
+  (latched ∧ `pacific_high_risk` ∧ an uncapitulated enemy with a European capital); gates
+  `should_usa_buffer_pacific` / `_low_army` / `_philippines` take its `NOT`, twins
+  `should_usa_buffer_pacific_capped` / `_philippines_capped` take it; blocks
+  `WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_pacific_capped` (order_ids 9120-9130, Σ 0.37, same
+  states and pool flags) and `_buffer_philippines_capped` (9131, 0.12) — Pacific nominal sum 0.49.
+  Doc: `documentation/WA_AI_MILITARY_ECONOMY.md` E4d (exclusive-family counting rule for E4c);
+  registry SKILL row for `wa_ai_theatre.txt`.
+- Reviews 2026-09-04, both CONCERNS, all required items applied or answered here: lessons —
+  the Philippines twin keeps its own reachable-and-contested terms (applied), a latch instead of
+  a bare 75 edge (applied), the probe stated as REALISED share (below); architecture — E4c
+  worst-case count settled by E4d (the file's worst case stays full 0.54 + skeleton 0.50, a
+  pre-existing co-fire below 110 divisions, outside this subject), `has_army_size` shape
+  (applied), header sentences + registry row (applied).
+- Bound claim, (f) table at the two cadences (latch monthly; `enable` re-evaluation cadence
+  ASSUMED engine-side): t0 = first monthly tick with num_divisions > 75 → flag set; t1 = the next
+  strategy re-evaluation: the 3 full-family blocks retract (`abort_when_not_enabled`), the 2
+  capped blocks arm — whether the 15 existing garrison orders shrink to the new ratios or
+  persist until re-planned is the engine boundary (ASSUMED; the Hawaii pair 596/597 surviving the
+  `_low_army` disarm at 110 divisions says an order CAN outlive its block); t2 = steady: nominal
+  0.49 (0.31 non-yielding). No re-swap: the latch is one-way. Below 75, or on one ocean, nothing
+  changes.
+- Probes (campaign): (i) realised share — buffer / `num_divisions` ≤ 0.50 on every save where
+  USA is at war with a European-capital enemy AND `pacific_high_risk` AND `num_divisions` > 75
+  (`plans.py USA <save>`); (ii) churn — the Pacific buffer instance ids stable across the
+  consecutive saves after the crossing (`plans.py --oob` + type-5 re-parse); (iii) USA front
+  divisions at 1944.9-1945.5 above the `5d2a391c` reading (26-68 of 193-209).
+- Harness: `tag USA` then `event wa_uph.1` (`events/wa_test_usa_pacific_hoard.txt`, contract v1;
+  PASS shape in the event header) — owner run owed.
+- Proposed, not admitted (outside subject): `_buffer_pacific` (0.54) and `_buffer_pacific_low_army`
+  (0.50) still co-fire below 110 divisions in a Pacific-only war (nominal 1.04); the owner's idea
+  "buffers sized by distance to the front" is the generic form of this cap — to explore.
+- Closed when: harness output pasted (PASS shape) and probes (i)-(iii) pass on one scored campaign.
+
+### eng-reserve-partner — SHIPPED-UNTESTED (2026-09-04)
+- Owner order 2026-09-04, for ENG: "autorise le recrutement après que USA soit dans faction OU que
+  taille armée inférieure à 1 million après 1941". Intended behaviour: the materiel-limited
+  archetype's reserve bank deploys once a materiel partner is in its faction, or once its field
+  army is under 1 M men after 1941. Supersedes the 2026-08-27 v2 ruling "ENG reste fermé"
+  (`[reserve-quality]`); ENG division counts are non-comparable across this commit.
+- Symptom, MEASURED (`5d2a391c`, `var ENG "^reserves="`, 9 saves 1941.12-1945.8): `reserves = 40`
+  byte-identical for 45 months, no `WA_reserves_template_created` flag on ENG; ENG 75-81 divisions
+  with 261 k rifles idle at 1945.1 (scratchpad `5d2a391c_effectifs_et_buffers.md` §1.4).
+- Change (this commit): `WA_reserves_is_expeditionary_only` — the materiel-limited OR term is now
+  `AND { WA_AI_CONFIG_is_reserve_materiel_limited  NOT WA_reserves_is_materiel_limit_relieved }`;
+  new `WA_reserves_is_materiel_limit_relieved` = `any_allied_country { WA_AI_CONFIG_is_reserve_materiel_partner }`
+  OR (`WA_AI_CONFIG_after_1941` ∧ `has_army_manpower < @RESERVES_MATERIEL_LIMITED_SMALL_ARMY`,
+  1 000 000, single reader); new CONFIG archetype `WA_AI_CONFIG_is_reserve_materiel_partner` (USA).
+  Comments re-aligned (`_reserves.txt` veto note, CONFIG header + readers line, lessons entry).
+- Reading of "après 1941" = `WA_AI_CONFIG_after_1941` (`date > 1941.1.1`, the sanctioned date
+  vehicle) — owner to confirm the boundary (siblings exist at 1941.6 / 1941.11 / 1942.3).
+- Walk (historical): ENG at 1941.1.1 ≈ 39 divisions ≈ 0.65 M men → the size term opens the bank at
+  1941.1.1, eleven months before the USA joins (1941.12); `WA_reserves_can_deploy` passes (pool
+  > 150 499, a major enemy). Drain: `deploy_reserves_infantry` (base 4000, `days_remove = 1`,
+  10 divisions and −150 000 manpower per batch) → 4 batches within days; no refill in war
+  (`WA_reserves_can_recruit` needs `has_war = no`) → one 40-division wave per war, bounded.
+  Ahistorical: no partner ever joins → the size term is the only path; an army above 1 M keeps the
+  bank shut.
+- Regression risk, stated: the wave spawns at 0.3 equipment (`WA_reserves_spawn_divisions`); on
+  `1ac7e4ea` a 40-division ENG wave at 1945.2 died within a month (`eng-reserve-wave`). ENG's rifle
+  stock at 1941.1 is not measured (ASSUMED sufficient after 16 months of war; the v2 ruling's
+  reason was "no land stocks at war entry" in 1939.9). Killing probe (ii) below.
+- Reviews 2026-09-04, both CONCERNS, applied: lessons — supersession recorded in the lessons entry
+  and the CONFIG header, first-firing term named, wave probe; architecture — drifted comments
+  fixed, `after_1941` boundary raised to the owner (above).
+- Probes (campaign): (i) ENG `reserves` 40 → 0 within a month of 1941.1.1 (or of the USA joining,
+  whichever comes first); (ii) the spawned reserve divisions still in the OOB at +1 and +3 months
+  (`plans.py ENG --templates`, reserve template count) and ENG `wa_ai_fielded_eq_ratio` trajectory
+  — a fall under 0.85 the month after the wave = the eng-reserve-wave shape, then the relief needs
+  a stock term; (iii) ENG deployed count at 1942.6 above the `5d2a391c` reading (51).
+- No harness: not a `WA_AI_*` effect (< 40 lines, reserves has no `WA_TEST_*`); the console read is
+  `tag ENG` on a 1941+ fork and the decision list (`deploy_reserves_infantry` available).
+- Closed when: probes (i)-(iii) pass on one scored campaign, or the owner accepts a written no-fix
+  ruling on (ii).
+
 ### hq-role-capture — PARKED (2026-09-04)
 - Parked 2026-09-04 (owner decision): slot freed for `coal-prospect-loop`. Readings (1)-(4) below
   remain owed; nothing else changes. Reopens at the same state (SHIPPED-UNTESTED) when pasted.
@@ -1629,7 +1720,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   effect with no signature or scope change, below the harness-writing threshold. Verification is
   the campaign probe above.
 
-### modern-chassis-tier — SHIPPED-UNTESTED (2026-09-04)
+### modern-chassis-tier — PARKED (2026-09-04)
+- Parked 2026-09-04 by the agent, not by an owner decision, to admit the owner's two 2026-09-04
+  orders (`usa-pacific-hoard`, `eng-reserve-partner`) under the WIP limit — move it back to OPEN
+  in one line if that is the wrong pick. State at parking: SHIPPED-UNTESTED (code committed
+  2026-09-04, `a7ee778db` and its two predecessors), owner console run owed; nothing else changes.
 - **ADDENDUM 2026-09-04 (owner ruling, reverses the 2026-08-28 "every component one tier up"):
   the hull steps up, the variants stay on what the country stocks; modern variants are researched
   only while their chromium draw is absorbable.** Unparked for this (the WIP slot freed by
@@ -2727,7 +2822,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   boundary, AND per leg either a fix ships under this slug and its verification line passes in a
   campaign, or the owner accepts a written no-fix ruling.
 
-### levant-iraq-corridor — SHIPPED-UNTESTED (2026-09-02)
+### levant-iraq-corridor — PARKED (2026-09-04)
+- Parked 2026-09-04 by the agent, not by an owner decision, to admit the owner's two 2026-09-04
+  orders (`usa-pacific-hoard`, `eng-reserve-partner`) under the WIP limit — move it back to OPEN
+  in one line if that is the wrong pick. State at parking: SHIPPED-UNTESTED since 2026-09-02,
+  owner console run owed; nothing else changes.
 
 Owner order 2026-09-01: while the holder of Jordan (state 455) is at war with the Iraqi power, that
 holder must use PRIORITY CONSTRUCTION to place a supply depot on province 4440 — the Jordanian

@@ -8,6 +8,10 @@
 # [reserve-undersized-army] Field-army manpower a continental war needs; below it the bank
 # is spent. File-scoped on purpose - WA_reserves_should_deploy_undersized_army is its only reader.
 @RESERVES_UNDERSIZED_ARMY_MANPOWER = 3000000
+# [eng-reserve-partner] field-army size (men) under which a materiel-limited country's bank opens
+# after 1941 (owner order 2026-09-04: "taille armee inferieure a 1 million apres 1941"). Single
+# reader in this file: WA_reserves_is_materiel_limit_relieved.
+@RESERVES_MATERIEL_LIMITED_SMALL_ARMY = 1000000
 
 ############################################################################################################
 # MAIN ELIGIBILITY TRIGGERS
@@ -297,6 +301,21 @@ WA_reserves_should_deploy_undersized_army = {
 # EXPEDITIONARY HOLD
 ############################################################################################################
 
+# [eng-reserve-partner] COUNTRY scope; sole reader: WA_reserves_is_expeditionary_only. The
+# materiel-limited archetype's bank opens once a materiel partner sits in its faction, OR once its
+# field army is small after 1941 (the generic fallback when no partner ever joins). Assumes the
+# partner's land output covers the dump; how to tell it is gone: the deployed reserve wave dead
+# within a month with fielded equipment under 0.85 (the eng-reserve-wave shape, campaign 1ac7e4ea).
+WA_reserves_is_materiel_limit_relieved = {
+	OR = {
+		any_allied_country = { WA_AI_CONFIG_is_reserve_materiel_partner = yes }
+		AND = {
+			WA_AI_CONFIG_after_1941 = yes
+			has_army_manpower = { size < @RESERVES_MATERIEL_LIMITED_SMALL_ARMY }
+		}
+	}
+}
+
 # [reserve-quality] COUNTRY scope; single reader: deploy_reserves_infantry ai_will_do
 # (common/decisions/_reserves.txt) - change the behaviour here. The bank exists to bootstrap
 # a small army into a training snowball where industry can equip it; it stays shut when
@@ -311,8 +330,13 @@ WA_reserves_is_expeditionary_only = {
 		}
 	}
 	OR = {
-		# land-equipment output committed to air/sea - a dump would field empty rifles
-		WA_AI_CONFIG_is_reserve_materiel_limited = yes
+		# land-equipment output committed to air/sea - a dump would field empty rifles -
+		# unless the limit is relieved ([eng-reserve-partner]: partner in faction, or a
+		# small field army after 1941)
+		AND = {
+			WA_AI_CONFIG_is_reserve_materiel_limited = yes
+			NOT = { WA_reserves_is_materiel_limit_relieved = yes }
+		}
 		# capability tiers: below the tier's MIL count, an army past the listed size is
 		# already more than industry equips; 100+ MILs is never size-vetoed
 		AND = {

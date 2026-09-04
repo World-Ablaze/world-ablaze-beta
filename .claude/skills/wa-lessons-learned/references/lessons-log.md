@@ -2375,6 +2375,12 @@ process caveats (stale process, and the absence of a load-time hook).
   pure-capability alternative recorded here so it is not re-proposed. ASSUMED: whether
   `num_of_military_factories` counts occupied MILs (install doc says only "check amount of
   military factories"); benign direction - captured MILs do produce.
+- **Superseded in part 2026-09-04 (`[eng-reserve-partner]`, owner order):** the ENG carve-out now
+  has a RELIEF (`WA_reserves_is_materiel_limit_relieved`): the bank opens once a materiel partner
+  (`WA_AI_CONFIG_is_reserve_materiel_partner` = USA) is in the faction, or once the field army is
+  under 1 M men after 1941. MEASURED on `5d2a391c`: ENG's 40 banked divisions never deployed in 45
+  months. The rule above (industry proxy, never stockpile) stands; only the "closed for the war"
+  consequence for ENG is gone, and ENG division counts are non-comparable across that commit.
 - **Evidence:** WORK.md `[reserve-quality]` v2 calibration table (`24933fb9`: RAJ 22 MIL/50 div,
   CAN 15/14, ENG 134/31, USA 340/7; stocks RAJ 53k vs CAN 11.6k);
   `common/scripted_triggers/WA_reserves_triggers.txt` (tier OR),
