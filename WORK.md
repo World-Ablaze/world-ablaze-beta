@@ -326,11 +326,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   un event pour l'IA soviétique pour supprimer les divisions de light support" — sweep every
   "Light Support Tank template A..Z", delete template + divisions. Supersedes the conversion
   route of `light-support-conversion` for the AI Soviet park: the park is deleted, not converted.
-- Intended behaviour: AI SOV fields no light-support division after the mission resolves (either
-  way) or after 1942.1.1, and the light-support role never re-arms afterwards.
+- Intended behaviour (owner correction 2026-09-04, "la suppression doit avoir lieu en janvier
+  42"): AI SOV fields no light-support division after 1942.1.1, and the light-support role never
+  re-arms afterwards. The mission's end is NOT a trigger any more - campaign `5b7c30c6` showed it
+  resolving 1938.11.4 and the first cut deleting the 4 park corps that month, 3 years early. The
+  mission flag writes in `SOV_factions.txt` are removed (no reader left).
 - Shipped 2026-09-04: event `sov_armor.981`
-  (`events/WA_AI_SOV.txt`, trigger = pursues-park archetype + `is_ai` + resolved flag OR
-  `WA_AI_CONFIG_after_global_war_begins`); effect `WA_AI_TEMPLATES_retire_light_support_park`
+  (`events/WA_AI_SOV.txt`, trigger = pursues-park archetype + `is_ai` +
+  `WA_AI_CONFIG_after_global_war_begins`, i.e. date > 1942.1.1); effect `WA_AI_TEMPLATES_retire_light_support_park`
   (`WA_AI_TEMPLATES_effects.txt`: sets `WA_AI_TEMPLATES_light_support_park_retired`, clears the
   temporary latch, 26 guarded `delete_unit_template_and_units ... disband = yes`, re-runs the
   light-support calculator); the resolved flag `SOV_the_greatest_tank_army_resolved` written by
@@ -361,8 +364,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   of 86 `Strelkovaya Diviziya`. Both armour names are now in the sweep; the rifle division is
   left alone (its support battalion leaves when the infantry calculator upgrades it). **ASSUMED**: `has_template` and the delete effect run on the
   training queue too (doc says "a template and its units", no queue caveat).
-- Verification (owner console, harness contract): on a SOV save after the mission resolves
-  (or any 1942+ save), `event wa_abg.1 SOV` must read `retired=1  containing-LS=0  majority-LS=0
+- Verification (owner console, harness contract): on any SOV save from 1942.1 on, `event wa_abg.1 SOV` must read `retired=1  containing-LS=0  majority-LS=0
   light-role-open=0  light-support=0` on the lsmix/park lines, and `logs/game.log` carries
   `[sov-light-support-retire] Soviet Union retired the light-support park`. Control on a 1938
   save: `retired=0`, sweep not run. `retired=1` with `containing-LS=1` = a name the sweep
