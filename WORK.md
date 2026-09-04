@@ -920,6 +920,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   fault the light chain fixed with FINAL_MIS: a FINAL whose composition is not the medium role's
   CURRENT target is captured by whichever template is nearest, here the heavy one. Fix design owed
   to the owner (per-medium-value mirror of rung + FINAL, generated).
+- **Change 8 — built, then PARKED by owner order 2026-09-04.** Per-medium-value generated
+  rungs + FINALs for both chains (`tools/gen_ai_armor_conversion_finals.py`, ~9 000 generated
+  lines, reviews applied) live on branch `parked/armor-conversion-finals` (`e26ab824f`), not on
+  `ai-rework`. Owner ruling: a massive complexity increase, against the dynamic principles;
+  decision owed to the owners. **Side effect ACCEPTED meanwhile**: a country holding medium AND
+  heavy may see its converting light / light-support divisions land on a heavy template (the
+  9+6 FINAL's best existing match). The Change 7 window stays as shipped.
 - Verification — campaign probe, Change 7: a historical-difficulty SOV save ≥ 12 months after
   the mission resolution shows the light-support division count falling toward 0 and former park
   divisions on the 9 medium + 6 mot/mec shapes; `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` reads

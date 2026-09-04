@@ -2596,3 +2596,29 @@ process caveats (stale process, and the absence of a load-time hook).
   same target) and the harness window bit (`conv-window=0` with the park still fielded).
 - **Evidence:** WORK.md `light-support-conversion` Change 7; scratchpad
   `light_to_medium_diagnosis.md` (six boxes); `42206fcb6` (the branch), the fix commit.
+
+### The field-upgrade destination is the FINAL's best EXISTING match, not the FINAL
+
+- **Date:** 2026-09-04 (`light-support-conversion` Change 8, owner imgui + harness on `5de66942` 1943.3)
+- **Symptom:** the light-support conversion rung switched correctly onto its 9 medium + 6 mec
+  FINAL, and the Soviet light-support divisions turned into HEAVY divisions.
+- **Cause:** MEASURED (imgui `Best (all) = Best (role) = "Heavy Tank template A" 0.7353`) plus the
+  install doc ("make a copy of the best matching template"): when the arrow lands on a FINAL,
+  the engine copies the fielded template that best matches the FINAL and moves the converting
+  divisions onto that copy. The heavy target (9 heavy + 6 mec, RS 5+5, the same support set)
+  is nearer to a pure 9+6 medium FINAL than the medium role's own target (7 M + 3 SPG + 5 mec,
+  RS 3+3, SPG supports). Support companies and regimental supports weigh in the score; the
+  battalion type alone does not decide it.
+- **Rule:** a conversion FINAL is safe only when its composition IS the destination role's
+  CURRENT target, so the best existing match is that role's own template. The destination
+  target is a flag value and `replace_with` is static, so it takes one (rung, FINAL) pair per
+  destination value (built and parked: `tools/gen_ai_armor_conversion_finals.py` on branch
+  `parked/armor-conversion-finals` — the owners judged the ~9 000 generated lines a massive
+  complexity increase against the dynamic principles and ACCEPTED the side effect for now: a
+  country holding medium + heavy may see converting light divisions land on a heavy template).
+- **Detection:** `imgui show ai_templates` on the converting role: `Best (all)` for the FINAL
+  names a template of another class, or matches under ~0.9. In a save: divisions of the
+  converting role appearing on the OTHER class's battalions (`plans.py --templates`).
+- **Evidence:** WORK.md `light-support-conversion` (Change 7 defect + Change 8 decision); the heavy
+  target `WA_AI_TEMPLATES_armored_heavy.txt` value 7105 vs medium 6111; the per-value generator on
+  branch `parked/armor-conversion-finals` (`e26ab824f`), parked by owner order pending a decision.
