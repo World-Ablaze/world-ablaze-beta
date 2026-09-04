@@ -446,7 +446,15 @@ explicit branch per member or a terminal `else = { always = no }` - and adding t
 to an existing ladder is a BEHAVIOUR CHANGE for every country on an unlisted member (here: it
 would silently freeze USA's laws). Audit before "cleaning up".
 
-**Evidence:** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
+**Evidence (MEASURED on the engine, 2026-09-04):** owner console harness `WA_TEST_trigger_if`
+(`tag GER`, `event wa_test_trigif.1`, 1.19.2, 1944.6): `if = { limit = { always = no } always = no }`
+reads TRUE (A2=1), inside an OR with a false sibling reads TRUE (A5=1), inside an AND reads TRUE
+(A8=1); the same `if` with `else = { always = no }` reads FALSE (A6=0, A7=0). Second victim:
+`WA_AI_RAIL_CORRIDOR_state_is_friendly` (commit `70f33ae1d`) - corridors 4/5/7 spawned over
+neutral/enemy ground in campaign `5d2a391c`. **Rule for OR/AND members too, not only ladders:**
+any trigger-context `if` needs its terminal `else = { always = no }`.
+
+**Evidence (original):** R10 re-analysis 2026-08-10 (campaign 66d6b53c: USA extensive at 1943.8 via the
 vacuous path; `WA_AI_LAW_triggers.txt:15-22` ladder, `:1097` gate; the real ramp limiter was the
 2% law + `conscription_ratio >= 0.99` wait at `:1111`).
 

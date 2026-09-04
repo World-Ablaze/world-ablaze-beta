@@ -1,0 +1,29 @@
+############################################################################################################
+#	TRIGGER-IF - console harness: does a trigger-context `if` with a FAILED limit evaluate to TRUE?
+#
+#	Effects: common/scripted_effects/WA_TEST_trigger_if.txt
+#	Trigger under test (part B): WA_AI_RAIL_CORRIDOR_state_is_friendly (WA_AI_RAIL_CORRIDOR_triggers.txt)
+#
+#	CONSOLE, at the 1936 start (part B assumes GER holds state 64 and FRA holds state 16, no faction link):
+#	    tag GER
+#	    event wa_test_trigif.1
+#	  Then read logs/game.log and search for "TRIGGER-IF TEST". Read the scope line first (1 1 1 1 0 or
+#	  STOP), then part A: A2=1 confirms the claim (failed-limit if = TRUE), A2=0 refutes it. A5 is the
+#	  corridor OR shape, A6/A7 the proposed `else = { always = no }` fix. Part B fires the SHIPPED
+#	  predicate: B2=1 reproduces the corridor-7 bug on live code.
+#	  No side effects - temp variables only, nothing built, nothing flagged.
+#
+#	Own file, own namespace per the harness contract v1 (wa-testing SKILL) - never home a harness
+#	in events/wa_events_test.txt (its call site poisoned country-valued triggers, cause unknown).
+############################################################################################################
+
+add_namespace = wa_test_trigif
+
+country_event = {
+	id = wa_test_trigif.1
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_TRIGIF_report = yes
+	}
+}
