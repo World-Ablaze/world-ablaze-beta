@@ -3970,6 +3970,8 @@ OPEN with a session of its own.
   separate owner decision recorded here when taken.
 
 ### rail-spine-tree — PARKED (2026-09-05)
+- **Build spec: `documentation/WA_AI_RAILWAY_SPINE_SPEC.md`** (final, owner-ordered
+  2026-09-05 "écris la spec finale"; this entry keeps the state and the evidence).
 - Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — design agreed with the
   owner 2026-09-05, no code yet.** Owner-admitted; supersedes the trunk/branch reading of
   `rail-sizing-demand` and `rail-admission-churn` (both stay as shipped: sizing and
@@ -4077,6 +4079,7 @@ OPEN with a session of its own.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### pc-build-speed — PARKED (2026-09-05)
+- **Build spec: `documentation/WA_AI_RAILWAY_SPINE_SPEC.md` §8.**
 - Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — owner-admitted
   2026-09-05 ("ajoute la correction des défauts du modèle à la spec"), no code yet.** Companion
   of `rail-spine-tree`: it is the only lever that shortens the trunk without touching rail cost,
