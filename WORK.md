@@ -4061,7 +4061,9 @@ OPEN with a session of its own.
   trunk does not build faster than 79 civs × 5 IC/week allow (≈ 0.5 segment-level/week,
   DERIVED from `PC_ASSIGN` 1943.5); splitting the trunk into sections changes only the
   order, not the duration — hops are already one project each, and the shared prefix first is
-  what serves the most hubs soonest.
+  what serves the most hubs soonest. The one legitimate accelerator is the ledger's own speed
+  error — see `pc-build-speed` (companion subject, owner-admitted 2026-09-05): the engine
+  builds the same 20-civ project 2.6× faster than the ledger charges it.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
   line per enemy passing the gate, R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20
@@ -4072,6 +4074,66 @@ OPEN with a session of its own.
   the front settling, and the two-spine signature (rail raised on both the Warsaw and the
   Lublin lines in the same year) is absent; `pc GER --match rail-prewar` shows no 700-band
   stubs; corridor projects no longer hold 100 % of rail civs while a land front is open.
+- Closed when: (1) pasted here and passing, then (2) on one campaign.
+
+### pc-build-speed — PARKED (2026-09-05)
+- Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — owner-admitted
+  2026-09-05 ("ajoute la correction des défauts du modèle à la spec"), no code yet.** Companion
+  of `rail-spine-tree`: it is the only lever that shortens the trunk without touching rail cost,
+  civs per project or the PC fraction (all three owner-excluded), and it is a model error, not
+  a knob.
+- Intended behaviour: the priority-construction ledger charges a project at the same speed
+  the engine would build it — factory output × the builder's country construction modifiers ×
+  the state's infrastructure multiplier, per building type — so PC neither under- nor
+  over-paces the AI relative to what the player sees in the construction tooltip.
+- Symptom, MEASURED (owner screenshot, GER construction tooltip June 1943, a 3-province
+  railway project): cost 2 400 = 3 × 800; factory output 2.50; "Output from 20 factories:
+  50.00"; modifiers +5 +5 +5 +20 +10 −25 + 5×5 = **+45 %**; "State infrastructure: ×1.80";
+  construction speed **130.50/day** (= 50 × 1.45 × 1.80). MEASURED (`barb_supply test.hoi4`
+  vs `autosave.hoi4`, one weekly pulse apart, project 11 at 20 civs): remaining 495 → 145 =
+  350 per pulse = 7 × **50/day** — the ledger runs at 2.5 × 1.0 × 1.0. Ratio engine/ledger
+  **2.6** in Germany; DERIVED 1.7-1.9 on Soviet ground (infrastructure 2-3).
+- Cause, MEASURED (`WA_AI_CONSTRUCTION_PRIORITY_core.txt` `WA_AI_PC_get_build_speed`, THIS =
+  state, called as `var:WA_AI_PC_target_state^_project_id = { … }` from
+  `WA_AI_PC_update_project_progress`): (1) `modifier@production_speed_buildings_factor` and the
+  per-type `modifier@production_speed_<type>_factor` are read in STATE scope; the modifiers are
+  of category **country** (install `modifiers_documentation.md`, "Categories: country,
+  war_production"), so the read returns the state's value = 0 for every building type — the
+  +45 % (and the −25 % fatigue) never reach the ledger; (2) the infrastructure multiplier
+  `1 + 0.1 × infrastructure_level` is applied only to types 5-12 and 15-16 (factories,
+  refineries); the engine applies it to the railway too (tooltip ×1.80 at infrastructure 8),
+  and ASSUMED to every province/state building (to verify per type against the tooltip
+  before widening beyond rail: air bases, radars, naval bases, supply hubs).
+- Change (spec): in `WA_AI_PC_get_build_speed`, read the country modifiers on the BUILDER
+  (`ROOT.modifier@…`, ROOT = builder in every call chain — weekly on_action and recursion), and
+  apply the infrastructure multiplier to type 13 (rail) — and to the other province/state
+  types only where the tooltip confirms it. Keep 2.5 as the base (it matches "Factory Output:
+  2.50"; if that number is a define, register it — `tools/constants_registry.json` — rather
+  than leave a literal). Log line under `WA_AI_construction_logging`: `PC SPEED: type=T
+  state=S mods=M infra=I speed=X` once per project per pulse is too chatty — once per
+  `PC_ASSIGN` for the first project only.
+- Impact analysis, owed before code: `WA_AI_PC_get_build_speed` is shared by EVERY PC type
+  (airbases, radars, refineries, ports, hubs, rails, corridors) and by the ETA arithmetic
+  in `WA_AI_PC_update_project_progress`; every PC project on every AI country gets ×(1 +
+  country mods) and, for rail, × infrastructure — faster in a healthy economy, SLOWER under
+  an economy-fatigue penalty (−25 % here). Affordability gates and `savegame.py` `pc` ETA
+  (`eta_d`) read the same speed — check the mirror. Reach: historical and ahistorical alike
+  (no tag, no date). Regression risk, STATED: PC allocation (`alloc.fraction` 0.40) was
+  calibrated with the slow ledger; the same civ share now buys 1.5-2.6× more buildings —
+  the corridor, air-base and refinery families all accelerate, which may reopen the
+  "over-building" readings the caps were set against (LOGISTICS_MODEL rule 3). The owner's
+  ruling is explicit: speed honesty is wanted; retune caps on measurement, not pre-emptively.
+- DERIVED effect on `rail-spine-tree`: trunk Berlin→Minsk 3→5 at 79 civs from ≈ 122 weeks to
+  ≈ 50-70 weeks (Reich hops ×2.6, Soviet hops ×1.7-1.9); the prewar trunk fits comfortably
+  between 1938 and 1941.6.
+- Verification: (1) console — resume `barb_supply test.hoi4` with logging, one pulse: a
+  20-civ rail project in a German state loses ≈ 913/pulse (7 × 130.5) instead of 350 and the
+  `PC SPEED` line shows mods=0.45 infra=1.8; known-false control: the same project on a
+  Soviet-owned state with infrastructure 2 shows infra=1.2, and a country with no
+  construction modifiers logs mods=0 and 350/pulse unchanged. (2) campaign — GER
+  `wa_tlm_pc_built_n` per year ≥ 1.5× the `916b90f6` figure (503 over the war) at the same
+  `avail_share_pct`; tell-tale of over-reach: air-base/refinery caps hit earlier than before
+  (`pc_built_by_type` 2/16 rising faster) — then retune those caps, not the speed.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### sov-cutting-corners-module — PARKED (2026-08-30)
