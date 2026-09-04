@@ -3843,6 +3843,70 @@ OPEN with a session of its own.
   Wołyn/Kursk/Sumy before any Lublin 4→5.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
+### rail-sizing-demand — PARKED (2026-09-04)
+- Parked heading only for the WIP limit (4 OPEN). Real state: **SHIPPED-UNTESTED 2026-09-04** —
+  owner-admitted on a MEASURED symptom, owner rulings taken, code committed, harness owed.
+- Intended behaviour: a land-war railway route is sized for the divisions its frontline hub
+  actually feeds, so a hub carrying 35-66 supply of demand is not fed by a level-2 chain.
+- Symptom, MEASURED (owner screenshot, supply map 1943.10.13, same GER campaign as
+  `barb_supply test.hoi4`): centre-front hubs at 20/28 of capacity (rail level 2/3) against
+  29-66 of demand — 29/28 Smolensk, 35/20, 59/28, 66/20, 56/28, 34/28, 21/20. MEASURED (owner
+  console log, pass 1943.7.19): those hubs' routes sized at `target=2` (Smolensk, Bryansk, Nevel,
+  Pskov, N. Donetsk), Kursk 3, Kharkov/Rostov 4, Orel 5.
+- Cause, MEASURED (`WA_AI_PC_railway_land_size_this_route`, `railway_strategies.txt`): the
+  demand count `_rsize_prov_` held ONE province — the hub's — so `WA_AI_PC_rail_size_route`
+  counted divisions in the hub's state only; the presence ladder (≤ 10 div → 2, 16-20 → 3,
+  21-30 → 4, > 30 → 5 after × 2.5 × ratio) then read "≤ 10 divisions" for a hub whose area held
+  ~26. Second term, MEASURED: `corridor.target_ratio = 0.4` sizes every route to the
+  no-attrition floor by design (LOGISTICS_MODEL §11.4), i.e. 40 % of the estimated need — a
+  correctly counted 26-division hub still came out at level 3 (28) against 65 of need.
+  ASSUMED (engine): a supply hub feeds an area spanning several states; it is the only reading
+  that puts 66 of demand on a hub whose own state holds ≤ 10 divisions.
+- Owner rulings 2026-09-04: (1) "oui, il faut compter les états voisins"; (2) "passe le ratio à
+  0.5. on augmentera si les changements du 1) n'augmentent pas assez la demande".
+- Change (one commit, `# [rail-sizing-demand]`): `WA_AI_PC_railway_land_size_this_route` adds,
+  to the hub province, one province of every NEIGHBOURING state that borders the enemy being
+  processed (`every_neighbor_state` + the candidate trigger's own enemy test on
+  `_current_enemy_tag`); `_rsize_ours_` padded with 0 so the arrays stay aligned (the SUM
+  injection mode is not used by this family). New log `RAILWAY SIZE: hub P states=N
+  presence=X demand=D target=T`. `constant:wa_ai_railway.corridor.target_ratio` 0.4 → 0.5.
+- Impact analysis. Callers of the binding: the three sites inside
+  `WA_AI_PC_railway_land_consider_frontline` (land-war family only, all inside the per-enemy
+  loop, so `_current_enemy_tag` is always set). The ratio is SHARED with the corridor family
+  (`WA_AI_PC_rail_size_route` reads it for both): North Africa corridor targets rise by the same
+  25 % under its own floor 2 / cap 4 — accepted, one demand model. Reach: every AI belligerent
+  with a land front, historical and ahistorical (no tag, no date). Cost: `every_country` ×
+  (1 + neighbours ≈ 3-6) `divisions_in_state` tests per route, ≤ 16 routes per 8-week pass.
+  Regression risk, STATED: (i) routes to a hub whose neighbours hold a large parked reserve
+  (not at the front) now size higher — bounded by the cap 5 only (the "borders the enemy"
+  filter passes every enemy-controlled neighbour too, by design: spearhead divisions inside a
+  partly occupied enemy state draw on this hub); (ii) rails never downgrade, so a front that
+  later empties keeps its level — accepted by the cap ruling; (iii) two adjacent hubs count
+  each other's neighbour states, so a dense front sizes both routes at the same (higher)
+  target — intended: the trunk is shared; (iv) a neighbour across a strait touching the same
+  enemy adds one state's presence to a route that does not feed it — upward, one state, accepted
+  (lessons review). The presence index over-reads a dispersed army (sizer header, LOGISTICS_MODEL
+  §11.11) and the widening multiplies the bucket floors paid at the same moment the ratio rises:
+  MEASURE the over-reach tell-tale below before the 0.7 / 1.0 ratio step. Not done (optional,
+  editing rule 3): extracting the enemy-adjacency test shared by the candidate trigger and the
+  sizer into one scripted trigger. DERIVED on the 1943.10 map: Smolensk/Bryansk/Nevel routes go from 2 to
+  4-5, and the July pass's 12 slots (now weakest-link first, `rail-admission-churn`) fill
+  with their level-2/3 hops.
+- Verification, owed to the owner: (1) console — resume `barb_supply test.hoi4` (or the
+  1943.10 save) with `WA_AI_construction_logging` on GER, advance to the pass; expect
+  `RAILWAY SIZE:` lines with `states=` ≥ 2 for every hub that has a neighbour on the front,
+  and `target=` ≥ 3 for Smolensk/Bryansk/Nevel (were 2); known-false control: a hub with
+  `states=` ≥ 2 whose neighbours hold few divisions keeps `target=2` (the widening must not
+  inflate a thin front) — a frontline with a single enemy neighbour is the only `states=1` case
+  and is not the control. (2) campaign
+  probe (save-visible, no new TLM): `rail.py 6521 <hub>` on consecutive saves — the narrowest
+  link of the Smolensk/Bryansk routes rises above 2 within two passes of the front settling;
+  `control owner:SOV --buildings` GER rail_way total rising faster than before this commit.
+  Tell-tale of over-reach: level-5 edges appearing on routes whose hub state and neighbours
+  hold < 20 divisions in `plans.py --where`.
+- Closed when: (1) pasted here and passing, then (2) on one campaign; ratio step to 0.7/1.0 is a
+  separate owner decision recorded here when taken.
+
 ### sov-cutting-corners-module — PARKED (2026-08-30)
 - Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is
   DONE and **COMMITTED + PUSHED 2026-08-31** (owner order "garde tel quel, commit et push";
