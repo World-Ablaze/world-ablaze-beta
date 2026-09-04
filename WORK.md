@@ -435,7 +435,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   1 000 000, single reader); new CONFIG archetype `WA_AI_CONFIG_is_reserve_materiel_partner` (USA).
   Comments re-aligned (`_reserves.txt` veto note, CONFIG header + readers line, lessons entry).
 - Reading of "après 1941" = `WA_AI_CONFIG_after_1941` (`date > 1941.1.1`, the sanctioned date
-  vehicle) — owner to confirm the boundary (siblings exist at 1941.6 / 1941.11 / 1942.3).
+  vehicle) — CONFIRMED by the owner 2026-09-04 ("après 1941 = date > 1941.1.1, ok").
 - Walk (historical): ENG at 1941.1.1 ≈ 39 divisions ≈ 0.65 M men → the size term opens the bank at
   1941.1.1, eleven months before the USA joins (1941.12); `WA_reserves_can_deploy` passes (pool
   > 150 499, a major enemy). Drain: `deploy_reserves_infantry` (base 4000, `days_remove = 1`,
