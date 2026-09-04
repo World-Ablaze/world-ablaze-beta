@@ -3806,7 +3806,9 @@ OPEN with a session of its own.
   6556→11477 at level 1) and H + R ≥ 7; a Gomel/Poltava route showing `target=5` if its hub
   state holds > 30 divisions, else `target=4` unchanged. Known-false control: an overseas
   frontline (e.g. a Libyan state for ITA) at level 4 logs `SKIPPED - overseas hub already at
-  the port-fed cap` and no route. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
+  the port-fed cap` and no route. Cut 2 expectation on the 1943.7.19 pass: the first `PC QUEUED`
+  lines are level-2 hops (Wołyn 6520→11543, Kursk 9542→580, Sumy 3520→501), and no 4→5 hop is
+  queued while a level-2 hop of any route was refused. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
   GER > 0 during the GER-SOV war; `wa_tlm_pc_stale_n` ≤ 20 % of `wa_tlm_pc_built_by_type^13`
   growth over the same saves (today 10 stale vs 2 built in one pulse); rail-cache diff between
   consecutive saves raises ≥ 1 edge with level < 2 on the captured trunk before any 3→4 edge of
@@ -3814,6 +3816,22 @@ OPEN with a session of its own.
   > 30 divisions. Tell-tale of over-reach: `pc_built_by_type^14` (ports) rising on GER's
   overseas routes faster than before this commit (D's split failed), or the theatre-air band
   starving > 2 consecutive saves (rail budget now fully spent every pass).
+- Console harness, owner run 2026-09-04 on `barb_supply test.hoi4` resumed (GER, pass of
+  1943.7.19, build with cut 1): `RAILWAY: processed 10/10 routes (0 partial)`; NO `PC VALIDATION`
+  line — the queue held 0 `rail`-tag projects, so A and B were NOT exercised (no stale project to
+  keep or cancel); `RAILWAY ADMISSION: segments=444 head=0 rest=12`; D **PASS** — Orel route
+  `target=5`, Kharkov/Rostov 4, Kursk 3, Pskov/Smolensk/Nevel/Bryansk/N. Donetsk 2. C
+  **INSUFFICIENT**: phase A's only sub-floor hop (Kaluga 352→3226 at level 0) was refused
+  without `PC QUEUED` — budget empty, so the state-scoped admission gate (DERIVED: GER-held
+  province inside a SOV-controlled state, the r103 case) — and phase B spent all 12 slots on the
+  Lublin→Polesie 3→5 / 4→5 upgrades of the FIRST route while the level-2 links Wołyn
+  6520→11543→3470→6593, Kursk 9542→580→3580 and Sumy 3520→501→11397 were refused: the sweep was
+  route-ordered, and every route starts at the capital.
+- Cut 2 (`61157d63e`, same session, owner-ordered C intent "trous d'abord"): phase B is now one
+  sweep per raw map level from the floor up to `rail_level_cap_overland − 1` — all level-2 hops
+  of all routes, then level-3, then level-4. Same call count (each segment offered once);
+  segments at 5 not offered. Expected on the same save: the 12 slots go to the level-2 hops of
+  Wołyn/Kursk/Sumy before any Lublin 4→5.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### sov-cutting-corners-module — PARKED (2026-08-30)
