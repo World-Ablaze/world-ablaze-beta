@@ -408,6 +408,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the build that ran (first save 04:15, commit unstaged); this campaign IS the symptom's source
   (zero GER `rail` projects 1941.7→1943.1 above). Probe (2) waits for the next cloud run.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
+- Follow-up MEASURED again 2026-09-04 on the owner's 1943.06 console log and owner-admitted as its
+  own subject: `rail-admission-churn` (PARKED heading for the WIP limit) — stale validation runs
+  after admission and cancels paid segments; absorbs `east-front-rail-head`.
 
 ### coal-prospect-loop — SHIPPED-UNTESTED (2026-09-04)
 - Scope: owner report 2026-09-04 (National-Projects tooltip: GER running 11 "Expand X Coal Basin"
@@ -3596,6 +3599,162 @@ power capitulates.
 
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
+
+### rail-admission-churn — PARKED (2026-09-04)
+- Parked heading only for the WIP limit (5 OPEN at HEAD, pre-existing `WIP-LIMIT` error). Real
+  state: **SHIPPED-UNTESTED 2026-09-04** — owner-admitted ("c'est un sujet"), owner-ordered
+  "implémente A+B+C+D", code committed, console harness NOT yet run by the owner. Takes an OPEN
+  slot as soon as the owner names the swap. Sibling of `east-front-rail` (same family, same
+  harness); absorbs the `east-front-rail-head` follow-up candidate noted there.
+- Intended behaviour: the land-war railway family spends its 12-slot budget every pass on
+  segments that will survive to completion, and never discards IC it has already paid.
+- Symptom, MEASURED (owner console log, GER, Bhutan-observer campaign, weekly pulse 1943.06.07,
+  `WA_AI_construction_logging`): 309 civs, PC pool 185, every project at the 20-civ max, rail band
+  1000 at the head — capacity is NOT the bound. Routes: Pskov tgt 2 (met), Gomel tgt 4, Poltava
+  tgt 4, capital→Weser-Ems tgt 5 (met). Only 2 `PC QUEUED` (S. Brandenburg 9496→3473, Ostmark
+  3473→444, both 3→4 at the REAR of the trunk); ~55 later `PC START_PROJECT ENTRY` with no
+  `PC QUEUED` = `routes.queue_full = 12` refusing (10 old + 2 new = 12) — including the front-side
+  breaks Mozyr 6556→11477 (level 1), 11477→6593 (level 1), Vilnius 3320→6340 (level 2). Then, same
+  pulse, `PC VALIDATION: Cancelling 10 stale railway projects` — ids 11/12/13 at **prog=0** (fully
+  paid, waiting for next week's `PC CLEANUP` completion), 16 (593 IC paid), 17 (419), 21 (275),
+  22/23/24/25 (~85 each) on the previous pass's southern route (Vinnytsia 198 / Khmelnytskyi 199 /
+  Odessa 192 / Cherkasy 203 / Nikolaev 197). ≈ 4000 IC ≈ 5 segments discarded in one call.
+  Trunk Berlin→Minsk→Gomel reads level 3 (28 supply) everywhere = the "28 and no further" the
+  owner sees.
+- Cause, MEASURED (`common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt`):
+  (a) order of operations — `WA_AI_PC_railway_STRATEGIES` → per-route pathfind + queue (:126-197)
+  → `WA_AI_PC_railway_validate_queued_projects` (:210) — stale slots are freed AFTER admission, so
+  a pass whose routes changed admits only `12 − stale`; the freed slots wait `interval.war_weeks`
+  = 8 for the next pass. (b) `WA_AI_PC_validate_queued_provincial_projects`
+  (`WA_AI_CONSTRUCTION_PRIORITY_core.txt:1150`) tests only `type_id` + "province not in
+  `_valid_provinces`" — no progress term, so paid and prog-0 projects are cancelled like empty
+  ones; `WA_AI_PC_end_project_by_id` clears progress, the engine rail is placed ONLY at completion
+  (`WA_AI_PC_add_finished_building_by_id`, instant `build_railway`), so nothing is placed and the
+  IC is gone. (c) the route walk starts at the capital, so the 12 slots go to rear hops (3→4)
+  before front hops at 1 (`east-front-rail-head`, MEASURED again here).
+- Owner questions, answered 2026-09-04 from the code:
+  1. *"4 max = port bottleneck; a capital has huge supply, allow 5"* — MEASURED: in overland mode
+     (`_rsize_entry_mode_ = 2`, `WA_AI_PC_rail_size_route`) the port cap is NOT applied
+     (`rsize_inject_ = 0` → `_rz_capped_ = 0`); the ONLY thing pinning 4 is
+     `constant:wa_ai_railway.land_war.rail_level_cap`, declared as the irreversibility budget, not
+     a port fact. `CAPITAL_SUPPLY_BASE = 5` + 0.1/civ + 0.2/mil (`05_defines.lua:925`) — a major's
+     capital out-feeds any rail. Demand → level (DERIVED from the ladder 4+8L and 2.5×0.4):
+     hub state > 30 div → 35 supply → 5; 21-30 → 25 → 4; 16-20 → 3; ≤ 15 → 2. So cap 5 changes
+     only hubs holding > 30 divisions. Lever: raise `land_war.rail_level_cap` to 5 (one constant;
+     the three `_check_railway_level` readers in railway_strategies follow) or split it by entry
+     mode (overland 5 / overseas 4); the corridor keeps its own 4. Note the sizer reads ONE state
+     (the frontline hub), not the trunk several routes share.
+  2. *"A segment taking > 8 weeks is doomed to be cancelled?"* — MEASURED: no time term exists.
+     Two cancel paths only: stale validation (province off every route recomputed THIS pass,
+     whatever the progress) and the stall sweep (`alloc.stall_cancel_weeks = 30` weeks at 0
+     factories while others are funded, `core.txt:940`). A segment on a stable route is
+     re-requested each pass, reads `queued=1`, and is kept. Duration matters only as exposure: at
+     20 civs a segment takes exactly 8 weeks = one interval, so a route change at the next pass
+     catches it at ~100 % — the worst case, and the one measured.
+  3. *"If cancelled half-built, are the paid rails placed?"* — MEASURED: no (cause (b)); a partial
+     level cannot exist in the engine either (integer levels). PC never uses the engine's own
+     construction queue, which would have kept partial progress.
+- Owner rulings 2026-09-04: all four options taken ("ok, ça me va — implémente A+B+C+D"); B's
+  keep fraction 50 %; D as a SPLIT cap (overland 5, port-fed stays 4), because a single cap of 5
+  would also raise the overseas port-upgrade threshold (`overseas_max_railway_level_ < cap`) one
+  port level (10000 IC flat) on every port-fed route. Capture question answered from the code: a
+  kept project on an enemy-controlled state is frozen by the fill's controller test, holds no
+  budget slot (admission counter and skip gate both exclude hostile-state projects), and exits
+  by the 30-week stall sweep or resumes with progress intact on recapture.
+- Change (one commit, `# [rail-admission-churn]` at every site):
+  A. `railway_core.txt` `WA_AI_PC_railway`: the main pass is phase 0 (pathfind every route, cap
+     `routes.max_total`; collect segments into `_lseg_a_/_b_/_tgt_/_prio_/_state_/_lvl_` with the
+     RAW map level; every path province into `_valid_provinces`; frontier ports as before) →
+     `WA_AI_PC_railway_validate_queued_projects` → phase A → phase B. Validation is skipped when
+     routes were requested and every pathfind failed (the corridor pass's guard: an empty
+     `_valid_provinces` cancels 100 %). New log `RAILWAY ADMISSION: segments=N head=A rest=B`.
+  B. `core.txt` `WA_AI_PC_validate_queued_provincial_projects`: an off-path project is cancelled
+     only if `cost ≤ 0` or `remaining > cost × (1 − constant:wa_ai_pc.alloc.stale_keep_paid_fraction)`;
+     otherwise kept, `WA_TLM_pc_stale_kept_n += 1`, log `PC VALIDATION: KEPT off-path proj=`.
+     Constant declared in `wa_ai_pc.txt` (alloc, 0.5). TLM: init line, version 34→35, doc §5 row.
+  C. Phase A admits segments with map level < `land_war.rail_level_floor` (2) at target = floor;
+     phase B the rest at the sizing target. B always runs after A (the corridor runs B only when
+     A admitted nothing — A takes only what it needs of the 12 slots here, B fills the rest, and
+     the fill serves A's projects first: same band, earlier insertion).
+  D. `wa_ai_railway.txt` `land_war.rail_level_cap_overland = 5`; `WA_AI_PC_railway_land_size_this_route`
+     uses it when `_rsize_entry_mode_ = 2`; the land-war strategy's `_check_railway_level` reads
+     it (a capital-fed frontline at 4 stays a candidate); `WA_AI_PC_railway_land_consider_frontline`
+     gains an `else_if` for different-landmass frontlines already at `rail_level_cap` (4): `route_start`
+     zeroed → dropped by the existing `route_start > 0` gate, no pathfind, no route-budget slot;
+     `_check_railway_level` saved/restored around the test (the candidate trigger reads it next).
+- Impact analysis. Callers: `WA_AI_PC_railway` (weekly on_action, GER-class builders passing
+  `WA_AI_PC_country_can_build_own_logistics`); the validator is also called by the corridor pass
+  (`_strategy_id` = corridor tag — the keep rule applies there too, accepted: corridor nodes are
+  fixed, churn is rare) and by `WA_TEST_railway` test 014 (synthetic cost-less project → still
+  cancelled). Reach: every AI belligerent with a land or port route to an enemy, historical and
+  ahistorical alike (no tag, no date). NOT touched: `zz_debug_effects.txt` (debug mirror of the
+  old loop, `_check_railway_level = 5` hard-coded there), the overseas-war and prewar strategies'
+  own `_check_railway_level` (still `rail_level_cap`), the corridor's own floor/cap.
+  Regression risk, STATED: (i) B lets a ≥ 50 %-paid off-path segment finish on ground the
+  selector no longer routes through — a rail where no route goes (bounded: ≤ 4 weeks of one slot
+  at 20 civs, and the engine rail stays useful for any later route); (ii) C can spend the whole
+  budget on level-0/1 hops of a partial (dead-end) route at 70 % band before any trunk upgrade —
+  intended; (iii) D: a same-landmass frontline that is really port-fed (Italy→Libya, the
+  overseas FALLBACK inside the same-landmass branch) now passes the candidate filter at 4, is
+  sized at 4 by the port bottleneck, and consumes a pathfind + a route slot queuing nothing —
+  residual, bounded by `max_per_enemy = 4`; (iv) the `_lseg_*` arrays hold up to 8 routes × ~40
+  segments of temps for the duration of one pass — cleared on entry and exit.
+- Bounded, t-table at the real cadence (8-week pass, 8-week segment at 20 civs), same 1943.06
+  save: t0 (pass) validate first → 10 stale judged: 11/12/13 (prog 0) + 16 (593 paid) KEPT by B,
+  17 (419 = 52 %) KEPT, 21/22/23/24/25 (< 50 %) cancelled → 7 slots free; phase A admits the
+  level-1 hops Mozyr 6556→11477, 11477→6593 (the level-2 Vilnius hop is NOT a head: floor 2)
+  → 2 head + 5 rear admitted = 12; t0+1w the three prog-0 projects spawn (`PC CLEANUP`), 3 slots
+  free until t1; t1 (+8w) 16/17 and the 2 head hops done, Mozyr reads 2, up to 12 admitted;
+  t2 (+16w) trunk upgrades reach Warsaw; Gomel at 36 still ≈ 3 passes but the FRONT reads 20
+  supply (level 2) from t1 instead of ≈ t3. ASSUMED: route stability between passes.
+- Review repairs (lessons + architecture reviewers, same session): phase A carries its route's band
+  + (`prio.rail_connect` − `prio.rail_war`) = 1100 on a full route (no new band; partial routes
+  800) — without it a pass-N head hop sat behind pass N-1's still-valid rear upgrades by insertion
+  and the fill (pool/20 ≈ 9 funded of 12) starved exactly the head; `routes.max_total` 8 → 16 with
+  a WARNING log when the list overflows (routes past the cap are not pathfound, so their segments
+  are exposed to the stale test — candidate cause of the ASSUMED "southern route left the list");
+  the port-fed done-test at 4 also on the same-landmass overseas fallback (Italy→Libya class);
+  `_valid_provinces` cleared on the skipped-validation branch; dates/quotes/campaign numbers moved
+  out of the code comments; `WA_AI_RAILWAY_SYSTEM.md` pipeline section rewritten.
+- Proposed, NOT admitted (lessons reviewer): the corridor pass (`WA_AI_PC_railway_corridor_run_one`)
+  still validates AFTER admission — the same churn on a fixed node list (rare, because corridor
+  routes do not change between passes); own slug if a corridor `pc_stale_n` spike is measured.
+- Residual, STATED: a list longer than 16 routes still exposes the overflow's segments (the WARNING
+  log is the witness); `has_railway_level` is state-wide ("a railway at or above the level" anywhere
+  in the state, install `triggers_documentation.md`), so "done" can read true from a rail that is
+  not the hub's own connection — pre-existing, and moving the overland level 4 → 5 shrinks the
+  false-done set.
+- Bound of B for a kept project BELOW the head band (architecture review): the fill is
+  winner-takes-most by band, so a kept rail-prewar (500) or corridor project under a full rail-war
+  (1000) head gets 0 factories. t0 kept, holds 1 of its family's slots; t1 (+8w) still starved,
+  `stall_weeks` 8; t2 (+16w) 16; +30w the stall sweep (`alloc.stall_cancel_weeks`) cancels it —
+  worst case one slot for 30 weeks per such project, an exit that already exists. The war-band
+  case (the measured one) is funded first and finishes within ≤ 4 weeks at 20 civs. Not
+  mitigated by a "currently funded" term on purpose: `assigned_factories` of a prog-0 project
+  awaiting `PC CLEANUP` is not a reliable witness, and those are the projects B exists to keep.
+- Bounded today, t-table at the real cadence (8-week pass, 8-week segment at 20 civs): t0
+  1943.06.07 2 in flight / 10 slots idle; t1 ≈ 1943.08.02 both done, next pass admits ≤ 12 rear
+  hops; t2 ≈ 1943.09.27 those done; trunk Berlin→Gomel ≈ 33 hops at 3 → ≈ 3 passes → ≈ 1944.02
+  for 36 at Gomel, front breaks (Mozyr 1) later still — IF no further route change; every change
+  re-runs the loss. ASSUMED: why the southern route left the list (front moved, states at cap, or
+  `max_per_enemy = 4` ordering) — needs the save.
+- Verification, owed to the owner: (1) console — resume the same 1943.06 GER save on this build
+  with `-debug`, `WA_AI_construction_logging` on GER, advance to the railway pass; expect, in
+  this order: `RAILWAY: processed N/M routes` → `PC VALIDATION: KEPT off-path proj=` for the
+  paid ones and `Cancelling K stale` for the rest → the first `PC QUEUED` (never a `PC CANCELLED`
+  after a `PC QUEUED`) → `RAILWAY ADMISSION: segments=… head=H rest=R` with H ≥ 1 (Mozyr
+  6556→11477 at level 1) and H + R ≥ 7; a Gomel/Poltava route showing `target=5` if its hub
+  state holds > 30 divisions, else `target=4` unchanged. Known-false control: an overseas
+  frontline (e.g. a Libyan state for ITA) at level 4 logs `SKIPPED - overseas hub already at
+  the port-fed cap` and no route. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
+  GER > 0 during the GER-SOV war; `wa_tlm_pc_stale_n` ≤ 20 % of `wa_tlm_pc_built_by_type^13`
+  growth over the same saves (today 10 stale vs 2 built in one pulse); rail-cache diff between
+  consecutive saves raises ≥ 1 edge with level < 2 on the captured trunk before any 3→4 edge of
+  the same pass; a level-5 edge appears on a capital-fed trunk only where the hub state held
+  > 30 divisions. Tell-tale of over-reach: `pc_built_by_type^14` (ports) rising on GER's
+  overseas routes faster than before this commit (D's split failed), or the theatre-air band
+  starving > 2 consecutive saves (rail budget now fully spent every pass).
+- Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### sov-cutting-corners-module — PARKED (2026-08-30)
 - Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is
