@@ -57,9 +57,13 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 
 			### Per-enemy route counter, and the railway level at which a frontline is "done"
 			set_temp_variable = { _routes_for_this_enemy = 0 }
-			# [na-corridor] must stay equal to the sizer's cap. Set higher, no frontline ever reads
-			# "done" and every pass redraws routes that queue no segments.
-			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }
+			# [rail-admission-churn] the OVERLAND cap: a capital-fed frontline at 4 must still be a
+			# candidate (it can be sized to 5). A port-fed frontline (other landmass, or same landmass
+			# reached only by the overseas fallback) reads done at rail_level_cap inside
+			# WA_AI_PC_railway_land_consider_frontline, once that is known - the candidate trigger
+			# cannot tell the cases apart. Set higher than both caps, no frontline ever reads "done"
+			# and every pass redraws routes that queue no segments.
+			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap_overland }
 
 			### [na-corridor] three candidate populations, ONE shared body
 			### (WA_AI_PC_railway_land_consider_frontline). Order is load-bearing - the per-enemy
@@ -169,6 +173,12 @@ WA_AI_PC_railway_land_size_this_route = {
 		add_to_temp_array = { _rsize_ours_ = 1 }
 		set_temp_variable = { _rsize_floor_ = constant:wa_ai_railway.land_war.rail_level_floor }
 		set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap }
+		# [rail-admission-churn] capital-fed route (overland, no entry cap): the higher cap. The
+		# port-fed modes keep rail_level_cap - there the sizer's min(demand, entry) is the real bound.
+		if = {
+			limit = { check_variable = { _rsize_entry_mode_ = 2 } }
+			set_temp_variable = { _rsize_cap_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
+		}
 		WA_AI_PC_rail_size_route = yes
 		clear_temp_array = _rsize_prov_
 		clear_temp_array = _rsize_ours_
@@ -215,16 +225,36 @@ WA_AI_PC_railway_land_consider_frontline = {
 			# Get target landmass
 			set_temp_variable = { target_landmass = global.WA_AI_MAP_state_landmass^_target_state_id }
 
+			# [rail-admission-churn] a frontline on ANOTHER landmass is port-fed and reads "done" at
+			# the overseas cap, tested here because the candidate trigger filtered at the overland
+			# cap. Dropped by zeroing route_start (the `route_start > 0` gate below), so it consumes
+			# neither a pathfind nor a slot of the per-enemy route budget. _check_railway_level is a
+			# chain temp the candidate trigger reads for the NEXT state: saved and restored.
+			set_temp_variable = { _cfl_check_saved_ = _check_railway_level }
+			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }
+
 			# Determine route start and level based on landmass
 			if = {
 				limit = { check_variable = { target_landmass = capital_landmass } }
 				# Same landmass: use capital as route start.
+				# [east-front-rail] this assignment is the ONLY writer of route_start on the overland
+				# path; without it the `route_start > 0` gate below fails for every same-landmass
+				# frontline and the land-war family emits zero routes.
+				# Tell it is gone again: `RAILWAY LAND: COMPLETED - 0 targets found` after ACCEPTED lines.
+				set_temp_variable = { route_start = default_route_start }
 				# [railway-landwar] the levelling MUST stay after the pathfind - read before it, the
 				# path is the PREVIOUS target's or empty, and every land route targets level 1 and
 				# queues no segments. Until then this carries the family floor and
 				# _route_level_from_path marks the route for the recompute (a sizing, not a ratchet).
 				set_temp_variable = { route_level = default_route_level }
 				set_temp_variable = { _route_level_from_path = 1 }
+			}
+			else_if = {
+				limit = { WA_AI_PC_state_has_railway_at_level = yes }
+				set_temp_variable = { route_start = 0 }
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+					ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] SKIPPED - overseas hub already at the port-fed cap" }
+				}
 			}
 			else = {
 				# Different landmass: find nearest receiving port via distance-limited search.
@@ -252,6 +282,7 @@ WA_AI_PC_railway_land_consider_frontline = {
 					add_to_temp_array = { railway_port_upgrades_ = overseas_receiving_port_state_ }
 				}
 			}
+			set_temp_variable = { _check_railway_level = _cfl_check_saved_ }
 
 			# Only proceed if we have a valid route start
 			if = {
@@ -320,6 +351,19 @@ WA_AI_PC_railway_land_consider_frontline = {
 									WA_AI_PC_railway_land_size_this_route = yes
 									set_temp_variable = { _route_level_from_path = 0 }	# [railway-landwar] level now owned by port analysis
 									set_temp_variable = { _direct_success = pathfind_prov_success_ }
+									# [rail-admission-churn] fed by the sea leg, so "done" at the PORT-FED cap - the
+									# same test as the different-landmass branch; zeroing _direct_success drops the
+									# route at the gate below. THIS is still the frontline state here.
+									set_temp_variable = { _cfl_check_saved_ = _check_railway_level }
+									set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }
+									if = {
+										limit = { WA_AI_PC_state_has_railway_at_level = yes }
+										set_temp_variable = { _direct_success = 0 }
+										if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+											ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY LAND: [Prev.GetName] SKIPPED - sea-fed hub already at the port-fed cap" }
+										}
+									}
+									set_temp_variable = { _check_railway_level = _cfl_check_saved_ }
 									if = {
 										limit = {
 											check_variable = { overseas_max_railway_level_ < constant:wa_ai_railway.land_war.rail_level_cap }
@@ -522,7 +566,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 				}
 			}
 
-			if = { limit = { has_country_flag = WA_AI_construction_logging }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: continent=[?enemy_continent] candidate_beachhead=[?best_beachhead_state] port_level=[?best_beachhead_port]"
 			}
 
@@ -538,7 +582,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 					# Skip - too close to existing beachhead in same theatre
 					set_temp_variable = { best_beachhead_state = 0 }
 
-					if = { limit = { has_country_flag = WA_AI_construction_logging }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead [?candidate_beachhead_state_] SKIPPED - duplicate theatre"
 					}
 				}
@@ -546,7 +590,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 					# Register this beachhead for future duplicate checks
 					add_to_temp_array = { _beachhead_states_ = best_beachhead_state }
 
-					if = { limit = { has_country_flag = WA_AI_construction_logging }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead [?best_beachhead_state] ACCEPTED - new theatre"
 					}
 				}
@@ -569,7 +613,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 					# Beachhead too far from enemy capital - skip it
 					set_temp_variable = { best_beachhead_state = 0 }
 
-					if = { limit = { has_country_flag = WA_AI_construction_logging }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead too far from enemy capital - SKIPPED"
 					}
 				}
@@ -645,12 +689,12 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 					limit = { check_variable = { beachhead_valid_ = 0 } }
 					set_temp_variable = { best_beachhead_state = 0 }
 
-					if = { limit = { has_country_flag = WA_AI_construction_logging }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead has no path to frontlines - INVALID"
 					}
 				}
 				else = {
-					if = { limit = { has_country_flag = WA_AI_construction_logging }
+					if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: beachhead VALID - path to frontline exists"
 					}
 				}

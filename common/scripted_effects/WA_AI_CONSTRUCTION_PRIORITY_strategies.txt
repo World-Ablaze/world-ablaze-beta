@@ -1658,10 +1658,10 @@ WA_AI_build_theatre_air_bases = {
 			set_variable = { WA_AI_thair_dbg_active = _thair_any_ }
 
 			# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
-			if = { limit = { check_variable = { _thair_any_ > 0 } }
+			if = { limit = { check_variable = { _thair_any_ > 0 } has_country_flag = WA_AI_construction_logging }
 				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: [?_thair_any_|.0] deficit theatre(s) of [?_thair_contested_ct_|.0] contested, side target [?_thair_target_|.0] levels"
 			}
-			else = {
+			else_if = { limit = { has_country_flag = WA_AI_construction_logging }
 				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: all [?_thair_contested_ct_|.0] contested theatre(s) at capacity (target [?_thair_target_|.0]) - guardrail hold"
 			}
 
@@ -1793,8 +1793,10 @@ WA_AI_build_theatre_air_bases = {
 						if = {
 							limit = { ROOT = { check_variable = { WA_AI_PC_queue^num > _thair_qnum_before_ } } }
 
-							# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
-							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: air_base project started at level [?_thair_try_level_|.0] in [This.GetID] [This.GetName]"
+							# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family (state scope: flag read on ROOT)
+							if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+								log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: air_base project started at level [?_thair_try_level_|.0] in [This.GetID] [This.GetName]"
+							}
 
 							ROOT = {
 								set_temp_variable = { _thair_started_ = 1 }
@@ -1858,7 +1860,7 @@ WA_AI_build_theatre_air_bases = {
 				set_temp_variable = { _thair_near_only_ = 0 }
 
 				# TEMP R16 live-test logging - remove with the WA_AI_thair_dbg_* family
-				if = { limit = { check_variable = { _thair_started_ < 1 } }
+				if = { limit = { check_variable = { _thair_started_ < 1 } has_country_flag = WA_AI_construction_logging }
 					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | THEATRE AIR: deficit but no eligible member state (ladder exhausted at level [?_thair_try_level_|.0])"
 				}
 			}

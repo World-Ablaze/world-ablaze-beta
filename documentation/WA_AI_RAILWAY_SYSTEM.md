@@ -363,7 +363,9 @@ called once per corridor id with `_corridor_id_` (which define and which theatre
 
 **One PC `type_id` per corridor is load-bearing, not bookkeeping.** `run_one` ends with a stale-path
 validation that cancels *every queued project carrying its `_strategy_id`* whose target province is
-not on the routes it just pathfound. Two corridors under one tag would therefore cancel each other's
+not on the routes it just pathfound — except one paid past
+`constant:wa_ai_pc.alloc.stale_keep_paid_fraction` (`[rail-admission-churn]`), which is kept and
+holds its slot until completion. Two corridors under one tag would therefore cancel each other's
 in-flight segments on every pass — the same failure the `max_routes_per_run` note above describes,
 one level up. The per-tag `queue_max` follows from the same split, so the corridors do not compete
 for one budget either. **A third corridor takes a third id and a third `type_id`** (`wa_ai_pc.txt`,
@@ -480,7 +482,8 @@ them. A corridor that needs its own gauge takes its own metric names (WA_TLM doc
   the pass cadence — not the civ pool — bounds how fast a corridor grows: a 20-hop route reaches
   level 1 in ~3 passes = 12 weeks (24 at the main cadence), level 2 in ~5.
 - Stale-path validation is run only against the corridor tag and skipped when routes were requested
-  and *every* pathfind failed (a transient hole must not cancel paid-for progress). Peace purges the
+  and *every* pathfind failed (a transient hole must not cancel paid-for progress); off-path projects
+  paid past `alloc.stale_keep_paid_fraction` are kept (`WA_TLM_pc_stale_kept_n`). Peace purges the
   corridor's rails with every other type-13 (Fix 5/19 sweep) and resets its counter; queued depots
   survive peace by design.
 
@@ -720,9 +723,13 @@ happens to reach. They should be retunable apart.
 - **`STRATEGY_overseas_war` part A (the home-port chain) keeps its flat 5.** Its target is
   `constant:wa_ai_railway.supply.home_port_target_supply` (44 = level 5) by design, and it is fed
   overland from the capital rather than by a port.
-- **`_check_railway_level` now reads the cap** in all three strategies. Left at 5 while the sizer
-  targets at most 4, every frontline would stay for ever "not done" and keep drawing routes that queue
-  nothing.
+- **`_check_railway_level` reads the cap** — `land_war.rail_level_cap` in the overseas-war and prewar
+  strategies, `land_war.rail_level_cap_overland` (5, `[rail-admission-churn]`) in the land-war strategy,
+  whose sizer caps a capital-fed route at 5 and a port-fed one at 4; a different-landmass frontline
+  already at 4 is dropped inside `WA_AI_PC_railway_land_consider_frontline` (route_start zeroed), and
+  so is a same-landmass frontline reached only by the overseas fallback (`_direct_success` zeroed),
+  so neither draws a route. Left above the sizer's cap, a frontline would stay for ever "not done" and keep
+  drawing routes that queue nothing.
 
 ### What this cannot tell you
 
@@ -770,12 +777,13 @@ firing for exactly the countries that fail here.
 
 ## Route Processing Pipeline (`railway_core.txt`, lines 85-200)
 
-After strategies populate the output arrays, the core processes each route:
+After strategies populate the output arrays, the core runs ONE pass in phases (`[rail-admission-churn]`,
+the corridor's shape):
 
-1. **Pathfinding**: A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 1`
-2. **Partial path handling**: Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` (queues port construction)
-3. **Segment creation**: For each segment in the path, calls `WA_AI_PC_start_railway_project`
-4. **Stale project validation**: Existing queued railway projects (`type_id = 13`) are checked; those targeting provinces no longer on a valid path are cancelled. Fix 50 pins this filter to the railway constant instead of the shared `_project_type_id` temp, which frontier-port creation temporarily changes to 14.
+1. **Phase 0 — pathfind and collect** (every route, cap `routes.max_total`): A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 1`; each segment is collected into the `_lseg_*` temp arrays with its RAW map level, every path province into `_valid_provinces`. Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` here.
+2. **Stale project validation, BEFORE admission**: queued railway projects (`type_id = 13`) whose target province is on no valid path are cancelled — unless paid past `constant:wa_ai_pc.alloc.stale_keep_paid_fraction` (kept, `WA_TLM_pc_stale_kept_n`) — so their slots are free for this pass. Skipped when routes were requested and every pathfind failed (an empty `_valid_provinces` would cancel 100 %). Fix 50 pins the filter to the railway constant instead of the shared `_project_type_id` temp, which frontier-port creation temporarily changes to 14.
+3. **Phase A — head**: segments with map level below `land_war.rail_level_floor` are admitted first at target = floor, via `WA_AI_PC_start_railway_project`, at their route's band + (`prio.rail_connect` − `prio.rail_war`) so the fill funds them before any rail-war upgrade of any pass.
+4. **Phase B — raise**: the remaining segments at the sizing target. Always runs after A (the corridor runs it only when A admitted nothing). Log: `RAILWAY ADMISSION: segments=N head=A rest=B`.
 5. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
 6. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
 
@@ -924,13 +932,15 @@ When peace is signed (`on_peace` in `WA_AI_misc_on_actions.txt`, lines 301-343):
            ├── STRATEGY_overseas_war → home port + beachhead
            └── STRATEGY_prewar_preparation → border states + port
 
-3. Route processing (for each route in arrays)
-   ├── A* pathfinding (type 2, allow partial)
-   ├── Partial path → frontier port creation
-   └── Segment creation → WA_AI_PC_start_railway_project
+3. Route processing (one pass, phases — [rail-admission-churn])
+   ├── Phase 0: A* pathfinding (type 2, allow partial) for every route, segments collected
+   │   ├── Partial path → frontier port creation
+   │   └── path provinces → _valid_provinces
+   ├── Stale project validation + cancellation (paid ≥ keep fraction → kept)
+   ├── Phase A: segments below the floor → WA_AI_PC_start_railway_project (target = floor)
+   └── Phase B: the rest → WA_AI_PC_start_railway_project (sizing target)
 
 4. Post-processing
-   ├── Stale project validation + cancellation
    ├── Port upgrades via WA_AI_PC_process_port_upgrades
    └── Factory override (50% extra for 30 days)
 

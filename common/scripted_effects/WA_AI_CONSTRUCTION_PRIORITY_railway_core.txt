@@ -127,10 +127,34 @@ WA_AI_PC_railway = {
 						check_variable = { WA_AI_PC_railway_STRATEGIES = 1 }
 					}
 
-					### Route capping - limit pathfinding calls per execution
+					### [rail-admission-churn] ONE pass, three phases over ONE set of pathfinds - the shape the
+					### corridor already uses (WA_AI_PC_railway_corridor_run_one), adopted here for two measured reasons:
+					###   phase 0   pathfind every route (cap routes.max_total), collect each segment with its RAW map
+					###             level, and every path province into _valid_provinces. Frontier ports for partial
+					###             paths are placed here, while pathfind_prov_path_ is still this route's.
+					###   validate  stale projects are cancelled BEFORE any admission. Done after, the stale slots
+					###             hold the family budget (routes.queue_full) through the whole pass and are freed
+					###             for the interval in which nobody admits.
+					###   phase A   segments BELOW land_war.rail_level_floor first, target = floor. The chain is in
+					###             series, so one level-1 hop at the front caps the whole trunk whatever the rear
+					###             reads; a capital-first walk gives the budget to the rear upgrades.
+					###   phase B   the rest, at the sizing target. Unlike the corridor, B ALWAYS runs after A: A takes
+					###             only what it needs from the budget, B fills the remainder. A's projects carry their
+					###             route's band + (prio.rail_connect - prio.rail_war), so the fill serves them before
+					###             every rail-war upgrade, this pass's or an earlier one's - insertion order alone
+					###             would rank a new head hop behind last pass's still-valid rear upgrades.
+					### Tell it is gone: a `PC CANCELLED` line after the first `PC QUEUED` of a pass, or a level-1
+					### hop refused while a 3->4 hop of the same pass was admitted.
 					set_temp_variable = { _routes_processed = 0 }
 					set_temp_variable = { _partial_routes = 0 }
+					clear_temp_array = _lseg_a_
+					clear_temp_array = _lseg_b_
+					clear_temp_array = _lseg_tgt_
+					clear_temp_array = _lseg_prio_
+					clear_temp_array = _lseg_state_
+					clear_temp_array = _lseg_lvl_
 
+					### Phase 0 - pathfind and collect
 					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
 
 						### Break if max routes reached (use > with value-1 since >= not supported)
@@ -160,15 +184,26 @@ WA_AI_PC_railway = {
 									set_temp_variable = { next_i = path_i }
 									add_to_temp_variable = { next_i = 1 }
 									if = { limit = { check_variable = { next_i < pathfind_prov_path_^num } }
-										set_temp_variable = { _project_province_id = path_v }
-										set_temp_variable = { _project_connect_id = pathfind_prov_path_^next_i }
-										set_temp_variable = { _project_target_level = railway_target_levels_^railway_i }
-										set_temp_variable = { _project_priority = _route_priority }
+										set_temp_variable = { _lseg_next_prov_ = pathfind_prov_path_^next_i }
 										set_temp_variable = { _state_for_project = global.WA_AI_MAP_province_state_id^path_v }
 										# Validate state lookup succeeded (0 = no mapping in map data)
 										if = {
 											limit = { check_variable = { _state_for_project > 0 } }
-											var:_state_for_project = { WA_AI_PC_start_railway_project = yes }
+											# RAW map level of this connection - the same global ledger the helper reads,
+											# seeded at startup from the generated map data and moved only at completion.
+											meta_effect = {
+												text = {
+													set_temp_variable = { _lseg_this_lvl_ = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+												}
+												x = "[?path_v]"
+												y = "[?_lseg_next_prov_]"
+											}
+											add_to_temp_array = { _lseg_a_ = path_v }
+											add_to_temp_array = { _lseg_b_ = _lseg_next_prov_ }
+											add_to_temp_array = { _lseg_tgt_ = railway_target_levels_^railway_i }
+											add_to_temp_array = { _lseg_prio_ = _route_priority }
+											add_to_temp_array = { _lseg_state_ = _state_for_project }
+											add_to_temp_array = { _lseg_lvl_ = _lseg_this_lvl_ }
 										}
 										else = {
 											if = { limit = { has_country_flag = WA_AI_construction_logging }
@@ -202,9 +237,89 @@ WA_AI_PC_railway = {
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: processed [?_routes_processed]/[?railway_end_provinces_^num] routes ([?_partial_routes] partial)"
 					}
 
-				### Validate queued projects - cancel any that are no longer on valid paths
-				### This cleans up stale projects when frontlines shift or territory is lost
-					WA_AI_PC_railway_validate_queued_projects = yes
+					### Validate BEFORE admission - cancel queued segments no longer on any valid path, so their
+					### slots are free for this pass. SKIPPED when routes were requested and every pathfind failed:
+					### an empty _valid_provinces cancels 100 % of the family (the corridor pass has the same guard).
+					if = {
+						limit = {
+							OR = {
+								check_variable = { railway_end_provinces_^num = 0 }
+								check_variable = { _routes_processed > 0 }
+							}
+						}
+						WA_AI_PC_railway_validate_queued_projects = yes
+					}
+					else = {
+						# The validator normally clears this on exit; a skipped validation must leave the same state.
+						clear_temp_array = _valid_provinces
+						if = { limit = { has_country_flag = WA_AI_construction_logging }
+							log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: every pathfind failed - stale validation SKIPPED"
+						}
+					}
+					# Routes past routes.max_total are not pathfound, so their in-flight segments are off
+					# _valid_provinces and exposed to the stale test above (kept only if paid past the fraction).
+					# The cap is sized to the realistic list (max_per_enemy x bordered enemies + overseas); this
+					# line is the witness when it is not.
+					if = {
+						limit = {
+							has_country_flag = WA_AI_construction_logging
+							check_variable = { railway_end_provinces_^num > constant:wa_ai_railway.routes.max_total }
+						}
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: WARNING - [?railway_end_provinces_^num] routes requested, only [?_routes_processed] pathfound (routes.max_total) - the rest are exposed to stale validation"
+					}
+
+					### Phase A - HEAD. Segments below the family floor, target = the floor.
+					set_temp_variable = { _rail_head_admitted_ = 0 }
+					for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
+						if = {
+							limit = { check_variable = { _lseg_lvl_^_ls_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
+							set_temp_variable = { _project_province_id = _ls_a_ }
+							set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
+							set_temp_variable = { _project_target_level = constant:wa_ai_railway.land_war.rail_level_floor }
+							# Head band = the route's band + (rail_connect - rail_war): a full route's head hop lands on
+							# prio.rail_connect (the corridor's connect band, no new band), a partial route's stays
+							# below every full route.
+							set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
+							add_to_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+							subtract_from_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }
+							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
+							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+							if = {
+								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+								add_to_temp_variable = { _rail_head_admitted_ = 1 }
+							}
+						}
+					}
+
+					### Phase B - RAISE. Everything at or above the floor, at the sizing target.
+					set_temp_variable = { _rail_rest_admitted_ = 0 }
+					for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
+						if = {
+							limit = { NOT = { check_variable = { _lseg_lvl_^_ls_i_ < constant:wa_ai_railway.land_war.rail_level_floor } } }
+							set_temp_variable = { _project_province_id = _ls_a_ }
+							set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
+							set_temp_variable = { _project_target_level = _lseg_tgt_^_ls_i_ }
+							set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
+							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
+							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+							if = {
+								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+								add_to_temp_variable = { _rail_rest_admitted_ = 1 }
+							}
+						}
+					}
+					if = { limit = { has_country_flag = WA_AI_construction_logging }
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] rest=[?_rail_rest_admitted_]"
+					}
+					# The collection arrays are this pass's working set; nothing downstream reads them (editing rule 9).
+					clear_temp_array = _lseg_a_
+					clear_temp_array = _lseg_b_
+					clear_temp_array = _lseg_tgt_
+					clear_temp_array = _lseg_prio_
+					clear_temp_array = _lseg_state_
+					clear_temp_array = _lseg_lvl_
 
 				### Process port upgrades for overseas operations
 					if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
@@ -274,7 +389,9 @@ WA_AI_PC_railway = {
 #	Stale-path validation is pinned to type_id corridor and fed the provinces of THIS pass's
 #	successful paths plus the node provinces of its hubs. It is SKIPPED when routes were requested
 #	and every pathfind failed: an empty _valid_provinces cancels 100% of the queue, so a transient
-#	hole would destroy paid-for progress. Rails queued here are type-13 and are purged at peace with
+#	hole would destroy paid-for progress. [rail-admission-churn] the validator also KEEPS an
+#	off-path project paid past constant:wa_ai_pc.alloc.stale_keep_paid_fraction - such a project
+#	holds a corridor.queue_max slot until it completes. Rails queued here are type-13 and are purged at peace with
 #	the rest (intended); queued depots (17) are NOT - a hub in peace is preparation, not waste, and
 #	the pass will not queue a second one at the same province.
 ############################################################################################################

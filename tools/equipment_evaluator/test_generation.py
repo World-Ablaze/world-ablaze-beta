@@ -137,19 +137,19 @@ class GenerationTests(unittest.TestCase):
     def test_tank_frontier_scope_keeps_whole_groups_only(self):
         from types import SimpleNamespace
         patches = [
-            SimpleNamespace(country="USA", group="USA_medium_tanks", design="a"),
-            SimpleNamespace(country="USA", group="USA_medium_tanks", design="b"),
+            SimpleNamespace(country="USA", group="USA_medium_tank", design="a"),
+            SimpleNamespace(country="USA", group="USA_medium_tank", design="b"),
             SimpleNamespace(country="USA", group="USA_fighter", design="c"),
         ]
         selected = select_patches(
-            patches, "tank-frontiers", {("USA", "USA_medium_tanks")})
+            patches, "tank-frontiers", {("USA", "USA_medium_tank")})
         self.assertEqual(["a", "b"], [item.design for item in selected])
 
     def test_planner_drops_byte_identical_reconciliation_patches(self):
         from types import SimpleNamespace
         patch = SimpleNamespace(
-            country="GER", file="GER_tank.txt", group="GER_heavy_tanks",
-            design="heavy_tank_1", kind="priority_chain", start=10, end=20,
+            country="GER", file="GER_tank.txt", group="GER_heavy_tank",
+            design="tank_ger_heavy_chassis_infantry_support_1", kind="priority_chain", start=10, end=20,
             original="priority = { factor = 10 }",
             replacement="priority = { factor = 10 }")
         plan = build_plan(MOD_ROOT, "manifest", [patch], "tank-frontiers")
@@ -159,9 +159,9 @@ class GenerationTests(unittest.TestCase):
         cfg, diag = load_config(), Diagnostics()
         evaluator = TankEvaluator(MOD_ROOT, cfg)
         rows = [row for row in evaluator.evaluate({"USA"})
-                if row.group == "USA_medium_tanks"]
+                if row.group == "USA_medium_tank"]
         frontiers = [row for row in evaluator.frontier_decisions
-                     if row.group == "USA_medium_tanks"]
+                     if row.group == "USA_medium_tank"]
         groups = parse_country_file(
             MOD_ROOT / "common/ai_equipment/USA_tank.txt", "USA", diag, "land")
         emitter = Emitter(cfg, diag, file_suffix="tank", domain="tanks")
@@ -169,23 +169,26 @@ class GenerationTests(unittest.TestCase):
                     {"USA": groups}, MOD_ROOT / "common/ai_equipment", frontiers)
 
         patches = [patch for patch in emitter.patches
-                   if patch.group == "USA_medium_tanks"]
+                   if patch.group == "USA_medium_tank"]
         # On an ungenerated source this is seven complete priority patches;
         # on the repository after deployment it is a clean no-op.
         self.assertIn(len(patches), (0, 7))
-        self.assertFalse(any(item.group == "USA_medium_tanks"
+        self.assertFalse(any(item.group == "USA_medium_tank"
                              for item in emitter.blocked))
         if not patches:
             raw = (MOD_ROOT / "common/ai_equipment/USA_tank.txt").read_text(
                 encoding="utf-8-sig")
             self.assertEqual(7, sum(
-                f"USA_USA_medium_tanks_medium_tank_{i}_priority_factor_" in raw
-                for i in range(1, 8)))
+                f"USA_USA_medium_tank_{design}_priority_factor_" in raw
+                for design in ("tank_usa_medium_chassis_1", "tank_usa_medium_chassis_2",
+                               "tank_usa_medium_chassis_3", "tank_usa_medium_chassis_4",
+                               "tank_usa_medium_chassis_4_2", "tank_usa_medium_chassis_5",
+                               "tank_usa_medium_chassis_6")))
         primary = next(row for row in frontiers if row.action == "PRIMARY")
-        self.assertEqual("medium_tank_5", primary.design)  # M4A3E8 Sherman
+        self.assertEqual("tank_usa_medium_chassis_4_2", primary.design)  # M4A3E8 Sherman
         self.assertGreater(primary.priority_factor,
                            next(row.priority_factor for row in frontiers
-                                if row.design == "medium_tank_6"))  # T20
+                                if row.design == "tank_usa_medium_chassis_5"))  # T20
         by_rank = {row.rank: row.priority_factor for row in frontiers}
         self.assertEqual(
             [0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0],
@@ -280,7 +283,7 @@ class GenerationTests(unittest.TestCase):
         group = next(item for item in groups if item.name == "SOV_fighter_mr")
         transition = Transition(
             country="SOV", group=group.name, role=group.role,
-            from_design="fighter_mr_6", to_design="fighter_mr_7",
+            from_design="SOV_la_5_airframe", to_design="SOV_la_5fn_airframe",
             verdict=SWITCH_CONDITIONAL,
             res_significant={"aluminium": 1.0})
         emitter = Emitter(cfg, diag)
@@ -355,7 +358,7 @@ class ProductionStrategyTests(unittest.TestCase):
 
     def test_usa_medium_is_the_canonical_regression(self):
         """M4A3E8 with tungsten, M4A2 without - never T20/T23."""
-        rows = self.groups[("USA", "USA_medium_tanks")]
+        rows = self.groups[("USA", "USA_medium_tank")]
         lines, _ = build_group_blocks(rows)
         text = "\n".join(lines)
         want = [ln for ln in lines if "value = 100" in ln]
@@ -536,7 +539,7 @@ class CoverageAuditTests(unittest.TestCase):
     """The audit that catches chassis the design layer never describes.
 
     Campaign `02bd4445` (2026-08-13): ENG builds `tank_eng_medium_chassis_5`
-    (Comet) with 30+ factories from 1944.6 while `ENG_medium_tanks` stops at the
+    (Comet) with 30+ factories from 1944.6 while `ENG_medium_tank` stops at the
     Cromwell, so the emitted production-strategy file carries a lone `+100` and
     no suppression at all.  A gap in the design layer is invisible in every
     other output the evaluator produces - it looks exactly like a role that is
@@ -554,10 +557,10 @@ class CoverageAuditTests(unittest.TestCase):
         comet = [g for g in self.gaps
                  if g.equipment == "tank_eng_medium_chassis_5"]
         self.assertEqual(1, len(comet), "the Comet must be reported exactly once")
-        self.assertEqual("ENG_medium_tanks", comet[0].group)
+        self.assertEqual("ENG_medium_tank", comet[0].group)
         self.assertEqual("medium_tank_chassis", comet[0].archetype)
         self.assertTrue(comet[0].branched,
-                        "ENG_medium_tanks is a branched role, so its gap "
+                        "ENG_medium_tank is a branched role, so its gap "
                         "invalidates the emitted TANKS strategy file")
 
     def test_a_gap_is_never_something_the_country_already_covers(self):

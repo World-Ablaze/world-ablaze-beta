@@ -1161,13 +1161,33 @@ WA_AI_PC_cancel_projects = {
 WA_AI_PC_validate_queued_provincial_projects = {
 	clear_temp_array = _cancel_projects_IDS
 
+	# [rail-admission-churn] a project that is mostly PAID is kept even off the current paths. The
+	# engine building exists only at completion (WA_AI_PC_add_finished_building_by_id) and
+	# WA_AI_PC_end_project_by_id clears the progress, so a cancel here discards every civ-week spent;
+	# a segment's build time equals the pass interval, so a route change at the next pass catches
+	# segments at or near 100 % paid. Assumes: a rail on friendly ground is still supply whatever
+	# route the selector draws next. A kept project is funded like any other at its band; if the
+	# fill starves it, the stall sweep (alloc.stall_cancel_weeks) is its exit and it holds one budget
+	# slot until then. Fact is gone when: the engine building can be placed before completion.
+	# Cost <= 0 has no paid fraction to argue from and is cancelled as before (the orphan cleanup in
+	# WA_AI_PC_update_project_progress owns those; WA_TEST_railway test 014 builds one).
+	set_temp_variable = { _vq_keep_factor_ = 1 }
+	subtract_from_temp_variable = { _vq_keep_factor_ = constant:wa_ai_pc.alloc.stale_keep_paid_fraction }
+
 	for_each_loop = { array = WA_AI_PC_queue value = _project_id
+		# progress = REMAINING cost; remaining above cost x (1 - fraction) = paid below the fraction
+		set_temp_variable = { _vq_keep_below_ = WA_AI_PC_project_cost^_project_id }
+		multiply_temp_variable = { _vq_keep_below_ = _vq_keep_factor_ }
 		if = {
 			limit = {
 				# Match the strategy type (railway = type_id 13)
 				check_variable = { WA_AI_PC_type_id^_project_id = _strategy_id }
 				# Project target province is NOT in the current valid paths
 				NOT = { is_in_array = { _valid_provinces = WA_AI_PC_target_province^_project_id } }
+				OR = {
+					NOT = { check_variable = { WA_AI_PC_project_cost^_project_id > 0 } }
+					check_variable = { WA_AI_PC_progress^_project_id > _vq_keep_below_ }
+				}
 			}
 			add_to_temp_array = { _cancel_projects_IDS = _project_id }
 			# tlm: pc_stale_n - counter, one per queued project cancelled because its target
@@ -1185,6 +1205,22 @@ WA_AI_PC_validate_queued_provincial_projects = {
 			# spike tracking a type-13 collapse is that scenario.
 			# consumer: standing (the PC termination ledger)
 			add_to_variable = { WA_TLM_pc_stale_n = 1 }
+		}
+		else_if = {
+			limit = {
+				check_variable = { WA_AI_PC_type_id^_project_id = _strategy_id }
+				NOT = { is_in_array = { _valid_provinces = WA_AI_PC_target_province^_project_id } }
+			}
+			# tlm: pc_stale_kept_n - counter, one per off-path project this validator KEPT for being
+			# paid past alloc.stale_keep_paid_fraction ([rail-admission-churn]). Read against
+			# pc_stale_n: the pair is the validator's whole verdict on off-path projects, and a
+			# kept_n that stays 0 while stale_n climbs means the fraction never fires.
+			# consumer: standing (the PC termination ledger)
+			add_to_variable = { WA_TLM_pc_stale_kept_n = 1 }
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_prog = WA_AI_PC_progress^_project_id }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC VALIDATION: KEPT off-path proj=[?_project_id] remaining=[?_dbg_prog] (paid past the keep fraction)"
+			}
 		}
 	}
 

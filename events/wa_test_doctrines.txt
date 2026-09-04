@@ -1,0 +1,63 @@
+############################################################################################################
+#	World Ablaze - LAND DOCTRINE TRACKS harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human and is_ai reads no.
+#	Do NOT fire it as the spectated observer either: the observer context poisons country-valued
+#	triggers (lessons-log 08-27). Tag into a real country other than GER first (`tag FRA`), then:
+#
+#		event wa_doc.1 GER      one country's track report (swap the tag at will)
+#		event wa_doc.2 GER      run the SHIPPED assist step once on that country, then report -
+#		                        use this on a LOADED save to see one pulse without waiting for the
+#		                        weekly on_weekly_GER tick. It ignores the gate (date, difficulty):
+#		                        the step itself is what is under test.
+#
+#	Output: logs/game.log under "LAND DOCTRINE TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line.
+#
+#	WHAT TO FIRE IT ON
+#	------------------
+#		GER on a 1941.1 save, Hist. Normal/Hard   (gate-open=0 because after-deadline=0: the control)
+#		GER on a 1941.3+ save, Hist. Normal/Hard  (gate-open=1 while any tier-1 line reads done=0.
+#		                                     A line with its subdoctrine assigned reads done=1
+#		                                     after ONE wa_doc.2 (200 mastery = 2 rewards x 100);
+#		                                     an EMPTY line needs two: sub=0 -> sub=1 -> done=1)
+#		GER on a Hist. Easy / Comp. Normal save   (securities-enabled=0, gate-open=0 whatever the date)
+#		any other tag                       (is-GER=0, gate-open=0; the report still reads its tracks)
+#
+#	Effects: common/scripted_effects/WA_TEST_doctrines.txt. Owning subject: WORK.md [ger-barb-doctrine-catchup].
+############################################################################################################
+
+add_namespace = wa_doc
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_doc.1
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_DOC_report = yes
+	}
+
+	option = {}
+}
+
+# One shipped assist step on ROOT, then report. The measurement in section B stays independent
+# (contract rule 4); this only removes the wait for the weekly pulse and bypasses the gate.
+country_event = {
+	id = wa_doc.2
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_AI_DOCTRINES_complete_land_tier_1 = yes
+		WA_TEST_DOC_report = yes
+	}
+
+	option = {}
+}

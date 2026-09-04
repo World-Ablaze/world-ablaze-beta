@@ -61,8 +61,12 @@ wa_ai_railway = {
 	# (railway_core, [railway-landwar] live type-13 projects only) AND the [pc-queue] admission cap on queued segments
 	# (railway_helpers) - they were two @ names 'equal BY DESIGN'; one key makes the design structural.
 	routes = {
-		max_total                    = 8	# max routes processed per run
-		                               # was @WA_AI_PC_railway_MAX_ROUTES_TOTAL
+		max_total                    = 16	# max routes pathfound per run. [rail-admission-churn] a route past this cap is
+		                               # not pathfound, so its in-flight segments are off _valid_provinces and exposed
+		                               # to the stale test (kept only if paid past alloc.stale_keep_paid_fraction).
+		                               # Sized to the realistic list: max_per_enemy x bordered enemies + overseas.
+		                               # railway_core logs a WARNING when the list exceeds it.
+		                               # was @WA_AI_PC_railway_MAX_ROUTES_TOTAL (8)
 		max_per_enemy                = 4	# max routes per enemy country (enforced by WA_AI_PC_railway_land_frontline_candidate)
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
 		queue_full                   = 12	# 'a full queue is 12' - skip recalculation at/above, and never admit past it ([pc-queue])
@@ -158,13 +162,22 @@ wa_ai_railway = {
 	# be retunable apart. They are equal today by choice, not by contract - nothing checks it.
 	land_war = {
 		rail_level_floor = 2	# never size BELOW this. Keeps the change monotone against the pre-Fix-135
-		                    	# behaviour of a route whose front is empty.
-		rail_level_cap   = 4	# never size ABOVE this. 4 = 36 supply. Railways cannot be downgraded, so the
-		                    	# cap is the irreversibility budget (LOGISTICS_MODEL section 10 rule 3).
-		                    	# ALSO the "this frontline is done" level: `_check_railway_level` in the three
-		                    	# strategies reads this key, so a state at the cap stops attracting routes.
-		                    	# Leaving that at 5 while sizing at 4 would spend the route budget for ever
-		                    	# on states that can never read done.
+		                    	# behaviour of a route whose front is empty. [rail-admission-churn] ALSO the
+		                    	# HEAD threshold of the main pass: segments below it are admitted first.
+		rail_level_cap   = 4	# never size ABOVE this on a PORT-FED route (entry mode 1, and the different-
+		                    	# landmass done-test in WA_AI_PC_railway_land_consider_frontline). 4 = 36 supply.
+		                    	# Railways cannot be downgraded, so the cap is the irreversibility budget
+		                    	# (LOGISTICS_MODEL section 10 rule 3). Also the port-upgrade threshold of the
+		                    	# land-war/overseas strategies and the "done" level of the overseas-war and
+		                    	# prewar strategies (`_check_railway_level`).
+		rail_level_cap_overland = 5	# [rail-admission-churn] cap on a CAPITAL-FED route (entry mode 2) = the engine
+		                    	# maximum, 5 = 44 supply: the port cap exists because a port bottlenecks the
+		                    	# chain, a capital does not (owner ruling, WORK.md rail-admission-churn).
+		                    	# ALSO the land-war strategy's "done" level (`_check_railway_level` at its
+		                    	# entry), so a capital-fed frontline at 4 keeps attracting routes; overseas
+		                    	# frontlines read done at rail_level_cap inside consider_frontline instead.
+		                    	# Assumes: CAPITAL_SUPPLY_BASE + per-factory supply (05_defines.lua) out-feeds
+		                    	# a level-5 rail for any major. Gone when: that define drops below ~44.
 	}
 
 	# Supply-throughput model used to size ports against railways (railway_helpers).
