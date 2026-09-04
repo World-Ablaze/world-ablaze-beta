@@ -475,6 +475,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Proposed, not admitted: delete `WA_AI_MILITARY_SOV_counterattack` / `_coordinate_offensive`
   (dead: `coordinate_offensive` has no setter; the counterattack is outranked by the Default
   family) - legacy-gate trace first; a `WA_TLM_post_pursuit_n` metric (TLM doc §7 process).
+- **Campaign `d1c51a6c` scored 2026-09-04 (build carries `664a94bc9`; 116 saves 1936.2-1945.8):
+  probes (ii), (iii), (iv), (vi) PASS; (i), (v), (vii) NOT CHECKED (console/fork only).** Detail:
+  scratchpad `d1c51a6c_subjects_report.md`. MEASURED verdict series (`var <TAG> "^wa_ai_military_posture"`,
+  12 quarterly saves 1941.9→1945.8): **every level of the new scale fires** — level 3 on GER vs SOV
+  (1942.9-1943.9), GER vs ENG (1943.3), ENG vs ITA (1942.3, 1943.9), USA vs ITA (1943.9), USA vs
+  JAP (1945.3→), JAP vs PRC (all war); level 2 on USA vs GER (1944.3-1944.6, the post-D-Day
+  exchange), GER vs SOV (1942.3, 1944.3); level 4 on POL/YUG/NOR/PHI/INS (0-2 divisions or
+  annihilated), GER vs FRA (5-11 divisions), SOV/USA/ENG vs ITA (18-26 divisions, 4 states). (iv)
+  PASS: no level-4 cell against an enemy above `alive.min_div` = 40. SOV vs GER reads **1 on every
+  save 1942.9→1945.8** (0 at 1941.9/1942.3), never 2/3 — matches the DERIVED bar note above (GER
+  1.86 M / 248 div = 7.5 k per division > 3 k; SOV `wa_tlm_post_grind_n` = 3 vs `exec_n` 2143).
+  GER reads 0 (hold) vs SOV from 1944.6 and vs ENG/USA from 1945.3 while losing ground.
+  (ii) PASS on the basis the scan actually uses (own + faction members + subjects at war with the
+  enemy, vs enemy + its subjects): western bucket (metropolitan France + Benelux + western German
+  states, `plans.py ALL --where`, closure exact) 1944.9 Allies **203** vs German side **128** (1.59),
+  1945.3 **250** vs **201** (1.24 — above `inferior_hold` 1.2, so level 1 held; USA alone is 166 vs
+  GER 193, which is why a USA-only count reads as a false FAIL — the probe wording must say
+  coalition). USA vs GER = 1 at both dates. (iii) PASS: `control owner:SOV` 152/187 SOV-held at
+  the 1943.6 peak (RBL 18 / GER 12 / ROM 5) → 155 (1944.6) → **189/189, 2772/2772 provinces**
+  (1945.8) — all 35 states in 26 months vs 8 on `5d2a391c`; back-loaded (3 in the first 12 months,
+  32 in the next 14). Exchange (`losses.py`, peace-ledger corrected): SOV/GER losses 1.29 over
+  1943.6→1944.6, **0.42** over 1944.6→1945.8. (vi) PASS: `SPR_franco_won` 1939.4.3. TLM at 1945.8
+  (live, `last_t` 114): exec_n SOV 2143 / USA 3188 / GER 4087 / ENG 3306; grind_n 3 / 20 / 38 /
+  10; `xr_lt25 / xr_n` 85 / 80 / 87 / 76 % — the exchange-rate sample sits in the most favourable
+  band everywhere, the artefact suspected in the symptom list is still uninstrumented on a
+  campaign (probe v owed on the fork). Recorded, not defects: (a) SOV/USA/ENG keep `vs_ita = 4`
+  after ITA's 1944.1.20 defection and GER/JAP/ITA keep `vs_phi/ins/nor = 4` on annihilated tags —
+  the documented post-peace lingering, inert because every consumer and `_has_pursuit_target`
+  gate on `has_war_with`/`any_enemy_country`; (b) JAP's family FROZEN from 1945.4 (`last_t` 111,
+  all live-enemy verdicts 0 from 1945.3) — DERIVED candidate: `wa_ai_fielded_eq_ratio` 0.856 at
+  1945.8 against `enter.min_eq_hold` 0.85, i.e. the equipment gate cleared the posture; (c) USA's
+  overall tracks the highest single pairwise value (1→3→2→1→3), by construction. Also MEASURED on
+  this campaign, outside the subject: D-Day 1944.2.8 (4 months early), Paris liberated 1944.12.23,
+  and at 1945.3 the French front is an interleaved checkerboard (19 contested states, GER still in
+  Brittany and the Massif Central behind Allied-held Champagne/Paris) — France reads 58/60 French
+  by 1945.8. Stays SHIPPED-UNTESTED until the harness weekly series is pasted.
 - Closed when: harness output pasted (both the report and one weekly series), and probes
   (i)-(iv) pass on one scored campaign.
 
