@@ -3841,11 +3841,40 @@ OPEN with a session of its own.
   of all routes, then level-3, then level-4. Same call count (each segment offered once);
   segments at 5 not offered. Expected on the same save: the 12 slots go to the level-2 hops of
   Wołyn/Kursk/Sumy before any Lublin 4→5.
+- Console harness, owner run 2026-09-04 on the cut-2 build (`barb_supply test.hoi4` resumed,
+  pass of 1943.5.10, together with `rail-sizing-demand`): `RAILWAY: processed 10/10 routes`;
+  `RAILWAY ADMISSION: segments=504 head=0 rest=12`; the 12 `PC QUEUED` are ALL level-2 hops
+  (Grodno 3393→14173, Druskininkai, Vilnius ×3, Aukštaitija ×2, Zemgale, Latgale ×4 — the
+  Pskov route's level-2 run), every level-3 and level-4 hop refused, `PC SKIP DUPLICATE` on
+  the re-offers — C **PASS** (weakest links first). A and B still NOT exercised (no `rail`-tag
+  project in the queue before the pass → no `PC VALIDATION` line); they need the pass AFTER
+  this one (≈ 1943.7.5) on the same save, when the queue holds these 12 and the routes may
+  have moved. D confirmed again (all routes `target=5` under the widened demand).
+- Throughput, DERIVED from the same log and the 1943.5 save, for the owner: the binding
+  constraint is now FUNDING, not admission. `PC_ASSIGN: raw_avail=197 after_alloc_fraction=79`
+  → 79 civs ÷ 20 per project = **4 rail segments funded at a time**, 8 weeks each (100 IC/week
+  at 20 civs on an 800-IC segment) → 0.5 segment-level per week; with the rail override
+  (×0.6, 30-day flag re-armed by this pass) 118 civs → 0.74/week. The east routes on this log
+  hold ≈ 36 level-2 hops, ≈ 60 level-3, 6 level-4 → ≈ 234 segment-levels to reach target 5
+  everywhere = **≈ 6 years at 0.74/week**; the level-2 → 3 pass alone (36) ≈ 49 weeks. Target 5
+  everywhere is therefore a direction, not a reachable state; the weakest-link sweep is what
+  makes each pass useful. Levers, all owner decisions, none taken: PC allocation share for
+  rail (`alloc.fraction` 0.4 / the 0.6 override's 30-day life vs the 56-day pass interval),
+  `routes.queue_full` 12 (admission, only binding once funding rises), `max_civs_per_project`
+  20 (a PC ledger clamp, not an engine limit).
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### rail-sizing-demand — PARKED (2026-09-04)
-- Parked heading only for the WIP limit (4 OPEN). Real state: **SHIPPED-UNTESTED 2026-09-04** —
-  owner-admitted on a MEASURED symptom, owner rulings taken, code committed, harness owed.
+- Parked heading only for the WIP limit (4 OPEN). Real state: **TESTED 2026-09-04** — console
+  harness run by the owner (below) PASSED; campaign probe (2) still owed.
+- Console harness, owner run 2026-09-04 (`barb_supply test.hoi4` resumed, GER, pass of
+  1943.5.10, build `526acd975`): `RAILWAY SIZE:` on all 9 accepted hubs — Pskov `states=4
+  presence=51 demand=63.75 target=5`, Nevel 5/54/67.5/5, Rostov 5/35/43.75/5, Kursk
+  7/92/115/5, Kharkov 4/48/60/5, Orel 6/115/143.75/5, Bryansk 6/110/137.5/5, N. Donetsk
+  6/64/80/5, Smolensk 6/57/71.25/5 — **PASS** (Smolensk/Bryansk/Nevel were `target=2` on the
+  1943.7.19 pass). Every route reads the cap 5: the known-false control (`states` ≥ 2 with
+  `target=2`) did not occur on this front — no thin sector exists here; it stays owed on a
+  campaign save with a quiet front. Cost: 10 routes sized, no visible pulse stall.
 - Intended behaviour: a land-war railway route is sized for the divisions its frontline hub
   actually feeds, so a hub carrying 35-66 supply of demand is not fed by a level-2 chain.
 - Symptom, MEASURED (owner screenshot, supply map 1943.10.13, same GER campaign as
