@@ -4337,6 +4337,37 @@ OPEN with a session of its own.
   from 6521), `WA_AI_PC_railway_INTERVAL_counter` ≤ 6 in peace, `RAILWAY REFILL` lines in a logged
   wartime month, `built[13]` ≥ 19/month on the war saves, no save with one rail left and the counter
   running; known-false control: a country at peace with no CONFIG target keeps the 12-week counter.
+- Verification (3) RESULTS, campaign `8bf94908` (BHU observer, monthly saves 1936.2-1945.8, all on
+  the M1/P1 build — `wa_ai_pc_railway_refill_on` present from 1940.6; Barbarossa 1941.6.22). Scripts
+  `run3_rail.py` / `run3_rate2.py` / `run3_front_hubs.py`, extractions `run3_pc.md` / `run3_front.md`
+  (session scratchpad). PASSED on the two owner criteria, one open question:
+  - P1 PASSED, MEASURED (rail.py): the level-5 component from Berlin = 26 provinces at 1940.6, 35 at
+    1940.9, 69 at 1940.12 with its eastern end at Grodno, 72 at 1941.3-6; `rail-prewar` (500) rails in
+    the PC queue at 1940.9 (Poznań, Kraków, Ostmark, Brandenburg) and 1940.12 (Łódź, Kraków, Katowice,
+    Kielce, Poznań); 1941.3 and 1941.6 hold NO rail with `refill_on` 0 = the border network was done
+    (Grodno / Białystok read 5 at 1941.6). Railhead memory SOV = 6464 in peace, Wilno at 1941.9,
+    Bobruysk from 1941.12.
+  - One-year target PASSED, DERIVED: T5 = 89 (1941.12), 105 (1942.3), 120 (1942.6, one year in) against
+    run 2's 107 after two years; GER+subject east level-steps 10-15 per month 1941.7-1942.6 (run 2: 8);
+    `built[13]` +17 to +24 per month over the same window (run 2: 11). Hubs at 5 from Berlin: Minsk,
+    Bobruysk, Gomel at 1942.3, Daugavpils 1942.6, Kiev and Dnipropetrovsk 1942.9. Trunk shape: Königsberg
+    - Kaunas - Wilno - Minsk (no marshes) then Bobruysk, a Kiev line and a southern Lwów - Vinnytsia -
+    Cherkasy - Dnipropetrovsk line at 1000.
+  - M1 PASSED, MEASURED: no war snapshot with one rail left and the counter running; 1941.9 shows a fresh
+    lot of 20 trunk hops (1100) appended; `refill_on` = 1 on every snapshot 1941.7-1942.6.
+  - OPEN, MEASURED: from 1942.9 GER's queue holds no eastern rail in any snapshot (`refill_on` 0), while
+    frontline hubs facing SOV read Kharkov 4, Chernigov 3, one Gomel hub 2 until they are lost
+    (1943.6-1944.6); `built[13]` still +111 in 1942.12-1943.6 but in the Baltic, Kuwait and Tripoli. The
+    railhead stayed Bobruysk 1941.12-1944.6 while the front stood 200 km east. Cause not readable from
+    saves — harness: load `1942.10_Oct.hoi4`, `tag GER`, `effect d_WA_spine_pass`, tag back, next Monday;
+    read `RAILWAY SPINE cand=`, the `PATHFIND … FAIL` lines and `RAILWAY ADMISSION`.
+  - Noted, one line: spines also armed for ENG (railhead British Somaliland), FRA (Rhineland) and POL
+    (Vienna); 1940.9 funded 60 civs of East-Africa rails at 1000 while the prewar trunk at 500 got 20.
+  - Front, MEASURED (`control`, `army`): Axis peak 37 SOV states at 1942.9-12 (Kharkov, Crimea);
+    Leningrad, Moscow, Rostov, Stalingrad never fall; SOV retakes Kharkov by 1943.12, Dnipropetrovsk,
+    Riga, Minsk by 1945.1; 1945.8 war still open, GER 335 divisions vs SOV 434, Kiev and Crimea still
+    Axis-held. Rail is not the reader's explanation for the stall: the 1942.9 front hubs read 4-5
+    except Chernigov 3 and one Gomel hub 2.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
   line per enemy passing the gate (with `served=N` and `trunk_hops=k > 0`), R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20
