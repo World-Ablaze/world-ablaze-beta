@@ -138,7 +138,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > `WA_AI_CONFIG_is_reserve_materiel_limited` (ENG — owner chose "ENG reste fermé" over pure
 > capability: its MILs build air/sea, no land stocks at war entry). Calibration MEASURED at war
 > entries (24933fb9): RAJ 1939.10 22 MIL/50 div → closed; CAN 15/14 → open (snowball case); ENG
-> 134/31 → closed by archetype; GER 243/107 → open (veto moot, home neighbour at war); USA 1942.1
+> 134/31 → closed by archetype; GER 243/107 → open (veto moot, home neighbour at war — escape
+> superseded 2026-09-05 `[reserve-capacity]`: tiers now hold in every war); USA 1942.1
 > 340/7 → open; RAJ 1942.1 91/48 → open (industry grew into its army). Stock gating measured and
 > REJECTED: RAJ holds 53k infantry eq at entry (licences) while CAN holds 11.6k yet must open —
 > stock separates neither pair. Trigger symptom: USA fork 1944.6.20 `reserves=30` frozen at 59
@@ -171,6 +172,32 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > finishes **53/53 states, 436/436 provinces, 321 divisions and growing**, with Paris German at the
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
+
+### train-variant-choice — OPEN (2026-09-05)
+- Owner order 2026-09-05: AI train lines run on the Simplified / War Austerity trains when available;
+  the Armored Train is produced only with 10000 trains in reserve. All AI countries, every tech tree.
+- State before, MEASURED (`common/units/equipment/trains.txt`): Armored Train `priority = 30` >
+  Simplified 20 = Austerity 20 > Civilian 10, i.e. the vanilla order (vanilla armored 30) that puts the
+  AI on the 65-IC armored variant from 1936; the only train strategy was the archetype-level
+  `equipment_variant_production_factor id = train_equipment` (+5 / -50). One train tree only
+  (`common/technologies/support.txt` basic/simplified/wartime/armored; no country-specific train
+  equipment) so one rule covers every tree.
+- Change: `priority` armored 30 -> 5, austerity 20 -> 25; constant
+  `wa_ai_production.trains.armored_reserve = 10000`; decision triggers
+  `WA_AI_PRODUCTION_should_build_cheap_trains` / `_armored_trains` (exact complements on
+  `num_equipment@train_equipment`, strict >); blocks `WA_AI_PRODUCTION_build_cheap_trains`
+  (`production_upgrade_desire_offset` +100 on train_equipment_2/_3, -100 on _4) and
+  `_build_armored_trains` (+100 on _4) in `WA_AI_PRODUCTION_DEFAULT_ground.txt`.
+- ASSUMED (engine): equipment `priority` is the AI's pick among unlocked variants of an archetype
+  (wiki documents it as `# ?`); `production_upgrade_desire_offset` sign = eagerness to move a line
+  onto that id (vanilla comment "100 essentially means we don't require a stockpile surplus",
+  Expert AI holds lines with -100 under `has_equipment < 10000`). No hysteresis at the reserve: a
+  stock crossing 10000 flips the pair at the next strategy re-evaluation; at 10000 free trains the
+  need is met so the lines idle, flip cost ~0.
+- Probe (campaign): on every save 1940+ of an AI major with train_equipment stock < 10000, the
+  train production lines (`savegame.py` production lines) carry train_equipment_2/_3 (or _1 before
+  1939), never train_equipment_4; armored lines appear only on a save whose stock reads > 10000.
+- Closed when: probe passes on one scored campaign (F9 boot test first: the four files parse).
 
 ### ai-equipment-naming — TESTED (2026-09-04)
 - Owner order 2026-09-04: "on a un soucis d'hygiène de code : les entrées ai_equipment comme
@@ -876,6 +903,65 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   past that timestamp.
 - Closed when: probes (i)-(iii) pass on one scored campaign, or the owner accepts a written no-fix
   ruling on (ii).
+
+### reserve-capacity — PARKED (2026-09-05)
+- PARKED at creation (WIP limit: 4 non-PARKED subjects, owner to free a slot). State: both changes
+  in the working tree, UNCOMMITTED; no harness owed (`WA_reserves_*`, < 40 lines, no
+  `WA_TEST_reserves`); campaign probes wait for a save newer than the fix. Reviews 2026-09-05:
+  architecture CONCERNS (rule-7 comments trimmed, regression cases stated below), lessons CONCERNS
+  (forward walk done, t-table below, non-comparability note, lessons supersession appended).
+- Owner orders 2026-09-05: "corrige la coquille ×10 et remets le seuil d'origine" ; "sépare le veto
+  en deux triggers".
+- Symptom, MEASURED (`8bf94908`, BHU observer, monthly saves): ROM deployed 36 → 67 (1940.6, peace)
+  → 92 (1941.6) → 142 (1943.6) → 145 (1945.6) divisions, "Reserve Divisíon" 50/92 → 97/142;
+  `reserves` 80 (1939.6) → 0 (1943.6); `wa_ai_fielded_eq_ratio` 0.55–0.68 from 1942.1 vs HUN
+  0.998–1.0 on the same 104 MILs (1945.6: ROM 145 div, HUN 60); 1941.6 the 50 reserve divisions
+  read mean org 5.6 with 46 on a front order; `wa_tlm_llr_starving_n` 244. Manpower pool 1.97 M
+  and flat: not the constraint. Scratchpad `rom_reserves_diagnosis.md` (six boxes).
+- Cause 1, MEASURED (git): `WA_reserves_meets_recruitment_threshold` multipliers 2000/100 (std) and
+  1000/50 (SOV) since refactor `2c9028075` (2026-02-05), against its own header 20000/1000 and
+  10000/500 and the pre-refactor per-level triggers (`3b711ef39^`: bank 10 needed army > 399 999
+  / > 25 000 rifles). Forward walk: no commit in `2c9028075..HEAD` touched those four lines
+  (`git log -G`). DERIVED: ROM 1939.6 ≈ 330 k army men clears the loose level-70 bar (339 999) and
+  would have stalled at bank 10 under the intended one.
+- Cause 2, MEASURED (code): the MIL-tier capacity bars sat inside `WA_reserves_is_expeditionary_only`,
+  whose `NOT any_home_area_neighbor_country { has_war_with = ROOT }` term makes the whole trigger
+  false in a neighbour war (YUG 1941.4, SOV 1941.6) — the tiers were never evaluated for a
+  continental war. `[reserve-quality]` v2 was calibrated on USA/CAN/RAJ/ENG, all overseas wars; the
+  "GER 243/107 → open (veto moot, home neighbour at war)" cell recorded that escape as design.
+- Change 1: multipliers restored to 20000/1000 and 10000/500 (`WA_reserves_triggers.txt`).
+- Change 2: split. `WA_reserves_is_expeditionary_only` keeps has_war / no surrender / no neighbour
+  at war / ENG materiel archetype (now AND terms, no OR). New `WA_reserves_is_over_capacity` =
+  the three MIL tiers only, no war-state and no surrender term. `deploy_reserves_infantry` carries
+  a second factor-0 modifier on it, escaped like the first by `WA_reserves_should_deploy_undersized_army`.
+- Walk, ROM (DERIVED from the MEASURED cells): t0 1939.6 36 div / 31 MIL — tier 2 needs > 40, batch
+  1 passes (→ 46), restored ladder leaves a bank of ~10 so that is the whole wave; t1 1940.6 46 div
+  ≤ 49 MIL → vetoed; t2 1941.6 54 MIL: tier 2 no longer applies, tier 3 needs > 80 → open again
+  for whatever bank remains (0 under the restored ladder; under the old ladder the veto alone would
+  have capped ROM near 80–90 instead of 145). The ladder is the binding lever for ROM; the veto is
+  the guard for a bank that fills anyway (a major's, or a minor grown past 400 k army men).
+- Hover residue, accepted: a country at bar+10 has no hysteresis (dump → veto → losses → dump) —
+  the same "reserves replace losses" residue accepted for the 30-division bar (`[reserve-quality]`).
+- Blast radius, MEASURED (`8bf94908` 1939.6 / 1941.6 / 1943.6, every tag with `reserves` > 0): the
+  veto changes exactly one at-war cell, ROM 1941.6 (50 banked, 92 div, 54 MIL). YUG 1939.6 fires at
+  peace (10 banked, 22 div / 18 MIL). CHI, every warlord, FIN, GRE hold `reserves = 0`; POL/BEL are
+  exiles with 0 divisions; RAJ 1939.6 sits exactly on tier 1 (20 div / 21 MIL, not > 20). CZE (50)
+  and VIC (10) are dead tags carrying a frozen bank.
+- Regression risk, stated: (a) the peace path (`early_reserve_mobilization_flag`) is now vetoed for
+  an over-capacity country — YUG 1939 is the measured case; (b) a collapsing minor
+  (`surrender_progress > 0`) stays vetoed until attrition brings it under its tier bar — the exit is
+  the field army, not VP loss, chosen (lessons: `surrender_progress` is not a capability test);
+  (c) bank sizes are NON-COMPARABLE across this commit: every bank read so far (ENG 40 on
+  `5d2a391c`, USA 30, the v2 calibration cells) was measured under the 10×-loose ladder —
+  `eng-reserve-partner` probe (i) must be re-based on the bank this ladder yields (ENG needs
+  > 399 999 army men for bank 20).
+- Closed when: a campaign on this build shows (i) no country under 100 MIL holding `reserves` > 20
+  at its war entry unless `has_army_manpower` > the restored bar for that level; (ii) ROM deployed
+  ≤ 60 divisions at 1943.6 with `wa_ai_fielded_eq_ratio` > 0.85; (iii) no tier-vetoed country with
+  a bank > 0 reads `wa_ai_fielded_eq_ratio` > 0.9 for 6 consecutive months (that would say the
+  tiers under-read its industry — the assumption-gone signal named in the trigger header).
+- Probes: `var TAG "^reserves="`, `army TAG`, `buildings TAG --match arms_factory`,
+  `var TAG "^wa_ai_fielded_eq_ratio="`, `plans.py ROM --templates` (reserve template count).
 
 ### hq-role-capture — PARKED (2026-09-04)
 - Parked 2026-09-04 (owner decision): slot freed for `coal-prospect-loop`. Readings (1)-(4) below
