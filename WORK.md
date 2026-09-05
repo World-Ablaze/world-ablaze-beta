@@ -4211,6 +4211,15 @@ OPEN with a session of its own.
   enemy tag while the four prewar direct-route sites do not (`railway_enemy_tags_` is read only by
   the land-war sort — dormant misalignment, pre-existing shape); phase T keeps offering hops after
   the budget is full, like phase B.
+- Owner tuning, 2026-09-05, after the first harness pulse (1941.9.29) and the 1941.12.20 save reading
+  (12 hops built per 8-week pass, rail queue idle 5 weeks in 8, 9.5 weeks of war before the first
+  pass): (a) the rail override flag timer 30 → **21 days** (`railway_core`; the ENG air-hosting
+  writer keeps 30, the shared contract is the VALUE 0.6); (b) `interval.war_weeks` 8 → **6**;
+  (c) new `on_declare_war` block in `WA_AI_misc_on_actions.txt`: the railway interval counter of the
+  declaring country and of its target is set to 0 when they are AI. DERIVED at 6 weeks: trunk
+  Berlin→Nowogródek ≈ 30 weeks instead of 40, rail monopolises the PC pool ≈ 3 weeks in 6,
+  override armed ≈ 21 days in 42. Tell-tale to watch on the next campaign:
+  `wa_tlm_pc_avail_share_pct` well above 60 % = the override bites too much.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
   line per enemy passing the gate (with `served=N` and `trunk_hops=k > 0`), R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20

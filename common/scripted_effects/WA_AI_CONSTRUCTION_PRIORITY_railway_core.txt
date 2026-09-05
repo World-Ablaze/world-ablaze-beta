@@ -515,14 +515,19 @@ WA_AI_PC_railway = {
 						limit = {
 							check_variable = { queued_type_num_ > 0 }
 						}
-						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 30 }
+						# 21 days: the override exists to fund the lot this pass just admitted, and at the
+						# ledger's real speed a 12-hop lot at 4 slots is finished in ~3 weeks - past that the
+						# extra pool only starves the standard queue (owner ruling). Read against the pass
+						# interval: a timer longer than the interval makes the override permanent.
+						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 21 }
 						# HAZARD: this flag/variable pair is DELIBERATELY SHARED with
 						# WA_AI_build_uk_air_hosting_capacity (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
-						# The two writers must hold IDENTICAL values or they alternate on a
-						# last-writer-wins 30-day timer, each stamping its own over the other's - and
-						# this writer runs on far more pulses, so it wins during the window the other
-						# one exists to fund. Do not diverge them again without giving each system
-						# its own flag.
+						# The two writers must hold the IDENTICAL VALUE (0.6) or they alternate on a
+						# last-writer-wins timer, each stamping its own over the other's - and this
+						# writer runs on far more pulses, so it wins during the window the other one
+						# exists to fund. The timers may differ (21 here, 30 there): the last writer's
+						# expiry wins, the value never changes. Do not diverge the VALUE without giving
+						# each system its own flag.
 						set_variable = { WA_AI_PC_override_max_factories_factor = 0.6 }
 					}
 

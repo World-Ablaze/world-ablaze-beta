@@ -61,7 +61,7 @@ on top) and `constant:wa_ai_pc.prio.rail_prewar` (500, was 5000) in `wa_ai_pc.tx
 
 ```
 wa_ai_railway.interval.peace_weeks = 12      # runs every 12 weeks during peace
-wa_ai_railway.interval.war_weeks   = 8       # every 8 weeks during war
+wa_ai_railway.interval.war_weeks   = 6       # every 6 weeks during war (was 8; owner ruling 2026-09-05)
 wa_ai_railway.eligibility.min_civs = 50      # base civ minimum inside the run, peacetime side
 wa_ai_railway.eligibility.min_civs_war = 30  # Fix 104: absolute wartime floor, was min_civs x war_civs_factor (0.6)
                                              # computed at each site. A scripted TRIGGER cannot multiply, and
@@ -191,7 +191,8 @@ on_weekly:
 ### Interval Behavior
 
 The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, line 43):
-- **At war**: Counter resets to `constant:wa_ai_railway.interval.war_weeks` (8 weeks, ~2 months)
+- **At war**: Counter resets to `constant:wa_ai_railway.interval.war_weeks` (6 weeks; was 8 until 2026-09-05)
+- **On a war declaration** (`on_declare_war`, `WA_AI_misc_on_actions.txt`): the counter of the declaring country AND of the target is set to 0 when they are AI, so the first wartime pass runs on the next weekly pulse instead of waiting out the peace counter (measured: 9.5 weeks of the 1941 GER-SOV war with no pass)
 - **At peace**: Counter resets to `constant:wa_ai_railway.interval.peace_weeks` (12 weeks, ~3 months)
 - Counter decrements by 1 each weekly call
 - Execution occurs when counter reaches 0
@@ -863,7 +864,7 @@ the corridor's shape; `[rail-spine-tree]` added the kinds and phase T):
 5. **Phase T — trunk**: trunk hops (kind 1) at or above the floor and below their target, by value descending, then level ascending, then capital-first. Log `RAILWAY TRUNK` per hop offered.
 6. **Phase B — raise**: the remaining branch segments at the sizing target, one sweep per raw map level from the floor up to `rail_level_cap_overland − 1` (every level-2 hop of every route before any level-3 hop). Always runs after A and T (the corridor runs it only when A admitted nothing). Log: `RAILWAY ADMISSION: segments=N head=A trunk=T rest=B`.
 7. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
-8. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
+8. **Factory override**: When railway projects are queued at the end of the pass, sets the shared override flag (`WA_AI_PC_override_max_factories_factor`, pool ×0.6 instead of `alloc.fraction` 0.4) for **21 days** (was 30; owner ruling 2026-09-05 — the lot a pass admits is built in ~3 weeks at the corrected ledger speed, a longer timer only starves the standard queue)
 
 ## Function Reference
 
@@ -1033,7 +1034,7 @@ When peace is signed (`on_peace` in `WA_AI_misc_on_actions.txt`, lines 301-343):
 
 4. Post-processing
    ├── Port upgrades via WA_AI_PC_process_port_upgrades
-   └── Factory override (50% extra for 30 days)
+   └── Factory override (pool x0.6 for 21 days)
 
 5. Project completion (via WA_AI_PC_update_project_progress)
    ├── WA_AI_PC_add_finished_building_by_id → build_railway
