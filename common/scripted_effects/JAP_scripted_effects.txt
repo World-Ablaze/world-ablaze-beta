@@ -1235,3 +1235,62 @@ JAP_empire_independence_upgrade = {
 		}
 	}
 }
+
+# ── 五十個師団構想ミッション(JAP_factions.txt)の成否効果 ──
+# 平時段階と戦時段階の2本のミッションが同じ報酬・ペナルティを共有するため切り出し。
+JAP_fifty_division_plan_reward_effect = {
+	army_experience = 100
+	WA_add_mastery_infantry_50 = yes
+	WA_add_mastery_artillery_50 = yes
+	if = {
+		limit = { has_aat = yes }
+		mio:JAP_tokyo_arsenal_organization = {
+			add_mio_funds = 1200
+		}
+		mio:JAP_osaka_army_arsenal_artillery_organization = {
+			add_mio_funds = 1200
+		}
+	}
+}
+
+JAP_fifty_division_plan_timeout_effect = {
+	add_political_power = -150
+	add_war_support = -0.05
+	# 空証文の軍拡計画は陸軍の面子を潰し、艦隊派が息を吹き返す。効果変数は影響力と
+	# 同時にしか動かさない(影響力が上下限に張り付いた後の効果だけの積み増しを防ぐ)。
+	if = {
+		limit = {
+			has_completed_focus = JAP_purge_the_kodoha_faction
+		}
+		custom_effect_tooltip = JAP_toseiha_influence_down_tt
+		custom_effect_tooltip = JAP_kantaiha_influence_up_tt
+		hidden_effect = {
+			if = {
+				limit = { check_variable = { JAP_toseiha_influence > 0 } }
+				add_to_variable = { JAP_toseiha_influence = -1 }
+				add_to_variable = { JAP_toseiha_production_speed_arms_factory_factor = -0.04 }
+			}
+			if = {
+				limit = { check_variable = { JAP_kantaiha_influence < 7 } }
+				add_to_variable = { JAP_kantaiha_influence = 1 }
+				add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+			}
+		}
+	}
+	else = {
+		custom_effect_tooltip = JAP_kodoha_influence_down_tt
+		custom_effect_tooltip = JAP_kantaiha_influence_up_tt
+		hidden_effect = {
+			if = {
+				limit = { check_variable = { JAP_kodoha_influence > 0 } }
+				add_to_variable = { JAP_kodoha_influence = -1 }
+				add_to_variable = { JAP_kodoha_production_speed_arms_factory_factor = -0.04 }
+			}
+			if = {
+				limit = { check_variable = { JAP_kantaiha_influence < 7 } }
+				add_to_variable = { JAP_kantaiha_influence = 1 }
+				add_to_variable = { JAP_kantaiha_production_speed_dockyard_factor = 0.04 }
+			}
+		}
+	}
+}

@@ -27,7 +27,8 @@ JAP_internal_factions = {
 
 		visible = {
 			tag = JAP
-			check_variable = { JAP_toseiha_influence = 0 compare = greater_than_or_equals }
+			# 統制派が失脚したら欄から消す(影響力>=0は常に真で無意味だった)
+			JAP_toseiha_faction_alive_trigger = yes
 		}
 
 		modifier = {
@@ -117,7 +118,8 @@ JAP_internal_factions = {
 		fire_only_once = no
 
 		visible = {
-			check_variable = { JAP_kodoha_influence = 0 compare = greater_than_or_equals }
+			# 皇道派が粛清されたら欄から消す(影響力>=0は常に真で無意味だった)
+			JAP_kodoha_faction_alive_trigger = yes
 		}
 
 		modifier = {
@@ -1535,6 +1537,96 @@ equipment_missions = {
 			add_stability = -0.2
 			air_experience = -100
 			add_political_power = -100
+		}
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	# ── 五十個師団構想: 平時段階(27個師団体制) ──
+	# 盧溝橋事件(japanese_china_showdown)で未達成のまま開戦した場合、
+	# on_actions/JAP_rework_on_actions.txt がこれを取り下げて戦時段階を起動する。
+	# 砲の合計(野砲+山砲+重砲)は同 on_actions が毎日 JAP_army_artillery_total へ書き込む。
+	JAP_fifty_division_plan_mission = {
+		icon = generic_operation
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			# SOV_the_greatest_tank_army と同じ「現在値/目標値」表示。
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_manpower_tt
+				has_army_manpower = { size > 749999 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_inf_eq_tt
+				check_variable = { num_equipment_in_armies@infantry_equipment > 65000 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_heavy_eq_tt
+				check_variable = { num_equipment_in_armies@heavy_infantry_equipment > 11000 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_artillery_tt
+				check_variable = { JAP_army_artillery_total > 1499 }
+			}
+		}
+
+		days_mission_timeout = 1460
+		is_good = no
+		fire_only_once = yes
+
+		complete_effect = {
+			JAP_fifty_division_plan_reward_effect = yes
+		}
+		timeout_effect = {
+			JAP_fifty_division_plan_timeout_effect = yes
+		}
+		ai_will_do = {
+			factor = 1
+		}
+	}
+
+	# ── 五十個師団構想: 戦時段階(50個師団体制) ──
+	# 対中開戦後にNFを取った場合、または平時段階が未達成のまま開戦した場合に走る。
+	JAP_fifty_division_plan_wartime_mission = {
+		icon = generic_operation
+
+		allowed = {
+			always = no
+		}
+
+		available = {
+			# SOV_the_greatest_tank_army と同じ「現在値/目標値」表示。
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_war_manpower_tt
+				has_army_manpower = { size > 1149999 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_war_inf_eq_tt
+				check_variable = { num_equipment_in_armies@infantry_equipment > 95000 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_war_heavy_eq_tt
+				check_variable = { num_equipment_in_armies@heavy_infantry_equipment > 19000 }
+			}
+			custom_trigger_tooltip = {
+				tooltip = JAP_fifty_div_war_artillery_tt
+				check_variable = { JAP_army_artillery_total > 2599 }
+			}
+		}
+
+		days_mission_timeout = 1460
+		is_good = no
+		fire_only_once = yes
+
+		complete_effect = {
+			JAP_fifty_division_plan_reward_effect = yes
+		}
+		timeout_effect = {
+			JAP_fifty_division_plan_timeout_effect = yes
 		}
 		ai_will_do = {
 			factor = 1

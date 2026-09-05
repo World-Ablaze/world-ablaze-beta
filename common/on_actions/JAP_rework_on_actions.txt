@@ -26,6 +26,22 @@ on_actions = {
 			JAP_te_refresh_anchors_effect = yes
 			# Pacific control focus-speed tiers (60/75/90), both directions.
 			JAP_pacific_focus_sync_effect = yes
+			# Fifty Division Plan mission reads one variable for its artillery goal because
+			# triggers cannot sum equipment tokens (JAP_factions.txt, JAP_fifty_division_plan_mission).
+			set_variable = { JAP_army_artillery_total = num_equipment_in_armies@artillery_equipment }
+			add_to_variable = { JAP_army_artillery_total = num_equipment_in_armies@pack_artillery_equipment }
+			add_to_variable = { JAP_army_artillery_total = num_equipment_in_armies@heavy_artillery_equipment }
+			# The peacetime stage of the Fifty Division Plan escalates to the wartime stage
+			# when the Marco Polo Bridge Incident fires. The timer restarts at 1460 days:
+			# the engine has no way to hand the remaining days over to another mission.
+			if = {
+				limit = {
+					has_global_flag = japanese_china_showdown
+					has_active_mission = JAP_fifty_division_plan_mission
+				}
+				remove_mission = JAP_fifty_division_plan_mission
+				activate_mission = JAP_fifty_division_plan_wartime_mission
+			}
 		}
 	}
 }

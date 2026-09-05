@@ -7904,7 +7904,9 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_political_power = 25
+			army_experience = 25
+			navy_experience = 25
 		}
 	}
 
@@ -7968,7 +7970,15 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			if = {
+				limit = { has_aat = yes }
+				mio:JAP_kure_naval_arsenal_organization = {
+					add_mio_funds = 800
+				}
+				mio:JAP_yokosuka_naval_arsenal_organization = {
+					add_mio_funds = 800
+				}
+			}
 		}
 	}
 
@@ -8224,7 +8234,27 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# USA_the_90_division_plan と同型: プレイヤーにのみ軍拡ノルマのミッションを起動する。
+			# 対中開戦(japanese_china_showdown)前なら平時段階(27個師団体制)、開戦後なら
+			# 戦時段階(50個師団体制)。本体は common/decisions/JAP_factions.txt。
+			# 分岐を素で表示すると開戦前から戦時段階の存在がネタバレするため、表示は
+			# custom_effect_tooltip 1本に隠す(user ruling 2026-09-04)。
+			custom_effect_tooltip = JAP_fifty_division_plan_focus_tt
+			hidden_effect = {
+				if = {
+					limit = {
+						is_ai = no
+						NOT = { has_global_flag = japanese_china_showdown }
+					}
+					activate_mission = JAP_fifty_division_plan_mission
+				}
+				else_if = {
+					limit = {
+						is_ai = no
+					}
+					activate_mission = JAP_fifty_division_plan_wartime_mission
+				}
+			}
 		}
 	}
 
@@ -8310,7 +8340,7 @@ focus_tree = {
 	focus = {
 		id = JAP_recruit_takeo_yoshikawa
 		icon = GFX_goal_CHI_fund_assassinations
-		x = 57
+		x = 53
 		y = 5
 		cost = 4
 
@@ -8327,7 +8357,7 @@ focus_tree = {
 	focus = {
 		id = JAP_shinoda_research_section
 		icon = GFX_goal_generic_committee_of_defence
-		x = 35
+		x = 39
 		y = 6
 		cost = 4
 
@@ -8350,11 +8380,11 @@ focus_tree = {
 	focus = {
 		id = JAP_begin_mechanisation
 		icon = GFX_goal_generic_tanks   # 汎用から割り当て
-		x = 39
+		x = 35
 		y = 6
 		cost = 3
 
-		prerequisite = { focus = JAP_fifty_division_plan }
+		prerequisite = { focus = JAP_ija_institute_of_science }
 
 		# available = { }   # TODO 実装側で
 
@@ -8860,7 +8890,7 @@ focus_tree = {
 		y = 8
 		cost = 3
 
-		prerequisite = { focus = JAP_shinoda_research_section }
+		prerequisite = { focus = JAP_begin_mechanisation }
 
 		# available = { }   # TODO 実装側で
 
@@ -8877,7 +8907,7 @@ focus_tree = {
 		y = 8
 		cost = 5
 
-		prerequisite = { focus = JAP_begin_mechanisation }
+		prerequisite = { focus = JAP_fifty_division_plan }
 
 		# available = { }   # TODO 実装側で
 
@@ -9606,11 +9636,11 @@ focus_tree = {
 	focus = {
 		id = JAP_armoured_carrier_taiho
 		icon = GFX_goal_generic_ships_light_carrier   # 汎用から割り当て
-		x = 51
+		x = 57
 		y = 11
 		cost = 5
 
-		prerequisite = { focus = JAP_tokyo_express_operations }
+		prerequisite = { focus = JAP_rebuild_the_heavy_escort_fleet }
 
 		# available = { }   # TODO 実装側で
 
@@ -9695,11 +9725,11 @@ focus_tree = {
 	focus = {
 		id = JAP_grand_escort_command
 		icon = GFX_goal_generic_asw   # 汎用から割り当て
-		x = 57
+		x = 51
 		y = 11
 		cost = 5
 
-		prerequisite = { focus = JAP_special_naval_landing_forces }
+		prerequisite = { focus = JAP_tokyo_express_operations }
 
 		# available = { }   # TODO 実装側で
 
@@ -9787,7 +9817,7 @@ focus_tree = {
 		y = 12
 		cost = 5
 
-		prerequisite = { focus = JAP_armoured_carrier_taiho }
+		prerequisite = { focus = JAP_grand_escort_command }
 
 		# available = { }   # TODO 実装側で
 
