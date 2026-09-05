@@ -72,8 +72,16 @@ wa_ai_railway = {
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_TOTAL (8)
 		max_per_enemy                = 4	# max routes per enemy country (enforced by WA_AI_PC_railway_land_frontline_candidate)
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
-		queue_full                   = 12	# 'a full queue is 12' - skip recalculation at/above, and never admit past it ([pc-queue])
+		queue_full                   = 12	# 'a full queue is 12' - the FLOOR of the family cap: skip recalculation at/above, and never admit past it ([pc-queue])
 		                               # was @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD, @WA_AI_PC_railway_MAX_QUEUED
+		rails_per_slot               = 4	# [rail-spine-tree] the family cap grows with the builder's pool: cap = max(queue_full,
+		                               # WA_AI_PC_alloc_pool / wa_ai_pc.alloc.max_civs_per_project x this), fractional, read by the
+		                               # skip gate and the admission (railway_core, railway_helpers). Protects: a major whose pool
+		                               # funds 3-4 rails at once (a 73-civ pool) was admitted 8 segments per war interval and its
+		                               # rail lane sat idle - one 20-civ slot finishes an 800-cost segment in ~1.2 weeks at
+		                               # 4.7 per civ-day, ~5 per interval; 4 leaves the margin. Assumes: cost.railway 800,
+		                               # interval.war_weeks 6. Fact is gone when: RAILWAY ADMISSION reads head+trunk+rest = cap
+		                               # while PC_ASSIGN still lists funded rails at the next pass.
 		partial_path_priority_factor = 0.7	# partial paths (dead-ends) get 70% priority
 		                               # was @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR
 		theatre_separation_distance  = 10	# helpers: distance beyond which two targets are separate theatres
@@ -235,9 +243,20 @@ wa_ai_railway = {
 		                       	# this share (relative). Read by the railhead select (railway_strategies).
 		capital_weight       = 0.25	# weight of the capital distance in the railhead score against the summed hub
 		                       	# distances. Read by the railhead select.
-		in_trunk_bonus       = 1.0	# score bonus for a candidate already in T, in units of the candidate's MEAN hub
-		                       	# distance (relative, so it needs no retuning per theatre). To calibrate on the
-		                       	# first campaign. Read by the railhead select.
+		in_trunk_bonus       = 0.25	# score bonus for a candidate already in T, in units of the candidate's MEAN hub
+		                       	# distance (relative, so it needs no retuning per theatre). Read by the railhead select.
+		                       	# Protects: with the 20 % hysteresis on top, a full unit froze the railhead on the
+		                       	# first hub state that reached 5 for a year while the front moved 300 km.
+		trunk_starts         = 3	# [rail-spine-tree] the trunk route is pathfound from this many elements of S, nearest
+		                       	# first (straight line), and the candidate cheapest in LEVELS TO RAISE (sum over its
+		                       	# hops of cap_overland - level) is kept. Protects: the straight-line pick alone sent
+		                       	# a trunk through the Pripyat marshes (83 vs 92 map units) past a level-4 line one
+		                       	# state north. Cost: up to this many DEEP searches per railhead. Read by the trunk
+		                       	# route (railway_strategies).
+		trunk_share          = 0.34	# [rail-spine-tree] share of the pass's FREE admissions held back from the branch
+		                       	# heads (phase A) for the trunk hops (phase T), never more than there are trunk hops
+		                       	# to raise. Protects: heads first ate 7 of 8 admissions and the trunk moved one hop
+		                       	# per pass. Read by the admission (railway_core).
 		min_hubs             = 4	# frontline hubs (counted BEFORE routes.max_per_enemy) an enemy needs for a trunk;
 		                       	# fewer keep today's direct routes. Owner ruling. Read by the gate (railway_strategies).
 		min_enemy_divisions  = 40	# ...or, for a non-major, this many divisions. The one number here without a

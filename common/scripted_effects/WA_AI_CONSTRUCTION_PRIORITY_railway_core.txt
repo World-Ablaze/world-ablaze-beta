@@ -114,9 +114,22 @@ WA_AI_PC_railway = {
 					add_to_temp_variable = { _rail_live_queued_ = 1 }
 				}
 			}
+			# [rail-spine-tree] the family cap = max(routes.queue_full, pool / civs per slot x routes.rails_per_slot):
+			# a full queue is what the builder cannot fund more of, not a constant. Read by the skip gate here, by
+			# WA_AI_PC_start_railway_project (admission) and by phase A (the trunk reserve); zeroed by
+			# WA_AI_PC_clear_project_inputs at the end of the pass. WA_AI_PC_alloc_pool is 0 on a save whose
+			# allocator never ran this build - the cap is then queue_full. Fractional: admits up to the next integer.
+			set_temp_variable = { _rail_queue_cap_ = constant:wa_ai_railway.routes.queue_full }
+			set_temp_variable = { _rail_cap_pool_ = WA_AI_PC_alloc_pool }
+			divide_temp_variable = { _rail_cap_pool_ = constant:wa_ai_pc.alloc.max_civs_per_project }
+			multiply_temp_variable = { _rail_cap_pool_ = constant:wa_ai_railway.routes.rails_per_slot }
+			if = {
+				limit = { check_variable = { _rail_cap_pool_ > _rail_queue_cap_ } }
+				set_temp_variable = { _rail_queue_cap_ = _rail_cap_pool_ }
+			}
 			if = {
 				limit = {
-					check_variable = { _rail_live_queued_ < constant:wa_ai_railway.routes.queue_full }
+					check_variable = { _rail_live_queued_ < _rail_queue_cap_ }
 				}
 
 				### Execute all applicable strategies
@@ -354,105 +367,122 @@ WA_AI_PC_railway = {
 						WA_AI_PC_railway_spine_value_add = yes
 					}
 
+					### [rail-spine-tree] TRUNK RESERVE. Free admissions this pass = the family cap minus the live
+					### rails counted before the strategies (stale cancellations since then only widen the room). A
+					### share spine.trunk_share of them is held back from the branch heads for phase T, never more
+					### than there are trunk hops phase T could raise. A trunk hop below the floor is head AND trunk
+					### and is never held back. Phase T takes at most the reserve while branch heads wait, the waiting
+					### heads follow (A'), the trunk gets what is left (T'): a branch head loses at most the reserve
+					### to the trunk in one pass, never the pass. No trunk in the pass: reserve 0, A unchanged.
+					set_temp_variable = { _rail_free_ = _rail_queue_cap_ }
+					subtract_from_temp_variable = { _rail_free_ = _rail_live_queued_ }
+					set_temp_variable = { _rail_trunk_todo_ = 0 }
+					for_each_loop = { array = _lseg_a_ index = _rt_i_ value = _rt_a_
+						if = {
+							limit = {
+								check_variable = { _lseg_kind_^_rt_i_ = 1 }
+								NOT = { check_variable = { _lseg_lvl_^_rt_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
+								check_variable = { _lseg_lvl_^_rt_i_ < _lseg_tgt_^_rt_i_ }
+							}
+							add_to_temp_variable = { _rail_trunk_todo_ = 1 }
+						}
+					}
+					set_temp_variable = { _rail_reserve_ = _rail_free_ }
+					multiply_temp_variable = { _rail_reserve_ = constant:wa_ai_railway.spine.trunk_share }
+					if = {
+						limit = { check_variable = { _rail_reserve_ > _rail_trunk_todo_ } }
+						set_temp_variable = { _rail_reserve_ = _rail_trunk_todo_ }
+					}
+					set_temp_variable = { _rail_head_room_ = _rail_free_ }
+					subtract_from_temp_variable = { _rail_head_room_ = _rail_reserve_ }
+
 					### Phase A - HEAD. Segments below the family floor, target = the floor.
 					set_temp_variable = { _rail_head_admitted_ = 0 }
+					set_temp_variable = { _rail_head_pending_ = 0 }
 					for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
 						if = {
 							limit = { check_variable = { _lseg_lvl_^_ls_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
-							set_temp_variable = { _project_province_id = _ls_a_ }
-							set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
-							set_temp_variable = { _project_target_level = constant:wa_ai_railway.land_war.rail_level_floor }
-							# Head band = the route's band + (rail_connect - rail_war): a full route's head hop lands on
-							# prio.rail_connect (the corridor's connect band, no new band), a partial route's stays
-							# below every full route. [rail-spine-tree] a trunk hop never goes above rail_connect -
-							# above it lies the resumed-save legacy clamp of WA_AI_PC_assign_factories.
-							set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
-							add_to_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
-							subtract_from_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }
 							if = {
 								limit = {
-									check_variable = { _lseg_kind_^_ls_i_ = 1 }
-									check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect }
+									OR = {
+										check_variable = { _lseg_kind_^_ls_i_ = 1 }
+										check_variable = { _rail_head_admitted_ < _rail_head_room_ }
+									}
 								}
-								set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+								set_temp_variable = { _project_province_id = _ls_a_ }
+								set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
+								set_temp_variable = { _project_target_level = constant:wa_ai_railway.land_war.rail_level_floor }
+								# Head band = the route's band + (rail_connect - rail_war): a full route's head hop lands on
+								# prio.rail_connect (the corridor's connect band, no new band), a partial route's stays
+								# below every full route. [rail-spine-tree] a trunk hop never goes above rail_connect -
+								# above it lies the resumed-save legacy clamp of WA_AI_PC_assign_factories.
+								set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
+								add_to_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+								subtract_from_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }
+								if = {
+									limit = {
+										check_variable = { _lseg_kind_^_ls_i_ = 1 }
+										check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect }
+									}
+									set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+								}
+								set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
+								set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+								var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+								if = {
+									limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+									add_to_temp_variable = { _rail_head_admitted_ = 1 }
+								}
 							}
-							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
-							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
-							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
-							if = {
-								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
-								add_to_temp_variable = { _rail_head_admitted_ = 1 }
+							else = {
+								# a branch head past the head room: waits for phase A' (after the trunk reserve)
+								add_to_temp_variable = { _rail_head_pending_ = 1 }
 							}
 						}
 					}
 
 					### [rail-spine-tree] Phase T - TRUNK hops by VALUE (descending), then level ascending, then
-					### capital-first (route order, then hop index). One selection per admission - the set is two
-					### trunk routes at most. A hop below the floor was phase A's; one at its target needs no call.
+					### capital-first (WA_AI_PC_railway_spine_phase_T). While branch heads are waiting (phase A
+					### held some back) it takes at most the reserve; T' below takes the rest after them, so a
+					### branch head loses at most the reserve to the trunk in a pass ("create" outranks "improve").
 					set_temp_variable = { _rail_trunk_admitted_ = 0 }
-					set_temp_variable = { _pt_stop_ = 0 }
-					while_loop_effect = {
-						limit = { check_variable = { _pt_stop_ = 0 } }
-						set_temp_variable = { _pt_best_ = -1 }
-						set_temp_variable = { _pt_best_key_ = -1 }
-						for_each_loop = { array = _lseg_a_ index = _pt_i_ value = _pt_a_
+					set_temp_variable = { _pt_limit_ = -1 }
+					if = {
+						limit = { check_variable = { _rail_head_pending_ > 0 } }
+						set_temp_variable = { _pt_limit_ = _rail_reserve_ }
+					}
+					WA_AI_PC_railway_spine_phase_T = yes
+
+					### [rail-spine-tree] Phase A' - the branch heads the trunk reserve held back; same call as
+					### phase A (the province-duplicate guard skips the ones phase A admitted), counted with the heads.
+					if = {
+						limit = { check_variable = { _rail_head_pending_ > 0 } }
+						for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
 							if = {
 								limit = {
-									check_variable = { _lseg_kind_^_pt_i_ = 1 }
-									check_variable = { _lseg_done_^_pt_i_ = 0 }
-									NOT = { check_variable = { _lseg_lvl_^_pt_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
-									check_variable = { _lseg_lvl_^_pt_i_ < _lseg_tgt_^_pt_i_ }
+									check_variable = { _lseg_lvl_^_ls_i_ < constant:wa_ai_railway.land_war.rail_level_floor }
+									NOT = { check_variable = { _lseg_kind_^_ls_i_ = 1 } }
 								}
-								# key = value, then the lowest level, then the earliest route, then the hop nearest the capital
-								set_temp_variable = { _pt_key_ = _lseg_val_^_pt_i_ }
-								multiply_temp_variable = { _pt_key_ = 20000 }
-								set_temp_variable = { _pt_term_ = 9 }
-								subtract_from_temp_variable = { _pt_term_ = _lseg_lvl_^_pt_i_ }
-								multiply_temp_variable = { _pt_term_ = 2000 }
-								add_to_temp_variable = { _pt_key_ = _pt_term_ }
-								set_temp_variable = { _pt_term_ = 19 }
-								subtract_from_temp_variable = { _pt_term_ = _lseg_route_^_pt_i_ }
-								multiply_temp_variable = { _pt_term_ = 100 }
-								add_to_temp_variable = { _pt_key_ = _pt_term_ }
-								set_temp_variable = { _pt_term_ = 99 }
-								subtract_from_temp_variable = { _pt_term_ = _lseg_hop_^_pt_i_ }
-								add_to_temp_variable = { _pt_key_ = _pt_term_ }
+								set_temp_variable = { _project_province_id = _ls_a_ }
+								set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
+								set_temp_variable = { _project_target_level = constant:wa_ai_railway.land_war.rail_level_floor }
+								set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
+								add_to_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+								subtract_from_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }
+								set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
+								set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+								var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
 								if = {
-									limit = { check_variable = { _pt_key_ > _pt_best_key_ } }
-									set_temp_variable = { _pt_best_key_ = _pt_key_ }
-									set_temp_variable = { _pt_best_ = _pt_i_ }
+									limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+									add_to_temp_variable = { _rail_head_admitted_ = 1 }
 								}
-							}
-						}
-						if = {
-							limit = { check_variable = { _pt_best_ < 0 } }
-							set_temp_variable = { _pt_stop_ = 1 }
-						}
-						else = {
-							set_temp_variable = { _lseg_done_^_pt_best_ = 1 }
-							set_temp_variable = { _project_province_id = _lseg_a_^_pt_best_ }
-							set_temp_variable = { _project_connect_id = _lseg_b_^_pt_best_ }
-							set_temp_variable = { _project_target_level = _lseg_tgt_^_pt_best_ }
-							set_temp_variable = { _project_priority = _lseg_prio_^_pt_best_ }
-							# never above rail_connect: above it lies the resumed-save legacy clamp of WA_AI_PC_assign_factories
-							if = {
-								limit = { check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect } }
-								set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
-							}
-							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_pt_best_ }
-							if = { limit = { has_country_flag = WA_AI_construction_logging }
-								set_temp_variable = { _dbg_tlvl_ = _lseg_lvl_^_pt_best_ }
-								set_temp_variable = { _dbg_tval_ = _lseg_val_^_pt_best_ }
-								log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY TRUNK: hop [?_project_province_id]->[?_project_connect_id] level=[?_dbg_tlvl_] value=[?_dbg_tval_]"
-							}
-							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
-							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
-							if = {
-								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
-								add_to_temp_variable = { _rail_trunk_admitted_ = 1 }
 							}
 						}
 					}
+
+					### [rail-spine-tree] Phase T' - the trunk hops phase T left (no limit; _lseg_done_ keeps its picks)
+					set_temp_variable = { _pt_limit_ = -1 }
+					WA_AI_PC_railway_spine_phase_T = yes
 
 					### Phase B - RAISE the branches, weakest links first: one sweep per RAW map level from the floor
 					### up to rail_level_cap_overland - 1, so every level-2 hop of every route is offered before any
@@ -486,7 +516,7 @@ WA_AI_PC_railway = {
 						add_to_temp_variable = { _rail_sweep_lvl_ = 1 }
 					}
 					if = { limit = { has_country_flag = WA_AI_construction_logging }
-						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] trunk=[?_rail_trunk_admitted_] rest=[?_rail_rest_admitted_] attach_miss=[?_rail_attach_miss_]"
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] trunk=[?_rail_trunk_admitted_] rest=[?_rail_rest_admitted_] attach_miss=[?_rail_attach_miss_] cap=[?_rail_queue_cap_] free=[?_rail_free_] reserve=[?_rail_reserve_]"
 					}
 					# The collection arrays are this pass's working set; nothing downstream reads them (editing rule 9).
 					clear_temp_array = _lseg_a_
@@ -717,6 +747,93 @@ WA_AI_PC_railway_spine_value_add = {
 		}
 	}
 	clear_temp_array = _vp_idx_
+}
+
+### [rail-spine-tree] Phase T of the admission: trunk hops (kind 1, at or above the floor, below target) by
+### VALUE descending, then level ascending, then capital-first; one selection per admission, marked
+### _lseg_done_ so a second call continues where the first stopped. _pt_limit_ >= 0 stops after that many
+### ADMISSIONS (queue grew; a duplicate refusal costs nothing) - the trunk reserve while branch heads wait;
+### -1 = until no hop is left. A hop's priority never goes above rail_connect (the allocator's legacy clamp).
+# <<< _pt_limit_, the _lseg_* arrays, _lseg_val_ / _lseg_done_ of the pass   >>> _rail_trunk_admitted_ (added to), _lseg_done_
+WA_AI_PC_railway_spine_phase_T = {
+	set_temp_variable = { _pt_taken_ = 0 }
+	set_temp_variable = { _pt_stop_ = 0 }
+	if = {
+		limit = {
+			NOT = { check_variable = { _pt_limit_ < 0 } }
+			NOT = { check_variable = { _pt_taken_ < _pt_limit_ } }
+		}
+		set_temp_variable = { _pt_stop_ = 1 }
+	}
+	while_loop_effect = {
+		limit = { check_variable = { _pt_stop_ = 0 } }
+		set_temp_variable = { _pt_best_ = -1 }
+		set_temp_variable = { _pt_best_key_ = -1 }
+		for_each_loop = { array = _lseg_a_ index = _pt_i_ value = _pt_a_
+			if = {
+				limit = {
+					check_variable = { _lseg_kind_^_pt_i_ = 1 }
+					check_variable = { _lseg_done_^_pt_i_ = 0 }
+					NOT = { check_variable = { _lseg_lvl_^_pt_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
+					check_variable = { _lseg_lvl_^_pt_i_ < _lseg_tgt_^_pt_i_ }
+				}
+				# key = value, then the lowest level, then the earliest route, then the hop nearest the capital
+				set_temp_variable = { _pt_key_ = _lseg_val_^_pt_i_ }
+				multiply_temp_variable = { _pt_key_ = 20000 }
+				set_temp_variable = { _pt_term_ = 9 }
+				subtract_from_temp_variable = { _pt_term_ = _lseg_lvl_^_pt_i_ }
+				multiply_temp_variable = { _pt_term_ = 2000 }
+				add_to_temp_variable = { _pt_key_ = _pt_term_ }
+				set_temp_variable = { _pt_term_ = 19 }
+				subtract_from_temp_variable = { _pt_term_ = _lseg_route_^_pt_i_ }
+				multiply_temp_variable = { _pt_term_ = 100 }
+				add_to_temp_variable = { _pt_key_ = _pt_term_ }
+				set_temp_variable = { _pt_term_ = 99 }
+				subtract_from_temp_variable = { _pt_term_ = _lseg_hop_^_pt_i_ }
+				add_to_temp_variable = { _pt_key_ = _pt_term_ }
+				if = {
+					limit = { check_variable = { _pt_key_ > _pt_best_key_ } }
+					set_temp_variable = { _pt_best_key_ = _pt_key_ }
+					set_temp_variable = { _pt_best_ = _pt_i_ }
+				}
+			}
+		}
+		if = {
+			limit = { check_variable = { _pt_best_ < 0 } }
+			set_temp_variable = { _pt_stop_ = 1 }
+		}
+		else = {
+			set_temp_variable = { _lseg_done_^_pt_best_ = 1 }
+			set_temp_variable = { _project_province_id = _lseg_a_^_pt_best_ }
+			set_temp_variable = { _project_connect_id = _lseg_b_^_pt_best_ }
+			set_temp_variable = { _project_target_level = _lseg_tgt_^_pt_best_ }
+			set_temp_variable = { _project_priority = _lseg_prio_^_pt_best_ }
+			if = {
+				limit = { check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect } }
+				set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+			}
+			set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_pt_best_ }
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				set_temp_variable = { _dbg_tlvl_ = _lseg_lvl_^_pt_best_ }
+				set_temp_variable = { _dbg_tval_ = _lseg_val_^_pt_best_ }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY TRUNK: hop [?_project_province_id]->[?_project_connect_id] level=[?_dbg_tlvl_] value=[?_dbg_tval_]"
+			}
+			set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+			var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+			if = {
+				limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+				add_to_temp_variable = { _rail_trunk_admitted_ = 1 }
+				add_to_temp_variable = { _pt_taken_ = 1 }
+				if = {
+					limit = {
+						NOT = { check_variable = { _pt_limit_ < 0 } }
+						NOT = { check_variable = { _pt_taken_ < _pt_limit_ } }
+					}
+					set_temp_variable = { _pt_stop_ = 1 }
+				}
+			}
+		}
+	}
 }
 
 ### Validate only railway-owned projects, regardless of the last project helper called.

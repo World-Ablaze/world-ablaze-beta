@@ -2176,7 +2176,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   for the SPG battalion. Closing them all is not more branches — the ladder is a 3 x 2 x 2 x 2 cross
   product and hand-writing it is exactly how the four duplicate pairs above got in. The real fix is
   to GENERATE the light 30-width ladder and its templates the way
-  `tools/gen_ai_medium_modern_mirror.py` generates the modern-chassis mirror. That is a rewrite of a
+  `tools/gen/gen_ai_medium_modern_mirror.py` generates the modern-chassis mirror. That is a rewrite of a
   file the collaborator also edits, and it renumbers live values, so it is not started.
 - Tooling (this ship, owner request 2026-08-29): the audits below were run by hand and would have
   rotted the moment nobody re-ran them. `python tools/check_templates.py` now holds them
@@ -2476,7 +2476,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   country's modern TD / SPAA / SPG chassis carries chromium 2-4 (GER 2, USA/SOV/JAP/POL 3, HUN 3,
   ITA 2); the GER medium variants carry chromium 2 as well — the difference is the STOCK, not the
   recipe.
-- Change: (A) `tools/gen_ai_medium_modern_mirror.py` — `TIER_UP` maps the hull only
+- Change: (A) `tools/gen/gen_ai_medium_modern_mirror.py` — `TIER_UP` maps the hull only
   (`medium_armor_battalion_line` → modern, engineer / maintenance tank companies follow); every
   TD / SPAA / SPG / assault / infantry-support component maps to itself, `NAME_SHIFT` emptied,
   header rewritten; `WA_AI_TEMPLATES_armored_medium_modern.txt` regenerated. (B) the nine
@@ -2559,7 +2559,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   harness prints the per-role used/set pairs and the pre/post parity of one calculation pass
   (`WA_TEST_templates.txt`): `medium used=1 set=1`, pre = post, no orphan flag — it proves the
   twin value is still answered, not the composition; (2) composition is a static-file fact:
-  `python tools/gen_ai_medium_modern_mirror.py --dry-run` unchanged, `check_templates.py` clean on
+  `python tools/gen/gen_ai_medium_modern_mirror.py --dry-run` unchanged, `check_templates.py` clean on
   the mirror, boot test (`error.log` clean of `WA_AI_TEMPLATES_GENERIC_MODERN_ARMOR`); (3) next
   cloud campaign: GER modern TD / SPAA / SPG need = 0 after the twin, medium SPG / SPAA
   fielded/need > 0.8 with stock falling, and `ger_modern_td_tank_1` NOT researched while
@@ -2604,7 +2604,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Change 2 — one ladder, two chassis tiers. `WA_AI_TEMPLATES_calculate_medium_armor_template`
   still picks the COMPOSITION and writes 6000–6116; a flat `+500` then picks the CHASSIS. Every
   value therefore needs a twin, so the mirror is GENERATED:
-  `tools/gen_ai_medium_modern_mirror.py` → `common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`
+  `tools/gen/gen_ai_medium_modern_mirror.py` → `common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`
   (19 templates, `role = medium_armor`, the shape `WA_light_support_armor_role` already uses). A
   component with no modern-tier answer is a hard error in the generator, never a silent copy.
 - Change 3 — the switch is a one-way latch `WA_AI_TEMPLATES_modern_chassis_earned` (medium
@@ -4220,6 +4220,66 @@ OPEN with a session of its own.
   Berlin→Nowogródek ≈ 30 weeks instead of 40, rail monopolises the PC pool ≈ 3 weeks in 6,
   override armed ≈ 21 days in 42. Tell-tale to watch on the next campaign:
   `wa_tlm_pc_avail_share_pct` well above 60 % = the override bites too much.
+- Owner tuning (2), 2026-09-05, after the logged pass of 1943.4.12 (campaign 1941.10-1943.4, GER vs SOV;
+  owner: "implémente L1, L2, L3"). MEASURED on that pass: `RAILWAY ADMISSION: segments=70 head=7 trunk=1
+  rest=0`; 8 = `queue_full` 12 − 4 live trunk hops of the previous pass (`queued=1` + `SKIP DUPLICATE`);
+  every later `PC START_PROJECT ENTRY` without `PC QUEUED` = the cap. `PC_ASSIGN after_alloc_fraction=73`
+  and `PC SPEED speed=4.745` per civ-day: one 20-civ slot finishes an 800-cost segment in ~1.2 weeks,
+  DERIVED ≈ 18 segments fundable per 6-week interval against 8 admitted — the cap bound, not the pool.
+  `RAILWAY SPINE: cand=6 served=0 T=55 R1=6373 R2=525 trunk_hops=19`: trunk 572 Wołyń → Polesie → Mozyr
+  → Bobruysk (12 hops at 2-4) + Mozyr → Kiev (7); DERIVED from the 1943.4.1 save + province coordinates:
+  Wołyń was the T element nearest Bobruysk at 83 map units against Grodno 92 (Grodno in T at 5), so the
+  trunk ran through the Pripyat marshes and the Minsk / Latgale branches hung off Polesie — the owner's
+  "axe secondaire parallèle Kraków–Minsk". `value=0` on every trunk hop (branches at level 1 cap
+  themselves — by design).
+  - L1 `railway_core` / `railway_helpers` / `PRIORITY_core`: the family cap = max(`routes.queue_full`,
+    `WA_AI_PC_alloc_pool` / `alloc.max_civs_per_project` × new `routes.rails_per_slot` 4), the pool
+    published by `WA_AI_PC_assign_factories` on the same pulse (assign → progress → railway); a trunk
+    reserve of `spine.trunk_share` 0.34 × free admissions (≤ trunk hops phase T can raise) held back from
+    the branch heads, which return in a phase A' after phase T. Log adds `cap= free= reserve=`.
+  - L2 `railway_strategies` `WA_AI_PC_railway_spine_trunk_route`: `spine.trunk_starts` 3 candidate starts
+    (nearest S elements, `_spn_excl_` on `WA_AI_PC_railway_spine_nearest`), each deep-pathfound, kept =
+    fewest levels to raise (Σ cap_overland − level on the ledger). Logs `trunk start k a -> R hops= raise=`
+    and `… KEPT`.
+  - L3 `spine.in_trunk_bonus` 1.0 → 0.25.
+  DERIVED at the new numbers, GER 1943.4: cap 14.7 → free ≈ 10-11, reserve 3-4 trunk hops per pass
+  instead of 1; a 12-hop trunk from 3 to 5 (24 hop-levels) ≈ 6-8 passes (36-48 weeks) instead of 24
+  passes. Owner question answered the same day: `routes.max_per_enemy` 4 → 8 changes nothing for ROOT's
+  own hubs — MEASURED 6 `ACCEPTED` under a cap of 4, because `every_controlled_state`'s limit is evaluated
+  before the body increments `_routes_for_this_enemy` (ASSUMED engine list-then-execute); it only widens
+  the subject / ally populations that run after. Not changed.
+  Review repairs (architecture reviewer, CONCERNS): (i) regression risk stated — a cap above 12 keeps
+  1000/1100-band rails at the queue head for weeks the pool used to fall through to the 250/100 bands
+  (winner-takes-most); the tail is carried by the `[pc-queue]` aging lane, and the tell-tale is the one
+  tuning (1) already names, `wa_tlm_pc_avail_share_pct` well above 60 %. t-table at the new cap, GER
+  1943.4 (73-civ pool, 3-4 funded rails, ~1.2 weeks each): t0 pass admits ~11 (cap 14.7 − 4 live),
+  t0+3 weeks ≈ 9-10 of them built and the pool falls through, t0+6 weeks next pass — rail holds the pool
+  ≈ 3-4 weeks in 6 instead of ≈ 2. (ii) the reading rule "every `PC START_PROJECT ENTRY` without `PC
+  QUEUED` = the cap" holds for phase A / T / B only: phase A' re-offers the heads phase A admitted, which
+  log `ENTRY` + `SKIP DUPLICATE`. (iii) `_rail_queue_cap_` is read with `>` in `railway_helpers`; an
+  unset temp would pass — every rail-family caller runs inside `WA_AI_PC_railway` after it is set, and
+  the HAZARD sentence at the read site binds any future caller.
+  Review repairs (lessons reviewer, CONCERNS — one CONFLICT with the "create the thing outranks improve
+  the thing" band lesson): the reserve as first written let phase T fill the queue while below-floor
+  branch heads waited, so a hub with NO supply could lose a whole interval to trunk level-raises. Shipped
+  shape: phase T is an effect (`WA_AI_PC_railway_spine_phase_T`, `_pt_limit_`) called twice — T takes at
+  most the reserve while heads are pending, A' admits the waiting heads, T' takes the rest — so a head
+  loses at most the reserve to the trunk in one pass, never the pass. t-table (6-week pass, ~1.2 weeks per
+  20-civ segment, admissions counted as `queued_amount_ < cap` = up to the next integer):
+  | case | cap | live | free | reserve | heads offered | A | T | A' | T' |
+  | GER 1943.4, 73-civ pool | 14.7 | 4 | 10.7 | 3.6 | 7 | 7 | 4 | 0 | 0 (cap) |
+  | same, 12 heads pending | 14.7 | 4 | 10.7 | 3.6 | 12 | 8 | 3 | 0 (cap) | 0 |
+  | pool < 60 civs (cap = 12) | 12 | 4 | 8 | 2.7 | 8 | 6 | 2 | 0 (cap) | 0 |
+  DERIVED: a minor at the floor cap loses 2 heads per pass to the trunk (they return next pass, the
+  trunk hops built meanwhile are what those heads will draw supply through). ASSUMED acceptable —
+  owner's call; revert = `spine.trunk_share = 0`, which restores today's order exactly. Two-states note:
+  `free` is computed on the controller-filtered live count while the cap counts every queued type-13
+  (dead included) — after a mass flip free overstates the room and the reserve can eat the real room
+  for one pass; the validation sweep clears the dead ones on the same pass, so bounded to that pass.
+  L3 release reachability, DERIVED on the 1943.4.1 save (177 hub candidates, the 6 hubs of the pass,
+  straight-line scores): with Wołyń as incumbent the best candidate (Bobruysk) scored 0.802 × Wołyń's at
+  bonus 1.0 — 0.2 % short of the 20 % release bar, the freeze — and 0.704 × at bonus 0.25: released.
+  With Bobruysk as incumbent it stays best under both (ratio 1.0), so the trunk keeps its railhead.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
   line per enemy passing the gate (with `served=N` and `trunk_hops=k > 0`), R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20

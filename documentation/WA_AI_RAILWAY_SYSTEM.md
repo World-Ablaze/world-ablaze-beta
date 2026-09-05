@@ -79,8 +79,9 @@ wa_ai_railway.eligibility.recovery_min_states = 20 # hatch: run anyway if civs >
 wa_ai_railway.eligibility.minor_civ_threshold = 50 # minors bypass the state gate above this
 wa_ai_railway.routes.max_total = 8           # routes processed per execution
 wa_ai_railway.routes.max_per_enemy = 4       # routes per enemy country
-wa_ai_railway.routes.queue_full = 12         # skip recalculation at/above (Fix 29b: live type-13 only)
+wa_ai_railway.routes.queue_full = 12         # FLOOR of the family cap: skip recalculation at/above (Fix 29b: live type-13 only)
                                              # AND the Fix 77 admission cap - one key, was two @ names
+wa_ai_railway.routes.rails_per_slot = 4      # [rail-spine-tree] cap = max(queue_full, WA_AI_PC_alloc_pool / 20 civs x this)
 wa_ai_railway.routes.partial_path_priority_factor = 0.7
 wa_ai_railway.routes.theatre_separation_distance = 10
 wa_ai_railway.supply.railway_base = 4        # throughput = base + per_level x level
@@ -809,13 +810,14 @@ direct routes from the capital; the `RAILWAY SPINE … BELOW GATE` line says so.
 | --- | --- | --- |
 | T | provinces reachable from the capital over rail edges at ≥ `spine.trunk_level` (5), bounded BFS on `global.WA_AI_PC_railway_connection_level_a^b` and the generated adjacency, ≤ `spine.max_walk` (400); always holds the capital; once per pass | `WA_AI_PC_railway_spine_walk` (helpers) |
 | R1 | candidates = hub states on the capital's landmass that are NOT a frontline of this enemy (`WA_AI_PC_railway_state_is_railhead_candidate`), same three populations as the route walk; score = Σ hub distances + `capital_weight` × capital distance − `in_trunk_bonus` × mean hub distance if in T; hysteresis: the previous railhead (`WA_AI_PC_spine_railhead@<enemy>`) is kept unless beaten by `spine.hysteresis` (20 %) | `WA_AI_PC_railway_spine_collect_railheads` / `_score` |
-| trunk | nearest element of S to R1 (straight line) → A* type 2, **no partial**, under the pathfinder's DEEP budget (`@WA_AI_PATHFIND_PROV_DEEP_ITS` 300 iterations, switched on by `_pathfind_prov_deep_ = 1` for this one call); the path's provinces join S and are marked as this pass's designated network; the route is appended for that enemy **before its branches** with `railway_route_kind_ = 1`, target `rail_level_cap_overland` (5), band `_spine_band_` (`prio.rail_connect` 1100 at war, `prio.rail_prewar` 500 in peace) | `WA_AI_PC_railway_spine_trunk_route` |
+| trunk | the `spine.trunk_starts` (3) elements of S nearest R1 (straight line, nearest first — `_spn_excl_` walks "next nearest") are each pathfound → A* type 2, **no partial**, under the pathfinder's DEEP budget (`@WA_AI_PATHFIND_PROV_DEEP_ITS` 300 iterations, switched on by `_pathfind_prov_deep_ = 1` for these calls); the candidate cheapest in **levels to raise** (Σ over its hops of `rail_level_cap_overland` − current level, read on the global ledger; ties to the nearer start) is kept: its provinces join S and are marked as this pass's designated network; the route is appended for that enemy **before its branches** with `railway_route_kind_ = 1`, target `rail_level_cap_overland` (5), band `_spine_band_` (`prio.rail_connect` 1100 at war, `prio.rail_prewar` 500 in peace). Log `RAILWAY SPINE: trunk start k a -> R hops=n raise=r` per candidate, `… KEPT` for the winner. Why: the straight-line pick alone sent the SOV trunk Wołyń → Pripyat marshes → Bobruysk (83 vs Grodno 92 map units) past a level-4 Grodno–Minsk line (1943.4 pass) | `WA_AI_PC_railway_spine_trunk_route` |
 | R2 | at most `spine.max_second_railheads` (1): two-centre split of the hubs (seed = the hub farthest from R1, one centroid iteration), R2 = best candidate for that group; kept iff dist(R2, S) + Σ dist(hub, R2) < Σ dist(hub, S); its trunk route → nearest element of S | same |
 | branches | `WA_AI_PC_railway_land_consider_frontline` starts each route at the element of S nearest the hub (`WA_AI_PC_railway_spine_nearest`) instead of the capital (route kind 3); target = the hub's demand (`[rail-sizing-demand]`), band `rail_war` as before | strategies |
 | served hubs | frontline hub states already at the done level (`WA_AI_PC_railway_state_is_served_frontline_hub`) draw no route but are attached at the spine element nearest them (`spine_done_attach_`) and counted in the trunk values with minimum = the level they read done at — the trunk under a served hub still caps it | `WA_AI_PC_railway_spine_add_done_hub`, select |
 
-Log: `RAILWAY SPINE: enemy=E cand=N served=M T=n R1=p R2=p|0 trunk_hops=k`; `trunk pathfind FAILED a -> b` when
-the deep search still fails (S then stays T for that enemy). The enemy-threat sort's ×1.1 boost of the first
+Log: `RAILWAY SPINE: enemy=E cand=N served=M T=n R1=p R2=p|0 trunk_hops=k`; `trunk start k a -> b pathfind
+FAILED` per failed candidate and `trunk pathfind FAILED -> b` when every candidate fails (S then stays T for
+that enemy). The enemy-threat sort's ×1.1 boost of the first
 route skips a trunk (it sits at `rail_connect` already; above it lies the allocator's legacy clamp).
 
 **Peace mode** (`WA_AI_PC_railway_STRATEGY_prewar_preparation`): for a CONFIG-declared target
@@ -825,16 +827,29 @@ hub, the gate satisfied by the window itself, trunk band `rail_prewar`. The rail
 the war and is cleared by `on_peace` for every country ROOT is no longer at war with, except the
 CONFIG-declared targets themselves (a peace with anyone else must not wipe the peace trunk's hysteresis).
 
-**Admission** (`railway_core.txt`, one budget `routes.queue_full`, validation before admission unchanged):
-phase A (below the floor, any kind; a trunk hop never goes above `rail_connect`) → **phase T**: trunk hops by
-**value** descending, then level ascending, then capital-first → phase B: branch hops by the level sweep.
+**Admission** (`railway_core.txt`, one family budget, validation before admission unchanged). The budget is
+the **pool-sized cap** `_rail_queue_cap_` = max(`routes.queue_full` 12, `WA_AI_PC_alloc_pool` /
+`wa_ai_pc.alloc.max_civs_per_project` × `routes.rails_per_slot` 4) — `WA_AI_PC_alloc_pool` is the pool
+`WA_AI_PC_assign_factories` allocated from on the same pulse (after fraction / override and the hard cap;
+0 on a save whose allocator never ran this build, so the cap is then the constant). It is read by the skip
+gate, by `WA_AI_PC_start_railway_project` (rail family only; zeroed by `WA_AI_PC_clear_project_inputs` at the
+end of the pass) and by the **trunk reserve**: free = cap − live rails counted before the strategies;
+reserve = min(free × `spine.trunk_share` 0.34, trunk hops phase T could raise). Why: GER 1943.4 funded 3-4
+rails at once (73 civs; one 20-civ slot finishes an 800-cost segment in ~1.2 weeks) but was admitted 8
+segments per 6-week pass, 7 of them branch heads — the trunk moved one hop per pass and the rail lane sat
+idle. Order: phase A (below the floor: trunk heads always, branch heads while head admissions < free −
+reserve; a trunk hop never goes above `rail_connect`) → **phase T** (`WA_AI_PC_railway_spine_phase_T`): trunk
+hops by **value** descending, then level ascending, then capital-first — at most the reserve while branch
+heads are waiting → phase A' (the branch heads the reserve held back) → phase T' (the same effect, no limit:
+the trunk hops T left) → phase B: branch hops by the level sweep. A branch head thus loses at most the
+reserve to the trunk in one pass, never the pass ("create the thing" outranks "improve the thing").
 Value(h) = the number of branches attached downstream of h whose effective minimum — min(trunk prefix from
 the capital to the attachment, the branch's own minimum) — equals level(h) **and whose own hops sit above
 it**; a branch whose own hops are at the trunk's level is held back by itself as much as by the trunk and
 counts for nothing until phase B moves its hops. The comment at the value block reproduces the spec's worked
 example (Berlin→Minsk at 3, Warsaw→Pskov at 5 attached at hop 10: hops 1-10 go 3→4→5 before any hop 11-30)
 and says why the literal "equals level(h)" count would not. Log: `RAILWAY TRUNK: hop a->b level=L value=v`;
-`RAILWAY ADMISSION: segments=N head=A trunk=T rest=B attach_miss=M` (M = spine branches whose start lies on
+`RAILWAY ADMISSION: segments=N head=A trunk=T rest=B attach_miss=M cap=C free=F reserve=R` (C/F/R = the pool-sized cap, the free admissions and the trunk reserve of this pass; M = spine branches whose start lies on
 no trunk segment of this pass and not in T: phase 0 re-pathfound the trunk on another line, and those
 branches fell to the level sweep). The fill serves by band then insertion, so trunk hops at 1100 are funded
 before branch hops at 1000 and before any corridor RAISE project; they **tie** with the corridor's CONNECT

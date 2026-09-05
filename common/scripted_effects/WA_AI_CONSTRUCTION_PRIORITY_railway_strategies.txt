@@ -1588,52 +1588,121 @@ WA_AI_PC_railway_spine_score = {
 	}
 }
 
-# Trunk route from the nearest element of S to a railhead: pathfound now (type 2, NO partial - a trunk
-# that stops short is a stub at full band), its provinces join S and are marked as the designated network
-# so the branches pathfound afterwards hug it, and the route is appended (kind 1) at the overland cap and
-# the spine band. A railhead already in S needs no route.
+# Trunk route from S to a railhead: the spine.trunk_starts elements of S nearest the railhead are each
+# deep-pathfound (type 2, NO partial - a stub at full band connects nothing) and the candidate cheapest in
+# LEVELS TO RAISE (sum over its hops of cap_overland - level; ties to the nearer start) is kept: its provinces
+# join S and the designated network the branches hug, appended (kind 1) at the overland cap and the spine band.
 # <<< _st_target_, _spine_band_, _current_enemy_tag, arr:spine_S_   >>> spine_S_ grown, spine_trunk_hops_
 WA_AI_PC_railway_spine_trunk_route = {
 	if = {
 		limit = { NOT = { is_in_array = { spine_S_ = _st_target_ } } }
-		set_temp_variable = { _spn_prov_ = _st_target_ }
-		WA_AI_PC_railway_spine_nearest = yes
-		if = {
-			limit = { check_variable = { spine_nearest_ > 0 } }
-			set_temp_variable = { _pathfind_prov_start = spine_nearest_ }
-			set_temp_variable = { _pathfind_prov_end = _st_target_ }
-			set_temp_variable = { _pathfind_prov_type = 2 }
-			set_temp_variable = { _pathfind_prov_allow_partial = 0 }
-			# the trunk is the one long search of the pass (30+ hops, no partial fallback): the deep
-			# iteration budget of the pathfinder, switched on for this call only.
-			set_temp_variable = { _pathfind_prov_deep_ = 1 }
-			WA_AI_PATHFIND_PROV_get_path = yes
-			set_temp_variable = { _pathfind_prov_deep_ = 0 }
+		clear_temp_array = _spn_excl_
+		clear_temp_array = _st_best_path_
+		set_temp_variable = { _st_best_start_ = 0 }
+		set_temp_variable = { _st_best_raise_ = -1 }
+		set_temp_variable = { _st_k_ = 0 }
+		while_loop_effect = {
+			limit = { check_variable = { _st_k_ < constant:wa_ai_railway.spine.trunk_starts } }
+			set_temp_variable = { _spn_prov_ = _st_target_ }
+			WA_AI_PC_railway_spine_nearest = yes
 			if = {
-				limit = { check_variable = { pathfind_prov_success_ = 1 } }
-				for_each_loop = { array = pathfind_prov_path_ value = _st_p_
-					if = {
-						limit = { NOT = { is_in_array = { spine_S_ = _st_p_ } } }
-						add_to_temp_array = { spine_S_ = _st_p_ }
+				limit = { check_variable = { spine_nearest_ > 0 } }
+				add_to_temp_array = { _spn_excl_ = spine_nearest_ }
+				set_temp_variable = { _pathfind_prov_start = spine_nearest_ }
+				set_temp_variable = { _pathfind_prov_end = _st_target_ }
+				set_temp_variable = { _pathfind_prov_type = 2 }
+				set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+				# the trunk is the long search of the pass (30+ hops, no partial fallback): the deep
+				# iteration budget of the pathfinder, switched on for these calls only.
+				set_temp_variable = { _pathfind_prov_deep_ = 1 }
+				WA_AI_PATHFIND_PROV_get_path = yes
+				set_temp_variable = { _pathfind_prov_deep_ = 0 }
+				if = {
+					limit = { check_variable = { pathfind_prov_success_ = 1 } }
+					# levels to raise = sum over the path's hops of (cap_overland - current level), read on the
+					# same global ledger phase 0 reads, the current level capped at the target
+					set_temp_variable = { _st_raise_ = 0 }
+					set_temp_variable = { _st_prev_ = 0 }
+					for_each_loop = { array = pathfind_prov_path_ value = _st_p_
+						if = {
+							limit = { check_variable = { _st_prev_ > 0 } }
+							meta_effect = {
+								text = {
+									set_temp_variable = { _st_lvl_ = global.WA_AI_PC_railway_connection_level_[x]^[y] }
+								}
+								x = "[?_st_prev_]"
+								y = "[?_st_p_]"
+							}
+							if = {
+								limit = { check_variable = { _st_lvl_ > constant:wa_ai_railway.land_war.rail_level_cap_overland } }
+								set_temp_variable = { _st_lvl_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
+							}
+							add_to_temp_variable = { _st_raise_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
+							subtract_from_temp_variable = { _st_raise_ = _st_lvl_ }
+						}
+						set_temp_variable = { _st_prev_ = _st_p_ }
 					}
-					set_temp_variable = { _designated_railway_network_^_st_p_ = 1 }
+					set_temp_variable = { _st_hops_ = pathfind_prov_path_^num }
+					subtract_from_temp_variable = { _st_hops_ = 1 }
+					if = { limit = { has_country_flag = WA_AI_construction_logging }
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk start [?_st_k_] [?spine_nearest_] -> [?_st_target_] hops=[?_st_hops_] raise=[?_st_raise_]"
+					}
+					if = {
+						limit = {
+							OR = {
+								check_variable = { _st_best_raise_ < 0 }
+								check_variable = { _st_raise_ < _st_best_raise_ }
+							}
+						}
+						set_temp_variable = { _st_best_raise_ = _st_raise_ }
+						set_temp_variable = { _st_best_start_ = spine_nearest_ }
+						clear_temp_array = _st_best_path_
+						for_each_loop = { array = pathfind_prov_path_ value = _st_p_
+							add_to_temp_array = { _st_best_path_ = _st_p_ }
+						}
+					}
 				}
-				add_to_temp_array = { railway_start_provinces_ = spine_nearest_ }
-				add_to_temp_array = { railway_end_provinces_ = _st_target_ }
-				add_to_temp_array = { railway_target_levels_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
-				add_to_temp_array = { railway_priorities_ = _spine_band_ }
-				add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
-				add_to_temp_array = { railway_route_kind_ = 1 }
-				set_temp_variable = { _st_hops_ = pathfind_prov_path_^num }
-				subtract_from_temp_variable = { _st_hops_ = 1 }
-				add_to_temp_variable = { spine_trunk_hops_ = _st_hops_ }
+				else = {
+					if = { limit = { has_country_flag = WA_AI_construction_logging }
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk start [?_st_k_] [?spine_nearest_] -> [?_st_target_] pathfind FAILED"
+					}
+				}
+				add_to_temp_variable = { _st_k_ = 1 }
 			}
 			else = {
-				if = { limit = { has_country_flag = WA_AI_construction_logging }
-					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk pathfind FAILED [?spine_nearest_] -> [?_st_target_] (branches attach to S as it stands)"
-				}
+				# S exhausted before trunk_starts candidates
+				set_temp_variable = { _st_k_ = constant:wa_ai_railway.spine.trunk_starts }
 			}
 		}
+		clear_temp_array = _spn_excl_
+		if = {
+			limit = { check_variable = { _st_best_start_ > 0 } }
+			for_each_loop = { array = _st_best_path_ value = _st_p_
+				if = {
+					limit = { NOT = { is_in_array = { spine_S_ = _st_p_ } } }
+					add_to_temp_array = { spine_S_ = _st_p_ }
+				}
+				set_temp_variable = { _designated_railway_network_^_st_p_ = 1 }
+			}
+			add_to_temp_array = { railway_start_provinces_ = _st_best_start_ }
+			add_to_temp_array = { railway_end_provinces_ = _st_target_ }
+			add_to_temp_array = { railway_target_levels_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
+			add_to_temp_array = { railway_priorities_ = _spine_band_ }
+			add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+			add_to_temp_array = { railway_route_kind_ = 1 }
+			set_temp_variable = { _st_hops_ = _st_best_path_^num }
+			subtract_from_temp_variable = { _st_hops_ = 1 }
+			add_to_temp_variable = { spine_trunk_hops_ = _st_hops_ }
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk [?_st_best_start_] -> [?_st_target_] hops=[?_st_hops_] raise=[?_st_best_raise_] KEPT"
+			}
+		}
+		else = {
+			if = { limit = { has_country_flag = WA_AI_construction_logging }
+				log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk pathfind FAILED -> [?_st_target_] (branches attach to S as it stands)"
+			}
+		}
+		clear_temp_array = _st_best_path_
 	}
 }
 

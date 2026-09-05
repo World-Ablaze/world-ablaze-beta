@@ -76,9 +76,14 @@ Peace mode (§6) runs the same steps toward the CONFIG-declared target.
    on province coordinates). Hysteresis: the previous railhead (per-enemy country variable
    `WA_AI_PC_spine_railhead@E`) is kept unless the best candidate scores better by more than
    `spine.hysteresis` (0.2, relative). Log `RAILWAY SPINE`.
-3. **Trunk route**: R1 → the element of T nearest to R1 (straight-line pick, then A\* with
-   `_pathfind_prov_type = 2`, no partial); target `land_war.rail_level_cap_overland` (5); band
-   `prio.rail_connect` (1100). R1 ∈ T → no trunk route. S = T ∪ that route's provinces.
+3. **Trunk route**: R1 → the `spine.trunk_starts` (3) elements of T nearest to R1 (straight-line
+   pick, nearest first), each pathfound (A\* with `_pathfind_prov_type = 2`, no partial, deep
+   budget); the candidate cheapest in **levels to raise** — Σ over its hops of
+   `land_war.rail_level_cap_overland` − current level — is kept, ties to the nearer start
+   (shipped 2026-09-05 after the 1943.4 pass: the nearest start alone, Wołyń at 83 vs Grodno at
+   92 map units, ran the trunk through the Pripyat marshes past a level-4 Grodno–Minsk line);
+   target `land_war.rail_level_cap_overland` (5); band `prio.rail_connect` (1100). R1 ∈ T → no
+   trunk route. S = T ∪ that route's provinces.
 4. **Second railhead** (at most `spine.max_second_railheads` = 1): group B = hubs whose
    distance to the centre of the hubs-not-nearest-to-R1 is smaller than their distance to R1
    (two-centre split, one iteration); R2 = best-scoring candidate for B alone. Keep R2 iff
@@ -89,9 +94,17 @@ Peace mode (§6) runs the same steps toward the CONFIG-declared target.
    (`rail-sizing-demand`: hub state + enemy-bordering neighbours, ratio 0.5, floor 2, cap 5);
    band as today (`rail_war`, ×0.7 never applies — see step 7). 10-20 hops per search
    instead of 50-65, so `_pf_max_its = 100` no longer binds.
-6. **Admission** (one family budget, `routes.queue_full` = 12, validation before admission
-   and the keep rule of `rail-admission-churn` unchanged):
-   1. phase A as today: any hop below `land_war.rail_level_floor`, head band;
+6. **Admission** (one family budget, validation before admission and the keep rule of
+   `rail-admission-churn` unchanged). Budget = max(`routes.queue_full` 12, `WA_AI_PC_alloc_pool` /
+   `wa_ai_pc.alloc.max_civs_per_project` × `routes.rails_per_slot` 4) — the pool the allocator
+   used on the same pulse, published by `WA_AI_PC_assign_factories` (shipped 2026-09-05: GER
+   1943.4 funded 3-4 rails at once and was admitted 8 per pass). Trunk reserve: free = budget −
+   live rails; reserve = min(free × `spine.trunk_share` 0.34, trunk hops step 2 could raise).
+   1. phase A as today: any hop below `land_war.rail_level_floor`, head band — trunk heads
+      always, branch heads only while head admissions < free − reserve; step 2 then takes at
+      most the reserve while heads are waiting, the held-back heads follow (phase A'), and the
+      trunk hops step 2 left follow them (T') — a head loses at most the reserve to the trunk
+      in one pass, never the pass;
    2. **trunk hops by value**: value(h) = number of branches attached downstream of h whose
       effective minimum — min(trunk-prefix minimum from the capital to the attachment point,
       branch minimum) — equals level(h) **and whose own minimum lies strictly above level(h)**,
@@ -187,13 +200,16 @@ in exactly one file:
 | `max_walk` | 400 | trunk walk |
 | `hysteresis` | 0.2 | railhead select (strategies) |
 | `capital_weight` | 0.25 | railhead select |
-| `in_trunk_bonus` | to calibrate; start = one hub-distance unit | railhead select |
+| `in_trunk_bonus` | 0.25 (owner 2026-09-05; was 1.0: with the 20 % hysteresis the railhead froze on the first hub state at 5 — SOV Wołyń for 12 months while the front moved 300 km) | railhead select |
+| `trunk_starts` | 3 — candidate starts pathfound per railhead, cheapest in levels to raise kept (step 3) | trunk route (strategies) |
+| `trunk_share` | 0.34 — share of the free admissions held back from branch heads for trunk hops (step 6) | admission (core) |
 | `min_hubs` | 4 | gate (strategies) |
 | `min_enemy_divisions` | 40 — the one number without a measurement behind it | gate |
 | `max_second_railheads` | 1 | step 4 |
 
 Unchanged and reused: `land_war.rail_level_floor` 2, `rail_level_cap` 4, `rail_level_cap_overland`
-5, `corridor.target_ratio` 0.5, `routes.queue_full` 12, `routes.max_per_enemy` 4,
+5, `corridor.target_ratio` 0.5, `routes.queue_full` 12 (now the FLOOR of the pool-sized budget, step 6;
+new `routes.rails_per_slot` 4), `routes.max_per_enemy` 4,
 `routes.max_total` 16, `prio.rail_connect` 1100, `prio.rail_war` 1000, `prio.rail_prewar` 500.
 
 ## 10. Files and state

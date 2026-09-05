@@ -966,23 +966,28 @@ WA_AI_PC_railway_spine_walk = {
 }
 
 # The element of the spine nearest (straight line, generated province coordinates) to a province.
-# <<< _spn_prov_, arr:spine_S_   >>> spine_nearest_ (0 when S is empty), spine_nearest_d_
+# [rail-spine-tree] elements listed in _spn_excl_ are skipped - the trunk route's "next nearest" walk;
+# every other caller leaves that array empty (the trunk route clears it before and after its use).
+# <<< _spn_prov_, arr:spine_S_, arr:_spn_excl_   >>> spine_nearest_ (0 when S is empty), spine_nearest_d_
 WA_AI_PC_railway_spine_nearest = {
 	set_temp_variable = { spine_nearest_ = 0 }
 	set_temp_variable = { spine_nearest_d_ = -1 }
 	for_each_loop = { array = spine_S_ value = _spn_v_
-		set_temp_variable = { _province_id_a = _spn_prov_ }
-		set_temp_variable = { _province_id_b = _spn_v_ }
-		WA_AI_MATH_get_distance_between_provinces_a_b = yes
 		if = {
-			limit = {
-				OR = {
-					check_variable = { spine_nearest_d_ < 0 }
-					check_variable = { distance_ < spine_nearest_d_ }
+			limit = { NOT = { is_in_array = { _spn_excl_ = _spn_v_ } } }
+			set_temp_variable = { _province_id_a = _spn_prov_ }
+			set_temp_variable = { _province_id_b = _spn_v_ }
+			WA_AI_MATH_get_distance_between_provinces_a_b = yes
+			if = {
+				limit = {
+					OR = {
+						check_variable = { spine_nearest_d_ < 0 }
+						check_variable = { distance_ < spine_nearest_d_ }
+					}
 				}
+				set_temp_variable = { spine_nearest_d_ = distance_ }
+				set_temp_variable = { spine_nearest_ = _spn_v_ }
 			}
-			set_temp_variable = { spine_nearest_d_ = distance_ }
-			set_temp_variable = { spine_nearest_ = _spn_v_ }
 		}
 	}
 }
@@ -1104,6 +1109,14 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 			# [na-corridor] "country-wide" means every type-13 EXCEPT the corridor's - the skip gate
 			# in railway_core and this budget both key on WA_AI_PC_type_id = rail.
 			set_temp_variable = { _project_queue_max = constant:wa_ai_railway.routes.queue_full }
+			# [rail-spine-tree] the pass's pool-sized cap (railway_core, >= queue_full) while one is set;
+			# WA_AI_PC_clear_project_inputs zeroes it at the end of the pass, so outside it the constant holds.
+			# HAZARD: an UNSET temp passes a `>` guard and would copy a scope token here (0 = uncapped) -
+			# a rail-family caller added OUTSIDE WA_AI_PC_railway must set _rail_queue_cap_ = 0 first.
+			if = {
+				limit = { check_variable = { _rail_queue_cap_ > _project_queue_max } }
+				set_temp_variable = { _project_queue_max = _rail_queue_cap_ }
+			}
 			set_temp_variable = { _project_queue_max_scoped = 1 }
 		}
 		set_temp_variable = { _project_target_level = 0 }  # Already checked above
@@ -1123,6 +1136,8 @@ WA_AI_PC_clear_project_inputs = {
 	clear_temp_array = railway_port_upgrades_
 	clear_temp_array = railway_enemy_tags_
 	clear_temp_array = railway_route_kind_
+	# [rail-spine-tree] the pass's pool-sized family cap: 0 outside the pass (railway_helpers keeps queue_full)
+	set_temp_variable = { _rail_queue_cap_ = 0 }
 	# [rail-spine-tree] the pass's spine working set
 	clear_temp_array = spine_T_
 	clear_temp_array = spine_S_
