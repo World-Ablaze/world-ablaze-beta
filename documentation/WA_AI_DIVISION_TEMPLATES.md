@@ -37,7 +37,7 @@ Do not skip the research or production layers. A template that selects equipment
 | Template value calculation | `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` | Map country state to one active numeric template value per template family. |
 | Template definitions | `common/ai_templates/WA_AI_TEMPLATES_*.txt` | Add the actual AI design under the correct role file. |
 | Research demand | `common/scripted_triggers/WA_AI_RESEARCH_*.txt` | Use `WA_AI_RESEARCH_needs_*` triggers based on strategic desire, not unlock state. |
-| Technology `ai_will_do` | `common/technologies/*.txt` and `tools/ai_will_do_replacer_all.py` | Preserve generated `ai_will_do` conventions and use dry-run tooling before applying generated changes. |
+| Technology `ai_will_do` | `common/technologies/*.txt` and `tools/migrations/ai_will_do/ai_will_do_replacer_all.py` | Preserve generated `ai_will_do` conventions and use dry-run tooling before applying generated changes. |
 | Equipment production demand | `common/scripted_triggers/WA_AI_PRODUCTION_ground.txt` and `common/scripted_triggers/WA_AI_PRODUCTION_tanks.txt` | Use production triggers as one-line gates for `ai_strategy` files. |
 | Army composition | `common/scripted_triggers/WA_AI_PRODUCTION_army_composition.txt` and `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_army_composition.txt` | Keep `role_ratio` changes additive and balanced against infantry. |
 
@@ -356,11 +356,11 @@ Apply only after reviewing the dry-run output:
 python ai_will_do_replacer_all.py --type armor --apply
 ```
 
-When adding a new research trigger, update the appropriate parser mapping documented in `tools/REFACTORING_SUMMARY.md`:
+When adding a new research trigger, update the appropriate parser mapping documented in `tools/migrations/ai_will_do/REFACTORING_SUMMARY.md`:
 
-- `tools/ai_will_do_replacer_infantry.py` for infantry and special forces.
-- `tools/ai_will_do_replacer_support.py` for support companies.
-- `tools/ai_will_do_replacer_armor.py` for armor and mechanized.
+- `tools/migrations/ai_will_do/ai_will_do_replacer_infantry.py` for infantry and special forces.
+- `tools/migrations/ai_will_do/ai_will_do_replacer_support.py` for support companies.
+- `tools/migrations/ai_will_do/ai_will_do_replacer_armor.py` for armor and mechanized.
 
 Update the parser methods that apply:
 

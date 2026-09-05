@@ -164,7 +164,7 @@ The historical `# Fix NN:` comments throughout `WA_AI_CONSTRUCTION_PRIORITY_rail
 
 ## Map data and pathfinding
 
-`common/scripted_effects/WA_AI_MAP_*.txt` are **generated lookup tables** — province connections, railway connections, state→provinces, VP provinces, coordinates, terrain, landmass. Do not hand-edit them; change the generator under `tools/map_generators/` and regenerate (see `wa-tooling`).
+`common/scripted_effects/WA_AI_MAP_*.txt` are **generated lookup tables** — province connections, railway connections, state→provinces, VP provinces, coordinates, terrain, landmass. Do not hand-edit them; change the generator under `tools/gen/map_generators/` and regenerate (see `wa-tooling`).
 
 Consumers: `WA_AI_pathfinding_effects.txt` and `WA_AI_MATH_effects.txt`. Pathfinder province-type parameter: `0`/`1` = allied + subjects, `2` = ROOT + allies + subjects.
 

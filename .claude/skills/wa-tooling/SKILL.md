@@ -5,7 +5,7 @@ description: The Python tooling under `tools/` that generates World Ablaze conte
 
 # WA Python tooling
 
-Reference: `tools/REFACTORING_SUMMARY.md` for current parser status and known limitations. `PRESERVED_MODIFIER_FIX_FINAL.md` (repo root) for the prospecting modifier-preservation history.
+Reference: `tools/migrations/ai_will_do/REFACTORING_SUMMARY.md` for current parser status and known limitations. `PRESERVED_MODIFIER_FIX_FINAL.md` (repo root) for the prospecting modifier-preservation history.
 
 ## Recognising generated content
 
@@ -13,9 +13,9 @@ If you are about to edit one of these, stop and find the generator instead:
 
 | Generated area | Owned by |
 | --- | --- |
-| `common/scripted_effects/WA_AI_MAP_*.txt` lookup data | `tools/run_generators.py` + `tools/map_generators/*.py` |
-| `ai_will_do` blocks in `common/technologies/*.txt` | `tools/ai_will_do_replacer_all.py` and the per-domain replacers |
-| `ai_will_do` blocks in `common/decisions/_resource_prospecting.txt` | `tools/ai_will_do_replacer_prospecting.py`, `needs_aware_generator.py`, `prospecting_decision_analyzer.py` |
+| `common/scripted_effects/WA_AI_MAP_*.txt` lookup data | `tools/gen/run_generators.py` + `tools/gen/map_generators/*.py` |
+| `ai_will_do` blocks in `common/technologies/*.txt` | `tools/migrations/ai_will_do/ai_will_do_replacer_all.py` and the per-domain replacers |
+| `ai_will_do` blocks in `common/decisions/_resource_prospecting.txt` | `tools/migrations/prospecting/ai_will_do_replacer_prospecting.py`, `needs_aware_generator.py`, `prospecting_decision_analyzer.py` |
 | `localisation/**/*_GENERATED_*.yml` | their generator workflow |
 | `.claude/skills/wa-constants-registry/references/registry.md` | `python tools/check_constants.py --markdown` (from `tools/constants_registry.json`) |
 
@@ -29,27 +29,27 @@ Commit (or at least stage) unrelated work before applying a generator, so `git d
 
 ## Map data generators
 
-Run from `tools/` so the default relative paths resolve:
+Generators resolve the mod root from their own location (`tools/gen/`); run them from anywhere:
 
 ```bash
-python run_generators.py --help
+python tools/gen/run_generators.py --help
 ```
 
 ```bash
-python run_generators.py all --dry-run -v
+python tools/gen/run_generators.py all --dry-run -v
 ```
 
 ```bash
-python run_generators.py all
+python tools/gen/run_generators.py all
 ```
 
 Individual generators can be named, and multiple can be combined — they are re-sorted into dependency order automatically (`EXECUTION_ORDER`):
 
 ```bash
-python run_generators.py landmass province_terrain --dry-run
+python tools/gen/run_generators.py landmass province_terrain --dry-run
 ```
 
-Available generators (`tools/map_generators/`): `landmass`, `province_connections`, `province_positions`, `province_terrain`, `railway_connections`, `state_provinces`, `state_vp_provinces`.
+Available generators (`tools/gen/map_generators/`): `landmass`, `province_connections`, `province_positions`, `province_terrain`, `railway_connections`, `state_provinces`, `state_vp_provinces`.
 
 These read from `map/` and emit the `WA_AI_MAP_*` lookup effects consumed by `WA_AI_pathfinding_effects.txt` and the railway system. If pathfinding starts behaving oddly after a map change, regenerating is the first thing to try — the lookup tables and `map/` can drift apart silently.
 
@@ -73,9 +73,9 @@ python ai_will_do_replacer_all.py --file armor_ger.txt --apply
 python ai_will_do_replacer_all.py --type infantry --apply
 ```
 
-Dispatch map: `infantry_*.txt` / `special_forces_doctrine.txt` → infantry; `support*.txt` → support; `armor_*.txt` → armor; `air_techs*.txt`, `naval*.txt` / `MTG_naval.txt`, `industry.txt` / `electronic_mechanical_engineering*.txt` → legacy parsers (the dispatcher matches on `industry` / `electronic` substrings — `tools/ai_will_do_replacer_all.py`).
+Dispatch map: `infantry_*.txt` / `special_forces_doctrine.txt` → infantry; `support*.txt` → support; `armor_*.txt` → armor; `air_techs*.txt`, `naval*.txt` / `MTG_naval.txt`, `industry.txt` / `electronic_mechanical_engineering*.txt` → legacy parsers (the dispatcher matches on `industry` / `electronic` substrings — `tools/migrations/ai_will_do/ai_will_do_replacer_all.py`).
 
-Shared parsing/generation lives in `tools/ai_replacer_base/` (`file_processor.py`, `block_finder.py`, `text_utils.py`, `trigger_resolver.py`, `tech_graph.py`, `generator.py`). Fix bugs there rather than in one domain replacer, or the fix applies to one tech family only.
+Shared parsing/generation lives in `tools/migrations/ai_will_do/ai_replacer_base/` (`file_processor.py`, `block_finder.py`, `text_utils.py`, `trigger_resolver.py`, `tech_graph.py`, `generator.py`). Fix bugs there rather than in one domain replacer, or the fix applies to one tech family only.
 
 `ai_will_do_replacer_land.py` is **deprecated** — it was split into infantry + support + armor. Do not add to it.
 
@@ -106,11 +106,11 @@ Read that document before changing the pipeline itself.
 | Path | Purpose |
 | --- | --- |
 | `tools/check_constants.py` + `tools/constants_registry.json` | Constants registry checker: drift / phantom mirrors / unread copies across file-scoped `@` constants, `05_defines.lua`, `00_buildings.txt` and `savegame.py`. Stdlib only, exit 1 on ERROR. Run before committing `WA_AI_*` script (skill `wa-constants-registry`). |
-| `tools/dlc_splitter/` | Lexer/parser/AST/splitter for detecting and separating DLC-gated content. Has its own `__main__.py`. |
-| `tools/core/` | Shared CLI, CSV parsers, file IO, logging config. |
-| `tools/misc/ai_will_do_date_updater.py` | Conservative date-only updater — changes date modifiers without touching trigger logic. Prefer this when a date is all you need. |
-| `tools/misc/delete_naval_cheat_events.py` | One-off maintenance script. |
-| `tools/apply_output.log`, `full_run.log` | Output from previous runs; useful for seeing what a past apply actually touched. |
+| `tools/archive/dlc_splitter/` | Lexer/parser/AST/splitter for detecting and separating DLC-gated content. Has its own `__main__.py`. |
+| `tools/gen/core/` | Shared CLI, CSV parsers, file IO, logging config. |
+| `tools/archive/misc/ai_will_do_date_updater.py` | Conservative date-only updater — changes date modifiers without touching trigger logic. Prefer this when a date is all you need. |
+| `tools/archive/misc/delete_naval_cheat_events.py` | One-off maintenance script. |
+| `tools/**/*.log` | Run output is git-ignored since 2026-09-05 (the two January logs were deleted); use `git log -p` on the generated files to see what a past apply touched. |
 
 ## Changing a generator
 

@@ -106,7 +106,7 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help='Show what would be deleted')
     args = parser.parse_args()
 
-    base_path = Path(__file__).parent.parent.parent
+    base_path = Path(__file__).resolve().parents[3]
     events_path = base_path / 'events'
 
     total_deleted = 0

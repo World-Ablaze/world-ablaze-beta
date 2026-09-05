@@ -210,7 +210,7 @@ def main():
     dry_run = not args.apply
 
     # Get the base path (parent of tools directory)
-    base_path = Path(__file__).parent.parent
+    base_path = Path(__file__).resolve().parents[3]
     tech_path = base_path / 'common' / 'technologies'
 
     if args.file:

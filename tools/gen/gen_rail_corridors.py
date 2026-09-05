@@ -19,7 +19,7 @@ Inputs (all read-only):
   common/ai_areas/default.txt                                 (north_africa regions)
   map/strategicregions/*.txt                                  (region -> provinces)
 
-Usage (from tools/):
+Usage (any cwd):
   python gen_rail_corridors.py --dry-run
   python gen_rail_corridors.py
 """
@@ -184,7 +184,7 @@ def ordered_unique(seq):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[1])
-    parser.add_argument("--mod-root", type=Path, default=Path(".."))
+    parser.add_argument("--mod-root", type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -264,7 +264,7 @@ def main() -> int:
     # ---------------- data file: gates + builds ----------------
     lines = []
     lines.append("# GENERATED FILE - do not hand-edit. Regenerate with:")
-    lines.append("#   cd tools && python gen_rail_corridors.py")
+    lines.append("#   python tools/gen/gen_rail_corridors.py")
     lines.append("# [rail-corridors] AI-only pathfinding cheat: spawns max-level railways along")
     lines.append("# faction-controlled land corridors so strategic redeployment stops shipping")
     lines.append("# divisions across oceans. No economic intent; dispatch and gating rules live in")
@@ -349,7 +349,7 @@ def main() -> int:
     )
     h = []
     h.append("# GENERATED FILE - do not hand-edit. Regenerate with:")
-    h.append("#   cd tools && python gen_rail_corridors.py")
+    h.append("#   python tools/gen/gen_rail_corridors.py")
     h.append("# [rail-corridors] console harness for the strategic rail corridor cheat.")
     h.append("# Recipe: events/wa_test_rail_corridors.txt (event wa_test_rail.1 = report;")
     h.append("# wa_test_rail.11-19 = force-build corridor 1-9). harness-contract: v1 (wa-testing SKILL).")

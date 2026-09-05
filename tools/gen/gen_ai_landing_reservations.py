@@ -36,7 +36,7 @@ whole calendar - immaterial against the 50-day reservation lease.
 Calendar scope: the KDE yearly schedule ONLY. Events fired from other call sites (e.g. the
 Mulberry pair WA_AI_invasions.101/.102) are not part of the reservation calendar.
 
-Usage (run from tools/ so relative paths resolve):
+Usage (any cwd; the mod root is derived from this file's location):
   python gen_ai_landing_reservations.py --dry-run   # report what would be written
   python gen_ai_landing_reservations.py             # write the data file
 Exit 2 if any scheduled operation has no recoverable anchor state - fix the source first.
@@ -51,7 +51,7 @@ from pathlib import Path
 GRACE_DAYS = 45  # days past the scheduled fire date a reservation stays pending
 EPOCH = datetime.date(1936, 1, 1)
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 KDE_PATH = REPO / "common" / "scripted_effects" / "WA_KDE_AI_effects.txt"
 EVENTS_PATH = REPO / "events" / "WA_AI_invasions.txt"
 OUT_PATH = REPO / "common" / "scripted_effects" / "WA_AI_LANDING_reservations_data.txt"
@@ -171,7 +171,7 @@ def main():
     lines.append("#\tWA AI LANDING - scripted-invasion target-reservation data")
     lines.append("#")
     lines.append("#\tGENERATED FILE - do not hand-edit. Regenerate with:")
-    lines.append("#\t    cd tools && python gen_ai_landing_reservations.py")
+    lines.append("#\t    python tools/gen/gen_ai_landing_reservations.py")
     lines.append("#\tSources: WA_KDE_AI_effects.txt (calendar) + events/WA_AI_invasions.txt (anchor states).")
     lines.append("#\tConsumers: WA_AI_LANDING_update_reservations (WA_AI_LANDING_effects.txt).")
     lines.append("#")

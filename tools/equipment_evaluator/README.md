@@ -188,9 +188,9 @@ sequence `Sherman -> T20`.
 
 ### Why a new parser
 
-`tools/ai_replacer_base/` is regex + brace-matching specialised for technology
+`tools/migrations/ai_will_do/ai_replacer_base/` is regex + brace-matching specialised for technology
 blocks (`TechBlock`, `find_ai_will_do_block`) and never builds a value tree.
-`tools/dlc_splitter/` does have a real lexer and parser, but its AST exists to
+`tools/archive/dlc_splitter/` does have a real lexer and parser, but its AST exists to
 *round-trip formatting* for rewriting files — overhead this read-only tool does
 not need across ~6 MB of airframe and module data. `pdx.py` keeps the same
 token grammar as `dlc_splitter/lexer.py` (identifier / number / string /

@@ -43,7 +43,7 @@ USAGE
     python gen_ai_faction_theaters.py --dry-run      # report only, write nothing
     python gen_ai_faction_theaters.py                # write the file
 
-Run it from tools/ so the default relative paths resolve, per AGENTS.md.
+The default --mod-root is the repo this script lives in; run it from any directory.
 """
 
 from __future__ import annotations
@@ -332,8 +332,8 @@ HEADER = """\
 ############################################################################################################
 # WA AI faction theatres - GENERATED, do not hand-edit
 ############################################################################################################
-# Source of truth: tools/gen_ai_faction_theaters.py. Regenerate with:
-#     cd tools && python gen_ai_faction_theaters.py
+# Source of truth: tools/gen/gen_ai_faction_theaters.py. Regenerate with:
+#     python tools/gen/gen_ai_faction_theaters.py
 #
 # WHY THIS FILE EXISTS AS A WA FILE
 # Vanilla ships this file and WA did not replace the folder, so vanilla's copy ran in every
@@ -360,7 +360,7 @@ HEADER = """\
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--install", type=Path, default=DEFAULT_INSTALL, help="HOI4 install directory")
-    parser.add_argument("--mod-root", type=Path, default=Path(".."), help="mod root (default: parent of tools/)")
+    parser.add_argument("--mod-root", type=Path, default=Path(__file__).resolve().parents[2], help="mod root (default: the repo this script lives in)")
     parser.add_argument("--overlap", type=float, default=DEFAULT_OVERLAP,
                         help="minimum share of a WA region's provinces that must lie in the theatre")
     parser.add_argument("--dry-run", action="store_true", help="report only, write nothing")

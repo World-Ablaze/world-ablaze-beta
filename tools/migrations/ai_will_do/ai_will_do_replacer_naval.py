@@ -522,7 +522,7 @@ def main():
     args = parser.parse_args()
     
     # Get the base path (parent of tools directory)
-    base_path = Path(__file__).parent.parent
+    base_path = Path(__file__).resolve().parents[3]
     
     if args.file:
         files = [Path(args.file)]

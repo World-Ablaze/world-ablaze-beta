@@ -11,7 +11,7 @@ Successfully fixed critical bugs in the needs-aware prospecting parser that were
 
 ### Bug #1: Nested Brace Extraction Failure
 
-**Location**: `tools/needs_aware_generator.py`, function `extract_existing_modifiers()`
+**Location**: `tools/migrations/prospecting/needs_aware_generator.py`, function `extract_existing_modifiers()`
 
 **Problem**:
 - Used regex pattern `modifier\s*=\s*\{[^}]*\}` to extract modifier blocks
@@ -63,7 +63,7 @@ def extract_existing_modifiers(ai_will_do_block: str) -> list[str]:
 
 ### Bug #2: Preserved Modifier Indentation Loss
 
-**Location**: `tools/needs_aware_generator.py`, function `generate_ai_will_do_block()`
+**Location**: `tools/migrations/prospecting/needs_aware_generator.py`, function `generate_ai_will_do_block()`
 
 **Problem**:
 - Used `mod_line.lstrip()` to remove "old indentation"
@@ -257,7 +257,7 @@ modifier = {
 ### Commit 2: Code Fix
 - **Hash**: a18f3781d
 - **Message**: Fix: Implement proper nested brace extraction and indentation handling
-- **Changes**: Updated `tools/needs_aware_generator.py` with fixed algorithms
+- **Changes**: Updated `tools/migrations/prospecting/needs_aware_generator.py` with fixed algorithms
 
 ---
 
@@ -266,9 +266,9 @@ modifier = {
 | File | Status | Changes |
 |------|--------|---------|
 | `common/decisions/_resource_prospecting.txt` | ✅ UPDATED | 136 decisions regenerated with proper formatting |
-| `tools/needs_aware_generator.py` | ✅ UPDATED | Fixed nested brace extraction and indentation logic |
-| `tools/ai_will_do_replacer_prospecting.py` | ✅ UPDATED | Uses fixed generator |
-| `tools/prospecting_decision_analyzer.py` | ✅ CREATED | Decision metadata extraction (no changes for this fix) |
+| `tools/migrations/prospecting/needs_aware_generator.py` | ✅ UPDATED | Fixed nested brace extraction and indentation logic |
+| `tools/migrations/prospecting/ai_will_do_replacer_prospecting.py` | ✅ UPDATED | Uses fixed generator |
+| `tools/migrations/prospecting/prospecting_decision_analyzer.py` | ✅ CREATED | Decision metadata extraction (no changes for this fix) |
 | `common/scripted_triggers/WA_AI_RESOURCE_NEEDS_triggers.txt` | ✅ CREATED | 3-layer trigger definitions (no changes for this fix) |
 
 ---

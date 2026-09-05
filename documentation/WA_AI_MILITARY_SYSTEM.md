@@ -827,7 +827,7 @@ reading; until then treat the AFTER column as the intended target, not a measure
 
 ### What WA generates and what it does not
 
-`tools/gen_ai_faction_theaters.py` writes `common/ai_faction_theaters/ai_faction_theaters.txt`.
+`tools/gen/gen_ai_faction_theaters.py` writes `common/ai_faction_theaters/ai_faction_theaters.txt`.
 Every theatre's `name`, `ai_will_do`, `cancel`, `preferred_countries` and `can_skip_first_region`
 are **vanilla's, verbatim** - only `regions = { }` is computed, as the WA regions covering the
 province area the vanilla list covered (threshold: half the WA region's provinces inside it).
@@ -1499,7 +1499,7 @@ landing executes; this suppresses the calendar's own targets BEFORE their schedu
 
 | Piece | File |
 | --- | --- |
-| Calendar data (GENERATED - regenerate, never hand-edit) | `common/scripted_effects/WA_AI_LANDING_reservations_data.txt` via `tools/gen_ai_landing_reservations.py` |
+| Calendar data (GENERATED - regenerate, never hand-edit) | `common/scripted_effects/WA_AI_LANDING_reservations_data.txt` via `tools/gen/gen_ai_landing_reservations.py` |
 | Epoch init + monthly updater + stamp | `common/scripted_effects/WA_AI_LANDING_effects.txt` (reservation section) |
 | Switch (control panel) | `common/scripted_triggers/WA_AI_LANDING_triggers.txt`, `WA_AI_LANDING_reservations_enabled` |
 | Consumer (Default layer) | `common/ai_strategy/WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt`, `WA_AI_MILITARY_INV_reserved_scripted_target` |

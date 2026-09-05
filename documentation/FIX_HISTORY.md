@@ -3,7 +3,7 @@
 The `Fix NN` numbering is retired: work is tracked by SUBJECT slug in `WORK.md`
 (AGENTS.md, section 'Subjects and sessions'), and code comments carry `# [slug]` markers.
 This table resolves every historical number to its commit and the subject that absorbed it
-(mapping source: `tools/fix_slug_map.json`; commits: `tools/fix_registry.json`, frozen).
+(mapping source: `tools/archive/fix_tracking/fix_slug_map.json`; commits: `tools/archive/fix_tracking/fix_registry.json`, frozen).
 Known number collision: 28 was reused by two unrelated changes - the posture-verdict family
 (offensive-posture) and the railway overseas fallback (railway-pathfinding); markers were
 assigned per file. 54/55 follow the posture family.

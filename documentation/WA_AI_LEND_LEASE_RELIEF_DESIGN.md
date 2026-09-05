@@ -191,7 +191,7 @@ moving) and count only the verified send in TLM. Three options:
   small table (the §3 rows) and emits (i) the three scripted triggers per archetype
   into a marked region of `WA_AI_LEND_LEASE_triggers.txt`, (ii) the leg blocks into a
   marked region of `WA_AI_lend_lease_effects.txt`, (iii) the script-constants file,
-  (iv) the TLM index table. Same dry-run discipline as `tools/ai_will_do_replacer_*`.
+  (iv) the TLM index table. Same dry-run discipline as `tools/migrations/ai_will_do/ai_will_do_replacer_*`.
   Adding an archetype = one row.
 - **B: hand-written legs** from one template comment; acceptable up to ~6 archetypes,
   drifts beyond.

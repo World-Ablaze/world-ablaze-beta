@@ -595,7 +595,7 @@ def main():
     
     # Determine project root (script is in tools/)
     script_dir = Path(__file__).parent
-    project_root = script_dir.parent
+    project_root = script_dir.resolve().parents[2]
     tech_dir = project_root / 'common' / 'technologies'
     
     if not tech_dir.exists():

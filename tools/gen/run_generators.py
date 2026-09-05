@@ -16,6 +16,7 @@ from typing import Dict, List, Type
 
 # Add current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
+MOD_ROOT = Path(__file__).resolve().parents[2]
 
 from map_generators import (
     BaseMapGenerator,
@@ -124,19 +125,19 @@ Examples:
     parser.add_argument(
         "--map-dir",
         type=Path,
-        default=Path("../map"),
+        default=MOD_ROOT / "map",
         help="Path to map folder (default: ../map)",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("../common/scripted_effects"),
+        default=MOD_ROOT / "common/scripted_effects",
         help="Output directory (default: ../common/scripted_effects)",
     )
     parser.add_argument(
         "--states-dir",
         type=Path,
-        default=Path("../history/states"),
+        default=MOD_ROOT / "history/states",
         help="Path to states folder (default: ../history/states)",
     )
 

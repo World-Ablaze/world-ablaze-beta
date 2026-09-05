@@ -149,7 +149,7 @@ Live, AI-relevant, and confirmed absent from `descriptor.mod`'s replace list:
 
 `common/ai_faction_theaters/` used to be listed here - **no longer true since 2026-08-18**: the
 folder is now on `descriptor.mod`'s replace list (line 13) and the live content is WA's own
-generated `ai_faction_theaters.txt` (`tools/gen_ai_faction_theaters.py`, `--dry-run` first - never
+generated `ai_faction_theaters.txt` (`tools/gen/gen_ai_faction_theaters.py`, `--dry-run` first - never
 hand-edit). Vanilla's 22 KB copy no longer loads. See `documentation/WA_AI_MILITARY_SYSTEM.md` §15.
 
 ### `common/defines` is an override layer, not a table

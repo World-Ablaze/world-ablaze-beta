@@ -22,9 +22,9 @@ Both files declare `role = medium_armor`. That is the shape the light-support te
 use (WA_light_support_armor_role also declares role = light_armor); only one template is ever
 enabled because the flag VALUE selects exactly one.
 
-Usage, from tools/:
-    python gen_ai_medium_modern_mirror.py --dry-run
-    python gen_ai_medium_modern_mirror.py
+Usage (any cwd):
+    python tools/gen/gen_ai_medium_modern_mirror.py --dry-run
+    python tools/gen/gen_ai_medium_modern_mirror.py
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ import re
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = Path(__file__).resolve().parents[2]
 SRC = REPO / "common" / "ai_templates" / "WA_AI_TEMPLATES_armored_medium.txt"
 DST = REPO / "common" / "ai_templates" / "WA_AI_TEMPLATES_armored_medium_modern.txt"
 
@@ -204,7 +204,7 @@ HEADER = """\
 ############################################################################################################
 # GENERATED FILE - DO NOT EDIT BY HAND.
 # Source    : common/ai_templates/WA_AI_TEMPLATES_armored_medium.txt
-# Generator : tools/gen_ai_medium_modern_mirror.py  (run with --dry-run first)
+# Generator : tools/gen/gen_ai_medium_modern_mirror.py  (run with --dry-run first)
 ############################################################################################################
 # [modern-chassis-tier] The modern-CHASSIS tier of the MEDIUM weight class. Same role, same ladder,
 # the hull one tier up and every other component UNCHANGED (the variants stay on the archetypes the

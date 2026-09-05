@@ -4,7 +4,7 @@ collapse_fix_comments.py - phase C of the 2026-08-23 tracking redesign.
 
 Replaces the retired `Fix NN` numbering inside PDXScript COMMENTS with the subject slug
 that absorbed the fix (`# Fix 95: ...` -> `# [na-corridor] ...`), across common/ and
-events/. Numbers resolve through tools/fix_slug_map.json; the historical number->commit
+events/. Numbers resolve through tools/archive/fix_tracking/fix_slug_map.json; the historical number->commit
 table stays in documentation/FIX_HISTORY.md.
 
 Safety: the transform must be behaviour-neutral. Only the text at or after the first `#`
@@ -12,9 +12,9 @@ of a line is ever touched, and --verify recomputes the code-only content (everyt
 before the first `#` of every line) of every file and fails if a single code byte
 changed. Run order:
 
-    python tools/collapse_fix_comments.py --dry-run   # report what would change
-    python tools/collapse_fix_comments.py             # apply + verify
-    python tools/collapse_fix_comments.py --verify    # standalone: code equals baseline
+    python tools/archive/fix_tracking/collapse_fix_comments.py --dry-run   # report what would change
+    python tools/archive/fix_tracking/collapse_fix_comments.py             # apply + verify
+    python tools/archive/fix_tracking/collapse_fix_comments.py --verify    # standalone: code equals baseline
 
 --dry-run and the apply run both write a baseline manifest of code-only hashes to the
 scratch file next to this script (fix_collapse_baseline.json) before touching anything,
@@ -28,8 +28,8 @@ import re
 import sys
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent.parent
-MAP = REPO / "tools/fix_slug_map.json"
+REPO = Path(__file__).resolve().parents[3]
+MAP = REPO / "tools/archive/fix_tracking/fix_slug_map.json"
 BASELINE = REPO / "tools/fix_collapse_baseline.json"
 BASES = ("common", "events")
 

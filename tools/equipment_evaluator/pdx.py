@@ -3,13 +3,13 @@ Minimal PDXScript (Clausewitz) reader used by the equipment evaluator.
 
 Why this module exists rather than reusing an existing parser
 ------------------------------------------------------------
-`tools/ai_replacer_base/` is regex + brace-matching and is specialised for
+`tools/migrations/ai_will_do/ai_replacer_base/` is regex + brace-matching and is specialised for
 technology blocks (`TechBlock`, `find_ai_will_do_block`); it does not produce a
-value tree.  `tools/dlc_splitter/` has a real lexer and parser, but its AST is
+value tree.  `tools/archive/dlc_splitter/` has a real lexer and parser, but its AST is
 built to *round-trip formatting* for rewriting files, which we do not need and
 which costs a lot of time on the ~6 MB of airframe/module data we read.
 
-This module keeps the *token grammar* of `tools/dlc_splitter/lexer.py`
+This module keeps the *token grammar* of `tools/archive/dlc_splitter/lexer.py`
 (identifier / number / string / `=` `<` `>` / braces / `#` comments / `@vars`)
 but scans with a single compiled regex and emits a plain, read-only tree.
 The evaluator never writes PDXScript, so nothing here needs to preserve

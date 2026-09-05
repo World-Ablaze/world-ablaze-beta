@@ -64,7 +64,7 @@ t'est dû côté jeu.
 - La chaîne pacific est UNE observation `WA_AI_MILITARY_pacific_high_risk` définie dans
   MILITARY_triggers ; `pacific_war_active` et l'alias CONFIG sont morts.
 - Les docs vivantes (MILITARY_SYSTEM, TYPES_REFERENCE, LEND_LEASE_RELIEF_DESIGN) renommées dans
-  le même commit ; `tools/fix_registry.json` volontairement NON réécrit (historique gelé).
+  le même commit ; `tools/archive/fix_tracking/fix_registry.json` volontairement NON réécrit (historique gelé).
 
 ### 2.3 Phase 2b — difficulté (changements de comportement VOULUS)
 
