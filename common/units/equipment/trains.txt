@@ -61,14 +61,15 @@ equipments = {
 		armor_value = 250 # HP = BASE_TRAIN_HP + armor_value
 		air_attack = 18
 		priority = 30
-		# [train-variant-choice] AI countries may produce this variant only while the free train stockpile is
-		# above the reserve (WA_AI_PRODUCTION_should_build_armored_trains); humans are never gated. The F9 boot
-		# test is the arbiter that the scripted trigger resolves here: Armored greyed on an AI-tagged production
-		# tab under the bar AND no unknown-trigger line in error.log; if either fails, move the gate to a flag.
+		# [train-variant-choice] AI gate reads a FLAG, never a variable. can_be_produced is evaluated at
+		# load OUTSIDE any country scope, so a check_variable / num_equipment@ / constant: here dereferences
+		# null and crashes the game on launch (MEASURED 2026-09-05). The flag is latched monthly by the
+		# is_ai pulse in WA_AI_misc_on_actions.txt from WA_AI_PRODUCTION_should_build_armored_trains, where
+		# those tokens are safe. Humans are never gated.
 		can_be_produced = {
 			OR = {
 				is_ai = no
-				WA_AI_PRODUCTION_should_build_armored_trains = yes
+				has_country_flag = WA_AI_armored_trains_allowed
 			}
 		}
 		build_cost_ic = 65
