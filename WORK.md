@@ -177,29 +177,66 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Owner order 2026-09-05: AI train lines run on the Simplified / War Austerity trains when available;
   the Armored Train is produced only with 10000 trains in reserve. All AI countries, every tech tree.
 - State before, MEASURED (`common/units/equipment/trains.txt`): Armored Train `priority = 30` >
-  Simplified 20 = Austerity 20 > Civilian 10, i.e. the vanilla order (vanilla armored 30) that puts the
-  AI on the 65-IC armored variant from 1936; the only train strategy was the archetype-level
-  `equipment_variant_production_factor id = train_equipment` (+5 / -50). One train tree only
-  (`common/technologies/support.txt` basic/simplified/wartime/armored; no country-specific train
-  equipment) so one rule covers every tree.
-- Change: `priority` armored 30 -> 5, austerity 20 -> 25; constant
-  `wa_ai_production.trains.armored_reserve = 10000`; decision triggers
-  `WA_AI_PRODUCTION_should_build_cheap_trains` / `_armored_trains` (exact complements on
-  `num_equipment@train_equipment`, strict >); blocks `WA_AI_PRODUCTION_build_cheap_trains`
-  (`production_upgrade_desire_offset` +100 on train_equipment_2/_3, -100 on _4) and
-  `_build_armored_trains` (+100 on _4) in `WA_AI_PRODUCTION_DEFAULT_ground.txt`.
-- ASSUMED (engine): equipment `priority` is the AI's pick among unlocked variants of an archetype
-  (wiki documents it as `# ?`); `production_upgrade_desire_offset` sign = eagerness to move a line
-  onto that id (vanilla comment "100 essentially means we don't require a stockpile surplus",
-  Expert AI holds lines with -100 under `has_equipment < 10000`). No hysteresis at the reserve: a
-  stock crossing 10000 flips the pair at the next strategy re-evaluation; at 10000 free trains the
-  need is met so the lines idle, flip cost ~0.
-- Probe (campaign): on every save 1940+ of an AI major with train_equipment stock < 10000, the
-  train production lines (`savegame.py` production lines) carry train_equipment_2/_3 (or _1 before
-  1939), never train_equipment_4; armored lines appear only on a save whose stock reads > 10000.
-- Closed when: probe passes on one scored campaign (F9 boot test first: the four files parse).
+  Simplified 20 = Austerity 20 > Civilian 10 (the vanilla order), parent chain _1 -> _4 -> _2 -> _3;
+  the only train strategy was the archetype-level `equipment_variant_production_factor id =
+  train_equipment` (+5 / -50, both on the always-yes ground gate, net -45 - pre-existing, not touched).
+  One train tech chain only (`common/technologies/support.txt`), no country-specific train equipment,
+  so one rule covers every tree. `AI_purge_train_equipment_production` (trains.txt:8) has no setter
+  anywhere in the repo - dead vanilla residue, not built on.
+- Change: (1) `train_equipment_4` gets an AI-only `can_be_produced` = `is_ai = no` OR
+  `WA_AI_PRODUCTION_should_build_armored_trains`; `priority` stays 30 so that, once producible, it is
+  the AI's top pick; War Austerity `priority` 20 -> 25 (cheapest variant wins the tie with Simplified).
+  (2) constant `wa_ai_production.trains.armored_reserve = 10000`. (3) decision triggers
+  `WA_AI_PRODUCTION_should_build_cheap_trains` / `_armored_trains`, exact complements on
+  `check_variable = { num_equipment@train_equipment > constant }` (free stockpile, strict >; the
+  `num_equipment@` idiom is the one shipped in `WA_AI_LEND_LEASE_triggers.txt`). (4) blocks
+  `WA_AI_PRODUCTION_build_cheap_trains` (`production_upgrade_desire_offset` +100 on _2/_3, -100 on _4)
+  and `_build_armored_trains` (+100 on _4) for EXISTING lines only, per the 2026-08-13 lesson (the type
+  waives the surplus check on a line, it never chooses what a new line builds).
+- Lessons review 2026-09-05 (two passes: CONFLICT, then CONCERNS all applied) -> resolved: the first draft armed the ON case with `priority = 5`
+  + `+100 on _4`, which the lesson records as a no-op for a line on a NEWER variant; the ON lever is
+  now the `can_be_produced` gate (armored unproducible for AI under the bar, producible and top
+  priority above it). Architecture review CONCERNS all applied (no date in the constant comment, no
+  ladder copy in the strategy comment, `WA_AI_DIVISION_TEMPLATES.md` trigger list).
+- ASSUMED (engine): equipment `priority` is the AI's pick among the variants it can produce (wiki:
+  `# ?`); a scripted trigger resolves inside equipment `can_be_produced` (repo precedent is flags/
+  ideas/DLC only; `is_ai` there is MEASURED to resolve, convoys.txt). Fail direction if it does NOT
+  resolve is ALSO ASSUMED: the one measurement in the log (2026-08-16 meta_trigger, unparsed token)
+  read TRUE, i.e. armored ALWAYS for AI = today's behaviour, not a new failure. The F9 boot test
+  arbitrates (Armored greyed on an AI-tagged production tab under the bar + no unknown-trigger line
+  in error.log); if either fails the gate moves to a flag set by a WA_AI effect (the vanilla
+  `AI_purge_*` shape already on trains.txt:8). A running armored line whose `can_be_produced` turns
+  false stops (ASSUMED). `num_equipment@train_equipment` = free stockpile = the owner's "en réserve".
+  The two triggers carry no `ground_is_enabled` term (second lessons pass): `WA_AI_CONFIG_uses_
+  default_ground_production` is `always = yes` today (MEASURED `WA_AI_CONFIG.txt:1786`), but a
+  future restriction would have turned the gate into a silent armored ban for the excluded AIs.
+- Bar timeline, (f) table (cadences ASSUMED: `enable` re-evaluated daily, `can_be_produced` checked
+  at line creation and each production tick): t0 = free stock crosses 10000 upward -> cheap block
+  aborts, armored block arms, `can_be_produced` opens; new lines pick armored (priority 30), a
+  Civilian line converts (+100), Simplified/Austerity lines keep running (backward upgrade, no-op).
+  t1 = stock falls under 10000 (consumption, lend-lease, losses) -> gate closes, armored lines stop,
+  the AI reopens cheap lines (efficiency loss on a cross-family line, `_4` has no `family`).
+  t2 = steady under the bar (the expected state: the FRA failsafe in `100_wa_on_actions.txt:4388`
+  treats 720 TOTAL trains as the floor, so 10000 FREE trains is a bar most AIs never reach - armored
+  "effectively never" is the owner's number, stated here so it is not read as a bug). Flip rate,
+  worst case: at the ASSUMED daily `enable` cadence a stock oscillating across 10000 flips the pair
+  once per DAY, each flip costing the armored line its efficiency; no hysteresis band because the
+  expected state is t2 and the owner gave one number. If a campaign shows a stock hovering at the
+  bar, add a re-arm constant below it (second key in the `trains` group).
+- Probe (campaign): on every save 1940+ of an AI major with free train stock < 10000, the train
+  production lines (`savegame.py` production lines) carry train_equipment_2/_3 (or _1 before 1939),
+  never train_equipment_4, INCLUDING at least one line CREATED after 1939.1.1 (creation is the
+  `priority` path, the one the lesson has never measured); armored lines appear only on a save whose
+  free stock reads > 10000, or none does and the stock never crossed the bar.
+- Closed when: F9 boot test passes (the five files parse, no unknown-trigger line in error.log, the
+  Armored Train greyed on an AI-tagged production tab under the bar) and the probe passes on one
+  scored campaign.
 
-### ai-equipment-naming — TESTED (2026-09-04)
+### ai-equipment-naming — PARKED (2026-09-05)
+- Parked 2026-09-05 on the owner's order ("parque ai-equipment-naming") to bring OPEN back under the
+  WIP limit; move it back to OPEN in one line when a scored campaign is read. State at parking:
+  TESTED 2026-09-04 (checker + evaluator diff DONE, boot OK); the AI GER Panzer III/IV variant reading
+  from the next scored campaign is the only item owed; nothing else changes.
 - Owner order 2026-09-04: "on a un soucis d'hygiène de code : les entrées ai_equipment comme
   medium_tank_6 n'ont pas de convention claire de nommage (noms dupliqués entre nations, le nom
   n'est pas clair, les outils python référencent ces id) - harmonisation + convention propre".
