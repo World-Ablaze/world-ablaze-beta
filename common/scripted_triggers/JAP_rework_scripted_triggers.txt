@@ -21,3 +21,20 @@ JAP_te_state_held_trigger = {
 		JAP_te_state_supplied_trigger = yes
 	}
 }
+
+# ── 派閥の存命判定 ──
+# 粛清・失脚した派閥のディシジョンと国内勢力GUIの行を隠すための一元判定
+# (JAP_factions.txt の visible と JAP_internal_factions_scripted_gui の triggers が参照)。
+# 影響力変数は粛清後に0へセットされるだけで、存命でも0になり得るため判定に使わない。
+JAP_kodoha_faction_alive_trigger = {
+	# 死亡ルートは2本: 粛清NF、または「青年将校の蜂起」ミッションの期限切れ処理
+	# (JAP_young_officers_coup の timeout_effect。NFを完了させずに影響力0化+このフラグを立てる)。
+	NOT = { has_completed_focus = JAP_purge_the_kodoha_faction }
+	NOT = { has_country_flag = young_officers_coup_fired }
+}
+
+# 統制派の失脚ルート(JAP_support_the_kodoha_faction)は本家9.6時点で効果未実装
+# (focus_tree_coming_in_94)だが、実装されたとき自動で効くよう先回りで判定しておく。
+JAP_toseiha_faction_alive_trigger = {
+	NOT = { has_completed_focus = JAP_support_the_kodoha_faction }
+}
