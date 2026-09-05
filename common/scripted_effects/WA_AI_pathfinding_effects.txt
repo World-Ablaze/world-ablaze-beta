@@ -358,6 +358,9 @@ WA_AI_PATHFIND_get_lowest_from_open_list = {
 #	Provincial pathfinding (for railways)
 ###########################################
 
+# [rail-spine-tree] A* iteration cap of a DEEP search (_pathfind_prov_deep_ = 1); the default is the literal 100 below.
+@WA_AI_PATHFIND_PROV_DEEP_ITS = 300
+
 WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_end, var:_pathfind_prov_type >>> var:pathfind_prov_success_ arr:pathfind_prov_path_
 
 	if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
@@ -388,6 +391,14 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 	add_to_temp_array = { open_list_id = _pathfind_prov_start }
 
 	set_temp_variable = { _pf_max_its = 100 }
+	# [rail-spine-tree] a caller may switch the DEEP budget on for one search - the spine's trunk route,
+	# 30+ hops with no partial fallback, where the default cap was measured exhausted on 50-65-hop
+	# searches. Tested by EQUALITY, never by `> 0`: an unset temp reads as a scope token, and a `> 0`
+	# guard would pass on it for the first caller of every pulse. The caller zeroes it after its call.
+	if = {
+		limit = { check_variable = { _pathfind_prov_deep_ = 1 } }
+		set_temp_variable = { _pf_max_its = @WA_AI_PATHFIND_PROV_DEEP_ITS }
+	}
 	set_temp_variable = { _pf_its = 0 }
 	set_temp_variable = { pathfind_prov_success_ = 0 }
 
@@ -533,24 +544,35 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 			}
 		}
 
-		### Partial path fallback: build to the frontier province with most progress
+		### Partial path fallback: build to the closed province nearest the target
 		if = {
 			limit = {
 				check_variable = { _pathfind_prov_allow_partial = 1 }
 				check_variable = { closed_list_id^num > 1 }  # Need at least start + 1 other
 			}
 
-			# Find province in closed_list with highest g_cost (most progress from start)
-			# This is the actual frontier - the province furthest along the path
+			# [rail-spine-tree] the frontier is the closed province NEAREST THE TARGET (lowest raw
+			# heuristic), not the one with the highest cumulative cost: g grows with detours and with
+			# unrailed ground, so "highest g" picked the most EXPENSIVE closed node - a stub away from
+			# the target - whenever the search wandered before the iteration cap. Tell it is gone: a
+			# partial route whose frontier lies farther from the target than its start.
 			set_temp_variable = { best_frontier_id = 0 }
-			set_temp_variable = { best_frontier_g = -1 }
+			set_temp_variable = { best_frontier_h = -1 }
 
 			for_each_loop = { array = closed_list_id value = _check_id
 				# Skip start province
 				if = { limit = { NOT = { check_variable = { _check_id = _pathfind_prov_start } } }
-					# Check g_cost (cumulative progress from start)
-					if = { limit = { check_variable = { prov_g^_check_id > best_frontier_g } }
-						set_temp_variable = { best_frontier_g = prov_g^_check_id }
+					set_temp_variable = { _h_check_id = _check_id }
+					set_temp_variable = { _h_target_id = _pathfind_prov_end }
+					WA_AI_PATHFIND_PROV_calculate_h = yes
+					if = {
+						limit = {
+							OR = {
+								check_variable = { best_frontier_h < 0 }
+								check_variable = { _calc_h_result < best_frontier_h }
+							}
+						}
+						set_temp_variable = { best_frontier_h = _calc_h_result }
 						set_temp_variable = { best_frontier_id = _check_id }
 					}
 				}
@@ -561,7 +583,7 @@ WA_AI_PATHFIND_PROV_get_path = { # var:_pathfind_prov_start, var:_pathfind_prov_
 				if = { limit = { ROOT = { has_country_flag = WA_AI_pathfind_logging } }
 					set_temp_variable = { _log_frontier_state = global.WA_AI_MAP_province_state_id^best_frontier_id }
 					var:_log_frontier_state = {
-						ROOT = { log = "PATHFIND PARTIAL: building to frontier [?best_frontier_id] ([Prev.GetName]) g=[?best_frontier_g]" }
+						ROOT = { log = "PATHFIND PARTIAL: building to frontier [?best_frontier_id] ([Prev.GetName]) h=[?best_frontier_h]" }
 					}
 				}
 

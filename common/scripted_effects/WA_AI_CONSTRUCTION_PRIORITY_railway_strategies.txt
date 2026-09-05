@@ -65,6 +65,37 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 			# and every pass redraws routes that queue no segments.
 			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap_overland }
 
+			### [rail-spine-tree] SPINE GATE. Against an enemy worth a trunk - at least spine.min_hubs
+			### frontline hubs (counted BEFORE the per-enemy route budget, which would cap the count at
+			### max_per_enemy) AND a major or spine.min_enemy_divisions divisions - the routes below start
+			### from the nearest element of the spine S instead of the capital, and the trunk route(s) to
+			### the railhead(s) are appended first (kind 1). Below the gate: today's direct routes,
+			### unchanged - a small border enemy gets no trunk. THIS = the enemy here.
+			set_temp_variable = { spine_active_ = 0 }
+			ROOT = { WA_AI_PC_railway_spine_collect_hubs = yes }
+			set_temp_variable = { _spine_enemy_divs_ = num_divisions }
+			set_temp_variable = { _spine_enemy_major_ = 0 }
+			if = {
+				limit = { is_major = yes }
+				set_temp_variable = { _spine_enemy_major_ = 1 }
+			}
+			if = {
+				limit = {
+					NOT = { check_variable = { spine_hubs_^num < constant:wa_ai_railway.spine.min_hubs } }
+					OR = {
+						check_variable = { _spine_enemy_major_ = 1 }
+						NOT = { check_variable = { _spine_enemy_divs_ < constant:wa_ai_railway.spine.min_enemy_divisions } }
+					}
+				}
+				set_temp_variable = { _spine_band_ = constant:wa_ai_pc.prio.rail_connect }
+				ROOT = { WA_AI_PC_railway_spine_select = yes }
+			}
+			else = {
+				if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+					ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: enemy=[?_current_enemy_tag.GetName] cand=[?spine_hubs_^num] major=[?_spine_enemy_major_] divs=[?_spine_enemy_divs_] BELOW GATE - direct routes" }
+				}
+			}
+
 			### [na-corridor] three candidate populations, ONE shared body
 			### (WA_AI_PC_railway_land_consider_frontline). Order is load-bearing - the per-enemy
 			### route budget is consumed top-down, so ROOT's own soil always outranks a subject's
@@ -123,6 +154,9 @@ WA_AI_PC_railway_STRATEGY_land_war = {
 			}
 		}
 	}
+
+	# [rail-spine-tree] per-enemy state; the overseas strategy runs next and must not read a spine
+	set_temp_variable = { spine_active_ = 0 }
 
 	### Sort targets by enemy threat (highest threat enemy's targets first)
 	if = { limit = { check_variable = { railway_end_provinces_^num > 1 } }
@@ -231,6 +265,8 @@ WA_AI_PC_railway_land_consider_frontline = {
 	}
 
 	# Skip single-node states (only port, no supply hub to connect to)
+	# [rail-spine-tree] the route kind of this body: 0 plain, 3 when it starts on the spine (set by the hook)
+	set_temp_variable = { _branch_kind_ = 0 }
 	WA_AI_PC_coastal_state_is_single_node = yes
 	if = {
 		limit = { check_variable = { is_single_node_ = 0 } }
@@ -280,6 +316,19 @@ WA_AI_PC_railway_land_consider_frontline = {
 				# frontline and the land-war family emits zero routes.
 				# Tell it is gone again: `RAILWAY LAND: COMPLETED - 0 targets found` after ACCEPTED lines.
 				set_temp_variable = { route_start = default_route_start }
+				# [rail-spine-tree] a BRANCH starts at the element of the spine S nearest the hub, not at
+				# the capital - 10-20 hops instead of 50-65, so the pathfinder's iteration cap no longer
+				# binds and no two branches redraw the trunk. Only for an enemy that passed the spine gate.
+				if = {
+					limit = { check_variable = { spine_active_ = 1 } }
+					set_temp_variable = { _spn_prov_ = supply_hub_province_ }
+					WA_AI_PC_railway_spine_nearest = yes
+					if = {
+						limit = { check_variable = { spine_nearest_ > 0 } }
+						set_temp_variable = { route_start = spine_nearest_ }
+						set_temp_variable = { _branch_kind_ = 3 }
+					}
+				}
 				# [railway-landwar] the levelling MUST stay after the pathfind - read before it, the
 				# path is the PREVIOUS target's or empty, and every land route targets level 1 and
 				# queues no segments. Until then this carries the family floor and
@@ -350,7 +399,7 @@ WA_AI_PC_railway_land_consider_frontline = {
 						set_temp_variable = { _pathfind_prov_start = route_start }
 						set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 						set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces
-						set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
+						set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 						WA_AI_PATHFIND_PROV_get_path = yes
 
 						# [railway-pathfinding] If same-landmass route got PARTIAL or FAIL, try overseas fallback
@@ -369,7 +418,7 @@ WA_AI_PC_railway_land_consider_frontline = {
 								set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
 								set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 								set_temp_variable = { _pathfind_prov_type = 2 }
-								set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+								set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 								WA_AI_PATHFIND_PROV_get_path = yes
 								if = {
 									limit = {
@@ -445,6 +494,7 @@ WA_AI_PC_railway_land_consider_frontline = {
 							add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 							add_to_temp_array = { railway_target_levels_ = route_level }
 							add_to_temp_array = { railway_priorities_ = route_priority }
+							add_to_temp_array = { railway_route_kind_ = _branch_kind_ }
 							add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
 
 							### Increment per-enemy counter
@@ -504,6 +554,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 		add_to_temp_array = { railway_end_provinces_ = best_home_port_province_ }
 		add_to_temp_array = { railway_target_levels_ = route_level }
 		add_to_temp_array = { railway_priorities_ = route_priority }
+		add_to_temp_array = { railway_route_kind_ = 0 }
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging }
 			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: Part A - queued capital->home_port route"
@@ -527,6 +578,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 		add_to_temp_array = { railway_end_provinces_ = best_home_port_province_ }
 		add_to_temp_array = { railway_target_levels_ = route_level }
 		add_to_temp_array = { railway_priorities_ = route_priority }
+		add_to_temp_array = { railway_route_kind_ = 0 }
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging }
 			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: Part A - queued capital->naval_base railway upgrade"
@@ -809,6 +861,7 @@ WA_AI_PC_railway_STRATEGY_overseas_war = {
 									add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 									add_to_temp_array = { railway_target_levels_ = rsize_rail_tgt_ }
 									add_to_temp_array = { railway_priorities_ = route_priority }
+									add_to_temp_array = { railway_route_kind_ = 2 } # [rail-spine-tree] overseas beachhead route: the partial-path fallback stays
 
 									ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
 										log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY OVERSEAS: ADDED beachhead->[Prev.GetName] route"
@@ -878,6 +931,9 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 
 	### SCRIPTED OVERRIDES: Check for country-specific override targets first (highest priority)
 	clear_temp_array = _scripted_override_targets_
+	# [rail-spine-tree] the CONFIG-declared targets in the same representation as _target_countries_ (a
+	# scope value, not an .id), so the peace-mode spine can test membership per target below.
+	clear_temp_array = _spine_peace_targets_
 	if = {
 		limit = { WA_AI_CONFIG_RAILWAY_has_scripted_override = yes }
 		WA_AI_PC_railway_get_scripted_override_targets = yes
@@ -898,6 +954,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						ROOT = { NOT = { is_subject_of = PREV } }
 					}
 					add_to_temp_array = { _target_countries_ = THIS }
+					add_to_temp_array = { _spine_peace_targets_ = THIS }
 				}
 			}
 		}
@@ -958,6 +1015,23 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 
 			### LAND TARGET: Build to border states with supply hubs
 			set_temp_variable = { _check_railway_level = constant:wa_ai_railway.land_war.rail_level_cap }	# [na-corridor] family cap
+
+			### [rail-spine-tree] PEACE MODE toward a CONFIG-declared target (lever "time"): the spine runs
+			### with the hub set = our states bordering the target that hold a supply hub, the gate
+			### satisfied by the window itself (no division count in peace), trunk band rail_prewar. Goal:
+			### the trunk reaches the border railhead at the overland cap before the war, so on day 1 only
+			### branches remain. A wargoal / claim target without a CONFIG window keeps the direct routes.
+			set_temp_variable = { spine_active_ = 0 }
+			if = {
+				limit = { is_in_array = { _spine_peace_targets_ = _target_tag } }
+				set_temp_variable = { _current_enemy_tag = _target_tag }
+				WA_AI_PC_railway_spine_collect_hubs = yes
+				if = {
+					limit = { check_variable = { spine_hubs_^num > 0 } }
+					set_temp_variable = { _spine_band_ = constant:wa_ai_pc.prio.rail_prewar }
+					WA_AI_PC_railway_spine_select = yes
+				}
+			}
 			every_controlled_state = {
 				limit = {
 					any_neighbor_state = {
@@ -970,6 +1044,8 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 				}
 
 				# Skip single-node states (only port, no supply hub to connect to)
+				# [rail-spine-tree] the route kind of this body: 0 plain, 3 when it starts on the spine (set by the hook)
+				set_temp_variable = { _branch_kind_ = 0 }
 				WA_AI_PC_coastal_state_is_single_node = yes
 				if = {
 					limit = { check_variable = { is_single_node_ = 0 } }
@@ -995,6 +1071,17 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						limit = { check_variable = { target_landmass = capital_landmass } }
 						# Same landmass: use capital as route start
 						set_temp_variable = { route_start = default_route_start }
+						# [rail-spine-tree] peace-mode branch: from the nearest element of the spine
+						if = {
+							limit = { check_variable = { spine_active_ = 1 } }
+							set_temp_variable = { _spn_prov_ = supply_hub_province_ }
+							WA_AI_PC_railway_spine_nearest = yes
+							if = {
+								limit = { check_variable = { spine_nearest_ > 0 } }
+								set_temp_variable = { route_start = spine_nearest_ }
+								set_temp_variable = { _branch_kind_ = 3 }
+							}
+						}
 						# [railway-landwar] level computed after the pathfind below; floor at default
 						set_temp_variable = { route_level = default_route_level }
 						set_temp_variable = { _route_level_from_path = 1 }
@@ -1034,7 +1121,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							set_temp_variable = { _pathfind_prov_start = route_start }
 							set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 							set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces
-							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
+							set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 							WA_AI_PATHFIND_PROV_get_path = yes
 
 							# [railway-pathfinding] Overseas fallback for same-landmass prewar targets
@@ -1051,7 +1138,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 									set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
 									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 									set_temp_variable = { _pathfind_prov_type = 2 }
-									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+									set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 									WA_AI_PATHFIND_PROV_get_path = yes
 									if = {
 										limit = {
@@ -1113,6 +1200,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 								add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 								add_to_temp_array = { railway_target_levels_ = route_level }
 								add_to_temp_array = { railway_priorities_ = route_priority }
+								add_to_temp_array = { railway_route_kind_ = _branch_kind_ }
 							}
 						}
 					}
@@ -1131,6 +1219,8 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 						NOT = { WA_AI_PC_state_has_railway_at_level = yes }
 					}
 
+					# [rail-spine-tree] the route kind of this body: 0 plain, 3 when it starts on the spine (set by the hook)
+					set_temp_variable = { _branch_kind_ = 0 }
 					WA_AI_PC_coastal_state_is_single_node = yes
 					if = {
 						limit = { check_variable = { is_single_node_ = 0 } }
@@ -1154,6 +1244,17 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 							if = {
 								limit = { check_variable = { target_landmass = capital_landmass } }
 								set_temp_variable = { route_start = default_route_start }
+								# [rail-spine-tree] peace-mode branch: from the nearest element of the spine
+								if = {
+									limit = { check_variable = { spine_active_ = 1 } }
+									set_temp_variable = { _spn_prov_ = supply_hub_province_ }
+									WA_AI_PC_railway_spine_nearest = yes
+									if = {
+										limit = { check_variable = { spine_nearest_ > 0 } }
+										set_temp_variable = { route_start = spine_nearest_ }
+										set_temp_variable = { _branch_kind_ = 3 }
+									}
+								}
 								set_temp_variable = { route_level = default_route_level }
 							}
 							else = {
@@ -1183,7 +1284,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 									set_temp_variable = { _pathfind_prov_start = route_start }
 									set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 									set_temp_variable = { _pathfind_prov_type = 2 }
-									set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+									set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 									WA_AI_PATHFIND_PROV_get_path = yes
 
 									# [railway-pathfinding] Overseas fallback for same-landmass prewar puppet targets
@@ -1200,7 +1301,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 											set_temp_variable = { _pathfind_prov_start = overseas_route_start_ }
 											set_temp_variable = { _pathfind_prov_end = supply_hub_province_ }
 											set_temp_variable = { _pathfind_prov_type = 2 }
-											set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+											set_temp_variable = { _pathfind_prov_allow_partial = 0 } # [rail-spine-tree] no partial paths in the land family
 											WA_AI_PATHFIND_PROV_get_path = yes
 											if = {
 												limit = {
@@ -1233,6 +1334,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 										add_to_temp_array = { railway_end_provinces_ = supply_hub_province_ }
 										add_to_temp_array = { railway_target_levels_ = route_level }
 										add_to_temp_array = { railway_priorities_ = route_priority }
+										add_to_temp_array = { railway_route_kind_ = _branch_kind_ }
 									}
 								}
 							}
@@ -1260,6 +1362,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 				add_to_temp_array = { railway_end_provinces_ = best_home_port_province_ }
 				add_to_temp_array = { railway_target_levels_ = route_level }
 				add_to_temp_array = { railway_priorities_ = route_priority }
+				add_to_temp_array = { railway_route_kind_ = 0 }
 
 				if = {
 					limit = { NOT = { is_in_array = { railway_port_upgrades_ = best_home_port_state_ } } }
@@ -1282,6 +1385,7 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 				add_to_temp_array = { railway_end_provinces_ = best_home_port_province_ }
 				add_to_temp_array = { railway_target_levels_ = route_level }
 				add_to_temp_array = { railway_priorities_ = route_priority }
+				add_to_temp_array = { railway_route_kind_ = 0 }
 
 				if = { limit = { has_country_flag = WA_AI_construction_logging }
 					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: Added capital->naval_base railway upgrade"
@@ -1290,9 +1394,454 @@ WA_AI_PC_railway_STRATEGY_prewar_preparation = {
 		}
 	}
 
+	# [rail-spine-tree] per-target state, not to outlive the strategy
+	set_temp_variable = { spine_active_ = 0 }
+	clear_temp_array = _spine_peace_targets_
+
 	if = { limit = { has_country_flag = WA_AI_construction_logging }
 		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY PREWAR: COMPLETED - [?railway_end_provinces_^num] targets found"
 	}
+}
+
+############################################################################################################
+#	[rail-spine-tree] RAILWAY SPINE - one trunk per enemy worth it, short branches from the trunk
+#	ROOT = builder (country scope) for every effect below except the two per-state bodies.
+#	<<< capital_province, capital_landmass, _current_enemy_tag (the enemy, or the CONFIG target in
+#	    peace), _check_railway_level, _spine_band_ (rail_connect at war, rail_prewar in peace)
+#	>>> spine_hubs_ (frontline hub provinces of this enemy), spine_T_ (trunk set, once per pass),
+#	    spine_S_ (T + the trunk routes of this pass), spine_active_ = 1, trunk routes appended to the
+#	    route arrays FIRST for their enemy with railway_route_kind_ = 1, and the system state
+#	    WA_AI_PC_spine_railhead@<enemy> (province id; purged with the rails at peace).
+#	Distances are straight lines on the generated province coordinates (WA_AI_MATH).
+############################################################################################################
+
+# Frontline hubs of the enemy being processed, over the same three populations as the route walk
+# (ROOT / subjects / dependent allies), WITHOUT the per-enemy route budget.
+WA_AI_PC_railway_spine_collect_hubs = {
+	clear_temp_array = spine_hubs_
+	clear_temp_array = _spine_done_this_
+	every_controlled_state = {
+		limit = { WA_AI_PC_railway_state_is_frontline_hub = yes }
+		WA_AI_PC_railway_spine_add_hub = yes
+	}
+	every_subject_country = {
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_frontline_hub = yes }
+			WA_AI_PC_railway_spine_add_hub = yes
+		}
+	}
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = ROOT }
+			is_in_faction_with = ROOT
+			NOT = { is_subject_of = ROOT }
+			WA_AI_PC_country_cannot_fund_own_logistics = yes
+		}
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_frontline_hub = yes }
+			WA_AI_PC_railway_spine_add_hub = yes
+		}
+	}
+	# SERVED hubs: frontline hub states already at the family's done level. They draw no branch, but the
+	# trunk under them still caps them, so the core counts them in the trunk-hop value (attached at the
+	# spine element nearest them, computed by the select once S is final).
+	every_controlled_state = {
+		limit = { WA_AI_PC_railway_state_is_served_frontline_hub = yes }
+		WA_AI_PC_railway_spine_add_done_hub = yes
+	}
+	every_subject_country = {
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_served_frontline_hub = yes }
+			WA_AI_PC_railway_spine_add_done_hub = yes
+		}
+	}
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = ROOT }
+			is_in_faction_with = ROOT
+			NOT = { is_subject_of = ROOT }
+			WA_AI_PC_country_cannot_fund_own_logistics = yes
+		}
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_served_frontline_hub = yes }
+			WA_AI_PC_railway_spine_add_done_hub = yes
+		}
+	}
+}
+
+# THIS = a served frontline hub state (same acceptance as WA_AI_PC_railway_spine_add_hub).
+WA_AI_PC_railway_spine_add_done_hub = {
+	WA_AI_PC_coastal_state_is_single_node = yes
+	if = {
+		limit = { check_variable = { is_single_node_ = 0 } }
+		WA_AI_PC_railway_get_supply_hub_province = yes
+		if = {
+			limit = {
+				check_variable = { supply_hub_province_ > 0 }
+				NOT = { is_in_array = { _spine_done_this_ = supply_hub_province_ } }
+				OR = {
+					ROOT = { controls_province = var:supply_hub_province_ }
+					CONTROLLER = { controls_province = var:supply_hub_province_ }
+				}
+			}
+			add_to_temp_array = { _spine_done_this_ = supply_hub_province_ }
+		}
+	}
+}
+
+# THIS = a frontline hub state. Same acceptance as WA_AI_PC_railway_land_consider_frontline: not a
+# single-node coastal state, hub province held by ROOT or by the state's controller.
+WA_AI_PC_railway_spine_add_hub = {
+	WA_AI_PC_coastal_state_is_single_node = yes
+	if = {
+		limit = { check_variable = { is_single_node_ = 0 } }
+		WA_AI_PC_railway_get_supply_hub_province = yes
+		if = {
+			limit = {
+				check_variable = { supply_hub_province_ > 0 }
+				NOT = { is_in_array = { spine_hubs_ = supply_hub_province_ } }
+				OR = {
+					ROOT = { controls_province = var:supply_hub_province_ }
+					CONTROLLER = { controls_province = var:supply_hub_province_ }
+				}
+			}
+			add_to_temp_array = { spine_hubs_ = supply_hub_province_ }
+		}
+	}
+}
+
+# Railhead candidates: hub provinces of states that are NOT a frontline of this enemy, on the capital's
+# landmass (a railhead across water is no end for an overland trunk); same three populations.
+WA_AI_PC_railway_spine_collect_railheads = {
+	clear_temp_array = _spc_prov_
+	every_controlled_state = {
+		limit = { WA_AI_PC_railway_state_is_railhead_candidate = yes }
+		WA_AI_PC_railway_spine_add_railhead = yes
+	}
+	every_subject_country = {
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_railhead_candidate = yes }
+			WA_AI_PC_railway_spine_add_railhead = yes
+		}
+	}
+	every_country = {
+		limit = {
+			exists = yes
+			NOT = { tag = ROOT }
+			is_in_faction_with = ROOT
+			NOT = { is_subject_of = ROOT }
+			WA_AI_PC_country_cannot_fund_own_logistics = yes
+		}
+		every_controlled_state = {
+			limit = { WA_AI_PC_railway_state_is_railhead_candidate = yes }
+			WA_AI_PC_railway_spine_add_railhead = yes
+		}
+	}
+}
+
+# THIS = a candidate railhead state.
+WA_AI_PC_railway_spine_add_railhead = {
+	WA_AI_PC_get_state_id = yes
+	if = {
+		limit = { check_variable = { global.WA_AI_MAP_state_landmass^state_id_ = capital_landmass } }
+		WA_AI_PC_railway_get_supply_hub_province = yes
+		if = {
+			limit = {
+				check_variable = { supply_hub_province_ > 0 }
+				NOT = { is_in_array = { _spc_prov_ = supply_hub_province_ } }
+			}
+			add_to_temp_array = { _spc_prov_ = supply_hub_province_ }
+		}
+	}
+}
+
+# Railhead score of one candidate province against a hub set: the summed hub distances + capital_weight
+# x the capital distance - in_trunk_bonus x the MEAN hub distance when the candidate is already in T (a
+# relative bonus, so it needs no retuning per theatre). Lower is better.
+# <<< _sps_cand_, arr:_sps_hubs_, capital_province, arr:spine_T_   >>> _sps_score_, _sps_sum_
+WA_AI_PC_railway_spine_score = {
+	set_temp_variable = { _sps_sum_ = 0 }
+	for_each_loop = { array = _sps_hubs_ value = _sps_h_
+		set_temp_variable = { _province_id_a = _sps_h_ }
+		set_temp_variable = { _province_id_b = _sps_cand_ }
+		WA_AI_MATH_get_distance_between_provinces_a_b = yes
+		add_to_temp_variable = { _sps_sum_ = distance_ }
+	}
+	set_temp_variable = { _sps_score_ = _sps_sum_ }
+	set_temp_variable = { _province_id_a = capital_province }
+	set_temp_variable = { _province_id_b = _sps_cand_ }
+	WA_AI_MATH_get_distance_between_provinces_a_b = yes
+	multiply_temp_variable = { distance_ = constant:wa_ai_railway.spine.capital_weight }
+	add_to_temp_variable = { _sps_score_ = distance_ }
+	set_temp_variable = { _sps_n_ = _sps_hubs_^num }
+	if = {
+		limit = {
+			is_in_array = { spine_T_ = _sps_cand_ }
+			check_variable = { _sps_n_ > 0 }
+		}
+		set_temp_variable = { _sps_bonus_ = _sps_sum_ }
+		divide_temp_variable = { _sps_bonus_ = _sps_n_ }
+		multiply_temp_variable = { _sps_bonus_ = constant:wa_ai_railway.spine.in_trunk_bonus }
+		subtract_from_temp_variable = { _sps_score_ = _sps_bonus_ }
+	}
+}
+
+# Trunk route from the nearest element of S to a railhead: pathfound now (type 2, NO partial - a trunk
+# that stops short is a stub at full band), its provinces join S and are marked as the designated network
+# so the branches pathfound afterwards hug it, and the route is appended (kind 1) at the overland cap and
+# the spine band. A railhead already in S needs no route.
+# <<< _st_target_, _spine_band_, _current_enemy_tag, arr:spine_S_   >>> spine_S_ grown, spine_trunk_hops_
+WA_AI_PC_railway_spine_trunk_route = {
+	if = {
+		limit = { NOT = { is_in_array = { spine_S_ = _st_target_ } } }
+		set_temp_variable = { _spn_prov_ = _st_target_ }
+		WA_AI_PC_railway_spine_nearest = yes
+		if = {
+			limit = { check_variable = { spine_nearest_ > 0 } }
+			set_temp_variable = { _pathfind_prov_start = spine_nearest_ }
+			set_temp_variable = { _pathfind_prov_end = _st_target_ }
+			set_temp_variable = { _pathfind_prov_type = 2 }
+			set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+			# the trunk is the one long search of the pass (30+ hops, no partial fallback): the deep
+			# iteration budget of the pathfinder, switched on for this call only.
+			set_temp_variable = { _pathfind_prov_deep_ = 1 }
+			WA_AI_PATHFIND_PROV_get_path = yes
+			set_temp_variable = { _pathfind_prov_deep_ = 0 }
+			if = {
+				limit = { check_variable = { pathfind_prov_success_ = 1 } }
+				for_each_loop = { array = pathfind_prov_path_ value = _st_p_
+					if = {
+						limit = { NOT = { is_in_array = { spine_S_ = _st_p_ } } }
+						add_to_temp_array = { spine_S_ = _st_p_ }
+					}
+					set_temp_variable = { _designated_railway_network_^_st_p_ = 1 }
+				}
+				add_to_temp_array = { railway_start_provinces_ = spine_nearest_ }
+				add_to_temp_array = { railway_end_provinces_ = _st_target_ }
+				add_to_temp_array = { railway_target_levels_ = constant:wa_ai_railway.land_war.rail_level_cap_overland }
+				add_to_temp_array = { railway_priorities_ = _spine_band_ }
+				add_to_temp_array = { railway_enemy_tags_ = _current_enemy_tag }
+				add_to_temp_array = { railway_route_kind_ = 1 }
+				set_temp_variable = { _st_hops_ = pathfind_prov_path_^num }
+				subtract_from_temp_variable = { _st_hops_ = 1 }
+				add_to_temp_variable = { spine_trunk_hops_ = _st_hops_ }
+			}
+			else = {
+				if = { limit = { has_country_flag = WA_AI_construction_logging }
+					log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: trunk pathfind FAILED [?spine_nearest_] -> [?_st_target_] (branches attach to S as it stands)"
+				}
+			}
+		}
+	}
+}
+
+# Railhead selection with hysteresis, the trunk route, the optional second railhead.
+WA_AI_PC_railway_spine_select = {
+	set_temp_variable = { spine_active_ = 0 }
+	set_temp_variable = { spine_r1_ = 0 }
+	set_temp_variable = { spine_r2_ = 0 }
+	set_temp_variable = { spine_trunk_hops_ = 0 }
+	# T once per pass: the capital's level-5 component does not change between enemies.
+	if = {
+		limit = { check_variable = { _spine_walk_done_ = 0 } }
+		WA_AI_PC_railway_spine_walk = yes
+		set_temp_variable = { _spine_walk_done_ = 1 }
+	}
+	clear_temp_array = spine_S_
+	for_each_loop = { array = spine_T_ value = _ss_v_
+		add_to_temp_array = { spine_S_ = _ss_v_ }
+	}
+	WA_AI_PC_railway_spine_collect_railheads = yes
+	if = {
+		limit = {
+			check_variable = { _spc_prov_^num > 0 }
+			check_variable = { spine_hubs_^num > 0 }
+		}
+		### Railhead R1 = the candidate at the centre of the front by summed distance
+		clear_temp_array = _sps_hubs_
+		for_each_loop = { array = spine_hubs_ value = _sh_v_
+			add_to_temp_array = { _sps_hubs_ = _sh_v_ }
+		}
+		set_temp_variable = { _sr_best_ = 0 }
+		set_temp_variable = { _sr_best_score_ = 0 }
+		set_temp_variable = { _sr_prev_ = WA_AI_PC_spine_railhead@var:_current_enemy_tag }
+		set_temp_variable = { _sr_prev_score_ = -1 }
+		for_each_loop = { array = _spc_prov_ value = _sr_c_
+			set_temp_variable = { _sps_cand_ = _sr_c_ }
+			WA_AI_PC_railway_spine_score = yes
+			if = {
+				limit = {
+					OR = {
+						check_variable = { _sr_best_ = 0 }
+						check_variable = { _sps_score_ < _sr_best_score_ }
+					}
+				}
+				set_temp_variable = { _sr_best_ = _sr_c_ }
+				set_temp_variable = { _sr_best_score_ = _sps_score_ }
+			}
+			if = {
+				limit = { check_variable = { _sr_c_ = _sr_prev_ } }
+				set_temp_variable = { _sr_prev_score_ = _sps_score_ }
+			}
+		}
+		# Hysteresis: the previous railhead is kept while it is still a candidate and the best one does not
+		# beat it by more than spine.hysteresis (relative) - a trunk that flips is two half-trunks.
+		set_temp_variable = { spine_r1_ = _sr_best_ }
+		if = {
+			limit = {
+				check_variable = { _sr_prev_ > 0 }
+				NOT = { check_variable = { _sr_prev_score_ < 0 } }
+			}
+			set_temp_variable = { _sr_bar_ = 1 }
+			subtract_from_temp_variable = { _sr_bar_ = constant:wa_ai_railway.spine.hysteresis }
+			multiply_temp_variable = { _sr_bar_ = _sr_prev_score_ }
+			if = {
+				limit = { NOT = { check_variable = { _sr_best_score_ < _sr_bar_ } } }
+				set_temp_variable = { spine_r1_ = _sr_prev_ }
+			}
+		}
+		set_variable = { WA_AI_PC_spine_railhead@var:_current_enemy_tag = spine_r1_ }
+		set_temp_variable = { spine_active_ = 1 }
+
+		### Trunk route R1 -> nearest element of T
+		set_temp_variable = { _st_target_ = spine_r1_ }
+		WA_AI_PC_railway_spine_trunk_route = yes
+
+		### Second railhead: a two-centre split of the hubs, one iteration; kept only when connecting the
+		### far group to a railhead of its own costs less than connecting it to the spine as it stands.
+		if = {
+			limit = {
+				check_variable = { constant:wa_ai_railway.spine.max_second_railheads > 0 }
+				check_variable = { spine_hubs_^num > 1 }
+			}
+			# distance of every hub to R1; the seed of the second centre = the hub farthest from R1
+			clear_temp_array = _s2_d1_
+			set_temp_variable = { _s2_seed_ = 0 }
+			set_temp_variable = { _s2_seed_d_ = -1 }
+			for_each_loop = { array = spine_hubs_ value = _s2_h_
+				set_temp_variable = { _province_id_a = _s2_h_ }
+				set_temp_variable = { _province_id_b = spine_r1_ }
+				WA_AI_MATH_get_distance_between_provinces_a_b = yes
+				add_to_temp_array = { _s2_d1_ = distance_ }
+				if = {
+					limit = { check_variable = { distance_ > _s2_seed_d_ } }
+					set_temp_variable = { _s2_seed_d_ = distance_ }
+					set_temp_variable = { _s2_seed_ = _s2_h_ }
+				}
+			}
+			# group B around the seed, then once more around B's centroid (the one iteration)
+			clear_temp_array = _s2_B_
+			for_each_loop = { array = spine_hubs_ index = _s2_i_ value = _s2_h_
+				set_temp_variable = { _province_id_a = _s2_h_ }
+				set_temp_variable = { _province_id_b = _s2_seed_ }
+				WA_AI_MATH_get_distance_between_provinces_a_b = yes
+				if = {
+					limit = { check_variable = { distance_ < _s2_d1_^_s2_i_ } }
+					add_to_temp_array = { _s2_B_ = _s2_h_ }
+				}
+			}
+			if = {
+				limit = { check_variable = { _s2_B_^num > 0 } }
+				set_temp_variable = { _s2_n_ = _s2_B_^num }
+				set_temp_variable = { _s2_cx_ = 0 }
+				set_temp_variable = { _s2_cy_ = 0 }
+				for_each_loop = { array = _s2_B_ value = _s2_b_
+					add_to_temp_variable = { _s2_cx_ = global.WA_AI_MAP_province_x_pos^_s2_b_ }
+					add_to_temp_variable = { _s2_cy_ = global.WA_AI_MAP_province_y_pos^_s2_b_ }
+				}
+				divide_temp_variable = { _s2_cx_ = _s2_n_ }
+				divide_temp_variable = { _s2_cy_ = _s2_n_ }
+				clear_temp_array = _s2_B_
+				for_each_loop = { array = spine_hubs_ index = _s2_i_ value = _s2_h_
+					set_temp_variable = { _point_a_x = global.WA_AI_MAP_province_x_pos^_s2_h_ }
+					set_temp_variable = { _point_a_y = global.WA_AI_MAP_province_y_pos^_s2_h_ }
+					set_temp_variable = { _point_b_x = _s2_cx_ }
+					set_temp_variable = { _point_b_y = _s2_cy_ }
+					WA_AI_MATH_get_distance_between_points_a_b = yes
+					if = {
+						limit = { check_variable = { distance_ < _s2_d1_^_s2_i_ } }
+						add_to_temp_array = { _s2_B_ = _s2_h_ }
+					}
+				}
+			}
+			if = {
+				limit = { check_variable = { _s2_B_^num > 0 } }
+				# R2 = the best candidate for B alone, never R1 itself
+				clear_temp_array = _sps_hubs_
+				for_each_loop = { array = _s2_B_ value = _s2_b_
+					add_to_temp_array = { _sps_hubs_ = _s2_b_ }
+				}
+				set_temp_variable = { _s2_best_ = 0 }
+				set_temp_variable = { _s2_best_score_ = 0 }
+				set_temp_variable = { _s2_best_sum_ = 0 }
+				for_each_loop = { array = _spc_prov_ value = _s2_c_
+					if = {
+						limit = { NOT = { check_variable = { _s2_c_ = spine_r1_ } } }
+						set_temp_variable = { _sps_cand_ = _s2_c_ }
+						WA_AI_PC_railway_spine_score = yes
+						if = {
+							limit = {
+								OR = {
+									check_variable = { _s2_best_ = 0 }
+									check_variable = { _sps_score_ < _s2_best_score_ }
+								}
+							}
+							set_temp_variable = { _s2_best_ = _s2_c_ }
+							set_temp_variable = { _s2_best_score_ = _sps_score_ }
+							set_temp_variable = { _s2_best_sum_ = _sps_sum_ }
+						}
+					}
+				}
+				if = {
+					limit = { check_variable = { _s2_best_ > 0 } }
+					# keep iff dist(R2, S) + sum over B of dist(h, R2) < sum over B of dist(h, S)
+					set_temp_variable = { _spn_prov_ = _s2_best_ }
+					WA_AI_PC_railway_spine_nearest = yes
+					set_temp_variable = { _s2_lhs_ = spine_nearest_d_ }
+					add_to_temp_variable = { _s2_lhs_ = _s2_best_sum_ }
+					set_temp_variable = { _s2_rhs_ = 0 }
+					for_each_loop = { array = _s2_B_ value = _s2_b_
+						set_temp_variable = { _spn_prov_ = _s2_b_ }
+						WA_AI_PC_railway_spine_nearest = yes
+						add_to_temp_variable = { _s2_rhs_ = spine_nearest_d_ }
+					}
+					if = {
+						limit = { check_variable = { _s2_lhs_ < _s2_rhs_ } }
+						set_temp_variable = { spine_r2_ = _s2_best_ }
+						set_temp_variable = { _st_target_ = spine_r2_ }
+						WA_AI_PC_railway_spine_trunk_route = yes
+					}
+				}
+			}
+			clear_temp_array = _s2_d1_
+			clear_temp_array = _s2_B_
+		}
+		### Served hubs of this enemy: attached at the spine element nearest them, for the core's trunk values
+		for_each_loop = { array = _spine_done_this_ value = _sd_v_
+			set_temp_variable = { _spn_prov_ = _sd_v_ }
+			WA_AI_PC_railway_spine_nearest = yes
+			if = {
+				limit = { check_variable = { spine_nearest_ > 0 } }
+				# its minimum = the level it reads done at (the family's _check_railway_level of THIS call:
+				# the overland cap at war, rail_level_cap in peace), never a fixed 5
+				add_to_temp_array = { spine_done_attach_ = spine_nearest_ }
+				add_to_temp_array = { spine_done_min_ = _check_railway_level }
+			}
+		}
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: enemy=[?_current_enemy_tag.GetName] cand=[?spine_hubs_^num] served=[?_spine_done_this_^num] T=[?spine_T_^num] R1=[?spine_r1_] R2=[?spine_r2_] trunk_hops=[?spine_trunk_hops_]"
+		}
+	}
+	else = {
+		if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY SPINE: enemy=[?_current_enemy_tag.GetName] cand=[?spine_hubs_^num] T=[?spine_T_^num] no railhead candidate - direct routes"
+		}
+	}
+	clear_temp_array = _spc_prov_
+	clear_temp_array = _sps_hubs_
+	clear_temp_array = _spine_done_this_
 }
 
 ############################################################################################################

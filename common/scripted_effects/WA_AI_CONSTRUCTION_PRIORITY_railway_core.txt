@@ -138,7 +138,13 @@ WA_AI_PC_railway = {
 					###   phase A   segments BELOW land_war.rail_level_floor first, target = floor. The chain is in
 					###             series, so one level-1 hop at the front caps the whole trunk whatever the rear
 					###             reads; a capital-first walk gives the budget to the rear upgrades.
-					###   phase B   the rest, at the sizing target, one sweep per map level from the floor up (weakest
+					###   phase T   [rail-spine-tree] the TRUNK hops (route kind 1) by VALUE - the number of branches
+					###             each hop caps - then level ascending, then capital-first; the value block below
+					###             and WA_AI_PC_railway_spine_attach. Trunk hops carry prio.rail_connect, so the fill
+					###             serves them before every branch hop (rail_war) and every corridor RAISE project;
+					###             they TIE with the corridor's CONNECT hops and with phase-A heads (rail_connect too),
+					###             where insertion order decides - accepted, no new band (savegame.py bands unchanged).
+					###   phase B   the BRANCH hops, at the sizing target, one sweep per map level from the floor up (weakest
 					###             links first). Unlike the corridor, B ALWAYS runs after A: A takes
 					###             only what it needs from the budget, B fills the remainder. A's projects carry their
 					###             route's band + (prio.rail_connect - prio.rail_war), so the fill serves them before
@@ -154,6 +160,9 @@ WA_AI_PC_railway = {
 					clear_temp_array = _lseg_prio_
 					clear_temp_array = _lseg_state_
 					clear_temp_array = _lseg_lvl_
+					clear_temp_array = _lseg_kind_
+					clear_temp_array = _lseg_route_
+					clear_temp_array = _lseg_hop_
 
 					### Phase 0 - pathfind and collect
 					for_each_loop = { array = railway_end_provinces_ index = railway_i value = railway_v break = railway_b
@@ -169,7 +178,15 @@ WA_AI_PC_railway = {
 							set_temp_variable = { _pathfind_prov_start = railway_start_provinces_^railway_i }
 							set_temp_variable = { _pathfind_prov_end = railway_end_provinces_^railway_i }
 							set_temp_variable = { _pathfind_prov_type = 2 } # Rail networks - only ROOT-controlled provinces
-							set_temp_variable = { _pathfind_prov_allow_partial = 1 } # Allow partial paths to frontier
+							# [rail-spine-tree] NO partial paths for the land family (kind 0 branch / plain routes,
+							# kind 1 trunk): a stub toward an unreachable hub was admitted at 70 % band and connected
+							# nothing. The frontier fallback stays for the overseas beachhead routes (kind 2) only.
+							set_temp_variable = { _lseg_route_kind_ = railway_route_kind_^railway_i }
+							set_temp_variable = { _pathfind_prov_allow_partial = 0 }
+							if = {
+								limit = { check_variable = { _lseg_route_kind_ = 2 } }
+								set_temp_variable = { _pathfind_prov_allow_partial = 1 }
+							}
 							WA_AI_PATHFIND_PROV_get_path = yes
 							if = { limit = { check_variable = { pathfind_prov_success_ > 0 } } # 1 = full path, 2 = partial path to frontier
 
@@ -205,6 +222,9 @@ WA_AI_PC_railway = {
 											add_to_temp_array = { _lseg_prio_ = _route_priority }
 											add_to_temp_array = { _lseg_state_ = _state_for_project }
 											add_to_temp_array = { _lseg_lvl_ = _lseg_this_lvl_ }
+											add_to_temp_array = { _lseg_kind_ = _lseg_route_kind_ }
+											add_to_temp_array = { _lseg_route_ = railway_i }
+											add_to_temp_array = { _lseg_hop_ = path_i }
 										}
 										else = {
 											if = { limit = { has_country_flag = WA_AI_construction_logging }
@@ -269,6 +289,71 @@ WA_AI_PC_railway = {
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: WARNING - [?railway_end_provinces_^num] routes requested, only [?_routes_processed] pathfound (routes.max_total) - the rest are exposed to stale validation"
 					}
 
+					### [rail-spine-tree] trunk hop VALUE = the number of hubs this very hop caps on its own: branches
+					### attached downstream of it whose effective minimum - min(trunk prefix from the capital to the
+					### attachment, the branch's own minimum) - equals the hop's level AND whose own minimum lies above
+					### it. A branch whose own hops sit at the trunk's level is held back by itself as much as by the
+					### trunk: raising the trunk under it delivers nothing until phase B moves its hops, so it counts
+					### for nothing here. A hub whose state already holds the family's done level draws no branch (the
+					### candidate test) but is still capped by the trunk under it: it counts as a SERVED hub whose minimum is
+					### the level it read done at, attached at the spine element nearest it (spine_done_attach_).
+					### Worked example this ordering must reproduce: trunk Berlin->Minsk 30 hops at 3, Pskov already
+					### served at 5 and attached at hop 10, other branches at 3 attached at hop 30.
+					###   pass 1: hops 1-10 value 1 (Pskov: eff min 3 = their level, 5 > 3), hops 11-30 value 0
+					###           (the far branches are capped by their own level-3 hops too) -> hops 1-10 go 3->4 first;
+					###   pass 2: hops 1-10 at 4 still cap Pskov alone (value 1), hops 11-30 still 0 -> hops 1-10 go
+					###           4->5: Pskov reads 44 after 20 hop-levels of work, not after all 30 hops reached 5;
+					###   pass 3: every value 0 -> level ascending, capital-first: hops 11-30 at 3->4, then their
+					###           branches by the phase-B sweep.
+					### Counting the far branches on every level-3 hop instead (the plain "equals level(h)") would
+					### flip pass 2 to hops 11-30 as soon as two far branches exist, and the example would not hold.
+					# attach misses: a branch that started on the spine (kind 3) whose start is on no trunk segment
+					# collected this pass and not in T - phase 0 re-pathfound the trunk on another line, and the
+					# branch falls to the level sweep for this pass. Reported in RAILWAY ADMISSION so the harness
+					# can tell "value 0 by design" from "the trunk moved under its branches".
+					set_temp_variable = { _rail_attach_miss_ = 0 }
+					clear_temp_array = _lseg_val_
+					clear_temp_array = _lseg_done_
+					for_each_loop = { array = _lseg_a_ value = _lv_dummy_
+						add_to_temp_array = { _lseg_val_ = 0 }
+						add_to_temp_array = { _lseg_done_ = 0 }
+					}
+					# branches drawn this pass: their own minimum over their collected segments
+					for_each_loop = { array = railway_end_provinces_ index = _vr_i_ value = _vr_end_
+						if = {
+							limit = { NOT = { check_variable = { railway_route_kind_^_vr_i_ = 1 } } }
+							set_temp_variable = { _vb_min_ = 99 }
+							set_temp_variable = { _vb_has_ = 0 }
+							for_each_loop = { array = _lseg_a_ index = _vs_i_ value = _vs_a_
+								if = {
+									limit = { check_variable = { _lseg_route_^_vs_i_ = _vr_i_ } }
+									set_temp_variable = { _vb_has_ = 1 }
+									if = {
+										limit = { check_variable = { _lseg_lvl_^_vs_i_ < _vb_min_ } }
+										set_temp_variable = { _vb_min_ = _lseg_lvl_^_vs_i_ }
+									}
+								}
+							}
+							if = {
+								limit = { check_variable = { _vb_has_ = 1 } }
+								set_temp_variable = { _att_prov_ = railway_start_provinces_^_vr_i_ }
+								set_temp_variable = { _vb_spine_ = 0 }
+								if = {
+									limit = { check_variable = { railway_route_kind_^_vr_i_ = 3 } }
+									set_temp_variable = { _vb_spine_ = 1 }
+								}
+								WA_AI_PC_railway_spine_value_add = yes
+							}
+						}
+					}
+					# served hubs (already at the done level): no branch, minimum = the level they read done at
+					for_each_loop = { array = spine_done_attach_ index = _vd_i_ value = _vd_att_
+						set_temp_variable = { _att_prov_ = _vd_att_ }
+						set_temp_variable = { _vb_min_ = spine_done_min_^_vd_i_ }
+						set_temp_variable = { _vb_spine_ = 0 }
+						WA_AI_PC_railway_spine_value_add = yes
+					}
+
 					### Phase A - HEAD. Segments below the family floor, target = the floor.
 					set_temp_variable = { _rail_head_admitted_ = 0 }
 					for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
@@ -279,10 +364,18 @@ WA_AI_PC_railway = {
 							set_temp_variable = { _project_target_level = constant:wa_ai_railway.land_war.rail_level_floor }
 							# Head band = the route's band + (rail_connect - rail_war): a full route's head hop lands on
 							# prio.rail_connect (the corridor's connect band, no new band), a partial route's stays
-							# below every full route.
+							# below every full route. [rail-spine-tree] a trunk hop never goes above rail_connect -
+							# above it lies the resumed-save legacy clamp of WA_AI_PC_assign_factories.
 							set_temp_variable = { _project_priority = _lseg_prio_^_ls_i_ }
 							add_to_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
 							subtract_from_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_war }
+							if = {
+								limit = {
+									check_variable = { _lseg_kind_^_ls_i_ = 1 }
+									check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect }
+								}
+								set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+							}
 							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_ls_i_ }
 							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
 							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
@@ -293,19 +386,90 @@ WA_AI_PC_railway = {
 						}
 					}
 
-					### Phase B - RAISE, weakest links first: one sweep per RAW map level from the floor up to
-					### rail_level_cap_overland - 1, so every level-2 hop of every route is offered before any
+					### [rail-spine-tree] Phase T - TRUNK hops by VALUE (descending), then level ascending, then
+					### capital-first (route order, then hop index). One selection per admission - the set is two
+					### trunk routes at most. A hop below the floor was phase A's; one at its target needs no call.
+					set_temp_variable = { _rail_trunk_admitted_ = 0 }
+					set_temp_variable = { _pt_stop_ = 0 }
+					while_loop_effect = {
+						limit = { check_variable = { _pt_stop_ = 0 } }
+						set_temp_variable = { _pt_best_ = -1 }
+						set_temp_variable = { _pt_best_key_ = -1 }
+						for_each_loop = { array = _lseg_a_ index = _pt_i_ value = _pt_a_
+							if = {
+								limit = {
+									check_variable = { _lseg_kind_^_pt_i_ = 1 }
+									check_variable = { _lseg_done_^_pt_i_ = 0 }
+									NOT = { check_variable = { _lseg_lvl_^_pt_i_ < constant:wa_ai_railway.land_war.rail_level_floor } }
+									check_variable = { _lseg_lvl_^_pt_i_ < _lseg_tgt_^_pt_i_ }
+								}
+								# key = value, then the lowest level, then the earliest route, then the hop nearest the capital
+								set_temp_variable = { _pt_key_ = _lseg_val_^_pt_i_ }
+								multiply_temp_variable = { _pt_key_ = 20000 }
+								set_temp_variable = { _pt_term_ = 9 }
+								subtract_from_temp_variable = { _pt_term_ = _lseg_lvl_^_pt_i_ }
+								multiply_temp_variable = { _pt_term_ = 2000 }
+								add_to_temp_variable = { _pt_key_ = _pt_term_ }
+								set_temp_variable = { _pt_term_ = 19 }
+								subtract_from_temp_variable = { _pt_term_ = _lseg_route_^_pt_i_ }
+								multiply_temp_variable = { _pt_term_ = 100 }
+								add_to_temp_variable = { _pt_key_ = _pt_term_ }
+								set_temp_variable = { _pt_term_ = 99 }
+								subtract_from_temp_variable = { _pt_term_ = _lseg_hop_^_pt_i_ }
+								add_to_temp_variable = { _pt_key_ = _pt_term_ }
+								if = {
+									limit = { check_variable = { _pt_key_ > _pt_best_key_ } }
+									set_temp_variable = { _pt_best_key_ = _pt_key_ }
+									set_temp_variable = { _pt_best_ = _pt_i_ }
+								}
+							}
+						}
+						if = {
+							limit = { check_variable = { _pt_best_ < 0 } }
+							set_temp_variable = { _pt_stop_ = 1 }
+						}
+						else = {
+							set_temp_variable = { _lseg_done_^_pt_best_ = 1 }
+							set_temp_variable = { _project_province_id = _lseg_a_^_pt_best_ }
+							set_temp_variable = { _project_connect_id = _lseg_b_^_pt_best_ }
+							set_temp_variable = { _project_target_level = _lseg_tgt_^_pt_best_ }
+							set_temp_variable = { _project_priority = _lseg_prio_^_pt_best_ }
+							# never above rail_connect: above it lies the resumed-save legacy clamp of WA_AI_PC_assign_factories
+							if = {
+								limit = { check_variable = { _project_priority > constant:wa_ai_pc.prio.rail_connect } }
+								set_temp_variable = { _project_priority = constant:wa_ai_pc.prio.rail_connect }
+							}
+							set_temp_variable = { _lseg_cur_state_ = _lseg_state_^_pt_best_ }
+							if = { limit = { has_country_flag = WA_AI_construction_logging }
+								set_temp_variable = { _dbg_tlvl_ = _lseg_lvl_^_pt_best_ }
+								set_temp_variable = { _dbg_tval_ = _lseg_val_^_pt_best_ }
+								log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY TRUNK: hop [?_project_province_id]->[?_project_connect_id] level=[?_dbg_tlvl_] value=[?_dbg_tval_]"
+							}
+							set_temp_variable = { _rail_q_before_ = WA_AI_PC_queue^num }
+							var:_lseg_cur_state_ = { WA_AI_PC_start_railway_project = yes }
+							if = {
+								limit = { check_variable = { WA_AI_PC_queue^num > _rail_q_before_ } }
+								add_to_temp_variable = { _rail_trunk_admitted_ = 1 }
+							}
+						}
+					}
+
+					### Phase B - RAISE the branches, weakest links first: one sweep per RAW map level from the floor
+					### up to rail_level_cap_overland - 1, so every level-2 hop of every route is offered before any
 					### level-3 hop, and so on. The chain is in series: a level-2 link on a target-5 route caps
 					### the whole route at 20 supply whatever the rear reads, and a single route-order sweep
 					### gave the budget to the 3->5 and 4->5 hops nearest the capital while the level-2 links
-					### were refused. Segments already at the overland cap need no call.
+					### were refused. Segments already at the overland cap need no call. Trunk hops were phase T's.
 					set_temp_variable = { _rail_rest_admitted_ = 0 }
 					set_temp_variable = { _rail_sweep_lvl_ = constant:wa_ai_railway.land_war.rail_level_floor }
 					while_loop_effect = {
 						limit = { check_variable = { _rail_sweep_lvl_ < constant:wa_ai_railway.land_war.rail_level_cap_overland } }
 						for_each_loop = { array = _lseg_a_ index = _ls_i_ value = _ls_a_ break = _ls_b_
 							if = {
-								limit = { check_variable = { _lseg_lvl_^_ls_i_ = _rail_sweep_lvl_ } }
+								limit = {
+									check_variable = { _lseg_lvl_^_ls_i_ = _rail_sweep_lvl_ }
+									NOT = { check_variable = { _lseg_kind_^_ls_i_ = 1 } }
+								}
 								set_temp_variable = { _project_province_id = _ls_a_ }
 								set_temp_variable = { _project_connect_id = _lseg_b_^_ls_i_ }
 								set_temp_variable = { _project_target_level = _lseg_tgt_^_ls_i_ }
@@ -322,7 +486,7 @@ WA_AI_PC_railway = {
 						add_to_temp_variable = { _rail_sweep_lvl_ = 1 }
 					}
 					if = { limit = { has_country_flag = WA_AI_construction_logging }
-						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] rest=[?_rail_rest_admitted_]"
+						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] trunk=[?_rail_trunk_admitted_] rest=[?_rail_rest_admitted_] attach_miss=[?_rail_attach_miss_]"
 					}
 					# The collection arrays are this pass's working set; nothing downstream reads them (editing rule 9).
 					clear_temp_array = _lseg_a_
@@ -331,6 +495,11 @@ WA_AI_PC_railway = {
 					clear_temp_array = _lseg_prio_
 					clear_temp_array = _lseg_state_
 					clear_temp_array = _lseg_lvl_
+					clear_temp_array = _lseg_kind_
+					clear_temp_array = _lseg_route_
+					clear_temp_array = _lseg_hop_
+					clear_temp_array = _lseg_val_
+					clear_temp_array = _lseg_done_
 
 				### Process port upgrades for overseas operations
 					if = { limit = { check_variable = { railway_port_upgrades_^num > 0 } }
@@ -452,6 +621,99 @@ WA_AI_PC_railway_corridor_pass = {
 	}
 }
 
+### [rail-spine-tree] the collected TRUNK segment (kind 1) whose far end is a province, or -1: where a
+### branch - or the second trunk route - attaches to the trunk. A route's own start is never the far end
+### of one of its own hops, so a route never attaches to itself.
+# <<< _att_prov_, the _lseg_* arrays of the pass   >>> _att_idx_
+WA_AI_PC_railway_spine_attach = {
+	set_temp_variable = { _att_idx_ = -1 }
+	for_each_loop = { array = _lseg_b_ index = _att_i_ value = _att_b_
+		if = {
+			limit = {
+				check_variable = { _att_idx_ < 0 }
+				check_variable = { _lseg_kind_^_att_i_ = 1 }
+				check_variable = { _att_b_ = _att_prov_ }
+			}
+			set_temp_variable = { _att_idx_ = _att_i_ }
+		}
+	}
+}
+
+### [rail-spine-tree] add one branch's (or served hub's) vote to the trunk hops that cap it alone: the trunk
+### prefix from the capital to the attachment (depth 2: the trunk route the start lies on, then the trunk
+### route THAT one starts on - R2 on R1; empty when the start is in T proper, which is at the trunk level).
+# <<< _att_prov_ (the branch's start / the hub's spine element), _vb_min_ (its own minimum), _vb_spine_
+#     (1 = a kind-3 branch: an attach miss is counted), the _lseg_* arrays   >>> _lseg_val_, _rail_attach_miss_
+WA_AI_PC_railway_spine_value_add = {
+	clear_temp_array = _vp_idx_
+	WA_AI_PC_railway_spine_attach = yes
+	if = {
+		limit = {
+			check_variable = { _vb_spine_ = 1 }
+			check_variable = { _att_idx_ < 0 }
+			NOT = { is_in_array = { spine_T_ = _att_prov_ } }
+		}
+		add_to_temp_variable = { _rail_attach_miss_ = 1 }
+	}
+	set_temp_variable = { _vp_depth_ = 0 }
+	while_loop_effect = {
+		limit = {
+			NOT = { check_variable = { _att_idx_ < 0 } }
+			check_variable = { _vp_depth_ < 2 }
+		}
+		set_temp_variable = { _vp_route_ = _lseg_route_^_att_idx_ }
+		set_temp_variable = { _vp_hop_ = _lseg_hop_^_att_idx_ }
+		for_each_loop = { array = _lseg_a_ index = _vs_i_ value = _vs_a_
+			if = {
+				limit = {
+					check_variable = { _lseg_kind_^_vs_i_ = 1 }
+					check_variable = { _lseg_route_^_vs_i_ = _vp_route_ }
+					NOT = { check_variable = { _lseg_hop_^_vs_i_ > _vp_hop_ } }
+				}
+				add_to_temp_array = { _vp_idx_ = _vs_i_ }
+			}
+		}
+		# climb: where does THIS trunk route start? (a route's own hops never end at its start)
+		set_temp_variable = { _att_prov_ = railway_start_provinces_^_vp_route_ }
+		WA_AI_PC_railway_spine_attach = yes
+		if = {
+			limit = {
+				NOT = { check_variable = { _att_idx_ < 0 } }
+				check_variable = { _lseg_route_^_att_idx_ = _vp_route_ }
+			}
+			set_temp_variable = { _att_idx_ = -1 }
+		}
+		add_to_temp_variable = { _vp_depth_ = 1 }
+	}
+	if = {
+		limit = { check_variable = { _vp_idx_^num > 0 } }
+		set_temp_variable = { _vp_min_ = 99 }
+		for_each_loop = { array = _vp_idx_ value = _vp_v_
+			if = {
+				limit = { check_variable = { _lseg_lvl_^_vp_v_ < _vp_min_ } }
+				set_temp_variable = { _vp_min_ = _lseg_lvl_^_vp_v_ }
+			}
+		}
+		set_temp_variable = { _veff_ = _vp_min_ }
+		if = {
+			limit = { check_variable = { _vb_min_ < _veff_ } }
+			set_temp_variable = { _veff_ = _vb_min_ }
+		}
+		if = {
+			limit = { check_variable = { _vb_min_ > _veff_ } }
+			for_each_loop = { array = _vp_idx_ value = _vp_v_
+				if = {
+					limit = { check_variable = { _lseg_lvl_^_vp_v_ = _veff_ } }
+					set_temp_variable = { _vtmp_ = _lseg_val_^_vp_v_ }
+					add_to_temp_variable = { _vtmp_ = 1 }
+					set_temp_variable = { _lseg_val_^_vp_v_ = _vtmp_ }
+				}
+			}
+		}
+	}
+	clear_temp_array = _vp_idx_
+}
+
 ### Validate only railway-owned projects, regardless of the last project helper called.
 # ROOT = BUILDER, _valid_provinces array (temp)
 WA_AI_PC_railway_validate_queued_projects = {
@@ -477,6 +739,14 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 	clear_temp_array = railway_priorities_
 	clear_temp_array = railway_port_upgrades_
 	clear_temp_array = railway_enemy_tags_
+	# [rail-spine-tree] per-route kind, parallel to the arrays above: 0 land plain route (no partial
+	# path), 1 trunk (no partial, admitted by value), 2 overseas beachhead (partial path allowed),
+	# 3 land branch started on the spine (as 0, plus the attach-miss count in the core).
+	clear_temp_array = railway_route_kind_
+	clear_temp_array = spine_done_attach_
+	clear_temp_array = spine_done_min_
+	set_temp_variable = { _spine_walk_done_ = 0 }
+	set_temp_variable = { spine_active_ = 0 }
 
 	### Get capital info using VP-based detection
 	WA_AI_MAP_get_capital_vp_province = yes

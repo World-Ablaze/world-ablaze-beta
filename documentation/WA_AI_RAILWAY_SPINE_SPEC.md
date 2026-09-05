@@ -94,8 +94,12 @@ Peace mode (§6) runs the same steps toward the CONFIG-declared target.
    1. phase A as today: any hop below `land_war.rail_level_floor`, head band;
    2. **trunk hops by value**: value(h) = number of branches attached downstream of h whose
       effective minimum — min(trunk-prefix minimum from the capital to the attachment point,
-      branch minimum) — equals level(h), i.e. the branches this very hop caps. Descending
-      value, then level ascending, then capital-first. Log `RAILWAY TRUNK`.
+      branch minimum) — equals level(h) **and whose own minimum lies strictly above level(h)**,
+      i.e. the branches this very hop caps on its own. A branch whose own hops sit at the trunk's
+      level is held back by itself as much as by the trunk and counts for nothing until its hops
+      move (step 3). Descending value, then level ascending, then capital-first. Log
+      `RAILWAY TRUNK`. (Shipped 2026-09-05; the earlier wording without the "strictly above"
+      clause flips the worked example below at its second pass — see the note under it.)
    3. **branch hops** by the existing level sweep (raw level ascending, floor …
       cap_overland − 1), route order within a level;
    4. nothing else: partial paths are not admitted for the land family (step 7).
@@ -111,6 +115,21 @@ branch Warsaw→Pskov already at 5, attached at hop 10; other branches at 3 atta
 30. Hops 1-10 cap Pskov (effective min 3 = their level) and every other branch → value = all
 branches; hops 11-30 cap only the Minsk branches → lower value. Hops 1-10 are raised 3→4→5
 first (Pskov reads 44 after 20 hop-levels of work, not 60), then hops 11-30 at 3→4.
+
+Shipped rule, why the clause: under the plain "equals level(h)" count, pass 1 gives hops 1-10 value =
+all branches and hops 11-30 value = the far branches, so hops 1-10 go 3→4 first — but at pass 2 hops
+1-10 (now 4) cap Pskov alone while hops 11-30 (still 3) still cap every far branch, and with two or more
+far branches the count sends the next pass to hops 11-30: Pskov would read 44 after 40 hop-levels, not
+20. With the "own minimum strictly above" clause the far branches (at 3 behind a trunk at 3) count for no
+hop, hops 1-10 keep value 1 (Pskov) through 3→4→5, and only then does level-ascending order take hops
+11-30 — the ordering this example states. The pass-1 numbers of the example ("value = all branches")
+are therefore not what the log prints; the ordering is. `railway_core.txt` carries the same argument at
+the value block. A second shipped fact: a hub state already at the family's done level (`has_railway_level`
+at `_check_railway_level`, state-wide) is not a frontline candidate and draws no branch — the example's
+"branch Warsaw→Pskov already at 5" is therefore a **served hub**, collected separately
+(`WA_AI_PC_railway_state_is_served_frontline_hub`), attached at the spine element nearest it and counted
+in the trunk values with minimum = `rail_level_cap_overland`; that is the path through which the example
+is reachable.
 
 ## 6. Peace mode (lever "time")
 
@@ -164,7 +183,7 @@ in exactly one file:
 
 | Key | Value | Read by |
 | --- | --- | --- |
-| `trunk_level` | 5 | trunk walk (helpers) |
+| `trunk_level` | 5 | trunk walk (helpers) — registered with `land_war.rail_level_cap_overland` (`engine_rail_max_level`), shipped 2026-09-05 |
 | `max_walk` | 400 | trunk walk |
 | `hysteresis` | 0.2 | railhead select (strategies) |
 | `capital_weight` | 0.25 | railhead select |

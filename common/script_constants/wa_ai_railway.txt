@@ -211,4 +211,36 @@ wa_ai_railway = {
 		                             # was @WA_AI_PC_RAILWAY_SEGMENTS_PER_STATE
 	}
 
+	# [rail-spine-tree] THE RAILWAY SPINE (WA_AI_PC_railway_spine_select in railway_strategies, the trunk
+	# walk in railway_helpers, the value ordering in railway_core; documentation/WA_AI_RAILWAY_SPINE_SPEC.md).
+	# Against an enemy worth it, a land power builds ONE trunk from the level-5 network around its
+	# capital to a railhead at the centre of that front, then short branches from the trunk to every
+	# frontline hub. Protects against: two half-trunks (the route pathfound first each pass decided the
+	# line), a budget spent where every route overlaps and never on the branches, and dead-end stubs from
+	# exhausted searches. Assumes: a hub's supply = the MINIMUM level along its path (engine ruling), so
+	# one level-5 trunk plus branches suffices. Fact is gone when: a trunk segment's supply-map tooltip
+	# reads used = capacity while the hubs read below their last hop - shared trunk capacity would then be
+	# the binding model and a second parallel trunk (max_second_railheads) the answer.
+	spine = {
+		trunk_level          = 5	# rail level from which an edge belongs to the trunk set T = the engine maximum =
+		                       	# land_war.rail_level_cap_overland, the level the trunk route targets. Registered
+		                       	# as one group (engine_rail_max_level): if they drift, a finished trunk never
+		                       	# joins T. Read by the trunk walk (railway_helpers).
+		max_walk             = 400	# provinces the trunk walk may visit - a cost bound, not a design number. Read
+		                       	# by the trunk walk (railway_helpers).
+		hysteresis           = 0.2	# the previous railhead is kept unless a candidate scores better by more than
+		                       	# this share (relative). Read by the railhead select (railway_strategies).
+		capital_weight       = 0.25	# weight of the capital distance in the railhead score against the summed hub
+		                       	# distances. Read by the railhead select.
+		in_trunk_bonus       = 1.0	# score bonus for a candidate already in T, in units of the candidate's MEAN hub
+		                       	# distance (relative, so it needs no retuning per theatre). To calibrate on the
+		                       	# first campaign. Read by the railhead select.
+		min_hubs             = 4	# frontline hubs (counted BEFORE routes.max_per_enemy) an enemy needs for a trunk;
+		                       	# fewer keep today's direct routes. Owner ruling. Read by the gate (railway_strategies).
+		min_enemy_divisions  = 40	# ...or, for a non-major, this many divisions. The one number here without a
+		                       	# measurement behind it - tune after the first campaign. Read by the gate.
+		max_second_railheads = 1	# at most this many second railheads per enemy (0 switches the two-centre split
+		                       	# off). Read by the railhead select.
+	}
+
 }

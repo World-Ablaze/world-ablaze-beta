@@ -3972,8 +3972,9 @@ OPEN with a session of its own.
 ### rail-spine-tree — PARKED (2026-09-05)
 - **Build spec: `documentation/WA_AI_RAILWAY_SPINE_SPEC.md`** (final, owner-ordered
   2026-09-05 "écris la spec finale"; this entry keeps the state and the evidence).
-- Parked heading only for the WIP limit (4 OPEN). Real state: **OPEN — design agreed with the
-  owner 2026-09-05, no code yet.** Owner-admitted; supersedes the trunk/branch reading of
+- Parked heading only for the WIP limit (4 OPEN). Real state: **SHIPPED-UNTESTED 2026-09-05** —
+  design agreed with the owner 2026-09-05, code committed the same day, console harness
+  (Verification (1) below) NOT yet run by the owner. Owner-admitted; supersedes the trunk/branch reading of
   `rail-sizing-demand` and `rail-admission-churn` (both stay as shipped: sizing and
   weakest-link admission are reused unchanged for the branches).
 - Intended behaviour: a land power at war with an enemy worth it builds ONE railway trunk from
@@ -4043,7 +4044,9 @@ OPEN with a session of its own.
      the land family (lever 3; the fallback keeps its coastal-beachhead use, with its
      frontier fixed to the closed node of LOWEST heuristic, nearest the target). Phase A
      (below the floor) stays first for both families.
-  Worked example the criterion must reproduce: trunk Berlin→Minsk 30 hops at 3, branch
+  Worked example the criterion must reproduce (design wording; the SHIPPED rule adds "and the
+  branch's own minimum lies strictly above the hop" — see the "Value rule, DEVIATION" bullet below
+  for why the plain count does not reproduce it): trunk Berlin→Minsk 30 hops at 3, branch
   Warsaw→Pskov already at 5 attached at hop 10: value of hops 1-10 = every branch (all
   prefixes share them) and Pskov's min is capped by them → raised to 5 before any hop 11-30
   goes 3→4; Pskov reads 44 after 20 hops of work, not after 60.
@@ -4066,8 +4069,150 @@ OPEN with a session of its own.
   what serves the most hubs soonest. The one legitimate accelerator is the ledger's own speed
   error — see `pc-build-speed` (companion subject, owner-admitted 2026-09-05): the engine
   builds the same 20-civ project 2.6× faster than the ledger charges it.
+- Change (shipped 2026-09-05, one commit, `# [rail-spine-tree]` at every site; system doc
+  `WA_AI_RAILWAY_SYSTEM.md` "Railway spine" section):
+  - `common/script_constants/wa_ai_railway.txt` group `spine` exactly as spec §9 (`trunk_level` 5,
+    `max_walk` 400, `hysteresis` 0.2, `capital_weight` 0.25, `in_trunk_bonus` 1.0 = one MEAN
+    hub-distance unit, relative, `min_hubs` 4, `min_enemy_divisions` 40, `max_second_railheads` 1),
+    each key read in one file.
+  - `WA_AI_CONSTRUCTION_triggers.txt`: `WA_AI_PC_railway_land_frontline_candidate` = the route
+    budget term + new `WA_AI_PC_railway_state_is_frontline_hub` (the count the gate uses, BEFORE the
+    budget); new `WA_AI_PC_railway_state_is_railhead_candidate` (hub state not bordering the enemy);
+    new `WA_AI_PC_railway_state_is_served_frontline_hub` (a frontline hub state already at the done
+    level: no route, but counted in the trunk values — review repair).
+  - `railway_helpers.txt`: `WA_AI_PC_railway_spine_walk` (bounded BFS from the capital over
+    `global.WA_AI_PC_railway_connection_level_a^b` ≥ trunk_level → `spine_T_`, once per pass),
+    `WA_AI_PC_railway_spine_nearest`; the enemy-threat sort and `WA_AI_PC_clear_project_inputs`
+    carry the new parallel route array `railway_route_kind_` (0 land plain route, 1 trunk, 2
+    overseas beachhead, 3 land branch started on the spine); the sort's ×1.1 top-threat boost skips a
+    trunk first route (it would go above the legacy clamp — review repair).
+  - `railway_strategies.txt`: the per-enemy gate in `STRATEGY_land_war` (THIS = enemy: hubs ≥
+    min_hubs AND `is_major` or `num_divisions` ≥ min_enemy_divisions); `WA_AI_PC_railway_spine_select`
+    (ROOT scope: railhead candidates on the capital's landmass over the three populations, score =
+    Σ hub dist + capital_weight × capital dist − in_trunk_bonus × mean hub dist if in T, hysteresis
+    against `WA_AI_PC_spine_railhead@var:_current_enemy_tag`, trunk route pathfound at strategy time
+    with NO partial and appended FIRST for its enemy at target `rail_level_cap_overland` and band
+    `_spine_band_` (1100 at war / 500 in peace), its provinces marked as designated network and added
+    to `spine_S_`; optional R2 by the two-centre split (seed = hub farthest from R1, one centroid
+    iteration) and the keep test dist(R2,S) + Σ_B dist(h,R2) < Σ_B dist(h,S)); branches:
+    `WA_AI_PC_railway_land_consider_frontline` and the two prewar same-landmass sites start at the
+    nearest element of S when `spine_active_`; peace mode for the CONFIG-declared targets
+    (`_spine_peace_targets_`, filled beside `_scripted_override_targets_`) at band `rail_prewar`,
+    gate = the window; every route add site pushes its kind; the six land-family validation
+    pathfinds run with `_pathfind_prov_allow_partial = 0`. Logs `RAILWAY SPINE: enemy=E cand=N T=n
+    R1=p R2=p|0 trunk_hops=k` and `… BELOW GATE - direct routes`.
+  - `railway_core.txt`: phase 0 collects `_lseg_kind_ / _route_ / _hop_` and allows partial paths
+    for kind 2 only; a value block (`WA_AI_PC_railway_spine_attach` = the trunk segment whose far
+    end is the branch's start; `WA_AI_PC_railway_spine_value_add` = the prefix walk of depth ≤ 2 for
+    R2 on R1 and the vote, called for every branch drawn this pass with its own minimum AND for every
+    SERVED hub — `spine_done_attach_`, attached at the spine element nearest it — with minimum = the
+    level they read done at, `spine_done_min_`); admission = phase A (a trunk head hop never above `rail_connect`) →
+    phase T (trunk hops by value desc, level asc, capital-first, priority clamped at `rail_connect`;
+    log `RAILWAY TRUNK: hop a->b level=L value=v`) → phase B (branch hops by the existing level sweep);
+    `RAILWAY ADMISSION: segments=N head=A trunk=T rest=B attach_miss=M` (M = spine branches, route
+    kind 3, whose start is on no trunk segment collected this pass and not in T — phase 0 re-pathfound
+    the trunk on another line; "value 0 by design" and "the trunk moved" are then distinguishable).
+  - `WA_AI_pathfinding_effects.txt`: the partial-path frontier = the closed province with the LOWEST
+    raw heuristic (nearest the target) instead of the highest cumulative cost; a DEEP iteration budget
+    (`@WA_AI_PATHFIND_PROV_DEEP_ITS = 300`, file-scoped, single reader) switched on by equality on
+    `_pathfind_prov_deep_ = 1` — never `> 0`, an unset temp reads as a scope token — for the trunk
+    route's search only (the trunk effect sets it to 1 before and 0 after its call).
+  - `tools/constants_registry.json`: group `engine_rail_max_level` ties `spine.trunk_level` to
+    `land_war.rail_level_cap_overland` (both 5 = the engine maximum; apart, a finished trunk would
+    never join T).
+  - `WA_AI_misc_on_actions.txt` `on_peace`: `WA_AI_PC_spine_railhead@<country>` cleared for every
+    country ROOT is no longer at war with EXCEPT the CONFIG-declared peace-mode targets
+    (`WA_AI_PC_railway_get_scripted_override_targets`) — a peace with anyone else must not wipe the
+    peace trunk's hysteresis (own effect block, not gated on the queue; `on_peace` documents no
+    partner scope, MEASURED in the install's on_actions files, so the partner cannot be keyed on).
+- Served hubs (review repair): a frontline hub state already at the done level fails the candidate
+  test (`has_railway_level` at `_check_railway_level`, state-wide) and draws no branch — so the spec's
+  "branch Warsaw→Pskov already at 5" is not a route. The trunk under it still caps it, so such hubs
+  are collected per enemy (`WA_AI_PC_railway_state_is_served_frontline_hub`), attached at the spine
+  element nearest them (DERIVED proxy for their real prefix; straight line, like the branches) and
+  counted in the trunk values with the level they read done at as minimum. The worked example is reachable
+  through this path: Pskov served at 5, attached at hop 10, gives hops 1-10 value 1 until they read 5.
+- Value rule, DEVIATION from spec §5.6 (2) stated: the literal "branches whose effective minimum
+  equals level(h)" flips the worked example at the second pass — with hops 1-10 at 4 and ≥ 2 far
+  branches at 3 attached at hop 30, hops 11-30 (level 3 = the far branches' effective minimum) would
+  outrank hops 1-10 (level 4, Pskov alone), and Pskov would read 44 after 40 hop-levels, not 20.
+  Shipped: a branch counts for a hop only if the hop is its effective minimum AND the branch's own
+  minimum is strictly above it — a branch whose own hops sit at the trunk's level is held back by
+  itself and counts for nothing until phase B moves its hops. This reproduces the example's ordering
+  exactly (pass 1 and 2: hops 1-10, value 1 = Pskov; pass 3: all values 0 → level ascending,
+  capital-first → hops 11-30). "Mine covers it because": the owner's stated outcome is the example's
+  ordering ("hops 1-10 raised 3→4→5 first"), and no static per-hop count reproduces both the example's
+  pass-1 numbers ("value = all branches") and its pass-2 ordering; the ordering is the observable.
+  Written next to the value computation as ordered.
+- Impact analysis (AGENTS.md principle 3). Callers / readers, MEASURED by grep: the land-war gate
+  runs for every relevant enemy ROOT directly borders (majors, > 50 factories, direct border); the
+  peace mode only for `_scripted_override_targets_` (today `WA_AI_RAILWAY_should_override_GER_to_SOV`);
+  `WA_AI_PC_railway_land_frontline_candidate` keeps its three readers (the three population loops)
+  and its terms (budget + the new hub trigger = the old body); `railway_route_kind_` is pushed at all
+  nine route add sites (consider_frontline 1, overseas A 2, overseas B 1 (kind 2), prewar 4, trunk 1)
+  and carried by the sort; the partial-path fallback's remaining callers are phase 0 for kind-2 routes
+  and the debug mirrors in `zz_debug_effects.txt` (a partial there now ends nearer the target — debug
+  only); the corridor family (`WA_AI_PC_railway_corridor_run_one`) is untouched and already ran without
+  partial. Reach: every AI belligerent with a land front, historical and ahistorical alike (no tag,
+  no date; the gate is hub count + major/divisions; the peace mode keys on the CONFIG window that
+  already existed). Below the gate (Denmark, Luxembourg, an occupied Yugoslavia) nothing changes but
+  the loss of partial routes. Regression risk, STATED: (i) phase T admits every trunk hop below its
+  target BEFORE any branch hop at or above the floor, so while a 30-hop trunk is being raised the
+  branches get only the slots the trunk leaves — the owner's ordering (spec §5.6), stated here as
+  the t-table below; phase A (level-0/1 hops anywhere) still goes first; (ii) the trunk pathfind
+  runs under the deep budget (300 iterations; the measured 50-65-hop searches exhausted the default
+  100; a 30-hop trunk under 300 is ASSUMED to fit — MEASURED only when the harness prints a
+  `RAILWAY SPINE … trunk_hops=k` with k > 0). Walk of the failure case, GER→SOV 1941.7: t0 T = {Berlin}
+  (ASSUMED no level-5 edge at the capital), trunk search Berlin→railhead fails → `trunk pathfind
+  FAILED`, S = T = {Berlin}, the branches start at Berlin as before but WITHOUT partial paths: hubs
+  reachable within the default 100 iterations get full routes, the far ones get nothing (they got a
+  70 %-band stub before, which connected nothing); t1 (+8 w) the same, since nothing moved — the
+  tell-tale is `trunk pathfind FAILED` on every pass with `cand ≥ 4`, and the lever is
+  `@WA_AI_PATHFIND_PROV_DEEP_ITS`; (iii) phase 0 re-pathfinds the trunk route like every route; its
+  strategy-time path is marked as designated network so the re-pathfind sees the same costs, but a
+  route of ANOTHER enemy pathfound earlier in phase 0 can shift it — a branch whose start is then
+  off the trunk path attaches nowhere and is admitted as a plain branch for that pass (self-healing
+  next pass: same inputs, same marks); (iv) the land family no longer draws partial routes, so a hub
+  unreachable through friendly ground gets NO route instead of a stub — intended (the stub connected
+  nothing) — and the same-landmass overseas fallback still fires on a direct FAIL (it tested
+  `NOT = { _direct_success = 1 }`, unchanged); (v) the railhead scoring costs (candidates ×
+  hubs) script sqrt distances per gated enemy per pass, the walk one meta_effect per rail edge over
+  ≤ 400 provinces once per pass — about one extra A* per enemy, at the 8-week cadence; (vi)
+  `_current_enemy_tag` is overwritten in peace mode for the CONFIG target — nothing in the prewar
+  strategy read it before; (vii) the parallel-array contract: a route add without a kind push
+  misaligns every later route's kind — the nine sites are listed above, the sort copies the kind.
+- Bounded, t-table at the real cadence (8-week pass, `routes.queue_full` 12, `pc-build-speed` ledger:
+  a 20-civ segment on German ground ≈ 1 week, on Soviet ground at infrastructure 2 ≈ 1.3 weeks, GER
+  79 civs = 4 slots), a 1941-42 GER save with a 30-hop Berlin→railhead trunk at 3 and 9 branches at
+  2-3: t0 (pass 1) phase A takes the level-0/1 hops first (none on this trunk), phase T admits 12
+  trunk hops 3→4 in value order (the prefix shared by every branch first), phase B gets 0 slots;
+  t0+3w all 12 done, the queue idles until t1; t1 (+8w) 12 more trunk hops 3→4; t2 (+16w) the last
+  6 to 4, then 6 branch hops at 2 by the sweep; t3-t5 (+24..40w) the trunk 4→5 (30 hop-levels), the
+  branches interleave only through phase A / the slots the trunk leaves; ≈ t5 the railhead reads 44
+  and every branch is a 5-15-hop job at its own demand target. The binding constraint is the
+  ADMISSION cadence (12 hop-levels per 8-week pass), not funding (12 × 800 IC at 4 × 130/day ≈ 3
+  weeks) — an observation on `interval.war_weeks` / `routes.queue_full`, both owner-tunable and
+  both out of this subject's scope (spec §9 "unchanged"). In peace (§6, GER 1938-41) the same 60
+  hop-levels take 5 passes at the 12-week cadence ≈ 60 weeks — fits between 1938.6 and 1941.6 only
+  if the CONFIG window opens by early 1940; today `WA_AI_CONFIG_RAILWAY_GER_to_SOV_window` opens
+  1941.1.1 (MEASURED, `WA_AI_CONFIG.txt`), i.e. ≈ 2 peace passes ≈ 24 trunk hop-levels before
+  Barbarossa — the window is the lever, an owner decision, not taken here.
+- Review repairs (lessons reviewer CONCERNS, architecture reviewer CONFLICT then re-reviewed, same
+  session): the on_peace purge excludes the CONFIG-declared peace targets (every peace GER signs
+  before Barbarossa would otherwise wipe the SOV memory); spec §5.6 (2) and its worked example, and
+  this entry's algorithm bullet, carry the shipped "own minimum strictly above" clause; the
+  `attach_miss` counter (route kind 3 = spine branch) in `RAILWAY ADMISSION`; the trunk / corridor
+  CONNECT / phase-A tie at 1100 stated in the core comment and the system doc (insertion decides,
+  no new band); the ×1.1 top-threat boost of the sort no longer applies to a trunk first route and
+  phase T clamps at `rail_connect` (1210 would have hit the legacy clamp and dropped to 1000 a week
+  later); `spine.trunk_level` registered against `land_war.rail_level_cap_overland`; served hubs
+  counted in the trunk values (the example's level-5 branch is not a route); the trunk pathfind's
+  deep budget and the failure walk in (ii). Noted, not changed: the peace-mode trunk pushes an
+  enemy tag while the four prewar direct-route sites do not (`railway_enemy_tags_` is read only by
+  the land-war sort — dormant misalignment, pre-existing shape); phase T keeps offering hops after
+  the budget is full, like phase B.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
-  line per enemy passing the gate, R1 in the centre of the front (Minsk/Gomel area for a
+  line per enemy passing the gate (with `served=N` and `trunk_hops=k > 0`), R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20
   hops, the first `PC QUEUED` of the pass on trunk hops in value order, no band-700 stub; a
   1938 GER save: trunk toward the CONFIG target queued in peace; known-false control: Denmark

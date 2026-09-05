@@ -219,7 +219,8 @@ The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, l
     control diverges from state control on contested fronts)
   - Handles cross-landmass targets via overseas supply chain analysis (per target since Fix 26)
   - Queues port upgrades for bottlenecked overseas routes
-- Pathfinds (type 2 = ROOT + allied + subject provinces, allows partial paths)
+- `[rail-spine-tree]` per enemy, BEFORE the three populations: the spine gate and, above it, `WA_AI_PC_railway_spine_select` (trunk route(s) appended first, `spine_S_` published) — see "Railway spine" below; branches then start from the nearest element of S
+- Pathfinds (type 2 = ROOT + allied + subject provinces; no partial paths in the land family since `[rail-spine-tree]`)
 - Sorts all targets by enemy threat (factories + divisions*5) via `WA_AI_PC_railway_score_and_sort_by_enemy_threat`
 - Default route level: 5, priority: 1000 (`constant:wa_ai_pc.prio.rail_war`; Fix 41 band compression)
 
@@ -783,17 +784,86 @@ disqualifier, it does not lower the capability bars. Whether `surrender_progress
 all is the open question R27 owns; the Tunisian rail itself comes from Fix 74's ally leg, which keeps
 firing for exactly the countries that fail here.
 
+## Railway spine — one trunk, short branches (`[rail-spine-tree]`, 2026-09-05)
+
+Build spec: `WA_AI_RAILWAY_SPINE_SPEC.md` (the design and its evidence); `WORK.md` `rail-spine-tree` carries
+the state and the harness. This section is the system as shipped.
+
+**Why.** With every land-war route drawn from the capital, the routes toward one front overlap for 30-50
+hops, the pathfinder's "designated network" temp (×0.5 on this pass's earlier paths) makes the first route
+pathfound decide the trunk line, and the line flips between passes; the budget is spent where every route
+overlaps and never on the branches; a search toward a far hub exhausts the iteration cap and its
+partial-path stub is admitted at 70 % band. Engine ruling (owner): a hub's supply is the **minimum** rail
+level along its path, so **one** level-5 trunk plus branches is enough.
+
+**Gate** (`WA_AI_PC_railway_STRATEGY_land_war`, per enemy ROOT borders): at least `spine.min_hubs` (4)
+frontline hubs — counted by `WA_AI_PC_railway_state_is_frontline_hub`, i.e. the candidate test **without**
+the per-enemy route budget (`WA_AI_PC_railway_land_frontline_candidate` = budget + that trigger) — AND the
+enemy `is_major` or holds `spine.min_enemy_divisions` (40) divisions. Below the gate the enemy keeps today's
+direct routes from the capital; the `RAILWAY SPINE … BELOW GATE` line says so.
+
+**Selection** (`WA_AI_PC_railway_spine_select`, ROOT scope, `railway_strategies.txt`):
+
+| Step | What | Where |
+| --- | --- | --- |
+| T | provinces reachable from the capital over rail edges at ≥ `spine.trunk_level` (5), bounded BFS on `global.WA_AI_PC_railway_connection_level_a^b` and the generated adjacency, ≤ `spine.max_walk` (400); always holds the capital; once per pass | `WA_AI_PC_railway_spine_walk` (helpers) |
+| R1 | candidates = hub states on the capital's landmass that are NOT a frontline of this enemy (`WA_AI_PC_railway_state_is_railhead_candidate`), same three populations as the route walk; score = Σ hub distances + `capital_weight` × capital distance − `in_trunk_bonus` × mean hub distance if in T; hysteresis: the previous railhead (`WA_AI_PC_spine_railhead@<enemy>`) is kept unless beaten by `spine.hysteresis` (20 %) | `WA_AI_PC_railway_spine_collect_railheads` / `_score` |
+| trunk | nearest element of S to R1 (straight line) → A* type 2, **no partial**, under the pathfinder's DEEP budget (`@WA_AI_PATHFIND_PROV_DEEP_ITS` 300 iterations, switched on by `_pathfind_prov_deep_ = 1` for this one call); the path's provinces join S and are marked as this pass's designated network; the route is appended for that enemy **before its branches** with `railway_route_kind_ = 1`, target `rail_level_cap_overland` (5), band `_spine_band_` (`prio.rail_connect` 1100 at war, `prio.rail_prewar` 500 in peace) | `WA_AI_PC_railway_spine_trunk_route` |
+| R2 | at most `spine.max_second_railheads` (1): two-centre split of the hubs (seed = the hub farthest from R1, one centroid iteration), R2 = best candidate for that group; kept iff dist(R2, S) + Σ dist(hub, R2) < Σ dist(hub, S); its trunk route → nearest element of S | same |
+| branches | `WA_AI_PC_railway_land_consider_frontline` starts each route at the element of S nearest the hub (`WA_AI_PC_railway_spine_nearest`) instead of the capital (route kind 3); target = the hub's demand (`[rail-sizing-demand]`), band `rail_war` as before | strategies |
+| served hubs | frontline hub states already at the done level (`WA_AI_PC_railway_state_is_served_frontline_hub`) draw no route but are attached at the spine element nearest them (`spine_done_attach_`) and counted in the trunk values with minimum = the level they read done at — the trunk under a served hub still caps it | `WA_AI_PC_railway_spine_add_done_hub`, select |
+
+Log: `RAILWAY SPINE: enemy=E cand=N served=M T=n R1=p R2=p|0 trunk_hops=k`; `trunk pathfind FAILED a -> b` when
+the deep search still fails (S then stays T for that enemy). The enemy-threat sort's ×1.1 boost of the first
+route skips a trunk (it sits at `rail_connect` already; above it lies the allocator's legacy clamp).
+
+**Peace mode** (`WA_AI_PC_railway_STRATEGY_prewar_preparation`): for a CONFIG-declared target
+(`WA_AI_CONFIG_RAILWAY_*_window`, the `_scripted_override_targets_` list — the wargoal / claim targets keep
+their direct routes) the same selection runs with the hub set = our states bordering the target that hold a
+hub, the gate satisfied by the window itself, trunk band `rail_prewar`. The railhead memory persists into
+the war and is cleared by `on_peace` for every country ROOT is no longer at war with, except the
+CONFIG-declared targets themselves (a peace with anyone else must not wipe the peace trunk's hysteresis).
+
+**Admission** (`railway_core.txt`, one budget `routes.queue_full`, validation before admission unchanged):
+phase A (below the floor, any kind; a trunk hop never goes above `rail_connect`) → **phase T**: trunk hops by
+**value** descending, then level ascending, then capital-first → phase B: branch hops by the level sweep.
+Value(h) = the number of branches attached downstream of h whose effective minimum — min(trunk prefix from
+the capital to the attachment, the branch's own minimum) — equals level(h) **and whose own hops sit above
+it**; a branch whose own hops are at the trunk's level is held back by itself as much as by the trunk and
+counts for nothing until phase B moves its hops. The comment at the value block reproduces the spec's worked
+example (Berlin→Minsk at 3, Warsaw→Pskov at 5 attached at hop 10: hops 1-10 go 3→4→5 before any hop 11-30)
+and says why the literal "equals level(h)" count would not. Log: `RAILWAY TRUNK: hop a->b level=L value=v`;
+`RAILWAY ADMISSION: segments=N head=A trunk=T rest=B attach_miss=M` (M = spine branches whose start lies on
+no trunk segment of this pass and not in T: phase 0 re-pathfound the trunk on another line, and those
+branches fell to the level sweep). The fill serves by band then insertion, so trunk hops at 1100 are funded
+before branch hops at 1000 and before any corridor RAISE project; they **tie** with the corridor's CONNECT
+hops (map level 0, also `rail_connect`) and with phase-A head hops, where insertion order decides — accepted,
+no new band by the spec (`savegame.py _PC_BANDS` unchanged).
+
+**No partial paths for the land family.** Every route carries a kind (`railway_route_kind_`: 0 land plain
+route, 1 trunk, 2 overseas beachhead, 3 land branch started on the spine); phase 0 and the six validation pathfinds of the land-war and prewar
+strategies run with `_pathfind_prov_allow_partial = 0`; only kind-2 routes keep the fallback, whose frontier
+is now the closed province **nearest the target** (lowest raw heuristic) instead of the highest cumulative
+cost — see Pathfinding below.
+
+**Cost per pass.** The walk: one `meta_effect` per rail edge over ≤ 400 provinces, once. The railhead
+score: (candidates on the landmass) × (hubs + 1) distances with the script sqrt per enemy passing the gate,
+plus the nearest-element picks over S (≤ T + trunk provinces) per branch — about one extra A* pathfind's
+worth of statements per enemy.
+
 ## Route Processing Pipeline (`railway_core.txt`, lines 85-200)
 
 After strategies populate the output arrays, the core runs ONE pass in phases (`[rail-admission-churn]`,
-the corridor's shape):
+the corridor's shape; `[rail-spine-tree]` added the kinds and phase T):
 
-1. **Phase 0 — pathfind and collect** (every route, cap `routes.max_total`): A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 1`; each segment is collected into the `_lseg_*` temp arrays with its RAW map level, every path province into `_valid_provinces`. Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` here.
+1. **Phase 0 — pathfind and collect** (every route, cap `routes.max_total`): A* via `WA_AI_PATHFIND_PROV_get_path` with `_pathfind_prov_type = 2` (ROOT + allied + subject provinces since `9aef32f41`) and `_pathfind_prov_allow_partial = 0` for the land family (kind 0 / 1), 1 only for the overseas beachhead routes (kind 2); each segment is collected into the `_lseg_*` temp arrays with its RAW map level, its route kind, route index and hop index, every path province into `_valid_provinces`. Dead-end paths at coastal provinces trigger `WA_AI_PC_create_frontier_port` here (kind 2 only, by construction).
 2. **Stale project validation, BEFORE admission**: queued railway projects (`type_id = 13`) whose target province is on no valid path are cancelled — unless paid past `constant:wa_ai_pc.alloc.stale_keep_paid_fraction` (kept, `WA_TLM_pc_stale_kept_n`) — so their slots are free for this pass. Skipped when routes were requested and every pathfind failed (an empty `_valid_provinces` would cancel 100 %). Fix 50 pins the filter to the railway constant instead of the shared `_project_type_id` temp, which frontier-port creation temporarily changes to 14.
-3. **Phase A — head**: segments with map level below `land_war.rail_level_floor` are admitted first at target = floor, via `WA_AI_PC_start_railway_project`, at their route's band + (`prio.rail_connect` − `prio.rail_war`) so the fill funds them before any rail-war upgrade of any pass.
-4. **Phase B — raise**: the remaining segments at the sizing target, one sweep per raw map level from the floor up to `rail_level_cap_overland − 1` (every level-2 hop of every route before any level-3 hop). Always runs after A (the corridor runs it only when A admitted nothing). Log: `RAILWAY ADMISSION: segments=N head=A rest=B`.
-5. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
-6. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
+3. **Trunk values** (`[rail-spine-tree]`): for every branch route, its attachment on the trunk (`WA_AI_PC_railway_spine_attach`), the trunk prefix from the capital, the effective minimum and the value of each prefix hop (see the spine section).
+4. **Phase A — head**: segments with map level below `land_war.rail_level_floor` are admitted first at target = floor, via `WA_AI_PC_start_railway_project`, at their route's band + (`prio.rail_connect` − `prio.rail_war`) so the fill funds them before any rail-war upgrade of any pass; a trunk hop stays at `rail_connect`.
+5. **Phase T — trunk**: trunk hops (kind 1) at or above the floor and below their target, by value descending, then level ascending, then capital-first. Log `RAILWAY TRUNK` per hop offered.
+6. **Phase B — raise**: the remaining branch segments at the sizing target, one sweep per raw map level from the floor up to `rail_level_cap_overland − 1` (every level-2 hop of every route before any level-3 hop). Always runs after A and T (the corridor runs it only when A admitted nothing). Log: `RAILWAY ADMISSION: segments=N head=A trunk=T rest=B`.
+7. **Port upgrades**: Processed via `WA_AI_PC_process_port_upgrades` (builds naval bases via PC system, capped at level 9 since L5 railways bottleneck at 44 supply)
+8. **Factory override**: When railway projects are queued, sets override flag to allocate up to 50% extra factory capacity for 30 days
 
 ## Function Reference
 
@@ -866,6 +936,8 @@ railway_target_levels_         # Target railway level per route (1-5)
 railway_priorities_            # Priority value per route
 railway_port_upgrades_         # State IDs of ports to upgrade
 railway_enemy_tags_            # Enemy tag associated with each route
+railway_route_kind_            # [rail-spine-tree] 0 land plain route, 1 trunk, 2 overseas beachhead (partial path allowed), 3 land branch started on the spine
+spine_T_ / spine_S_ / spine_hubs_   # [rail-spine-tree] trunk set, spine of this pass, frontline hubs of the enemy being processed
 ```
 
 ## Pathfinding
@@ -890,6 +962,14 @@ and differ only in cost model:
 - Applies cost reduction for existing railways: `cost = base_cost / (railway_level + 1)`
 - Can route through allied and subject territory (`build_railway` is a map modification and
   works regardless of the controller)
+
+**Partial-path fallback** (`_pathfind_prov_allow_partial = 1`): when the search fails (iteration cap
+`_pf_max_its = 100`, or no walkable neighbour), the path is rebuilt to a frontier province and
+`pathfind_prov_success_ = 2`. Since `[rail-spine-tree]` the frontier is the closed province **nearest the
+target** (lowest raw heuristic, `WA_AI_PATHFIND_PROV_calculate_h`), not the one with the highest cumulative
+cost — g grows with detours and unrailed ground, so "highest g" picked the most expensive closed node, a stub
+away from the target. Callers today: the main pass for kind-2 overseas beachhead routes only, and the debug
+mirrors in `zz_debug_effects.txt`; the land-war and prewar strategies and the corridor run without it.
 
 ### State-Level Pathfinding Types (`WA_AI_PATHFIND_get_path`)
 
@@ -918,6 +998,7 @@ When peace is signed (`on_peace` in `WA_AI_misc_on_actions.txt`, lines 301-343):
 - All railway projects (type 13) are removed from the construction queue
 - Uses a while loop with safety limit of 100
 - Interval counter reset to 0 to trigger immediate recalculation
+- `[rail-spine-tree]` the railhead memory `WA_AI_PC_spine_railhead@<country>` is cleared for every country ROOT is no longer at war with, except the CONFIG-declared peace-mode targets (a separate effect block, not gated on the queue)
 
 ## Data Flow
 
@@ -940,13 +1021,15 @@ When peace is signed (`on_peace` in `WA_AI_misc_on_actions.txt`, lines 301-343):
            ├── STRATEGY_overseas_war → home port + beachhead
            └── STRATEGY_prewar_preparation → border states + port
 
-3. Route processing (one pass, phases — [rail-admission-churn])
-   ├── Phase 0: A* pathfinding (type 2, allow partial) for every route, segments collected
-   │   ├── Partial path → frontier port creation
+3. Route processing (one pass, phases — [rail-admission-churn], [rail-spine-tree])
+   ├── Phase 0: A* pathfinding (type 2; partial only for kind-2 overseas routes) for every route, segments collected
+   │   ├── Partial path (kind 2) → frontier port creation
    │   └── path provinces → _valid_provinces
    ├── Stale project validation + cancellation (paid ≥ keep fraction → kept)
+   ├── Trunk values: attachment + prefix minimum per branch
    ├── Phase A: segments below the floor → WA_AI_PC_start_railway_project (target = floor)
-   └── Phase B: the rest → WA_AI_PC_start_railway_project (sizing target)
+   ├── Phase T: trunk hops by value → WA_AI_PC_start_railway_project (target = overland cap)
+   └── Phase B: the branch hops → WA_AI_PC_start_railway_project (sizing target)
 
 4. Post-processing
    ├── Port upgrades via WA_AI_PC_process_port_upgrades
@@ -1035,8 +1118,10 @@ Fix 95 the PC system CAN build a `supply_node` (building type 17) and the theatr
 at the nodes its data marks — but only there; there is still no general "where would a hub help"
 selector.
 
-### 4. Single Capital Start Point
-Land war and pre-war strategies always start from capital province. Doesn't optimize for existing railway network topology.
+### 4. Single Capital Start Point (lifted by `[rail-spine-tree]` for enemies passing the spine gate)
+Against an enemy below the spine gate, land war and pre-war strategies still start every route from the
+capital province. Above it, routes start from the nearest element of the level-5 network around the capital
+plus this pass's trunk (the spine section above).
 
 ### 5. Single Beachhead Per Continent
 Only one beachhead port per enemy continent. Multi-theater operations on the same continent get limited support.

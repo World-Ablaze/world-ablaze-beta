@@ -1542,6 +1542,14 @@ WA_AI_PC_corridor_theatre_live_levant_iraq = {
 WA_AI_PC_railway_land_frontline_candidate = {
 	### Skip if we already have enough routes for this enemy
 	check_variable = { _routes_for_this_enemy < constant:wa_ai_railway.routes.max_per_enemy }
+	WA_AI_PC_railway_state_is_frontline_hub = yes
+}
+
+# [rail-spine-tree] the frontline test WITHOUT the per-enemy route budget: the spine gate counts every
+# frontline hub of the enemy, not only those a route slot is left for - counted after the budget,
+# ">= min_hubs" could only ever read "budget reached". THIS = state; reads _current_enemy_tag and
+# _check_railway_level (the level at which a frontline is "done").
+WA_AI_PC_railway_state_is_frontline_hub = {
 	# State borders this specific enemy (or the enemy's puppets)
 	any_neighbor_state = {
 		OR = {
@@ -1551,8 +1559,37 @@ WA_AI_PC_railway_land_frontline_candidate = {
 	}
 	# State has a supply hub (proper check)
 	WA_AI_PC_state_has_supply_hub = yes
-	# Skip states that already have level 5 railways (native check - includes focus/event built)
+	# Skip states already at the family's "done" level (native check - includes focus/event built)
 	NOT = { WA_AI_PC_state_has_railway_at_level = yes }
+}
+
+# [rail-spine-tree] a frontline hub state ALREADY at the family's done level: it draws no route, but the
+# trunk under it still caps it, so the spine counts it as a served hub. THIS = state; reads
+# _current_enemy_tag and _check_railway_level.
+WA_AI_PC_railway_state_is_served_frontline_hub = {
+	any_neighbor_state = {
+		OR = {
+			is_controlled_by = var:_current_enemy_tag
+			controller = { is_subject_of = var:_current_enemy_tag }
+		}
+	}
+	WA_AI_PC_state_has_supply_hub = yes
+	WA_AI_PC_state_has_railway_at_level = yes
+}
+
+# [rail-spine-tree] may this state host the RAILHEAD (the trunk's end) against the enemy being processed?
+# A hub state that is NOT a frontline of that enemy. The landmass test is the caller's (it needs the
+# state id). THIS = state; reads _current_enemy_tag.
+WA_AI_PC_railway_state_is_railhead_candidate = {
+	WA_AI_PC_state_has_supply_hub = yes
+	NOT = {
+		any_neighbor_state = {
+			OR = {
+				is_controlled_by = var:_current_enemy_tag
+				controller = { is_subject_of = var:_current_enemy_tag }
+			}
+		}
+	}
 }
 
 # Verdict: build the Barbarossa preparation railways now. Setup half in

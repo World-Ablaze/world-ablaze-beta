@@ -505,6 +505,7 @@ WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
 	clear_temp_array = _tmp_target_levels_
 	clear_temp_array = _tmp_priorities_
 	clear_temp_array = _tmp_enemy_tags_
+	clear_temp_array = _tmp_route_kind_
 
 	for_each_loop = { array = railway_start_provinces_ index = _copy_i
 		add_to_temp_array = { _tmp_start_provinces_ = railway_start_provinces_^_copy_i }
@@ -512,6 +513,7 @@ WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
 		add_to_temp_array = { _tmp_target_levels_ = railway_target_levels_^_copy_i }
 		add_to_temp_array = { _tmp_priorities_ = railway_priorities_^_copy_i }
 		add_to_temp_array = { _tmp_enemy_tags_ = railway_enemy_tags_^_copy_i }
+		add_to_temp_array = { _tmp_route_kind_ = railway_route_kind_^_copy_i }
 	}
 
 	# Clear original arrays
@@ -520,8 +522,10 @@ WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
 	clear_temp_array = railway_target_levels_
 	clear_temp_array = railway_priorities_
 	clear_temp_array = railway_enemy_tags_
+	clear_temp_array = railway_route_kind_
 
-	# Rebuild in sorted order: for each enemy (highest threat first), add all their targets
+	# Rebuild in sorted order: for each enemy (highest threat first), add all their targets. Insertion
+	# order is kept inside an enemy's group - [rail-spine-tree] the trunk routes stay ahead of the branches.
 	for_each_loop = { array = _unique_enemies_ value = _sorted_enemy
 		for_each_loop = { array = _tmp_enemy_tags_ index = _target_i value = _target_enemy
 			if = { limit = { check_variable = { _target_enemy = _sorted_enemy } }
@@ -530,12 +534,20 @@ WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
 				add_to_temp_array = { railway_target_levels_ = _tmp_target_levels_^_target_i }
 				add_to_temp_array = { railway_priorities_ = _tmp_priorities_^_target_i }
 				add_to_temp_array = { railway_enemy_tags_ = _target_enemy }
+				add_to_temp_array = { railway_route_kind_ = _tmp_route_kind_^_target_i }
 			}
 		}
 	}
+	clear_temp_array = _tmp_route_kind_
 
 	# Boost priority of first target (highest threat enemy's first target)
-	if = { limit = { check_variable = { railway_priorities_^num > 0 } }
+	# [rail-spine-tree] never a trunk route: it sits at rail_connect already, and x1.1 would put it above
+	# the legacy clamp of WA_AI_PC_assign_factories, which rewrites it to rail_war a week later.
+	if = {
+		limit = {
+			check_variable = { railway_priorities_^num > 0 }
+			NOT = { check_variable = { railway_route_kind_^0 = 1 } }
+		}
 		set_temp_variable = { _boosted_priority = railway_priorities_^0 }
 		multiply_temp_variable = { _boosted_priority = 1.1 }
 		set_temp_variable = { railway_priorities_^0 = _boosted_priority }
@@ -896,6 +908,86 @@ WA_AI_PC_analyze_overseas_supply_chain = { # capital_landmass, target_landmass, 
 }
 
 ############################################################################################################
+#	[rail-spine-tree] SPINE HELPERS - the trunk set T and the nearest-element pick
+############################################################################################################
+
+# T = the provinces reachable from the capital over rail edges at >= spine.trunk_level, on the WA cache
+# global.WA_AI_PC_railway_connection_level_<a>^<b> and the generated adjacency. Bounded breadth-first walk
+# (spine.max_walk provinces); T always holds the capital. One connected component by construction - a
+# level-5 line that does not touch the capital's component is not a trunk.
+# <<< capital_province   >>> arr:spine_T_ (temp)
+WA_AI_PC_railway_spine_walk = {
+	clear_temp_array = spine_T_
+	clear_temp_array = _spw_queue_
+	add_to_temp_array = { spine_T_ = capital_province }
+	add_to_temp_array = { _spw_queue_ = capital_province }
+	set_temp_variable = { _spw_head_ = 0 }
+	while_loop_effect = {
+		limit = {
+			check_variable = { _spw_head_ < _spw_queue_^num }
+			check_variable = { spine_T_^num < constant:wa_ai_railway.spine.max_walk }
+		}
+		set_temp_variable = { _spw_cur_ = _spw_queue_^_spw_head_ }
+		add_to_temp_variable = { _spw_head_ = 1 }
+		# Only a province that carries any railway at all is worth a neighbour scan (the pathfinder's g-cost guard).
+		if = {
+			limit = { check_variable = { global.WA_AI_PC_railway_connections^_spw_cur_ = 1 } }
+			set_temp_variable = { _get_province_id_neighbors = _spw_cur_ }
+			WA_AI_MAP_get_province_neighbors = yes
+			# The neighbour helper rewrites province_neighbors_ on every call: copied before the loop reads it.
+			clear_temp_array = _spw_nb_
+			for_each_loop = { array = province_neighbors_ value = _spw_v_
+				add_to_temp_array = { _spw_nb_ = _spw_v_ }
+			}
+			for_each_loop = { array = _spw_nb_ value = _spw_n_
+				if = {
+					limit = {
+						NOT = { is_in_array = { spine_T_ = _spw_n_ } }
+						check_variable = { global.WA_AI_PC_railway_connections^_spw_n_ = 1 }
+					}
+					meta_effect = {
+						text = {
+							set_temp_variable = { _spw_lvl_ = global.WA_AI_PC_railway_connection_level_[a]^[b] }
+						}
+						a = "[?_spw_cur_]"
+						b = "[?_spw_n_]"
+					}
+					if = {
+						limit = { NOT = { check_variable = { _spw_lvl_ < constant:wa_ai_railway.spine.trunk_level } } }
+						add_to_temp_array = { spine_T_ = _spw_n_ }
+						add_to_temp_array = { _spw_queue_ = _spw_n_ }
+					}
+				}
+			}
+		}
+	}
+	clear_temp_array = _spw_queue_
+	clear_temp_array = _spw_nb_
+}
+
+# The element of the spine nearest (straight line, generated province coordinates) to a province.
+# <<< _spn_prov_, arr:spine_S_   >>> spine_nearest_ (0 when S is empty), spine_nearest_d_
+WA_AI_PC_railway_spine_nearest = {
+	set_temp_variable = { spine_nearest_ = 0 }
+	set_temp_variable = { spine_nearest_d_ = -1 }
+	for_each_loop = { array = spine_S_ value = _spn_v_
+		set_temp_variable = { _province_id_a = _spn_prov_ }
+		set_temp_variable = { _province_id_b = _spn_v_ }
+		WA_AI_MATH_get_distance_between_provinces_a_b = yes
+		if = {
+			limit = {
+				OR = {
+					check_variable = { spine_nearest_d_ < 0 }
+					check_variable = { distance_ < spine_nearest_d_ }
+				}
+			}
+			set_temp_variable = { spine_nearest_d_ = distance_ }
+			set_temp_variable = { spine_nearest_ = _spn_v_ }
+		}
+	}
+}
+
+############################################################################################################
 #	PROJECT MANAGEMENT HELPERS
 ############################################################################################################
 
@@ -1029,6 +1121,15 @@ WA_AI_PC_clear_project_inputs = {
 	clear_temp_array = railway_target_levels_
 	clear_temp_array = railway_priorities_
 	clear_temp_array = railway_port_upgrades_
+	clear_temp_array = railway_enemy_tags_
+	clear_temp_array = railway_route_kind_
+	# [rail-spine-tree] the pass's spine working set
+	clear_temp_array = spine_T_
+	clear_temp_array = spine_S_
+	clear_temp_array = spine_hubs_
+	clear_temp_array = spine_done_attach_
+	clear_temp_array = spine_done_min_
+	set_temp_variable = { spine_active_ = 0 }
 }
 
 WA_AI_PC_get_total_queued_num = { # _get_queued_num_building_type, _get_queued_num_type_id >>> queued_type_num_

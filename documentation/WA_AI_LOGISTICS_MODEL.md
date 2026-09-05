@@ -280,6 +280,12 @@ These are known gaps, not oversights to be re-discovered:
 4. Size against `sizing.target_ratio` of the estimated need (0.5, `[rail-sizing-demand]`; the original 0.4 was the attrition threshold of §8), never against 100% demand.
 5. Compare the three substitutes by cost before spending (§7).
 6. On conquered soil, assume **no local supply** (2.5% population factor) (§6).
+7. A hub's supply from the capital is the **minimum** rail level along its path (owner ruling 2026-09-05,
+   `[rail-spine-tree]`): toward one front, build **one** trunk to a railhead at the front's centre and short
+   branches from it, and raise the trunk hop that caps the most branches first — never two parallel spines.
+   **ASSUMED** (engine): shared capacity on a trunk segment is not the binding model; the tell-tale is a trunk
+   tooltip reading used = capacity while the hubs read below their last hop, and the answer then is the
+   second railhead the spine already allows (`WA_AI_RAILWAY_SPINE_SPEC.md` §2, §5 step 4).
 
 ---
 
@@ -496,6 +502,7 @@ this speed; an economy-fatigue penalty (`production_speed_buildings_factor -0.5`
 | Date | Change |
 | --- | --- |
 | 2026-09-05 | §12 added - the ledger speed model shipped as `pc-build-speed`: country modifiers read on the builder, state modifier on the state, infrastructure multiplier on every flagged type (was factories only, and the modifiers read 0 in state scope). |
+| 2026-09-05 | §10 rule 7 added - the minimum-level path model behind the railway spine (`rail-spine-tree`): one trunk, branches, trunk hops raised by the branches they cap. |
 | 2026-08-18 | Three citations corrected. `SUPPLY_FROM_DAMAGED_INFRA` was quoted as 0.01 from a WA line that writes it under the wrong category; the live value is vanilla's **0.15** (`NSupply`). `COMBAT_SUPPLY_LACK_IMPACT` does not exist in 1.19.2 - replaced by the four `COMBAT_SUPPLY_LACK_{ATTACKER,DEFENDER}_{ATTACK,DEFEND}` keys WA does override. `SUPPLY_PORT_LEVEL_THROUGHPUT` lives in `NBuildings`, and WA's dead `NCountry` write is gone; the 5/level ruling is unaffected. |
 | 2026-08-17 | Created while designing corridor dimensioning. Rulings recorded: port flow is 5/level (not the `SUPPLY_PORT_LEVEL_THROUGHPUT = 3` define); hubs have no level; range and throughput are separate failure modes with separate levers; hub supply is additive. |
 | 2026-08-18 | §11 SHIPPED as Fix 107. §11.11 added with the three deviations (no §11.3, break-even 20 not 12, presence index not a division count). Measured trigger: campaign `9d83084c`, every corridor hop at level 2 on all 121 saves. |

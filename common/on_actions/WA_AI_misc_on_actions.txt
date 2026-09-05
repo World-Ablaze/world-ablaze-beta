@@ -642,6 +642,28 @@ on_actions = {
 			}
 		}
 		effect = {
+			# [rail-spine-tree] the per-enemy railhead memory (WA_AI_PC_spine_railhead@<enemy>) goes with the
+			# rails it anchored: a country ROOT is no longer at war with keeps no railhead, so a later war
+			# starts its trunk afresh. Outside the queue gate above on purpose - the memory exists whether or
+			# not a rail project was still queued. The CONFIG-declared peace-mode targets are EXCLUDED: their
+			# memory is the peace trunk's hysteresis, and every peace ROOT signs with anyone else would
+			# otherwise wipe it before the war it prepares for. (on_peace gives no partner scope to key on.)
+			if = {
+				limit = { is_ai = yes }
+				clear_temp_array = _scripted_override_targets_
+				WA_AI_PC_railway_get_scripted_override_targets = yes
+				every_country = {
+					limit = {
+						NOT = { has_war_with = ROOT }
+						NOT = { is_in_array = { _scripted_override_targets_ = THIS.id } }
+					}
+					set_temp_variable = { _spine_purge_tag_ = THIS }
+					ROOT = { clear_variable = WA_AI_PC_spine_railhead@var:_spine_purge_tag_ }
+				}
+				clear_temp_array = _scripted_override_targets_
+			}
+		}
+		effect = {
 			if = {
 				limit = {
 					is_ai = yes
