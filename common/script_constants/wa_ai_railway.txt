@@ -74,14 +74,22 @@ wa_ai_railway = {
 		                               # was @WA_AI_PC_railway_MAX_ROUTES_PER_ENEMY
 		queue_full                   = 12	# 'a full queue is 12' - the FLOOR of the family cap: skip recalculation at/above, and never admit past it ([pc-queue])
 		                               # was @WA_AI_PC_railway_QUEUE_SKIP_THRESHOLD, @WA_AI_PC_railway_MAX_QUEUED
-		rails_per_slot               = 4	# [rail-spine-tree] the family cap grows with the builder's pool: cap = max(queue_full,
+		rails_per_slot               = 5	# [rail-spine-tree] the family cap grows with the builder's pool: cap = max(queue_full,
 		                               # WA_AI_PC_alloc_pool / wa_ai_pc.alloc.max_civs_per_project x this), fractional, read by the
 		                               # skip gate and the admission (railway_core, railway_helpers). Protects: a major whose pool
 		                               # funds 3-4 rails at once (a 73-civ pool) was admitted 8 segments per war interval and its
 		                               # rail lane sat idle - one 20-civ slot finishes an 800-cost segment in ~1.2 weeks at
-		                               # 4.7 per civ-day, ~5 per interval; 4 leaves the margin. Assumes: cost.railway 800,
-		                               # interval.war_weeks 6. Fact is gone when: RAILWAY ADMISSION reads head+trunk+rest = cap
-		                               # while PC_ASSIGN still lists funded rails at the next pass.
+		                               # 4.7 per civ-day, ~5 per interval = this. Assumes: cost.railway 800, interval.war_weeks 6;
+		                               # refill_slots below covers the pool moving between passes. Fact is gone when: RAILWAY
+		                               # ADMISSION reads head+trunk+rest = cap while PC_ASSIGN still lists funded rails.
+		refill_slots                 = 1	# [rail-spine-tree] MOMENTUM: the pass runs early (countdown preserved) when the live
+		                               # rails fall below this many times the funded slots (WA_AI_PC_alloc_pool /
+		                               # max_civs_per_project) and the last pass admitted work (WA_AI_PC_railway_refill_on).
+		                               # 0 switches the refill off. Protects: a lot of ~cap segments is built in ~4 weeks of a
+		                               # 6-week interval and the lane then sits empty. Assumes: a pass costs little enough to
+		                               # run up to weekly (deep pathfinds included). Fact is gone when: RAILWAY REFILL lines
+		                               # appear on consecutive weeks with ADMISSION head+trunk+rest = 0 (a pass that admits
+		                               # nothing must switch itself off). Read by WA_AI_PC_railway (railway_core).
 		partial_path_priority_factor = 0.7	# partial paths (dead-ends) get 70% priority
 		                               # was @WA_AI_PC_railway_PARTIAL_PATH_PRIORITY_FACTOR
 		theatre_separation_distance  = 10	# helpers: distance beyond which two targets are separate theatres

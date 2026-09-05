@@ -81,7 +81,8 @@ wa_ai_railway.routes.max_total = 8           # routes processed per execution
 wa_ai_railway.routes.max_per_enemy = 4       # routes per enemy country
 wa_ai_railway.routes.queue_full = 12         # FLOOR of the family cap: skip recalculation at/above (Fix 29b: live type-13 only)
                                              # AND the Fix 77 admission cap - one key, was two @ names
-wa_ai_railway.routes.rails_per_slot = 4      # [rail-spine-tree] cap = max(queue_full, WA_AI_PC_alloc_pool / 20 civs x this)
+wa_ai_railway.routes.rails_per_slot = 5      # [rail-spine-tree] cap = max(queue_full, WA_AI_PC_alloc_pool / 20 civs x this)
+wa_ai_railway.routes.refill_slots = 1        # [rail-spine-tree] momentum: pass now when live rails < this x funded slots (0 = off)
 wa_ai_railway.routes.partial_path_priority_factor = 0.7
 wa_ai_railway.routes.theatre_separation_distance = 10
 wa_ai_railway.supply.railway_base = 4        # throughput = base + per_level x level
@@ -194,7 +195,8 @@ on_weekly:
 The interval counter is managed inside `WA_AI_PC_railway` (`railway_core.txt`, line 43):
 - **At war**: Counter resets to `constant:wa_ai_railway.interval.war_weeks` (6 weeks; was 8 until 2026-09-05)
 - **On a war declaration** (`on_declare_war`, `WA_AI_misc_on_actions.txt`): the counter of the declaring country AND of the target is set to 0 when they are AI, so the first wartime pass runs on the next weekly pulse instead of waiting out the peace counter (measured: 9.5 weeks of the 1941 GER-SOV war with no pass)
-- **At peace**: Counter resets to `constant:wa_ai_railway.interval.peace_weeks` (12 weeks, ~3 months)
+- **At peace**: Counter resets to `constant:wa_ai_railway.interval.peace_weeks` (12 weeks, ~3 months) — EXCEPT for a country whose prewar strategy found a CONFIG-declared target (`_rail_peace_work_`, `[rail-spine-tree]`): the pass tail sets the WAR interval. The prewar strategy itself is dispatched at peace AND at war when `WA_AI_CONFIG_RAILWAY_has_scripted_override` holds (at war it reads the CONFIG targets alone, the wargoal population stays peace-only): GER is at war with ENG for the whole GER→SOV window, and a peace-only dispatch never ran it — MEASURED run 2, nothing east of Berlin at level 5 at 1941.10. The window opens 1940.7.1 (`WA_AI_CONFIG.txt`)
+- **Momentum refill** (`[rail-spine-tree]`, head of `WA_AI_PC_railway`): while the counter is running, if the last pass ADMITTED segments (`WA_AI_PC_railway_refill_on`, written at the pass tail from head+trunk+rest of the admission; a pass that admits nothing switches it off) and the live rails (`WA_AI_PC_railway_count_live_rail`, controller-filtered) fall below `routes.refill_slots` × the funded slots (`WA_AI_PC_alloc_pool` / 20), the pass runs on this pulse with the countdown PRESERVED (`_rail_refill_saved_`, restored minus this week's tick at the tail): the scheduled pass keeps its date and stays the only writer of the ×0.6 override (`_rail_refill_pass_`). Worst case one pass per weekly pulse. Log `RAILWAY REFILL: live=n slots=s`
 - Counter decrements by 1 each weekly call
 - Execution occurs when counter reaches 0
 
@@ -843,6 +845,14 @@ hops by **value** descending, then level ascending, then capital-first — at mo
 heads are waiting → phase A' (the branch heads the reserve held back) → phase T' (the same effect, no limit:
 the trunk hops T left) → phase B: branch hops by the level sweep. A branch head thus loses at most the
 reserve to the trunk in one pass, never the pass ("create the thing" outranks "improve the thing").
+
+**Momentum** (`[rail-spine-tree]`, owner ruling after campaign run 2, 1941.10-1943.6): the cap sizes one lot to
+`routes.rails_per_slot` (5) segments per funded slot, i.e. one 6-week interval of work at ~1.2 weeks per
+segment; the pool moves between passes, so the head of `WA_AI_PC_railway` re-runs the pass early when the
+live rails fall below `routes.refill_slots` × the funded slots (see the interval section above). Why: run 2
+built 228 rails in 20 months at ~60 % of the pool — two saves show one rail left in the queue with the
+counter still running. A refill pass re-plans on the current geometry (railhead, trunk, branches) and never
+re-arms the ×0.6 override, so the pool share is the scheduled pass's alone.
 Value(h) = the number of branches attached downstream of h whose effective minimum — min(trunk prefix from
 the capital to the attachment, the branch's own minimum) — equals level(h) **and whose own hops sit above
 it**; a branch whose own hops are at the trunk's level is held back by itself as much as by the trunk and

@@ -37,6 +37,39 @@ WA_AI_PC_railway = {
 	### before and independently of the main pass below - see WA_AI_PC_railway_corridor_pass.
 	WA_AI_PC_railway_corridor_pass = yes
 
+	### [rail-spine-tree] MOMENTUM. A pass admits ~cap segments and pool/20 slots finish them in ~4 weeks of
+	### a 6-week interval; the lane then sits empty until the counter runs out. When the live rails fall
+	### below routes.refill_slots x the funded slots and the last pass ADMITTED work (WA_AI_PC_railway_refill_on),
+	### the pass runs now with the countdown PRESERVED: the scheduled pass keeps its date and stays the only
+	### writer of the x0.6 override (21 days in 42). Worst case: one pass per weekly pulse. Timeline at 5
+	### slots: t0 scheduled pass admits ~21, t0+4w live < 5 -> refill (+~20, counter still 2), t0+6w the
+	### scheduled pass runs on time and re-arms the override; a network with nothing to admit refills never.
+	set_temp_variable = { _rail_refill_pass_ = 0 }
+	set_temp_variable = { _rail_refill_saved_ = 0 }
+	set_temp_variable = { _rail_peace_work_ = 0 }
+	set_temp_variable = { _rail_work_admitted_ = 0 }
+	if = {
+		limit = {
+			check_variable = { WA_AI_PC_railway_INTERVAL_counter > 0 }
+			check_variable = { WA_AI_PC_railway_refill_on = 1 }
+			check_variable = { constant:wa_ai_railway.routes.refill_slots > 0 }
+		}
+		WA_AI_PC_railway_count_live_rail = yes
+		set_temp_variable = { _rail_slots_ = WA_AI_PC_alloc_pool }
+		divide_temp_variable = { _rail_slots_ = constant:wa_ai_pc.alloc.max_civs_per_project }
+		multiply_temp_variable = { _rail_slots_ = constant:wa_ai_railway.routes.refill_slots }
+		if = {
+			limit = {
+				check_variable = { _rail_slots_ > 0 }
+				check_variable = { _rail_live_queued_ < _rail_slots_ }
+			}
+			set_temp_variable = { _rail_refill_saved_ = WA_AI_PC_railway_INTERVAL_counter }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+			set_temp_variable = { _rail_refill_pass_ = 1 }
+			if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY REFILL: live=[?_rail_live_queued_] slots=[?_rail_slots_] - pass now (override not re-armed)" }
+		}
+	}
+
 	if = { limit = { check_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 } }
 
 		if = { limit = { has_country_flag = WA_AI_construction_logging } log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ENTRY: interval check PASSED - executing" }
@@ -94,26 +127,7 @@ WA_AI_PC_railway = {
 			# type: corridor segments are type-13 too but carry type_id corridor and have their
 			# own scoped budget, so counting them here would let a full corridor queue switch the
 			# whole land-war pass off, and vice versa.
-			set_temp_variable = { _rail_live_queued_ = 0 }
-			for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
-				if = {
-					limit = {
-						check_variable = { WA_AI_PC_type_id^_rail_cnt_proj_ = constant:wa_ai_pc.type_id.rail }
-						NOT = { check_variable = { WA_AI_PC_target_state^_rail_cnt_proj_ = 0 } }
-						var:WA_AI_PC_target_state^_rail_cnt_proj_ = {
-							CONTROLLER = {
-								OR = {
-									tag = ROOT
-									is_in_faction_with = ROOT
-									is_subject_of = ROOT
-									ROOT = { is_subject_of = PREV }
-								}
-							}
-						}
-					}
-					add_to_temp_variable = { _rail_live_queued_ = 1 }
-				}
-			}
+			WA_AI_PC_railway_count_live_rail = yes
 			# [rail-spine-tree] the family cap = max(routes.queue_full, pool / civs per slot x routes.rails_per_slot):
 			# a full queue is what the builder cannot fund more of, not a constant. Read by the skip gate here, by
 			# WA_AI_PC_start_railway_project (admission) and by phase A (the trunk reserve); zeroed by
@@ -518,6 +532,10 @@ WA_AI_PC_railway = {
 					if = { limit = { has_country_flag = WA_AI_construction_logging }
 						log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY ADMISSION: segments=[?_lseg_a_^num] head=[?_rail_head_admitted_] trunk=[?_rail_trunk_admitted_] rest=[?_rail_rest_admitted_] attach_miss=[?_rail_attach_miss_] cap=[?_rail_queue_cap_] free=[?_rail_free_] reserve=[?_rail_reserve_]"
 					}
+					# [rail-spine-tree] what this pass admitted, read by the pass tail for the momentum refill
+					set_temp_variable = { _rail_work_admitted_ = _rail_head_admitted_ }
+					add_to_temp_variable = { _rail_work_admitted_ = _rail_trunk_admitted_ }
+					add_to_temp_variable = { _rail_work_admitted_ = _rail_rest_admitted_ }
 					# The collection arrays are this pass's working set; nothing downstream reads them (editing rule 9).
 					clear_temp_array = _lseg_a_
 					clear_temp_array = _lseg_b_
@@ -544,11 +562,14 @@ WA_AI_PC_railway = {
 					if = {
 						limit = {
 							check_variable = { queued_type_num_ > 0 }
+							# [rail-spine-tree] a momentum refill pass never re-arms the override (pool share unchanged)
+							check_variable = { _rail_refill_pass_ = 0 }
 						}
-						# 21 days: the override exists to fund the lot this pass just admitted, and at the
-						# ledger's real speed a 12-hop lot at 4 slots is finished in ~3 weeks - past that the
-						# extra pool only starves the standard queue (owner ruling). Read against the pass
-						# interval: a timer longer than the interval makes the override permanent.
+						# 21 days: the override exists to give the lot the SCHEDULED pass admitted a head start;
+						# past that the extra pool only starves the standard queue (owner ruling). With the
+						# pool-sized cap the lot is one interval of work per slot and the momentum refill lot
+						# mid-interval runs at the normal share - the ratio stays 21 days in 42. Read against
+						# the pass interval: a timer longer than the interval makes the override permanent.
 						set_country_flag = { flag = WA_AI_PC_override_max_factories_factor value = 1 days = 21 }
 						# HAZARD: this flag/variable pair is DELIBERATELY SHARED with
 						# WA_AI_build_uk_air_hosting_capacity (WA_AI_CONSTRUCTION_PRIORITY_strategies.txt).
@@ -564,6 +585,32 @@ WA_AI_PC_railway = {
 					###
 				}
 			}
+		}
+
+		### [rail-spine-tree] what the momentum refill may act on until the next pass: this pass ADMITTED
+		### segments (head + trunk + rest of the admission). A pass that admitted nothing - network done, cap
+		### full, no enemy worth it - switches the refill off until the scheduled pass. Ledger state; absent on
+		### a resumed save reads 0 = off.
+		set_variable = { WA_AI_PC_railway_refill_on = 0 }
+		if = {
+			limit = { check_variable = { _rail_work_admitted_ > 0 } }
+			set_variable = { WA_AI_PC_railway_refill_on = 1 }
+		}
+		### [rail-spine-tree] PREWAR CADENCE: a country with a CONFIG-declared target keeps the WAR interval in
+		### peace - the peace interval is for a country with nothing to prepare.
+		if = {
+			limit = {
+				has_war = no
+				check_variable = { _rail_peace_work_ = 1 }
+			}
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = constant:wa_ai_railway.interval.war_weeks }
+		}
+		### [rail-spine-tree] a refill pass gives the countdown back, minus this week's tick: the scheduled
+		### pass keeps its date.
+		if = {
+			limit = { check_variable = { _rail_refill_pass_ = 1 } }
+			set_variable = { WA_AI_PC_railway_INTERVAL_counter = _rail_refill_saved_ }
+			subtract_from_variable = { WA_AI_PC_railway_INTERVAL_counter = 1 }
 		}
 
 		WA_AI_PC_clear_project_inputs = yes
@@ -919,10 +966,17 @@ WA_AI_PC_railway_STRATEGIES = { # >>> arr:railway_start_provinces_:railway_end_p
 		}
 	}
 
-	### STRATEGY 3: PRE-WAR PREPARATION (justifying, has wargoal, or claims)
+	### STRATEGY 3: PRE-WAR PREPARATION (justifying, has wargoal, or claims). [rail-spine-tree] ALSO AT WAR
+	### when a CONFIG-declared target exists: a major at war with an overseas enemy prepares its next land
+	### war (the GER->SOV window runs while GER is at war with ENG, so a peace-only gate never ran it). At
+	### war the strategy reads the CONFIG targets alone - the wargoal / justification population stays
+	### peace-only (railway_strategies).
 	if = {
 		limit = {
-			has_war = no
+			OR = {
+				has_war = no
+				WA_AI_CONFIG_RAILWAY_has_scripted_override = yes
+			}
 		}
 		WA_AI_PC_railway_STRATEGY_prewar_preparation = yes
 	}

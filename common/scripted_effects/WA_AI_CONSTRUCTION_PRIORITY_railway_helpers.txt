@@ -965,6 +965,34 @@ WA_AI_PC_railway_spine_walk = {
 	clear_temp_array = _spw_nb_
 }
 
+# [rail-spine-tree] the LIVE rail projects of the builder: rail-family type-13 whose target state is held by
+# our side (the [pc-queue] controller test the allocator and the completion path apply - a project they
+# would refuse to fund is not live). Corridor segments carry their own type_id and are not counted. Read by
+# the skip gate, the trunk reserve and the momentum refill (railway_core).
+# <<< ROOT = builder   >>> _rail_live_queued_
+WA_AI_PC_railway_count_live_rail = {
+	set_temp_variable = { _rail_live_queued_ = 0 }
+	for_each_loop = { array = WA_AI_PC_queue value = _rail_cnt_proj_
+		if = {
+			limit = {
+				check_variable = { WA_AI_PC_type_id^_rail_cnt_proj_ = constant:wa_ai_pc.type_id.rail }
+				NOT = { check_variable = { WA_AI_PC_target_state^_rail_cnt_proj_ = 0 } }
+				var:WA_AI_PC_target_state^_rail_cnt_proj_ = {
+					CONTROLLER = {
+						OR = {
+							tag = ROOT
+							is_in_faction_with = ROOT
+							is_subject_of = ROOT
+							ROOT = { is_subject_of = PREV }
+						}
+					}
+				}
+			}
+			add_to_temp_variable = { _rail_live_queued_ = 1 }
+		}
+	}
+}
+
 # The element of the spine nearest (straight line, generated province coordinates) to a province.
 # [rail-spine-tree] elements listed in _spn_excl_ are skipped - the trunk route's "next nearest" walk;
 # every other caller leaves that array empty (the trunk route clears it before and after its use).

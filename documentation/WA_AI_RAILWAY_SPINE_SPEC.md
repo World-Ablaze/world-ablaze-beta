@@ -63,7 +63,10 @@ measure on the first harness.
 
 ## 5. Algorithm — per enemy, per land-war pass
 
-Cadence unchanged: `interval.war_weeks` (8) at war, `interval.peace_weeks` (12) in peace.
+Cadence: `interval.war_weeks` (6, owner 2026-09-05) at war and, since run 2, ALSO in peace for a country
+whose prewar strategy found a CONFIG-declared target (`_rail_peace_work_` → the pass tail sets the war
+interval); `interval.peace_weeks` (12) only for a country with nothing to prepare. On top, the momentum
+refill (§5.6) re-runs the pass early when the live rails fall below the funded slots.
 Peace mode (§6) runs the same steps toward the CONFIG-declared target.
 
 0. **Gate** (§4).
@@ -96,7 +99,9 @@ Peace mode (§6) runs the same steps toward the CONFIG-declared target.
    instead of 50-65, so `_pf_max_its = 100` no longer binds.
 6. **Admission** (one family budget, validation before admission and the keep rule of
    `rail-admission-churn` unchanged). Budget = max(`routes.queue_full` 12, `WA_AI_PC_alloc_pool` /
-   `wa_ai_pc.alloc.max_civs_per_project` × `routes.rails_per_slot` 4) — the pool the allocator
+   `wa_ai_pc.alloc.max_civs_per_project` × `routes.rails_per_slot` 5, one interval of work per slot;
+   the momentum refill re-runs the pass when the live rails fall below `routes.refill_slots` (1) ×
+   the funded slots, a refill pass never re-arming the ×0.6 override) — the pool the allocator
    used on the same pulse, published by `WA_AI_PC_assign_factories` (shipped 2026-09-05: GER
    1943.4 funded 3-4 rails at once and was admitted 8 per pass). Trunk reserve: free = budget −
    live rails; reserve = min(free × `spine.trunk_share` 0.34, trunk hops step 2 could raise).
@@ -153,6 +158,19 @@ itself (no division count in peace), trunk band `rail_prewar` (500). Goal: T rea
 border railhead at 5 before the war; on day 1 only branches remain. **DERIVED** at the
 corrected ledger speed (§8): Berlin→border ≈ 20 hops × 2 levels ≈ 40 hop-levels ≈ 40-55
 weeks at 79 civs — fits between 1938 and 1941.6.
+Run 2 (1941.10-1943.6) MEASURED the failure of the first shape: at 1941.10 nothing east of
+Berlin read level 5. Cause, MEASURED in code (lessons review): the prewar strategy was
+dispatched under `has_war = no` only, and on the historical path GER is at war with ENG for the
+whole GER→SOV window — the peace mode never ran for GER (ASSUMED for the run: no save before
+1941.10; the war with ENG is the historical path the window is gated on). Shipped 2026-09-05:
+the strategy is dispatched at war too when `WA_AI_CONFIG_RAILWAY_has_scripted_override` holds
+(CONFIG targets alone; the wargoal population stays peace-only), the window opens 1940.7.1
+(`WA_AI_CONFIG.txt`), a country whose prewar strategy found a target keeps the WAR interval in
+peace (`_rail_peace_work_`, pass tail of `WA_AI_PC_railway`), and the momentum refill applies
+whenever the last pass admitted work (`WA_AI_PC_railway_refill_on`). At war with ENG the prewar
+rails (band 500) sit below the overseas-war routes (1000) and above every non-rail band.
+Verification: a logged month of 1940.9-1941.5 in the next run shows `RAILWAY PREWAR: STARTED`
+for GER, and a 1941.5 save reads T at Grodno / Brest at 5 before 1941.6.22.
 
 ## 7. Theatre arbitration (lever "band")
 
@@ -209,7 +227,7 @@ in exactly one file:
 
 Unchanged and reused: `land_war.rail_level_floor` 2, `rail_level_cap` 4, `rail_level_cap_overland`
 5, `corridor.target_ratio` 0.5, `routes.queue_full` 12 (now the FLOOR of the pool-sized budget, step 6;
-new `routes.rails_per_slot` 4), `routes.max_per_enemy` 4,
+new `routes.rails_per_slot` 5 and `routes.refill_slots` 1), `routes.max_per_enemy` 4,
 `routes.max_total` 16, `prio.rail_connect` 1100, `prio.rail_war` 1000, `prio.rail_prewar` 500.
 
 ## 10. Files and state

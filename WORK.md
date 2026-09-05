@@ -4280,6 +4280,63 @@ OPEN with a session of its own.
   straight-line scores): with Wołyń as incumbent the best candidate (Bobruysk) scored 0.802 × Wołyń's at
   bonus 1.0 — 0.2 % short of the 20 % release bar, the freeze — and 0.704 × at bonus 0.25: released.
   With Bobruysk as incumbent it stays best under both (ratio 1.0), so the trunk keeps its railhead.
+- Owner tuning (3), 2026-09-05, after campaign run 2 (`5432bfeb`, 8 saves 1941.10.7 → 1943.6.28, all on
+  the L1-L3 build — `wa_ai_pc_alloc_pool` present in every save; GER–SOV war since 1941.6.22). Owner:
+  "c'est mieux sur la logique, le problème principal reste que c'est trop lent … en un an, pas deux";
+  "je suis ouvert à un build du tronc de berlin vers la frontière SOV avant barbarossa".
+  MEASURED (`pc`, `var`, `tlm`): pool 70-132 civs, fully assigned every save; rails all-or-nothing —
+  4 saves fund only rails, 4 saves fund no rail, of which 1941.12 and 1943.1 hold ONE rail with the
+  counter at 2 / 0 weeks (the lane ran dry) and 1942.9.13 / 1943.6 hold a fresh lot of 17 / 11 not yet
+  assigned; `built[13]` 102 → 330 = 228 rails in 20 months. DERIVED: pool ≈ 5 slots × 3.6 rails/month
+  = 18/month capacity → ~60 % used; GER-held east level-steps (rail.py) 163 in 21 months, 2-13 per
+  month, worst 1941.12→1942.3. MEASURED shape: level 5 reached Grodno / Polesie / Zhytomyr between
+  1942.4 and 1942.9, Kiev 1942.9, Daugavpils 1943.6; T = 107 provinces at 1943.6 (run 1: 80 at 1943.4);
+  railhead Wilno → Bobruysk at 1943.1 (L3 released it); one trunk, no parallel axis. Prewar: at 1941.10
+  nothing east of Berlin at 5 (T5 = 33). Cause MEASURED in code by the lessons review, not the cadence I
+  first blamed: `WA_AI_PC_railway_STRATEGY_prewar_preparation` was dispatched under `has_war = no` only
+  (`railway_core` STRATEGY 3), and on the historical path GER is at war with ENG for the whole window —
+  the peace mode never ran for GER (ASSUMED for run 2: no save before 1941.10). Target "1943.6 network in one year" = 19 rails/month = 100 % of the
+  pool: momentum + a prewar head start, without touching the PC fraction (owner-excluded above).
+  M1 vs M2 (owner asked, chose M1 + rails_per_slot 5): M2 alone (`rails_per_slot` 6) fills one interval
+  with a lot planned on day-1 geometry and idles again whenever the pool grows; M1 re-plans and
+  self-paces to the pool. Shipped:
+  - M1 `railway_core` head of `WA_AI_PC_railway`: when the counter is running, `WA_AI_PC_railway_refill_on`
+    = 1 (set at the pass tail when the pass ADMITTED segments, head+trunk+rest of the admission; a pass
+    that admits nothing switches it off — review repair, the first draft tested `has_war`) and live rails (`WA_AI_PC_railway_count_live_rail`, the skip gate's count extracted
+    to `railway_helpers`) < new `routes.refill_slots` (1) × `WA_AI_PC_alloc_pool` / 20 → counter = 0, pass
+    now with the countdown PRESERVED (`_rail_refill_saved_`, restored minus this week's tick at the tail —
+    review repair: the first draft re-based the counter, so recurring refills would have pushed the
+    scheduled pass out and the override to 0 days in 42); `_rail_refill_pass_` = 1 blocks the ×0.6
+    override re-arm, so the ratio stays 21 days in 42.
+    Log `RAILWAY REFILL: live= slots=`. `routes.rails_per_slot` 4 → 5.
+  - P1 `railway_core` STRATEGY 3: the prewar strategy is dispatched at war too when
+    `WA_AI_CONFIG_RAILWAY_has_scripted_override` holds (at war it reads the CONFIG targets alone — the
+    wargoal / justification population is gated `has_war = no` in `railway_strategies`); band 500 sits
+    below the overseas-war routes (1000) and above every non-rail band. `WA_AI_CONFIG.txt`
+    `WA_AI_CONFIG_RAILWAY_GER_to_SOV_window`: `date > 1940.7.1` (was 1941.1.1). Pass tail: a country with
+    `_rail_peace_work_` = 1 and no war resets the counter to `interval.war_weeks`.
+  t-table at GER run-2 numbers (pool 100 = 5 slots, 1.2 weeks per segment, capacity 25 per 6 weeks):
+  | step | today | M1 + slot 5 | note |
+  | --- | --- | --- | --- |
+  | t0 pass admits | 16 (cap 20 − 4 live) | 21 (cap 25 − 4) | cap = pool/20 × rails_per_slot |
+  | t0 + 3 weeks | ~13 built, 3-7 live | ~13 built, 8 live | 5 slots × 1.2 weeks |
+  | t0 + 4 weeks | lot done, lane empty | live < 5 → REFILL pass, +~20 admitted | assign funds them the next pulse |
+  | t0 + 6 weeks | scheduled pass | scheduled pass (override re-armed here only) | 21 days in 42 unchanged |
+  | built per 6 weeks | 16 (64 %) | ~23-24 (~95 %) | capacity 25 |
+  | no-work case (network at target, every pathfind failed, cap full) | scheduled pass every 6 weeks | the pass admits 0 → `refill_on` = 0 → no refill until the scheduled pass | worst case one pass per weekly pulse never persists |
+  Bounded: at most one pass per weekly pulse per country, and only while the previous pass admitted
+  something; refill needs pool > 0 and a prior pass on this build. ASSUMED: the cost of ~2 passes per
+  6 weeks (up to 3 deep pathfinds per railhead plus the branches) is negligible — not measured. Lower
+  bands while rails hold the head continuously (air 350/300, strategic 250, default 100): carried by the
+  `[pc-queue]` aging lane (`alloc.aging_lane_weeks` 12, up to 3 candidates per pass) and the `[uk-air-basing]`
+  air lane; the tell-tale stays `wa_tlm_pc_avail_share_pct` well above 60 %. Prewar override share:
+  the scheduled prewar pass at war cadence arms the ×0.6 flag 21 days in 42 of 1940.7-1941.6 (was never,
+  since the strategy never ran) — accepted, it is the head start the owner asked for. Prewar DERIVED:
+  Berlin→Grodno/Brest ≈ 50-60 level-steps ≈ 3-4 months at the war rate, 11 months available from 1940.7.
+- Verification (3), owed: next run — a 1941.5 save: T reaches Grodno / Brest at 5 (`rail.py` widest
+  from 6521), `WA_AI_PC_railway_INTERVAL_counter` ≤ 6 in peace, `RAILWAY REFILL` lines in a logged
+  wartime month, `built[13]` ≥ 19/month on the war saves, no save with one rail left and the counter
+  running; known-false control: a country at peace with no CONFIG target keeps the 12-week counter.
 - Verification, owed: (1) console — a 1941-42 GER save with logging: one `RAILWAY SPINE`
   line per enemy passing the gate (with `served=N` and `trunk_hops=k > 0`), R1 in the centre of the front (Minsk/Gomel area for a
   Pskov–Rostov front, never Riga or Kiev), every branch pathfound from an S element with ≤ 20
