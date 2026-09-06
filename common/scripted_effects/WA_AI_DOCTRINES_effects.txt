@@ -151,3 +151,82 @@ WA_AI_DOCTRINES_complete_land_tier_1 = {
 		}
 	}
 }
+
+# [ger-barb-doctrine-catchup] Every tier-2 land track holds a subdoctrine after ONE call: on each
+# EMPTY tier-2 track the SELECT-preferred subdoctrine is assigned, the German fallback otherwise.
+# Each assignment costs the owner's doctrine price (army_experience -80, the 1940 schwerpunkt
+# price); no mastery, the campaign earns the rewards. Assumes tier 1 is complete (a tier-2 subdoctrine is only `available` then): callers run
+# WA_AI_DOCTRINES_finish_land_tier_1 first. tier_2_operations is left alone (needs tier_3_infantry).
+WA_AI_DOCTRINES_assign_land_tier_2 = {
+	### INFANTRY
+	if = {
+		limit = { NOT = { has_subdoctrine_in_track = tier_2_infantry } }
+		if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_elastic_defense = yes }
+			set_sub_doctrine = elastic_defense
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned elastic_defense (tier_2_infantry was empty), army XP -80"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_defense_in_depth = yes }
+			set_sub_doctrine = defense_in_depth
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned defense_in_depth (tier_2_infantry was empty), army XP -80"
+		}
+		else = {
+			set_sub_doctrine = elastic_defense
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned elastic_defense by default (no SELECT trigger true for tier_2_infantry), army XP -80"
+		}
+	}
+
+	### ARTILLERY
+	if = {
+		limit = { NOT = { has_subdoctrine_in_track = tier_2_artillery } }
+		if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_concentrated_spacing = yes }
+			set_sub_doctrine = concentrated_spacing
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned concentrated_spacing (tier_2_artillery was empty), army XP -80"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_anti_tank_strong_points = yes }
+			set_sub_doctrine = anti_tank_strong_points
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned anti_tank_strong_points (tier_2_artillery was empty), army XP -80"
+		}
+		else = {
+			set_sub_doctrine = concentrated_spacing
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned concentrated_spacing by default (no SELECT trigger true for tier_2_artillery), army XP -80"
+		}
+	}
+
+	### ARMOUR
+	if = {
+		limit = { NOT = { has_subdoctrine_in_track = tier_2_armour } }
+		if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_schwerpunkt = yes }
+			set_sub_doctrine = schwerpunkt
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned schwerpunkt (tier_2_armour was empty), army XP -80"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_encirclement = yes }
+			set_sub_doctrine = encirclement
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned encirclement (tier_2_armour was empty), army XP -80"
+		}
+		else_if = {
+			limit = { WA_AI_LAND_DOCTRINES_SELECT_armoured_waves = yes }
+			set_sub_doctrine = armoured_waves
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned armoured_waves (tier_2_armour was empty), army XP -80"
+		}
+		else = {
+			set_sub_doctrine = schwerpunkt
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned schwerpunkt by default (no SELECT trigger true for tier_2_armour), army XP -80"
+		}
+	}
+}

@@ -1,8 +1,8 @@
 ############################################################################################################
 #	World Ablaze - LAND DOCTRINE TRACKS console harness. harness-contract: v1 (wa-testing SKILL).
 ############################################################################################################
-#	[ger-barb-doctrine-catchup] Instrument for the tier-1 land doctrine assist
-#	(common/scripted_effects/WA_AI_DOCTRINES_effects.txt, event ger_armor.1001). Track completion
+#	[ger-barb-doctrine-catchup] Instrument for the tier-1 land doctrine assist and its tier-2 safety
+#	(common/scripted_effects/WA_AI_DOCTRINES_effects.txt, events ger_armor.1001 / ger_armor.1002). Track completion
 #	and subdoctrine assignment are engine state that a savegame does not name track by track, so
 #	the only way to see whether the assist has anything left to do - and whether its gate is open -
 #	is to print both.
@@ -49,12 +49,14 @@ WA_TEST_DOC_report = {
 	if = { limit = { WA_AI_CONFIG_securities_enabled = yes } set_temp_variable = { _doc_cheats = 1 } }
 	set_temp_variable = { _doc_deadline = 0 }
 	if = { limit = { WA_AI_CONFIG_after_ger_land_doctrine_gift = yes } set_temp_variable = { _doc_deadline = 1 } }
+	set_temp_variable = { _doc_deadline2 = 0 }
+	if = { limit = { WA_AI_CONFIG_after_ger_land_doctrine_tier_2_gift = yes } set_temp_variable = { _doc_deadline2 = 1 } }
 	set_temp_variable = { _doc_ger = 0 }
 	if = { limit = { tag = GER } set_temp_variable = { _doc_ger = 1 } }
 	set_temp_variable = { _doc_trigdone = 0 }
 	if = { limit = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } set_temp_variable = { _doc_trigdone = 1 } }
 
-	log = "  gate  : is-GER=[?_doc_ger|.0]  is_ai=[?_doc_ai|.0]  securities-enabled=[?_doc_cheats|.0]  after-deadline=[?_doc_deadline|.0]  trigger-says-done=[?_doc_trigdone|.0]"
+	log = "  gate  : is-GER=[?_doc_ger|.0]  is_ai=[?_doc_ai|.0]  securities-enabled=[?_doc_cheats|.0]  after-deadline=[?_doc_deadline|.0]  after-t2-deadline=[?_doc_deadline2|.0]  trigger-says-done=[?_doc_trigdone|.0]"
 
 	############################################################
 	# B. Tracks - engine triggers only (independent of the shipped effect)
@@ -125,5 +127,25 @@ WA_TEST_DOC_report = {
 		}
 		set_temp_variable = { _doc_gate = 1 }
 	}
+	set_temp_variable = { _doc_t2sub = 0 }
+	if = {
+		limit = {
+			check_variable = { _doc_s2i = 1 }
+			check_variable = { _doc_s2a = 1 }
+			check_variable = { _doc_s2r = 1 }
+		}
+		set_temp_variable = { _doc_t2sub = 1 }
+	}
+	set_temp_variable = { _doc_gate2 = 0 }
+	if = {
+		limit = {
+			check_variable = { _doc_ger = 1 }
+			check_variable = { _doc_ai = 1 }
+			check_variable = { _doc_cheats = 1 }
+			check_variable = { _doc_deadline2 = 1 }
+		}
+		set_temp_variable = { _doc_gate2 = 1 }
+	}
 	log = "  VERDICT: tier1-all-done=[?_doc_alldone|.0]  trigger-says-done=[?_doc_trigdone|.0]  gate-open=[?_doc_gate|.0]   (done and says-done must agree; gate-open=1 means ger_armor.1001 fires within a day, once)"
+	log = "  VERDICT: tier2-all-sub=[?_doc_t2sub|.0]  t2-gate-open=[?_doc_gate2|.0]   (t2-gate-open=1 means ger_armor.1002 fires within a day, once; after wa_doc.4 tier2-all-sub must read 1)"
 }
