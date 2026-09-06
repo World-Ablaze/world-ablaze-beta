@@ -315,7 +315,7 @@ Ground production triggers:
 - Artillery: `WA_AI_PRODUCTION_build_artillery`, `WA_AI_PRODUCTION_build_artillery_major`.
 - Anti-tank: `WA_AI_PRODUCTION_build_anti_tank`, `WA_AI_PRODUCTION_build_heavy_anti_tank`.
 - Anti-air: `WA_AI_PRODUCTION_build_anti_air`, `WA_AI_PRODUCTION_build_heavy_anti_air`.
-- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, `WA_AI_PRODUCTION_build_trucks_stockpile_low`, `WA_AI_PRODUCTION_build_trucks_stockpile_very_low`, `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`.
+- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, `WA_AI_PRODUCTION_build_trucks_stockpile_low`, `WA_AI_PRODUCTION_build_trucks_stockpile_very_low`, `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
 
 Tank and mechanized production triggers:
 

@@ -61,6 +61,17 @@ equipments = {
 		armor_value = 250 # HP = BASE_TRAIN_HP + armor_value
 		air_attack = 18
 		priority = 30
+		# [train-variant-choice] AI gate reads a FLAG, never a variable. can_be_produced is evaluated at
+		# load OUTSIDE any country scope, so a check_variable / num_equipment@ / constant: here dereferences
+		# null and crashes the game on launch (MEASURED 2026-09-05). The flag is latched monthly by the
+		# is_ai pulse in WA_AI_misc_on_actions.txt from WA_AI_PRODUCTION_should_build_armored_trains, where
+		# those tokens are safe. Humans are never gated.
+		can_be_produced = {
+			OR = {
+				is_ai = no
+				has_country_flag = WA_AI_armored_trains_allowed
+			}
+		}
 		build_cost_ic = 65
 		resources = {
 			steel = 8
@@ -112,7 +123,8 @@ equipments = {
 		type = {
 			train
 		}
-		priority = 20
+		# [train-variant-choice] Above the Simplified Train (20): the cheapest variant wins the AI pick.
+		priority = 25
 
 		build_cost_ic = 30
 		resources = {

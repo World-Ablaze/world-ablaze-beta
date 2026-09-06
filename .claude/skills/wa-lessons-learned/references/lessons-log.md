@@ -2386,6 +2386,19 @@ process caveats (stale process, and the absence of a load-time hook).
   `common/scripted_triggers/WA_reserves_triggers.txt` (tier OR),
   `common/scripted_triggers/WA_AI_CONFIG.txt` (`is_reserve_materiel_limited`).
 
+- **Superseded in part 2026-09-05 (`[reserve-capacity]`, owner order):** the MIL tiers held only
+  INSIDE the expeditionary veto, whose neighbour-war term switched the whole trigger off — so a
+  continental war had no capability gate at all. MEASURED on `8bf94908`: ROM (54 → 104 MIL)
+  deployed 100 reserve divisions, `wa_ai_fielded_eq_ratio` 0.55–0.68 vs HUN 0.998–1.0 on the same
+  104 MILs; the 1941.6 wave read org 5.6 with 46 of 50 on a front. The tiers now live in
+  `WA_reserves_is_over_capacity`, read regardless of war state or enemy geography; the rule above
+  (industry proxy, never stockpile) stands. Same commit: the recruitment ladder
+  (`WA_reserves_meets_recruitment_threshold`) had run 10× too loose since refactor `2c9028075`
+  (2026-02-05: body 2000/100 against its own header 20000/1000), restored. **Rule:** a refactor that
+  folds a per-level ladder into a formula is diffed against the ORIGINAL per-level values, never
+  against its own comment; and a capability gate is a trigger of its own, never an OR-branch inside
+  a situational veto whose other terms can switch it off.
+
 ### A nameless create_corps_commander creates an orphan - and its caller loops forever
 
 - **Date:** 2026-08-28 (campaign `0767987f`, all 4 sampled saves; `[recruit-loop]`)

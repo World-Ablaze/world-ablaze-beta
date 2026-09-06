@@ -178,24 +178,24 @@ WA_reserves_meets_recruitment_threshold = {
 	subtract_from_temp_variable = { _reserves_level = _level_remainder }
 	multiply_temp_variable = { _reserves_level = 10 }
 
-	# Calculate standard thresholds: 199999 + (level * 2000)
+	# Calculate standard thresholds: 199999 + (level * 20000)
 	set_temp_variable = { _std_manpower = _reserves_level }
-	multiply_temp_variable = { _std_manpower = 2000 }
+	multiply_temp_variable = { _std_manpower = 20000 }
 	add_to_temp_variable = { _std_manpower = 199999 }
 
-	# Standard equipment: 15000 + (level * 100)
+	# Standard equipment: 15000 + (level * 1000)
 	set_temp_variable = { _std_equipment = _reserves_level }
-	multiply_temp_variable = { _std_equipment = 100 }
+	multiply_temp_variable = { _std_equipment = 1000 }
 	add_to_temp_variable = { _std_equipment = 15000 }
 
-	# Calculate SOV thresholds: 99999 + (level * 1000)
+	# Calculate SOV thresholds: 99999 + (level * 10000)
 	set_temp_variable = { _sov_manpower = _reserves_level }
-	multiply_temp_variable = { _sov_manpower = 1000 }
+	multiply_temp_variable = { _sov_manpower = 10000 }
 	add_to_temp_variable = { _sov_manpower = 99999 }
 
-	# SOV equipment: 10000 + (level * 50)
+	# SOV equipment: 10000 + (level * 500)
 	set_temp_variable = { _sov_equipment = _reserves_level }
-	multiply_temp_variable = { _sov_equipment = 50 }
+	multiply_temp_variable = { _sov_equipment = 500 }
 	add_to_temp_variable = { _sov_equipment = 10000 }
 
 	# Check any path passes
@@ -317,10 +317,10 @@ WA_reserves_is_materiel_limit_relieved = {
 }
 
 # [reserve-quality] COUNTRY scope; single reader: deploy_reserves_infantry ai_will_do
-# (common/decisions/_reserves.txt) - change the behaviour here. The bank exists to bootstrap
-# a small army into a training snowball where industry can equip it; it stays shut when
-# materiel is the limiting factor (MIL tiers, or the archetype). Load-bearing: has_war
-# (else the pre-war early_reserve_mobilization path is vetoed too).
+# (common/decisions/_reserves.txt). The bank bootstraps a small army into a training snowball;
+# it stays shut while the war is far away AND materiel is the limit (the archetype).
+# Load-bearing: has_war (else the pre-war early_reserve_mobilization path is vetoed too).
+# The MIL-tier hold is in WA_reserves_is_over_capacity so a neighbour war cannot switch it off.
 WA_reserves_is_expeditionary_only = {
 	has_war = yes
 	NOT = { surrender_progress > 0 }
@@ -329,16 +329,24 @@ WA_reserves_is_expeditionary_only = {
 			has_war_with = ROOT
 		}
 	}
+	# land-equipment output committed to air/sea - a dump would field empty rifles -
+	# unless the limit is relieved ([eng-reserve-partner]: partner in faction, or a
+	# small field army after 1941)
+	WA_AI_CONFIG_is_reserve_materiel_limited = yes
+	NOT = { WA_reserves_is_materiel_limit_relieved = yes }
+}
+
+############################################################################################################
+# CAPACITY HOLD
+############################################################################################################
+
+# [reserve-capacity] COUNTRY scope; single reader: deploy_reserves_infantry ai_will_do. Below
+# the tier's MIL count, an army past the listed size is already more than industry equips, so a
+# dump would field 30%-equipped divisions; 100+ MILs is never size-vetoed. Independent of war
+# state and of who the enemy is: a neighbour war changes the manpower case, not the equipment
+# case. How to tell the assumption is gone: a tier-vetoed country fielding at eq ratio > 0.9.
+WA_reserves_is_over_capacity = {
 	OR = {
-		# land-equipment output committed to air/sea - a dump would field empty rifles -
-		# unless the limit is relieved ([eng-reserve-partner]: partner in faction, or a
-		# small field army after 1941)
-		AND = {
-			WA_AI_CONFIG_is_reserve_materiel_limited = yes
-			NOT = { WA_reserves_is_materiel_limit_relieved = yes }
-		}
-		# capability tiers: below the tier's MIL count, an army past the listed size is
-		# already more than industry equips; 100+ MILs is never size-vetoed
 		AND = {
 			NOT = { num_of_military_factories > 24 }
 			num_divisions > 20
