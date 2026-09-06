@@ -1356,3 +1356,306 @@ d_railway_route_debug = {
 	log = "  Skipped (no hub province): [?_dbg_rt_skipped_nohub]"
 	log = "====================================================================="
 }
+
+############################################################################################################
+#	[rail-spine-tree] CONSOLE PROBES - one land-war railway pass NOW, with logging, on the tagged country.
+#	Console: `tag GER` (never the observer tag), then `effect d_WA_spine_pass`. ROOT = the tagged country.
+#	Reads back in logs/game.log: SPINE PROBE header -> RAILWAY ENTRY -> RAILWAY SPINE (cand / served / T /
+#	R1 / R2 / trunk_hops, or `trunk pathfind FAILED`) -> PATHFIND PROV lines -> RAILWAY LAND ACCEPTED ->
+#	RAILWAY TRUNK (value order) -> PC QUEUED -> RAILWAY ADMISSION (head / trunk / rest / attach_miss).
+#	STOP rule: no `RAILWAY ENTRY` line after the header = the effect ran on the wrong country or the
+#	on_weekly gate would have refused it; read nothing further.
+############################################################################################################
+
+d_WA_spine_pass = {
+	set_country_flag = WA_AI_construction_logging
+	set_country_flag = WA_AI_pathfind_logging
+	log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SPINE PROBE: who=[Root.GetName] interval_was=[?WA_AI_PC_railway_INTERVAL_counter] - forcing one pass now (memory kept)"
+	every_enemy_country = {
+		set_temp_variable = { _dbg_spine_enemy_ = THIS }
+		ROOT = {
+			set_temp_variable = { _dbg_spine_mem_ = WA_AI_PC_spine_railhead@var:_dbg_spine_enemy_ }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SPINE PROBE: railhead memory for [?_dbg_spine_enemy_.GetName] = [?_dbg_spine_mem_] (0 = none)"
+		}
+	}
+	set_variable = { WA_AI_PC_railway_INTERVAL_counter = 0 }
+	log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SPINE PROBE: counter zeroed - UNPAUSE, the next weekly pulse runs the pass (console-direct calls misread the border test)"
+}
+
+# Same pass after FORGETTING every railhead: R1 is then the raw score, without the 20 % hysteresis.
+# Compare its RAILWAY SPINE line with d_WA_spine_pass's: same R1 = the score chose it, different R1 =
+# the hysteresis kept an earlier choice. Requeues nothing (the province-duplicate guard refuses).
+d_WA_spine_pass_fresh = {
+	every_enemy_country = {
+		set_temp_variable = { _dbg_spine_enemy_ = THIS }
+		ROOT = { clear_variable = WA_AI_PC_spine_railhead@var:_dbg_spine_enemy_ }
+	}
+	log = "[GetYear] [GetMonth] | AI | [Root.GetName] | SPINE PROBE: railhead memory cleared for every enemy"
+	d_WA_spine_pass = yes
+}
+
+# [rail-spine-tree] probe: the border primitive in three contexts, same run. `effect d_WA_spine_ctx_probe`.
+d_WA_spine_ctx_probe = {
+	set_country_flag = WA_AI_construction_logging
+	# A - the primitive with the enemy set OUTSIDE any every_enemy_country loop
+	set_temp_variable = { _dbg_ctx_ = 0 }
+	every_country = {
+		limit = { has_war_with = ROOT is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CTX PROBE A every_country major: this=[This.GetName] var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# B - the check_land_access loop, verbatim, with logs
+	every_enemy_country = {
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CTX PROBE B every_enemy_country: this=[This.GetName] var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# C - the overseas loop, verbatim (enemy_tag set first), with logs
+	every_enemy_country = {
+		set_temp_variable = { enemy_tag = THIS }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CTX PROBE C overseas-shaped: this=[This.GetName] enemy_tag=[?enemy_tag.GetName] var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# D - Part A of the overseas strategy first, then the loop again
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+	WA_AI_PC_railway_find_best_home_port = yes
+	every_enemy_country = {
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CTX PROBE D after find_best_home_port: this=[This.GetName] var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+
+# [rail-spine-tree] probe: WHICH step of overseas Part A makes the border primitive read right.
+# `effect d_WA_spine_bisect_probe`. Majors only (SOV + UK). The FIRST block that flips SOV to 1 is the cause.
+d_WA_spine_bisect_probe = {
+	set_country_flag = WA_AI_construction_logging
+	# E0 - baseline, nothing before
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E0 baseline: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E1 - after zeroing the shared `break` temp
+	set_temp_variable = { break = 0 }
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E1 break=0: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E2 - after one bare default-break for_each_loop
+	clear_temp_array = _bisect_arr_
+	add_to_temp_array = { _bisect_arr_ = 1 }
+	for_each_loop = { array = _bisect_arr_ value = _bisect_v_
+		set_temp_variable = { _bisect_dummy_ = _bisect_v_ }
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E2 after for_each_loop: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E3 - after WA_AI_MAP_get_capital_vp_province
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E3 after get_capital_vp_province: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E4 - after an every_controlled_state walk with WA_AI_PC_get_state_id
+	every_controlled_state = {
+		WA_AI_PC_get_state_id = yes
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E4 after every_controlled_state walk: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E5 - after the BFS WA_AI_PC_railway_get_states_within_distance
+	set_temp_variable = { _origin_state_id = capital_state_id }
+	set_temp_variable = { _max_distance = constant:wa_ai_railway.supply.home_port_search_distance }
+	WA_AI_PC_railway_get_states_within_distance = yes
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E5 after BFS: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# E6 - after the whole find_best_home_port
+	WA_AI_PC_railway_find_best_home_port = yes
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT E6 after find_best_home_port: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+
+# [rail-spine-tree] probe: the last four candidate steps of find_best_home_port. `effect d_WA_spine_bisect2_probe`.
+# The FIRST block that flips Soviet Union to primitive=1 is the cause. Majors only.
+d_WA_spine_bisect2_probe = {
+	set_country_flag = WA_AI_construction_logging
+	WA_AI_MAP_get_capital_vp_province = yes
+	set_temp_variable = { capital_province = capital_vp_province_ }
+	set_temp_variable = { capital_state_id = capital_state_id_ }
+	# G0 - baseline (after get_capital_vp_province only, known 0)
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G0 baseline: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# G1 - after one trivial meta_effect
+	meta_effect = {
+		text = {
+			set_temp_variable = { _bisect_meta_ = [x] }
+		}
+		x = "[?capital_state_id]"
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G1 after meta_effect: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# G2 - after a var:<state> scope change (the log at the end of find_best_home_port)
+	var:capital_state_id = {
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G2 scoped into [Prev.GetName]" }
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G2 after var:state scope: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# G3 - after get_naval_base_province on the capital state (meta_effect + province triggers)
+	var:capital_state_id = {
+		WA_AI_PC_railway_get_naval_base_province = yes
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G3 after get_naval_base_province: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# G4 - after score_port_candidate (pure arithmetic)
+	set_temp_variable = { _candidate_port_level = 3 }
+	set_temp_variable = { _bfs_distance = 2 }
+	WA_AI_PC_score_port_candidate = yes
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G4 after score_port_candidate: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+	# G5 - the coastal state walk with the explicit-break for_each_loop, as in find_best_home_port
+	every_controlled_state = {
+		limit = { is_coastal = yes }
+		WA_AI_PC_get_state_id = yes
+		set_temp_variable = { _this_state_id = state_id_ }
+		for_each_loop = { array = states_within_distance_ index = _dist_idx value = _check_state break = _found_dist
+			if = { limit = { check_variable = { _check_state = _this_state_id } }
+				set_temp_variable = { _found_dist = 1 }
+			}
+		}
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | BISECT2 G5 after coastal walk + explicit-break loop: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+
+# [rail-spine-tree] probes: does the FIRST statement of the execution decide? Run each separately.
+# d_WA_h0: a ROOT-scope temp write first, then the loop.  d_WA_h1: the loop first, nothing before.
+# d_WA_h2: the loop first, but the enemy stored from ROOT scope (PREV) instead of the enemy scope.
+d_WA_h0 = {
+	set_temp_variable = { _dbg_first_ = 1 }
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | H0 root-temp-first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+d_WA_h1 = {
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | H1 loop-first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+d_WA_h2 = {
+	every_enemy_country = {
+		limit = { is_major = yes }
+		ROOT = {
+			set_temp_variable = { _check_enemy_tag = PREV }
+			WA_AI_PC_has_land_border_with_enemy = yes
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | H2 enemy-stored-from-ROOT: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]"
+		}
+	}
+}
+
+# [rail-spine-tree] probes K1-K4: what, run FIRST in a fresh execution, makes the border primitive read right.
+d_WA_k1 = {
+	# a for_each_loop with an EXPLICIT break variable, breaking on its first element
+	clear_temp_array = _k_arr_
+	add_to_temp_array = { _k_arr_ = 1 }
+	add_to_temp_array = { _k_arr_ = 2 }
+	for_each_loop = { array = _k_arr_ value = _k_v_ break = _k_b_
+		set_temp_variable = { _k_b_ = 1 }
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | K1 explicit-break loop first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+d_WA_k2 = {
+	# control: get_capital_vp_province first (bisect2 G0 read 1)
+	WA_AI_MAP_get_capital_vp_province = yes
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | K2 get_capital first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+d_WA_k3 = {
+	# a bare capital_scope block first
+	capital_scope = {
+		set_temp_variable = { _k_dummy_ = 1 }
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | K3 capital_scope first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
+d_WA_k4 = {
+	# a state walk with a state trigger first
+	every_controlled_state = {
+		limit = { is_coastal = yes }
+		set_temp_variable = { _k_dummy_ = 1 }
+	}
+	every_enemy_country = {
+		limit = { is_major = yes }
+		set_temp_variable = { _check_enemy_tag = THIS }
+		ROOT = { WA_AI_PC_has_land_border_with_enemy = yes }
+		ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | K4 coastal state walk first: var=[?_check_enemy_tag.GetName] primitive=[?has_land_border_with_enemy_]" }
+	}
+}
