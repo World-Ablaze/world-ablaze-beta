@@ -310,6 +310,15 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (harness `wa_doc.2` measures it). Harness: `wa_doc.3 <TAG>` added = the whole gift, gate mirror
   no longer reads all-done. Verification lines below still name the 1941 saves of the first design:
   read "1940.1.2+" for "1941.3+" and "1939" for "1941.1"; the console readings are otherwise unchanged.
+- Added 2026-09-06 (owner order: "ajoute un event de safety comme ger_armor.1001 qui, au moment de
+  barbarossa (la date) donne à GER les doctrines tiers 2 qui lui manquent"): `ger_armor.1002`, same
+  gate shape, on `WA_AI_CONFIG_after_ger_land_doctrine_tier_2_gift` (date > 1941.6.21). Immediate:
+  `WA_AI_DOCTRINES_finish_land_tier_1` then `WA_AI_DOCTRINES_assign_land_tier_2` (each EMPTY
+  `tier_2_infantry` / `tier_2_artillery` / `tier_2_armour` gets its SELECT-preferred subdoctrine,
+  German default otherwise; `tier_2_operations` excluded, MEASURED needs `tier_3_infantry`).
+  No mastery; owner order 2026-09-06 "80 d'xp enlevé par doctrine": each assignment charges
+  `army_experience = -80` (same price as the 1940 schwerpunkt). Harness: `wa_doc.4 <TAG>` mirrors it; report gains
+  `after-t2-deadline`, `tier2-all-sub`, `t2-gate-open`. Untested like the rest of the subject.
 - Owner order 2026-09-04: "add a cheat for GER AI : when 4 months before historical barb date, it
   should have completed all land doctrines of tier 1 : if not, give mastery to finish them, so
   that it can unlock the focuses to add mastery to tier 2 before the barb start".
