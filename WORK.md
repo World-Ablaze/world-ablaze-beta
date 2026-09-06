@@ -297,6 +297,19 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Parked 2026-09-04 on the owner's order ("parke ces deux là") to bring OPEN back under the WIP
   limit; move it back to OPEN in one line when the harness is played. State at parking:
   SHIPPED-UNTESTED 2026-09-04 (commit `b049763e0`), owner console harness (GER, `ger_armor.1001`) not yet run, one Historical Normal/Hard campaign save owed afterwards; nothing else changes.
+- Redesign 2026-09-06 (owner order: "il doit terminer les doctrines tiers 1, donner à l'Allemagne
+  schwerpunkt, et enlever 80 d'xp terrestre"): `ger_armor.1001` is now a ONE-SHOT gift
+  (`fire_only_once`, 1-day MTTH, no on_weekly pulse) on a FIXED date `WA_AI_CONFIG_after_ger_land_doctrine_gift`
+  (date > 1940.1.1 - a calendar date on purpose, mastery gain is balanced by humans; replaces
+  `WA_AI_CONFIG_after_barbarossa_doctrine_deadline`). Immediate: `WA_AI_DOCTRINES_finish_land_tier_1`
+  (the step effect re-run up to 4 times until the observation trigger reads complete, WARNING log
+  otherwise), then if `tier_2_armour` is empty `set_sub_doctrine = schwerpunkt` + `army_experience = -80`
+  (owner's price; `armor_subdoctrines.txt` lists `xp_cost = 100`). The trigger no longer requires
+  tier 1 incomplete, so the tier-2 gift lands even when tier 1 was already done. ASSUMED: a
+  `set_sub_doctrine` / `add_mastery` is visible to `has_completed_track` inside the same effect
+  (harness `wa_doc.2` measures it). Harness: `wa_doc.3 <TAG>` added = the whole gift, gate mirror
+  no longer reads all-done. Verification lines below still name the 1941 saves of the first design:
+  read "1940.1.2+" for "1941.3+" and "1939" for "1941.1"; the console readings are otherwise unchanged.
 - Owner order 2026-09-04: "add a cheat for GER AI : when 4 months before historical barb date, it
   should have completed all land doctrines of tier 1 : if not, give mastery to finish them, so
   that it can unlock the focuses to add mastery to tier 2 before the barb start".

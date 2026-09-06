@@ -40,6 +40,9 @@ from pathlib import Path
 BLOCKED_TECHS = [
     "sov_light_spg_tank_1",  # SU-5
     "sov_light_spg_tank_2",  # SU-26
+    "ger_heavy_tank_chassis_1",  # VK 36.01 (VK 30.01 upstream is already allow = { always = no })
+    "ger_heavy_tank_chassis_2",  # Tiger P (Tiger I stays open via Panzer IV F, owner choice 2026-09-06)
+    "ger_landkruiser_tank_chassis_1",  # Ratte
 ]
 
 # Body of the generated `allow` block, one trigger line per entry (indent added by the tool).
@@ -150,10 +153,14 @@ def process_file(path, blocked, report):
         if tech_id in blocked:
             report["found"].add(tech_id)
             if foreign_allow:
+                # keep scanning so every problem in the file is reported in one run
                 report["errors"].append(
                     f"{path.name}: {tech_id}: has an `allow` block the tool does not own - resolve by hand"
                 )
-                return None
+                new_lines.append(header)
+                new_lines.extend(body)
+                cursor = end
+                continue
             block = managed_block(nl)
             if managed is None:
                 body = block + body

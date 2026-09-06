@@ -8,6 +8,22 @@
 # costs one more pulse. Only this file reads it (AGENTS.md rule 10).
 @WA_AI_DOCTRINES_catchup_mastery_per_pulse = 200
 
+# [ger-barb-doctrine-catchup] Every tier-1 land track complete in ONE call: the step effect below
+# is re-run up to 4 times, the longest ladder a line can need (assign tier 0, finish tier 0,
+# assign tier 1, finish tier 1); each run is skipped once the observation trigger reads complete.
+# Assumes a set_sub_doctrine / add_mastery is visible to has_completed_track inside the same
+# effect (harness wa_doc.2 measures it: one run must move a line from sub=1 to done=1).
+WA_AI_DOCTRINES_finish_land_tier_1 = {
+	if = { limit = { NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } } WA_AI_DOCTRINES_complete_land_tier_1 = yes }
+	if = { limit = { NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } } WA_AI_DOCTRINES_complete_land_tier_1 = yes }
+	if = { limit = { NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } } WA_AI_DOCTRINES_complete_land_tier_1 = yes }
+	if = { limit = { NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } } WA_AI_DOCTRINES_complete_land_tier_1 = yes }
+	if = {
+		limit = { NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes } }
+		log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] WARNING tier-1 land tracks still incomplete after 4 steps"
+	}
+}
+
 # [ger-barb-doctrine-catchup] One step per land line per call towards a complete tier-1 track:
 # finish tier 0, then assign the SELECT-preferred tier-1 subdoctrine, then finish tier 1 - one
 # else_if rung per call because a tier-1 subdoctrine is only `available` once tier 0 is complete.

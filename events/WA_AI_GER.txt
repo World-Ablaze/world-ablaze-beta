@@ -966,30 +966,40 @@ country_event = {
 
 
 
-# [ger-barb-doctrine-catchup] Scripted assist: from 4 months before the historical Barbarossa
-# date, an AI Germany that still lacks a tier-1 land doctrine gets one step per week towards it
-# (WA_AI_DOCTRINES_complete_land_tier_1), so the spring focuses' mastery lands on tier 2. Stops
-# by itself when the three tier-1 tracks read complete. Gated as a SECURITY (Historical Normal +
-# both Hard buttons, [difficulty-mapping]): off only on Historical Easy / Competitive Normal. Country
-# layer, not an archetype: the deadline is the German Barbarossa date, nobody else's. Fired by
-# on_weekly_GER (common/on_actions/100_wa_on_actions.txt): one step every 7 days, no MTTH - a
-# repeating MTTH event is polled daily by the engine and logs "Event is set to trigger every day".
+# [ger-barb-doctrine-catchup] One-shot doctrine gift: on the CONFIG gift date an AI Germany gets
+# every tier-1 land track completed (WA_AI_DOCTRINES_finish_land_tier_1), schwerpunkt on
+# tier_2_armour, and pays the doctrine's army XP - so the later focus mastery lands on tier 2.
+# Gated as a SECURITY (Historical Normal + both Hard buttons, [difficulty-mapping]): off only on
+# Historical Easy / Competitive Normal. Country layer, not an archetype: the schwerpunkt line is
+# a German gift, nobody else's. fire_only_once + 1-day MTTH: fires once, the day after the gate
+# opens; it does not wait on the tier-1 state so the tier-2 gift lands even if tier 1 was done.
 country_event = {
 	id = ger_armor.1001
 	hidden = yes
 
-	is_triggered_only = yes
+	mean_time_to_happen = { days = 1 }
+
+	fire_only_once = yes
 
 	trigger = {
 		tag = GER
 		is_ai = yes
 		WA_AI_CONFIG_securities_enabled = yes
-		WA_AI_CONFIG_after_barbarossa_doctrine_deadline = yes
-		NOT = { WA_AI_DOCTRINES_has_completed_land_tier_1 = yes }
+		WA_AI_CONFIG_after_ger_land_doctrine_gift = yes
 	}
 
 	immediate = {
-		WA_AI_DOCTRINES_complete_land_tier_1 = yes
+		WA_AI_DOCTRINES_finish_land_tier_1 = yes
+		if = {
+			limit = { NOT = { has_subdoctrine_in_track = tier_2_armour } }
+			set_sub_doctrine = schwerpunkt
+			# doctrine price ordered by the owner (armor_subdoctrines.txt lists xp_cost = 100)
+			army_experience = -80
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] assigned schwerpunkt, army XP -80"
+		}
+		else = {
+			log = "[ger-barb-doctrine-catchup] [ROOT.GetName] [GetDateText] tier_2_armour already holds a subdoctrine, schwerpunkt not assigned"
+		}
 	}
 
 	option = {}
