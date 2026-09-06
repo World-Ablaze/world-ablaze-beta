@@ -312,7 +312,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   read "1940.1.2+" for "1941.3+" and "1939" for "1941.1"; the console readings are otherwise unchanged.
 - Added 2026-09-06 (owner order: "ajoute un event de safety comme ger_armor.1001 qui, au moment de
   barbarossa (la date) donne à GER les doctrines tiers 2 qui lui manquent"): `ger_armor.1002`, same
-  gate shape, on `WA_AI_CONFIG_after_ger_land_doctrine_tier_2_gift` (date > 1941.6.21). Immediate:
+  gate shape, on `WA_AI_CONFIG_after_1941_6` (date > 1941.6.1 - owner: three weeks before the
+  historical jump-off "pour laisser le temps à l'event de trigger", no dedicated trigger). Immediate:
   `WA_AI_DOCTRINES_finish_land_tier_1` then `WA_AI_DOCTRINES_assign_land_tier_2` (each EMPTY
   `tier_2_infantry` / `tier_2_artillery` / `tier_2_armour` gets its SELECT-preferred subdoctrine,
   German default otherwise; `tier_2_operations` excluded, MEASURED needs `tier_3_infantry`).
