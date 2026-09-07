@@ -143,3 +143,4 @@ triages from this file first.
 - A 08-29 Park an expandedWindow at y <= -height; a parked list is still drawn · grep:"park it above its own height"
 - A 08-29 .gui z-order is declaration order; move the element after the container · grep:"z-order is declaration order"
 - A 08-29 replace_with resolves in its own role group; target_min_match checks the NEXT target · grep:"second, silent condition"
+- B 09-07 check_variable takes <, > or = only; `>= constant:` kills the file at boot · grep:"with `>= constant:` does not parse"

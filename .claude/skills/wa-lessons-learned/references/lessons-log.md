@@ -2670,3 +2670,23 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** `common/units/equipment/trains.txt` (chain + comment); WORK.md `train-variant-choice`
   probe of 2026-09-07 with the campaign ids; the sibling entry of 2026-08-13 on
   `production_upgrade_desire_offset` (which is the OTHER lever that acts on a chain step).
+
+## 2026-09-07 - `check_variable` with `>= constant:` does not parse, and one bad token desyncs the whole effects file
+
+- **Date:** 2026-09-07 (`light-support-conversion` Change 11, owner boot log 14:18)
+- **Symptom:** `parser.cpp:1111 Error: unexpected token ... near line 1410 (constant:wa_ai_production.army_composition.light_support_phase_pulses)`,
+  followed by `Invalid trigger 'set_country_flag'` / `'set_variable'` on the effect lines right after it
+  and a trigger error 130 lines later inside an unrelated effect (`WA_AI_TEMPLATES_retire_light_support_park`).
+  Every Python checker (`check_templates`, `check_constants`, brace balance) had passed.
+- **Cause:** the offending line was `check_variable = { WA_AI_TEMPLATES_ls_phase_pulses >= constant:... }`.
+  The repo held ZERO `>=` inside a `check_variable` before it (MEASURED grep), while the `> constant:` form
+  (`WA_AI_AIFC_core.txt:83`) boots. Whether `>=` alone or `>=` followed by a `constant:` token is the
+  unparseable part is ASSUMED; both readings forbid the same line. Once the trigger parser gives up
+  inside a `limit`, it keeps reading the effect body as triggers and reports errors far from the cause:
+  the "near line 1556" error was the cascade, not a second defect.
+- **Rule:** in `check_variable`, compare with `<`, `>` or `=` only; for "at least K" compute K-1 into a
+  temp (`set_temp_variable` + `subtract_from_temp_variable`) and test `> temp`. And a change to a
+  `WA_AI_*` effect is not shipped until a game boot (or the owner's boot log) shows 0 errors on the
+  file - no offline checker parses PDXScript the way the engine does.
+- **Evidence:** WORK.md `light-support-conversion` Change 11 boot bullet; commit `943011b142` (broken)
+  and its follow-up fix; `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` PONT exit.

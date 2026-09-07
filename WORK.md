@@ -1829,6 +1829,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   - Checkers: `check_templates` 0 errors outside the 4 pre-existing HQ slot errors (`--selftest`
     OK); `check_constants` exit 0; `check_worklist` exit 0; `check_ai_layers` exit 1 on the
     pre-existing NUMBER-LEAK above. BOM-free, braces balanced on every touched file.
+  - **Boot 2026-09-07 14:18 (owner log) FAILED on `943011b142`**: `parser.cpp: unexpected token
+    near line 1410 (constant:...)` — the PONT exit was written `check_variable = { pulses >=
+    constant:... }`, and the parser does not take `>=` there (zero `>=` existed in the repo; the
+    `> constant:` form of the AIFC core parses). The trigger parser then desynced through the
+    rest of the file (`Invalid trigger set_country_flag`, and an error 130 lines later in the
+    retire effect). Fixed in the follow-up commit: K-1 computed into a temp and compared with
+    `>`; the retire effect's `clear_variable` rewritten as `set_variable = 0` (harmless either
+    way). No checker sees a parser error - only a boot does; lesson recorded.
 - Verification — owner console, Change 11. (a) Post-mission, pre-T-34 SOV save (`a100b67c`
   1939.x): `event wa_abg.1 SOV` reads `pont-15009=1 bridge-done=0` for the first two pulses then
   `stable-15010=1 bridge-done=1 conv-started=0 light-role-open=0`; `imgui show ai_templates`:

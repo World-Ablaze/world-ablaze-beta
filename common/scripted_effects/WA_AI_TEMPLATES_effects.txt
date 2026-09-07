@@ -1406,8 +1406,11 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 			limit = { NOT = { has_country_flag = WA_AI_TEMPLATES_ls_bridge_done } }
 			set_temp_variable = { _template_value = 15009 }
 			add_to_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 1 }
+			# `>` against K-1: the parser rejects `>=` in check_variable (boot log 2026-09-07).
+			set_temp_variable = { _ls_kmax = constant:wa_ai_production.army_composition.light_support_phase_pulses }
+			subtract_from_temp_variable = { _ls_kmax = 1 }
 			if = {
-				limit = { check_variable = { WA_AI_TEMPLATES_ls_phase_pulses >= constant:wa_ai_production.army_composition.light_support_phase_pulses } }
+				limit = { check_variable = { WA_AI_TEMPLATES_ls_phase_pulses > _ls_kmax } }
 				set_country_flag = WA_AI_TEMPLATES_ls_bridge_done
 				set_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 0 }
 			}
@@ -1552,7 +1555,7 @@ WA_AI_TEMPLATES_retire_light_support_park = {
 	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_settled
 	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy
 	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
-	clear_variable = WA_AI_TEMPLATES_ls_phase_pulses
+	set_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 0 }
 	if = { limit = { has_template = "Tankovaya brigada" } delete_unit_template_and_units = { division_template = "Tankovaya brigada" disband = yes } }
 	if = { limit = { has_template = "Mekhanizirovaniy Korpus" } delete_unit_template_and_units = { division_template = "Mekhanizirovaniy Korpus" disband = yes } }
 	if = { limit = { has_template = "Light Support Tank template A" } delete_unit_template_and_units = { division_template = "Light Support Tank template A" disband = yes } }
