@@ -103,13 +103,24 @@ WA_TEST_ABG_report = {
 		set_temp_variable = { _abt_lssourceactive = 1 }
 	}
 	set_temp_variable = { _abt_lssourceconvert = 0 }
-	if = {
-		limit = {
-			has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15006 }
-			NOT = { has_active_mission = SOV_the_greatest_tank_army }
-		}
-		set_temp_variable = { _abt_lssourceconvert = 1 }
-	}
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15009 } } set_temp_variable = { _abt_lssourceconvert = 1 } }
+	set_temp_variable = { _abt_lsstable = 0 }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15010 } } set_temp_variable = { _abt_lsstable = 1 } }
+	# [light-support-conversion] Phase memory of the temporary corps, re-typed from the flags and
+	# the counter the calculator writes: MISSION -> PONT (K pulses) -> STABLE -> CONVERT-1 (K) -> CONVERT-2.
+	set_temp_variable = { _abt_lsk = constant:wa_ai_production.army_composition.light_support_phase_pulses }
+	set_temp_variable = { _abt_lspulses = 0 }
+	if = { limit = { has_variable = WA_AI_TEMPLATES_ls_phase_pulses } set_temp_variable = { _abt_lspulses = WA_AI_TEMPLATES_ls_phase_pulses } }
+	set_temp_variable = { _abt_lsbridge = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_ls_bridge_done } set_temp_variable = { _abt_lsbridge = 1 } }
+	set_temp_variable = { _abt_lscstart = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_started } set_temp_variable = { _abt_lscstart = 1 } }
+	set_temp_variable = { _abt_lscsettled = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_settled } set_temp_variable = { _abt_lscsettled = 1 } }
+	set_temp_variable = { _abt_lscheavy = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy } set_temp_variable = { _abt_lscheavy = 1 } }
+	set_temp_variable = { _abt_lscmec = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_mec } set_temp_variable = { _abt_lscmec = 1 } }
 
 	# Light-support run state - the two ends of the finite run, printed even when it is shut.
 	set_temp_variable = { _abt_lschassis = 0 }
@@ -156,12 +167,19 @@ WA_TEST_ABG_report = {
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15003 } } set_temp_variable = { _abt_lsconvv = 15003 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15004 } } set_temp_variable = { _abt_lsconvv = 15004 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15005 } } set_temp_variable = { _abt_lsconvv = 15005 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15011 } } set_temp_variable = { _abt_lsconvv = 15011 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15012 } } set_temp_variable = { _abt_lsconvv = 15012 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15013 } } set_temp_variable = { _abt_lsconvv = 15013 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15014 } } set_temp_variable = { _abt_lsconvv = 15014 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15015 } } set_temp_variable = { _abt_lsconvv = 15015 } }
+	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15016 } } set_temp_variable = { _abt_lsconvv = 15016 } }
 
 	log = "  tmpl  : light=[?_abt_tl|.0]  light-support=[?_abt_tls|.0]  medium=[?_abt_tm|.0]  light-to-medium-switch=[?_abt_tsw|.0]  heavy=[?_abt_th|.0]  modern=[?_abt_tmo|.0]"
 	log = "  lsrun : has-support-chassis=[?_abt_lschassis|.0]  owns-light-role=[?_abt_lsowns|.0]  fielded=[?_abt_lsfield|.0](cap [?_abt_lscap|.0], reached=[?_abt_lscapped|.0])  before-1942=[?_abt_lsdate|.0]"
-	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0](cap [?_abt_ltcap|.0], reached=[?_abt_ltcapped|.0])  conv-window=[?_abt_lsconv|.0]  conv-value=[?_abt_lsconvv|.0]  majority-LS=[?_abt_lsmaj|.0]  containing-LS=[?_abt_lscont|.0]  retired=[?_abt_lsretired|.0]  (latched drives the enables; conv-window=1 = park converting to medium, and then conv-value must be 15002-15008, never 15006; window=0 with containing-LS=1 after the mission = the defect)"
+	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0](cap [?_abt_ltcap|.0], reached=[?_abt_ltcapped|.0])  conv-window=[?_abt_lsconv|.0]  conv-value=[?_abt_lsconvv|.0]  majority-LS=[?_abt_lsmaj|.0]  containing-LS=[?_abt_lscont|.0]  retired=[?_abt_lsretired|.0]  (latched drives the enables; conv-window=1 = park converting, and then conv-value must be a rung or FINAL value 15002-15005 / 15007-15008 / 15011-15016, never 15006 / 15009 / 15010; window=0 with containing-LS=1 after the mission and conv-started=0 = the defect)"
 	log = "  lsline: chassis-line-ON=[?_abt_lsline|.0]  chassis-line-OFF=[?_abt_lsoff|.0]  (exactly one must be 1 once the chassis is unlocked; both 0 = the country has no support chassis)"
-	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  sov-temporary-15006=[?_abt_lstemp|.0]  sov-tank-mission-active=[?_abt_lsmission|.0]  temporary-source-active=[?_abt_lssourceactive|.0]  temporary-source-convert=[?_abt_lssourceconvert|.0]  (temporary=1 + mission=1 requires active=1, convert=0)"
+	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  sov-mission-15006=[?_abt_lstemp|.0]  sov-tank-mission-active=[?_abt_lsmission|.0]  temporary-source-active=[?_abt_lssourceactive|.0]  pont-15009=[?_abt_lssourceconvert|.0]  stable-15010=[?_abt_lsstable|.0]  (mission=1 requires 15006; mission=0 + bridge-done=0 requires 15009; bridge-done=1 + conv-started=0 requires 15010)"
+	log = "  lsphase: K=[?_abt_lsk|.0]  pulses=[?_abt_lspulses|.0]  bridge-done=[?_abt_lsbridge|.0]  conv-started=[?_abt_lscstart|.0]  conv-settled=[?_abt_lscsettled|.0]  conv-heavy=[?_abt_lscheavy|.0]  conv-mec=[?_abt_lscmec|.0]  (conv-started=1 + settled=0 requires containing-LS=1 and conv-value 15007 / 15008 with mec=1, or 15013 / 15014 with heavy=1; settled=1 requires containing-LS=0 and 15011 / 15012, or 15015 / 15016 with heavy=1; pulses counts PONT only and never exceeds K)"
 
 	############################################################
 	# B1b. [armor-class-handoff] The light-to-medium HANDOFF, re-typed from its own terms.

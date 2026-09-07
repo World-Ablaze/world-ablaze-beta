@@ -695,7 +695,18 @@ WA_AI_CONFIG_TEMPLATES_admits_medium_armor = {
 		has_tech = jap_medium_tank_chassis_4
 		has_tech = ger_medium_tank_chassis_2_4
 		has_tech = sov_medium_tank_chassis_3
-		WA_AI_CONFIG_switch_from_light_to_medium_armor = yes
+		# [light-support-conversion] The Soviet Union admits medium on its T-34 (the accelerator
+		# above) or at the global-war bound, never on the era boundary alone: that boundary also
+		# opens on its KV-1, which must open the heavy class and not a T-28 medium role. The tag,
+		# not an archetype: the tech ids are its own, like every other row of this list.
+		AND = {
+			NOT = { original_tag = SOV }
+			WA_AI_CONFIG_switch_from_light_to_medium_armor = yes
+		}
+		AND = {
+			original_tag = SOV
+			WA_AI_CONFIG_after_global_war_begins = yes
+		}
 	}
 }
 
@@ -704,17 +715,28 @@ WA_AI_CONFIG_TEMPLATES_admits_medium_armor = {
 # (which closes light) and, as its fallback term, by WA_AI_CONFIG_TEMPLATES_admits_medium_armor
 # (which opens medium), so the two sides of the handoff cannot drift apart. Do not add a second
 # light-era or medium-era date anywhere: that is what opened the 1940 gap.
+# [light-support-conversion] The Soviet light era ends with its own tank generation, not with the
+# calendar: the T-34 (medium) or the KV-1 (heavy) closes it, and the global-war bound is the
+# no-gap fallback (the same day the AI park is retired, so for the AI it only closes the role).
+# The generic date must exclude the tag, or the tech terms are unreachable.
 WA_AI_CONFIG_switch_from_light_to_medium_armor = {
 	OR = {
 		AND = {
 			original_tag = SOV
-			date > 1941.1.1
+			OR = {
+				has_tech = sov_medium_tank_chassis_3
+				has_tech = sov_heavy_tank_chassis_2
+				WA_AI_CONFIG_after_global_war_begins = yes
+			}
 		}
 		AND = {
 			original_tag = ENG
 			date > 1939.1.1
 		}
-		date > 1940.1.1
+		AND = {
+			NOT = { original_tag = SOV }
+			date > 1940.1.1
+		}
 	}
 }
 

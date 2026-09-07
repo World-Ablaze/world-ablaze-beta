@@ -333,7 +333,12 @@ WA_AI_TEMPLATES_calculate_all_templates = {
 		WA_AI_TEMPLATES_calculate_motorized_template = yes
 		WA_AI_TEMPLATES_calculate_mountaineer_template = yes
 		WA_AI_TEMPLATES_calculate_mechanized_template = yes
-		WA_AI_TEMPLATES_calculate_light_support_armor_template = yes
+		# [light-support-conversion] The park country already ran it above: a second call per pulse
+		# would count two phase pulses a month.
+		if = {
+			limit = { NOT = { WA_AI_CONFIG_pursues_historical_tank_park = yes } }
+			WA_AI_TEMPLATES_calculate_light_support_armor_template = yes
+		}
 		# [armor-class-handoff] medium BEFORE light: the light calculator's MIS redirect reads
 		# the WA_MEDIUM_ARMOR_TEMPLATE flag this same pass writes.
 		WA_AI_TEMPLATES_calculate_medium_armor_template = yes
@@ -1344,7 +1349,7 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 	set_temp_variable = { _template_type_code = 14 }
 	set_temp_variable = { _template_value = 0 }
 	# [historical-tank-park] Latch the exact 1936 Soviet corps target while its finite park is
-	# active. The same value remains after completion so its replace_with can take it to 30_MOT_MIX.
+	# active; the latch is the memory that this country ran the park.
 	if = {
 		limit = {
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
@@ -1352,16 +1357,132 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 		}
 		set_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
 	}
-	# [light-support-conversion] 15006 yields to the conversion window: emitted here it is non-zero
-	# before the else_if below, and every branch under it needs 0 - without this term the
-	# temporary park can never reach a medium rung.
+	# [light-support-conversion] The temporary corps walks FIVE phases. A replace_with bridge is a
+	# one-shot with no memory: once the template it matched is gone it re-selects itself by
+	# priority and walks the moved divisions back, so every bridge here has an EXIT.
+	#   MISSION   15006  corps target alone, while the mission counts the park
+	#   PONT      15009  44w corps -> 30w MIX bridge (+ the brigade STARTER_MIX); exit =
+	#                    light_support_phase_pulses pulses (the 44w corps shape has no trigger)
+	#   STABLE    15010  MIX alone, until the T-34 / KV-1 opens the destination class
+	#   CONVERT-1 15007/15008 (medium MOT/MEC), 15013/15014 (heavy): rung -> FINAL; exit = no
+	#                    template contains a support battalion any more (the rung's own match
+	#                    dies with that template, and that is the moment it would pull back)
+	#   CONVERT-2 15011/15012 (medium), 15015/15016 (heavy): FINAL alone, until the park retires
+	# CONVERT is sticky (flag) so an emptied park can never re-arm a light target under the
+	# divisions sitting on the FINAL. Destination class AND its MOT/MEC form are latched at window
+	# entry: a live read would flip the sole FINAL's shape mid-conversion. Runs first: every
+	# generic branch below needs _template_value = 0. Pulse = one call of this effect, monthly for
+	# the park country (WA_AI_TEMPLATES_calculate_all_templates calls it once; the startup and
+	# retire calls land in MISSION / after the latch is cleared; a WA_TEST_templates run adds one).
 	if = {
 		limit = {
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
 			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
-			NOT = { WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes }
 		}
-		set_temp_variable = { _template_value = 15006 }
+		# STABLE is the default; the branches below override it.
+		set_temp_variable = { _template_value = 15010 }
+		# Migration: a save already on a conversion rung predates the phases - it bridged long ago.
+		if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_TEMPLATES_ls_bridge_done }
+				OR = {
+					has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15007 }
+					has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15008 }
+				}
+			}
+			set_country_flag = WA_AI_TEMPLATES_ls_bridge_done
+			set_country_flag = WA_AI_TEMPLATES_ls_conversion_started
+			if = {
+				limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15008 } }
+				set_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
+			}
+		}
+		if = {
+			limit = { WA_AI_PRODUCTION_historical_tank_park_mission_is_active = yes }
+			set_temp_variable = { _template_value = 15006 }
+			set_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 0 }
+		}
+		else_if = {
+			limit = { NOT = { has_country_flag = WA_AI_TEMPLATES_ls_bridge_done } }
+			set_temp_variable = { _template_value = 15009 }
+			add_to_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 1 }
+			if = {
+				limit = { check_variable = { WA_AI_TEMPLATES_ls_phase_pulses >= constant:wa_ai_production.army_composition.light_support_phase_pulses } }
+				set_country_flag = WA_AI_TEMPLATES_ls_bridge_done
+				set_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 0 }
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					has_country_flag = WA_AI_TEMPLATES_ls_conversion_started
+					WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes
+				}
+			}
+			# The PONT counter is spent once the window opens; CONVERT exits on a trigger, not a count.
+			set_variable = { WA_AI_TEMPLATES_ls_phase_pulses = 0 }
+			if = {
+				limit = { NOT = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_started } }
+				set_country_flag = WA_AI_TEMPLATES_ls_conversion_started
+				# Heavy only while the medium class is still shut: the T-34 wins over the KV-1.
+				if = {
+					limit = {
+						NOT = { WA_AI_TEMPLATES_use_medium_armor_templates = yes }
+						WA_AI_TEMPLATES_use_heavy_armor_templates = yes
+					}
+					set_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy
+				}
+				# MOT vs MEC follows the mechanized branch the medium and heavy calculators use.
+				if = {
+					limit = { WA_AI_TEMPLATES_use_mechanized_templates = yes }
+					set_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
+				}
+			}
+			if = {
+				limit = {
+					NOT = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_settled }
+					NOT = { has_template_containing_unit = light_support_armor_battalion_line }
+				}
+				set_country_flag = WA_AI_TEMPLATES_ls_conversion_settled
+			}
+			if = {
+				limit = { NOT = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_settled } }
+				set_temp_variable = { _template_value = 15007 }
+				if = {
+					limit = {
+						has_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy
+						has_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
+					}
+					set_temp_variable = { _template_value = 15014 }
+				}
+				else_if = {
+					limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy }
+					set_temp_variable = { _template_value = 15013 }
+				}
+				else_if = {
+					limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_mec }
+					set_temp_variable = { _template_value = 15008 }
+				}
+			}
+			else = {
+				set_temp_variable = { _template_value = 15011 }
+				if = {
+					limit = {
+						has_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy
+						has_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
+					}
+					set_temp_variable = { _template_value = 15016 }
+				}
+				else_if = {
+					limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy }
+					set_temp_variable = { _template_value = 15015 }
+				}
+				else_if = {
+					limit = { has_country_flag = WA_AI_TEMPLATES_ls_conversion_mec }
+					set_temp_variable = { _template_value = 15012 }
+				}
+			}
+		}
 	}
 	if = {
 		limit = {
@@ -1388,31 +1509,17 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 			set_temp_variable = { _template_value = 15001 }
 		}
 	}
-	# [historical-tank-park] Conversion rungs: run over, park still fielded -> point the role at a
-	# transition rung whose replace_with is the medium ENTRY final. MOT vs MEC follows the same
-	# mechanized branch the medium calculator uses (6100 vs 6101), pure vs MIX follows the latch.
+	# [historical-tank-park] Conversion rungs of the generic park (pure / MIX latch): run over, park
+	# still fielded -> a transition rung whose replace_with is the same-group FINAL. MOT vs MEC
+	# follows the mechanized branch the medium calculator uses (6100 vs 6101), pure vs MIX the latch.
+	# The temporary corps never reaches this branch: its phases above always write a value.
 	else_if = {
 		limit = {
 			check_variable = { _template_value = 0 }
 			WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor = yes
 		}
 		set_temp_variable = { _template_value = 15002 }
-		# [light-support-conversion] The temporary (15006) park converts through its own rungs,
-		# whose target is the 1936 corps shape it was built toward - the MIX rungs target 7/3/5
-		# and would not match it at 0.8. Tested BEFORE the MIX latch: both latches can coexist
-		# when a pulse precedes the mission, and the temporary corps must win that pulse.
 		if = {
-			limit = {
-				has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
-				WA_AI_TEMPLATES_use_mechanized_templates = yes
-			}
-			set_temp_variable = { _template_value = 15008 }
-		}
-		else_if = {
-			limit = { has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched }
-			set_temp_variable = { _template_value = 15007 }
-		}
-		else_if = {
 			limit = {
 				has_country_flag = WA_AI_TEMPLATES_light_support_mixed
 				WA_AI_TEMPLATES_use_mechanized_templates = yes
@@ -1440,6 +1547,12 @@ WA_AI_TEMPLATES_calculate_light_support_armor_template = {
 WA_AI_TEMPLATES_retire_light_support_park = {
 	set_country_flag = WA_AI_TEMPLATES_light_support_park_retired
 	clr_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+	clr_country_flag = WA_AI_TEMPLATES_ls_bridge_done
+	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_started
+	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_settled
+	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_heavy
+	clr_country_flag = WA_AI_TEMPLATES_ls_conversion_mec
+	clear_variable = WA_AI_TEMPLATES_ls_phase_pulses
 	if = { limit = { has_template = "Tankovaya brigada" } delete_unit_template_and_units = { division_template = "Tankovaya brigada" disband = yes } }
 	if = { limit = { has_template = "Mekhanizirovaniy Korpus" } delete_unit_template_and_units = { division_template = "Mekhanizirovaniy Korpus" disband = yes } }
 	if = { limit = { has_template = "Light Support Tank template A" } delete_unit_template_and_units = { division_template = "Light Support Tank template A" disband = yes } }

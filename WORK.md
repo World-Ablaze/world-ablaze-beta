@@ -583,7 +583,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   own subject: `rail-admission-churn` (PARKED heading for the WIP limit) — stale validation runs
   after admission and cancels paid segments; absorbs `east-front-rail-head`.
 
-### coal-prospect-loop — SHIPPED-UNTESTED (2026-09-04)
+### coal-prospect-loop — PARKED (2026-09-07)
+- Parked 2026-09-07 by the agent, not by an owner decision, to admit the owner's
+  `light-support-conversion` order under the WIP limit — move it back to OPEN in one line if that
+  is the wrong pick. State at parking: SHIPPED-UNTESTED since 2026-09-04, owner console harness
+  run owed; nothing else changes.
 - Scope: owner report 2026-09-04 (National-Projects tooltip: GER running 11 "Expand X Coal Basin"
   at once, 55 civs). Intended behaviour, two levers under one slug: (A) a coal state is prospected
   at most twice (excavation4 tier, then excavation5 tier) and never again; (B) a supplier prospects
@@ -1717,11 +1721,131 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### light-support-conversion — PARKED (2026-09-04)
+### light-support-conversion — SHIPPED-UNTESTED (2026-09-07)
+- Unparked 2026-09-07 on the owner order below; slot freed by parking `coal-prospect-loop`.
+- **Change 11 (owner order 2026-09-07 "vas-y, implémente dans l'ordre C, B, A+D, D bis") — every
+  bridge of the temporary corps carries its own exit; medium and heavy open on the T-34 / KV-1.**
+  Owner intention (same day): mission over → the 44w corps goes to the 30w MIX and STAYS there;
+  medium opens when `sov_medium_tank_chassis_3` (T-34) is researched, heavy when
+  `sov_heavy_tank_chassis_2` (KV-1) is; the 30w park converts directly into whichever class is
+  open. Not covered, owner decision owed: the light budget still closes at the mission's end
+  (`WA_AI_PRODUCTION_build_army_light_armor`), so the 30w park is kept and converted, never renewed.
+  - Symptom, MEASURED (campaign `a100b67c`, BHU observer, 132 monthly saves 1936.2-1947.1,
+    unbranched, build of 2026-09-06 evening; full timeline in scratchpad
+    `a100b67c_SOV_templates_timeline.md`): mission completed 1938.11 (1156 days early). Then the
+    whole park (37 divisions, pinned 1939.06-1941.10, armour budget 0/0/0/0 for 14 months) walked
+    6/3/4 → 7/3/4 → 8/3/4 → 9/3/4 as ONE pool (1939.12, 1940.01, 1940.02) — the 7/3/5 MIX was
+    never fielded in 132 saves; flag 15007 at 1940.2 on a T-28 medium role (T-34 researched
+    1940.6.27, KV-1 1940.6.23); 31 divisions on the 9 med/6 mot FINAL by 1941.02, then 18 of them
+    walked back onto light shapes 1941.05-1941.08 (tid 2438 = 3 LS/6 mot/2 art, tid 2488 = 4 LS/
+    5 L/5 mot) before landing on the medium role's own template 1941.08; 18 OOB brigades went to
+    "Motorized Infantry template A" in 1939.01; `sov_armor.981` fired 1942.1.4 on an
+    already-medium park; 12 707 support chassis byte-identical in stock 1942.6-1947.1.
+  - Cause (script lines): (C) `WA_AI_CONFIG_switch_from_light_to_medium_armor` — the SOV
+    `date > 1941.1.1` branch sat in an `OR` with the generic `date > 1940.1.1`, unreachable (blame
+    `1848f569a40`), and `admits_medium_armor` inherited it, so medium opened on the calendar with
+    the T-28 instead of on the T-34; (A) `_44_TEMPORARY_CONVERT` (base 15) and `30_MOT_LIGHT_MIX`
+    (base 10) both enabled under 15006 + mission inactive, forever — a `replace_with` bridge is a
+    one-shot with no memory, re-selected by priority every 7-day pass once the moved divisions no
+    longer match it at 0.9, and the designer walks them back toward it; (B) STARTER / STARTER_MIX
+    enabled on 15000 / 15001 only, so the brigades had no bridge under 15006; (D) the rung
+    (15007/15008) is the same one-shot one level down: once the last LS template died its chain
+    stopped firing, the rung stayed selected and pulled the FINAL's divisions back.
+  - Shipped (commit on this subject, 2026-09-07):
+    - `WA_AI_CONFIG.txt`: the SOV branch of the switch = T-34 or KV-1 or
+      `WA_AI_CONFIG_after_global_war_begins` (the no-gap fallback, which is also the retire date
+      — for the AI it only closes the role); the generic date branch excludes SOV;
+      `admits_medium_armor`'s fallback excludes SOV, SOV admits on the T-34 accelerator or the
+      global-war bound (KV-1 alone must not open a T-28 medium role).
+      `WA_AI_PRODUCTION_army_composition.txt`: `build_army_medium_armor` no longer opens the
+      medium budget slot on the switch for the park country (KV-1 before T-34 funded a slot
+      with no template).
+    - `WA_AI_TEMPLATES_effects.txt`, type-14 calculator: a five-phase machine for the temporary
+      corps — MISSION 15006 (mission active) → PONT 15009 (CONVERT + MIX + STARTER_MIX enabled,
+      `light_support_phase_pulses` = 2 monthly pulses, counter `WA_AI_TEMPLATES_ls_phase_pulses`,
+      exit flag `ls_bridge_done`) → STABLE 15010 (MIX alone, until the window) → CONVERT-1
+      15007/15008 medium or 15013/15014 heavy (rung + FINAL; class and MOT/MEC latched at entry
+      in `ls_conversion_heavy` / `ls_conversion_mec`, sticky `ls_conversion_started`; exit = no
+      template contains a support battalion any more, flag `ls_conversion_settled`) → CONVERT-2
+      15011/15012/15015/15016 (FINAL alone, until the retire event clears everything). Migration:
+      a save reloading on 15007/15008 sets bridge-done + started (+ mec) at its first pulse. The
+      second monthly call of the calculator for the park country is removed
+      (`WA_AI_TEMPLATES_calculate_all_templates`); the generic (pure/MIX) path is unchanged.
+    - `WA_AI_TEMPLATES_triggers.txt`: the window opens on medium OR heavy.
+      `wa_ai_production.txt`: `army_composition.light_support_phase_pulses = 2`.
+    - `WA_AI_TEMPLATES_armored_light_support.txt`: STARTER_MIX enable + 15009; CONVERT enable =
+      15009 only; MIX enable = 15001 / 15009 / 15010; rungs 15007/15008 retargeted 8/5/5 → 7/3/5
+      with the MIX's RS 4+4 and 9 supports (D bis); two heavy rungs 15013/15014 (same target) →
+      two heavy FINALs mirroring the heavy role's 7100 / 7105 shapes; MOT_FINAL + 15011,
+      MEC_FINAL + 15012.
+    - `WA_TEST_armor_budget.txt`: `flags` line re-typed (mission / pont / stable), new `lsphase`
+      line (K, pulses, bridge-done, conv-started/settled/heavy/mec), conv-value knows 15011-15016.
+    - `tools/check_templates.py`: the VALUE-NO-TEMPLATE join read `has_country_flag` only as a
+      direct child of `enable`; every value that lived only inside an `OR` (all FINALs, the MIX's
+      second and third values) was invisible to it. It now descends OR / AND (not NOT); fixture
+      entry 1001 moved under an OR so the clean fixture proves it; `--selftest` OK.
+  - t0/t1/t2 at the real cadences (monthly calculator, 7-day engine selection, monthly save;
+    division moves are equipment-gated and take months — the phases bound the ARROW, and rely on
+    the sole target keeping the divisions converging afterwards, see ASSUMED (i)):
+    | t | flag | enabled | expected |
+    | --- | --- | --- | --- |
+    | t0 mission end (`a100b67c` 1938.11→12) | 15009 | STARTER_MIX, CONVERT, MIX | corps template tid 700 = 12/6/4 byte-identical to the CONVERT target (MEASURED) → match 1.0 ≥ 0.9, arrow on the MIX ≤ 7 days (the owner's screenshot of 2026-09-07 saw exactly this fire); brigades via STARTER_MIX (base 15, declared first, selected while "Tankovaya brigada" exists) |
+    | t0 + 2 pulses | 15010 | MIX | arrow stays on the MIX; corps and brigade residuals keep moving (stock 12 977 LS + 5 669 L at 1938.11, MEASURED) |
+    | t_T-34 (1940.7 here; STABLE lasted 19 months) | 15007/15008 | rung 7/3/5 + FINAL | park on 7/3/5 → match ~1.0 ≥ 0.8 → arrow on the FINAL ≤ 7 days; divisions move as medium chassis arrive (113 in stock 1940.6 → 1 475 at 1941.1, MEASURED: months) |
+    | while any template contains a support battalion | same | same | the chain re-fires every pass against that template (MEASURED precedent: `6f52600d` 62 → 92, `a100b67c` 3 → 31 with the LS template alive) — no pull-back possible |
+    | first pulse with no LS template | 15011/15012 | FINAL | arrow on the FINAL, nothing left to pull; sticky until the retire |
+    | 1942.1.4 | absent | none | `sov_armor.981`: nothing to delete, role closed |
+    Bound: the pull-back window is at most ONE monthly pulse between the last LS template dying
+    and CONVERT-2 (on `a100b67c` the pull-back needed 2 months to show, 1941.03 → 1941.05).
+  - Change 9 replaced (rule g). Its objection: "the rung target is a fixed literal; the fielded
+    shape is emergent and changes per campaign, which is the coupling Change 8 was built to
+    remove." Mine covers it because STABLE makes the fielded shape non-emergent: the MIX is the
+    role's SOLE target from the end of PONT to the window (19 months on `a100b67c`), so the park
+    converges on 7/3/5 and the rung target equals it by construction; when STABLE is short (T-34
+    before the mission's end) the rung faces a 12/6/4 park and the symmetric pair scored 0.85 on
+    the owner's 1943.1 read (12/6/4 target vs 6/3/6 park) ≥ 0.8.
+  - ASSUMED, stated: (i) in STABLE and CONVERT-2 the divisions not yet moved keep converging on
+    the sole target by ordinary field upgrade with no chain armed — DERIVED from `a100b67c`
+    1939.12-1940.02 (the pool moved monthly while the CONVERT chain could not fire: no 12/6/4
+    template existed after 1939.11) and 1941.05 (Med G → tid 2438 with the rung selected and its
+    chain dead); if false, PONT residuals freeze on 12/6/4 until CONVERT-1, whose rung scores
+    ~0.85 against them ≥ 0.8. (ii) The heavy FINALs mirror 7100/7105 so the heavy role captures
+    them; the medium FINAL (9 M/6 mec) vs SOV's medium target 6111 (7 M/3 SPG/5 mec) residual —
+    a T-34 + KV-1 SOV may still land its converted divisions on a heavy template — is unchanged
+    and owner-accepted under Change 8. (iii) `WA_TEST_templates.txt:155` calls the calculator:
+    one owner harness run = one extra PONT pulse.
+  - Reviews 2026-09-07. Lessons **CONFLICT** (5 required): (1) "show the PONT bridge can fire" —
+    answered by the t0 row (tid 700 = 12/6/4, match 1.0); (2) MOT/MEC latched at window entry —
+    applied; (3) K bounds the arrow, not the divisions — CONVERT-1's exit is now the containing
+    test (the rung is armed exactly as long as its source template exists), K applies to PONT
+    alone and ASSUMED (i) carries the residuals; (4) migration for saves on 15007/15008 —
+    applied; (5) rule (g) sentence — above. Architecture **CONCERNS**: (1) tag vs archetype in
+    CONFIG — comment reworded, the tag is the intent (the tech ids are its own); (2) base-15 tie
+    STARTER_MIX / CONVERT under 15009 — sentence added at the CONVERT block, the arrow lands on
+    the MIX through either chain; (3) subject re-enters SHIPPED-UNTESTED — done; (4)
+    `check_ai_layers` NUMBER-LEAK 348 > baseline 347 is pre-existing at HEAD (MEASURED: recount
+    of the HEAD tree via `git show` = 348, the touched files count identically) — not bundled,
+    owner to bump or fix on its own commit.
+  - Checkers: `check_templates` 0 errors outside the 4 pre-existing HQ slot errors (`--selftest`
+    OK); `check_constants` exit 0; `check_worklist` exit 0; `check_ai_layers` exit 1 on the
+    pre-existing NUMBER-LEAK above. BOM-free, braces balanced on every touched file.
+- Verification — owner console, Change 11. (a) Post-mission, pre-T-34 SOV save (`a100b67c`
+  1939.x): `event wa_abg.1 SOV` reads `pont-15009=1 bridge-done=0` for the first two pulses then
+  `stable-15010=1 bridge-done=1 conv-started=0 light-role-open=0`; `imgui show ai_templates`:
+  arrow on `30_MOT_LIGHT_MIX`, still there one month later. (b) Post-T-34 save (`a100b67c`
+  1940.7+): `conv-started=1 conv-settled=0 containing-LS=1 conv-value=15007|15008`, `handoff`
+  line `era-boundary=1 admits-medium=1`; arrow on `_44_TEMPORARY_TRANSITION_*` then on the FINAL
+  within 7 days. NOTE: `a100b67c` saves from 1940.2 on reload with flag 15007/15008 → the
+  migration path fires, expect `bridge-done=1 conv-started=1` on the first pulse. (c) Control on
+  a 1937 save: `sov-mission-15006=1 pont-15009=0 stable-15010=0 bridge-done=0`.
+- Verification — campaign probe, Change 11 (fresh campaign): no SOV division on an 8/3/4 or
+  9/3/4 shape after the mission; ≥ 90 % of the park on 7/3/5 within 12 months of the mission;
+  `WA_MEDIUM_ARMOR_TEMPLATE` first set the month after `sov_medium_tank_chassis_3` completes,
+  never before; zero light-shaped templates created after the first FINAL division; the
+  light-support flag never returns to a lower phase value.
 - Parked 2026-09-04 by the agent, not by an owner decision, to admit the owner's `posture-v3`
-  order under the WIP limit — move it back to OPEN in one line if that is the wrong pick. State at
-  parking: SHIPPED-UNTESTED since 2026-09-02 (Change 7 committed, WORK.md updated 2026-09-04 by
-  another session), owner console run owed; nothing else changes.
+  order under the WIP limit. State at that parking: SHIPPED-UNTESTED since 2026-09-02 (Change 7
+  committed, WORK.md updated 2026-09-04 by another session), owner console run owed.
 - **Change 10 — NOT SHIPPED. The proposed `upgrade_prio` retarget of the two SOV rungs is INERT;
   the arrow on the FINAL is the `replace_with` chain working, not a priority loss.** Owner brief
   2026-09-04: raise `upgrade_prio` of `..._44_TEMPORARY_TRANSITION_MOT` / `_MEC` above the FINALs'
