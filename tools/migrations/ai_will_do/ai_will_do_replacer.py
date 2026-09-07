@@ -264,7 +264,7 @@ def should_use_factor_1(tech_name: str, trigger: str) -> bool:
     return False
 
 
-def generate_ai_will_do(trigger, date: int, factor: int = 5) -> str:
+def generate_ai_will_do(trigger, date: int, factor: int = 5, tech_name: str | None = None) -> str:
     """Generate the standardized ai_will_do block - delegates to new base module.
 
     Args:
@@ -310,7 +310,7 @@ def generate_ai_will_do(trigger, date: int, factor: int = 5) -> str:
 			}}
 		}}"""
 
-    return generate_ai_will_do_block(triggers, date, indent="		", factor=factor)
+    return generate_ai_will_do_block(triggers, date, indent="		", factor=factor, tech_name=tech_name)
 def generate_ai_will_do_old(trigger: str, date: int, factor: int = 5) -> str:
     """OLD VERSION - kept for reference but not used."""
     if trigger is None:
@@ -465,12 +465,12 @@ def process_file(file_path: Path, file_type: str, dry_run: bool = False) -> dict
 
         # Determine factor: 1 for mines and fire control, 5 for others
         factor = 1 if should_use_factor_1(tech_name, trigger) else 5
-        new_ai_will_do = generate_ai_will_do(trigger, start_year, factor)
+        new_ai_will_do = generate_ai_will_do(trigger, start_year, factor, tech_name=tech_name)
 
         # Only replace if the block actually changed
         old_block = content[block['start']:block['end']]
         if new_ai_will_do != old_block:
-            content = content[:block['start']] + new_ai_will_do + content[block['end']]
+            content = content[:block['start']] + new_ai_will_do + content[block['end']:]
             stats['replaced'] += 1
 
             if dry_run:

@@ -344,7 +344,8 @@ def get_reachable_archetypes(
     return triggers
 
 
-def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_indent: str) -> str:
+def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_indent: str,
+                           tech_name: Optional[str] = None) -> str:
     """Generate the date modifier with unused research slots logic.
     
     Args:
@@ -360,12 +361,20 @@ def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_in
     
     year = int(start_year)
     early_year = year - 1
-    
+    # [research-bonus-gate] a tech bonus lifts the date gate from start_year - 2; the engine's
+    # ahead-of-time weighting arbitrates instead of a hard factor 0 (see ai_replacer_base/generator.py)
+    bonus_line = (
+        f"{deep_indent}OR = {{\n"
+        f"{deep_indent}\tNOT = {{ has_tech_bonus = {{ technology = {tech_name} }} }}\n"
+        f"{deep_indent}\tdate < {year - 2}.1.1\n"
+        f"{deep_indent}}}\n"
+    ) if tech_name else ""
+
     return f'''
 
 {inner_indent}modifier = {{
 {deep_indent}factor = 0
-{deep_indent}OR = {{
+{bonus_line}{deep_indent}OR = {{
 {deep_indent}\tAND = {{
 {deep_indent}\t\tNOT = {{ has_country_flag = WA_AI_unused_research_slots }}
 {deep_indent}\t\tdate < {year}.1.1
@@ -378,7 +387,8 @@ def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_in
 {inner_indent}}}'''
 
 
-def generate_new_ai_will_do(triggers: set[str], base_indent: str, start_year: Optional[str] = None) -> str:
+def generate_new_ai_will_do(triggers: set[str], base_indent: str, start_year: Optional[str] = None,
+                            tech_name: Optional[str] = None) -> str:
     """
     Generate a new ai_will_do block using WA_AI_RESEARCH triggers.
     
@@ -413,7 +423,7 @@ def generate_new_ai_will_do(triggers: set[str], base_indent: str, start_year: Op
         not_block = f"{deep_indent}NOT = {{\n{or_indent}OR = {{\n" + "\n".join(trigger_lines) + f"\n{or_indent}}}\n{deep_indent}}}"
     
     # Build the date modifier if start_year is provided
-    date_modifier = generate_date_modifier(start_year, inner_indent, deep_indent)
+    date_modifier = generate_date_modifier(start_year, inner_indent, deep_indent, tech_name)
     
     return f'''{base_indent}ai_will_do = {{
 {inner_indent}factor = 1
@@ -536,7 +546,7 @@ def process_tech_file(filepath: Path, dry_run: bool = True) -> tuple[int, int, l
         start_year = extract_start_year(content, tech_start, tech_end)
         
         # Generate new ai_will_do block with all reachable triggers
-        new_block = generate_new_ai_will_do(reachable_triggers, base_indent, start_year)
+        new_block = generate_new_ai_will_do(reachable_triggers, base_indent, start_year, tech_name)
 
         # Only replace if the block actually changed
         if new_block != old_block:

@@ -602,7 +602,7 @@ class ArmorFileProcessor(BaseFileProcessor):
             # Generate new block
             triggers = sorted(resolved_triggers)
             generated_ai_will_do = generate_ai_will_do_block(
-                triggers, start_year, indent="\t\t"
+                triggers, start_year, indent="\t\t", tech_name=tech_name
             )
             new_block = f"\t\t{GENERATED_CODE_COMMENT}\n{generated_ai_will_do}"
 

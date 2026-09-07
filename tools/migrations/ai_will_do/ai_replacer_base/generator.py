@@ -12,10 +12,18 @@ def generate_ai_will_do_block(
     start_year: int,
     indent: str = "\t\t",
     factor: int = 1,
-    use_or: bool = True
+    use_or: bool = True,
+    tech_name: Optional[str] = None
 ) -> str:
     """
     Generate ai_will_do block with triggers.
+
+    [research-bonus-gate] When tech_name is given, the date gate is lifted from
+    `start_year - 2` while a tech bonus (focus/decision `add_tech_bonus`) covers the tech:
+    the engine's own ahead-of-time weighting (NDefines.NAI.RESEARCH_AHEAD_OF_TIME_FACTOR /
+    MAX_AHEAD_RESEARCH_PENALTY) then arbitrates instead of a hard `factor = 0`.
+    `has_tech_bonus` cannot tell an `ahead_reduction` bonus from a speed `bonus`; both lift
+    the gate by design, and the two-year floor bounds how early a speed-only bonus can pull.
 
     Single trigger format:
         ai_will_do = {
@@ -63,6 +71,8 @@ def generate_ai_will_do_block(
         indent: Base indentation string (default: 2 tabs for tech content)
         factor: Base factor value (default: 1)
         use_or: Use OR logic for multiple triggers (default: True)
+        tech_name: Technology key; when given, a `has_tech_bonus` exemption floored at
+                   start_year - 2 is added to the date gate (None keeps the legacy gate)
 
     Returns:
         Formatted ai_will_do block string
@@ -96,6 +106,11 @@ def generate_ai_will_do_block(
     lines.append("")
     lines.append(f"{indent}\tmodifier = {{")
     lines.append(f"{indent}\t\tfactor = 0")
+    if tech_name:
+        lines.append(f"{indent}\t\tOR = {{")
+        lines.append(f"{indent}\t\t\tNOT = {{ has_tech_bonus = {{ technology = {tech_name} }} }}")
+        lines.append(f"{indent}\t\t\tdate < {start_year - 2}.1.1")
+        lines.append(f"{indent}\t\t}}")
     lines.append(f"{indent}\t\tOR = {{")
     lines.append(f"{indent}\t\t\tAND = {{")
     lines.append(f"{indent}\t\t\t\tNOT = {{ has_country_flag = WA_AI_unused_research_slots }}")
