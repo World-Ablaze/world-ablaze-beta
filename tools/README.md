@@ -10,6 +10,7 @@ what it is expected to launch. Full rationale and the measurements behind the sp
 | **Log readers** | `tools/` (root) | After every owner boot / console harness run | `read_harness_log.py`, `triage_error_log.py` |
 | **Generators** | `tools/gen/` | When their source changes (map, corridors, medium ladder, faction theatres, landing calendar) | `run_generators.py` + `map_generators/` + `core/`, `gen_rail_corridors.py`, `gen_ai_medium_modern_mirror.py`, `gen_ai_faction_theaters.py`, `gen_ai_landing_reservations.py`, `gen_ai_research_allow_gates.py` (AI research blocklist → managed `allow` blocks in `common/technologies/`) |
 | **Evaluator** | `tools/equipment_evaluator/` | On demand (`python -m equipment_evaluator`, pytest inside) | Self-contained package, see its README |
+| **Campaign report** | `tools/campaign_report/` | On demand (`python -m tools.campaign_report build --campaign <id>`) | English offline HTML dashboard from save series plus `campaign_digest.md`, the agent-readable high-level view `wa-savegame-analysis` opens with; deterministic extraction and ignored cache/output. See its README. |
 | **Migrations** | `tools/migrations/` | Replayable pipelines, rarely replayed (`ai_will_do/` tech replacers + `ai_replacer_base/`; `prospecting/` decision replacer) | Dry-run first, always |
 | **Archive** | `tools/archive/` | Never — one-shot scripts already applied, kept for provenance, not maintained | `fix_tracking/` (Fix-NN → slug collapse, `fix_registry.json` read by `documentation/FIX_HISTORY.md`), `misc/`, `dlc_splitter/` |
 

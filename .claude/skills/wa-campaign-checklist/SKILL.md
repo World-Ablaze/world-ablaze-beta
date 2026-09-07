@@ -34,7 +34,11 @@ untested subjects).
 
 1. **Follow `wa-savegame-analysis` discipline.** All probes go through its `savegame.py`
    script, run inside subagents so bulky output never enters the main context. Batch probes
-   per country/save so one extraction subagent answers several items in one pass.
+   per country/save so one extraction subagent answers several items in one pass. Open with
+   the campaign digest (`python -m tools.campaign_report build --campaign <id>`, then read
+   `tools/campaign_report/output/campaign_digest.md`): it gives the WW2 arc, the wars and the
+   collapses at a glance and names the saves to probe — the FUNDAMENTAL items still need their
+   own probe lines, the digest only says where to point them.
 2. **Quote the probe line verbatim into the subagent prompt. Do not paraphrase it.** Every
    qualifier in a probe line was put there by a scoring session that got burned without it;
    the cost of dropping one is a well-formed, confidently-wrong number. The cautionary

@@ -3959,6 +3959,164 @@ power capitulates.
 
 ## PARKED
 
+### campaign-html-report — PARKED (2026-09-07)
+- Owner request: an English graphical campaign overview, seven majors and time filters,
+  deterministic extraction, maintainable generator in the repository, ignored cache.
+- Delivered: `tools/campaign_report/`, six-tab HTML, JSON/CSV export code, content-addressed
+  cache, branch checks, English measurement contracts. No gameplay changes in this subject.
+- MEASURED (`tools/campaign_report/output/campaign.json`): 132 observations of `a100b67c`,
+  1936.2–1947.1. HTML 8.35 MB; cached selection/extraction 21.79 s (before final writing).
+- Validation: 17 standard tests pass, one optional parity test skipped in the standard run;
+  three-date real-save parity passed separately. Six tabs and shared filters checked in-browser.
+- State 2026-09-07 (parked; the digest ask below was done in the same session without an OPEN slot, WIP limit reached): generator delivered; semantic validation of daily armor output, net
+  shortage and training/variant needs remains open. These values are null, not guessed.
+  Direct file opening was blocked by browser policy; CSV download confirmation, JSON
+  download and mobile layout still need browser validation. No OPEN slot consumed.
+- Closed when: remaining metric contracts are verified or their explicit limits accepted,
+  and direct offline opening plus CSV/JSON downloads are verified in a desktop browser.
+- MEASURED 2026-09-07 rerun (owner ask: does it work on the cache): cold build 431.66 s,
+  cache 0/132 because the dependency digest covers `common/units` and 15 tank-gun commits
+  landed after the first cache (by design); warm rebuild 6.57 s, cache 132/132, HTML 8.4 MB.
+  31 unit tests pass (1 optional skipped). Six tabs, quick ranges and end-date filter checked
+  over `http://localhost` (`.claude/launch.json` `campaign-report`, `python -m http.server`);
+  `file://` still blocked in the in-app browser, CSV/JSON clicks raise no error but the
+  sandbox shows no download - desktop-browser check still owed.
+- 2026-09-07 owner ask: an `only` button on every row of the country filter (hover-revealed,
+  keeps the panel open, selects that single tag). `web/app.js` `renderCountries` +
+  `web/style.css` `.only-tag`; HTML re-rendered from the cached JSON via `render`.
+- Verification: commands, evidence and limitations in
+  `documentation/CAMPAIGN_HTML_REPORT_PROPOSAL.md` and `tools/campaign_report/README.md`.
+- Owner ask 2026-09-07: make the report consultable by the savegame-analysis skill so an agent
+  gets the high-level view cheaply. Delivered as `tools/campaign_report/digest.py` — `build` now
+  also writes `campaign_digest.md` (MEASURED 428 lines / 30 KB for 132 saves x 7 majors; cache
+  still 132/132 after the change, `digest.py` excluded from the key) and a `digest` subcommand
+  re-cuts it from the JSON (`--tags`, `--every`). `wa-savegame-analysis` gained a "Start from the
+  campaign digest" section, `wa-campaign-checklist` step 1 points to it. The HTML stays the
+  human view (served via `.claude/launch.json` `campaign-report`).
+- Owner report 2026-09-07 (screenshot): the Resource dropdown listed non-resources (delivered,
+  destination, efficiency, fuel_*, lended_cic, origin, request, required_cic). MEASURED cause
+  `extract.py`: the ledger keys were the union of EVERY depth-1 block of the save's `resources`
+  section, while `savegame.py` reads only the five ledger blocks. Fixed to the ledger blocks +
+  `to_use`; regression test `test_resource_rows_come_only_from_ledger_blocks`; extractor change =
+  cache key change, full re-extraction: MEASURED 146.53 s with `--workers 4` (vs 431.66 s on the
+  default 2), dropdown then lists exactly the nine `common/resources` entries, HTML 7.8 MB.
+- Owner report 2026-09-07: changing the Resource select at the bottom of Industry reset the view
+  to the top. Cause `web/app.js` `render()` empties and rebuilds the whole tab, so the browser
+  clamps the scroll. Fix: `render()` restores `scrollY` when the tab is unchanged (covers scope,
+  armor filter and heatmap cells too) and scrolls to top on a tab change; MEASURED in-browser
+  2290 -> 2290 on select, -> 0 on tab switch.
+- Owner report 2026-09-07 (USA 1942.9, no positive resource): the Resources heatmap showed the
+  `to_use[2]` unmet-demand column, <= 0 by construction. Data MEASURED correct (`savegame.py
+  resources USA 1942.9_Sep.hoi4` = JSON: aluminium net 684 / deficit -680 / effective +4, coal
+  effective +5700). Fix `web/app.js`: heatmap and Overview pressure table now show the EFFECTIVE
+  balance (net + deficit, what `resource@X` reads), signed, negative = shortage; headings say so.
+- Owner report 2026-09-07 (Armor tab, empty charts): `Training requirement` and `Daily production`
+  were always empty because `training_need` / `production_per_day` are null for every family
+  (`extract.py:338-360`); `armor_production.py` and `armor_training.py` exist with tests but are
+  NOT imported by the extractor. Removed the two charts and the always-empty `Units/day` column
+  from `web/app.js`; the armor notice now names the three uncomputed metrics. Wiring the two
+  modules in is criterion (c) - an owner decision, not done here.
+- Owner report 2026-09-07 (SOV medium tank destroyers: 360 in stock, 0 factories, deployed
+  spiking 2/0/1/2/0): data MEASURED correct - `stock.py SOV 1945.12_Dec.hoi4 --foreign` holds
+  238 `tank_ger_medium_chassis_td_3_3` built by GER (Germany collapsed 1945.11; stock jumps 5 ->
+  312 that month), the family is 100 % captured/received and the deployed spikes are 1-2
+  vehicles in one division. Presentation fix in `web/app.js`: a notice names the foreign-built
+  share of the selected family when it is >= 50 %, and small integer counts get integer
+  gridlines (the 2.2 tick read as fake data).
+- Owner question 2026-09-07 (variant names vs raw keys): MEASURED in `1947.1_Jan.hoi4` the
+  equipment registry names only DESIGNED variants (`name="M36 Jackson"`, `version=1`,
+  `parent_id`); the base chassis entry of the same key has no `name` (`obsolete=yes`) and the
+  game shows its localised key. `extract.py:419` fell back to the key. Fix in `render.py`:
+  `equipment_names()` reads `localisation/replace/*_l_english.yml` for the definitions present
+  (presentation metadata in `english_report`, no cache impact); `web/app.js` `variantName()`
+  uses it, raw key kept beneath. Test `test_equipment_names_resolve_bare_registry_keys`.
+- Owner ask 2026-09-07: sortable columns on every data table. `web/app.js` `makeSortable(table)`
+  wired into `tablePanel` (page panels), `showTable` (chart Data dialog) and the sources table:
+  click = ascending, again = descending, third = original order; numeric when the primary cell
+  text parses (thousands separators, signs), alphabetical otherwise, missing values last; the
+  key is the cell's first non-`<small>` child so a snapshot delta or a raw variant key does not
+  pollute it; rows are moved not rebuilt (heatmap cell handlers survive). MEASURED in-browser on
+  Overview snapshot, Armor variants, Wars table and a Data dialog.
+- Owner ask 2026-09-07, three features. (1) Convoy war: MEASURED in `1942.9_Sep.hoi4` USA the
+  country `convoys={equipment=...}` pool (2209), telemetry `wa_tlm_nav_convoys` (1841),
+  `convoys_destroyed` (9) and the top-level `sunk_convoys_history` ledger (301 records, 24-month
+  window, per month/killer/owner); `country_reports/equipment_production` REJECTED as a
+  production counter (armor frozen at 73 over four saves while USA built tanks). Shipped: metrics
+  convoys_pool/free/in_use/convoy_kills, snapshot `convoy_losses` + `convoy_window`, Wars tab
+  section (lost-last-month chart, kills, pool, losses-by-attacker and kills-by-victim share
+  tables over the selected period, latest covering save wins per month), digest section.
+  (2) Economy fatigue: MEASURED `variables/economic_fatigue` (USA 14 at 1942.9); metric +
+  Country status chart + digest column. (3) Factory/dockyard output, consumer goods, efficiency
+  growth/cap: NOT in the save - only the WA dynamic-modifier inputs are serialised
+  (`dynamic_modifier` list, `usa_kaiser_dockyard_output=0.25`...), the engine total is not;
+  needs a WA_TLM probe writing `modifier:<name>` monthly (owner decision, separate subject).
+  Extractor change = full re-extraction (MEASURED 137.8 s, 4 workers). Two follow-ups in the same
+  session: `convoys_in_use` is unknown when the telemetry exceeds the pool (GER 1947: pool 0,
+  frozen telemetry 2582 read as -2582), and `web/app.js` builds its catalog from the UNION of its
+  hard-coded keys and the JSON catalog (new metrics rendered as raw ids before).
+- Owner batch 2026-09-07 (seven items): legend clicks toggle series (hidden set keyed by chart
+  title + series, the axis rescales on the visible lines, last line cannot be hidden); text
+  columns of the convoy share tables left-aligned (`tablePanel` `left` option); `convoys_free`
+  unknown when above the pool (GER 1945.12+: pool 0, telemetry frozen 2582 - no negative
+  convoys nor negative use); everything English at the source (METRICS, warnings, CLI, errors)
+  and the render-time translation layer deleted (`presentation()` replaces `english_report`);
+  `Negative stock balances` chart replaced by per-country `Stock versus recorded demand`
+  panels with shortfall = max(0, requests - stock) DERIVED (digest armor lines say the same);
+  helpers `section()` / `countryPanels()` / `armorMeta()` dedupe the tab code. No LLM anywhere:
+  stdlib Python + static HTML/JS, no network import (grep). Catalog change = re-extraction.
+- Owner question 2026-09-07 (gaps in `Factories assigned to armor`): MEASURED `1943.10_Oct.hoi4`
+  USA, 2 of 36 `military_lines` carry no `active_factories=` (queued lines: `queued_factories=26
+  requested_factories=26`, engine omits the field at default 0); the extractor read them as
+  unknown, which nulled the family sum and cut the curve. Fixed to 0 in the aggregate (raw line
+  kept as recorded); regression test added; re-extraction.
+- Owner batch 2026-09-07 (four items): cumulative convoy losses derived at build time in
+  `convoys.py` (stitched ledger, unknown past the first uncovered month; excluded from the
+  cache key, MEASURED cache 132/132) with a last-month/cumulative toggle in the Wars tab;
+  remaining factory-chart gaps NOT reproducible - MEASURED 0 null family counts for the 7
+  majors and 1 SVG segment per curve in-browser, the screenshot was the stale cached page;
+  `Factories requested versus assigned` per-country panel (MEASURED `requested_factories` vs
+  `active_factories`, 1308 of 4056 lines differ) - bombing/sabotage attribution impossible,
+  the save carries no per-building damage (scan of `states` in 1944.7: only named flags);
+  `Import JSON data` button: `boot(text)` is re-entrant, the file replaces the embedded data
+  for the session, schema/snapshots/campaign id validated, nothing uploaded.
+- Owner batch 2026-09-07 (three items). Theme: `theme_assets.py` turns
+  `gfx/loadingscreens/mainmenu_bg.dds` (1960x1440 DXT, MEASURED) into `web/theme_bg.jpg` (136 kB)
+  embedded behind the sidebar; aged-paper page, brass accents, serif headings; tokens keep their
+  names so no rule changed. Factories: MEASURED `military_lines` carries `damaged_factories`
+  (GER 1944.7: 3 of 32 lines) - third curve added, extractor reads queued + damaged fields
+  (re-extraction). Dedupe assessment: `extract.py` (534 lines) already imports 11 readers from
+  the skill scripts and re-implements a block lexer, the equipment registry (also in `stock.py`),
+  the convoy ledger (also `convoywar.py`) and the division/units walk (also `savegame.py army`);
+  the skill scripts (6.1k lines, 12 files) each carry their own streaming parser. A shared
+  `hoi4save` library is the right target but is a cross-cutting refactor of calibrated analysis
+  tools = owner decision, not done here (see the session summary for the phased plan).
+- Owner report 2026-09-07 (manpower never falls): MEASURED `manpower.ratio` is the only shallow
+  manpower scalar (losses.py ASSUMED free pool) and it DOES fall, rarely - GER 2 decreases /
+  132 saves (1937.2-3), ENG 2 (1940.5-6, 400000 -> 350000), FRA 5 (1940.8-10), SOV 23, JAP/ITA
+  0 - consistent with the AI raising the law before the pool empties. Shipped: conscription law
+  per save (`politics/ideas` x `mobilization_laws` ladder from `common/ideas`, now in the cache
+  key), `conscription_rank` metric, Country status panel + law-change table, digest `law`
+  column, honest manpower note. In-game comparison of `ratio` still owed (owner). Theme
+  (owner dislike, colours distorted): fully reverted, `theme_assets.py` and the JPEG deleted.
+- Owner correction 2026-09-07: my 'pool that rarely dips' reading was WRONG (GER flat/rising
+  1943-45 under the top law while casualties 3.2M -> 9.5M). Owner: `manpower.ratio` = mobilised
+  share of the population. MEASURED confirmation: state `manpower_pool={available locked total}`,
+  Ruhr 1943.6 (total-locked)/total = 14.8 % = GER ratio 1481500/1e7. Shipped: `mobilised_share`
+  (%), `population`, `manpower_recruitable`, `manpower_free` summed over controlled states'
+  pools (the free pool the first question was about), law-rank chart removed (ids, not
+  numbers), law kept as a change table + digest line. Re-extraction.
+- Owner 2026-09-07: direct double-click opening of `campaign.html` CONFIRMED in a desktop
+  browser (criterion (b) half done; CSV/JSON downloads still unconfirmed). Layout: one
+  `Mobilisation` section with the mobilised share and the available pool side by side, population
+  chart and per-country recruitable panels removed, `manpower_recruitable` metric deleted.
+- Closed when: (a) an analysis session uses the digest first and records in WORK.md that it
+  chose the right saves/countries from it; (b) CSV/JSON downloads confirmed in a desktop
+  browser; (c) the null armor metrics are either verified or their limits accepted.
+- Verification: `python -m unittest tools.campaign_report.test_digest`; `python -m
+  tools.campaign_report build --campaign a100b67c` prints `cache : 132/132` and a `DIGEST :`
+  line; the digest's trend table for GER shows `—` divisions from 1946.01 with the
+  "No deployed-division record" line, never a 0.
+
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
 

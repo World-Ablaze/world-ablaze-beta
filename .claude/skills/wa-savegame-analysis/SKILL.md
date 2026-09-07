@@ -21,6 +21,43 @@ Every extraction subagent prompt should end with an instruction like: *"Return o
 
 Inline exception: a single `meta FILE` on an already-known file is small enough to run directly, as is `army TAG FILE...` (one line per save) and `navy TAG FILE...` without `--fleets` (three lines per save), and `plans.py TAG FILE...` in its default census mode (about six lines per country per save — but `plans.py ALL` and `--armies`/`--fronts`/`--where`/`--oob`/`--templates` over many saves belong in a subagent; `--where` is one row per state and `--oob` is four lines per army, so cap both with `--limit`; `--templates` is three lines per template and is short enough inline for one country on one save; `--limit 0` = unlimited, as does `airload.py --top 0`), and `control SCOPE FILE...` without `--provinces` (about ten lines per save; `--provinces` is one row per province and belongs in a subagent), `relations FILE --tag TAG` (about fifteen lines per save; the no-`--tag` faction table is twelve), and `rail.py` on a handful of hops. Everything else — `campaigns`, `sections`, `section`, `var`, `ideas`, `flags`, `tlm`, `resources`, `buildings`, `decisions`, `pc` — runs inside a subagent. (`pc --match no_such_thing` suppresses the project table and leaves the ~10-line summary per save plus a two-line `NO MATCH` notice, which is the shape to ask a subagent for when the question is about factory share or queue depth rather than individual projects.)
 
+## Start from the campaign digest — the high-level view before any save is opened
+
+`tools/campaign_report/` folds a whole campaign's saves into one **Markdown digest** sized to be
+read inline by the main agent (about 430 lines / 30 KB for 132 monthly saves and the seven majors):
+sampled yearly trends per country (manpower, divisions, army manpower, ships, aircraft, factories,
+casualties, stability, war support, WA economy fatigue), every war relation with the first/last save that carries it,
+the convoy war (losses by attacker share from the stitched `sunk_convoys_history` ledgers, kills, pool),
+force/navy/air composition, armor reinforcement pressure and resource deficits at the last save,
+the ranges where a country has no deployed-division record (capitulation, annexation), the
+coverage caveats, and the save filenames behind each sampled row. Every metric carries its
+catalog evidence label (MEASURED / DERIVED / ASSUMED) and a `—` is a missing value, never a zero.
+
+```bash
+python -m tools.campaign_report list
+python -m tools.campaign_report build --campaign <id-prefix>
+```
+
+Then `Read` `tools/campaign_report/output/campaign_digest.md`. The `build` also writes the human
+HTML report and the full `campaign.json` next to it; `python -m tools.campaign_report digest
+tools/campaign_report/output/campaign.json --tags GER,ROM,HUN --every 6` re-cuts the digest for
+other countries or a finer step without touching the saves (at most 12 countries per digest).
+
+- **Cost.** With a warm `.cache/campaign_report/` the build takes seconds (MEASURED 6.6 s for 132
+  saves). The cache key covers the extractor sources AND `common/units` + `common/buildings`, so
+  after a merge that touched equipment files the first build re-extracts everything (MEASURED
+  7 min 12 s for 132 saves on 2 workers) — run that one in the background and carry on.
+- **What it answers.** Orientation questions: who grew, who collapsed and when, which wars ran,
+  which majors are short of what at the end. Use it to CHOOSE which saves and which country to
+  probe, and to sanity-check a subagent's number against the same date.
+- **What it cannot answer.** No AI variables, flags, ideas, WA_TLM telemetry, battle plans,
+  priority-construction queue or per-state control — those stay `savegame.py` work on the files
+  the digest names. Its casualty counter is the ongoing-war relation (a vanished relation freezes
+  it), and factories are installed levels, not usable capacity — read the evidence table at the
+  top of the digest before quoting a number.
+- **Contract.** `tools/campaign_report/README.md` carries the measurement contracts and limits;
+  the generator never guesses a missing metric (null stays null).
+
 ## The helper script
 
 All access goes through [savegame.py](scripts/savegame.py) (stdlib-only, streams a single pass per file):
