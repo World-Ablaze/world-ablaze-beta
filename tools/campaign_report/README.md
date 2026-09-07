@@ -8,6 +8,8 @@ a browser providing `DecompressionStream` (a clear error is shown otherwise).
 Original in-game template and equipment names are preserved. Every string the generator
 produces (catalog, caveats, CLI, errors) is English; there is no translation layer.
 
+Non-technical users: `USER_GUIDE.md` next to this file is the step-by-step manual.
+
 ## Generate
 
 From the repository root:
