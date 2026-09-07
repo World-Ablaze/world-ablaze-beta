@@ -106,6 +106,46 @@ class ExtractionTests(unittest.TestCase):
         for key in ("mobilised_share", "divisions", "army_manpower", "ships", "aircraft_stock", "stability"):
             self.assertIsNone(result["metrics"][key], key)
 
+    def test_displayed_stability_is_rebuilt_from_base_and_terms(self):
+        catalog = dict(ideas={"spirit": {"stability_factor": 0.1, "war_support_factor": 0.05}, "law": {"stability_factor": -0.1}},
+                       traits={"figurehead": {"stability_factor": 0.15}}, advisors={"minister": ["figurehead"]},
+                       dynamic={"faction": ["political_power_gain", "stability_factor"]},
+                       defines=dict(ex._NCOUNTRY_DEFAULTS, WAR_SUPPORT_TENSION_IMPACT=0.0))
+        raw = {"scalars": ["stability=0.3\n", "war_support=0.4\n", "coastal_protection_ratio=0.5\n", "being_bombed_support_penalty=-0.1\n"],
+               "politics": ["politics={ parties={ democratic={ popularity=80 } fascism={ popularity=20 } } ideas={ spirit minister unknown } ruling_party=democratic }"],
+               "dynamic_modifier": ["dynamic_modifier={ modifier={ modifier=\"faction\" value={ 0.2 0.05 } enabled=yes } modifier={ modifier=\"off\" value={ 1 } enabled=no } }"],
+               "diplomacy": ["diplomacy={active_relations={GER={war_relation={first=ENG second=GER start_date=1939.9.1.3 first_casualties=5 second_casualties=7 first_was_instigator=no}}}}"]}
+        result, wars = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        self.assertEqual(result["metrics"]["stability_base"], 0.3)
+        self.assertEqual(result["metrics"]["stability"], 0.3)  # not final before the wars are attached
+        self.assertEqual(result["politics"]["modifiers"]["stability_factor"], 0.3)  # spirit 0.1 + trait 0.15 + dynamic 0.05
+        self.assertEqual([s[0] for s in result["politics"]["sources"]], ["spirit", "minister", "dynamic:faction"])
+        self.assertIs(wars[0]["first_was_instigator"], False)
+        result["wars"].append(dict(enemy="GER", offensive=False))
+        ex._finalize_politics(result, catalog)
+        terms = result["politics"]["stability_terms"]
+        self.assertEqual(result["politics"]["war_posture"], "defensive")
+        self.assertAlmostEqual(terms["party_popularity"], 0.12)
+        self.assertAlmostEqual(terms["coastal_protection"], 0.05)
+        self.assertAlmostEqual(terms["war"], -0.2)
+        self.assertAlmostEqual(result["metrics"]["stability"], 0.3 + 0.3 + 0.12 + 0.05 - 0.2)
+        self.assertAlmostEqual(result["metrics"]["war_support"], 0.4 + 0.05 + 0.2 - 0.1)
+        self.assertEqual(result["metrics"]["war_support_base"], 0.4)
+        # Offensive war: -0.2 scaled by the offensive factor; both postures at once count as offensive.
+        catalog["ideas"]["spirit"]["offensive_war_stability_factor"] = 0.5
+        result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        result["wars"] += [dict(enemy="GER", offensive=False), dict(enemy="FRC", offensive=True)]
+        ex._finalize_politics(result, catalog)
+        self.assertEqual(result["politics"]["war_posture"], "offensive")
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["war"], -0.1)
+        self.assertAlmostEqual(result["politics"]["war_support_terms"]["war"], -0.2)
+        # A country without a politics block has no popularity: the displayed value stays unknown, never a guess.
+        bare, _ = ex._country("GER", {"scalars": ["stability=1\n"]}, {}, {}, {}, {})
+        ex._finalize_politics(bare, ex._EMPTY_POLITICS)
+        self.assertIsNone(bare["metrics"]["stability"])
+        self.assertEqual(bare["metrics"]["stability_base"], 1)
+        self.assertTrue(any("party_popularity" in issue for issue in bare["issues"]))
+
     def test_stock_shortfalls_do_not_cancel_other_variants_surpluses(self):
         raw = {"production": ["production={equipments={equipment={id={id=1} amount=-12} equipment={id={id=2} amount=20}}}"]}
         definitions = {i: dict(id=i, definition="chassis", name=str(i), creator="GER") for i in (1, 2)}

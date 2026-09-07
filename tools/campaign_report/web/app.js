@@ -25,14 +25,15 @@ async function boot(text) {
     ships:{label:"Warships",unit:"ships"}, aircraft:{label:"Aircraft in wings",unit:"aircraft"},
     aircraft_stock:{label:"Aircraft stockpile",unit:"aircraft"}, civilian_factories:{label:"Civilian factories",unit:"levels"},
     military_factories:{label:"Military factories",unit:"levels"},dockyards:{label:"Dockyards",unit:"levels"},
-    losses:{label:"Ongoing-war casualties",unit:"men",evidence:"DERIVED"}, stability:{label:"Stability",unit:"%"},
-    war_support:{label:"War support",unit:"%"},command_power:{label:"Command power",unit:"points"},
+    losses:{label:"Ongoing-war casualties",unit:"men",evidence:"DERIVED"}, stability:{label:"Stability",unit:"%",evidence:"DERIVED"},
+    war_support:{label:"War support",unit:"%",evidence:"DERIVED"},stability_base:{label:"Stability (stored base)",unit:"%"},war_support_base:{label:"War support (stored base)",unit:"%"},command_power:{label:"Command power",unit:"points"},
     army_xp:{label:"Army XP",unit:"points"},navy_xp:{label:"Navy XP",unit:"points"},air_xp:{label:"Air XP",unit:"points"}
   };
+  const percentIds = new Set(["stability","war_support","stability_base","war_support_base","mobilised_share"]);
   const catalog = Object.fromEntries([...new Set([...Object.keys(fallbackMetrics),...Object.keys(D.metric_catalog || {})])].map(k => [k,{evidence:"MEASURED",source:"See metric definitions",...(fallbackMetrics[k] || {}),...(D.metric_catalog?.[k] || {})}]));
   for (const [id,m] of Object.entries(catalog)) {
     m.unit = ({men:"men",count:buildingKeys[id]?"levels":id==="divisions"?"divisions":id==="ships"?"ships":id.startsWith("aircraft")?"aircraft":"units",percent:"%"})[m.unit] || m.unit;
-    if(id==="stability" || id==="war_support" || id==="mobilised_share")m.note=[m.note,"Source ratio multiplied by 100 for percentage display."].filter(Boolean).join(" ");
+    if(percentIds.has(id))m.note=[m.note,"Source ratio multiplied by 100 for percentage display."].filter(Boolean).join(" ");
   }
   function metric(id) { return catalog[id] || {label:familyNames[id] || id,unit:"units",evidence:"DERIVED",source:"Aggregated extracted data"}; }
   const labelType = value => familyNames[value] || String(value ?? "Unclassified").replaceAll("_"," ").replace(/^./,c=>c.toUpperCase());
@@ -63,7 +64,7 @@ async function boot(text) {
     if (!country) return null;
     if (buildingKeys[id]) return finite(country.metrics?.[id]) && country.buildings?.[S.scope] ? country.buildings[S.scope][buildingKeys[id]] ?? 0 : null;
     const v = country.metrics?.[id];
-    return finite(v) ? ((id === "stability" || id === "war_support" || id === "mobilised_share") ? v*100 : v) : null;
+    return finite(v) ? (percentIds.has(id) ? v*100 : v) : null;
   }
   function metricSeries(id) { return tags().map(tag => ({name:labelCountry(tag),color:color(tag),meta:metric(id),points:points(s=>countryValue(s.countries[tag],id))})); }
   function countriesSeries(getter,meta) { return tags().map(tag=>({name:labelCountry(tag),color:color(tag),meta,points:points(s=>getter(s.countries[tag]))})); }
@@ -146,7 +147,7 @@ async function boot(text) {
     if(options.note || indexWarnings.length)card.insertAdjacentHTML("beforeend",`<div class="chart-note">${esc(options.note || "")}${indexWarnings.length?` Cannot rebase: ${esc(indexWarnings.join(", "))}.`:""}</div>`);
     return card;
   }
-  function appendMetric(parent,id,options={}) {const m=metric(id);parent.append(chart(m.label,metricSeries(id),["stability","war_support","mobilised_share"].includes(id)?"%":m.unit,{...options,note:options.note ?? m.note}));}
+  function appendMetric(parent,id,options={}) {const m=metric(id);parent.append(chart(m.label,metricSeries(id),percentIds.has(id)?"%":m.unit,{...options,note:options.note ?? m.note}));}
   // Column sorting for every data table: click a header for ascending, again for descending, a
   // third time for the original order. Numbers sort numerically (formatted "1,234" and "-5" included),
   // anything else alphabetically; missing values ("—" or empty) always sink to the bottom. Rows are
@@ -298,7 +299,8 @@ async function boot(text) {
     const mg=section(el,"Mobilisation","Share of the population the conscription law makes recruitable, beside the free manpower pool");appendMetric(mg,"mobilised_share",{indexable:false});appendMetric(mg,"manpower_free");
     const changes=tags().flatMap(tag=>{let previous;return snapshots.slice(S.from,S.to+1).flatMap(s=>{const law=s.countries[tag]?.conscription_law;if(!law||law===previous){if(law)previous=law;return [];}const row=[countryCell(tag),dateText(s.date),esc(labelType(previous||"—")),esc(labelType(law)),fmt(s.countries[tag]?.metrics?.manpower)];previous=law;return [row];});});
     if(changes.length)el.append(tablePanel(["Country","First save with the law","From","To","Pool at that save"],changes,{left:[2,3]}));
-    countryPanels(section(el,"Stability and war support","Two comparable percentages in one panel per country"),["stability","war_support"],"%",{max:100,indexable:false});
+    countryPanels(section(el,"Stability and war support","Displayed values rebuilt from the stored base plus spirits, advisors, dynamic modifiers, party popularity, war posture and penalties (DERIVED; see the metric definitions)"),["stability","war_support"],"%",{max:100,indexable:false});
+    countryPanels(section(el,"Stored base values","What the save stores: moved by add_stability / add_war_support and weekly modifiers only, never by national spirits"),["stability_base","war_support_base"],"%",{max:100,indexable:false});
     countryPanels(section(el,"Available experience","Army, navy, and air experience in points"),["army_xp","navy_xp","air_xp"],"points",{indexable:false});
     appendMetric(section(el,"Command power"),"command_power");
     appendMetric(section(el,"Economy fatigue","WA economic fatigue variable, in points"),"economy_fatigue",{indexable:false});

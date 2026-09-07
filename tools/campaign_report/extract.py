@@ -50,8 +50,10 @@ METRICS = {
     "military_factories": _metric("Military factories", "count", "DERIVED", "states/buildings/arms_factory/level", "Installed levels in controlled states."),
     "dockyards": _metric("Dockyards", "count", "DERIVED", "states/buildings/dockyard/level", "Installed levels in controlled states."),
     "losses": _metric("Ongoing-war casualties", "men", "DERIVED", "diplomacy/active_relations/*/war_relation/first_casualties,second_casualties", "Counter direction is inferred; peace can remove a counter. The combat/attrition scope is not verified."),
-    "stability": _metric("Stability", "percent", "MEASURED", "countries/TAG/stability"),
-    "war_support": _metric("War support", "percent", "MEASURED", "countries/TAG/war_support"),
+    "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + idea, advisor-trait and dynamic-modifier stability_factor + party popularity + war + coastal protection, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions. Term formulas (party popularity x 0.15, war -0.2 scaled by the offensive/defensive factor, coastal ratio x 0.1) follow the vanilla defines and are ASSUMED until checked against one in-game tooltip; espionage propaganda is not included. Per-term breakdown in countries/TAG/politics."),
+    "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + idea, advisor-trait and dynamic-modifier war_support_factor + offensive/defensive war + stored bombing and hero-casualty penalties, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base. Offensive (-0.2) or defensive (+0.2) follows the war_relation instigator flags; a country with both counts as offensive (ASSUMED). World tension counts for 0 in WA (05_defines.lua). Per-term breakdown in countries/TAG/politics."),
+    "stability_base": _metric("Stability (stored base)", "percent", "MEASURED", "countries/TAG/stability", "The base the engine stores; add_stability and weekly modifiers move this number, national spirits do not."),
+    "war_support_base": _metric("War support (stored base)", "percent", "MEASURED", "countries/TAG/war_support", "The base the engine stores; add_war_support and weekly modifiers move this number, national spirits do not."),
     "command_power": _metric("Command power", "points", "MEASURED", "countries/TAG/command_power"),
     "army_xp": _metric("Army XP", "points", "MEASURED", "countries/TAG/experience_status/army_experience"),
     "navy_xp": _metric("Navy XP", "points", "MEASURED", "countries/TAG/experience_status/navy_experience"),
@@ -101,6 +103,134 @@ def conscription_ladder(repo):
                     break
             k += 1
     return tuple(ladder)
+
+
+_POLITICS_KEYS = ("stability_factor", "war_support_factor", "offensive_war_stability_factor",
+                  "defensive_war_stability_factor", "party_popularity_stability_factor", "war_stability_factor")
+# Vanilla 1.19.2 NDefines.NCountry values; any of them present in the checkout's 05_defines.lua wins.
+_NCOUNTRY_DEFAULTS = {"BASE_STABILITY_WAR_FACTOR": -0.2, "BASE_STABILITY_PARTY_POPULARITY_FACTOR": 0.15,
+                      "DEFAULT_COASTAL_PROTECTION_STABILITY": 0.1, "WAR_SUPPORT_OFFNSIVE_WAR": -0.2,
+                      "WAR_SUPPORT_DEFENSIVE_WAR": 0.2, "WAR_SUPPORT_TENSION_IMPACT": 0.4,
+                      "MIN_STABILITY": 0.0, "MAX_STABILITY": 1.0, "MIN_WAR_SUPPORT": 0.0, "MAX_WAR_SUPPORT": 1.0}
+
+
+def _modifier_values(node):
+    """The stability / war-support modifiers of one definition block, numeric values only."""
+    found = {}
+    for key in _POLITICS_KEYS:
+        value = numeric(node, key)
+        if value is not None:
+            found[key] = value
+    return found
+
+
+@lru_cache(maxsize=4)
+def politics_catalog(repo):
+    """Stability / war-support modifiers per idea, advisor idea_token, leader trait and dynamic modifier.
+
+    Dynamic modifiers keep their line order: the save stores their current values as an ordered list.
+    """
+    repo = Path(repo)
+    ideas, traits, advisors, dynamic = {}, {}, {}, {}
+    for path in sorted(repo.glob("common/ideas/*.txt")):
+        for _, category in parse(path.read_text(encoding="utf-8-sig", errors="replace")).block("ideas"):
+            if not isinstance(category, Node):
+                continue
+            for name, idea in category:
+                if isinstance(idea, Node) and name not in ideas:
+                    found = _modifier_values(idea.block("modifier"))
+                    if found:
+                        ideas[name] = found
+    for path in sorted(repo.glob("common/country_leader/*.txt")):
+        for name, trait in parse(path.read_text(encoding="utf-8-sig", errors="replace")).block("leader_traits"):
+            if isinstance(trait, Node) and name not in traits:
+                found = _modifier_values(trait)
+                if found:
+                    traits[name] = found
+    for path in sorted(repo.glob("common/characters/*.txt")):
+        for _, character in parse(path.read_text(encoding="utf-8-sig", errors="replace")).block("characters"):
+            if not isinstance(character, Node):
+                continue
+            for advisor in blocks(character, "advisor"):
+                token = advisor.scalar("idea_token")
+                if token and token not in advisors:
+                    advisors[token] = [v for k, v in advisor.block("traits") if k is None and isinstance(v, str)]
+    for path in sorted(repo.glob("common/dynamic_modifiers/*.txt")):
+        for name, definition in parse(path.read_text(encoding="utf-8-sig", errors="replace")):
+            if isinstance(definition, Node) and name not in dynamic:
+                dynamic[name] = [key for key, value in definition if key not in (None, "icon") and not isinstance(value, Node)]
+    defines = dict(_NCOUNTRY_DEFAULTS)
+    lua = repo / "common/defines/05_defines.lua"
+    if lua.exists():
+        for match in re.finditer(r"NDefines\.NCountry\.([A-Z_]+)\s*=\s*(-?[0-9.]+)", lua.read_text(encoding="utf-8-sig", errors="replace")):
+            if match.group(1) in defines:
+                defines[match.group(1)] = float(match.group(2))
+    return dict(ideas=ideas, traits=traits, advisors=advisors, dynamic=dynamic, defines=defines)
+
+
+_EMPTY_POLITICS = dict(ideas={}, traits={}, advisors={}, dynamic={}, defines=dict(_NCOUNTRY_DEFAULTS))
+
+
+def _political_modifiers(ideas, dynamic_values, catalog):
+    """Sum of the stability / war-support modifiers a country currently carries, with their sources."""
+    totals = {key: 0.0 for key in _POLITICS_KEYS}
+    sources = []
+    for token in ideas:
+        found = catalog["ideas"].get(token)
+        if token in catalog["advisors"]:
+            found = {}
+            for trait in catalog["advisors"][token]:
+                for key, value in catalog["traits"].get(trait, {}).items():
+                    found[key] = found.get(key, 0.0) + value
+        if found:
+            sources.append([token, dict(found)])
+            for key, value in found.items():
+                totals[key] += value
+    for name, values in dynamic_values:
+        found = {}
+        for key, value in zip(catalog["dynamic"].get(name, []), values):
+            if key in _POLITICS_KEYS and value is not None:
+                found[key] = found.get(key, 0.0) + value
+        if found:
+            sources.append(["dynamic:" + name, found])
+            for key, value in found.items():
+                totals[key] += value
+    return totals, sources
+
+
+def _finalize_politics(country, catalog):
+    """Rebuild the displayed stability and war support once the country's wars are known."""
+    politics = country.get("politics") or {}
+    metrics = country["metrics"]
+    if "modifiers" not in politics:
+        return
+    defines, totals = catalog["defines"], politics["modifiers"]
+    postures = [w.get("offensive") for w in country["wars"]]
+    posture = "peace" if not postures else "offensive" if any(p is True for p in postures) else "defensive" if all(p is False for p in postures) else "unknown"
+    politics["war_posture"] = posture
+    popularity = politics.get("ruling_popularity")
+    terms = {"base": metrics["stability_base"], "modifiers": totals["stability_factor"],
+             "party_popularity": defines["BASE_STABILITY_PARTY_POPULARITY_FACTOR"] * popularity / 100.0 * (1 + totals["party_popularity_stability_factor"]) if popularity is not None else None,
+             "coastal_protection": defines["DEFAULT_COASTAL_PROTECTION_STABILITY"] * politics["coastal_protection_ratio"] if politics.get("coastal_protection_ratio") is not None else 0.0}
+    ws_terms = {"base": metrics["war_support_base"], "modifiers": totals["war_support_factor"],
+                "bombing": politics.get("being_bombed_support_penalty") or 0.0,
+                "hero_casualties": politics.get("heroes_dying_war_support_penalty") or 0.0,
+                "tension": 0.0 if defines["WAR_SUPPORT_TENSION_IMPACT"] == 0 else None}
+    if posture == "peace":
+        terms["war"], ws_terms["war"] = 0.0, 0.0
+    elif posture == "unknown":
+        terms["war"] = ws_terms["war"] = None
+    else:
+        scale = totals["offensive_war_stability_factor" if posture == "offensive" else "defensive_war_stability_factor"] + totals["war_stability_factor"]
+        terms["war"] = defines["BASE_STABILITY_WAR_FACTOR"] * (1 - scale)
+        ws_terms["war"] = defines["WAR_SUPPORT_OFFNSIVE_WAR" if posture == "offensive" else "WAR_SUPPORT_DEFENSIVE_WAR"]
+    politics["stability_terms"], politics["war_support_terms"] = terms, ws_terms
+    for metric, parts, low, high in (("stability", terms, "MIN_STABILITY", "MAX_STABILITY"), ("war_support", ws_terms, "MIN_WAR_SUPPORT", "MAX_WAR_SUPPORT")):
+        if all(v is not None for v in parts.values()):
+            metrics[metric] = min(defines[high], max(defines[low], sum(parts.values())))
+        else:
+            metrics[metric] = None
+            country["issues"].append(f"{metric}: a term is unknown ({', '.join(k for k, v in parts.items() if v is None)}); the displayed value is not reported.")
 
 
 def convoy_window(date):
@@ -315,26 +445,44 @@ def _empty():
             "army": {"types": {}, "templates": [], "manpower_by_origin": {}},
             "navy": {"types": {}}, "air": {"types": {}, "stock_types": {}},
             "buildings": {"controlled": {}, "owned": {}}, "resources": {},
-            "armor": {"families": {}, "variants": []}, "wars": [], "issues": [], "conscription_law": None}
+            "armor": {"families": {}, "variants": []}, "wars": [], "issues": [], "conscription_law": None,
+            "politics": {}}
 
 
 REPO_FOR_LADDER = Path(__file__).resolve().parents[2]
 
 
-def _country(tag, raw, definitions, catalog, templates, battalions):
+def _country(tag, raw, definitions, catalog, templates, battalions, politics=None):
     result = _empty()
     metrics = result["metrics"]
     nodes = {k: parse("".join(v)).block(k) for k, v in raw.items() if k not in ("scalars", "resources", "variables")}
     scalars = parse("".join(raw.get("scalars", [])))
-    for name in ("stability", "war_support", "command_power"):
-        metrics[name] = numeric(scalars, name)
+    metrics["command_power"] = numeric(scalars, "command_power")
     metrics["convoy_kills"] = numeric(scalars, "convoys_destroyed")
+    # The stored stability / war support are bases; the displayed values are rebuilt in
+    # _finalize_politics once the wars (offensive or defensive) are attached to the country.
+    metrics["stability_base"], metrics["war_support_base"] = numeric(scalars, "stability"), numeric(scalars, "war_support")
+    metrics["stability"], metrics["war_support"] = metrics["stability_base"], metrics["war_support_base"]
+    ideas = []
     if "politics" in nodes:
         ideas = [value for key, value in nodes["politics"].block("ideas") if key is None]
         ladder = conscription_ladder(str(REPO_FOR_LADDER))
         laws = [idea for idea in ideas if idea in ladder]
         if laws:
             result["conscription_law"] = laws[0]
+    if metrics["stability_base"] is not None or metrics["war_support_base"] is not None:
+        politics = politics or _EMPTY_POLITICS
+        ruling = nodes["politics"].scalar("ruling_party") if "politics" in nodes else None
+        popularity = numeric(nodes["politics"].block("parties").block(ruling), "popularity") if ruling else None
+        dynamic_values = []
+        for modifier in blocks(nodes.get("dynamic_modifier", Node()), "modifier"):
+            if modifier.scalar("modifier") and modifier.scalar("enabled", "yes") != "no":
+                dynamic_values.append((modifier.scalar("modifier"), [number(v) for k, v in modifier.block("value") if k is None]))
+        totals, sources = _political_modifiers(ideas, dynamic_values, politics)
+        result["politics"] = dict(ruling_party=ruling, ruling_popularity=popularity, modifiers=totals, sources=sources,
+                                  coastal_protection_ratio=numeric(scalars, "coastal_protection_ratio"),
+                                  being_bombed_support_penalty=numeric(scalars, "being_bombed_support_penalty"),
+                                  heroes_dying_war_support_penalty=numeric(scalars, "heroes_dying_war_support_penalty"))
     variables = _scan_variables(raw.get("variables"), ("economic_fatigue", "wa_tlm_nav_convoys"))
     metrics["economy_fatigue"] = variables["economic_fatigue"]
     metrics["convoys_free"] = variables["wa_tlm_nav_convoys"]
@@ -482,9 +630,11 @@ def _country(tag, raw, definitions, catalog, templates, battalions):
     for war in walk(nodes.get("diplomacy", Node()), "war_relation"):
         first, second, start = war.scalar("first"), war.scalar("second"), war.scalar("start_date")
         if first and second:
+            instigator = war.scalar("first_was_instigator")
             wars.append(dict(first=first, second=second, start_date=start,
                              first_casualties=numeric(war, "first_casualties"),
-                             second_casualties=numeric(war, "second_casualties")))
+                             second_casualties=numeric(war, "second_casualties"),
+                             first_was_instigator=None if instigator is None else instigator == "yes"))
     return result, wars
 
 
@@ -501,7 +651,10 @@ def extract_save(path: Path, repo: Path) -> dict:
     date = None
     saw_states = saw_air = False
     convoy_losses, saw_ledger = [], False
-    selected = {"units", "production", "resources", "manpower", "experience_status", "diplomacy", "variables", "convoys", "politics"}
+    politics = politics_catalog(str(repo))
+    selected = {"units", "production", "resources", "manpower", "experience_status", "diplomacy", "variables", "convoys", "politics", "dynamic_modifier"}
+    scalar_keys = {"stability", "war_support", "command_power", "convoys_destroyed", "coastal_protection_ratio",
+                   "being_bombed_support_penalty", "heroes_dying_war_support_penalty"}
     with sg.open_save(str(path)) as fh:
         for line in fh:
             if line.startswith("date="):
@@ -552,9 +705,9 @@ def extract_save(path: Path, repo: Path) -> dict:
                         key = key_match.group(1) if key_match else None
                         if key in selected:
                             raw[key] = chunk
-                        elif len(chunk) == 1 and key in {"stability", "war_support", "command_power", "convoys_destroyed"}:
+                        elif len(chunk) == 1 and key in scalar_keys:
                             raw["scalars"].extend(chunk)
-                    countries[tag], wars = _country(tag, raw, definitions, catalog, templates, battalions)
+                    countries[tag], wars = _country(tag, raw, definitions, catalog, templates, battalions, politics)
                     all_wars.extend(wars)
     # This reader includes all countries in its one pass; no per-tag rescanning.
     _, wings = airload.parse_wings(str(path))
@@ -580,10 +733,13 @@ def extract_save(path: Path, repo: Path) -> dict:
         for side, other in (("first", "second"), ("second", "first")):
             tag = war[side]
             if tag in countries:
-                countries[tag]["wars"].append(dict(id="|".join(identity[0]) + "|" + (identity[1] or "?"), enemy=war[other], start_date=war["start_date"], losses=war[side + "_casualties"]))
+                instigator = war.get("first_was_instigator")
+                offensive = None if instigator is None else (instigator if side == "first" else not instigator)
+                countries[tag]["wars"].append(dict(id="|".join(identity[0]) + "|" + (identity[1] or "?"), enemy=war[other], start_date=war["start_date"], losses=war[side + "_casualties"], offensive=offensive))
     for country in countries.values():
         values = [w["losses"] for w in country["wars"]]
         country["metrics"]["losses"] = sum(values) if all(v is not None for v in values) else None
+        _finalize_politics(country, politics)
         country["issues"] = list(dict.fromkeys(country["issues"]))
     if date is None:
         raise ValueError(f"No date in save: {path}")
