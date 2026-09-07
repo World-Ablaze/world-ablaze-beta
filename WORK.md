@@ -232,6 +232,21 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   Armored Train greyed on an AI-tagged production tab under the bar) and the probe passes on one
   scored campaign.
 
+- Probe run 2026-09-07 on campaign `e57efdea` (BHU observer, build >= 2026-09-05 08:39 by fingerprint,
+  owner-confirmed current): **FAIL, and a regression.** MEASURED: 8 saves 1940.1-1945.1, 7 majors, 409
+  countries - every train line is `train_equipment_1` (GER 39 lines, SOV/ENG/USA too; ITA/JAP/FRA none),
+  0 lines on _2/_3/_4, while GER holds all four techs from 1942.12. Control, 7 pre-gate saves 1942.4-1945.4
+  (campaigns `5432bfeb`, `82554312`, `5d2a391c`, `5ee2d112`): AI majors ran _2 in 1942 then _3 from 1943
+  (ITA 24/44, HUN 28/37, JAP 0/42); _4 only where armored was the sole upgrade held (ROM, POL).
+- DERIVED cause: the AI walks the `parent` chain to the deepest producible variant and does not skip an
+  unproducible link. Old chain `_1 -> _4 -> _2 -> _3` + AI gate on _4 = every line frozen on Civilian.
+  Also falsifies the ASSUMED "priority = the AI's pick": pre-gate, _4 (30) was producible for every
+  major and none took it over _3 (25).
+- Change 2 (2026-09-07): chain rechained `_1 -> _2 -> _3 -> _4` in `trains.txt` (_4 block moved after
+  _3); under the bar the walk stops at War Austerity, above it reaches Armored. Offsets on _4 now act on
+  the _3 -> _4 step. Probe text unchanged. Closing criterion unchanged (F9 boot + probe on one campaign).
+- SHIPPED-UNTESTED 2026-09-07 (equipment-file change, no harness applies; the campaign probe is the test).
+
 ### ai-equipment-naming — PARKED (2026-09-05)
 - Parked 2026-09-05 on the owner's order ("parque ai-equipment-naming") to bring OPEN back under the
   WIP limit; move it back to OPEN in one line when a scored campaign is read. State at parking:

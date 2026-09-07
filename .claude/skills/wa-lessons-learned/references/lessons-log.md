@@ -2649,3 +2649,24 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** WORK.md `light-support-conversion` (Change 7 defect + Change 8 decision); the heavy
   target `WA_AI_TEMPLATES_armored_heavy.txt` value 7105 vs medium 6111; the per-value generator on
   branch `parked/armor-conversion-finals` (`e26ab824f`), parked by owner order pending a decision.
+
+## 2026-09-07 - The AI picks an equipment VARIANT by walking the `parent` chain, not by `priority` - and an unproducible link freezes the line
+
+- **Date:** 2026-09-07
+- **Symptom:** `train-variant-choice` gated the Armored Train (`train_equipment_4`) behind an AI-only
+  `can_be_produced`. On the next campaign (`e57efdea`, 8 saves, 7 majors, 409 countries) every AI train
+  line ran the Civilian train `_1` - none on Simplified `_2` or War Austerity `_3`, both researched
+  since 1942. Seven pre-gate saves (1942.4-1945.4) had the majors on `_2` then `_3`.
+- **Cause:** WA's chain was `_1 -> _4 -> _2 -> _3` (`parent =` in `trains.txt`, since 2024). The AI
+  moves a line to the deepest variant it can produce along that chain and does not skip a link it
+  cannot produce; gating `_4` therefore cut `_2`/`_3` off from every line sitting on `_1`. Two
+  measurements settle the pick rule: pre-gate, `_4` (`priority = 30`) was producible for every
+  major and none chose it over `_3` (25) - the chain end wins, not the priority; ROM/POL ran `_4`
+  only while it was the sole child of `_1` they held, and moved to `_2` the month Simplified landed.
+- **Rule:** to make a variant the AI's choice, put it at the END of the `parent` chain; to withhold a
+  variant from the AI, make it a LEAF (nothing behind it), never a link. A `can_be_produced` gate on
+  a mid-chain variant is a silent ban on everything below it. `priority` is not the AI's pick
+  (ASSUMED role: tie-break / human UI order). Fix: chain `_1 -> _2 -> _3 -> _4`.
+- **Evidence:** `common/units/equipment/trains.txt` (chain + comment); WORK.md `train-variant-choice`
+  probe of 2026-09-07 with the campaign ids; the sibling entry of 2026-08-13 on
+  `production_upgrade_desire_offset` (which is the OTHER lever that acts on a chain step).
