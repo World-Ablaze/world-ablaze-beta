@@ -446,22 +446,37 @@ def load_templates(template_dir):
                 enable = entry.get("enable")
                 if enable is None:
                     continue
-                flag = enable.get("has_country_flag")
-                if flag is None or flag.block is None:
-                    continue
-                fname = fval = None
-                for kv in flag.block:
-                    if kv.key == "flag":
-                        fname = kv.scalar
-                    elif kv.key == "value":
-                        fval = kv.scalar
-                if fname and fval and fval.isdigit():
-                    by_flag.setdefault(fname, {}).setdefault(int(fval), []).append(
-                        (entry.key, f, entry.line))
+                # An entry enables on N wherever `has_country_flag value = N` sits under its
+                # enable - directly, or inside an OR / AND (one template, several values: the
+                # conversion FINALs and the STABLE-phase MIX). A flag under NOT is a value the
+                # entry does NOT answer, so NOT is not descended.
+                for flag in _flags_under(enable):
+                    fname = fval = None
+                    for kv in flag.block:
+                        if kv.key == "flag":
+                            fname = kv.scalar
+                        elif kv.key == "value":
+                            fval = kv.scalar
+                    if fname and fval and fval.isdigit():
+                        by_flag.setdefault(fname, {}).setdefault(int(fval), []).append(
+                            (entry.key, f, entry.line))
             for name, lines in names.items():
                 if len(lines) > 1:
                     entries.append(("DUP", f, group.key, (name, lines)))
     return by_flag, entries
+
+
+def _flags_under(node):
+    """Every `has_country_flag = { ... }` block under `node`, descending OR / AND only."""
+    out = []
+    for n in node.block or []:
+        if n.block is None:
+            continue
+        if n.key == "has_country_flag":
+            out.append(n)
+        elif n.key in ("OR", "AND"):
+            out.extend(_flags_under(n))
+    return out
 
 
 def load_type_map(loc_file):
@@ -673,7 +688,7 @@ FIXTURE_TEMPLATES = """WA_infantry_role = {
 \t\t}
 \t}
 \tWA_T_1001 = {
-\t\tenable = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1001 } }
+\t\tenable = { OR = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1001 } } }
 \t\ttarget_template = {
 \t\t\tregiments = { infantry_battalion_line = 10 }
 \t\t\tsupport = { engineer_company_divisional = 1 }
