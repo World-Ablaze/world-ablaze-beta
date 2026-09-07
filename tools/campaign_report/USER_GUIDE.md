@@ -11,8 +11,34 @@ commands. No programming knowledge needed.
 - **The mod folder** (`world-ablaze-beta`) on your disk. Nothing else to install: the generator
   only uses what ships with Python.
 - **The saves of the campaign** in the usual HOI4 folder:
-  `Documents\Paradox Interactive\Hearts of Iron IV\save games`. Saves must be text saves
-  (binary saves are reported as unsupported).
+  `Documents\Paradox Interactive\Hearts of Iron IV\save games`, written as **readable text
+  saves**. This is the one thing that must be set up BEFORE the campaign is played: see the
+  next section. Binary saves cannot be read, and there is no way to convert them afterwards.
+
+## Make HOI4 write readable saves (do this before playing)
+
+By default HOI4 writes its saves in a compact binary form the generator cannot read. Switch
+the game to text saves once, before the campaign starts:
+
+1. Close the game.
+2. Open `Documents\Paradox Interactive\Hearts of Iron IV\settings.txt` in Notepad.
+3. Find the line `save_as_binary=yes` and change it to `save_as_binary=no`. Save the file.
+4. Start the game and play: every save (manual or autosave) is now written as text. A text
+   save may still be zip-compressed; that is fine, the generator opens it.
+5. **Do not use Ironman.** Ironman saves are always binary, whatever the setting.
+
+To check a save, open the `.hoi4` file in Notepad and look at the first characters:
+
+| First characters | Meaning |
+| --- | --- |
+| `HOI4txt` | text save: readable |
+| `PK` | zip-compressed text save: readable |
+| `HOI4bin` | binary save: **not readable**, the generator reports it as skipped |
+
+A campaign already saved in binary cannot be recovered by the generator: only saves written
+after the switch are usable. The saves of one campaign are grouped by the game's own
+campaign identifier, so text saves written from an old game after the switch still belong
+to that campaign.
 
 ## Step 1: open a terminal in the mod folder
 
@@ -83,7 +109,7 @@ paths are printed:
 | `ERROR: Choose a single campaign with --campaign` | Several campaigns were found: add `--campaign <first 8 characters>`. |
 | `ERROR: Two different states at <date>` | Two different saves carry the same date (two branches of one game). Move one of them out of the folder. |
 | `'python' is not recognized` | Python is not in the PATH: reinstall it with the PATH box ticked. |
-| `SKIPPED: <file>` | That save could not be read (binary save, or not a HOI4 save); the others are still used. |
+| `SKIPPED: <file>` | That save could not be read: binary save (see *Make HOI4 write readable saves*), Ironman, or not a HOI4 save. The others are still used. |
 | The report shows the old numbers after a rebuild | The browser cached the page: press Ctrl+F5. |
 
 ## Sharing
