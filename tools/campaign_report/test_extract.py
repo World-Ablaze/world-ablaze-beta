@@ -108,37 +108,47 @@ class ExtractionTests(unittest.TestCase):
 
     def test_displayed_stability_is_rebuilt_from_base_and_terms(self):
         catalog = dict(ideas={"spirit": {"stability_factor": 0.1, "war_support_factor": 0.05}, "law": {"stability_factor": -0.1}},
-                       traits={"figurehead": {"stability_factor": 0.15}}, advisors={"minister": ["figurehead"]},
+                       traits={"figurehead": {"stability_factor": 0.15}, "iron": {"war_support_factor": 0.05}},
                        dynamic={"faction": ["political_power_gain", "stability_factor"]},
+                       static={"pride_of_the_fleet_country": {"war_support_factor": 0.05}, "pride_of_the_fleet_sunk_temporary": {"war_support_factor": -0.1}},
                        defines=dict(ex._NCOUNTRY_DEFAULTS, WAR_SUPPORT_TENSION_IMPACT=0.0))
-        raw = {"scalars": ["stability=0.3\n", "war_support=0.4\n", "coastal_protection_ratio=0.5\n", "being_bombed_support_penalty=-0.1\n"],
-               "politics": ["politics={ parties={ democratic={ popularity=80 } fascism={ popularity=20 } } ideas={ spirit minister unknown } ruling_party=democratic }"],
-               "dynamic_modifier": ["dynamic_modifier={ modifier={ modifier=\"faction\" value={ 0.2 0.05 } enabled=yes } modifier={ modifier=\"off\" value={ 1 } enabled=no } }"],
+        characters = dict(advisors={"minister": ["figurehead"]}, leaders={7: dict(token="leader_x", traits={"conservatism": ["iron"], "despotism": ["figurehead"]})})
+        raw = {"scalars": ["stability=0.3\n", "war_support=0.4\n", "coastal_protection_ratio=0.5\n", "being_bombed_support_penalty=-0.1\n",
+                           "pride_of_the_fleet={ id=108 type=51 }\n", 'pride_of_the_fleet_date_lost="1.1.1.1"\n'],
+               "politics": ["politics={ parties={ democratic={ popularity=80 country_leader={ { ideology=conservatism character={ id=7 type=73 } } { ideology=despotism character={ id=8 type=73 } } } } fascism={ popularity=20 } } ideas={ spirit minister unknown } ruling_party=democratic }"],
+               "dynamic_modifier": ['dynamic_modifier={ modifier={ modifier="faction" value={ 0.2 0.05 } enabled=yes } modifier={ modifier="off" value={ 1 } enabled=no } }'],
                "diplomacy": ["diplomacy={active_relations={GER={war_relation={first=ENG second=GER start_date=1939.9.1.3 first_casualties=5 second_casualties=7 first_was_instigator=no}}}}"]}
         result, wars = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
         self.assertEqual(result["metrics"]["stability_base"], 0.3)
         self.assertEqual(result["metrics"]["stability"], 0.3)  # not final before the wars are attached
-        self.assertEqual(result["politics"]["modifiers"]["stability_factor"], 0.3)  # spirit 0.1 + trait 0.15 + dynamic 0.05
-        self.assertEqual([s[0] for s in result["politics"]["sources"]], ["spirit", "minister", "dynamic:faction"])
+        self.assertAlmostEqual(result["politics"]["modifiers"]["stability_factor"], 0.15)  # spirit 0.1 + dynamic 0.05
+        self.assertEqual(result["politics"]["_leader"], ["conservatism", 7])
         self.assertIs(wars[0]["first_was_instigator"], False)
         result["wars"].append(dict(enemy="GER", offensive=False))
-        ex._finalize_politics(result, catalog)
+        ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
+        self.assertEqual([s[0] for s in result["politics"]["sources"]], ["spirit", "dynamic:faction", "advisor:minister", "leader:leader_x", "static:pride_of_the_fleet_country"])
         terms = result["politics"]["stability_terms"]
         self.assertEqual(result["politics"]["war_posture"], "defensive")
         self.assertAlmostEqual(terms["party_popularity"], 0.12)
         self.assertAlmostEqual(terms["coastal_protection"], 0.05)
-        self.assertAlmostEqual(terms["war"], -0.2)
-        self.assertAlmostEqual(result["metrics"]["stability"], 0.3 + 0.3 + 0.12 + 0.05 - 0.2)
-        self.assertAlmostEqual(result["metrics"]["war_support"], 0.4 + 0.05 + 0.2 - 0.1)
-        self.assertEqual(result["metrics"]["war_support_base"], 0.4)
-        # Offensive war: -0.2 scaled by the offensive factor; both postures at once count as offensive.
-        catalog["ideas"]["spirit"]["offensive_war_stability_factor"] = 0.5
+        self.assertEqual((terms["offensive_war"], terms["defensive_war"]), (0.0, 0.0))
+        self.assertAlmostEqual(result["metrics"]["stability"], 0.3 + 0.15 + 0.15 + 0.12 + 0.05)  # advisor trait counted, no penalty in a defensive war
+        self.assertAlmostEqual(result["metrics"]["war_support"], 0.4 + 0.05 + 0.05 + 0.05 + 0.2 - 0.1)  # spirit + leader trait + pride + defensive - bombing
+        self.assertNotIn("_ideas", result["politics"])
+        # Offensive plus defensive wars: the offensive penalty (scaled) applies to stability, the defensive bonus to war support.
+        catalog["ideas"]["spirit"].update(offensive_war_stability_factor=0.2, defensive_war_stability_factor=0.15)
         result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
         result["wars"] += [dict(enemy="GER", offensive=False), dict(enemy="FRC", offensive=True)]
-        ex._finalize_politics(result, catalog)
-        self.assertEqual(result["politics"]["war_posture"], "offensive")
-        self.assertAlmostEqual(result["politics"]["stability_terms"]["war"], -0.1)
-        self.assertAlmostEqual(result["politics"]["war_support_terms"]["war"], -0.2)
+        ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
+        self.assertEqual(result["politics"]["war_posture"], "both")
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["offensive_war"], -0.16)
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["defensive_war"], 0.15)
+        self.assertAlmostEqual(result["politics"]["war_support_terms"]["war"], 0.2)
+        # A pride of the fleet lost within 30 days carries the temporary penalty instead of the bonus.
+        raw["scalars"][-1] = 'pride_of_the_fleet_date_lost="1941.7.20.1"\n'
+        result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
+        self.assertIn("static:pride_of_the_fleet_sunk_temporary", [s[0] for s in result["politics"]["sources"]])
         # A country without a politics block has no popularity: the displayed value stays unknown, never a guess.
         bare, _ = ex._country("GER", {"scalars": ["stability=1\n"]}, {}, {}, {}, {})
         ex._finalize_politics(bare, ex._EMPTY_POLITICS)

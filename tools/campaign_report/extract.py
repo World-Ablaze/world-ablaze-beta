@@ -50,8 +50,8 @@ METRICS = {
     "military_factories": _metric("Military factories", "count", "DERIVED", "states/buildings/arms_factory/level", "Installed levels in controlled states."),
     "dockyards": _metric("Dockyards", "count", "DERIVED", "states/buildings/dockyard/level", "Installed levels in controlled states."),
     "losses": _metric("Ongoing-war casualties", "men", "DERIVED", "diplomacy/active_relations/*/war_relation/first_casualties,second_casualties", "Counter direction is inferred; peace can remove a counter. The combat/attrition scope is not verified."),
-    "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + idea, advisor-trait and dynamic-modifier stability_factor + party popularity + war + coastal protection, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions. Term formulas (party popularity x 0.15, war -0.2 scaled by the offensive/defensive factor, coastal ratio x 0.1) follow the vanilla defines and are ASSUMED until checked against one in-game tooltip; espionage propaganda is not included. Per-term breakdown in countries/TAG/politics."),
-    "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + idea, advisor-trait and dynamic-modifier war_support_factor + offensive/defensive war + stored bombing and hero-casualty penalties, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base. Offensive (-0.2) or defensive (+0.2) follows the war_relation instigator flags; a country with both counts as offensive (ASSUMED). World tension counts for 0 in WA (05_defines.lua). Per-term breakdown in countries/TAG/politics."),
+    "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + stability_factor of held ideas, hired advisor and ruling leader traits and enabled dynamic modifiers + party popularity + war terms + coastal protection, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions, calibrated on two in-game readings (ENG 77 % and SOV 100 %, August 1941). Terms: ruling party popularity x 0.15 x (1 + party_popularity_stability_factor); -0.2 x (1 - offensive_war_stability_factor - war_stability_factor) only while waging an offensive war; + defensive_war_stability_factor while in a defensive war; coastal protection ratio x 0.1. ASSUMED beyond those readings; espionage propaganda and the war_support_during_war static modifier are not included. Per-term breakdown in countries/TAG/politics."),
+    "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + war_support_factor of held ideas, hired advisor and ruling leader traits, enabled dynamic modifiers and an intact pride of the fleet + defensive (+0.2) or offensive (-0.2) war + stored bombing and hero-casualty penalties, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base. The defensive bonus applies as soon as one war is defensive (war_relation first_was_instigator); world tension counts for 0 in WA (05_defines.lua). Calibrated on SOV August 1941 (91 % in game, 91.6 rebuilt); ENG the same month reads 24 % in game against 34.8 rebuilt: the convoy-raid malus (up to -0.3) and enemy propaganda are not stored in the save and are not reconstructed, so a heavily raided country reads too high. Per-term breakdown in countries/TAG/politics."),
     "stability_base": _metric("Stability (stored base)", "percent", "MEASURED", "countries/TAG/stability", "The base the engine stores; add_stability and weekly modifiers move this number, national spirits do not."),
     "war_support_base": _metric("War support (stored base)", "percent", "MEASURED", "countries/TAG/war_support", "The base the engine stores; add_war_support and weekly modifiers move this number, national spirits do not."),
     "command_power": _metric("Command power", "points", "MEASURED", "countries/TAG/command_power"),
@@ -126,12 +126,13 @@ def _modifier_values(node):
 
 @lru_cache(maxsize=4)
 def politics_catalog(repo):
-    """Stability / war-support modifiers per idea, advisor idea_token, leader trait and dynamic modifier.
+    """Stability / war-support modifiers per idea, leader trait, dynamic modifier and static modifier.
 
     Dynamic modifiers keep their line order: the save stores their current values as an ordered list.
+    Advisor and leader traits are named by the save itself (character_manager); only their values come from here.
     """
     repo = Path(repo)
-    ideas, traits, advisors, dynamic = {}, {}, {}, {}
+    ideas, traits, dynamic, static = {}, {}, {}, {}
     for path in sorted(repo.glob("common/ideas/*.txt")):
         for _, category in parse(path.read_text(encoding="utf-8-sig", errors="replace")).block("ideas"):
             if not isinstance(category, Node):
@@ -147,41 +148,33 @@ def politics_catalog(repo):
                 found = _modifier_values(trait)
                 if found:
                     traits[name] = found
-    for path in sorted(repo.glob("common/characters/*.txt")):
-        for _, character in parse(path.read_text(encoding="utf-8-sig", errors="replace")).block("characters"):
-            if not isinstance(character, Node):
-                continue
-            for advisor in blocks(character, "advisor"):
-                token = advisor.scalar("idea_token")
-                if token and token not in advisors:
-                    advisors[token] = [v for k, v in advisor.block("traits") if k is None and isinstance(v, str)]
     for path in sorted(repo.glob("common/dynamic_modifiers/*.txt")):
         for name, definition in parse(path.read_text(encoding="utf-8-sig", errors="replace")):
             if isinstance(definition, Node) and name not in dynamic:
                 dynamic[name] = [key for key, value in definition if key not in (None, "icon") and not isinstance(value, Node)]
+    for path in sorted(repo.glob("common/modifiers/*.txt")):
+        for name, definition in parse(path.read_text(encoding="utf-8-sig", errors="replace")):
+            if isinstance(definition, Node) and name.startswith("pride_of_the_fleet") and name not in static:
+                static[name] = _modifier_values(definition)
     defines = dict(_NCOUNTRY_DEFAULTS)
     lua = repo / "common/defines/05_defines.lua"
     if lua.exists():
         for match in re.finditer(r"NDefines\.NCountry\.([A-Z_]+)\s*=\s*(-?[0-9.]+)", lua.read_text(encoding="utf-8-sig", errors="replace")):
             if match.group(1) in defines:
                 defines[match.group(1)] = float(match.group(2))
-    return dict(ideas=ideas, traits=traits, advisors=advisors, dynamic=dynamic, defines=defines)
+    return dict(ideas=ideas, traits=traits, dynamic=dynamic, static=static, defines=defines)
 
 
-_EMPTY_POLITICS = dict(ideas={}, traits={}, advisors={}, dynamic={}, defines=dict(_NCOUNTRY_DEFAULTS))
+_EMPTY_POLITICS = dict(ideas={}, traits={}, dynamic={}, static={}, defines=dict(_NCOUNTRY_DEFAULTS))
+_NO_CHARACTERS = dict(advisors={}, leaders={})
 
 
 def _political_modifiers(ideas, dynamic_values, catalog):
-    """Sum of the stability / war-support modifiers a country currently carries, with their sources."""
+    """Sum of the stability / war-support modifiers of the ideas and dynamic modifiers a country carries."""
     totals = {key: 0.0 for key in _POLITICS_KEYS}
     sources = []
     for token in ideas:
         found = catalog["ideas"].get(token)
-        if token in catalog["advisors"]:
-            found = {}
-            for trait in catalog["advisors"][token]:
-                for key, value in catalog["traits"].get(trait, {}).items():
-                    found[key] = found.get(key, 0.0) + value
         if found:
             sources.append([token, dict(found)])
             for key, value in found.items():
@@ -198,16 +191,58 @@ def _political_modifiers(ideas, dynamic_values, catalog):
     return totals, sources
 
 
-def _finalize_politics(country, catalog):
-    """Rebuild the displayed stability and war support once the country's wars are known."""
+def _trait_modifiers(names, catalog):
+    found = {}
+    for trait in names or ():
+        for key, value in catalog["traits"].get(trait, {}).items():
+            found[key] = found.get(key, 0.0) + value
+    return found
+
+
+def _days(date):
+    parts = sg.date_key(date)
+    return parts[0] * 365 + parts[1] * 30 + parts[2]
+
+
+def _finalize_politics(country, catalog, characters=_NO_CHARACTERS, date=None):
+    """Rebuild the displayed stability and war support once wars and characters are known.
+
+    Calibrated on two in-game readings (ENG and SOV, August 1941): the offensive-war stability
+    penalty only applies to a country waging an offensive war, a defensive war adds its
+    defensive_war_stability_factor instead; war support takes the defensive bonus as soon as one
+    war is defensive; hired advisors and the ruling leader contribute their trait modifiers;
+    an intact pride of the fleet adds its static modifier. Everything else remains ASSUMED.
+    """
     politics = country.get("politics") or {}
     metrics = country["metrics"]
     if "modifiers" not in politics:
         return
-    defines, totals = catalog["defines"], politics["modifiers"]
-    postures = [w.get("offensive") for w in country["wars"]]
-    posture = "peace" if not postures else "offensive" if any(p is True for p in postures) else "defensive" if all(p is False for p in postures) else "unknown"
-    politics["war_posture"] = posture
+    defines, totals, sources = catalog["defines"], politics["modifiers"], politics["sources"]
+    extra = []
+    for token in politics.pop("_ideas", []):
+        found = _trait_modifiers(characters["advisors"].get(token), catalog)
+        if found:
+            extra.append(["advisor:" + token, found])
+    ideology, leader_id = politics.pop("_leader", (None, None))
+    leader = characters["leaders"].get(leader_id)
+    if leader:
+        found = _trait_modifiers(leader["traits"].get(ideology), catalog)
+        if found:
+            extra.append(["leader:" + leader["token"], found])
+    pride, lost = politics.pop("_pride", (False, None))
+    if pride and lost in (None, "1.1.1.1"):
+        extra.append(["static:pride_of_the_fleet_country", dict(catalog["static"].get("pride_of_the_fleet_country", {}))])
+    elif pride and lost and date and 0 <= _days(date) - _days(lost) <= 30:
+        extra.append(["static:pride_of_the_fleet_sunk_temporary", dict(catalog["static"].get("pride_of_the_fleet_sunk_temporary", {}))])
+    for name, found in extra:
+        if found:
+            sources.append([name, found])
+            for key, value in found.items():
+                totals[key] += value
+    offensive = any(w.get("offensive") is True for w in country["wars"])
+    defensive = any(w.get("offensive") is False for w in country["wars"])
+    unknown = any(w.get("offensive") is None for w in country["wars"])
+    politics["war_posture"] = "peace" if not country["wars"] else "unknown" if unknown else "offensive" if offensive and not defensive else "defensive" if defensive and not offensive else "both"
     popularity = politics.get("ruling_popularity")
     terms = {"base": metrics["stability_base"], "modifiers": totals["stability_factor"],
              "party_popularity": defines["BASE_STABILITY_PARTY_POPULARITY_FACTOR"] * popularity / 100.0 * (1 + totals["party_popularity_stability_factor"]) if popularity is not None else None,
@@ -216,14 +251,12 @@ def _finalize_politics(country, catalog):
                 "bombing": politics.get("being_bombed_support_penalty") or 0.0,
                 "hero_casualties": politics.get("heroes_dying_war_support_penalty") or 0.0,
                 "tension": 0.0 if defines["WAR_SUPPORT_TENSION_IMPACT"] == 0 else None}
-    if posture == "peace":
-        terms["war"], ws_terms["war"] = 0.0, 0.0
-    elif posture == "unknown":
-        terms["war"] = ws_terms["war"] = None
+    if unknown:
+        terms["offensive_war"] = terms["defensive_war"] = ws_terms["war"] = None
     else:
-        scale = totals["offensive_war_stability_factor" if posture == "offensive" else "defensive_war_stability_factor"] + totals["war_stability_factor"]
-        terms["war"] = defines["BASE_STABILITY_WAR_FACTOR"] * (1 - scale)
-        ws_terms["war"] = defines["WAR_SUPPORT_OFFNSIVE_WAR" if posture == "offensive" else "WAR_SUPPORT_DEFENSIVE_WAR"]
+        terms["offensive_war"] = defines["BASE_STABILITY_WAR_FACTOR"] * (1 - totals["offensive_war_stability_factor"] - totals["war_stability_factor"]) if offensive else 0.0
+        terms["defensive_war"] = totals["defensive_war_stability_factor"] if defensive else 0.0
+        ws_terms["war"] = defines["WAR_SUPPORT_DEFENSIVE_WAR"] if defensive else defines["WAR_SUPPORT_OFFNSIVE_WAR"] if offensive else 0.0
     politics["stability_terms"], politics["war_support_terms"] = terms, ws_terms
     for metric, parts, low, high in (("stability", terms, "MIN_STABILITY", "MAX_STABILITY"), ("war_support", ws_terms, "MIN_WAR_SUPPORT", "MAX_WAR_SUPPORT")):
         if all(v is not None for v in parts.values()):
@@ -479,7 +512,10 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
             if modifier.scalar("modifier") and modifier.scalar("enabled", "yes") != "no":
                 dynamic_values.append((modifier.scalar("modifier"), [number(v) for k, v in modifier.block("value") if k is None]))
         totals, sources = _political_modifiers(ideas, dynamic_values, politics)
+        leader = next((v for k, v in nodes["politics"].block("parties").block(ruling).block("country_leader") if k is None and isinstance(v, Node)), None) if ruling else None
         result["politics"] = dict(ruling_party=ruling, ruling_popularity=popularity, modifiers=totals, sources=sources,
+                                  _ideas=ideas, _leader=[leader.scalar("ideology"), _id(leader, "character")] if leader is not None else [None, None],
+                                  _pride=[bool(scalars.block("pride_of_the_fleet")), scalars.scalar("pride_of_the_fleet_date_lost")],
                                   coastal_protection_ratio=numeric(scalars, "coastal_protection_ratio"),
                                   being_bombed_support_penalty=numeric(scalars, "being_bombed_support_penalty"),
                                   heroes_dying_war_support_penalty=numeric(scalars, "heroes_dying_war_support_penalty"))
@@ -654,7 +690,8 @@ def extract_save(path: Path, repo: Path) -> dict:
     politics = politics_catalog(str(repo))
     selected = {"units", "production", "resources", "manpower", "experience_status", "diplomacy", "variables", "convoys", "politics", "dynamic_modifier"}
     scalar_keys = {"stability", "war_support", "command_power", "convoys_destroyed", "coastal_protection_ratio",
-                   "being_bombed_support_penalty", "heroes_dying_war_support_penalty"}
+                   "being_bombed_support_penalty", "heroes_dying_war_support_penalty", "pride_of_the_fleet", "pride_of_the_fleet_date_lost"}
+    characters = dict(advisors={}, leaders={})
     with sg.open_save(str(path)) as fh:
         for line in fh:
             if line.startswith("date="):
@@ -683,6 +720,28 @@ def extract_save(path: Path, repo: Path) -> dict:
                     month, killer, owner = numeric(node, "month"), node.scalar("killer_country"), node.scalar("owner")
                     if month is not None and killer and owner:
                         convoy_losses.append([int(month), killer, owner, numeric(node, "convoys") or 0])
+            elif line.startswith("character_manager={"):
+                # Hired advisors and leaders name their traits here; the trait values come from the checkout.
+                # Characters sit one level down, under wrappers such as `historical={`.
+                for wrapper in fh:
+                    if wrapper.strip() == "}":
+                        break
+                    if _delta(wrapper) == 0:
+                        continue
+                    for chunk in _children(fh):
+                        node = parse("".join(chunk)).block("character")
+                        cid = _id(node)
+                        if cid is None:
+                            continue
+                        leaders = {}
+                        for leader in blocks(node.block("country_leaders"), "country_leader"):
+                            leaders[leader.scalar("ideology")] = [v for k, v in leader.block("traits") if k is None and isinstance(v, str)]
+                        if leaders:
+                            characters["leaders"][cid] = dict(token=node.scalar("token") or str(cid), traits=leaders)
+                        for advisor in blocks(node.block("advisors"), "advisor"):
+                            token = advisor.scalar("idea_token")
+                            if token and token not in characters["advisors"]:
+                                characters["advisors"][token] = [v for k, v in advisor.block("traits") if k is None and isinstance(v, str)]
             elif line.startswith("division_templates={"):
                 templates = plans._read_templates(fh)
             elif line.startswith("strategic_air={"):
@@ -739,7 +798,7 @@ def extract_save(path: Path, repo: Path) -> dict:
     for country in countries.values():
         values = [w["losses"] for w in country["wars"]]
         country["metrics"]["losses"] = sum(values) if all(v is not None for v in values) else None
-        _finalize_politics(country, politics)
+        _finalize_politics(country, politics, characters, date)
         country["issues"] = list(dict.fromkeys(country["issues"]))
     if date is None:
         raise ValueError(f"No date in save: {path}")

@@ -18,9 +18,9 @@ def dependency_digest(repo: Path) -> str:
     paths.update((repo / "common/buildings").glob("*.txt"))
     paths.update((repo / "common/ideas").glob("*.txt"))  # the conscription ladder and idea modifiers
     # Displayed stability / war support: advisor traits, dynamic modifiers, NCountry defines.
-    paths.update((repo / "common/characters").glob("*.txt"))
     paths.update((repo / "common/country_leader").glob("*.txt"))
     paths.update((repo / "common/dynamic_modifiers").glob("*.txt"))
+    paths.update((repo / "common/modifiers").glob("*.txt"))
     paths.add(repo / "common/defines/05_defines.lua")
     # UI/render/CLI do not change an extracted value; changing them must reuse the cache.
     paths = {p for p in paths if p.name not in {"render.py", "__main__.py", "campaign.py", "cache.py", "digest.py", "convoys.py"}
