@@ -187,6 +187,7 @@ Use this table to find the existing source of truth before adding new logic.
 | `common/scripted_effects/WA_AI_MAP_*` lookup data | `tools/gen/run_generators.py` and `tools/gen/map_generators/*.py` |
 | `common/ai_faction_theaters/ai_faction_theaters.txt` | `tools/gen/gen_ai_faction_theaters.py` (`--dry-run` first) |
 | `common/scripted_effects/WA_AI_LANDING_reservations_data.txt` | `tools/gen/gen_ai_landing_reservations.py` (`--dry-run` first) |
+| `# WA_RB_GRANT` regions after every `add_tech_bonus` (common/, events/) and `# WA_RB_CONSUME` regions in every technology's `on_research_complete` | `tools/gen/gen_research_bonus_tracking.py` (`--dry-run` / `--check`); the counters they keep are read by the generated `ai_will_do` date gates (`documentation/WA_RESEARCH_RUSH.md`) |
 | Technology `ai_will_do` blocks | `tools/migrations/ai_will_do/ai_will_do_replacer_all.py`, domain replacers, and `tools/migrations/ai_will_do/ai_replacer_base/` |
 | Prospecting decision `ai_will_do` blocks | `tools/migrations/prospecting/needs_aware_generator.py`, `tools/migrations/prospecting/prospecting_decision_analyzer.py`, `tools/migrations/prospecting/ai_will_do_replacer_prospecting.py` |
 | `_GENERATED_` localisation files | Existing generator workflow for their corresponding content |

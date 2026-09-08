@@ -173,6 +173,143 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### pc-lost-state-purge — TESTED (2026-09-08)
+- Owner order 2026-09-08 ("corrige la purge"), from the ITA side-switch audit (campaign `6fcbbe0d`,
+  1943.9 vs 1944.1). Intended behaviour: when a state changes hands to a party the old controller may
+  not build through (not itself, not faction, not subject either way, not in its
+  `WA_AI_PC_construction_permissions`), the old controller's priority-construction projects in that
+  state are cancelled at once and counted in `wa_tlm_pc_lost_n`.
+- Symptom, MEASURED: `wa_tlm_pc_lost_n = 0` on every country (all 66 tags) at 1944.1 after four
+  years of war - the purge never fired for anyone. ITA keeps 5 non-rail projects (naval_base +
+  3 supply_line in Libya 448/449/450, lost ITA -> FRA between 1943.6 and 1943.8; inf_resource in
+  Veneto 160, RIT-held) at 0 factories, stall 10-13 wk, `active_nonrail = 5` = the `< 5` admission
+  gate, so ITA admits no non-rail project. The state-side arrays ARE populated
+  (`wa_ai_pc_projects_in_state_of_ita^0 = 13` on 448): the data was there, the read was wrong.
+- Cause, DERIVED from the hook's own measured comment: in `on_state_control_changed`
+  (`common/on_actions/WA_AI_misc_on_actions.txt`) the purge read
+  `WA_AI_PC_projects_in_state_of_@FROM` and the permission tests `FROM = { ... }` INSIDE the
+  `FROM.FROM = { }` state block, where FROM re-binds to the state (recorded 30 lines above for
+  `sq_ctrl_reset_n`, local run BHU_1941_11_18_12). Array keyed by the state = empty = no cancel.
+  Rival not killed: the hook itself never fires (ASSUMED engine; `sq_ctrl_reset_n` is 0 everywhere
+  too, but it only counts a live TTL flag, so it does not discriminate). The console test below is
+  what separates the two.
+- Change (working tree, NOT committed): (1) the old controller is captured at the effect root
+  (`set_temp_variable = { _pc_lost_old_ctrl_ = FROM }`) and every read goes through
+  `@var:_pc_lost_old_ctrl_` / `var:_pc_lost_old_ctrl_ = { }`; the permission OR runs in the old
+  controller's scope (`ROOT` = new controller never re-binds; reverse subject test is
+  `ROOT = { is_subject_of = PREV }`); the cancel runs in the old controller's country scope.
+  (2) `WA_AI_PC_end_project_by_id` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`) removes the state-side
+  entry from `..._of_@PREV` instead of `..._of_@ROOT`: under this on_action ROOT is the NEW controller,
+  so `@ROOT` would strip the new controller's same-numbered slot and leave the loser's entry behind;
+  every other caller runs in the builder's scope where PREV == ROOT; the add site in
+  `WA_AI_PC_start_project` uses the same `@PREV` accessor so the pair cannot desync. `@var:` in a
+  `for_each_loop array =` / `check_variable ^num` is ASSUMED (proven in this repo for
+  set_temp_variable and clear_variable only); `@PREV` is proven (AIFC / LANDING flags).
+  (3) Resumed saves: state-side arrays already carry ids from the years the purge was dead (ITA on
+  Libya today), and slot ids are recycled, so a stale entry could cancel a live project elsewhere.
+  The purge therefore drops any entry whose slot `WA_AI_PC_target_state` is not this state and never
+  cancels through it (idempotent clean-up at the only read site; no load-time migration). Architecture
+  review CONFLICT (ROOT-keyed removal, silent regression, comment date) -> all three applied. Lessons
+  review CONFLICT (same ROOT defect; `WA_AI_PC_construction_permissions` has NO writer - noted at the
+  site, term kept; `PC CANCELLED` log printed `[Root.GetName]` = the conqueror -> now `[This.GetName]`;
+  `WA_AI_PC_cancel_projects` header now says THIS = builder) -> all applied.
+- Impact: callers of `WA_AI_PC_end_project_by_id` - core (6), this on_action (2), WA_TEST_railway (3)
+  - all in builder scope. Readers of `projects_in_state_of_`: `WA_AI_PC_has_same_type_project_here`,
+  the thair strategy, WA_TEST_railway 014. Tag-free, date-free: historical and ahistorical identical.
+  Regression risk, STATED: a purge that now actually fires cancels paid-for projects in a state lost
+  to an enemy - the intended behaviour since 2026-01-29, never exercised; the [rail-admission-churn]
+  keep-paid rule does not apply here (same as before). Civil-war splits (Veneto -> RIT) may never
+  reach this hook (ASSUMED engine) - out of scope, would need a periodic re-validation sweep.
+- Console run 1, MEASURED (`pc_purge_test.hoi4`, 1944.1.3, Tripoli 448 ITA -> GER): hook FIRED,
+  `@var:` array iteration and the `var:` effect scope WORK (the state-side entry `_of_ita^0 = 13` was
+  removed), but nothing was cancelled (`pc_lost_n = 0`, project 13 still queued). The first-cut stale
+  guard classified the live project as stale: it compared the state's `THIS.id` (engine-encoded) with
+  the stored plain `WA_AI_PC_target_state` inside a `var:` block used as a TRIGGER scope - two rivals,
+  one measurement, both removed: the classification now runs as EFFECTS in the old controller's scope
+  (a state flag `WA_AI_PC_lost_here` set/cleared on the lost state, read by a scope walk through
+  `var:WA_AI_PC_target_state^id`) and feeds two plain temps the `if` reads. That save's 448 bookkeeping
+  is desynced by the run (entry gone, project kept) - re-test from a fresh load of `1944.1_Jan.hoi4`.
+- Harness (contract v1, owner order "des effets pour pas que je fasse tout en console"):
+  `common/scripted_effects/WA_TEST_pc_lost_purge.txt` + `events/wa_test_pc_lost_purge.txt`. From
+  any tag on a FRESH load of `1944.1_Jan.hoi4`: `event wa_pclost.9 ITA` runs report, leg A (448
+  Tripoli -> ITA -> an enemy, expect cancel), leg B (450 Benghasi -> ITA -> a faction member, expect
+  nothing), leg C (160 Veneto -> ITA -> an enemy, expect cancel), report; each leg prints
+  `expect cancelled=N` beside the three measured deltas and a `VERDICT: PASS|FAIL`. The legs use
+  `set_state_controller`, so they also answer whether that effect reaches `on_state_control_changed`
+  (ASSUMED yes; the console `setcontroller` run above proved the hook fires for that path).
+- Harness run 1, MEASURED (2026-09-08 19:10, `1944.1_Jan.hoi4`, `event wa_pclost.9 ITA` from BHU):
+  scope line 1 1 1 1 0 on all five blocks; report correct (13 queued, 5 of them on ground ITA does
+  not control); legs A/C FAIL, B PASS - but every "after step 1" row still read the OLD controller
+  (Tripoli: United Kingdom), so the fixture never changed hands and the purge was never exercised.
+  Cause, MEASURED in the engine doc (`effects_documentation.md`): `set_state_controller` is the
+  COUNTRY-scope form taking a state; inside a state block the effect is `set_state_controller_to`.
+  Harness fixed (`set_state_controller_to = ROOT` / `= PREV` from the partner's scope, both vanilla
+  forms). Verdicts of run 1 are void for the purge.
+- Harness run 2, MEASURED (owner, 2026-09-08 19:26, cold-restarted game, fresh `1944.1_Jan.hoi4`,
+  `event wa_pclost.9 ITA` from BHU): scope `1 1 1 1 0` on all five blocks, and all three legs PASS.
+  Leg A (448 Tripoli -> ITA -> GER, enemy): queue 13->12, active_nonrail 5->4, pc_lost_n 0->1,
+  `projects_in_state_of_ITA^num` 1->0. Leg B (450 Benghasi -> ITA -> USA, faction member): queue
+  12->12, pc_lost_n 1->1, array stays 2 (nothing cancelled). Leg C (160 Veneto -> ITA -> GER):
+  queue 12->11, active_nonrail 4->3, pc_lost_n 1->2, array 1->0. So the purge fires, cancels only
+  the enemy-lost projects, counts them, cleans the builder's state array, and leaves a faction
+  transfer intact; `set_state_controller_to` reaches `on_state_control_changed` (the ASSUMED rung
+  6 boundary is now MEASURED closed for this path). The `@var:` array iteration and both `var:`
+  scopes work in-engine.
+- Runs 19:17 and 19:21 were VOID (`I-am-ROOT=0`, all country-valued triggers false while name
+  interpolation and `ROOT = { always = yes }` read true) - the console hot-reload poison. Discriminated
+  by the cold restart at 19:26 reading `1 1 1 1 0` from the byte-identical file: it is the reload, not
+  the harness. Durable rule -> [[hot-reload-poisons-country-triggers]] (lessons log).
+- NOT committed: the working-tree diff (on_action classification, `@PREV` add-site, harness files) is
+  not committed by me; the first-cut edits were swept into `054a4a87e4` (see [[concurrent-sessions-sweep-edits]]).
+  Commit the remainder as one change before closing.
+- Verification (campaign): `wa_tlm_pc_lost_n > 0` on at least one country that lost ground to an
+  enemy (positive control), and no `pc` row whose state is controlled by an enemy for more than one
+  save (`savegame.py pc TAG --limit 0` joined with `control`).
+- Closed when: the remainder is committed and one campaign shows the two verification lines.
+
+### research-rush — TESTED (2026-09-08)
+- **Owner console run 2026-09-08 18:13, save `1937.4_Apr.hoi4`, ENG** (game.log, pasted):
+  ```
+  Q7    : WA_rb_uses_cat_transport=0 ahead2=0   uses_industry=0   uses_cat_light_armor=0   uses_t_eng_fighter_multirole_ad_tech_1=0
+  GATE  : transport OR1=1 veto=1   hampden OR1=1 veto=1
+  wa_rb.2 granted WA_TEST_rb_bonus (cat_transport, 0.5, uses 1)
+  Q7    : WA_rb_uses_cat_transport=1 ahead2=0   uses_industry=0   uses_cat_light_armor=0   uses_t_eng_fighter_multirole_ad_tech_1=0
+  GATE  : transport OR1=0 veto=0   hampden OR1=1 veto=1
+  ```
+  Then the game ran to 1938.6.20 (`test_research_3.hoi4`): Bristol Bombay `level=1 date="1938.1.4.1"`
+  (normal completion, no slot entry), the test record a spent shell (no `uses`, no `claim`), and
+  `var ENG "^wa_rb_"` = only `wa_rb_uses_t_eng_destroyer_7=1` (ENG_the_admiralty granted 1937.5,
+  tech not yet researched) - `wa_rb_uses_cat_transport` consumed and cleared by the
+  `on_research_complete` chain. MEASURED. Boot 18:07: 0 parser errors on technologies / grant files
+  (the harness's own `clear_temp_variable` lines were the only errors, removed); 18:08-18:59: no
+  runtime error naming the ledger's constructs.
+- Verification (1) DONE above; (2) DONE (boot); (3) campaign probe pending.
+- Owner order 2026-09-08 ("tous les bonus, compteur d'usages, plancher 1 an ... 2 ans pour les ahead
+  of time de 2 ans"). Intended behaviour: an AI may start a tech one year before `start_year` while a
+  research bonus use is available for it (any of its categories, or the tech itself), two years when
+  that bonus carries `ahead_reduction >= 2`; without a bonus the generated date gate is unchanged.
+- Symptom (MEASURED, campaign `6fcbbe0d` + owner observe run): on build `b829393945` ENG started
+  four 1938 techs in August 1936 with no bonus on them - the `has_tech_bonus` exemption shipped that
+  day was inverted. Console harness `wa_rb.1` (6 runs, ENG/LUX, 1936.8/1937.4): `technology =` form
+  never depends on the tech; `category =` form stays true on spent records the engine never deletes
+  (20-save trace). No usable engine trigger -> script-side ledger.
+- Change (`documentation/WA_RESEARCH_RUSH.md`): `tools/gen/gen_research_bonus_tracking.py` writes
+  `WA_rb_uses_<key>` / `WA_rb_ahead2_<key>` counters after every `add_tech_bonus` (1 610 blocks, 83
+  files) and an `on_research_complete` consume chain in every tech (4 357); the 4 203 generated
+  `ai_will_do` date gates read the counters (`add_research_bonus_exemption.py` migrated them, the
+  ai_will_do generators emit the same shape). Residual, by construction: a tech of the category
+  already running at grant time completes first and decrements in the bonus's place - closes early,
+  never late (no research-START hook exists in the engine).
+- Verification: (1) owner console, save 1937.4 of `6fcbbe0d`: `tag ENG`, `event wa_rb.1` (Q7 counters
+  absent, GATE Bombay veto 1), `event wa_rb.2` (grants cat_transport: Q7 `uses_cat_transport = 1`,
+  GATE Bombay veto 0), then a NORMAL completion of a cat_transport tech brings the counter to 0
+  (`research all` does not fire on_research_complete the normal way - RUN 6). Paste here.
+  (2) Boot log: 0 parser errors on `common/technologies/*` and the 83 grant files (F9).
+  (3) Campaign: `savegame.py var ENG "^wa_rb_" <saves>` never monotone-growing; a major with a
+  2-year ahead focus (GER `GER_synthetic_breakthroughs`, ITA `ITA_mare_nostrum`) has the covered
+  `start_year+2` tech in progress within a year.
+- Closed when: (1) pasted with the counter returning to 0, (2) clean, (3) observed on one campaign.
+
 ### repeatable-pp-decisions — OPEN (2026-09-08)
 - Owner order 2026-09-08 ("certaines pays IA ont des décisions répétables qui coutent des PP ... ces
   décisions empêchent les IAs de faire les choses importantes"). Intended behaviour: an AI spends PP on

@@ -48,7 +48,8 @@ def extract_categories(tech_block: str) -> list[str]:
     categories = []
     cat_match = re.search(r'categories\s*=\s*\{([^}]+)\}', tech_block, re.DOTALL)
     if cat_match:
-        cat_content = cat_match.group(1)
+        # drop `# comments` line by line: a commented-out category is not a category
+        cat_content = "\n".join(line.split('#', 1)[0] for line in cat_match.group(1).splitlines())
         categories = re.findall(r'(\w+)', cat_content)
     return categories
 

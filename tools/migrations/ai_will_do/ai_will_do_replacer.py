@@ -12,6 +12,7 @@ import sys
 import argparse
 from pathlib import Path
 from ai_replacer_base.generator import generate_ai_will_do_block
+from ai_replacer_base.text_utils import extract_categories
 
 # =============================================================================
 # TECHNOLOGY TO TRIGGER MAPPINGS
@@ -264,7 +265,8 @@ def should_use_factor_1(tech_name: str, trigger: str) -> bool:
     return False
 
 
-def generate_ai_will_do(trigger, date: int, factor: int = 5, tech_name: str | None = None) -> str:
+def generate_ai_will_do(trigger, date: int, factor: int = 5, tech_name: str | None = None,
+                        categories: list[str] | None = None) -> str:
     """Generate the standardized ai_will_do block - delegates to new base module.
 
     Args:
@@ -310,7 +312,8 @@ def generate_ai_will_do(trigger, date: int, factor: int = 5, tech_name: str | No
 			}}
 		}}"""
 
-    return generate_ai_will_do_block(triggers, date, indent="		", factor=factor, tech_name=tech_name)
+    return generate_ai_will_do_block(triggers, date, indent="		", factor=factor, tech_name=tech_name,
+                                     categories=categories)
 def generate_ai_will_do_old(trigger: str, date: int, factor: int = 5) -> str:
     """OLD VERSION - kept for reference but not used."""
     if trigger is None:
@@ -465,7 +468,8 @@ def process_file(file_path: Path, file_type: str, dry_run: bool = False) -> dict
 
         # Determine factor: 1 for mines and fire control, 5 for others
         factor = 1 if should_use_factor_1(tech_name, trigger) else 5
-        new_ai_will_do = generate_ai_will_do(trigger, start_year, factor, tech_name=tech_name)
+        new_ai_will_do = generate_ai_will_do(trigger, start_year, factor, tech_name=tech_name,
+                                             categories=extract_categories(block['tech_content']))
 
         # Only replace if the block actually changed
         old_block = content[block['start']:block['end']]

@@ -146,7 +146,7 @@ class SupportFileProcessor(BaseFileProcessor):
 
             # Generate new block
             triggers = [trigger] if isinstance(trigger, str) else trigger
-            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name)
+            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name, categories=categories)
 
             # Replace the block
             content = content[:block_start] + new_block + content[block_end:]

@@ -221,7 +221,8 @@ class InfantryFileProcessor(BaseFileProcessor):
 
             # Generate new block
             triggers = sorted(list(reachable_triggers))
-            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name)
+            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name,
+                                                  categories=extract_categories(tech_block))
 
             # Replace the block
             content = content[:block_start] + new_block + content[block_end:]

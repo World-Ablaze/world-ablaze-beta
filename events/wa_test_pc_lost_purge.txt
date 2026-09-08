@@ -1,0 +1,121 @@
+############################################################################################################
+#	World Ablaze - PC lost-state purge harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human. From any tag (observer):
+#
+#		event wa_pclost.1 ITA    report: counters + every queued project, its state and who holds it
+#		event wa_pclost.2 ITA    leg A: fixture state 448 (Tripoli)  -> ITA -> an ENEMY        : expect cancel
+#		event wa_pclost.3 ITA    leg B: fixture state 450 (Benghasi) -> ITA -> a FACTION member : expect nothing
+#		event wa_pclost.4 ITA    leg C: fixture state 160 (Veneto)   -> ITA -> an ENEMY        : expect cancel
+#		event wa_pclost.9 ITA    all three, in order, on one save
+#
+#	Fixtures are for 1944.1_Jan.hoi4 of campaign 6fcbbe0d (ITA holds queued projects in those three
+#	states while ENG / ENG / RIT control them). On another save, swap the three state ids below.
+#	Each leg is one transition of the state under test: to ITA first (so ITA is the OLD controller),
+#	then to the partner. Reload the save between runs - the legs change the map.
+#
+#	Output: logs/game.log under "PC LOST PURGE TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP. Then `expect cancelled=` against the three measured deltas and the VERDICT.
+#	Effects: common/scripted_effects/WA_TEST_pc_lost_purge.txt. Owning subject: WORK.md [pc-lost-state-purge].
+############################################################################################################
+
+add_namespace = wa_pclost
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_pclost.1
+	title = wa_pclost.1.t
+	desc = wa_pclost.1.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_PCLOST_report = yes
+	}
+
+	option = { name = wa_pclost.1.a }
+}
+
+# Leg A - fixture state lost to an enemy.
+country_event = {
+	id = wa_pclost.2
+	title = wa_pclost.2.t
+	desc = wa_pclost.2.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		set_temp_variable = { _pcl_fixture_state_ = 448 } # Tripoli
+		set_temp_variable = { _pcl_to_enemy_ = 1 }
+		WA_TEST_PCLOST_leg = yes
+	}
+
+	option = { name = wa_pclost.2.a }
+}
+
+# Leg B - fixture state handed to a faction member (control: nothing must move).
+country_event = {
+	id = wa_pclost.3
+	title = wa_pclost.3.t
+	desc = wa_pclost.3.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		set_temp_variable = { _pcl_fixture_state_ = 450 } # Benghasi
+		set_temp_variable = { _pcl_to_enemy_ = 0 }
+		WA_TEST_PCLOST_leg = yes
+	}
+
+	option = { name = wa_pclost.3.a }
+}
+
+# Leg C - second enemy leg on a different state.
+country_event = {
+	id = wa_pclost.4
+	title = wa_pclost.4.t
+	desc = wa_pclost.4.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		set_temp_variable = { _pcl_fixture_state_ = 160 } # Veneto
+		set_temp_variable = { _pcl_to_enemy_ = 1 }
+		WA_TEST_PCLOST_leg = yes
+	}
+
+	option = { name = wa_pclost.4.a }
+}
+
+# All three legs plus a report before and after.
+country_event = {
+	id = wa_pclost.9
+	title = wa_pclost.9.t
+	desc = wa_pclost.9.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_PCLOST_report = yes
+		set_temp_variable = { _pcl_fixture_state_ = 448 } # Tripoli
+		set_temp_variable = { _pcl_to_enemy_ = 1 }
+		WA_TEST_PCLOST_leg = yes
+		set_temp_variable = { _pcl_fixture_state_ = 450 } # Benghasi
+		set_temp_variable = { _pcl_to_enemy_ = 0 }
+		WA_TEST_PCLOST_leg = yes
+		set_temp_variable = { _pcl_fixture_state_ = 160 } # Veneto
+		set_temp_variable = { _pcl_to_enemy_ = 1 }
+		WA_TEST_PCLOST_leg = yes
+		WA_TEST_PCLOST_report = yes
+	}
+
+	option = { name = wa_pclost.9.a }
+}
