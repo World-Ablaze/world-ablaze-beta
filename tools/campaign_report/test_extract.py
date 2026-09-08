@@ -216,7 +216,8 @@ class ExtractionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "wings.hoi4"
             path.write_text('HOI4txt\ndate="1941.8.1.2"\nequipments={\n\tsmall_fighter_airframe={\n\t\tid={ id=7 type=70 }\n\t\tname="Spitfire"\n\t\tcreator="ENG"\n\t}\n\tinfantry_equipment={\n\t\tid={ id=8 type=70 }\n\t\tname="Rifle"\n\t\tcreator="ENG"\n\t}\n}\n'
-                            'countries={\n\tENG={\n\t\tstability=0.5\n\t\tproduction={\n\t\t\tequipments={\n\t\t\t\tequipment={ id={ id=7 type=70 } amount=40 }\n\t\t\t}\n\t\t}\n\t}\n}\n'
+                            'countries={\n\tENG={\n\t\tstability=0.5\n\t\tcharacters={\n\t\t\tcharacter_status={ character={ id=1 type=73 } unit_leader=yes }\n\t\t\tcharacter_status={ character={ id=2 type=73 } unit_leader=yes }\n\t\t\tcharacter_status={ character={ id=3 type=73 } unit_leader=yes }\n\t\t\tcharacter_status={ character={ id=4 type=73 } unit_leader=no }\n\t\t}\n\t\tproduction={\n\t\t\tequipments={\n\t\t\t\tequipment={ id={ id=7 type=70 } amount=40 }\n\t\t\t}\n\t\t}\n\t}\n}\n'
+                            'character_manager={\n\thistorical={\n\t\tcharacter={\n\t\t\tid={ id=1 type=73 }\n\t\t\ttoken="ENG_a"\n\t\t\tcorps_commander={ skill=1 }\n\t\t}\n\t\tcharacter={\n\t\t\tid={ id=2 type=73 }\n\t\t\ttoken="ENG_b"\n\t\t\tfield_marshal={ skill=1 }\n\t\t}\n\t\tcharacter={\n\t\t\tid={ id=3 type=73 }\n\t\t\ttoken="ENG_c"\n\t\t\tnavy_leader={ skill=1 }\n\t\t}\n\t\tcharacter={\n\t\t\tid={ id=4 type=73 }\n\t\t\ttoken="ENG_d"\n\t\t\tcorps_commander={ skill=1 }\n\t\t}\n\t}\n}\n'
                             'strategic_air={\n\tENG={\n\t\tair_wing_pool={\n\t\t\tdefinition=fighter_multirole\n\t\t\tair_wings={\n\t\t\t\tcount=100\n\t\t\t\tequipment={\n\t\t\t\t\tequipment={ id={ id=7 type=70 } amount=100 }\n\t\t\t\t\tequipment={ id={ id=8 type=70 } amount=0 }\n\t\t\t\t\tequipment={ id={ id=9 type=70 } amount=3 }\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n', encoding="utf-8")
             catalog = {"small_fighter_airframe": dict(domain="air", family="small_fighter_airframe", role="fighter"),
                        "infantry_equipment": dict(domain="army", family="infantry_equipment", role=None)}
@@ -229,6 +230,7 @@ class ExtractionTests(unittest.TestCase):
             self.assertEqual(country["air"]["wings_by_role"], {"fighter": 100})
             self.assertEqual([v["deployed"] for v in country["equipment"]["variants"] if v["id"] == 7], [100])
             self.assertTrue(any("Wing equipment #9" in issue for issue in country["issues"]))  # unregistered variant reported, not dropped
+            self.assertEqual((country["metrics"]["generals"], country["metrics"]["field_marshals"], country["metrics"]["admirals"]), (1, 1, 1))  # id 4 holds no unit-leader role
 
     def test_missing_global_sections_keep_global_counts_unknown(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -56,6 +56,9 @@ METRICS = {
     "war_support_base": _metric("War support (stored base)", "percent", "MEASURED", "countries/TAG/war_support", "The base the engine stores; add_war_support and weekly modifiers move this number, national spirits do not."),
     "command_power": _metric("Command power", "points", "MEASURED", "countries/TAG/command_power"),
     "political_power": _metric("Political power", "points", "MEASURED", "countries/TAG/politics/political_power", "Stored balance at the save date."),
+    "generals": _metric("Generals", "count", "DERIVED", "countries/TAG/characters/character_status (unit_leader=yes) x character_manager corps_commander role", "Characters of the country holding the unit-leader role whose record carries a corps_commander block and no field_marshal block. Retired characters are listed apart and not counted; a leader hidden by an availability trigger is counted (ASSUMED rare)."),
+    "field_marshals": _metric("Field marshals", "count", "DERIVED", "countries/TAG/characters/character_status (unit_leader=yes) x character_manager field_marshal role", "Same rule with the field_marshal block."),
+    "admirals": _metric("Admirals", "count", "DERIVED", "countries/TAG/characters/character_status (unit_leader=yes) x character_manager navy_leader role", "Same rule with the navy_leader block."),
     "army_xp": _metric("Army XP", "points", "MEASURED", "countries/TAG/experience_status/army_experience"),
     "navy_xp": _metric("Navy XP", "points", "MEASURED", "countries/TAG/experience_status/navy_experience"),
     "air_xp": _metric("Air XP", "points", "MEASURED", "countries/TAG/experience_status/air_experience"),
@@ -674,6 +677,7 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
                                   _leader=[leader.scalar("ideology"), _id(leader, "character")] if leader is not None else [None, None],
                                   _pride=[bool(scalars.block("pride_of_the_fleet")), scalars.scalar("pride_of_the_fleet_date_lost")],
                                   _capital=numeric(scalars, "capital"),
+                                  _unit_leaders=[_id(status, "character") for status in blocks(nodes.get("characters", Node()), "character_status") if status.scalar("unit_leader") == "yes"],
                                   coastal_protection_ratio=numeric(scalars, "coastal_protection_ratio"),
                                   being_bombed_support_penalty=numeric(scalars, "being_bombed_support_penalty"),
                                   heroes_dying_war_support_penalty=numeric(scalars, "heroes_dying_war_support_penalty"))
@@ -909,7 +913,8 @@ def extract_save(path: Path, repo: Path) -> dict:
                             leaders[leader.scalar("ideology")] = [v for k, v in leader.block("traits") if k is None and isinstance(v, str)]
                         for advisor in blocks(node.block("advisors"), "advisor"):
                             advisor_traits += [v for k, v in advisor.block("traits") if k is None and isinstance(v, str)]
-                        characters["characters"][cid] = dict(token=node.scalar("token") or str(cid), leaders=leaders, advisor_traits=advisor_traits)
+                        characters["characters"][cid] = dict(token=node.scalar("token") or str(cid), leaders=leaders, advisor_traits=advisor_traits,
+                                                             roles=[role for role in ("corps_commander", "field_marshal", "navy_leader") if node.block(role)])
             elif line.startswith("division_templates={"):
                 templates = plans._read_templates(fh)
             elif line.startswith("strategic_air={"):
@@ -984,6 +989,12 @@ def extract_save(path: Path, repo: Path) -> dict:
         capital = country_politics.pop("_capital", None)
         if capital is not None:
             characters["capitals"][tag] = int(capital)
+        leaders = country_politics.pop("_unit_leaders", None)
+        if leaders is not None and characters["characters"]:
+            roles = [set(characters["characters"].get(cid, {}).get("roles", ())) for cid in leaders]
+            country["metrics"]["field_marshals"] = sum(1 for r in roles if "field_marshal" in r)
+            country["metrics"]["generals"] = sum(1 for r in roles if "corps_commander" in r and "field_marshal" not in r)
+            country["metrics"]["admirals"] = sum(1 for r in roles if "navy_leader" in r)
     for tag, country in countries.items():
         country["tag"] = tag
         values = [w["losses"] for w in country["wars"]]

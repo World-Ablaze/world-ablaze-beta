@@ -27,12 +27,12 @@ async function boot(text) {
     military_factories:{label:"Military factories",unit:"levels"},dockyards:{label:"Dockyards",unit:"levels"},
     losses:{label:"Ongoing-war casualties",unit:"men",evidence:"DERIVED"}, stability:{label:"Stability",unit:"%",evidence:"DERIVED"},
     war_support:{label:"War support",unit:"%",evidence:"DERIVED"},stability_base:{label:"Stability (stored base)",unit:"%"},war_support_base:{label:"War support (stored base)",unit:"%"},command_power:{label:"Command power",unit:"points"},
-    army_xp:{label:"Army XP",unit:"points"},navy_xp:{label:"Navy XP",unit:"points"},air_xp:{label:"Air XP",unit:"points"}
+    generals:{label:"Generals",unit:"count",evidence:"DERIVED"},field_marshals:{label:"Field marshals",unit:"count",evidence:"DERIVED"},admirals:{label:"Admirals",unit:"count",evidence:"DERIVED"},army_xp:{label:"Army XP",unit:"points"},navy_xp:{label:"Navy XP",unit:"points"},air_xp:{label:"Air XP",unit:"points"}
   };
   const percentIds = new Set(["stability","war_support","stability_base","war_support_base","mobilised_share"]);
   const catalog = Object.fromEntries([...new Set([...Object.keys(fallbackMetrics),...Object.keys(D.metric_catalog || {})])].map(k => [k,{evidence:"MEASURED",source:"See metric definitions",...(fallbackMetrics[k] || {}),...(D.metric_catalog?.[k] || {})}]));
   for (const [id,m] of Object.entries(catalog)) {
-    m.unit = ({men:"men",count:buildingKeys[id]?"levels":id==="divisions"?"divisions":id==="ships"?"ships":id.startsWith("aircraft")?"aircraft":"units",percent:"%"})[m.unit] || m.unit;
+    m.unit = ({men:"men",count:buildingKeys[id]?"levels":id==="divisions"?"divisions":id==="ships"?"ships":id.startsWith("aircraft")?"aircraft":["generals","field_marshals","admirals"].includes(id)?"leaders":"units",percent:"%"})[m.unit] || m.unit;
     if(percentIds.has(id))m.note=[m.note,"Source ratio multiplied by 100 for percentage display."].filter(Boolean).join(" ");
   }
   function metric(id) { return catalog[id] || {label:familyNames[id] || id,unit:"units",evidence:"DERIVED",source:"Aggregated extracted data"}; }
@@ -195,7 +195,8 @@ async function boot(text) {
   }
   function forces(){const el=$("content"),bar=controlBar();segment(bar,[["land","Army"],["sea","Navy"],["air","Air"]],S.force,v=>S.force=v);
     const percent=document.createElement("label");percent.innerHTML=`<input type="checkbox" ${S.percent?"checked":""}> Composition in %`;percent.querySelector("input").onchange=e=>{S.percent=e.target.checked;render();};bar.append(percent);
-    const charts=grid();if(S.force==="land"){appendMetric(charts,"divisions");appendMetric(charts,"army_manpower");}else if(S.force==="sea"){appendMetric(charts,"ships");appendMetric(charts,"dockyards");}else{appendMetric(charts,"aircraft");appendMetric(charts,"aircraft_stock");}
+    const charts=grid();if(S.force==="land"){appendMetric(charts,"divisions");appendMetric(charts,"army_manpower");}else if(S.force==="sea"){appendMetric(charts,"ships");appendMetric(charts,"dockyards");appendMetric(charts,"admirals",{indexable:false});}else{appendMetric(charts,"aircraft");appendMetric(charts,"aircraft_stock");}
+    if(S.force==="land")countryPanels(section(el,"Generals and field marshals","Unit leaders the country holds at each save, one panel per country"),["generals","field_marshals"],"count",{indexable:false});
     el.append(heading("Force composition",dateText(times[S.at])));const comps=grid();tags().forEach(tag=>{const c=current(tag),available=finite(c?.metrics?.[S.force==="land"?"divisions":S.force==="sea"?"ships":"aircraft"]);composition(comps,tag,available?c?.[S.force==="land"?"army":S.force==="sea"?"navy":"air"]?.types:null,S.force==="land"?"Divisions by family":S.force==="sea"?"Ships by type":"Aircraft by role");});
     if(S.force==="land"){
       el.append(heading("Division templates","Composition at the inspection date"));
