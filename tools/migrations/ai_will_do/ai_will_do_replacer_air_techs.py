@@ -345,7 +345,7 @@ def get_reachable_archetypes(
 
 
 def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_indent: str,
-                           tech_name: Optional[str] = None) -> str:
+                           tech_name: Optional[str] = None, categories: Optional[list[str]] = None) -> str:
     """Generate the date modifier with unused research slots logic.
     
     Args:
@@ -361,14 +361,24 @@ def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_in
     
     year = int(start_year)
     early_year = year - 1
-    # [research-bonus-gate] a tech bonus lifts the date gate from start_year - 2; the engine's
-    # ahead-of-time weighting arbitrates instead of a hard factor 0 (see ai_replacer_base/generator.py)
-    bonus_line = (
-        f"{deep_indent}OR = {{\n"
-        f"{deep_indent}\tNOT = {{ has_tech_bonus = {{ technology = {tech_name} }} }}\n"
-        f"{deep_indent}\tdate < {year - 2}.1.1\n"
-        f"{deep_indent}}}\n"
-    ) if tech_name else ""
+    # [research-rush] WA_rb_* counters (tools/gen/gen_research_bonus_tracking.py) lift the date
+    # gate from start_year-1 (any bonus use) / start_year-2 (ahead_reduction >= 2 bonus); same
+    # shape as ai_replacer_base/generator.py research_bonus_exemption_lines. Never has_tech_bonus.
+    bonus_line = ""
+    if tech_name:
+        keys = list(categories or []) + [f"t_{tech_name}"]
+        for fam, years in (("uses", 1), ("ahead2", 2)):
+            key_lines = "".join(f"{deep_indent}\t\t\tcheck_variable = {{ WA_rb_{fam}_{k} > 0 }}\n" for k in keys)
+            bonus_line += (
+                f"{deep_indent}OR = {{\n"
+                f"{deep_indent}\tNOT = {{\n"
+                f"{deep_indent}\t\tOR = {{\n"
+                f"{key_lines}"
+                f"{deep_indent}\t\t}}\n"
+                f"{deep_indent}\t}}\n"
+                f"{deep_indent}\tdate < {year - years}.1.1\n"
+                f"{deep_indent}}}\n"
+            )
 
     return f'''
 
@@ -388,7 +398,7 @@ def generate_date_modifier(start_year: Optional[str], inner_indent: str, deep_in
 
 
 def generate_new_ai_will_do(triggers: set[str], base_indent: str, start_year: Optional[str] = None,
-                            tech_name: Optional[str] = None) -> str:
+                            tech_name: Optional[str] = None, categories: Optional[list[str]] = None) -> str:
     """
     Generate a new ai_will_do block using WA_AI_RESEARCH triggers.
     
@@ -423,7 +433,7 @@ def generate_new_ai_will_do(triggers: set[str], base_indent: str, start_year: Op
         not_block = f"{deep_indent}NOT = {{\n{or_indent}OR = {{\n" + "\n".join(trigger_lines) + f"\n{or_indent}}}\n{deep_indent}}}"
     
     # Build the date modifier if start_year is provided
-    date_modifier = generate_date_modifier(start_year, inner_indent, deep_indent, tech_name)
+    date_modifier = generate_date_modifier(start_year, inner_indent, deep_indent, tech_name, categories)
     
     return f'''{base_indent}ai_will_do = {{
 {inner_indent}factor = 1
@@ -546,7 +556,9 @@ def process_tech_file(filepath: Path, dry_run: bool = True) -> tuple[int, int, l
         start_year = extract_start_year(content, tech_start, tech_end)
         
         # Generate new ai_will_do block with all reachable triggers
-        new_block = generate_new_ai_will_do(reachable_triggers, base_indent, start_year, tech_name)
+        cat_match = re.search(r'categories\s*=\s*\{([^}]*)\}', content[tech_start:tech_end])
+        categories = re.findall(r'\w+', '\n'.join(l.split('#', 1)[0] for l in cat_match.group(1).splitlines())) if cat_match else []
+        new_block = generate_new_ai_will_do(reachable_triggers, base_indent, start_year, tech_name, categories)
 
         # Only replace if the block actually changed
         if new_block != old_block:

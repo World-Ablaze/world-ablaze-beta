@@ -1,0 +1,286 @@
+############################################################################################################
+#	WA_TEST - RESEARCH BONUS GATE, console-driven, READ-ONLY. TEMPORARY.
+#
+#	Fired by wa_rb.1 in events/wa_test_research_bonus.txt. Console recipe:
+#	  load a save dated BEFORE 1936.8.11 (e.g. 1936.8_Aug.hoi4 - ENG still holds `industrial_bonus`)
+#	  tag ENG
+#	  event wa_rb.1
+#	  read logs/game.log, lines "RESEARCH BONUS TEST"; `tag` back to your country afterwards.
+#
+#	QUESTION. The generated ai_will_do date gate ([research-bonus-gate], tools/migrations/ai_will_do)
+#	lifts the veto from start_year-2 when `has_tech_bonus = { technology = <tech> }` is true. Two
+#	readings of that trigger would make the gate wrong, and no game file settles them:
+#	  Q1  does `technology = X` read TRUE when the country holds a bonus that does NOT target X
+#	      (any-bonus semantics)?  -> the gate would open every 1938 tech for any country with any bonus.
+#	  Q2  does `technology = X` read TRUE when the bonus targets X only through its CATEGORY?
+#	      -> if not, the exemption is inert for the 1242 category-form bonuses in WA focuses.
+#	ENG at 1936.8 is the calibrated subject: MEASURED in save 1936.8_Aug.hoi4 it holds exactly ONE
+#	bonus, `industrial_bonus` (category = industry, claimed by industry_infrastructure), and no
+#	bonus of any kind on an air or electronics tech.
+#
+#	Expected on ENG 1936.8 if the trigger works as the gate assumes:
+#	  Q1: transport=0 hampden=0 radar=0 computing=0   (no bonus targets them)
+#	  Q2: cat-industry=1  tech-industry_infrastructure=1  (category bonus seen through technology=)
+#	  Any Q1 line at 1 = any-bonus semantics = the gate is WRONG (opens on unrelated bonuses).
+#	  Q2 tech line 0 while cat line 1 = the exemption never fires on category bonuses.
+#	  Both Q2 lines 0 = ENG no longer holds the bonus (save too late): unreadable, reload earlier.
+#
+#	RUN 1 (owner, ENG, 1936.8.1, build b829393945): scope 1 1 1 1 0; Q1 = 1 1 1 1 (WRONG);
+#	Q2 = cat 1 / technology=industry_infrastructure 0 / excavation1 0; GATE veto 0 / 0.
+#	=> `technology = X` read TRUE for four techs no bonus targets and FALSE for the tech the
+#	   bonus covers. The two 0s are the two techs IN PROGRESS at that date; Q1b/Q2b below and
+#	   the no-bonus re-fire (tag LUX) separate "any bonus unless in progress" from other readings.
+#	   The shipped gate opened every 1938 tech for ENG from 1936.1.1 - the pick is a gate defect.
+#	RUN 2 (ENG then LUX, same save): ENG Q1b = 1 1 0, Q2b = 0 0 0; LUX (no bonus) Q1 = 1 1 1 1,
+#	Q1b = 1 1 1, Q2 = cat 0 / tech 1 / tech 1, Q2b = 0 0 0.
+#	=> 13/13 probes fit ONE reading: `has_tech_bonus = { technology = X }` is TRUE iff NO bonus
+#	   covers X (inverted against triggers_documentation.md); `category = C` is correct both ways
+#	   (1 only when a bonus of that category is held). excavation1 and improved_machine_tools_comp
+#	   are category industry, which is why they read 0 on ENG - "in progress" was a red herring.
+#	   Q3 below asks whether category= also sees a bonus declared by technology=.
+#	   FIX: generators + migration switched to the category= form (4201 gates); GATE replica below too.
+#	RUN 3 (ENG, 1937.4.1 - holds ENG_royal_airforce declared by technology=, unclaimed): Q1 1 1 1 1,
+#	Q1b 1 1 1, Q2 cat 1 / tech 1 / tech 1, Q2b 0 0 0, Q3 tech 1 1 / cat 0 0 0, GATE veto 1 / 1.
+#	=> (a) category= does NOT see a bonus declared by technology= (Q3 cat lines 0 while held);
+#	   (b) technology= reads 1 on the very tech that bonus targets, so "inverted" was too
+#	   simple: the only 0s ever seen are category-industry techs on 1936.8 while industrial_bonus
+#	   was ACTIVE (claim=1); on 1937.4 the same techs read 1 and category=industry still reads 1
+#	   with the record present - whether that record is spent is the open question (save trace).
+#	   Net for the gate: category= form, lifts on category-declared bonuses only; the 10
+#	   technology-only ahead_reduction bonuses in WA (advanced_sonar, atomic_research, ...) are
+#	   outside it. The corrected GATE reads veto 1 / 1 on this save, as intended.
+#	RUN 4 (ENG, 1937.4.1, holds cat_light_armor bonus uses=1 UNCLAIMED): Q4 = 1 1 1.
+#	=> technology= reads 1 on an idle tech covered by an available category bonus. Across all
+#	   runs its only 0s are techs covered by a record that was CLAIMED (claim=1) by an in-progress
+#	   research (1936.8). The technology= form is unusable for "a bonus covers X" in any reading.
+#	   Save trace (20 saves): records never disappear; a spent record keeps its shell with `uses`
+#	   omitted, and category= reads that shell as 1 (Q2 cat=industry on 1937.4) - so the
+#	   category= gate stays lifted for the whole category once any bonus of it was consumed.
+#	RUN 5 (ENG 1937.4, Q5/Q6): category=major_technologies 0 while holding league_of_nations
+#	(the only `research_bonus major_technologies` modifier in WA) -> permanent research_bonus
+#	modifiers are NOT read. wa_rb.2 grant: cat_transport 0 -> 1, GATE Bombay veto 1 -> 0.
+#	RUN 6 (save test_research.hoi4): `research all` left the record CLAIMED (claim=1, uses absent)
+#	and the tech entry still carrying bonus/limited_use_bonus - console completion does not go
+#	through normal consumption, so its cat=1 proves nothing about spent shells.
+#	=> Rivals for the 1937.4 cat=industry=1 reading, all dead: permanent modifiers (Q5), a second
+#	   industry record (trace: none), an industry MIO design team (WA has no MIO with an industry
+#	   research category). Remaining reading, by elimination: category= is TRUE while a record of
+#	   that category EXISTS, spent or not. Records never disappear. DERIVED from MEASURED parts.
+#	SHIPPED (research-rush): has_tech_bonus dropped from the gates; the WA_rb_* counters replace it
+#	(documentation/WA_RESEARCH_RUSH.md). Q1-Q6 stay as the engine record; Q7 + GATE test the ledger.
+#	RUN 7 (ENG 1937.4 -> 1938.6, saves test_research_2/_3): Q7 cat_transport 0 -> 1 after wa_rb.2,
+#	GATE Bombay veto 1 -> 0; normal completion 1938.1.4 cleared the counter (var absent in the
+#	1938.6 save, record a spent shell). The ledger cycle grant -> gate -> consume is MEASURED.
+#
+#	DELETE THIS FILE and events/wa_test_research_bonus.txt once the answer is recorded in the
+#	generator header (tools/migrations/ai_will_do/ai_replacer_base/generator.py). A harness whose
+#	question is answered is dead code.
+############################################################################################################
+
+# ROOT = THIS = whatever country fired it. Read-only: temp variables (they die with the effect -
+# `clear_temp_variable` is NOT an engine effect, boot log 2026-09-08 18:07) and log only.
+WA_TEST_RESEARCH_BONUS_report = {
+
+	log = "=========================================================================================="
+	log = "[GetDateText] | RESEARCH BONUS TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	### Without these lines a poisoned call site reads every country-valued trigger false while
+	### [Root.GetName] still prints the right name beside it. The fifth check is a KNOWN-FALSE
+	### control: it must read 0.
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _rb_e1_ = 0 }
+	set_temp_variable = { _rb_e2_ = 0 }
+	set_temp_variable = { _rb_e3_ = 0 }
+	set_temp_variable = { _rb_e4_ = 0 }
+	set_temp_variable = { _rb_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _rb_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _rb_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _rb_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _rb_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _rb_e5_ = 1 } }
+	log = "  scope : always=[?_rb_e1_|.0]  I-am-ROOT=[?_rb_e2_|.0]  I-am-THIS=[?_rb_e3_|.0]  ROOT-scope-usable=[?_rb_e4_|.0]  control-false=[?_rb_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire from another event file - tag ENG then event wa_iso.3 - before editing a line of this effect.)"
+
+	########################################################################################
+	### CONTROLS specific to this harness. A country-valued trigger that is known TRUE and
+	### one known FALSE on the subject, so a flat 0/0/0/0 below is readable as "no bonus"
+	### rather than "triggers dead".
+	########################################################################################
+	set_temp_variable = { _rb_c1_ = 0 }
+	set_temp_variable = { _rb_c2_ = 0 }
+	set_temp_variable = { _rb_c3_ = 0 }
+	if = { limit = { has_tech = basic_train } set_temp_variable = { _rb_c1_ = 1 } }
+	if = { limit = { has_tech = eng_transport_plane_1 } set_temp_variable = { _rb_c2_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_unused_research_slots } set_temp_variable = { _rb_c3_ = 1 } }
+	log = "  ctrl  : has_tech basic_train=[?_rb_c1_|.0] (expect 1, start-granted)   has_tech eng_transport_plane_1=[?_rb_c2_|.0] (expect 0 before 1938)   flag WA_AI_unused_research_slots=[?_rb_c3_|.0]"
+
+	########################################################################################
+	### Q1 - technology= form on techs that NO bonus targets (ENG 1936.8). Expect all 0.
+	########################################################################################
+	set_temp_variable = { _rb_q1a_ = 0 }
+	set_temp_variable = { _rb_q1b_ = 0 }
+	set_temp_variable = { _rb_q1c_ = 0 }
+	set_temp_variable = { _rb_q1d_ = 0 }
+	if = { limit = { has_tech_bonus = { technology = eng_transport_plane_1 } } set_temp_variable = { _rb_q1a_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = eng_strategic_bomber_ad_tech_1 } } set_temp_variable = { _rb_q1b_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = decimetric_radar } } set_temp_variable = { _rb_q1c_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = computing_machine } } set_temp_variable = { _rb_q1d_ = 1 } }
+	log = "  Q1    : technology= on untargeted techs -> transport=[?_rb_q1a_|.0] hampden=[?_rb_q1b_|.0] radar=[?_rb_q1c_|.0] computing=[?_rb_q1d_|.0]   (expect 0 0 0 0; any 1 = any-bonus semantics, gate WRONG)"
+
+	### Q1b - run 1 (ENG 1936.8.1) read 1 1 1 1 above and 0 on the two techs IN PROGRESS. Separate
+	### the two readings: an untargeted tech that is NOT 1938 and NOT in progress, an untargeted
+	### tech IN PROGRESS, and a tech the industry bonus DOES cover but which is not in progress.
+	set_temp_variable = { _rb_q1e_ = 0 }
+	set_temp_variable = { _rb_q1f_ = 0 }
+	set_temp_variable = { _rb_q1g_ = 0 }
+	if = { limit = { has_tech_bonus = { technology = eng_infantry_weapons_2 } } set_temp_variable = { _rb_q1e_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = muzzle_brakes } } set_temp_variable = { _rb_q1f_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = improved_machine_tools_comp } } set_temp_variable = { _rb_q1g_ = 1 } }
+	log = "  Q1b   : technology= eng_infantry_weapons_2 (1941, untargeted, idle) -> [?_rb_q1e_|.0]   muzzle_brakes (1936, untargeted, IN PROGRESS on ENG 1936.8) -> [?_rb_q1f_|.0]   improved_machine_tools_comp (1937, category industry = COVERED, idle) -> [?_rb_q1g_|.0]"
+	log = "          (correct semantics: 0 0 1. any-bonus-unless-in-progress: 1 0 1. Then re-fire as a country with NO bonus - tag LUX, event wa_rb.1 - every Q line must read 0.)"
+
+	########################################################################################
+	### Q2 - a CATEGORY bonus (industrial_bonus, category = industry) seen through both forms.
+	########################################################################################
+	set_temp_variable = { _rb_q2a_ = 0 }
+	set_temp_variable = { _rb_q2b_ = 0 }
+	set_temp_variable = { _rb_q2c_ = 0 }
+	if = { limit = { has_tech_bonus = { category = industry } } set_temp_variable = { _rb_q2a_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = industry_infrastructure } } set_temp_variable = { _rb_q2b_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = excavation1 } } set_temp_variable = { _rb_q2c_ = 1 } }
+	log = "  Q2    : category=industry -> [?_rb_q2a_|.0]   technology=industry_infrastructure -> [?_rb_q2b_|.0]   technology=excavation1 (category excavation_tech, NOT industry) -> [?_rb_q2c_|.0]"
+	log = "          (expect 1 1 0. cat=1 tech=0: technology= does not see category bonuses. 0 0 0: bonus already consumed, reload an earlier save.)"
+
+	### Q2b - NEGATIVE controls for the category= form (the form the generator may switch to).
+	### ENG 1936.8 holds category=industry only: every line here must read 0.
+	set_temp_variable = { _rb_q2d_ = 0 }
+	set_temp_variable = { _rb_q2e_ = 0 }
+	set_temp_variable = { _rb_q2f_ = 0 }
+	if = { limit = { has_tech_bonus = { category = cat_transport } } set_temp_variable = { _rb_q2d_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = radar_tech } } set_temp_variable = { _rb_q2e_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = industry_not_synth } } set_temp_variable = { _rb_q2f_ = 1 } }
+	log = "  Q2b   : category= negative controls -> cat_transport=[?_rb_q2d_|.0] radar_tech=[?_rb_q2e_|.0] industry_not_synth=[?_rb_q2f_|.0]   (expect 0 0 0; any 1 = category= form is ALSO any-bonus, unusable)"
+
+	### Q3 - a TECHNOLOGY-form bonus (ENG_royal_airforce: technology = eng_fighter_multirole_ad_tech_1,
+	### categories light_air / cat_multirole / air_equipment). Run on a save where ENG holds it.
+	### Does the category= form see a bonus declared by technology? Does the (inverted) technology=
+	### form read 0 on the covered tech?
+	set_temp_variable = { _rb_q3a_ = 0 }
+	set_temp_variable = { _rb_q3b_ = 0 }
+	set_temp_variable = { _rb_q3c_ = 0 }
+	set_temp_variable = { _rb_q3d_ = 0 }
+	set_temp_variable = { _rb_q3e_ = 0 }
+	if = { limit = { has_tech_bonus = { technology = eng_fighter_multirole_ad_tech_1 } } set_temp_variable = { _rb_q3a_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = eng_fighter_multirole_1 } } set_temp_variable = { _rb_q3b_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = cat_multirole } } set_temp_variable = { _rb_q3c_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = light_air } } set_temp_variable = { _rb_q3d_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = air_equipment } } set_temp_variable = { _rb_q3e_ = 1 } }
+	log = "  Q3    : technology=eng_fighter_multirole_ad_tech_1 -> [?_rb_q3a_|.0] (BBA form)   technology=eng_fighter_multirole_1 -> [?_rb_q3b_|.0] (no-BBA form)   category=cat_multirole -> [?_rb_q3c_|.0] light_air -> [?_rb_q3d_|.0] air_equipment -> [?_rb_q3e_|.0]"
+	log = "          (holding ENG_royal_airforce, inverted technology= reads 0 on the covered form; category= lines at 1 mean category= sees technology-declared bonuses. Without the bonus: 1 1 0 0 0.)"
+
+	### Q4 - the case the gate exists for: a category bonus AVAILABLE and UNCLAIMED, tech idle.
+	### ENG 1937.4 holds record 2 ENG_BEL_joint_tank_programme_bonus (cat_light_armor, uses=1,
+	### never claimed in 20 saves). Does technology= read 0 on an idle light-armor tech there
+	### (as it did on improved_machine_tools_comp in 1936.8 while the industry record was live)?
+	set_temp_variable = { _rb_q4a_ = 0 }
+	set_temp_variable = { _rb_q4b_ = 0 }
+	set_temp_variable = { _rb_q4c_ = 0 }
+	if = { limit = { has_tech_bonus = { technology = eng_light_tank_chassis_2 } } set_temp_variable = { _rb_q4a_ = 1 } }
+	if = { limit = { has_tech_bonus = { technology = eng_light_tank_chassis_3 } } set_temp_variable = { _rb_q4b_ = 1 } }
+	if = { limit = { has_tech_bonus = { category = cat_light_armor } } set_temp_variable = { _rb_q4c_ = 1 } }
+	log = "  Q4    : technology=eng_light_tank_chassis_2 -> [?_rb_q4a_|.0]   eng_light_tank_chassis_3 -> [?_rb_q4b_|.0]   category=cat_light_armor -> [?_rb_q4c_|.0]   (ENG 1937.4 expect 0 0 1 if technology= is NOT(unspent category bonus covers X); 1 1 1 = technology= unusable even there)"
+
+	### Q5 - RIVAL for "category= reads spent records": does category= read PERMANENT research
+	### modifiers? ENG holds idea league_of_nations (`research_bonus = { major_technologies = -0.10 }`,
+	### the ONLY major_technologies modifier in WA) and no limited record of that category.
+	### 1 here = permanent modifiers (even negative ones) count, and every generated gate that lists
+	### major_technologies is open for every league_of_nations holder.
+	set_temp_variable = { _rb_q5a_ = 0 }
+	set_temp_variable = { _rb_q5b_ = 0 }
+	if = { limit = { has_tech_bonus = { category = major_technologies } } set_temp_variable = { _rb_q5a_ = 1 } }
+	if = { limit = { has_idea = league_of_nations } set_temp_variable = { _rb_q5b_ = 1 } }
+	log = "  Q5    : category=major_technologies -> [?_rb_q5a_|.0]   has_idea league_of_nations -> [?_rb_q5b_|.0]   (idea 1 + cat 1 = permanent research_bonus modifiers count as bonuses; idea 1 + cat 0 = they do not)"
+
+	### Q6 - CONTROLLED grant/consume cycle (recipe in events/wa_test_research_bonus.txt, wa_rb.2).
+	### cat_transport reads 0 on every save probed so far (Q2b). wa_rb.2 grants a 1-use
+	### cat_transport bonus to the fired country; read this line before the grant (0), after the
+	### grant (1), while the Bristol Bombay is researching with the bonus claimed, and after it
+	### completed. A 1 after completion = category= reads the spent shell.
+	set_temp_variable = { _rb_q6a_ = 0 }
+	set_temp_variable = { _rb_q6b_ = 0 }
+	if = { limit = { has_tech_bonus = { category = cat_transport } } set_temp_variable = { _rb_q6a_ = 1 } }
+	if = { limit = { has_country_flag = WA_TEST_rb_granted } set_temp_variable = { _rb_q6b_ = 1 } }
+	log = "  Q6    : category=cat_transport -> [?_rb_q6a_|.0]   test bonus granted by wa_rb.2 -> [?_rb_q6b_|.0]   has_tech eng_transport_plane_1 -> [?_rb_c2_|.0]   (granted 1 / has_tech 0 / cat 1 = live; granted 1 / has_tech 1 / cat 1 = SPENT SHELL READ; granted 1 / has_tech 1 / cat 0 = spent records are NOT read)"
+
+
+	### Q7 - [research-rush] counters written by the WA_RB_GRANT regions and consumed by the
+	### WA_RB_CONSUME chains (documentation/WA_RESEARCH_RUSH.md). Absent = 0 = no bonus in flight.
+	log = "  Q7    : WA_rb_uses_cat_transport=[?WA_rb_uses_cat_transport|.0] ahead2=[?WA_rb_ahead2_cat_transport|.0]   uses_industry=[?WA_rb_uses_industry|.0]   uses_cat_light_armor=[?WA_rb_uses_cat_light_armor|.0]   uses_t_eng_fighter_multirole_ad_tech_1=[?WA_rb_uses_t_eng_fighter_multirole_ad_tech_1|.0]"
+	log = "          (after wa_rb.2: cat_transport 1; after a NORMAL completion of a cat_transport tech: 0. On a save older than this build every counter is absent.)"
+
+	########################################################################################
+	### GATE REPLICA - independent walk of the generated ai_will_do veto for the two techs
+	### ENG picked in August 1936. Duplicates common/technologies/air_techs_eng.txt:34-53 and
+	### :4097-4130 term by term; never shares anything with them.
+	###   veto = (no WA_rb_uses on the tech's keys OR date < start_year-1) AND (no WA_rb_ahead2 OR date < start_year-2) AND (normal date gate)
+	########################################################################################
+	set_temp_variable = { _rb_g_d34_ = 0 }
+	set_temp_variable = { _rb_g_d37_ = 0 }
+	set_temp_variable = { _rb_g_d38_ = 0 }
+	if = { limit = { date < 1936.1.1 } set_temp_variable = { _rb_g_d34_ = 1 } }
+	if = { limit = { date < 1937.1.1 } set_temp_variable = { _rb_g_d37_ = 1 } }
+	if = { limit = { date < 1938.1.1 } set_temp_variable = { _rb_g_d38_ = 1 } }
+	# normal gate (OR 2): no flag AND date < 1938, or flag AND date < 1937
+	set_temp_variable = { _rb_g_or2_ = 0 }
+	if = {
+		limit = {
+			OR = {
+				AND = { NOT = { has_country_flag = WA_AI_unused_research_slots } date < 1938.1.1 }
+				AND = { has_country_flag = WA_AI_unused_research_slots date < 1937.1.1 }
+			}
+		}
+		set_temp_variable = { _rb_g_or2_ = 1 }
+	}
+	# transport plane
+	set_temp_variable = { _rb_g_t_or1_ = 0 }
+	set_temp_variable = { _rb_g_t_veto_ = 0 }
+	if = {
+		limit = { OR = { NOT = { OR = { check_variable = { WA_rb_uses_major_technologies > 0 } check_variable = { WA_rb_uses_medium_air > 0 } check_variable = { WA_rb_uses_air_equipment > 0 } check_variable = { WA_rb_uses_cat_transport > 0 } check_variable = { WA_rb_uses_t_eng_transport_plane_1 > 0 } } } date < 1937.1.1 }
+			OR = { NOT = { OR = { check_variable = { WA_rb_ahead2_major_technologies > 0 } check_variable = { WA_rb_ahead2_medium_air > 0 } check_variable = { WA_rb_ahead2_air_equipment > 0 } check_variable = { WA_rb_ahead2_cat_transport > 0 } check_variable = { WA_rb_ahead2_t_eng_transport_plane_1 > 0 } } } date < 1936.1.1 } }
+		set_temp_variable = { _rb_g_t_or1_ = 1 }
+	}
+	if = {
+		limit = {
+			OR = { NOT = { OR = { check_variable = { WA_rb_uses_major_technologies > 0 } check_variable = { WA_rb_uses_medium_air > 0 } check_variable = { WA_rb_uses_air_equipment > 0 } check_variable = { WA_rb_uses_cat_transport > 0 } check_variable = { WA_rb_uses_t_eng_transport_plane_1 > 0 } } } date < 1937.1.1 }
+			OR = { NOT = { OR = { check_variable = { WA_rb_ahead2_major_technologies > 0 } check_variable = { WA_rb_ahead2_medium_air > 0 } check_variable = { WA_rb_ahead2_air_equipment > 0 } check_variable = { WA_rb_ahead2_cat_transport > 0 } check_variable = { WA_rb_ahead2_t_eng_transport_plane_1 > 0 } } } date < 1936.1.1 }
+			OR = {
+				AND = { NOT = { has_country_flag = WA_AI_unused_research_slots } date < 1938.1.1 }
+				AND = { has_country_flag = WA_AI_unused_research_slots date < 1937.1.1 }
+			}
+		}
+		set_temp_variable = { _rb_g_t_veto_ = 1 }
+	}
+	# hampden
+	set_temp_variable = { _rb_g_h_or1_ = 0 }
+	set_temp_variable = { _rb_g_h_veto_ = 0 }
+	if = {
+		limit = { OR = { NOT = { OR = { check_variable = { WA_rb_uses_major_technologies > 0 } check_variable = { WA_rb_uses_heavy_air > 0 } check_variable = { WA_rb_uses_air_equipment > 0 } check_variable = { WA_rb_uses_cat_strategic_bomber > 0 } check_variable = { WA_rb_uses_cat_handley_page_planes > 0 } check_variable = { WA_rb_uses_t_eng_strategic_bomber_ad_tech_1 > 0 } } } date < 1937.1.1 }
+			OR = { NOT = { OR = { check_variable = { WA_rb_ahead2_major_technologies > 0 } check_variable = { WA_rb_ahead2_heavy_air > 0 } check_variable = { WA_rb_ahead2_air_equipment > 0 } check_variable = { WA_rb_ahead2_cat_strategic_bomber > 0 } check_variable = { WA_rb_ahead2_cat_handley_page_planes > 0 } check_variable = { WA_rb_ahead2_t_eng_strategic_bomber_ad_tech_1 > 0 } } } date < 1936.1.1 } }
+		set_temp_variable = { _rb_g_h_or1_ = 1 }
+	}
+	if = {
+		limit = {
+			OR = { NOT = { OR = { check_variable = { WA_rb_uses_major_technologies > 0 } check_variable = { WA_rb_uses_heavy_air > 0 } check_variable = { WA_rb_uses_air_equipment > 0 } check_variable = { WA_rb_uses_cat_strategic_bomber > 0 } check_variable = { WA_rb_uses_cat_handley_page_planes > 0 } check_variable = { WA_rb_uses_t_eng_strategic_bomber_ad_tech_1 > 0 } } } date < 1937.1.1 }
+			OR = { NOT = { OR = { check_variable = { WA_rb_ahead2_major_technologies > 0 } check_variable = { WA_rb_ahead2_heavy_air > 0 } check_variable = { WA_rb_ahead2_air_equipment > 0 } check_variable = { WA_rb_ahead2_cat_strategic_bomber > 0 } check_variable = { WA_rb_ahead2_cat_handley_page_planes > 0 } check_variable = { WA_rb_ahead2_t_eng_strategic_bomber_ad_tech_1 > 0 } } } date < 1936.1.1 }
+			OR = {
+				AND = { NOT = { has_country_flag = WA_AI_unused_research_slots } date < 1938.1.1 }
+				AND = { has_country_flag = WA_AI_unused_research_slots date < 1937.1.1 }
+			}
+		}
+		set_temp_variable = { _rb_g_h_veto_ = 1 }
+	}
+	log = "  GATE  : date<1936=[?_rb_g_d34_|.0] date<1937=[?_rb_g_d37_|.0] date<1938=[?_rb_g_d38_|.0]   normal-gate(OR2)=[?_rb_g_or2_|.0]"
+	log = "  GATE  : transport OR1=[?_rb_g_t_or1_|.0] veto=[?_rb_g_t_veto_|.0]   hampden OR1=[?_rb_g_h_or1_|.0] veto=[?_rb_g_h_veto_|.0]   (no counters: expect OR1 1 veto 1 / 1 1. After wa_rb.2 on a 1937 save: transport OR1 0 veto 0, hampden unchanged.)"
+	log = "=========================================================================================="
+}

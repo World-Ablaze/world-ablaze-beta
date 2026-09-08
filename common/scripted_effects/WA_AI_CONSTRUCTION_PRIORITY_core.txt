@@ -1153,7 +1153,12 @@ WA_AI_PC_end_project_by_id = {
 	set_temp_variable = { _pc_end_btype_ = WA_AI_PC_building_type^_project_id }
 	if = { limit = { NOT = { check_variable = { WA_AI_PC_target_state^_project_id = 0 } } }
 		var:WA_AI_PC_target_state^_project_id = {
-			remove_from_array = { array = WA_AI_PC_projects_in_state_of_@ROOT value = _project_id }
+			# [pc-lost-state-purge] keyed by PREV (the builder calling this effect), not ROOT: from
+			# on_state_control_changed ROOT is the NEW controller, and @ROOT there would strip the new
+			# controller's same-numbered slot while leaving the loser's entry behind. Every caller runs
+			# in the builder's scope, so PREV == ROOT on the ordinary paths. The fact is gone when a
+			# caller ends a project from a scope that is not the builder.
+			remove_from_array = { array = WA_AI_PC_projects_in_state_of_@PREV value = _project_id }
 			if = {
 				limit = { check_variable = { WA_AI_PC_state_type_projects^_pc_end_btype_ > 0 } }
 				subtract_from_variable = { WA_AI_PC_state_type_projects^_pc_end_btype_ = 1 }
