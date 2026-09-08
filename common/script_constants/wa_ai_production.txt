@@ -100,6 +100,64 @@ wa_ai_production = {
 		armored_reserve = 10000
 	}
 
+	# [air-park-caps] Force caps of the air production decisions (WA_AI_PRODUCTION_air.txt): the
+	# deployed park size above which a line closes, so a cap is a SATURATION bar, never an industry
+	# reading - the mil-factory bands are the `industry` group above. A cap named `_mass` is the
+	# ladder of WA_AI_CONFIG_AIRFORCE_is_mass_producer, `_small` of _keeps_small_tactical_park.
+	# Assumes the engine reads a constant in `has_deployed_air_force_size = { size < ... }`: the
+	# block-plus-`<` form is shipped elsewhere (has_equipment, has_manpower, surrender_progress) but
+	# THIS trigger was probed only with `size >` (wa-constants-registry, 2026-08-16). If the fact is
+	# gone the game says "Malformed token" for this file at launch - check error.log on the first
+	# boot after any change here, and re-probe before adding a cap in a new trigger.
+	air = {
+		# fighters - the whole fighter park, both branches of WA_AI_PRODUCTION_fighter_park_is_below_cap
+		fighter_cap                = 5000
+		fighter_cap_mass           = 10000
+
+		# Battle of Britain emergency programme: the defender's own bar, deliberately NOT
+		# fighter_cap - it must be retunable without moving every other fighter line.
+		bob_fighter_cap            = 5000
+		bob_fighter_cap_sov_gone   = 8000
+
+		# per-airframe parks (check_variable on num_deployed_planes_with_type@<airframe>)
+		interceptor_cap            = 1500	# small_fighter_interceptor_airframe
+		cv_fighter_cap             = 2000	# cv_small_fighter_airframe
+		heavy_fighter_cap          = 3000	# medium_fighter_airframe
+		attacker_cap               = 2000	# medium_fighter_multirole_airframe
+		cv_cas_cap                 = 2500	# cv_small_bomber_airframe (read by the effect)
+
+		# close support
+		cas_cap                    = 1600
+
+		# medium bombers - fast and strike lines share the tactical_bomber park
+		medium_bomber_cap          = 3000
+
+		# tactical bombers
+		tactical_cap               = 1000
+		tactical_cap_mass          = 2700
+		tactical_cap_small         = 500
+
+		# naval bombers - the carrier strike power climbs a two-rung ladder on its own cv tech
+		naval_cap                  = 2000
+		naval_cap_carrier_early    = 1800
+		naval_cap_carrier_late     = 3500
+
+		# strategic bombers
+		strategic_cap              = 3000
+		strategic_cap_mass         = 10000
+		strategic_cap_late_surge   = 4500	# the delayed arm, after 1944, while the SOV stands
+
+		# support types
+		scout_cap                  = 150
+		transport_cap              = 200
+
+		# non-park bars of the same decisions. max_surrender: a country this far into collapse
+		# stops opening bomber lines. min_alliance_strength: below it the coalition cannot escort
+		# what a transport or naval line would produce.
+		max_surrender              = 0.1
+		min_alliance_strength      = 0.5
+	}
+
 	# [industry-tiers] The mil-factory size ladder every production read shares. A tier bound is
 	# read as `> tier_x` (at least that size) or `NOT = { > tier_x }` (strictly below the next
 	# band) - integer factory counts make the NOT form exactly the old `< bound+1` literal.
