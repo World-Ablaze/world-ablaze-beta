@@ -173,6 +173,53 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### repeatable-pp-decisions — OPEN (2026-09-08)
+- Owner order 2026-09-08 ("certaines pays IA ont des décisions répétables qui coutent des PP ... ces
+  décisions empêchent les IAs de faire les choses importantes"). Intended behaviour: an AI spends PP on
+  a REPEATABLE PP-cost decision only when PP piles up with nothing better to buy; one-off choices
+  (laws, advisors) get the PP first.
+- Symptom: the owner's playthrough observation; "repeatables win by repetition" is ASSUMED, not
+  measured from decision counters (the last ENG "buys nothing" case had a scripted-sink cause -
+  lessons log - so a campaign law/advisor timing read is the probe, below).
+- Inventory, MEASURED (`common/decisions/*.txt`, parser over every decision): 764 decisions are
+  repeatable (`days_re_enable`, `days_remove`, or `fire_only_once = no`) and cost PP; most carry
+  `ai_will_do factor = 1..800` with no PP term, so they re-enter the AI's daily decision pick every
+  cooldown. Engine arbitration between decisions, laws and advisors is a black box.
+- Change: `WA_AI_DECISIONS_has_spare_pp` (OBSERVATION, `common/scripted_triggers/WA_AI_DECISIONS_triggers.txt`)
+  = native `has_political_power > constant:wa_ai_decisions.pp.spare_floor` (= 350,
+  `common/script_constants/wa_ai_decisions.txt`), wrapped by the DECISION trigger
+  `WA_AI_DECISIONS_can_spend_on_repeatable` that every gate names. Loud side chosen (lessons review):
+  a `constant:` inside a native numeric trigger is ASSUMED to work (same family as the validated
+  `num_of_civilian_factories` / `surrender_progress` rows, NOT itself in the 2026-08-16 probe list);
+  if it does not resolve it reads 0, the trigger is always TRUE and the brake never trips = today's
+  behaviour - never "216 decisions blocked forever", which a `check_variable` on `political_power`
+  (never read as a variable anywhere in this repo) would have risked.
+  218 decisions in 34 files (the owner's 3 + 215 added by classification) get
+  `modifier = { factor = 0  NOT = { WA_AI_DECISIONS_can_spend_on_repeatable = yes } }` placed LAST
+  in `ai_will_do` (a later `add` would revive a 0); 20 of them had no `ai_will_do` and got
+  `factor = 1` + the gate (ASSUMED = engine default weight). Owner exclusion applied: decisions
+  blocked at a maximum threshold (74 CAPPED) are untouched. Also untouched, by classification: 349
+  CRITICAL (war-support / stability recovery, propaganda, reserves, wargoals and claims, prospecting,
+  civil-war and coup races, aid to and from exile governments incl. `weapons_for_the_resistance`,
+  economy-fatigue relief), 4 PP-generating buffs (`*_political_favours`, `*_special_orders`), 50
+  already carrying a PP term. Full table (764 rows, per-verdict): scratchpad
+  `repeatable_pp_decisions_classification.md` (session 2026-09-08). Lessons review CONFLICT ->
+  resolved (native trigger, exile decision ungated, this symptom line); architecture review CONCERNS
+  -> all applied (layer wrapper, comment form, counts).
+- Regression risk, DERIVED: a country that never reaches 350 PP (small AI at war, PP-negative ideas)
+  never takes a gated decision again - for the APPLY set that is the intended trade (buffs, flavour,
+  South-American investments); the CRITICAL set was kept out for exactly this reason.
+- Owed before commit (owner): a game boot with 0 errors on the 34 decision files + the two new files
+  (`error.log`), and one console read on a 350+ PP country - `WA_AI_DECISIONS_can_spend_on_repeatable`
+  TRUE there and FALSE on a country under 350 (the FALSE control is what proves the constant resolved).
+  No `WA_TEST_*` harness: one-line trigger, no on_action caller.
+- Verification (campaign): no AI takes an APPLY-listed decision (timed ideas / cooldown flags such as
+  `ENG_labour_inspire_the_workforce`, `SOV_Workers_*`, `SOUTH_AMERICA_investment_*`) at a save where
+  its `political_power` reads below 350; AI law/advisor timing on the report's law-change table is not
+  later than the reference campaign `1ac7e4ea`.
+- Closed when: one campaign shows zero APPLY-listed decision taken by an AI below the floor, and no
+  law/advisor delay versus `1ac7e4ea`.
+
 ### sov-conscription-oscillation — SHIPPED-UNTESTED (2026-09-08)
 - Owner order 2026-09-08 ("corrige le", on the law-change table of the campaign HTML report).
   Intended behaviour: the AI conscription ladder only climbs; `volunteer_only` is the step out of
