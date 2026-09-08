@@ -196,13 +196,13 @@ async function boot(text) {
   function forces(){const el=$("content"),bar=controlBar();segment(bar,[["land","Army"],["sea","Navy"],["air","Air"]],S.force,v=>S.force=v);
     const percent=document.createElement("label");percent.innerHTML=`<input type="checkbox" ${S.percent?"checked":""}> Composition in %`;percent.querySelector("input").onchange=e=>{S.percent=e.target.checked;render();};bar.append(percent);
     const charts=grid();if(S.force==="land"){appendMetric(charts,"divisions");appendMetric(charts,"army_manpower");}else if(S.force==="sea"){appendMetric(charts,"ships");appendMetric(charts,"dockyards");appendMetric(charts,"admirals",{indexable:false});}else{appendMetric(charts,"aircraft");appendMetric(charts,"aircraft_stock");}
-    if(S.force==="land")countryPanels(section(el,"Generals and field marshals","Unit leaders the country holds at each save, one panel per country"),["generals","field_marshals"],"count",{indexable:false});
     el.append(heading("Force composition",dateText(times[S.at])));const comps=grid();tags().forEach(tag=>{const c=current(tag),available=finite(c?.metrics?.[S.force==="land"?"divisions":S.force==="sea"?"ships":"aircraft"]);composition(comps,tag,available?c?.[S.force==="land"?"army":S.force==="sea"?"navy":"air"]?.types:null,S.force==="land"?"Divisions by family":S.force==="sea"?"Ships by type":"Aircraft by role");});
     if(S.force==="land"){
       el.append(heading("Division templates","Composition at the inspection date"));
       const rows=tags().flatMap(tag=>(current(tag)?.army?.templates || []).map(t=>[countryCell(tag),esc(t.name || t.id),esc(labelType(t.family)),fmt(t.count),fmt(t.manpower)]));
       if(rows.length)el.append(tablePanel(["Country","Template","Family","Divisions","Men present"],rows));
       el.append(notice("Counts describe commanded units. Foreign manpower contributions and expeditionary forces require reconciliation before country totals can be combined."));
+      countryPanels(section(el,"Generals and field marshals","Unit leaders the country holds at each save, one panel per country"),["generals","field_marshals"],"leaders",{indexable:false});
     }else if(S.force==="air")el.append(notice("Aircraft in wings and in stockpiles are counted separately. These charts do not measure nominal airbase capacity."));
   }
   function resourceKeys(){return [...new Set(tags().flatMap(t=>Object.keys(current(t)?.resources || {})))].sort((a,b)=>(resourceNames[a]||a).localeCompare(resourceNames[b]||b,"en"));}
@@ -312,8 +312,7 @@ async function boot(text) {
     if(changes.length)el.append(tablePanel(["Country","First save with the law","From","To","Pool at that save"],changes,{left:[2,3]}));
     countryPanels(section(el,"Stability and war support","Displayed values rebuilt from the stored base plus spirits, advisors, dynamic modifiers, party popularity, war posture and penalties (DERIVED; see the metric definitions)"),["stability","war_support"],"%",{max:100,indexable:false});
     countryPanels(section(el,"Available experience","Army, navy, and air experience in points"),["army_xp","navy_xp","air_xp"],"points",{indexable:false});
-    appendMetric(section(el,"Command power"),"command_power");
-    appendMetric(section(el,"Political power","Stored balance at each save, in points"),"political_power");
+    countryPanels(section(el,"Command and political power","Stored balances at each save, in points, one panel per country"),["command_power","political_power"],"points",{indexable:false});
     appendMetric(section(el,"Economy fatigue","WA economic fatigue variable, in points"),"economy_fatigue",{indexable:false});
     countryPanels(section(el,"Convoys","Owned pool, free (WA telemetry) and in use, one panel per country"),["convoys_pool","convoys_free","convoys_in_use"],"convoys",{indexable:false});
   }
