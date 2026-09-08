@@ -1,0 +1,119 @@
+############################################################################################################
+#	WA_TEST - conscription pool floor ([sov-conscription-oscillation]), console-driven. harness-contract: v1 (wa-testing SKILL).
+#
+#	Fired by wa_law.1 (one country) / wa_law.2 (every AI country with an army) in events/wa_test_law.txt.
+#	Read the recipe there, not here.
+#
+#	Prints for the country under test: its law, the free pool read two ways (variable vs literal
+#	trigger; an unreadable variable reads 0 = ALWAYS short, the loud side), the deployed army, the floor the shipped effect wrote and an INDEPENDENT floor computed
+#	here with its own arithmetic, the shipped WA_AI_LAW_is_pool_short verdict beside an independent
+#	one, then one line per rung with the shipped can_take verdict and the non-pool gates it also needs.
+#	Write-nothing-but-the-log.
+############################################################################################################
+
+# ROOT = country under test.
+WA_TEST_law_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth].[GetDay] | LAW POOL TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _lw_e1_ = 0 }
+	set_temp_variable = { _lw_e2_ = 0 }
+	set_temp_variable = { _lw_e3_ = 0 }
+	set_temp_variable = { _lw_e4_ = 0 }
+	set_temp_variable = { _lw_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _lw_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _lw_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _lw_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _lw_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _lw_e5_ = 1 } }
+	log = "  scope : always=[?_lw_e1_|.0]  I-am-ROOT=[?_lw_e2_|.0]  I-am-THIS=[?_lw_e3_|.0]  ROOT-scope-usable=[?_lw_e4_|.0]  control-false=[?_lw_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from events/wa_test_scope_isolation.txt (wa_iso.3, its one call repointed to WA_TEST_law_report) before editing a line of this effect.)"
+
+	### Current law
+	set_temp_variable = { _lw_law_ = 0 }
+	if = { limit = { has_idea = volunteer_only } set_temp_variable = { _lw_law_ = 1 } }
+	if = { limit = { has_idea = limited_conscription } set_temp_variable = { _lw_law_ = 2 } }
+	if = { limit = { has_idea = extensive_conscription } set_temp_variable = { _lw_law_ = 3 } }
+	if = { limit = { has_idea = service_by_requirement } set_temp_variable = { _lw_law_ = 4 } }
+	if = { limit = { has_idea = all_adults_serve } set_temp_variable = { _lw_law_ = 5 } }
+	if = { limit = { has_idea = scraping_the_barrel } set_temp_variable = { _lw_law_ = 6 } }
+	set_temp_variable = { _lw_war_ = 0 }
+	if = { limit = { has_war = yes } set_temp_variable = { _lw_war_ = 1 } }
+	set_temp_variable = { _lw_cap_ = 0 }
+	if = { limit = { has_capitulated = yes } set_temp_variable = { _lw_cap_ = 1 } }
+	set_temp_variable = { _lw_ratio_ = 0 }
+	if = { limit = { NOT = { conscription_ratio < 0.99 } } set_temp_variable = { _lw_ratio_ = 1 } }
+	log = "  law   : rung=[?_lw_law_|.0] (0 disarmed / 1 volunteer / 2 limited / 3 extensive / 4 service / 5 all_adults / 6 scraping)  at_war=[?_lw_war_|.0]  capitulated=[?_lw_cap_|.0]  mobilised(ratio>=0.99)=[?_lw_ratio_|.0]"
+
+	### Pool read two ways: the variable the shipped trigger compares, and literal triggers as a yardstick
+	set_temp_variable = { _lw_pool_ = has_manpower }
+	set_temp_variable = { _lw_lt250_ = 0 }
+	set_temp_variable = { _lw_lt500_ = 0 }
+	set_temp_variable = { _lw_lt1m_ = 0 }
+	if = { limit = { has_manpower < 250000 } set_temp_variable = { _lw_lt250_ = 1 } }
+	if = { limit = { has_manpower < 500000 } set_temp_variable = { _lw_lt500_ = 1 } }
+	if = { limit = { has_manpower < 1000000 } set_temp_variable = { _lw_lt1m_ = 1 } }
+	log = "  pool  : has_manpower(var)=[?_lw_pool_|.0]  trigger<250k=[?_lw_lt250_|.0] <500k=[?_lw_lt500_|.0] <1M=[?_lw_lt1m_|.0]   (the var must sit in the band the three triggers describe; if not, the var is not the free pool and every floor reading below is void)"
+
+	### INDEPENDENT floor: own arithmetic on the same engine variable, no shared helper with the shipped effect
+	set_temp_variable = { _lw_army_k_ = deployed_army_manpower_k }
+	set_temp_variable = { _lw_ifloor_ = _lw_army_k_ }
+	multiply_temp_variable = { _lw_ifloor_ = constant:wa_ai_law.pool.army_share }
+	multiply_temp_variable = { _lw_ifloor_ = 1000 }		# thousands -> men, in the other order than the shipped effect
+	if = { limit = { check_variable = { _lw_ifloor_ < constant:wa_ai_law.pool.floor_min } } set_temp_variable = { _lw_ifloor_ = constant:wa_ai_law.pool.floor_min } }
+	set_temp_variable = { _lw_ishort_ = 0 }
+	if = { limit = { check_variable = { _lw_pool_ < _lw_ifloor_ } } set_temp_variable = { _lw_ishort_ = 1 } }
+	set_temp_variable = { _lw_sshort_ = 0 }
+	if = { limit = { WA_AI_LAW_is_pool_short = yes } set_temp_variable = { _lw_sshort_ = 1 } }
+	log = "  floor : deployed_army_k=[?_lw_army_k_|.0]  shipped_floor=[?WA_AI_LAW_pool_floor|.0]  indep_floor=[?_lw_ifloor_|.0]  shipped_short=[?_lw_sshort_|.0]  indep_short=[?_lw_ishort_|.0]   (shipped_floor=0: the background pulse has not run for this country yet - a human-tagged country never gets one; the two floors must be equal and the two shorts must agree)"
+
+	### One line per rung: the shipped verdict, then the non-pool gates it needs
+	set_temp_variable = { _lw_r1_ = 0 }
+	set_temp_variable = { _lw_r2_ = 0 }
+	set_temp_variable = { _lw_r3_ = 0 }
+	set_temp_variable = { _lw_r4_ = 0 }
+	set_temp_variable = { _lw_r5_ = 0 }
+	set_temp_variable = { _lw_r6_ = 0 }
+	if = { limit = { WA_AI_can_take_volunteer_only = yes } set_temp_variable = { _lw_r1_ = 1 } }
+	if = { limit = { WA_AI_can_take_limited_conscription = yes } set_temp_variable = { _lw_r2_ = 1 } }
+	if = { limit = { WA_AI_can_take_extensive_conscription = yes } set_temp_variable = { _lw_r3_ = 1 } }
+	if = { limit = { WA_AI_can_take_service_by_requirement = yes } set_temp_variable = { _lw_r4_ = 1 } }
+	if = { limit = { WA_AI_can_take_all_adults_serve = yes } set_temp_variable = { _lw_r5_ = 1 } }
+	if = { limit = { WA_AI_can_take_scraping_the_barrel = yes } set_temp_variable = { _lw_r6_ = 1 } }
+	set_temp_variable = { _lw_ideo_ = 0 }
+	if = { limit = { OR = { has_government = fascism has_government = communism } } set_temp_variable = { _lw_ideo_ = 1 } }
+	set_temp_variable = { _lw_ws15_ = 0 }
+	if = { limit = { has_war_support > 0.15 } set_temp_variable = { _lw_ws15_ = 1 } }
+	set_temp_variable = { _lw_y41_ = 0 }
+	if = { limit = { WA_AI_CONFIG_after_1941 = yes } set_temp_variable = { _lw_y41_ = 1 } }
+	set_temp_variable = { _lw_y43_ = 0 }
+	if = { limit = { WA_AI_CONFIG_after_1943 = yes } set_temp_variable = { _lw_y43_ = 1 } }
+	set_temp_variable = { _lw_queue_ = amount_manpower_in_deployment_queue }
+	log = "  rungs : can_take volunteer=[?_lw_r1_|.0] limited=[?_lw_r2_|.0] extensive=[?_lw_r3_|.0] service=[?_lw_r4_|.0] all_adults=[?_lw_r5_|.0] scraping=[?_lw_r6_|.0]   (only the rung above the current one can read 1)"
+	log = "  gates : fasc/comm=[?_lw_ideo_|.0]  ws>15%=[?_lw_ws15_|.0]  after_1941=[?_lw_y41_|.0]  after_1943=[?_lw_y43_|.0]  deploy_queue=[?_lw_queue_|.0]   (limited: war|ws|ideo; extensive: war|ideo; service: war & (8 majors|1941); all_adults: war & (list|1942.6) & queue<250k; scraping: war & (CHI/SOV/GER|1943) & queue<250k)"
+	set_temp_variable = { _lw_next_ = _lw_law_ }
+	add_to_temp_variable = { _lw_next_ = 1 }
+	set_temp_variable = { _lw_verdict_ = 0 }
+	if = { limit = { check_variable = { _lw_next_ = 1 } check_variable = { _lw_r1_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	if = { limit = { check_variable = { _lw_next_ = 2 } check_variable = { _lw_r2_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	if = { limit = { check_variable = { _lw_next_ = 3 } check_variable = { _lw_r3_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	if = { limit = { check_variable = { _lw_next_ = 4 } check_variable = { _lw_r4_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	if = { limit = { check_variable = { _lw_next_ = 5 } check_variable = { _lw_r5_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	if = { limit = { check_variable = { _lw_next_ = 6 } check_variable = { _lw_r6_ = 1 } } set_temp_variable = { _lw_verdict_ = 1 } }
+	log = "  verdict: climbs_next_pulse=[?_lw_verdict_|.0]   (1 with shipped_short=0 = a rung ignores the pool rule: the defect this harness exists to catch)"
+	if = {
+		limit = { check_variable = { _lw_verdict_ = 1 } check_variable = { _lw_sshort_ = 0 } }
+		log = "  FAIL  : [Root.GetName] would climb with the pool above its floor"
+	}
+	if = {
+		limit = { check_variable = { WA_AI_LAW_pool_floor > 0 } NOT = { check_variable = { _lw_sshort_ = _lw_ishort_ } } }
+		log = "  FAIL  : [Root.GetName] shipped_short=[?_lw_sshort_|.0] disagrees with indep_short=[?_lw_ishort_|.0] - one of the two comparisons does not read the pool"
+	}
+	if = {
+		limit = { NOT = { check_variable = { _lw_ifloor_ = WA_AI_LAW_pool_floor } } check_variable = { WA_AI_LAW_pool_floor > 0 } }
+		log = "  FAIL  : [Root.GetName] shipped floor [?WA_AI_LAW_pool_floor|.0] differs from the independent floor [?_lw_ifloor_|.0]"
+	}
+}

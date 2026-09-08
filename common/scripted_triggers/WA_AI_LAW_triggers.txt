@@ -926,6 +926,15 @@ WA_AI_can_take_over_mobilisation = {
 
 ### conscription laws
 
+# [sov-conscription-oscillation] free manpower is under the floor WA_AI_LAW_update_pool_floor wrote at
+# the last background pulse (0 before the first pulse = never short, the safe side). It reads the
+# VARIABLE so the script ladder and the engine ai_will_do (common/ideas/_manpower.txt) share one rule;
+# the rungs below name it instead of an absolute number, which never scaled with the army.
+WA_AI_LAW_is_pool_short = {
+	check_variable = { WA_AI_LAW_pool_floor > 0 }
+	check_variable = { has_manpower < WA_AI_LAW_pool_floor }
+}
+
 WA_AI_can_take_volunteer_only = {
 	########## AI LOGIC
 
@@ -934,12 +943,13 @@ WA_AI_can_take_volunteer_only = {
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
 
-	has_manpower > 750000
+	WA_AI_LAW_is_pool_short = yes
 
-	OR = {
-		has_idea = disarmed_nation
-		has_war = no
-	}
+	# [sov-conscription-oscillation] volunteer_only is the step up from disarmed_nation only; assumes the
+	# WA_AI_upgrade_conscription_law if-chain tests this trigger first whatever the current law, so any second
+	# admission branch here demotes every country whose pool reads short (SOV cycled every 2 months at peace);
+	# if that chain ever dispatches on the current law, this line becomes redundant.
+	has_idea = disarmed_nation
 
 	########## LAW REQUIREMENTS
 
@@ -984,10 +994,7 @@ WA_AI_can_take_limited_conscription = {
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
 
-	OR = {
-		original_tag = SOV
-		has_manpower < 500000
-	}
+	WA_AI_LAW_is_pool_short = yes
 
 	########## LAW REQUIREMENTS
 
@@ -1110,26 +1117,8 @@ WA_AI_can_take_extensive_conscription = {
 
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
 
-	OR = {
-		original_tag = SOV
-		has_manpower < 500000
-	}
-	if = {
-		limit = {
-			NOT = { tag = SOV }
-			NOT = { tag = FRA }
-		}
-		AND = {
-			has_manpower < 1000000
-			has_capitulated = no
-		}
-	}
-	if = {
-		limit = {
-			num_of_military_factories < 10
-		}
-		has_manpower < 300000
-	}
+	WA_AI_LAW_is_pool_short = yes
+	has_capitulated = no
 
 	NOT = {
 		original_tag = IRE
@@ -1263,14 +1252,7 @@ WA_AI_can_take_service_by_requirement = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 
-	#has_manpower_for_recruit_change_to = { value = 0.1 group = mobilization_laws }
-	has_manpower < 500000
-	if = {
-		limit = {
-			num_of_military_factories < 10
-		}
-		has_manpower < 300000
-	}
+	WA_AI_LAW_is_pool_short = yes
 
 	if = {
 		limit = {
@@ -1369,17 +1351,8 @@ WA_AI_can_take_all_adults_serve = {
 		NOT = { OVERLORD = { has_completed_focus = ENG_new_imperial_parliament } }
 	}
 
-	#has_manpower_for_recruit_change_to = { value = 0.2 group = mobilization_laws }
-	AND = {
-		has_manpower < 750000
-		has_capitulated = no
-	}
-	if = {
-		limit = {
-			num_of_military_factories < 10
-		}
-		has_manpower < 300000
-	}
+	WA_AI_LAW_is_pool_short = yes
+	has_capitulated = no
 	amount_manpower_in_deployment_queue < 250000
 	has_war = yes
 
@@ -1477,17 +1450,8 @@ WA_AI_can_take_scraping_the_barrel = {
 
 	### copy from idea file
 
-	#has_manpower_for_recruit_change_to = { value = 0.25 group = mobilization_laws }
-	AND = {
-		has_manpower < 500000
-		has_capitulated = no
-	}
-	if = {
-		limit = {
-			num_of_military_factories < 10
-		}
-		has_manpower < 300000
-	}
+	WA_AI_LAW_is_pool_short = yes
+	has_capitulated = no
 	NOT = { conscription_ratio < 0.99 } # wait for mobilization before upgrading again
 	has_war = yes
 

@@ -173,6 +173,81 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### sov-conscription-oscillation — SHIPPED-UNTESTED (2026-09-08)
+- Owner order 2026-09-08 ("corrige le", on the law-change table of the campaign HTML report).
+  Intended behaviour: the AI conscription ladder only climbs; `volunteer_only` is the step out of
+  `disarmed_nation`, never a peacetime demotion.
+- Symptom, MEASURED (saves `1936.2`-`1939.5` of the report campaign, SOV country block, one
+  `mobilization_laws` idea per save): `limited_conscription` 1936.3 -> `volunteer_only` 1936.4-5 ->
+  `limited` 1936.6-8 -> `volunteer` 1936.9 -> ... a ~2-month cycle at peace, all of 1936-1939.
+  The report reads the save correctly; the mod oscillates.
+- Cause, DERIVED: `WA_AI_upgrade_conscription_law` (`WA_AI_law_effects.txt:75`) gates on the
+  one-step-up `WA_AI_can_upgrade_manpower_law` but its if-chain tests `WA_AI_can_take_volunteer_only`
+  FIRST regardless of the current law. That trigger accepted `OR { disarmed_nation, has_war = no }` +
+  `has_manpower > 750000`, so at peace a country whose gate passed was demoted. Non-SOV: gate
+  (`can_take_extensive`, `has_manpower < 500000`) and demotion (`> 750000`) exclude each other on
+  the limited rung, so the demotion was dead code; SOV bypasses the band via `original_tag = SOV`
+  (`:988`, `:1114`), so it demoted and re-promoted every mobilisation cycle (`conscription_ratio >= 0.99`).
+- Change: `WA_AI_can_take_volunteer_only` (`WA_AI_LAW_triggers.txt`) requires `has_idea = disarmed_nation`;
+  the `has_war = no` branch is removed. 3 lines, no new tag/date/number. Lessons review CLEAR
+  (no lesson records the peacetime demotion as a regulator; the non-AI fallbacks to `volunteer_only`
+  - stability collapse `_stability_war_support.txt:457`, exiled government `100_wa_on_actions.txt:3336` -
+  are untouched). Architecture review CONCERNS all applied (comment rewritten to the protects /
+  assumes / how-to-tell form). Regression risk, DERIVED: non-SOV never reached the removed branch;
+  SOV's new steady state is `extensive_conscription` at peace (service_by_requirement needs war) -
+  ASSUMED acceptable. Pre-existing debt named, not fixed: tags in this non-CONFIG trigger file
+  (`original_tag = SOV` `:988/:1114`, `tag = SOV/FRA` `:1119`, USA/ENG `:896/:905`, HUN/IRE
+  `:962/:1135`). No harness: 4-line trigger change, no `WA_TEST_*` owed by the rule.
+- **Change 2 (2026-09-08, owner order on the HUN / SOV law tables: "l'ia devrait changer de loi si son
+  manpower restant est en dessous de soit 250k hommes, soit 10% des effectifs théoriques de l'armée";
+  ruling `max`).** Symptom, MEASURED (report campaign, law-change table + pool chart): HUN
+  `limited_conscription` 1938.7 with a ~100k pool, `extensive` 1940.5 at ~330k; SOV `extensive` 1939.10
+  with ~2M free. Cause, MEASURED (`WA_AI_LAW_triggers.txt`): every rung compared the free pool to an
+  ABSOLUTE number (500k / 750k / 1M / 300k) that never scaled with the army, so a small country was
+  always "short"; SOV skipped the pool test by `original_tag = SOV` on the limited and extensive rungs
+  and `NOT tag = SOV/FRA` on the 1M guard; the engine `ai_will_do` in `common/ideas/_manpower.txt`
+  carried the same absolute caps plus +1000 for SOV/FRA at war.
+  Change: one rule for both paths. `WA_AI_LAW_update_pool_floor` (`WA_AI_law_effects.txt`, first line
+  of the ~2-day conscription pulse) writes `WA_AI_LAW_pool_floor = max(constant floor_min 250000,
+  army_share 0.10 x deployed_army_manpower_k x 1000)` (`common/script_constants/wa_ai_law.txt`);
+  `WA_AI_LAW_is_pool_short` (new OBSERVATION trigger) reads `has_manpower < WA_AI_LAW_pool_floor`
+  and is 0 until the first pulse (safe side). The six `WA_AI_can_take_*` rungs name it in place of
+  their absolute numbers, the SOV/FRA exemptions and the `< 10 mil factories -> 300k` clauses;
+  `has_capitulated = no` now applies to every rung of extensive+. The five climbing `ai_will_do`
+  blocks get `factor = 0` unless the trigger reads true - placed LAST in each block, because
+  ai_will_do modifiers apply in order and an `add` after a 0 revives it (lessons review) - and lose
+  their `has_manpower > N` caps (which would have blocked a 12M army at 1.1M free); the
+  `volunteer_only` peacetime `add = 200` after 1943 is gated on `has_idea = disarmed_nation` so the
+  engine path cannot demote at peace (the Change-1 oscillation rebuilt on the second path); the
+  `volunteer_only` block carries the same last gate so rung 1 obeys one rule on both paths. Kept, pre-existing and outside this subject:
+  the war / ideology / date gates per rung, the ENG `has_manpower < 50000` clause on limited
+  (`:1078`, it now ANDs with the rule and keeps ENG at volunteer longer - owner to rule), the FRA
+  1940 focus clause, the engine `manpower_per_military_factory` weights.
+  MEASURED (install `dynamic_variables_documentation.md`): `has_manpower` and `deployed_army_manpower_k`
+  are listed dynamic variables; ASSUMED until the harness runs: they read on the LEFT of `check_variable`
+  (an unreadable left side reads 0 = ALWAYS short = climbs at every gate, the loud side - the harness
+  pool line beside three literal triggers is the probe);
+  `deployed_army_manpower_k` is the "theoretical army" the owner means (fielded divisions, not the
+  training queue). Regression risk, DERIVED: FRA at war in 1940 with a 2M army needs < 250k free
+  before extensive (it used to pass with any pool); disarmed nations leave `disarmed_nation` as
+  soon as ideas allow instead of waiting for a 750k pool that small nations never had.
+- Harness (contract v1, own file): `common/scripted_effects/WA_TEST_law.txt` + `events/wa_test_law.txt`
+  - `event wa_law.1 SOV` (one country) / `event wa_law.2` (every AI army). Independent floor and
+  short verdict beside the shipped ones; a `FAIL` line names a rung that climbs with the pool above
+  its floor or a floor mismatch. First run owed (owner), after a 0-error boot log on the two law
+  files (`check_variable` against `constant:` is the syntax the boot rule exists for). Lessons
+  review CONCERNS, both applied (gate order, engine demotion path); architecture review CONCERNS,
+  all four applied (no date at the code site, harness reads the constants with its own arithmetic
+  order, FAIL on shipped/indep disagreement, rung-1 symmetry).
+- Verification (campaign): SOV `conscription_law` monotone non-decreasing across the monthly saves
+  from 1936.2 to the first war (report law-change table shows no `-> Volunteer only` row for SOV);
+  for every AI law change in the table, the pool at the previous save reads under
+  max(250k, 10% of `deployed_army_manpower_k`) - the report's "Pool at that save" column; no AI
+  `-> Volunteer only` row at peace after 1943.1.1 (the engine demotion path stays closed).
+- Closed when: one campaign shows zero SOV demotions before its first war, SOV reaches
+  `extensive_conscription` only after its free pool drops under its floor, and no AI law change in
+  the table happens with the previous save's pool above the floor.
+
 ### train-variant-choice — OPEN (2026-09-05)
 - Owner order 2026-09-05: AI train lines run on the Simplified / War Austerity trains when available;
   the Armored Train is produced only with 10000 trains in reserve. All AI countries, every tech tree.

@@ -1,0 +1,51 @@
+############################################################################################################
+#	LAW POOL - console harness for [sov-conscription-oscillation] (the conscription ladder climbs one rung
+#	only while the free pool sits under max(250k, 10% of the deployed army)).
+#
+#	Effects: common/scripted_effects/WA_TEST_law.txt
+#
+#	CONSOLE, one country (stay on the observer tag and TARGET the event - never `tag SOV` first: a
+#	tagged country is human, the ~2-day background pulse that writes WA_AI_LAW_pool_floor runs only
+#	for is_ai, so its floor reads 0 and the report says so):
+#	    event wa_law.1 SOV
+#	CONSOLE, every AI country with an army (one report each, per-country firing on purpose):
+#	    event wa_law.2
+#	  Then read logs/game.log and search for "LAW POOL TEST" (or the "FAIL" lines).
+#
+#	WHAT GOOD LOOKS LIKE. shipped_floor = indep_floor for every country; shipped_short = indep_short;
+#	SOV 1939 at peace with a 2M pool and a 4M army: floor 400000, short 0, extensive can_take 0.
+#	HUN 1938 with a 100k pool: floor 250000, short 1, limited can_take 1 once Trianon is gone. No
+#	"FAIL" line anywhere. A pool line whose var sits outside the band of its three literal triggers
+#	means has_manpower is not readable as a variable - STOP, the rule compares nothing.
+#
+#	Own file, own namespace on purpose (wa-testing SKILL, harness contract v1).
+############################################################################################################
+
+add_namespace = wa_law
+
+# One report, country under test = the event's country.
+country_event = {
+	id = wa_law.1
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_law_report = yes
+	}
+}
+
+# Every AI country with an army: fire wa_law.1 on each (the report resolves against ROOT).
+country_event = {
+	id = wa_law.2
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		every_country = {
+			limit = {
+				is_ai = yes
+				exists = yes
+				num_divisions > 0
+			}
+			country_event = { id = wa_law.1 }
+		}
+	}
+}
