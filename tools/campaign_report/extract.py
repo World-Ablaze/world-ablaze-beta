@@ -277,6 +277,41 @@ def _days(date):
     return parts[0] * 365 + parts[1] * 30 + parts[2]
 
 
+def _attach_wings(country, wing_counts, definitions, catalog):
+    """Aircraft in wings per airframe family / role, from the wings' equipment amounts.
+
+    Air families take the wing aircraft as their `deployed` value (aircraft serve in wings, not
+    divisions); variants get theirs as well. Unregistered or unclassified variants are reported.
+    """
+    families, variants = country["equipment"]["families"], {v["id"]: v for v in country["equipment"]["variants"]}
+    by_role = Counter()
+    for family in families.values():
+        if family.get("domain") == "air":
+            family["deployed"] = 0.0
+    for variant in variants.values():
+        if variant.get("domain") == "air":
+            variant["deployed"] = 0.0
+    for eid, amount in wing_counts.items():
+        definition = definitions.get(eid)
+        classification = catalog.get(definition["definition"], {}) if definition else {}
+        if classification.get("domain") != "air":
+            country["issues"].append(f"Wing equipment #{eid} is not a classified airframe; {amount:g} aircraft are not attributed to a family.")
+            continue
+        family, role = classification["family"], classification.get("role") or classification["family"]
+        row = families.setdefault(family, {"domain": "air", "role": role, "stock": None, "deployed": 0.0, "reinforcement_need": None,
+                                           "training_need": None, "deficit": None, "stock_deficit": None, "active_factories": None, "production_per_day": None})
+        row["deployed"] = (row["deployed"] or 0.0) + amount
+        row["role"] = role
+        if eid in variants:
+            variants[eid]["deployed"] = (variants[eid]["deployed"] or 0.0) + amount
+        else:
+            country["equipment"]["variants"].append(dict(definition, family=family, domain="air", stock=None, deployed=amount, active_factories=None,
+                                                         production_per_day=None, reinforcement_need=None, training_need=None, stock_deficit=None, production_lines=[]))
+            variants[eid] = country["equipment"]["variants"][-1]
+        by_role[role] += amount
+    country["air"]["wings_by_role"] = dict(by_role)
+
+
 def _finalize_politics(country, catalog, characters=_NO_CHARACTERS, date=None):
     """Rebuild the displayed stability and war support once wars and characters are known.
 
@@ -596,7 +631,7 @@ def _manpower(node):
 def _empty():
     return {"metrics": {key: None for key in METRICS},
             "army": {"types": {}, "templates": [], "manpower_by_origin": {}},
-            "navy": {"types": {}}, "air": {"types": {}, "stock_types": {}},
+            "navy": {"types": {}}, "air": {"types": {}, "stock_types": {}, "wings_by_role": {}},
             "buildings": {"controlled": {}, "owned": {}}, "resources": {},
             "equipment": {"families": {}, "variants": []}, "wars": [], "issues": [], "conscription_law": None,
             "politics": {}}
@@ -772,6 +807,8 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
                    production_lines=lines[eid])
         variants.append(row)
         aggregate = family_row(family, domain)
+        if domain == "air":
+            aggregate["role"] = classification.get("role") or family
         for key in ("stock", "stock_deficit", "deployed", "active_factories"):
             if row[key] is None:
                 aggregate[key] = None
@@ -804,6 +841,7 @@ def extract_save(path: Path, repo: Path) -> dict:
     battalions = battalion_catalog(str(repo))
     definitions, templates, countries, state_totals, all_wars = {}, {}, {}, defaultdict(lambda: {"owned": Counter(), "controlled": Counter()}), []
     state_pools = defaultdict(Counter)  # controller -> available / locked / total summed over its states
+    wing_equipment = defaultdict(Counter)  # tag -> equipment variant id -> aircraft in wings
     warnings = ["Equipment classifications use the current checkout and may differ from the version played.",
                 "Daily armor output and training requirements are not computed; the shortfall shown is recorded reinforcement requests minus stock.",
                 "Recorded reinforcement requests by family may include equipment already in transit; they are not verified shortages. Training and variant-specific requirements are not established."]
@@ -876,6 +914,19 @@ def extract_save(path: Path, repo: Path) -> dict:
                 templates = plans._read_templates(fh)
             elif line.startswith("strategic_air={"):
                 saw_air = True
+                # Aircraft in wings per equipment variant: a wing lists its variants with amounts
+                # (older variants stay listed at 0). Resolved to families and roles once the registry is complete.
+                for chunk in _children(fh):
+                    match = re.match(r"\s*([A-Z0-9]{3})=\{", chunk[0])
+                    if not match or _delta(chunk[0]) == 0:
+                        continue
+                    counter = wing_equipment[match.group(1)]
+                    for pool in blocks(parse("".join(chunk)).block(match.group(1)), "air_wing_pool"):
+                        for wing in blocks(pool, "air_wings"):
+                            for entry in blocks(wing.block("equipment"), "equipment"):
+                                eid, amount = _id(entry), numeric(entry, "amount")
+                                if eid is not None and amount:
+                                    counter[eid] += amount
             elif line.startswith("countries={"):
                 # Consume one country at a time and discard unneeded child blocks.
                 for opening in fh:
@@ -906,6 +957,8 @@ def extract_save(path: Path, repo: Path) -> dict:
     for tag, country in countries.items():
         country["air"]["types"] = dict(air_totals[tag])
         country["metrics"]["aircraft"] = sum(air_totals[tag].values()) if saw_air else None
+        if saw_air:
+            _attach_wings(country, wing_equipment.get(tag, {}), definitions, catalog)
         country["buildings"] = {kind: dict(values) for kind, values in state_totals[tag].items()}
         for metric, key in (("civilian_factories", "industrial_complex"), ("military_factories", "arms_factory"), ("dockyards", "dockyard")):
             country["metrics"][metric] = state_totals[tag]["controlled"].get(key, 0) if saw_states else None

@@ -212,6 +212,24 @@ class ExtractionTests(unittest.TestCase):
         self.assertIsNone(result["army"]["templates"][0]["manpower"])
         self.assertTrue(result["issues"])
 
+    def test_aircraft_in_wings_attach_to_airframe_families(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "wings.hoi4"
+            path.write_text('HOI4txt\ndate="1941.8.1.2"\nequipments={\n\tsmall_fighter_airframe={\n\t\tid={ id=7 type=70 }\n\t\tname="Spitfire"\n\t\tcreator="ENG"\n\t}\n\tinfantry_equipment={\n\t\tid={ id=8 type=70 }\n\t\tname="Rifle"\n\t\tcreator="ENG"\n\t}\n}\n'
+                            'countries={\n\tENG={\n\t\tstability=0.5\n\t\tproduction={\n\t\t\tequipments={\n\t\t\t\tequipment={ id={ id=7 type=70 } amount=40 }\n\t\t\t}\n\t\t}\n\t}\n}\n'
+                            'strategic_air={\n\tENG={\n\t\tair_wing_pool={\n\t\t\tdefinition=fighter_multirole\n\t\t\tair_wings={\n\t\t\t\tcount=100\n\t\t\t\tequipment={\n\t\t\t\t\tequipment={ id={ id=7 type=70 } amount=100 }\n\t\t\t\t\tequipment={ id={ id=8 type=70 } amount=0 }\n\t\t\t\t\tequipment={ id={ id=9 type=70 } amount=3 }\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n', encoding="utf-8")
+            catalog = {"small_fighter_airframe": dict(domain="air", family="small_fighter_airframe", role="fighter"),
+                       "infantry_equipment": dict(domain="army", family="infantry_equipment", role=None)}
+            with patch.object(ex, "equipment_catalog", return_value=catalog), patch.object(ex, "battalion_catalog", return_value={}), \
+                    patch.object(ex, "politics_catalog", return_value=ex._EMPTY_POLITICS):
+                data = ex.extract_save(path, Path(directory))
+            country = data["countries"]["ENG"]
+            family = country["equipment"]["families"]["small_fighter_airframe"]
+            self.assertEqual((family["domain"], family["role"], family["stock"], family["deployed"]), ("air", "fighter", 40, 100))
+            self.assertEqual(country["air"]["wings_by_role"], {"fighter": 100})
+            self.assertEqual([v["deployed"] for v in country["equipment"]["variants"] if v["id"] == 7], [100])
+            self.assertTrue(any("Wing equipment #9" in issue for issue in country["issues"]))  # unregistered variant reported, not dropped
+
     def test_missing_global_sections_keep_global_counts_unknown(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "sample.hoi4"
