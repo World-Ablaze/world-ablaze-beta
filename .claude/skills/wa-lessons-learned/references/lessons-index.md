@@ -145,3 +145,4 @@ triages from this file first.
 - A 08-29 replace_with resolves in its own role group; target_min_match checks the NEXT target · grep:"second, silent condition"
 - B 09-07 check_variable takes <, > or = only; `>= constant:` kills the file at boot · grep:"with `>= constant:` does not parse"
 - ENGINE 09-08 never gate on `has_tech_bonus`; use the WA_rb_* ledger · grep:"`has_tech_bonus` does not read bonus availability"
+- C 09-09 Hot script reload can stall the AI template designer; restart before reading it · grep:"A hot script reload can also stall the AI's own template upgrades"

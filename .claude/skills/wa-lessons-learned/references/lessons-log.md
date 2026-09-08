@@ -2738,3 +2738,33 @@ process caveats (stale process, and the absence of a load-time hook).
   value triggers and name interpolation read true, suspect a stale reload before touching the effect.
 - **Evidence:** `common/scripted_effects/WA_TEST_pc_lost_purge.txt` (contract-v1 header); WORK.md
   `pc-lost-state-purge` runs 1-2 (19:10 clean FAIL-on-fixture, 19:17/19:21 void, 19:26 clean 3x PASS).
+
+### A hot script reload can also stall the AI's own template upgrades - restart before reading the designer
+
+- **Date:** 2026-09-09
+- **Symptom (owner report, ASSUMED until reproduced with a cold-vs-reloaded pair):** in a session
+  where scripted files had been hot-reloaded in the console (`reload` / `reloadfile`), the engine's
+  AI template upgrade machinery (`imgui show ai_templates`: role targets, best-match, copy-and-edit
+  of division templates, field upgrades) appeared to stop acting for the AI; after a full
+  executable restart on the same files and save it worked again. Seen while chasing the Soviet
+  44w -> 30w conversion (`light-support-conversion`, WORK.md Change 14), where a save later showed a
+  genuine script-side cause too (army XP starvation) - the two are not the same failure.
+- **Cause:** not established. Consistent with the previous entry (a hot reload leaves scope
+  DISPLAY bindings intact but breaks country-valued triggers): every `ai_templates` `enable` block
+  and role-level `upgrade_prio` modifier is a country-scope trigger evaluated by the engine, so a
+  reload that poisons `tag =` / `has_country_flag =` reads would silently disable every target and
+  zero every role weight - which is exactly "the designer does nothing". ASSUMED mechanism.
+- **Rule:** any reading of the AI template designer (`imgui show ai_templates`,
+  `ai_division_production`, a lettered template appearing or not, a field upgrade firing or not)
+  taken in a session that hot-reloaded scripts is void. Restart the executable, reload the save,
+  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass, then read. Before concluding "the AI
+  never designs X", ask how the session was started - and only then look for a script cause.
+- **Detection:** the session history (a `reload` in the console log); a `WA_TEST_*` harness whose
+  contract-v1 scope line is not `1 1 1 1 0` in the same session; the designer resuming after a
+  cold restart with byte-identical files.
+- **Evidence:** owner report 2026-09-09, then the owner's cold-boot control the same day: with
+  byte-identical files and a fresh executable the AI template upgrades ran ("les changements
+  locaux marchent") - one half of the discriminating pair, the reloaded half not re-run, so the
+  entry stays class C; the cold-restart pair of the previous entry
+  (`WA_TEST_pc_lost_purge.txt`, WORK.md `pc-lost-state-purge` runs 1-2) for the trigger-poisoning
+  half; engine doc `common/ai_templates/_documentation.md` for what the designer evaluates.

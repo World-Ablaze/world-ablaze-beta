@@ -1980,15 +1980,224 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### light-support-conversion — SHIPPED-UNTESTED (2026-09-07)
+### light-support-conversion — SHIPPED-UNTESTED (2026-09-08)
+- Owner in-game report 2026-09-09, cold boot, working tree without Change 14: "les changements
+  locaux marchent". Harness output not yet pasted, so the status stays. Owner live edit the same
+  day, in the tree and this commit: the "Tankovaya brigada" deletion is removed from BOTH mission
+  effects (complete_effect and timeout_effect) - the OOB brigades keep their units and template
+  and bridge through STARTER_MIX under 15009; only the two cavalry templates lose their divisions
+  (`delete_units`, templates kept). Change 13's "the deletion stays" ruling is superseded by this.
 - Unparked 2026-09-07 on the owner order below; slot freed by parking `coal-prospect-loop`.
+- **Change 14 (owner order 2026-09-08 "un event pour l'ia qui, une fois la mission accomplie, si la
+  date est avant 1942, supprime tous les chars, puis respawne 30 chars au template 30w, avec 1%
+  d'équipement") — delete + respawn replaces the designer-driven 44w -> 30w conversion.**
+  - **STASHED 2026-09-09 (owner order)**: taken out of the working tree, not committed, to test
+    whether the hot-reloaded build alone explains the missing 30w (lessons entry "A hot script
+    reload can also stall the AI's own template upgrades"). Patch = `E:/Projets/HOI4/WA/
+    stash-change14/change14-respawn.patch` (`git apply` from the repo root; `git apply --check`
+    passed on the reverted tree), full copies of the seven files under `stash-change14/full/`.
+    Kept in the tree: Changes 12-13, the mission's units-only deletes, the lessons entry.
+  - **DROPPED 2026-09-09 (owner cold-boot control: "les changements locaux marchent")**: with the
+    same files and a fresh executable the local changes behave; the missing 30w was the
+    hot-reloaded build, not the design (the XP-starvation reading stays MEASURED on the save but
+    is not the blocker the owner saw). The patch stays at the path above in case a campaign shows
+    the 44w park again; nothing of Change 14 is in the tree or the commit.
+  - Why (MEASURED, autosave 1941.2.1 of the owner's game + `imgui show ai_templates` 1940.4.27):
+    30 divisions still on "Light Support Tank template A" = the 44w corps (12 LS / 6 L / 4 mot) 27
+    months after the mission; no other light-support template; the arrow correctly on the MIX,
+    best match 0.28; `army_experience = 10.1`, `army_experience_daily_training = 0.015`; the
+    light-support role has 5.7 % of the design lottery (panel weights 71.9 vs infantry 733).
+    Engine rule (install `common/ai_templates/_documentation.md`): the AI never creates a
+    template, it copies the best match and edits it toward the target; A -> MIX needs >= 15
+    single edits at 5 XP each with ~0 XP income. The same reading explains the missing medium /
+    heavy rows: books `wa_ai_armor_budget_light=8 medium=8 heavy=4`, flags 6101 / 7105 set,
+    targets enabled, and SOV owns no template with a medium or heavy battalion (7 templates in
+    the save) - a role row needs an enabled target AND an owned template. Lowering
+    `target_min_match` (owner's live edit) changed nothing: the chain has no 30w-like template
+    to move divisions to.
+  - Shipped: `WA_AI_TEMPLATES_delete_light_support_park_templates` (the A..Z + OOB sweep, moved
+    out of the retire effect, plus the scripted name); `WA_AI_TEMPLATES_reset_light_support_park`
+    = sweep, `division_template` "Legkaya Tankovaya Diviziya" (exact MIX composition, x/y grid
+    with the 4 + 4 regimental supports on the four >= 3-battalion columns), `create_unit` x
+    `tank_park_hold_divisions` in `capital_scope` at `start_equipment_factor = 0.01` (manpower
+    engine default, ASSUMED full), flags `WA_AI_TEMPLATES_ls_park_reset` + `ls_bridge_done`,
+    immediate recalculation of the role target, game.log line; `sov_armor.982` (hidden,
+    triggered, once; AI + historical + park country + before 1942 + not retired) fired with
+    `days = 1` from the mission's `complete_effect` AI branch after its own sweep - the timeout
+    keeps the sweep alone (owner: "accomplie"); new constant
+    `wa_ai_production.army_composition.tank_park_hold_divisions = 30` owning both the respawn
+    count and the hold's `build_army value = 30` (regex mirror in `tools/constants_registry.json`
+    - `constant:` does not resolve in `ai_strategy value =`); harness `lsphase` prints `reset` and
+    `30w-template`; doc section rewritten.
+  - Interplay: the reset sets `WA_AI_TEMPLATES_ls_bridge_done` and recalculates the role target
+    at once, so the flag lands on STABLE 15010 (MIX alone) the day after completion; PONT is
+    skipped for the rebuilt park (it bridged a corps that no longer exists). CONVERT-1 on the
+    T-34 / KV-1 is unchanged: the rung matches the scripted template at ~1.0, and the FINAL needs a
+    medium-like template that the same XP starvation still withholds - NEXT GAP, not fixed here.
+    The hold keeps wanted at 30 so the share (8 % = 19) does not decommission the rebuilt park.
+    Supports: the six the 1936 Soviet tech set has are in the template; maintenance / field
+    hospital / signal are added by `add_units_to_division_template` under `has_tech`
+    (`tech_maintenance_company` / `tech_field_hospital` / `tech_signal_company`, MEASURED
+    `enable_subunits` join; the AST template uses the same guard).
+  - t0/t1/t2 (daily events, 7-day designer pass, monthly calculator; DERIVED):
+    | t | flag | enabled targets | park | expected |
+    | --- | --- | --- | --- | --- |
+    | t0 completion | 15006 | 44_TEMPORARY (44w) | corps + copies, brigades / cavalry deleted | +100 XP paid; a 7-day designer pass may land on this day, harmless: the park is still the 44w corps matching its own target at ~1.0 |
+    | t0 + 1 d reset | 15010 | MIX alone | 30 x scripted 30w at 1 % | best match 1.0 (< 1.0 only until the three support techs exist) - nothing for the designer to edit; the MISSION branch is closed by `ls_park_reset` whatever `has_active_mission` reads |
+    | t0 + 7 d .. monthly | 15010 | MIX alone | equipment filling from the refunded stock | calculator re-lands on 15010 every pulse (latch + bridge-done, mission inactive) |
+    | t T-34 / KV-1 | 15007 / 15013.. | rung + FINAL | rung match ~1.0 | FINAL needs the medium / heavy template - next gap |
+  - ASSUMED (i) `division_template` in an event `immediate` accepts `division_names_group`
+    (OOB syntax; the boot test tells); (ii) `create_unit` `count = <temp var>` in `capital_scope`
+    (form of `WA_AI_DIVISION_spawn_divisions`, meta_effect there); (iii) the disbanded corps
+    refunds the chassis the 1 %-equipped divisions then draw. (`days = 1` and the reset flag on
+    the calculator's MISSION branch are belt and braces: whatever `has_active_mission` reads on
+    the reset day, the value cannot return to 15006 once the park is rebuilt.)
+  - Drift risk, stated: the 30w composition is declared twice (ai_templates target and the
+    scripted template) and no checker joins them; the only join is the imgui best match 1.0 on
+    `30_MOT_LIGHT_MIX`, ASSUMED until the owner's console run prints it.
+  - Owner order (same day, after the reviews): the mission's six `delete_unit_template_and_units`
+    (complete_effect + timeout_effect: Kazachya / Kavaleriyskaya / Tankovaya brigada) become
+    `delete_units` with the same `has_template` guards and `disband = yes` - units go, templates
+    stay. Owner order 2026-09-09 "corrige l'event du lendemain": the reset now calls
+    `WA_AI_TEMPLATES_delete_light_support_park_units` (delete_units on the two OOB names and the
+    scripted rebuild, templates kept) + `WA_AI_TEMPLATES_delete_light_support_engine_copies`
+    (the A..Z copies go with their templates); the retire keeps the full template sweep
+    (`..._park_templates` = named templates + copies + MISS log).
+  - Reviews 2026-09-08: lessons CONFLICT (44w target left over the rebuilt park for <= 3 months
+    with 100 fresh XP; three unresearched supports; harness caveat) - all three applied
+    (STABLE at reset via bridge-done + recalculation and `days = 1`; guarded supports; caveat
+    in the harness comment); architecture CONCERNS (registry regex unbounded past the block;
+    drift risk to state) - both applied (the mirror pattern refuses to cross a top-level `}`
+    line, so a removed `value` line fails instead of capturing the next block; the line above).
+    Second round: lessons CONCERNS (MISSION-branch exit resting on `has_active_mission` timing;
+    t0 row wording) and architecture CONCERNS (`ls_park_reset` had no gameplay reader; calculator
+    caller list) - all applied: the MISSION branch now reads `NOT ls_park_reset` (its gameplay
+    reader), the caller list names the reset, the t0 row reworded.
+  - Verification - owner console: restart; load a save BEFORE the mission completes (it fires from
+    the completion, a post-mission save cannot replay it); run past completion without tagging
+    SOV; `game.log` "rebuilt the light-support park: 30 divisions", and NO
+    `add_units_to_division_template Not allowed` / `Trying to fill variant where none exist`
+    line (`error.log` too); `sov-tank-mission-active=0` on the flags line; `event wa_abg.3 SOV`:
+    `reset=1 30w-template=1 stable-15010=1 bridge-done=1`, park line `hold-30=1`; `imgui show
+    ai_templates`: arrow on `30_MOT_LIGHT_MIX`, best match "Legkaya Tankovaya Diviziya" at 1.0
+    (or the support-tech-bounded value below 1.0 before those techs); AI production panel:
+    `light_armor` current 30 / wanted 30. Controls: timeout path (no rebuild), competitive SOV (no rebuild),
+    1942 retire still deletes the scripted template (`retired=1 30w-template=0`).
+  - Verification - campaign: SOV division count at mission end = pre-mission - brigades -
+    cavalry - corps copies + 30; the 30 sit on the scripted template with rising equipment; the
+    medium / heavy rows still absent until the next gap is closed.
+- **Change 13 (owner order 2026-09-08, two panel screenshots 1938.11.1 / 1938.11.4) — the park
+  survives the mission's end; 30 light-support divisions held until the T-34 / KV-1.**
+  - Symptom, MEASURED (owner screenshots, build = working tree of Change 12): 1938.11.1 18:00
+    167 active divisions, `light_armor` current 67 / wanted 100; 1938.11.4 124 active (-43),
+    the `light_armor` row absent from the AI production panel, infantry current 86.6 -> 98.6.
+  - Cause (script lines): (1) `SOV_factions.txt` mission `complete_effect` / `timeout_effect`
+    delete "Tankovaya brigada" (21 OOB divisions) and "Kavaleriyskaya Diviziya" (30) with their
+    units (`3b865fa8f7`) — 43 <= 51, the rest had already field-upgraded off those names. Owner
+    ruling: the 18w brigade and the cavalry ARE dead weight; the deletion stays. (2)
+    `WA_AI_TEMPLATES_armored_light_support.txt` `_44_TEMPORARY` enable = 15006 AND mission
+    active; the calculator writes 15009 only at the next monthly pulse, so the role had ZERO
+    enabled targets for up to a month and vanished from the panel — the row was gone while the
+    light book still read 15 (the monthly reconcile precedes the 18:00 screenshot), so neither the
+    role_ratio share nor `build_army` can hold a role with no target. Change 12's slot is
+    complementary (it funds the FINAL divisions that stay in the light group), not the cure.
+  - DERIVED from the 1938.11.1 panel: `build_army id = light_armor value = 100` read as wanted
+    100 — the value is a wanted division count. The owner's `value = 30` proposal rests on that.
+    CONFOUNDED: that reading was taken with `force_build_armies 300` and the role_ratio slot both
+    live, so one data point cannot separate "absolute count" from "additive to the share"; the
+    console check below (wanted exactly 30) is the killing measurement and stays blocking.
+  - Shipped: `_44_TEMPORARY` enables on 15006 alone (values exclusive by construction since
+    Change 11); `WA_AI_PRODUCTION_should_hold_historical_tank_park` (historical, park country,
+    mission over, temporary latch, not retired, no major enemy, training allowed, SOV switch
+    closed = T-34 / KV-1 not researched and before 1942) gates
+    `WA_AI_PRODUCTION_DEFAULT_historical_tank_park_hold` = `build_army id = light_armor value = 30`,
+    no `force_build_armies`; harness `wa_abg.3` prints `hold-30` (a reading of the shipped gate,
+    not a retype) and `target-live` (set membership over the 17 declared values 15000-15016, not
+    an enable evaluation; the STARTER `has_template` terms are not retyped); doc section
+    rewritten. Deletion untouched. `tools/ai_layers_baseline.json` NUMBER-LEAK 338 -> 335 updated
+    in the same commit: MEASURED the drop is inherited from merge `e670dfd372` (`WA_triggers.txt`
+    10 -> 7, `WA_production_strategy_effects.txt` 2 -> 0, `WA_AI_PRODUCTION_air.txt` 0 -> 2), the
+    four files touched here count identically at HEAD and in the working tree.
+  - Reviews 2026-09-08: lessons CONCERNS (confounded wanted-100 reading; latch dependency;
+    `target-live` wording) and architecture CONCERNS (rule 7 comment phrasing; `hold-30` is a
+    reading; baseline provenance) - all applied. Latch dependency, stated: the hold needs
+    `WA_AI_TEMPLATES_sov_light_support_temporary_latched`, written only while the mission is live;
+    a save whose mission ended on a build predating the latch never arms it (no migration owed
+    unless such a save is scored).
+  - t0/t1/t2 (monthly calculator, 7-day engine selection, daily ai_strategy enable ASSUMED):
+    | t | flag | enabled targets | wanted | expected |
+    | --- | --- | --- | --- | --- |
+    | t0 mission end | 15006 | 44_TEMPORARY (44w, no chain) | 30 (hold arms) | brigades + cavalry deleted by the mission; corps + copies stay in the role; recruits <= 30 - current on the 44w shape |
+    | t1 next pulse | 15009 | CONVERT 44w (15) + MIX 30w (10) | 30 | arrow on the MIX; recruits still land on the 44w CONVERT (highest prio) |
+    | t2 = t1 + 2 pulses | 15010 | MIX alone | 30 | recruits on the 30w; 44w divisions upgrade to the MIX |
+    | t3 T-34 / KV-1 | 15007/15013... | rung + FINAL | share only (hold closes) | conversion window as Change 11 |
+    Residual: <= (30 - current) divisions queued on the 44w shape during <= 3 months (ASSUMED the
+    queue follows the template's field upgrade); how many of the 30 exist before the T-34 is
+    training-time-bound, not script-bound.
+  - Verification — owner console: restart the exe; post-mission pre-T-34 SOV save, no tag
+    switch; `event wa_abg.3 SOV`: scope `1 1 1 1 0`, `continues=0`, `force-500=0`, `hold-30=1`,
+    `light-role-open=1`, `target-live=1`, verdicts 1 1 1 1; the AI production panel must show
+    the `light_armor` row with wanted EXACTLY 30 - "30 + share" or a percent refutes the
+    wanted-count reading of `build_army` and the 30 is recomputed, not tuned. Controls:
+    mission-active save (`hold-30=0`, `force-500=1`), post-T-34 save (`hold-30=0`), competitive
+    SOV (`hold-30=0`).
+  - Verification — campaign: the SOV division count across the mission's end drops by the OOB
+    brigades + cavalry still on their names and by nothing else; `light_armor` current climbs
+    toward 30 before the T-34; FINAL shapes carry the park after it.
+- **Change 12 (owner order 2026-09-08) — keep the historical Soviet light budget open until 1942.**
+  - Owner report: light need falls to zero when the mission ends; two thirds of the LS divisions
+    disappear. ASSUMED causal link between budget withdrawal and those deletions; this change
+    implements the requested retention policy, not a demonstrated engine-level cure.
+  - MEASURED cause in script: `WA_AI_PRODUCTION_build_army_light_armor` vetoed historical SOV
+    when `should_continue_historical_tank_park` closed, and also required a live light-template
+    use trigger. Both gates could withdraw funding before the park finished conversion.
+  - Implemented: exclusive historical-difficulty + CONFIG park-country branch, with the existing
+    master gate, `before_global_war_begins` (`date < 1942.1.1`), a carried LS template flag and
+    no retired flag. No mission, cap, major-war, expansion or light-template-use condition in
+    that branch. No fallback to generic light after the boundary. Generic non-historical-SOV
+    behavior is logically unchanged (its old mission exception required historical SOV).
+  - Impact: only gameplay caller is `WA_AI_ARMOR_BUDGET_reconcile`; startup and monthly scheduling
+    remain unchanged, with template calculation before reconciliation. Harness is the other
+    reader. No change to mission continuation, its floor/force bonus, equipment policy, template
+    phases, conversion gates or retirement. No new constant, CONFIG declaration or telemetry.
+  - `WA_TEST_armor_budget.txt` independently retypes the new light gate. Its split expectation
+    also now includes the existing master/expansion gates and SOV medium-switch exclusion;
+    its floor expectation matches gameplay's either-cap-unmet condition and retired guard.
+    These are measurement corrections, not changes to medium/heavy or floor gameplay.
+  - Scenarios: historical SOV post-mission PONT/STABLE/CONVERT-1/CONVERT-2 keeps its ordinary
+    light share, including FINAL targets still in that role. Competitive SOV and non-SOV
+    countries use the previous generic path. Retired/missing-flag historical SOV closes;
+    historical SOV at/after 1942 closes even if its mission remains active. No-training still
+    zeros the budget independently of the open-role gate.
+  - Regression risk: reopening light redistributes the ordinary tank budget from other open
+    roles and permits recruitment in the park role. ASSUMED extra recruitment can compete
+    for conversion equipment; no bound or guarantee on division retention/conversion time.
+  - Final diff reviews: lessons CLEAR (carried-flag/retired guards, exclusive historical branch
+    and retained brakes); architecture OK.
+  - Validation (2026-09-08): constants and AI-layer checks exit 0; brace nesting and
+    `git diff --check` pass; template-checker selftest passes. Parsed light-gate truth table:
+    2 048 boolean combinations match the requested policy, including 1 536 generic cases
+    identical to HEAD (offline logic check, not an engine test). Global template check still
+    reports 4 HQ suffix errors / 48 warnings; all its inputs are unchanged. Worklist check
+    reports 3 existing errors (8 OPEN, two stale untested subjects), confirmed identical by
+    running its WORK checks against HEAD in memory. No unrelated tracker or HQ edit.
+  - Verification — owner console: restart the game; on the post-mission 1939 save, without
+    tag-switching, `event wa_abg.3 SOV` must show scope `1 1 1 1 0`, `continues=0`, `force-500=0`,
+    `light-role-open=1`, positive light book if training is allowed, and all four verdicts 1.
+    Repeat during conversion (including KV-1-only admission), and at/after 1942 (light book 0).
+    Controls: competitive SOV, non-SOV and mission-active one-cap-reached case. The calendar
+    gate changes immediately; normal applied books change on the next monthly reconciliation.
+  - Verification — campaign: follow the same historical Soviet divisions from mission end
+    through medium/heavy conversion; before 1942, a carried unretired park with training allowed
+    must retain a positive `WA_AI_ARMOR_BUDGET_light` after reconciliation. Record deployed
+    park counts/shapes to test the owner's retention hypothesis. Existing conversion criteria
+    remain; this change additionally closes only after these console and campaign checks pass.
 - **Change 11 (owner order 2026-09-07 "vas-y, implémente dans l'ordre C, B, A+D, D bis") — every
   bridge of the temporary corps carries its own exit; medium and heavy open on the T-34 / KV-1.**
   Owner intention (same day): mission over → the 44w corps goes to the 30w MIX and STAYS there;
   medium opens when `sov_medium_tank_chassis_3` (T-34) is researched, heavy when
   `sov_heavy_tank_chassis_2` (KV-1) is; the 30w park converts directly into whichever class is
-  open. Not covered, owner decision owed: the light budget still closes at the mission's end
-  (`WA_AI_PRODUCTION_build_army_light_armor`), so the 30w park is kept and converted, never renewed.
+  open. The mission-end budget closure left by this change is superseded by Change 12 above.
   - Symptom, MEASURED (campaign `a100b67c`, BHU observer, 132 monthly saves 1936.2-1947.1,
     unbranched, build of 2026-09-06 evening; full timeline in scratchpad
     `a100b67c_SOV_templates_timeline.md`): mission completed 1938.11 (1156 days early). Then the

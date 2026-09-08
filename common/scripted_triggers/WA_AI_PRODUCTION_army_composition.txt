@@ -26,27 +26,30 @@ WA_AI_PRODUCTION_army_composition_is_enabled = {
 # templates because WA_light_support_armor_role declares role = light_armor.
 
 WA_AI_PRODUCTION_build_army_light_armor = {
-	# [historical-tank-park] The Soviet temporary corps is recruitable from 1936, then the whole
-	# light role closes once its historical park is complete. Ahistorical SOV keeps the normal path.
-	NOT = {
+	# [light-support-conversion] Historical SOV funds its carried park through conversion until
+	# 1942, independently of the mission. Converted targets still belong to the light role.
+	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	OR = {
 		AND = {
 			WA_AI_DIFFICULTY_is_historical = yes
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
-			NOT = { WA_AI_PRODUCTION_should_continue_historical_tank_park = yes }
+			WA_AI_CONFIG_before_global_war_begins = yes
+			NOT = { has_country_flag = WA_AI_TEMPLATES_light_support_park_retired }
+			has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE
 		}
-	}
-	WA_AI_PRODUCTION_army_composition_is_enabled = yes
-	OR = {
-		NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 		AND = {
-			WA_AI_CONFIG_pursues_historical_tank_park = yes
-			WA_AI_PRODUCTION_should_continue_historical_tank_park = yes
-			has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+			NOT = {
+				AND = {
+					WA_AI_DIFFICULTY_is_historical = yes
+					WA_AI_CONFIG_pursues_historical_tank_park = yes
+				}
+			}
+			NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
+			OR = {
+				WA_AI_TEMPLATES_use_light_armor_templates = yes
+				WA_AI_TEMPLATES_use_light_support_armor_templates = yes
+			}
 		}
-	}
-	OR = {
-		WA_AI_TEMPLATES_use_light_armor_templates = yes
-		WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 	}
 }
 
@@ -161,6 +164,22 @@ WA_AI_PRODUCTION_should_force_historical_tank_park = {
 	WA_AI_CONFIG_pursues_historical_tank_park = yes
 	NOT = { any_enemy_country = { is_major = yes } }
 	WA_AI_PRODUCTION_historical_tank_park_mission_is_active = yes
+}
+
+# [light-support-conversion] Hold the converted park at a fixed wanted count from the mission's end
+# until the T-34 / KV-1 opens its destination class: the ordinary role_ratio share funds far fewer
+# divisions than the park fields. Payload is WA_AI_PRODUCTION_DEFAULT_historical_tank_park_hold.
+# Assumes the value of build_army reads as a wanted division count (panel: value 100 -> wanted 100).
+WA_AI_PRODUCTION_should_hold_historical_tank_park = {
+	WA_AI_PRODUCTION_army_composition_is_enabled = yes
+	WA_AI_DIFFICULTY_is_historical = yes
+	WA_AI_CONFIG_pursues_historical_tank_park = yes
+	NOT = { WA_AI_PRODUCTION_trains_no_divisions = yes }
+	NOT = { any_enemy_country = { is_major = yes } }
+	NOT = { has_country_flag = WA_AI_TEMPLATES_light_support_park_retired }
+	has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched
+	NOT = { WA_AI_PRODUCTION_historical_tank_park_mission_is_active = yes }
+	NOT = { WA_AI_CONFIG_switch_from_light_to_medium_armor = yes }
 }
 
 # [light-support-conversion] Gate of the armor-budget light floor (WA_AI_ARMOR_BUDGET_reconcile

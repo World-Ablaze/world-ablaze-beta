@@ -9,10 +9,9 @@
 #	Recipe: events/wa_test_armor_budget.txt header. Fire `event wa_abg.1 SOV` from ANY tag - do NOT
 #	tag into the country under test. Output: logs/game.log, "ARMOR BUDGET TEST".
 #
-#	Section C RE-DERIVES the open-role set from the TEMPLATE triggers and re-does the split with its
-#	own arithmetic, on purpose (contract rule 4): it shares no helper with the shipped effect except
-#	the budget constant, which IS the bar being measured. When C and D disagree the fault is in one
-#	of the two, not hidden between them.
+#	Section C RE-DERIVES the open-role set from template inputs and retyped policy terms, then
+#	re-does the split with its own arithmetic (contract rule 4). It does not call the shipped
+#	slot triggers. When C and D disagree the fault is in one of the two, not hidden between them.
 #
 #	[armor-budget-ramp] The budget is DATE-dependent (5 / 10 / 15 / 20 / 25 by year), so `budget=`
 #	changing between two runs on different years is correct, not a fault. One expected transient:
@@ -62,9 +61,11 @@ WA_TEST_ABG_report = {
 	if = { limit = { WA_AI_PRODUCTION_should_force_historical_tank_park = yes } set_temp_variable = { _abt_parkforce = 1 } }
 	set_temp_variable = { _abt_lightrole = 0 }
 	if = { limit = { WA_AI_PRODUCTION_build_army_light_armor = yes } set_temp_variable = { _abt_lightrole = 1 } }
+	set_temp_variable = { _abt_parkhold = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_historical_tank_park = yes } set_temp_variable = { _abt_parkhold = 1 } }
 
 	log = "  gates : is_ai=[?_abt_ai|.0]  composition-enabled=[?_abt_comp|.0]  trains-no-divisions=[?_abt_nodiv|.0]  early-expansion-override=[?_abt_expand|.0]  use-armor-templates=[?_abt_armortpl|.0]"
-	log = "  park  : continues=[?_abt_parkcontinue|.0]  force-500=[?_abt_parkforce|.0]  light-role-open=[?_abt_lightrole|.0]"
+	log = "  park  : continues=[?_abt_parkcontinue|.0]  force-500=[?_abt_parkforce|.0]  hold-30=[?_abt_parkhold|.0]  light-role-open=[?_abt_lightrole|.0]"
 
 	############################################################
 	# B. Template layer - which tank templates the country may design
@@ -106,6 +107,35 @@ WA_TEST_ABG_report = {
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15009 } } set_temp_variable = { _abt_lssourceconvert = 1 } }
 	set_temp_variable = { _abt_lsstable = 0 }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15010 } } set_temp_variable = { _abt_lsstable = 1 } }
+	# [light-support-conversion] Set membership, not an enable evaluation: 1 = the carried value is one
+	# of the 17 values the ai_templates file declares (15000-15016), each of which enables a target on
+	# its value alone. Assumes that list is complete: a value the calculator adds without extending it
+	# reads a false 0 here; the has_template terms of STARTER / STARTER_MIX are not retyped.
+	set_temp_variable = { _abt_lstarget = 0 }
+	if = {
+		limit = {
+			OR = {
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15000 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15001 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15002 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15003 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15004 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15005 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15006 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15007 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15008 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15009 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15010 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15011 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15012 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15013 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15014 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15015 }
+				has_country_flag = { flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE value = 15016 }
+			}
+		}
+		set_temp_variable = { _abt_lstarget = 1 }
+	}
 	# [light-support-conversion] Phase memory of the temporary corps, re-typed from the flags and
 	# the counter the calculator writes: MISSION -> PONT (K pulses) -> STABLE -> CONVERT-1 (K) -> CONVERT-2.
 	set_temp_variable = { _abt_lsk = constant:wa_ai_production.army_composition.light_support_phase_pulses }
@@ -178,7 +208,7 @@ WA_TEST_ABG_report = {
 	log = "  lsrun : has-support-chassis=[?_abt_lschassis|.0]  owns-light-role=[?_abt_lsowns|.0]  fielded=[?_abt_lsfield|.0](cap [?_abt_lscap|.0], reached=[?_abt_lscapped|.0])  before-1942=[?_abt_lsdate|.0]"
 	log = "  lsmix : latched-mixed=[?_abt_lsmixl|.0]  live-trigger=[?_abt_lsmixt|.0]  fielded-plain-lights=[?_abt_ltfield|.0](cap [?_abt_ltcap|.0], reached=[?_abt_ltcapped|.0])  conv-window=[?_abt_lsconv|.0]  conv-value=[?_abt_lsconvv|.0]  majority-LS=[?_abt_lsmaj|.0]  containing-LS=[?_abt_lscont|.0]  retired=[?_abt_lsretired|.0]  (latched drives the enables; conv-window=1 = park converting, and then conv-value must be a rung or FINAL value 15002-15005 / 15007-15008 / 15011-15016, never 15006 / 15009 / 15010; window=0 with containing-LS=1 after the mission and conv-started=0 = the defect)"
 	log = "  lsline: chassis-line-ON=[?_abt_lsline|.0]  chassis-line-OFF=[?_abt_lsoff|.0]  (exactly one must be 1 once the chassis is unlocked; both 0 = the country has no support chassis)"
-	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  sov-mission-15006=[?_abt_lstemp|.0]  sov-tank-mission-active=[?_abt_lsmission|.0]  temporary-source-active=[?_abt_lssourceactive|.0]  pont-15009=[?_abt_lssourceconvert|.0]  stable-15010=[?_abt_lsstable|.0]  (mission=1 requires 15006; mission=0 + bridge-done=0 requires 15009; bridge-done=1 + conv-started=0 requires 15010)"
+	log = "  flags : WA_LIGHT_ARMOR_TEMPLATE=[?_abt_fl|.0]  WA_LIGHT_SUPPORT_ARMOR_TEMPLATE=[?_abt_fls|.0]  sov-mission-15006=[?_abt_lstemp|.0]  sov-tank-mission-active=[?_abt_lsmission|.0]  temporary-source-active=[?_abt_lssourceactive|.0]  pont-15009=[?_abt_lssourceconvert|.0]  stable-15010=[?_abt_lsstable|.0]  target-live=[?_abt_lstarget|.0]  (mission=1 requires 15006; mission=0 + bridge-done=0 requires 15009; bridge-done=1 + conv-started=0 requires 15010)"
 	log = "  lsphase: K=[?_abt_lsk|.0]  pulses=[?_abt_lspulses|.0]  bridge-done=[?_abt_lsbridge|.0]  conv-started=[?_abt_lscstart|.0]  conv-settled=[?_abt_lscsettled|.0]  conv-heavy=[?_abt_lscheavy|.0]  conv-mec=[?_abt_lscmec|.0]  (conv-started=1 + settled=0 requires containing-LS=1 and conv-value 15007 / 15008 with mec=1, or 15013 / 15014 with heavy=1; settled=1 requires containing-LS=0 and 15011 / 15012, or 15015 / 15016 with heavy=1; pulses counts PONT only and never exceeds K)"
 
 	############################################################
@@ -341,7 +371,7 @@ WA_TEST_ABG_report = {
 
 	############################################################
 	# C. Independent re-derivation of the split (contract rule 4)
-	#    Reads the TEMPLATE triggers above, not the shipped slot triggers.
+	#    Retypes slot policy over TEMPLATE inputs, not the shipped slot triggers.
 	############################################################
 
 	set_temp_variable = { _abt_n = 0 }
@@ -351,19 +381,56 @@ WA_TEST_ABG_report = {
 	set_temp_variable = { _abt_wmo = 0 }
 
 	if = {
-		limit = { check_variable = { _abt_nodiv < 1 } }
+		limit = {
+			check_variable = { _abt_nodiv < 1 }
+			check_variable = { _abt_comp > 0 }
+		}
 		if = {
-			limit = { OR = { check_variable = { _abt_tl > 0 } check_variable = { _abt_tls > 0 } } }
+			# [light-support-conversion] Fund the carried historical park, including FINAL targets;
+			# template-use inputs can close at mission end and are not the park budget's lifetime.
+			limit = {
+				OR = {
+					AND = {
+						WA_AI_DIFFICULTY_is_historical = yes
+						WA_AI_CONFIG_pursues_historical_tank_park = yes
+						WA_AI_CONFIG_before_global_war_begins = yes
+						check_variable = { _abt_lsretired < 1 }
+						check_variable = { _abt_fls > 0 }
+					}
+					AND = {
+						NOT = {
+							AND = {
+								WA_AI_DIFFICULTY_is_historical = yes
+								WA_AI_CONFIG_pursues_historical_tank_park = yes
+							}
+						}
+						check_variable = { _abt_expand < 1 }
+						OR = { check_variable = { _abt_tl > 0 } check_variable = { _abt_tls > 0 } }
+					}
+				}
+			}
 			set_temp_variable = { _abt_wl = 1 }
 			add_to_temp_variable = { _abt_n = 1 }
 		}
 		if = {
-			limit = { OR = { check_variable = { _abt_tm > 0 } check_variable = { _abt_tsw > 0 } } }
+			limit = {
+				check_variable = { _abt_expand < 1 }
+				OR = {
+					check_variable = { _abt_tm > 0 }
+					AND = {
+						NOT = { WA_AI_CONFIG_pursues_historical_tank_park = yes }
+						check_variable = { _abt_tsw > 0 }
+					}
+				}
+			}
 			set_temp_variable = { _abt_wm = 1 }
 			add_to_temp_variable = { _abt_n = 1 }
 		}
 		if = {
-			limit = { check_variable = { _abt_th > 0 } }
+			limit = {
+				check_variable = { _abt_expand < 1 }
+				check_variable = { _abt_th > 0 }
+			}
 			set_temp_variable = { _abt_wh = 1 }
 			add_to_temp_variable = { _abt_n = 1 }
 		}
@@ -445,7 +512,7 @@ WA_TEST_ABG_report = {
 	else_if = { limit = { check_variable = { _abt_wh > 0 } } add_to_temp_variable = { _abt_xh = _abt_rem } }
 
 	# [light-support-conversion] Same tank-park light floor as the shipped effect, RE-TYPED
-	# (contract rule 4) INCLUDING the gate - spelled from its eight terms rather than calling
+	# (contract rule 4) INCLUDING the gate - spelled from its terms rather than calling
 	# WA_AI_PRODUCTION_should_floor_tank_park_budget, so a gate defect shows as a C/D mismatch
 	# instead of reproducing in the expect walk.
 	set_temp_variable = { _abt_floor = 0 }
@@ -455,9 +522,12 @@ WA_TEST_ABG_report = {
 			WA_AI_PRODUCTION_army_composition_is_enabled = yes
 			WA_AI_DIFFICULTY_is_historical = yes
 			WA_AI_CONFIG_pursues_historical_tank_park = yes
+			NOT = { has_country_flag = WA_AI_TEMPLATES_light_support_park_retired }
 			NOT = { any_enemy_country = { is_major = yes } }
-			NOT = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes }
-			NOT = { WA_AI_PRODUCTION_light_armor_at_fielded_cap = yes }
+			OR = {
+				NOT = { WA_AI_PRODUCTION_light_support_armor_at_fielded_cap = yes }
+				NOT = { WA_AI_PRODUCTION_light_armor_at_fielded_cap = yes }
+			}
 			has_active_mission = SOV_the_greatest_tank_army
 			WA_AI_TEMPLATES_use_light_support_armor_templates = yes
 			check_variable = { _abt_xl < constant:wa_ai_production.army_composition.tank_park_light_floor }
