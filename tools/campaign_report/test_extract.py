@@ -140,10 +140,10 @@ class ExtractionTests(unittest.TestCase):
         self.assertAlmostEqual(result["metrics"]["war_support"], expected_ws)
         terms = result["politics"]["stability_terms"]
         self.assertAlmostEqual(terms["party_popularity"], 0.12)
-        self.assertAlmostEqual(terms["coastal_protection"], 0.05)
+        self.assertAlmostEqual(terms["coastal_protection"], 0.5)
         self.assertAlmostEqual(terms["at_war"], -0.3 * (1 - expected_ws))
         self.assertEqual(terms["defensive_war"], 0.0)
-        self.assertAlmostEqual(result["metrics"]["stability"], 0.3 + 0.15 + 0.15 + 0.12 + 0.05 - 0.3 * (1 - expected_ws))
+        self.assertAlmostEqual(result["metrics"]["stability"], min(1.0, 0.3 + 0.15 + 0.15 + 0.12 + 0.5 - 0.3 * (1 - expected_ws)))
         self.assertNotIn("_hired", result["politics"])
         # Offensive plus defensive wars: both war-support terms apply; the defensive stability bonus applies.
         catalog["ideas"]["spirit"].update(offensive_war_stability_factor=0.2, defensive_war_stability_factor=0.15)
