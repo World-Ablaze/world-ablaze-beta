@@ -29,7 +29,8 @@ invariant déjà vrai.
 **Frontière 1/2 — donnée d'identité/de setup vs état du monde vivant.** Une déclaration de
 couche 1 lit des **données d'identité et de setup** : `tag`, `original_tag`, `date`, seuils,
 `has_tech`, `has_completed_focus`, `has_idea`, `has_government`, `has_autonomy_state`,
-`difficulty`. Elle ne lit pas l'**état du monde vivant** : `any_enemy_country`,
+`difficulty`, et un `has_country_flag` de **setup** (flag posé une fois par une décision ou un
+fichier `history/`, jamais par un pulse : les `*_technologies_tree_flag` d'adoption d'arbre). Elle ne lit pas l'**état du monde vivant** : `any_enemy_country`,
 `any_country_of`, `has_war*`, `controls_state`, `owns_state`, `surrender_progress`,
 `check_variable`, `num_divisions`, tout balayage de pays. Cas limite tranché :
 `is_in_faction_with` est toléré en couche 1 **uniquement** quand les tags sont la donnée et
