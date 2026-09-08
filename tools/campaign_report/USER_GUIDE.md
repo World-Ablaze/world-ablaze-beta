@@ -87,7 +87,7 @@ paths are printed:
 
 ## Using the report
 
-- **Tabs on the left**: Overview, Forces, Industry & resources, Armor, Wars & casualties,
+- **Tabs on the left**: Overview, Forces, Industry & resources, Equipment, Wars & casualties,
   Country status.
 - **Top bar**: choose the countries (the seven majors by default; hover a country and click
   `only` to isolate it), set the time window, move the *inspection date* slider for the

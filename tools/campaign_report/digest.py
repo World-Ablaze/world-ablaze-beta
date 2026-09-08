@@ -299,7 +299,7 @@ def digest(data: dict, tags: list[str] | None = None, every: int = 12) -> str:
     w("")
     for tag in tags:
         c = country(last, tag)
-        families = ((c or {}).get("armor", {}) or {}).get("families", {}) or {}
+        families = {name: f for name, f in (((c or {}).get("equipment", {}) or {}).get("families", {}) or {}).items() if f.get("domain") == "armor"}
         shortfall = lambda f: max(0.0, (f.get("reinforcement_need") or 0) - (f.get("stock") or 0))
         pressed = [(name, f) for name, f in families.items() if shortfall(f) > 0]
         pressed.sort(key=lambda nf: -shortfall(nf[1]))

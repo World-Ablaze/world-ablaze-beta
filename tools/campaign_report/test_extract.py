@@ -36,14 +36,14 @@ class ExtractionTests(unittest.TestCase):
         catalog = {key: dict(domain="armor", family="medium_tank_chassis", role=None)
                    for key in ("actual_chassis", "medium_tank_chassis")}
         result, wars = ex._country("GER", raw, definitions, catalog, {}, {})
-        family = result["armor"]["families"]["medium_tank_chassis"]
+        family = result["equipment"]["families"]["medium_tank_chassis"]
         self.assertEqual(family["stock"], -12)
         self.assertEqual(family["stock_deficit"], 12)
         self.assertEqual(family["deployed"], 8)
         self.assertEqual(family["reinforcement_need"], 4)
         self.assertIsNone(family["deficit"])
         self.assertIsNone(family["production_per_day"])
-        self.assertIsNone(result["armor"]["variants"][0]["reinforcement_need"])
+        self.assertIsNone(result["equipment"]["variants"][0]["reinforcement_need"])
         self.assertEqual(result["army"]["manpower_by_origin"], {"GER": 180, "HUN": 20})
         self.assertEqual(result["metrics"]["army_manpower"], 200)
         self.assertEqual(result["metrics"]["divisions"], 2)
@@ -84,11 +84,11 @@ class ExtractionTests(unittest.TestCase):
         definitions = {9: dict(id=9, definition="chassis", name="v", creator="USA")}
         catalog = {"chassis": dict(domain="armor", family="medium_tank_chassis", role=None)}
         result, _ = ex._country("USA", raw, definitions, catalog, {}, {})
-        self.assertEqual(result["armor"]["families"]["medium_tank_chassis"]["active_factories"], 4)
-        self.assertEqual(result["armor"]["variants"][0]["active_factories"], 4)
-        self.assertIsNone(result["armor"]["variants"][0]["production_lines"][0]["active_factories"])  # raw line kept as recorded
-        self.assertEqual(result["armor"]["variants"][0]["production_lines"][0]["queued_factories"], 26)
-        self.assertIsNone(result["armor"]["variants"][0]["production_lines"][0]["damaged_factories"])
+        self.assertEqual(result["equipment"]["families"]["medium_tank_chassis"]["active_factories"], 4)
+        self.assertEqual(result["equipment"]["variants"][0]["active_factories"], 4)
+        self.assertIsNone(result["equipment"]["variants"][0]["production_lines"][0]["active_factories"])  # raw line kept as recorded
+        self.assertEqual(result["equipment"]["variants"][0]["production_lines"][0]["queued_factories"], 26)
+        self.assertIsNone(result["equipment"]["variants"][0]["production_lines"][0]["damaged_factories"])
 
     def test_conscription_law_comes_from_the_mobilization_ladder(self):
         ladder = ex.conscription_ladder(str(ex.REPO_FOR_LADDER))
@@ -200,7 +200,7 @@ class ExtractionTests(unittest.TestCase):
         definitions = {i: dict(id=i, definition="chassis", name=str(i), creator="GER") for i in (1, 2)}
         catalog = {"chassis": dict(domain="armor", family="medium_tank_chassis")}
         result, _ = ex._country("GER", raw, definitions, catalog, {}, {})
-        family = result["armor"]["families"]["medium_tank_chassis"]
+        family = result["equipment"]["families"]["medium_tank_chassis"]
         self.assertEqual(family["stock"], 8)
         self.assertEqual(family["stock_deficit"], 12)
         self.assertIsNone(family["deficit"])
@@ -255,7 +255,7 @@ class CampaignParityTests(unittest.TestCase):
                     # Scope the legacy scanner to production. Its whole-country
                     # wrapper also includes division and recruitment inventories.
                     holdings, _ = stock._scan_country_body(sections.get("production", []), tag)
-                    for variant in country["armor"]["variants"]:
+                    for variant in country["equipment"]["variants"]:
                         self.assertEqual(variant["stock"], holdings.get(variant["id"], 0) if "production" in sections else None)
                     ships = sum(sum(tf["ships"].values()) for f in ex.sg._parse_fleets(sections["units"]) for tf in f["tfs"]) if "units" in sections else None
                     self.assertEqual(country["metrics"]["ships"], ships)

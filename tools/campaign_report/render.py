@@ -40,7 +40,7 @@ def equipment_names(definitions, root: Path = REPO) -> dict:
 
 def variant_definitions(data: dict) -> set:
     return {v.get("definition") for snap in data.get("snapshots", []) for c in snap.get("countries", {}).values()
-            for v in (c.get("armor", {}) or {}).get("variants", []) or []}
+            for v in (c.get("equipment", {}) or {}).get("variants", []) or []}
 
 
 def presentation(data: dict) -> dict:

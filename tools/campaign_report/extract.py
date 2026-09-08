@@ -45,7 +45,7 @@ METRICS = {
     "army_manpower": _metric("Army manpower", "men", "DERIVED", "units/division/army_manpower/army_manpower_value", "Sum of all countries' manpower contributions in deployed divisions; excludes the training queue."),
     "ships": _metric("Warships", "count", "DERIVED", "units/fleet/task_force/ship/definition", "Count of existing ships, excluding victims recorded in ship histories."),
     "aircraft": _metric("Aircraft in wings", "count", "DERIVED", "strategic_air/TAG/air_wing_pool/air_wings/count"),
-    "aircraft_stock": _metric("Aircraft stockpile", "count", "DERIVED", "production/equipments + equipments + common/units/equipment", "Signed stockpiles; roles are classified from the current checkout's definitions."),
+    "aircraft_stock": _metric("Aircraft stockpile", "count", "DERIVED", "production/equipments + equipments + common/units/equipment", "Signed stockpiles of every airframe family (fighters, bombers, transports); roles are classified from the current checkout's definitions."),
     "civilian_factories": _metric("Civilian factories", "count", "DERIVED", "states/buildings/industrial_complex/level", "Installed levels in controlled states, not usable factories after damage and occupation."),
     "military_factories": _metric("Military factories", "count", "DERIVED", "states/buildings/arms_factory/level", "Installed levels in controlled states."),
     "dockyards": _metric("Dockyards", "count", "DERIVED", "states/buildings/dockyard/level", "Installed levels in controlled states."),
@@ -55,6 +55,7 @@ METRICS = {
     "stability_base": _metric("Stability (stored base)", "percent", "MEASURED", "countries/TAG/stability", "The base the engine stores; add_stability and weekly modifiers move this number, national spirits do not."),
     "war_support_base": _metric("War support (stored base)", "percent", "MEASURED", "countries/TAG/war_support", "The base the engine stores; add_war_support and weekly modifiers move this number, national spirits do not."),
     "command_power": _metric("Command power", "points", "MEASURED", "countries/TAG/command_power"),
+    "political_power": _metric("Political power", "points", "MEASURED", "countries/TAG/politics/political_power", "Stored balance at the save date."),
     "army_xp": _metric("Army XP", "points", "MEASURED", "countries/TAG/experience_status/army_experience"),
     "navy_xp": _metric("Navy XP", "points", "MEASURED", "countries/TAG/experience_status/navy_experience"),
     "air_xp": _metric("Air XP", "points", "MEASURED", "countries/TAG/experience_status/air_experience"),
@@ -549,9 +550,11 @@ def equipment_catalog(repo):
             kinds = [kinds] if kinds else []
         if "armor" in kinds:
             inherited["domain"] = "armor"
-        air_roles = [k for k in kinds if k in {"fighter", "cv_fighter", "cas", "cv_cas", "naval_bomber", "cv_naval_bomber", "heavy_fighter", "tac_bomber", "strat_bomber", "transport_plane", "scout_plane", "maritime_patrol_plane", "heavy_strat_bomber", "jet_fighter", "jet_tac_bomber", "jet_strat_bomber", "interceptor"}]
+        air_roles = [k for k in kinds if k in {"fighter", "cv_fighter", "cas", "cv_cas", "naval_bomber", "cv_naval_bomber", "heavy_fighter", "tac_bomber", "strat_bomber", "transport_plane", "scout_plane", "maritime_patrol_plane", "heavy_strat_bomber", "jet_fighter", "jet_tac_bomber", "jet_strat_bomber", "interceptor", "tactical_bomber", "strategic_bomber", "air_transport"}]
         if air_roles:
             inherited.update(domain="air", role=air_roles[0])
+        elif "armor" not in kinds and set(kinds) & {"infantry", "artillery", "anti_tank", "anti_air", "motorized", "mechanized", "rocket", "railway_gun"}:
+            inherited["domain"] = "army"
         if row["is_archetype"] or not inherited["family"]:
             inherited["family"] = key
         return inherited
@@ -595,7 +598,7 @@ def _empty():
             "army": {"types": {}, "templates": [], "manpower_by_origin": {}},
             "navy": {"types": {}}, "air": {"types": {}, "stock_types": {}},
             "buildings": {"controlled": {}, "owned": {}}, "resources": {},
-            "armor": {"families": {}, "variants": []}, "wars": [], "issues": [], "conscription_law": None,
+            "equipment": {"families": {}, "variants": []}, "wars": [], "issues": [], "conscription_law": None,
             "politics": {}}
 
 
@@ -608,6 +611,7 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
     nodes = {k: parse("".join(v)).block(k) for k, v in raw.items() if k not in ("scalars", "resources", "variables")}
     scalars = parse("".join(raw.get("scalars", [])))
     metrics["command_power"] = numeric(scalars, "command_power")
+    metrics["political_power"] = numeric(nodes["politics"], "political_power") if "politics" in nodes else None
     metrics["convoy_kills"] = numeric(scalars, "convoys_destroyed")
     # The stored stability / war support are bases; the displayed values are rebuilt in
     # _finalize_politics once the wars (offensive or defensive) are attached to the country.
@@ -736,8 +740,8 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
             lines[eid].append({key: numeric(line, key) for key in ("produced", "speed", "cost", "active_factories", "requested_factories", "queued_factories", "damaged_factories")})
     families, variants, aircraft_stock = {}, [], Counter()
 
-    def family_row(family):
-        return families.setdefault(family, {"stock": 0 if "production" in nodes else None,
+    def family_row(family, domain):
+        return families.setdefault(family, {"domain": domain, "stock": 0 if "production" in nodes else None,
             "deployed": 0 if "units" in nodes else None,
             "reinforcement_need": 0 if "units" in nodes else None,
             "training_need": None, "deficit": None,
@@ -754,20 +758,20 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
             result["issues"].append(f"Definition {definition['definition']} is absent from the checkout: classification incomplete.")
         if classification.get("domain") == "air":
             aircraft_stock[classification.get("role") or classification["family"]] += inventory[eid]
-        if classification.get("domain") != "armor":
+        if classification.get("domain") not in ("armor", "army", "air"):
             continue
-        family = classification["family"]
+        family, domain = classification["family"], classification["domain"]
         # A serialised line without `active_factories=` is a queued line with none assigned yet: the
         # engine omits the field at its default (0). Unknown would poison the family and country sums.
         factories = sum(x["active_factories"] or 0 for x in lines[eid])
-        row = dict(definition, family=family, stock=inventory[eid] if "production" in nodes else None,
+        row = dict(definition, family=family, domain=domain, stock=inventory[eid] if "production" in nodes else None,
                    deployed=deployed[eid] if "units" in nodes else None,
                    active_factories=factories if "production" in nodes else None,
                    production_per_day=None, reinforcement_need=None, training_need=None,
                    stock_deficit=max(0, -inventory[eid]) if "production" in nodes else None,
                    production_lines=lines[eid])
         variants.append(row)
-        aggregate = family_row(family)
+        aggregate = family_row(family, domain)
         for key in ("stock", "stock_deficit", "deployed", "active_factories"):
             if row[key] is None:
                 aggregate[key] = None
@@ -775,9 +779,9 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
                 aggregate[key] += row[key]
     for archetype, need in requirements.items():
         classification = catalog.get(archetype, {})
-        if classification.get("domain") == "armor":
-            family_row(classification["family"])["reinforcement_need"] += need
-    result["armor"].update(families=families, variants=variants)
+        if classification.get("domain") in ("armor", "army", "air"):
+            family_row(classification["family"], classification["domain"])["reinforcement_need"] += need
+    result["equipment"].update(families=families, variants=variants)
     result["air"]["stock_types"] = dict(aircraft_stock)
     metrics["aircraft_stock"] = sum(aircraft_stock.values()) if "production" in nodes else None
 

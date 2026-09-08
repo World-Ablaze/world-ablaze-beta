@@ -20,7 +20,7 @@ def country(divisions=None, wars=(), issues=(), armor=None, resources=None):
             "army": {"types": {"foot": 3, "armour": 1}, "manpower_by_origin": {"GER": 900.0, "HUN": 100.0},
                      "templates": [{"name": "Infantry A", "family": "foot", "count": 3}]},
             "navy": {"types": {}}, "air": {"types": {"fighter": 40}},
-            "armor": {"families": armor or {}}, "resources": resources or {},
+            "equipment": {"families": {k: dict(domain="armor", **v) for k, v in (armor or {}).items()}}, "resources": resources or {},
             "wars": list(wars), "issues": list(issues)}
 
 
