@@ -141,9 +141,9 @@ class ExtractionTests(unittest.TestCase):
         terms = result["politics"]["stability_terms"]
         self.assertAlmostEqual(terms["party_popularity"], 0.12)
         self.assertAlmostEqual(terms["coastal_protection"], 0.5)
-        self.assertAlmostEqual(terms["at_war"], -0.3 * (1 - expected_ws))
-        self.assertEqual(terms["defensive_war"], 0.0)
-        self.assertAlmostEqual(result["metrics"]["stability"], min(1.0, 0.3 + 0.15 + 0.15 + 0.12 + 0.5 - 0.3 * (1 - expected_ws)))
+        self.assertAlmostEqual(terms["war_support"], -0.3 * (1 - expected_ws))
+        self.assertAlmostEqual(terms["at_war"], -0.2)  # at war, no offensive or defensive factor held
+        self.assertAlmostEqual(result["metrics"]["stability"], min(1.0, 0.3 + 0.15 + 0.15 + 0.12 + 0.5 - 0.2 - 0.3 * (1 - expected_ws)))
         self.assertNotIn("_hired", result["politics"])
         # Offensive plus defensive wars: both war-support terms apply; the defensive stability bonus applies.
         catalog["ideas"]["spirit"].update(offensive_war_stability_factor=0.2, defensive_war_stability_factor=0.15)
@@ -152,12 +152,30 @@ class ExtractionTests(unittest.TestCase):
         ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
         self.assertEqual(result["politics"]["war_posture"], "both")
         self.assertEqual((result["politics"]["war_support_terms"]["offensive_war"], result["politics"]["war_support_terms"]["defensive_war"]), (-0.2, 0.2))
-        self.assertAlmostEqual(result["politics"]["stability_terms"]["defensive_war"], 0.15)
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["at_war"], -0.2 + 0.2 + 0.15)  # both factors apply with both postures
+        catalog["ideas"]["spirit"]["party_popularity_stability_factor"] = 0.2
+        result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["party_popularity"], (0.15 + 0.2) * 0.8)
         # A pride of the fleet lost within 30 days carries the temporary penalty instead of the bonus.
         raw["scalars"][-1] = 'pride_of_the_fleet_date_lost="1941.7.20.1"\n'
         result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
         ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
         self.assertIn("static:pride_of_the_fleet_sunk_temporary", [s[0] for s in result["politics"]["sources"]])
+        # A faction manifest scales with a progress ratio the save does not store: report only when both bounds agree.
+        catalog["manifests"] = {"conquest": dict(scale={"offensive_war_stability_factor": 0.15}, fulfilled={}, range_max=1.0, fulfilled_min=0.75)}
+        raw["scalars"][-1] = 'pride_of_the_fleet_date_lost="1.1.1.1"\n'
+        raw["scalars"][0] = "stability=0.0\n"  # keep the sum below the cap so the two bounds differ
+        result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        result["tag"] = "ENG"
+        result["wars"] += [dict(enemy="FRC", offensive=True)]
+        ex._finalize_politics(result, catalog, dict(characters, manifests={"ENG": "conquest"}), "1941.8.1.2")
+        self.assertIsNone(result["metrics"]["stability"])
+        self.assertEqual(result["politics"]["faction_manifest"], "conquest")
+        lo, hi = result["politics"]["manifest_bounds"]["stability"]
+        self.assertGreater(hi, lo)  # +0.15 at full progress, clamped at 1.0
+        self.assertTrue(any("manifest progress" in issue for issue in result["issues"]))
+        self.assertIsNotNone(result["metrics"]["war_support"])  # the manifest carries no war-support term
         # A country without a politics block has no popularity: the displayed value stays unknown, never a guess.
         bare, _ = ex._country("GER", {"scalars": ["stability=1\n"]}, {}, {}, {}, {})
         ex._finalize_politics(bare, ex._EMPTY_POLITICS)
