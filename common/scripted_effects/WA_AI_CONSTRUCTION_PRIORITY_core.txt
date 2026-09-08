@@ -1186,11 +1186,12 @@ WA_AI_PC_end_project_by_id = {
 }
 
 ### Cancel multiple projects at once
-# ROOT = BUILDER, _cancel_projects_IDS array (temp)
+# THIS = BUILDER (ROOT is not read: on_state_control_changed calls this with ROOT = the new
+# controller), _cancel_projects_IDS array (temp)
 WA_AI_PC_cancel_projects = {
 	for_each_loop = { array = _cancel_projects_IDS value = _project_id
 		if = { limit = { has_country_flag = WA_AI_construction_logging }
-			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | PC CANCELLED: project_id=[?_project_id]"
+			log = "[GetYear] [GetMonth] | AI | [This.GetName] | PC CANCELLED: project_id=[?_project_id]"
 		}
 		WA_AI_PC_end_project_by_id = yes
 	}
@@ -1673,7 +1674,10 @@ WA_AI_PC_start_project = {
 
 				# Track in state (per-country array stores project IDs)
 				PREV = {
-					add_to_array = { WA_AI_PC_projects_in_state_of_@ROOT = _project_id }
+					# [pc-lost-state-purge] keyed by PREV (the builder, THIS of this effect) - the same accessor
+					# as the removal in WA_AI_PC_end_project_by_id, so the pair cannot desync when ROOT is not
+					# the builder (on_state_control_changed). Every caller has ROOT == THIS here.
+					add_to_array = { WA_AI_PC_projects_in_state_of_@PREV = _project_id }
 				}
 
 				# [uk-air-basing] BUILDER-AGNOSTIC per-state, per-building-type project counter, read

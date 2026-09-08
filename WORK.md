@@ -173,7 +173,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### pc-lost-state-purge — OPEN (2026-09-08)
+### pc-lost-state-purge — TESTED (2026-09-08)
 - Owner order 2026-09-08 ("corrige la purge"), from the ITA side-switch audit (campaign `6fcbbe0d`,
   1943.9 vs 1944.1). Intended behaviour: when a state changes hands to a party the old controller may
   not build through (not itself, not faction, not subject either way, not in its
@@ -201,9 +201,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (2) `WA_AI_PC_end_project_by_id` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`) removes the state-side
   entry from `..._of_@PREV` instead of `..._of_@ROOT`: under this on_action ROOT is the NEW controller,
   so `@ROOT` would strip the new controller's same-numbered slot and leave the loser's entry behind;
-  every other caller runs in the builder's scope where PREV == ROOT. `@var:` in a `for_each_loop
-  array =` / `check_variable ^num` is ASSUMED (proven in this repo for set_temp_variable and
-  clear_variable only); `@PREV` is proven (AIFC / LANDING flags).
+  every other caller runs in the builder's scope where PREV == ROOT; the add site in
+  `WA_AI_PC_start_project` uses the same `@PREV` accessor so the pair cannot desync. `@var:` in a
+  `for_each_loop array =` / `check_variable ^num` is ASSUMED (proven in this repo for
+  set_temp_variable and clear_variable only); `@PREV` is proven (AIFC / LANDING flags).
+  (3) Resumed saves: state-side arrays already carry ids from the years the purge was dead (ITA on
+  Libya today), and slot ids are recycled, so a stale entry could cancel a live project elsewhere.
+  The purge therefore drops any entry whose slot `WA_AI_PC_target_state` is not this state and never
+  cancels through it (idempotent clean-up at the only read site; no load-time migration). Architecture
+  review CONFLICT (ROOT-keyed removal, silent regression, comment date) -> all three applied. Lessons
+  review CONFLICT (same ROOT defect; `WA_AI_PC_construction_permissions` has NO writer - noted at the
+  site, term kept; `PC CANCELLED` log printed `[Root.GetName]` = the conqueror -> now `[This.GetName]`;
+  `WA_AI_PC_cancel_projects` header now says THIS = builder) -> all applied.
 - Impact: callers of `WA_AI_PC_end_project_by_id` - core (6), this on_action (2), WA_TEST_railway (3)
   - all in builder scope. Readers of `projects_in_state_of_`: `WA_AI_PC_has_same_type_project_here`,
   the thair strategy, WA_TEST_railway 014. Tag-free, date-free: historical and ahistorical identical.
@@ -211,17 +220,52 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   to an enemy - the intended behaviour since 2026-01-29, never exercised; the [rail-admission-churn]
   keep-paid rule does not apply here (same as before). Civil-war splits (Veneto -> RIT) may never
   reach this hook (ASSUMED engine) - out of scope, would need a periodic re-validation sweep.
-- Owed (owner console): boot with 0 errors; then on a save, `tag <builder>`,
-  `set_country_flag WA_AI_construction_logging`, note `wa_tlm_pc_lost_n`, hand one of its PC-project
-  states to an ENEMY with `setcontroller <enemy> <province of that state>` for every province of the
-  state, and read: game.log carries `PC CANCELLED: project_id=` lines and `wa_tlm_pc_lost_n` rose by
-  that count (control: hand a state to a FACTION member - no cancel, counter flat). A flat counter on
-  the enemy leg means the rival (hook never fires) is the true cause and the fix is void.
+- Console run 1, MEASURED (`pc_purge_test.hoi4`, 1944.1.3, Tripoli 448 ITA -> GER): hook FIRED,
+  `@var:` array iteration and the `var:` effect scope WORK (the state-side entry `_of_ita^0 = 13` was
+  removed), but nothing was cancelled (`pc_lost_n = 0`, project 13 still queued). The first-cut stale
+  guard classified the live project as stale: it compared the state's `THIS.id` (engine-encoded) with
+  the stored plain `WA_AI_PC_target_state` inside a `var:` block used as a TRIGGER scope - two rivals,
+  one measurement, both removed: the classification now runs as EFFECTS in the old controller's scope
+  (a state flag `WA_AI_PC_lost_here` set/cleared on the lost state, read by a scope walk through
+  `var:WA_AI_PC_target_state^id`) and feeds two plain temps the `if` reads. That save's 448 bookkeeping
+  is desynced by the run (entry gone, project kept) - re-test from a fresh load of `1944.1_Jan.hoi4`.
+- Harness (contract v1, owner order "des effets pour pas que je fasse tout en console"):
+  `common/scripted_effects/WA_TEST_pc_lost_purge.txt` + `events/wa_test_pc_lost_purge.txt`. From
+  any tag on a FRESH load of `1944.1_Jan.hoi4`: `event wa_pclost.9 ITA` runs report, leg A (448
+  Tripoli -> ITA -> an enemy, expect cancel), leg B (450 Benghasi -> ITA -> a faction member, expect
+  nothing), leg C (160 Veneto -> ITA -> an enemy, expect cancel), report; each leg prints
+  `expect cancelled=N` beside the three measured deltas and a `VERDICT: PASS|FAIL`. The legs use
+  `set_state_controller`, so they also answer whether that effect reaches `on_state_control_changed`
+  (ASSUMED yes; the console `setcontroller` run above proved the hook fires for that path).
+- Harness run 1, MEASURED (2026-09-08 19:10, `1944.1_Jan.hoi4`, `event wa_pclost.9 ITA` from BHU):
+  scope line 1 1 1 1 0 on all five blocks; report correct (13 queued, 5 of them on ground ITA does
+  not control); legs A/C FAIL, B PASS - but every "after step 1" row still read the OLD controller
+  (Tripoli: United Kingdom), so the fixture never changed hands and the purge was never exercised.
+  Cause, MEASURED in the engine doc (`effects_documentation.md`): `set_state_controller` is the
+  COUNTRY-scope form taking a state; inside a state block the effect is `set_state_controller_to`.
+  Harness fixed (`set_state_controller_to = ROOT` / `= PREV` from the partner's scope, both vanilla
+  forms). Verdicts of run 1 are void for the purge.
+- Harness run 2, MEASURED (owner, 2026-09-08 19:26, cold-restarted game, fresh `1944.1_Jan.hoi4`,
+  `event wa_pclost.9 ITA` from BHU): scope `1 1 1 1 0` on all five blocks, and all three legs PASS.
+  Leg A (448 Tripoli -> ITA -> GER, enemy): queue 13->12, active_nonrail 5->4, pc_lost_n 0->1,
+  `projects_in_state_of_ITA^num` 1->0. Leg B (450 Benghasi -> ITA -> USA, faction member): queue
+  12->12, pc_lost_n 1->1, array stays 2 (nothing cancelled). Leg C (160 Veneto -> ITA -> GER):
+  queue 12->11, active_nonrail 4->3, pc_lost_n 1->2, array 1->0. So the purge fires, cancels only
+  the enemy-lost projects, counts them, cleans the builder's state array, and leaves a faction
+  transfer intact; `set_state_controller_to` reaches `on_state_control_changed` (the ASSUMED rung
+  6 boundary is now MEASURED closed for this path). The `@var:` array iteration and both `var:`
+  scopes work in-engine.
+- Runs 19:17 and 19:21 were VOID (`I-am-ROOT=0`, all country-valued triggers false while name
+  interpolation and `ROOT = { always = yes }` read true) - the console hot-reload poison. Discriminated
+  by the cold restart at 19:26 reading `1 1 1 1 0` from the byte-identical file: it is the reload, not
+  the harness. Durable rule -> [[hot-reload-poisons-country-triggers]] (lessons log).
+- NOT committed: the working-tree diff (on_action classification, `@PREV` add-site, harness files) is
+  not committed by me; the first-cut edits were swept into `054a4a87e4` (see [[concurrent-sessions-sweep-edits]]).
+  Commit the remainder as one change before closing.
 - Verification (campaign): `wa_tlm_pc_lost_n > 0` on at least one country that lost ground to an
   enemy (positive control), and no `pc` row whose state is controlled by an enemy for more than one
   save (`savegame.py pc TAG --limit 0` joined with `control`).
-- Closed when: the console leg passes (pasted here) and one campaign shows the two verification
-  lines.
+- Closed when: the remainder is committed and one campaign shows the two verification lines.
 
 ### research-rush — TESTED (2026-09-08)
 - **Owner console run 2026-09-08 18:13, save `1937.4_Apr.hoi4`, ENG** (game.log, pasted):

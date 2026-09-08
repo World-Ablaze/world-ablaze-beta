@@ -2714,3 +2714,27 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** `common/scripted_effects/WA_TEST_research_bonus.txt` header (runs 1-6);
   `events/wa_test_research_bonus.txt`; commit `b829393945` (the defective gate) and its follow-up;
   scratchpad bug report sent to Paradox (`has_tech_bonus_bug_report.md`).
+
+## 2026-09-08 - Console script reload poisons country-valued triggers: name interpolation still works, `tag = ROOT` reads false
+
+- **Date:** 2026-09-08 (`pc-lost-state-purge`; harness `WA_TEST_pc_lost_purge`, 4 owner console runs on 1.19.2)
+- **Symptom:** the harness `scope :` self-check (contract v1: `always` / `I-am-ROOT` / `I-am-THIS`
+  / `ROOT-scope-usable` / `control-false`) read `1 1 1 1 0` on a cold-started game (19:10, 19:26)
+  and `1 0 0 1 0` on the two runs in between (19:17, 19:21), from a BYTE-IDENTICAL event file. In
+  the poisoned runs `[Root.GetName]`, `[This.GetName]` and `ROOT = { always = yes }` all still read
+  correctly (all "Republican Italy"), while `tag = ROOT`, `tag = THIS` and `is_controlled_by = ROOT`
+  read FALSE everywhere - Rome, which ITA controls, printed `ROOT-controls=0`.
+- **Cause (MEASURED by the cold-restart control):** between the clean runs the owner had reloaded
+  the scripted-effects file in the console (`reload` / `reloadfile`) after an edit. A hot script
+  reload leaves the scope's DISPLAY binding intact (GetName, `X = { always = yes }`) but breaks
+  every trigger that COMPARES the scope as a country (`tag =`, `is_controlled_by =`, `original_tag =`).
+  A full executable restart with the same files restored `1 1 1 1 0`. This is the same signature the
+  older "Two call sites, one effect" entry recorded as *cause unknown* - the discriminating pair
+  (cold vs reloaded, identical bytes) names the cause: it is the reload, not the call site.
+- **Rule:** never trust a console harness reading taken after a `reload`/`reloadfile` of the effect
+  or trigger file. Restart the executable and reload the save before measuring. The contract-v1
+  `scope :` line is what catches it - a run whose self-check is not `1 1 1 1 0` measures nothing,
+  whatever the rows below say. When a harness's country-valued triggers all read false while its
+  value triggers and name interpolation read true, suspect a stale reload before touching the effect.
+- **Evidence:** `common/scripted_effects/WA_TEST_pc_lost_purge.txt` (contract-v1 header); WORK.md
+  `pc-lost-state-purge` runs 1-2 (19:10 clean FAIL-on-fixture, 19:17/19:21 void, 19:26 clean 3x PASS).
