@@ -162,18 +162,30 @@ class ExtractionTests(unittest.TestCase):
         result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
         ex._finalize_politics(result, catalog, characters, "1941.8.1.2")
         self.assertIn("static:pride_of_the_fleet_sunk_temporary", [s[0] for s in result["politics"]["sources"]])
-        # A faction manifest scales with a progress ratio the save does not store: report only when both bounds agree.
-        catalog["manifests"] = {"conquest": dict(scale={"offensive_war_stability_factor": 0.15}, fulfilled={}, range_max=1.0, fulfilled_min=0.75)}
+        # A faction manifest scales with a progress ratio: rebuilt from state owners/controllers and history cores
+        # when its collections are reproduced, otherwise reported only when both bounds agree.
+        catalog["manifests"] = {"faction_manifest_conquest_of_territory": dict(scale={"offensive_war_stability_factor": 0.15}, fulfilled={}, range_max=1.0, fulfilled_min=0.75),
+                                "unknown_manifest": dict(scale={"offensive_war_stability_factor": 0.15}, fulfilled={}, range_max=1.0, fulfilled_min=0.75)}
+        catalog["state_cores"] = {1: {"ENG"}, 2: {"ENG"}, 3: {"FRA"}, 4: {"FRA"}}
         raw["scalars"][-1] = 'pride_of_the_fleet_date_lost="1.1.1.1"\n'
         raw["scalars"][0] = "stability=0.0\n"  # keep the sum below the cap so the two bounds differ
+        context = dict(characters, states={1: ("ENG", "ENG"), 2: ("ENG", "ENG"), 3: ("FRA", "ENG"), 4: ("FRA", "FRA")},
+                       factions={"ENG": dict(manifest="faction_manifest_conquest_of_territory", members=["ENG"], leader="ENG")})
         result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
         result["tag"] = "ENG"
         result["wars"] += [dict(enemy="FRC", offensive=True)]
-        ex._finalize_politics(result, catalog, dict(characters, manifests={"ENG": "conquest"}), "1941.8.1.2")
+        ex._finalize_politics(result, catalog, context, "1941.8.1.2")
+        self.assertAlmostEqual(result["politics"]["manifest_ratio"], 0.5)  # 1 controlled non-core state / 2 owned core states
+        self.assertAlmostEqual(result["politics"]["stability_terms"]["at_war"], -0.2 + 0.2 + 0.15 * 0.5)
+        self.assertIsNotNone(result["metrics"]["stability"])
+        context["factions"]["ENG"] = dict(manifest="unknown_manifest", members=["ENG"], leader="ENG")
+        result, _ = ex._country("ENG", raw, {}, {}, {}, {}, catalog)
+        result["tag"] = "ENG"
+        result["wars"] += [dict(enemy="FRC", offensive=True)]
+        ex._finalize_politics(result, catalog, context, "1941.8.1.2")
         self.assertIsNone(result["metrics"]["stability"])
-        self.assertEqual(result["politics"]["faction_manifest"], "conquest")
         lo, hi = result["politics"]["manifest_bounds"]["stability"]
-        self.assertGreater(hi, lo)  # +0.15 at full progress, clamped at 1.0
+        self.assertGreater(hi, lo)
         self.assertTrue(any("manifest progress" in issue for issue in result["issues"]))
         self.assertIsNotNone(result["metrics"]["war_support"])  # the manifest carries no war-support term
         # A country without a politics block has no popularity: the displayed value stays unknown, never a guess.

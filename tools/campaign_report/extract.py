@@ -50,8 +50,8 @@ METRICS = {
     "military_factories": _metric("Military factories", "count", "DERIVED", "states/buildings/arms_factory/level", "Installed levels in controlled states."),
     "dockyards": _metric("Dockyards", "count", "DERIVED", "states/buildings/dockyard/level", "Installed levels in controlled states."),
     "losses": _metric("Ongoing-war casualties", "men", "DERIVED", "diplomacy/active_relations/*/war_relation/first_casualties,second_casualties", "Counter direction is inferred; peace can remove a counter. The combat/attrition scope is not verified."),
-    "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + stability_factor of held ideas, appointed advisors' and ruling leader's traits and enabled dynamic modifiers + party popularity + coastal protection + at-war term + war-support term, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions. Every line of the ENG, ITA and JAP stability tooltips (August 1941) is reproduced: ruling party popularity x (0.15 + party_popularity_stability_factor); the stored coastal_protection_ratio as is; 'at war' = -0.2 + offensive_war_stability_factor while waging an offensive war + defensive_war_stability_factor while fighting a defensive one; the war_support_during_war static modifier (-0.3) x (1 - war support). A faction manifest's scale modifiers (e.g. the Axis +0.15 offensive factor) multiply a progress ratio the save does not store: both bounds are evaluated and the value is reported only when they agree after clamping, otherwise it is left unknown with the bounds in countries/TAG/politics/manifest_bounds. Per-term breakdown in countries/TAG/politics."),
-    "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + war_support_factor of held ideas, appointed advisors' and ruling leader's traits, enabled dynamic modifiers and an intact pride of the fleet - 0.2 per offensive war posture + 0.2 per defensive war posture + stored bombing and hero-casualty penalties, clamped to 0..1", "Rebuilt from the stored base; every term matches the in-game tooltip read on ENG, August 1941 (MEASURED: base, offensive -20 and defensive +20 both listed, enemy bombing, spirits, leader, appointed advisor, pride of the fleet). Advisors count when listed in characters/appointed_advisors; the leader in office counts through the leader traits only. World tension counts for 0 in WA (05_defines.lua). A faction manifest's war-support scale modifier (China's +0.1) multiplies a progress ratio the save does not store: reported only when both bounds agree after clamping. Per-term breakdown in countries/TAG/politics."),
+    "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + stability_factor of held ideas, appointed advisors' and ruling leader's traits and enabled dynamic modifiers + party popularity + coastal protection + at-war term + war-support term, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions. Every line of the ENG, ITA and JAP stability tooltips (August 1941) is reproduced: ruling party popularity x (0.15 + party_popularity_stability_factor); the stored coastal_protection_ratio as is; 'at war' = -0.2 + offensive_war_stability_factor while waging an offensive war + defensive_war_stability_factor while fighting a defensive one; the war_support_during_war static modifier (-0.3) x (1 - war support). A faction manifest's scale modifiers (e.g. the Axis +0.15 offensive factor) multiply a progress ratio rebuilt from the save's state owners/controllers and the checkout's initial cores and continents (in-game core changes are not stored: ASSUMED rare); a manifest whose collections are not reproduced falls back to both bounds and the value is reported only when they agree after clamping (bounds in countries/TAG/politics/manifest_bounds). Per-term breakdown in countries/TAG/politics."),
+    "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + war_support_factor of held ideas, appointed advisors' and ruling leader's traits, enabled dynamic modifiers and an intact pride of the fleet - 0.2 per offensive war posture + 0.2 per defensive war posture + stored bombing and hero-casualty penalties, clamped to 0..1", "Rebuilt from the stored base; every term matches the in-game tooltip read on ENG, August 1941 (MEASURED: base, offensive -20 and defensive +20 both listed, enemy bombing, spirits, leader, appointed advisor, pride of the fleet). Advisors count when listed in characters/appointed_advisors; the leader in office counts through the leader traits only. World tension counts for 0 in WA (05_defines.lua). A faction manifest's war-support scale modifier (China's +0.1) multiplies a progress ratio rebuilt from state controllers, initial cores and ruling parties (countries/TAG/politics/manifest_ratio). Per-term breakdown in countries/TAG/politics."),
     "stability_base": _metric("Stability (stored base)", "percent", "MEASURED", "countries/TAG/stability", "The base the engine stores; add_stability and weekly modifiers move this number, national spirits do not."),
     "war_support_base": _metric("War support (stored base)", "percent", "MEASURED", "countries/TAG/war_support", "The base the engine stores; add_war_support and weekly modifiers move this number, national spirits do not."),
     "command_power": _metric("Command power", "points", "MEASURED", "countries/TAG/command_power"),
@@ -172,17 +172,73 @@ def politics_catalog(repo):
                                        fulfilled_min=numeric(progress.block("progress_sections").block("manifest_fulfilled"), "min")
                                        if numeric(progress.block("progress_sections").block("manifest_fulfilled"), "min") is not None
                                        else (float(threshold.group(1)) if threshold else 0.75))
+    # Manifest progress collections: initial cores from history/states (in-game core changes are
+    # not stored in the save: ASSUMED rare), continents from map/definition.csv via a state's first province.
+    state_cores, state_first_province = {}, {}
+    for path in sorted(repo.glob("history/states/*.txt")):
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        sid = re.search(r"^\s*id\s*=\s*(\d+)", text, re.M)
+        if not sid:
+            continue
+        state_cores[int(sid.group(1))] = set(re.findall(r"add_core_of\s*=\s*([A-Z0-9]{3})", text))
+        provinces = re.search(r"provinces\s*=\s*\{([^}]*)\}", text)
+        if provinces and provinces.group(1).split():
+            state_first_province[int(sid.group(1))] = int(provinces.group(1).split()[0])
+    continent_names, province_continent, state_continent = [], {}, {}
+    continents = repo / "map/continent.txt"
+    if continents.exists():
+        match = re.search(r"continents\s*=\s*\{([^}]*)\}", continents.read_text(encoding="utf-8-sig", errors="replace"))
+        continent_names = match.group(1).split() if match else []
+    definition = repo / "map/definition.csv"
+    if definition.exists() and continent_names:
+        wanted = set(state_first_province.values())
+        for line in definition.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+            cells = line.split(";")
+            if len(cells) >= 8 and cells[0].isdigit() and int(cells[0]) in wanted and cells[7].strip().isdigit():
+                index = int(cells[7])
+                if 1 <= index <= len(continent_names):
+                    province_continent[int(cells[0])] = continent_names[index - 1]
+        state_continent = {sid: province_continent[pid] for sid, pid in state_first_province.items() if pid in province_continent}
     defines = dict(_NCOUNTRY_DEFAULTS)
     lua = repo / "common/defines/05_defines.lua"
     if lua.exists():
         for match in re.finditer(r"NDefines\.NCountry\.([A-Z_]+)\s*=\s*(-?[0-9.]+)", lua.read_text(encoding="utf-8-sig", errors="replace")):
             if match.group(1) in defines:
                 defines[match.group(1)] = float(match.group(2))
-    return dict(ideas=ideas, traits=traits, dynamic=dynamic, static=static, manifests=manifests, defines=defines)
+    return dict(ideas=ideas, traits=traits, dynamic=dynamic, static=static, manifests=manifests, defines=defines,
+                state_cores=state_cores, state_continent=state_continent)
 
 
-_EMPTY_POLITICS = dict(ideas={}, traits={}, dynamic={}, static={}, manifests={}, defines=dict(_NCOUNTRY_DEFAULTS))
-_NO_CHARACTERS = dict(characters={}, manifests={})
+_EMPTY_POLITICS = dict(ideas={}, traits={}, dynamic={}, static={}, manifests={}, defines=dict(_NCOUNTRY_DEFAULTS), state_cores={}, state_continent={})
+_NO_CHARACTERS = dict(characters={}, factions={}, states={}, governments={}, capitals={})
+
+
+def _manifest_ratio(name, faction, context, catalog):
+    """Progress ratio of a faction manifest, rebuilt from the save's state owners/controllers and the
+    checkout's cores and continents; None when the manifest's collections are not reproduced."""
+    states, cores, continent = context.get("states", {}), catalog.get("state_cores", {}), catalog.get("state_continent", {})
+    governments = context.get("governments", {})
+    members = set(faction["members"])
+    if name == "faction_manifest_conquest_of_territory":
+        total = sum(1 for sid, (owner, _) in states.items() if owner in members and owner in cores.get(sid, ()))
+        done = sum(1 for sid, (_, controller) in states.items() if controller in members and controller not in cores.get(sid, ()))
+    elif name == "faction_manifest_china_territorial_integrity":
+        chinese = {sid for sid in states if cores.get(sid, set()) & {"CHI", "PRC"}}
+        leader_government = governments.get(faction["leader"])
+        total = len(chinese)
+        done = sum(1 for sid in chinese if states[sid][1] in members and governments.get(states[sid][1]) == leader_government)
+    elif name == "faction_manifest_security_through_expansion":
+        home = continent.get(context.get("capitals", {}).get(faction["leader"]))
+        if home is None:
+            return None
+        mine = [sid for sid in states if continent.get(sid) == home]
+        total = len(mine)
+        done = sum(1 for sid in mine if governments.get(states[sid][1]) == "communism")
+    else:
+        return None
+    if not total:
+        return None
+    return min(catalog["manifests"][name]["range_max"], done / total)
 
 
 def _political_modifiers(ideas, dynamic_values, catalog):
@@ -289,24 +345,35 @@ def _finalize_politics(country, catalog, characters=_NO_CHARACTERS, date=None):
     # Faction manifest: its scale modifiers are multiplied by a progress ratio the save does not
     # store (collections such as core / non-core state counts). Both bounds are evaluated; a value
     # is reported only when the two bounds agree after clamping.
-    manifest = catalog.get("manifests", {}).get(characters.get("manifests", {}).get(country.get("tag")))
+    faction = characters.get("factions", {}).get(country.get("tag"))
+    manifest = catalog.get("manifests", {}).get(faction["manifest"]) if faction else None
     if manifest and any(key in manifest["scale"] or key in manifest["fulfilled"] for key in _POLITICS_KEYS):
-        politics["faction_manifest"] = characters.get("manifests", {}).get(country.get("tag"))
-        high = dict(totals)
-        for key, value in manifest["scale"].items():
-            high[key] += value * manifest["range_max"]
-        if manifest["range_max"] >= manifest["fulfilled_min"]:
-            for key, value in manifest["fulfilled"].items():
-                high[key] += value
-        low_result, high_result = compute(totals), compute(high)
-        sources.append(["manifest:" + politics["faction_manifest"], dict(manifest["scale"]), "x progress ratio, not stored in the save"])
-        result = dict(high_result)
-        for metric in ("stability", "war_support"):
-            lo, hi = low_result[metric], high_result[metric]
-            if lo is None or hi is None or abs(lo - hi) > 1e-9:
-                result[metric] = None
-                country["issues"].append(f"{metric}: the faction manifest progress is not stored in the save; the displayed value lies between {lo} and {hi}.")
-        politics["manifest_bounds"] = {m: [low_result[m], high_result[m]] for m in ("stability", "war_support")}
+        politics["faction_manifest"] = faction["manifest"]
+        ratio = _manifest_ratio(faction["manifest"], faction, characters, catalog)
+
+        def scaled(progress):
+            scaled_totals = dict(totals)
+            for key, value in manifest["scale"].items():
+                scaled_totals[key] += value * progress
+            if progress >= manifest["fulfilled_min"]:
+                for key, value in manifest["fulfilled"].items():
+                    scaled_totals[key] += value
+            return scaled_totals
+
+        if ratio is not None:
+            politics["manifest_ratio"] = ratio
+            sources.append(["manifest:" + faction["manifest"], {k: v * ratio for k, v in manifest["scale"].items()}, f"scale x progress ratio {ratio:.3f}, rebuilt from history cores and continents"])
+            result = compute(scaled(ratio))
+        else:
+            low_result, high_result = compute(totals), compute(scaled(manifest["range_max"]))
+            sources.append(["manifest:" + faction["manifest"], dict(manifest["scale"]), "x progress ratio, not reproduced"])
+            result = dict(high_result)
+            for metric in ("stability", "war_support"):
+                lo, hi = low_result[metric], high_result[metric]
+                if lo is None or hi is None or abs(lo - hi) > 1e-9:
+                    result[metric] = None
+                    country["issues"].append(f"{metric}: the faction manifest progress is not reproduced; the displayed value lies between {lo} and {hi}.")
+            politics["manifest_bounds"] = {m: [low_result[m], high_result[m]] for m in ("stability", "war_support")}
     else:
         result = compute(totals)
     politics["stability_terms"], politics["war_support_terms"] = result["stability_terms"], result["war_support_terms"]
@@ -567,6 +634,7 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
                                   _hired=[_id(entry, "character") for key, entry in nodes.get("characters", Node()).block("appointed_advisors") if key is None and isinstance(entry, Node)],
                                   _leader=[leader.scalar("ideology"), _id(leader, "character")] if leader is not None else [None, None],
                                   _pride=[bool(scalars.block("pride_of_the_fleet")), scalars.scalar("pride_of_the_fleet_date_lost")],
+                                  _capital=numeric(scalars, "capital"),
                                   coastal_protection_ratio=numeric(scalars, "coastal_protection_ratio"),
                                   being_bombed_support_penalty=numeric(scalars, "being_bombed_support_penalty"),
                                   heroes_dying_war_support_penalty=numeric(scalars, "heroes_dying_war_support_penalty"))
@@ -741,8 +809,8 @@ def extract_save(path: Path, repo: Path) -> dict:
     politics = politics_catalog(str(repo))
     selected = {"units", "production", "resources", "manpower", "experience_status", "diplomacy", "variables", "convoys", "politics", "dynamic_modifier", "characters"}
     scalar_keys = {"stability", "war_support", "command_power", "convoys_destroyed", "coastal_protection_ratio",
-                   "being_bombed_support_penalty", "heroes_dying_war_support_penalty", "pride_of_the_fleet", "pride_of_the_fleet_date_lost"}
-    characters = dict(characters={}, manifests={})
+                   "being_bombed_support_penalty", "heroes_dying_war_support_penalty", "pride_of_the_fleet", "pride_of_the_fleet_date_lost", "capital"}
+    characters = dict(characters={}, factions={}, states={}, governments={}, capitals={})
     with sg.open_save(str(path)) as fh:
         for line in fh:
             if line.startswith("date="):
@@ -751,6 +819,9 @@ def extract_save(path: Path, repo: Path) -> dict:
                 saw_states = True
                 for chunk in _children(fh):
                     bld, owner, controller = sg._state_buildings(chunk[1:-1])
+                    sid = re.match(r"\s*(\d+)=\{", chunk[0])
+                    if sid and owner:
+                        characters["states"][int(sid.group(1))] = (owner, controller or owner)
                     if owner:
                         state_totals[owner]["owned"].update(bld)
                     if controller:
@@ -774,9 +845,10 @@ def extract_save(path: Path, repo: Path) -> dict:
             elif line.startswith("faction={"):
                 faction = parse("".join(_read_block(fh, line))).block("faction")
                 manifest = faction.block("goal_status").scalar("manifest")
-                for key, member in faction.block("members"):
-                    if key is None and isinstance(member, str) and manifest:
-                        characters["manifests"][member] = manifest
+                members = [member for key, member in faction.block("members") if key is None and isinstance(member, str)]
+                for member in members:
+                    if manifest:
+                        characters["factions"][member] = dict(manifest=manifest, members=members, leader=members[0] if members else None)
             elif line.startswith("character_manager={"):
                 # Hired advisors and leaders name their traits here; the trait values come from the checkout.
                 # Characters sit one level down, under wrappers such as `historical={`.
@@ -849,6 +921,12 @@ def extract_save(path: Path, repo: Path) -> dict:
                 instigator = war.get("first_was_instigator")
                 offensive = None if instigator is None else (instigator if side == "first" else not instigator)
                 countries[tag]["wars"].append(dict(id="|".join(identity[0]) + "|" + (identity[1] or "?"), enemy=war[other], start_date=war["start_date"], losses=war[side + "_casualties"], offensive=offensive))
+    for tag, country in countries.items():
+        country_politics = country.get("politics") or {}
+        characters["governments"][tag] = country_politics.get("ruling_party")
+        capital = country_politics.pop("_capital", None)
+        if capital is not None:
+            characters["capitals"][tag] = int(capital)
     for tag, country in countries.items():
         country["tag"] = tag
         values = [w["losses"] for w in country["wars"]]
