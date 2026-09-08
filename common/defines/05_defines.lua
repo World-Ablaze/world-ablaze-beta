@@ -1111,12 +1111,12 @@ NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score fo
 --     around 50 - one sinking now lands at 100, clear of that band, and decays through it
 --     in ~12 days instead of starting inside it.
 --   CONVOY_DANGER_FOR_MAX_IMPORTANCE 400 -> 50 (below; vanilla 400, WA never overrode it).
---     Protection importance saturates at ONE sunk convoy (REGION_THREAT_PER_SUNK_CONVOY = 100)
+--     Protection importance saturates at ONE sunk convoy (REGION_THREAT_PER_SUNK_CONVOY, now 300)
 --     rather than eight - a navy that loses little still gets a full-strength objective on
 --     the region where it lost it.
--- Blast radius: convoy-danger memory and escort-importance scaling only. Region AVOIDANCE
--- reads REGION_THREAT_LEVEL_TO_AVOID/BLOCK_REGION (25 000, far above anything a decay change
--- reaches) and is unaffected; the escort share stays capped by
+-- Blast radius: convoy-danger memory and escort-importance scaling, AND region avoidance:
+-- REGION_THREAT_LEVEL_TO_AVOID/BLOCK_REGION (below) is a multiple of the per-sinking threat
+-- and must move with it - see [convoy-region-block] there; the escort share stays capped by
 -- MAX_SCREEN_TASKFORCES_FOR_CONVOY_DEFENSE_MIN/MAX (0.3-0.7); raiding, patrol and strike
 -- scoring do not read either term. Symmetric: GER and JAP get the same responsiveness.
 -- Pre-registered read (R36): USA per_region_danger non-zero on >= 4 Atlantic corridor
@@ -1125,7 +1125,7 @@ NDefines.NAI.CONVOY_ESCORT_SCORE_FROM_CONVOYS = 15          				    	-- score fo
 -- at 0 with these two in place, the objective generator is not danger-driven either and the
 -- next probe is the ai_strategy-invisible engine path, not another define.
 NDefines.NAI.REGION_CONVOY_DANGER_DAILY_DECAY = 4 --5  [Fix 86: was 5, vanilla 2; 4 chosen (not 2) so memory lengthens without hoarding - see the 100-per-sinking note below]
-NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 300 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions  [Fix 86: was 50, vanilla 2. 100 so that ONE sinking already sits above the ~50 band where the mission assigner was observed to flip between assignments (playtest note 2026-08-16); pairs with CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50 below, so a single loss saturates the protection importance outright]
+NDefines.NAI.REGION_THREAT_PER_SUNK_CONVOY = 300 --25								-- When convoys are sunk it generates threat in the region which the AI uses to prio nalval missions. Coupled: REGION_THREAT_LEVEL_TO_AVOID/BLOCK_REGION below = 1000 x this value.  [Fix 86: was 50, vanilla 25. 100 so that ONE sinking already sits above the ~50 band where the mission assigner was observed to flip between assignments (playtest note 2026-08-16); pairs with CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50 below, so a single loss saturates the protection importance outright]
 NDefines.NAI.CONVOY_DANGER_FOR_MAX_IMPORTANCE = 50								-- convoy danger at which the protection importance saturates  [Fix 86: vanilla 400, not previously overridden]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_OWNED = 300									-- Extra escort mission score near owned provinces  [Fix 53b: was 0, vanilla 300]
 NDefines.NAI.NAVAL_MISSION_ESCORT_NEAR_CONTROLLED = 200								-- Extra escort mission score near controlled provinces  [Fix 53b: was 0, vanilla 200]
@@ -1198,9 +1198,13 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 
 NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 10									-- maximum patrol/strike force ratio --was 4
 
---Need to find good values, 1 convoy sunk generates 25 threat
-NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
-NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
+-- [convoy-region-block] the AI marks a sea region avoided/blocked for its convoys once the region's
+-- convoy danger (REGION_THREAT_PER_SUNK_CONVOY per sinking, minus REGION_CONVOY_DANGER_DAILY_DECAY
+-- per day) crosses these. Design: 1000 net sinkings, i.e. never in practice - a blocked home
+-- approach costs a maritime AI its whole trade. Assumes both thresholds = 1000 x the per-sinking
+-- threat above; gone when a save shows per_region_danger >= threshold on a live trade region.
+NDefines.NAI.REGION_THREAT_LEVEL_TO_AVOID_REGION = 300 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
+NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 300 * 1000						-- How much threat must be generated in region ( by REGION_THREAT_PER_SUNK_CONVOY ) so the AI will decide to mark the region as avoid
 
 --NDefines.NAI.NAVAL_MISSION_AGGRESSIVE_PATROL_DIVISOR = 3							-- Divides patrol score when not defending
 --NDefines.NAI.NAVAL_MISSION_PATROL_NEAR_OWNED = 0									-- Extra patrol mission score near owned provinces
