@@ -11,6 +11,9 @@ static
 	withdrawal
 	operational_destruction
 	urban_warfare
+	seize_bridge
+	hold_bridge
+	amphibious_assault
 }
 
 ######### PHASE 0 #########
@@ -233,31 +236,6 @@ tactic_Simple_Attack = {
 	attacker = 0.05
 }
 
-# tactic_Embankment_Bombardment = {
-# 	is_attacker = yes
-# 	trigger = {
-# 		is_attacker = yes
-# 		phase = no
-# 		has_combat_modifier = river_crossing
-# 		NOT = { is_fighting_in_terrain = urban }
-# 	}
-# 	active = yes
-# 	base = {
-# 		factor = 80
-# 		modifier = {
-# 			factor = 2
-# # 		}
-# 	}
-# 	picture = positional_default_atk
-
-# 	attacker = -0.45
-# 	defender = -0.5
-# 	attacker_movement_speed = -0.8
-# 	attacker_org_damage_modifier = -0.35
-# 	defender_org_damage_modifier = -0.45
-# 	phase = static
-# }
-
 tactic_Coup_de_Main = {
 	is_attacker = yes
 	trigger = {
@@ -441,6 +419,33 @@ tactic_Prepared_Defenses2 = {
 	phase = static
 }
 
+tactic_seize_bridge = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		has_combat_modifier = river_crossing
+		phase = no
+		OR = {
+			skill > 3
+			AND = {
+				has_trait = offensive_doctrine
+				skill > 2
+			}
+		}
+	}
+	
+	base =  {
+		factor = 2
+	}
+	picture = positional_default_atk
+	
+	phase = seize_bridge
+	
+	attacker_movement_speed = 0.1
+	combat_width = -0.25
+	attacker = 0.2
+	defender = -0.05
+}
 
 ######### STATIC PHASE 1 #########
 
@@ -3983,4 +3988,198 @@ tactic_Street_to_Street_Defense = {
 	attacker_org_damage_modifier = 0.1
 	defender_org_damage_modifier = -0.3
 	phase = urban_warfare
+}
+
+
+# Sieze Bridge #
+
+tactic_attacker_sb_hold = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = seize_bridge
+	}
+	
+	base =  { factor = 4 }
+	picture = attacker_sb_hold
+	display_phase = seize_bridge
+	
+	combat_width = -0.25
+	attacker = 0.2
+}
+tactic_attacker_sb_skillful_defence = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = seize_bridge
+		skill > 4
+	}
+	
+	base =  { factor = 4 }
+	picture = attacker_sb_skillful_defence
+	display_phase = seize_bridge
+
+	combat_width = -0.25
+	attacker = 0.2
+	defender = -0.1
+}
+tactic_defender_sb_assault = { 
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = seize_bridge
+	}
+	
+	base =  { factor = 4 }
+	picture = defender_sb_assault
+	display_phase = seize_bridge
+
+	combat_width = -0.25
+	defender = -0.05
+}
+tactic_defender_sb_reckless_assault = { 
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = seize_bridge
+		skill < 3
+	}
+	
+	base =  { factor = 4 }
+	picture = defender_sb_reckless_assault
+	display_phase = seize_bridge
+
+	combat_width = -0.25
+	attacker = 0.25
+	defender = -0.1
+}
+tactic_defender_sb_retake_bridge = { 
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = seize_bridge
+		OR = {
+			skill > 2
+			has_trait = trickster
+		}
+	}
+	
+	countered_by = tactic_attacker_sb_skillful_defence
+	phase = hold_bridge
+	
+	base =  { factor = 4 }
+	picture = defender_sb_retake_bridge
+	display_phase = seize_bridge
+
+	combat_width = -0.25
+	attacker = 0.1
+	defender = -0.05
+}
+
+# Hold Bridge #
+
+tactic_hold_bridge = { 
+	is_attacker = no
+	trigger = {
+		has_combat_modifier = river_crossing
+		is_attacker = no
+		phase = no
+		OR = {
+			skill > 2
+			has_trait = defensive_doctrine
+		}
+	}
+	
+	base =  { factor = 2 }
+	picture = tactic_hold_bridge
+	
+	phase = hold_bridge
+	
+	attacker_movement_speed = 0.1
+	combat_width = -0.25
+	attacker = 0.2
+	defender = -0.05
+}
+tactic_attacker_hb_attack = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = hold_bridge
+	}
+	
+	base =  { factor = 4 }
+	picture = attacker_hb_attack
+	display_phase = hold_bridge
+
+	combat_width = -0.25
+	attacker = 0.1
+}
+tactic_attacker_hb_rush = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = hold_bridge
+		skill > 4
+	}
+	
+	base =  { factor = 4 }
+	picture = attacker_hb_rush
+	display_phase = hold_bridge
+
+	combat_width = -0.25
+	attacker = 0.2
+}
+tactic_attacker_hb_storm = { 
+	is_attacker = yes
+	trigger = {
+		is_attacker = yes
+		phase = hold_bridge
+	}
+	
+	base =  { factor = 2 }
+	picture = attacker_hb_storm
+	display_phase = hold_bridge
+
+	countered_by = tactic_defender_hb_skillful_defence
+	
+	phase = seize_bridge
+	
+	combat_width = -0.25
+	attacker = 0.2
+	defender = 0.05
+}
+tactic_defender_hb_hold = { 
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = hold_bridge
+		skill < 3
+	}
+	
+	base =  { factor = 2 }
+	picture = defender_hb_hold
+	display_phase = hold_bridge
+
+	combat_width = -0.25
+	attacker = 0.2
+	defender = -0.1
+}
+tactic_defender_hb_skillful_defence = { 
+	is_attacker = no
+	trigger = {
+		is_attacker = no
+		phase = hold_bridge
+		OR = {
+			skill > 2
+			has_trait = trickster
+		}
+	}
+	
+	base =  { factor = 2 }
+	picture = defender_hb_skillful_defence
+	display_phase = hold_bridge
+	
+	combat_width = -0.25
+	attacker = 0.1
+	defender = 0.05
 }
