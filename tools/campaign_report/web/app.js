@@ -53,7 +53,7 @@ async function boot(text) {
   const shortDate = value => monthFormatter.format(new Date(value));
   const fmt = (n, digits = 0) => {if(!finite(n))return "—";if(!numberFormatters.has(digits))numberFormatters.set(digits,new Intl.NumberFormat("en-GB",{maximumFractionDigits:digits}));return numberFormatters.get(digits).format(n);};
   function compact(n) { if (!finite(n)) return "—"; const a = Math.abs(n); return a >= 1e6 ? `${fmt(n/1e6,1)} M` : a >= 1e3 ? `${fmt(n/1e3,1)} k` : fmt(n,Math.abs(n)<10 ? 1 : 0); }
-  const S = {tags:new Set(D.default_tags.filter(t => allTags.includes(t))),from:0,to:snapshots.length-1,at:snapshots.length-1,tab:"overview",force:"land",scope:"controlled",resource:"steel",equipment:"tanks",family:"all",percent:false,indexed:false,hidden:new Set(),convoy:"month"};
+  const S = {tags:new Set(D.default_tags.filter(t => allTags.includes(t))),from:0,to:snapshots.length-1,at:snapshots.length-1,tab:"overview",force:"land",scope:"controlled",resource:"steel",equipment:"tanks",families:new Set(),percent:false,indexed:false,hidden:new Set(),convoy:"month"};
   const tabs = {overview:["Overview","Compare capabilities, follow their evolution, and identify pressures to investigate."],forces:["Forces","Compare force sizes and inspect the composition behind the totals."],industry:["Industry & resources","Track installed industry and the balance of resources."],equipment:["Equipment","Stockpiles, deployed equipment, recorded requests and assigned factories — army, tanks and air."],wars:["Wars & casualties","Follow casualties in the context of the wars included in each observation."],country:["Country status","Stability, war support, command power, and available experience."]};
   const tags = () => allTags.filter(t => S.tags.has(t));
   const current = tag => snapshots[S.at].countries[tag];
@@ -233,14 +233,24 @@ async function boot(text) {
   // Registry entries without a `name` are the base chassis; the game displays their localised key.
   const variantName=v=>(v.name&&v.name!==v.definition)?v.name:((D.equipment_names||{})[v.definition]||v.name||v.definition||v.id);
   const domainOf={army:"army",tanks:"armor",air:"air"},domainLabel={army:"Army equipment",tanks:"Tanks and derivatives",air:"Aircraft"};
-  function equipmentFamilies(country){const fs=country?.equipment?.families;if(!fs)return [];const d=domainOf[S.equipment];return Object.entries(fs).filter(([k,f])=>f.domain===d&&(S.family==="all"||k===S.family)).map(([,f])=>f);}
-  function equipmentVariants(country){const d=domainOf[S.equipment];return (country?.equipment?.variants || []).filter(v=>v.domain===d&&(S.family==="all"||v.family===S.family));}
+  const familyPicked=k=>S.families.size===0||S.families.has(k);
+  function equipmentFamilies(country){const fs=country?.equipment?.families;if(!fs)return [];const d=domainOf[S.equipment];return Object.entries(fs).filter(([k,f])=>f.domain===d&&familyPicked(k)).map(([,f])=>f);}
+  function equipmentVariants(country){const d=domainOf[S.equipment];return (country?.equipment?.variants || []).filter(v=>v.domain===d&&familyPicked(v.family));}
+  // Additive family filter: a dropdown of checkboxes; several families add up, none checked = all.
+  function familyPicker(bar,keys,what){const box=document.createElement("div");box.className="family-filter";const picked=keys.filter(k=>S.families.has(k));
+    box.innerHTML=`<label>Families</label><button type="button" class="family-toggle" aria-expanded="false">${esc(picked.length?picked.length===1?labelType(picked[0]):`${picked.length} families`:`All ${what.toLowerCase()}`)} <span>⌄</span></button><div class="family-panel" hidden><div class="family-actions"><button type="button" data-act="all">All</button><button type="button" data-act="none">Clear</button></div><div class="family-options">${keys.map(k=>`<label><input type="checkbox" value="${esc(k)}" ${S.families.has(k)?"checked":""}> ${esc(labelType(k))}</label>`).join("")}</div></div>`;
+    const panel=box.querySelector(".family-panel"),toggle=box.querySelector(".family-toggle");toggle.onclick=e=>{e.stopPropagation();panel.hidden=!panel.hidden;toggle.setAttribute("aria-expanded",String(!panel.hidden));};
+    panel.onclick=e=>e.stopPropagation();
+    panel.querySelectorAll("input").forEach(input=>input.onchange=()=>{if(input.checked)S.families.add(input.value);else S.families.delete(input.value);S.keepFamilyPanel=true;render();});
+    panel.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{S.families=new Set(b.dataset.act==="all"?keys:[]);S.keepFamilyPanel=true;render();});
+    if(S.keepFamilyPanel){panel.hidden=false;toggle.setAttribute("aria-expanded","true");S.keepFamilyPanel=false;}
+    document.addEventListener("click",()=>{panel.hidden=true;toggle.setAttribute("aria-expanded","false");},{once:true});bar.append(box);}
   function equipmentSum(country,key){if(!country?.equipment)return null;const values=equipmentFamilies(country);if(values.length)return sumKnown(values.map(v=>v[key]));if(["production_per_day","training_need","deficit"].includes(key))return null;return finite(country.metrics?.[["stock","stock_deficit","active_factories"].includes(key)?"aircraft_stock":"divisions"])?0:null;}
-  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"]],S.equipment,v=>{S.equipment=v;S.family="all";});
+  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"]],S.equipment,v=>{S.equipment=v;S.families=new Set();});
     const d=domainOf[S.equipment],air=S.equipment==="air",what=domainLabel[S.equipment];
     const keys=[...new Set(snapshots.slice(S.from,S.to+1).flatMap(s=>tags().flatMap(t=>Object.entries(s.countries[t]?.equipment?.families || {}).filter(([,f])=>f.domain===d).map(([k])=>k))))].sort();
-    if(S.family!=="all"&&!keys.includes(S.family))S.family="all";
-    const label=document.createElement("label");label.innerHTML=`Family <select aria-label="Equipment family"><option value="all">All ${esc(what.toLowerCase())}</option>${keys.map(k=>`<option value="${esc(k)}" ${k===S.family?"selected":""}>${esc(labelType(k))}</option>`).join("")}</select>`;label.querySelector("select").onchange=e=>{S.family=e.target.value;render();};bar.append(label);
+    S.families=new Set([...S.families].filter(k=>keys.includes(k)));
+    familyPicker(bar,keys,what);
     el.append(notice(air?"Stockpiles are signed. Aircraft serve in wings, not divisions: the save records no reinforcement request for them, so no shortfall is derived; wings come from the strategic_air section. Daily output is not computed.":"Stockpiles are signed. Reinforcement requests are recorded by compatible family; they cannot be attributed to individual variants. Shortfall = recorded reinforcement requests - stock (DERIVED): requests may include equipment already in transit, so it is pressure, not a certified shortage. Training requirement and daily output are not computed.",true));
     // Captured or received stock explains a family a country never produced (SOV medium tank
     // destroyers after Germany's collapse): say it beside the charts instead of leaving a puzzle.

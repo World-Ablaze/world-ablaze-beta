@@ -288,6 +288,9 @@ def _attach_wings(country, wing_counts, definitions, catalog):
     """
     families, variants = country["equipment"]["families"], {v["id"]: v for v in country["equipment"]["variants"]}
     by_role = Counter()
+    # The production section was read when the aircraft stockpile is known: a family with no stock
+    # entry then holds 0, never unknown (an unknown would void the country's family sums).
+    zero = 0.0 if country["metrics"].get("aircraft_stock") is not None else None
     for family in families.values():
         if family.get("domain") == "air":
             family["deployed"] = 0.0
@@ -301,15 +304,15 @@ def _attach_wings(country, wing_counts, definitions, catalog):
             country["issues"].append(f"Wing equipment #{eid} is not a classified airframe; {amount:g} aircraft are not attributed to a family.")
             continue
         family, role = classification["family"], classification.get("role") or classification["family"]
-        row = families.setdefault(family, {"domain": "air", "role": role, "stock": None, "deployed": 0.0, "reinforcement_need": None,
-                                           "training_need": None, "deficit": None, "stock_deficit": None, "active_factories": None, "production_per_day": None})
+        row = families.setdefault(family, {"domain": "air", "role": role, "stock": zero, "deployed": 0.0, "reinforcement_need": 0.0,
+                                           "training_need": None, "deficit": None, "stock_deficit": zero, "active_factories": zero, "production_per_day": None})
         row["deployed"] = (row["deployed"] or 0.0) + amount
         row["role"] = role
         if eid in variants:
             variants[eid]["deployed"] = (variants[eid]["deployed"] or 0.0) + amount
         else:
-            country["equipment"]["variants"].append(dict(definition, family=family, domain="air", stock=None, deployed=amount, active_factories=None,
-                                                         production_per_day=None, reinforcement_need=None, training_need=None, stock_deficit=None, production_lines=[]))
+            country["equipment"]["variants"].append(dict(definition, family=family, domain="air", stock=zero, deployed=amount, active_factories=zero,
+                                                         production_per_day=None, reinforcement_need=None, training_need=None, stock_deficit=zero, production_lines=[]))
             variants[eid] = country["equipment"]["variants"][-1]
         by_role[role] += amount
     country["air"]["wings_by_role"] = dict(by_role)

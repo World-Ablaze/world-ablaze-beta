@@ -63,7 +63,7 @@ selected initially; cards and compositions use the last observation in that wind
 | Overview | Country snapshot, changes within the window, force trends, resource shortfalls |
 | Forces | Army, navy and air totals; generals and field marshals (army), admirals (navy); composition by family/type; division templates |
 | Industry & resources | Installed civilian/military factories and dockyards; three refinery families with hydro variants and active/inactive detail; production, trade, balances and unmet demand |
-| Equipment | Three sub-tabs — Army (infantry, artillery, anti-tank, anti-air, motorized, mechanized), Tanks (chassis families) and Air (airframes): signed stockpiles, deployed equipment and recorded reinforcement requests (land), aircraft in wings with stock and deployed compositions by role, both following the family filter (air), assigned factories; variants and raw production-line fields |
+| Equipment | Three sub-tabs — Army (infantry, artillery, anti-tank, anti-air, motorized, mechanized), Tanks (chassis families) and Air (airframes): signed stockpiles, deployed equipment and recorded reinforcement requests (land), aircraft in wings with stock and deployed compositions by role (air), assigned factories; variants and raw production-line fields. The family filter is additive: tick several families to add them up, none ticked = all |
 | Wars & casualties | Counters for wars present at each observation, opponent detail, disappearing relations |
 | Country status | Displayed stability and war support (rebuilt, DERIVED); army/navy/air XP; command power; political power |
 
