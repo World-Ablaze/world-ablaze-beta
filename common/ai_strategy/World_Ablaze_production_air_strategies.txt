@@ -111,9 +111,12 @@ WA_usa_cas_strategy = {
 	ai_strategy = { type = equipment_production_min_factories  id = cv_cas									value = 1 }
 }
 
-WA_usa_cas_strategy_CANCEL = {
+# [carrier-needs-config] Carrier close support is produced ONLY by a country the archetype named
+# and whose line is currently open. No archetype means no flag, and no flag means this -1000: an
+# unguarded CANCEL is the whole point, because otherwise every other AI is free to spend factories
+# on carrier CAS that no WA decision ever asked for.
+WA_cv_cas_strategy_CANCEL = {
 	enable = {
-		tag = USA
 		NOT = {
 			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_cas_flag
 		}
@@ -121,9 +124,56 @@ WA_usa_cas_strategy_CANCEL = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_bomber_airframe				value = -1000 }
-	ai_strategy = { type = equipment_production_factor id = cas												value = -1000 }
 	ai_strategy = { type = equipment_production_factor id = cv_cas											value = -1000 }
 }
+
+# The LAND cas half stays on the archetype: it says "a carrier strike power does not build land
+# CAS", which is true of that archetype alone. Unguarding this line would stop land CAS everywhere.
+WA_usa_cas_strategy_CANCEL = {
+	enable = {
+		WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes
+		NOT = {
+			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_cas_flag
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_factor id = cas												value = -1000 }
+}
+
+# carrier fighters. The decision (WA_AI_PRODUCTION_should_build_cv_fighters) has always set
+# WORLD_ABLAZE_PRODUCTION_cv_fighter_flag, but until now no strategy read it: the line could only
+# ever be PURGED (AI_purge_cv_small_fighter_production, read by plane_airframes.txt), never funded.
+# Values mirror the carrier close-support pair below-none of them can be a script constant, since
+# ai_strategy `value =` does not read one.
+WA_cv_fighter_strategy = {
+	enable = {
+		has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_fighter_flag
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = cv_small_fighter_airframe			value = 140 }
+
+	ai_strategy = { type = unit_ratio id = cv_fighter														value = 80 }
+	ai_strategy = { type = equipment_production_factor id = cv_fighter										value = 100 }
+	ai_strategy = { type = equipment_production_min_factories  id = cv_fighter								value = 1 }
+}
+
+# [carrier-needs-config] Unguarded on purpose, same rule as carrier close support: a country the
+# archetype did not name never gets the flag, and must therefore produce no carrier fighters at
+# all. This DOES cover navies that hold carriers outside the archetype (ENG): giving them the
+# aircraft is an archetype decision, not something the absence of a suppression should grant.
+WA_cv_fighter_strategy_CANCEL = {
+	enable = {
+		NOT = {
+			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_fighter_flag
+		}
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = cv_small_fighter_airframe			value = -1000 }
+}
+
 
 # heavy fighter
 WA_heavy_fighter_strategy = {

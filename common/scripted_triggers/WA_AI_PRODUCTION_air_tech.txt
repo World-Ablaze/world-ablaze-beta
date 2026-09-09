@@ -2,24 +2,38 @@
 # WA_aircraft_production_strategies; layer 2 (OBSERVATION), so it answers "what is true", never
 # "should we act".
 #
+# Naming: every gate a `should_build_*` decision reads is `has_worthwhile_<line>` - one per
+# production line, no exception, so a decision never carries tech data of its own. The remaining
+# `has_*_tech` triggers are not line gates: the jet ones are vetoes read by the effect, and
+# has_late_cv_naval_bomber picks between two force caps.
+#
+# Every has_worthwhile_* lists at least one rung of EVERY tech tree that owns the family. A missing
+# tree does not narrow the line to the others, it bars that nation outright - who may build is
+# decided by the archetypes in WA_AI_CONFIG, never by a hole in a tech list.
+#
 # Why these are WA_AI_ and not the plain WA_has_*_tech of WA_triggers.txt: a `has_worthwhile_*`
 # trigger carries the AI's own judgement - the tree whose early models it refuses to spend a
 # factory on. That judgement must never gate player-facing content, and the name is what stops a
-# later author from wiring it there. The neutral "does this country hold the tech" lists that
-# player content also reads (WA_has_fighter_tech, WA_has_heavy_fighter_tech,
-# WA_has_tac_bomber_tech, read by HUN_scripted_triggers.txt) deliberately stay in WA_triggers.txt;
-# the two wrappers at the bottom add the AI rung on top of them instead of copying the list.
+# later author from wiring it there.
+#
+# [ai-owns-its-tech-list] This file reads NOTHING from WA_triggers.txt. Where the same list also
+# exists there for player content (fighter, heavy fighter, tactical bomber, all read by
+# HUN_scripted_triggers.txt), the copy below is deliberate: the player asks "does this country hold
+# the tech", the AI asks "may it spend a factory on this". The two agree today and are free to
+# diverge, so a retune here must never be able to move player content. Do not collapse a copy back
+# into a call to the generic trigger.
 
-WA_AI_PRODUCTION_has_interceptor_tech = {
+WA_AI_PRODUCTION_has_worthwhile_interceptor = {
 	OR = {
 		has_tech = fra_interceptor_ad_tech_1
 		has_tech = ita_interceptor_ad_tech_1
+	has_tech = jap_interceptor_ad_tech_1
 		has_tech = sov_interceptor_ad_tech_1
 		has_tech = usa_interceptor_ad_tech_1
 	}
 }
 
-WA_AI_PRODUCTION_has_multirole_tech = {
+WA_AI_PRODUCTION_has_worthwhile_multirole = {
 	OR = {
 		has_tech = ita_fighter_multirole_1
 		has_tech = ger_fighter_multirole_1
@@ -40,7 +54,7 @@ WA_AI_PRODUCTION_has_multirole_tech = {
 	}
 }
 
-WA_AI_PRODUCTION_has_attacker_tech = {
+WA_AI_PRODUCTION_has_worthwhile_attacker = {
 	OR = {
 		has_tech = jap_attacker_1
 		has_tech = sov_attacker_1
@@ -60,7 +74,7 @@ WA_AI_PRODUCTION_has_attacker_tech = {
 	}
 }
 
-WA_AI_PRODUCTION_has_fast_bomber_tech = {
+WA_AI_PRODUCTION_has_worthwhile_fast_bomber = {
 	OR = {
 		has_tech = fra_fast_bomber_ad_tech_1
 		has_tech = jap_fast_bomber_ad_tech_1
@@ -68,7 +82,7 @@ WA_AI_PRODUCTION_has_fast_bomber_tech = {
 	}
 }
 
-WA_AI_PRODUCTION_has_scout_plane_tech = {
+WA_AI_PRODUCTION_has_worthwhile_scout_plane = {
 	OR = {
 		has_tech = fra_scout_plane_3
 		has_tech = ita_scout_plane_2
@@ -87,7 +101,7 @@ WA_AI_PRODUCTION_has_scout_plane_tech = {
 	}
 }
 
-WA_AI_PRODUCTION_has_naval_bomber_tech = {
+WA_AI_PRODUCTION_has_worthwhile_naval_bomber = {
 	OR = {
 		has_tech = fra_naval_bomber_1
 		has_tech = ita_naval_bomber_1
@@ -265,7 +279,38 @@ WA_AI_PRODUCTION_has_worthwhile_strategic_bomber = {
 	}
 }
 
-# ---- AI judgement layered on a list player content also reads ------------------------------
+# ---- lists the AI owns outright ------------------------------------------------------------
+
+WA_AI_PRODUCTION_has_worthwhile_fighter = {
+	# [ai-owns-its-tech-list] This list is a DELIBERATE COPY of the same-named list in
+	# WA_triggers.txt, which player content reads (HUN_scripted_triggers.txt). Two readers, two
+	# questions: the player one asks "does this country hold the tech", this one asks "may the AI
+	# spend a factory on it". They agree today and are free to diverge; do NOT collapse them back
+	# into one call, or a retune meant for the AI silently moves player content.
+	OR = {
+		has_tech = fighter1
+		has_tech = fra_fighter_2
+		has_tech = ita_fighter_2
+		has_tech = jap_fighter_1
+		has_tech = ger_fighter_3
+		has_tech = sov_fighter_1
+		has_tech = eng_fighter_3
+		has_tech = usa_fighter_1
+		has_tech = rom_fighter_1
+		has_tech = hun_fighter_1
+
+		has_tech = fra_fighter_ad_tech_1
+		has_tech = ita_fighter_ad_tech_1
+		has_tech = jap_fighter_ad_tech_1
+		has_tech = ger_fighter_ad_tech_1
+		has_tech = sov_fighter_ad_tech_1
+		has_tech = eng_fighter_ad_tech_1
+		has_tech = usa_fighter_ad_tech_0
+	}
+}
+
+# ---- AI judgement layered on its own copy of a list player content also has -----------------
+# Same [ai-owns-its-tech-list] rule as above: the else branches are copies, not calls.
 
 WA_AI_PRODUCTION_has_worthwhile_heavy_fighter = {
 	# [tree-rung] The AI refuses to fund this tree's early models: it waits for the rung below.
@@ -278,7 +323,22 @@ WA_AI_PRODUCTION_has_worthwhile_heavy_fighter = {
 		}
 	}
 	else = {
-		WA_has_heavy_fighter_tech = yes
+		OR = {
+			has_tech = heavy_fighter1
+			has_tech = usa_heavy_fighter_1
+			has_tech = ger_heavy_fighter_1
+			has_tech = ita_heavy_fighter_1
+			has_tech = fra_heavy_fighter_1
+			has_tech = eng_heavy_fighter_1
+			has_tech = jap_heavy_fighter_1
+
+			has_tech = fra_heavy_fighter_ad_tech_1
+			has_tech = ita_heavy_fighter_ad_tech_1
+			has_tech = jap_heavy_fighter_ad_tech_2
+			has_tech = ger_heavy_fighter_ad_tech_conversion_1
+			has_tech = eng_fighter_multirole_ad_tech_0
+			has_tech = usa_heavy_fighter_ad_tech_1
+		}
 	}
 }
 
@@ -293,25 +353,75 @@ WA_AI_PRODUCTION_has_worthwhile_tactical_bomber = {
 		}
 	}
 	else = {
-		WA_has_tac_bomber_tech = yes
+		OR = {
+			has_tech = usa_tactical_bomber_2
+			has_tech = eng_tactical_bomber_1
+			has_tech = ita_tactical_bomber_2
+			has_tech = sov_tactical_bomber_2
+			has_tech = ger_tactical_bomber_2
+			has_tech = jap_tactical_bomber_1
+			has_tech = fra_tactical_bomber_1
+			has_tech = rom_tactical_bomber_1
+
+			has_tech = fra_tactical_bomber_ad_tech_0
+			has_tech = ita_tactical_bomber_ad_tech_1
+			has_tech = jap_tactical_bomber_ad_tech_1
+			has_tech = ger_fast_bomber_ad_tech_1
+			has_tech = sov_tactical_bomber_ad_tech_1
+			has_tech = eng_tactical_bomber_ad_tech_2
+			has_tech = usa_tactical_bomber_ad_tech_2
+		}
 	}
 }
 
 # ---- carrier lines: lists the decisions used to carry inline --------------------------------
 
-# Only the Japanese tree has a carrier-fighter rung the AI waits for. The other trees' carrier
-# fighters are deliberately absent: adding one opens a new production line for its owner, so do
-# it knowingly rather than as a tidy-up.
+# [rung-1940] One rung per TREE, chosen by a single measured rule: the first rung of that tree
+# whose start_year is 1940 or later, on the base line and on the ad-tech line separately. Earlier
+# rungs are pre-war models no factory should go to. The rule reproduces the three picks this repo
+# already had (ENG 1940, FRA 1940, JAP 1940), which is why it is the rule and not a taste.
+# Every tree that owns the family is listed: leaving one out silently bars that nation from the
+# line, whatever the archetype says. A country holds only its own tree's techs, so the flat OR
+# selects itself; who may actually build is the archetype's job, not this trigger's.
+# German carrier fighters have no ad-tech line, hence the single entry.
 WA_AI_PRODUCTION_has_worthwhile_cv_fighter = {
 	OR = {
+		has_tech = fra_cv_fighter_2
+		has_tech = fra_cv_fighter_ad_tech_2
+		has_tech = ita_cv_fighter_4
+		has_tech = ita_cv_fighter_ad_tech_2
 		has_tech = jap_cv_fighter_2
 		has_tech = jap_cv_fighter_ad_tech_2
+		has_tech = ger_cv_fighter_2
+		has_tech = sov_cv_fighter_3
+		has_tech = sov_cv_fighter_ad_tech_1
+		has_tech = eng_cv_fighter_3
+		has_tech = eng_cv_fighter_ad_tech_3
+		has_tech = usa_cv_fighter_3
+		has_tech = usa_cv_fighter_ad_tech_3
 	}
 }
 
-# Same shape, American tree only. See the note above before adding another tree.
+# [rung-1940] Same rule as the carrier fighter above, every tree that owns the family. Both halves
+# of a rung are listed: naming only the ad-tech half, as this trigger used to, left a country going
+# down the base line unable ever to pass.
 WA_AI_PRODUCTION_has_worthwhile_cv_cas = {
-	has_tech = usa_cv_cas_ad_tech_3
+	OR = {
+		has_tech = fra_cv_cas_3
+		has_tech = fra_cv_cas_ad_tech_3
+		has_tech = ita_cv_cas_3
+		has_tech = ita_cv_cas_ad_tech_2
+		has_tech = jap_cv_cas_2
+		has_tech = jap_cv_cas_ad_tech_2
+		has_tech = ger_cv_cas_3
+		has_tech = ger_cv_cas_ad_tech_3
+		has_tech = sov_cv_cas_2
+		has_tech = sov_cv_cas_ad_tech_2
+		has_tech = eng_cv_cas_3
+		has_tech = eng_cv_cas_ad_tech_2
+		has_tech = usa_cv_cas_3
+		has_tech = usa_cv_cas_ad_tech_3
+	}
 }
 
 # Does NOT open the naval line: it raises the park the carrier strike power may keep
