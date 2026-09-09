@@ -173,7 +173,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### techtree-capability — TESTED (2026-09-09)
+### resource-infra-targeting — OPEN (2026-09-09)
+- Owner order 2026-09-09 ("implémente le fix"). Intended behaviour: resource-extraction
+  infrastructure targets only a state carrying a resource that currently justifies this strategy.
+- Symptom, **MEASURED** (owner playthrough): with SOV `WA_AI_needs_bauxite = 3`, priority
+  construction selected states 876 and 226; their state files contain no bauxite.
+- Cause, **MEASURED** (script): `WA_AI_resource_extraction` proved only that one qualifying state
+  existed, then `WA_AI_get_resource_slot_scores` admitted every rich controlled state and
+  `WA_AI_priority_queue_INF_resource` accepted the first buildable score without rechecking need.
+- Change: `[resource-infra-targeting]` centralises the existing seven active branches in the
+  state-scope observation `WA_AI_CONSTRUCTION_has_needed_resource_for_infrastructure`, reused by
+  the existence gate, score-list admission, standard queue consumer and PC queue consumer.
+- Impact, **DERIVED**: historical SOV with only bauxite at need 3 excludes 876/226 and retains its
+  bauxite states; an ahistorical country with another need at 3 retains states matching that need.
+  Multiple simultaneous needs remain composable. The legacy standard consumer now gets the same
+  final guard; it has no live caller in `common/` or `events/` at this revision.
+- Regression risk, **DERIVED**: a state can disappear from resource scoring when it contains no
+  currently needed resource. This is the intended restriction; resource thresholds, scores,
+  priority, budget, cadence and controlled-state perimeter are unchanged.
+- Harness: none owed — 36 changed PDXScript lines, no on-action effect signature/scope change, and
+  non-rail priority construction has no existing `WA_TEST_*` harness.
+- Verification (owner game): with only `WA_AI_needs_bauxite = 3`, first inspect the type-25 PC
+  target state, then let that project complete; its state has bauxite >15 and 876/226 are absent
+  from type-25 starts. Repeat with one non-bauxite need at 3 to prove the generic branch.
+- Closed when: the owner game verifies both queue admission and one completed infrastructure level
+  for bauxite-only and one other-resource scenario, with no type-25 start in an unrelated state.
+
+### techtree-capability — PARKED (2026-09-09)
+- PARKED 2026-09-09 at state TESTED (WIP limit, owner ruling): nothing is owed on the code side,
+  only the CAMPAIGN-OK run below. Reopen at TESTED when a campaign is scored.
 - State: shipped as `7aac08324e` on `ai-rework`, pushed. TESTED, not SHIPPED-UNTESTED: this change
   is scripted TRIGGERS only - no `WA_AI_*` effect called by an on_action changed signature or scope,
   so no `WA_TEST_*` console harness applies and none is owed. The test that gates it is the boot,
@@ -800,6 +828,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   2-year ahead focus (GER `GER_synthetic_breakthroughs`, ITA `ITA_mare_nostrum`) has the covered
   `start_year+2` tech in progress within a year.
 - Closed when: (1) pasted with the counter returning to 0, (2) clean, (3) observed on one campaign.
+
+### ger-labour-law — OPEN (2026-09-09)
+- Owner order 2026-09-09 ("testons de garder l'allemagne 100% en mandatory army service").
+  Intended behaviour: the German AI holds `mandatory_army_service` in the `ministry_of_labour`
+  slot for the whole game and never swaps to `factory_conscription`.
+- Symptom: none - this is an owner-ordered experiment, not a measured defect.
+- Previous behaviour, MEASURED (`common/ideas/zzz_ministries.txt`, both `ai_will_do` blocks of the
+  slot): the two laws carried mirrored GER weights around a hard-coded `1942.2.1` - before it
+  mandatory x200 / factory x0, after it the reverse, with the pre-1942 weights restored whenever
+  GER took `surrender_progress` against SOV or reached `scraping_the_barrel`. So GER swapped to
+  factory conscription on 1942.2.1 and could swap back later.
+- Change: both GER modifier pairs replaced by one unconditional weight each - `factor = 200 / tag = GER`
+  in `mandatory_army_service`, `factor = 0 / tag = GER` in `factory_conscription`. The date literal,
+  the surrender/scraping clauses and the `NOT = { has_completed_focus = GER_prepare_the_opposition }`
+  term disappear with them. No other tag touched. DERIVED: the slot's two other laws already read 0
+  for GER (`offer_better_wages` `factor = 0`; `incentivise_employability_oppertunities` x0 on
+  `is_major = yes`), so mandatory is the only positive weight GER can see.
+- Regression risk, DERIVED: GER loses the +0.30 `industrial_capacity_factory` of factory conscription
+  from 1942.2 on and keeps +0.10 `conscription_factor` / -0.20 `training_time_factor` instead - a
+  deliberate trade, expected to show as lower late-war German equipment output and a larger manpower
+  pool. ASSUMED: the human player is unaffected (this is an `ai_will_do` weight, the law stays
+  selectable and its `available` block is untouched).
+- No harness owed: `ai_will_do` weights in an idea file, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): the report law-change table shows GER on `Mandatory Army Service` at every
+  monthly save from the first labour-law pick to the end of the run, and no `-> Factory Conscription`
+  row for GER; German military-factory output and manpower pool compared with `1ac7e4ea` to price the
+  trade.
+- Closed when: one campaign shows zero GER labour-law changes after its first pick, and the owner
+  rules on the output-versus-manpower trade the run measures.
 
 ### repeatable-pp-decisions — OPEN (2026-09-08)
 - Owner order 2026-09-08 ("certaines pays IA ont des décisions répétables qui coutent des PP ... ces
