@@ -173,7 +173,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### resource-infra-targeting — OPEN (2026-09-09)
+### resource-infra-targeting — PARKED (2026-09-09)
+- State: implementation ships with this subject update; parked only because the four OPEN slots
+  are already occupied. Re-open when one slot is free for owner-game verification.
 - Owner order 2026-09-09 ("implémente le fix"). Intended behaviour: resource-extraction
   infrastructure targets only a state carrying a resource that currently justifies this strategy.
 - Symptom, **MEASURED** (owner playthrough): with SOV `WA_AI_needs_bauxite = 3`, priority
