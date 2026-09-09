@@ -537,3 +537,28 @@ WA_TEST_AIRB_probe_cancel_tactical_undo = {
 	add_ai_strategy = { type = equipment_variant_production_factor id = medium_heavy_bomber_airframe value = 1000 }
 	log = "=== AIR PROBE === [Root.GetName] [GetDateText] variant factor medium_heavy_bomber_airframe +1000 applied (undo)"
 }
+
+# Cap probe - the has_deployed_air_force_size form reads a `constant:` bar (validated only with
+# `size >` when the constants moved). Fire on a country whose naval-bomber park is far above
+# naval_cap: `constant` and `literal` must agree, and `deployed` (the check_variable form on the
+# archetype) must agree with them; a constant read that says "below cap" against a park of 12000
+# is the constant not resolving inside this trigger.
+WA_TEST_AIRB_probe_caps = {
+	log = "=== AIR CAP PROBE === [Root.GetName] [GetDateText]"
+	set_temp_variable = { _airb_p1 = 0 }
+	if = { limit = { has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap type = naval_bomber } } set_temp_variable = { _airb_p1 = 1 } }
+	set_temp_variable = { _airb_p2 = 0 }
+	if = { limit = { has_deployed_air_force_size = { size < 2000 type = naval_bomber } } set_temp_variable = { _airb_p2 = 1 } }
+	set_temp_variable = { _airb_p3 = 0 }
+	if = { limit = { has_deployed_air_force_size = { size > 2000 type = naval_bomber } } set_temp_variable = { _airb_p3 = 1 } }
+	set_temp_variable = { _airb_p4 = num_deployed_planes_with_type@small_naval_bomber_airframe }
+	set_temp_variable = { _airb_p5 = 0 }
+	if = { limit = { has_deployed_air_force_size = { size < constant:wa_ai_production.air.medium_bomber_cap type = tactical_bomber } } set_temp_variable = { _airb_p5 = 1 } }
+	set_temp_variable = { _airb_p6 = 0 }
+	if = { limit = { has_deployed_air_force_size = { size < 2000 type = tactical_bomber } } set_temp_variable = { _airb_p6 = 1 } }
+	set_temp_variable = { _airb_p7 = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_naval_bombers = yes } set_temp_variable = { _airb_p7 = 1 } }
+	log = "  naval : below-cap(constant)=[?_airb_p1|.0]  below-2000(literal)=[?_airb_p2|.0]  above-2000(literal)=[?_airb_p3|.0]  deployed(small_naval archetype)=[?_airb_p4|.0]  should_build_naval=[?_airb_p7|.0]"
+	log = "  tac   : below-cap(constant)=[?_airb_p5|.0]  below-2000(literal)=[?_airb_p6|.0]"
+	log = "=== END AIR CAP PROBE ==="
+}

@@ -287,6 +287,65 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   files load or the armour template system goes silent.
 
 ### air-budget — SHIPPED-UNTESTED (2026-09-09)
+- **Campaign `2ee8a4ba` scored 2026-09-09 (133 saves 1936.2-1947.2, instrumented build, owner
+  report HTML).** Decision side PASS: GER 1939-41 `wa_tlm_air_w_fighter_pct` 40/40/40/48/48, floor
+  live, `air_emit_n` ≤ 41 on every major. **Factory side FAIL**: from the saves' military_lines
+  (MEASURED) GER air factories on fighters 31 % (1939.1), **19 %** (1939.9), 22 % (1940.1), 50 %
+  (1940.7), 22 % (1941.1), 31 % (1942.1) against a 40-48 % weight share - the original symptom
+  survives on the factory axis. DERIVED: factories per weight point GER = fighter 0.32, cas 0.30,
+  tactical 1.6-2.7, heavy 0.4; IC cost explains x1.7-1.8 of it (MEASURED evaluator medians:
+  tactical 32-46 IC vs fighter 18-29, strategic x2.4-2.7); the rest is the engine's allocation
+  (ASSUMED deficit/loss-driven - USA 1943.1 shows the inverse, tac 0.45 per point). Cap closures
+  MEASURED: USA 0 fighter factories 1944.1-1945.1 (park 9214-10100 vs reopen 9000), ENG 0 for
+  1943 (park 4827 vs 4500), GER 0 air factories at 1943.1 (13000 planes, bases full - engine pool
+  0, ASSUMED). Anomaly: SOV 12000 naval bombers by 1947.2 (0 in 1946.6, war with JAP 1946.3,
+  naval book 10 at 1946.7) against `naval_cap` 2000 - ASSUMED the `has_deployed_air_force_size
+  size < constant:` form does not read the bar; `event wa_airb.5 SOV` (new cap probe) on the
+  1947.2 save is the killing read before any cap retune. USA held 1 carrier fighter until 1943
+  (rung `usa_cv_fighter_3`, Q2 "rung wins"). Full tables and five proposals (cost-corrected
+  weights f60/cas38/tac24/strat15/nav10/hf10, industry-scaled caps, 80 % reopen or a maintenance
+  weight at cap, a 1-factory deck fallback, the cap probe): scratchpad
+  `air_campaign_2ee8a4ba.md`. Not closed; owner decisions pending.
+- **SOV 12000 naval bombers DIAGNOSED 2026-09-09 - the cap was never the fault.** MEASURED (9
+  monthly saves of `2ee8a4ba`): flag `WA_AI_PRODUCTION_AIR_open_naval_bomber` present 1946.6/.7/.8,
+  ABSENT 1946.9 on, and `wa_ai_air_budget_naval` 10 -> 0 by 1946.9. A country flag set without
+  `days` never expires, so its disappearance IS the `else_if` of `WA_production_strategy_effects.txt:167`
+  firing - the Schmitt cap bound at the 2000 bar while the park was between 1000 and 3100.
+  **The standing `ASSUMED the has_deployed_air_force_size size < constant: form does not read the bar`
+  is REFUTED**; `size <` is a vanilla form (install `common/decisions/GER.txt:13076`) and `constant:`
+  in that field was already a validated context. MEASURED cause instead: 287 factories stayed on 5
+  `SOV_il_10t_airframe` lines and drained 287/250/194/124/63/3 over five months (89 further 100-plane
+  wings), efficiency climbing monotonically 17 % -> 110 % - never cancelled. POSITIVE CONTROL,
+  MEASURED: the archetypes that carry a `_CANCEL` block are DELETED from the save within one month of
+  the same edge (USA fighters 1943.12->1944.1, 116 factories at 91-97 % -> line absent; ENG 1944.5->1944.6,
+  53 -> absent with total air factories unchanged 147->148; ENG reopens 1944.10 at efficiency 9.00 =
+  engine base). So the 5-month drain is not engine behaviour. Script line:
+  `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt:244` - `WA_AI_PRODUCTION_air_line_naval_bomber`
+  had no `_CANCEL` twin, so after closure the archetype's net production factor was 0 (SOV leads
+  COMINFORM, MEASURED, so the `-100` of `ENG_allies_we_dont_want_your_planes` never applied). FIX
+  SHIPPED: one additive block `WA_AI_PRODUCTION_air_line_naval_bomber_CANCEL` (`-1000`
+  `equipment_variant_production_factor` on `small_naval_bomber_airframe`, enable = the exact
+  complement of the funder). No constant retuned. Only funder MEASURED by grep: the funding block
+  itself (`:248`/`:249`) plus the category block (`:327`), both aborting on the same trigger; no
+  country file adds `min_factories naval_bomber`. Cadence table for the new cycle - t0 decision flips
+  at the cap (engine cadence, ASSUMED daily); t1 next ~2-day pulse, purge book clears AND the CANCEL
+  arms, MEASURED bound on the fighter control = line gone within <= 1 month; t2 next monthly pulse,
+  naval weight retired; t3 park attrites below the 1800 reopen bar, line reopens at efficiency 9.00
+  and climbs the whole curve again. **Flapping at the bar is therefore NOT covered by this fix**, and
+  the earlier proposal from the same scoring - "80 % reopen or a maintenance weight at cap" - STANDS
+  unrefuted: it addresses the reopen cost, this block addresses the overshoot after closure. Two
+  reviewers returned CONCERNS, none CONFLICT; both concerns applied (header no longer claims the purge
+  cannot cancel - only that purge-alone did not; no `equipment_production_factor` second lever, the
+  category block already withdraws on the same edge). Known-unfixed, same gap, NOT touched:
+  `cv_small_naval_bomber_airframe`, `medium_fighter_airframe`, `small_bomber_airframe`,
+  `large_bomber_airframe`/`large_heavy_bomber_airframe`, `transport_plane_equipment` carry no `_CANCEL`.
+  `documentation/WA_AI_AIR_PRODUCTION.md` sections 2 and 5 corrected (they asserted the purge book
+  cancels running lines). Caveat on the control, stated: both control countries are FIGHTERS, which
+  have a substitute archetype the land naval bomber lacks. Owner run owed: `event wa_airb.5 SOV` on the
+  1947.2 save after a COLD boot - now a confirmation, not the blocking read (expected
+  `below-cap(constant)=0 below-2000(literal)=0 above-2000(literal)=1 should_build_naval=0`); a
+  disagreement between the constant and literal columns would reopen H1. Full tables: scratchpad
+  `sov_naval_bomber_2ee8a4ba.md`.
 - State: phases 1-4 committed; harness runs pasted below for GER / ENG / MAL / USA on the
   pre-retune constants. One `event wa_airb.4 USA` on the 50/50 + naval 10 constants (cold boot)
   moves this to TESTED; phase 0b remains optional. Phase 5 (2026-09-09): TLM family
