@@ -1,7 +1,8 @@
 # Air production decisions - one per aircraft line the AI can open. Read by
 # WA_aircraft_production_strategies (WA_production_strategy_effects.txt, ~2-day event in
 # events/WA_AI_misc.txt), which sets the WORLD_ABLAZE_PRODUCTION_* flags the air strategies enable on.
-# Tech availability is WA_has_*_tech (WA_triggers.txt); identity is WA_AI_CONFIG_AIRFORCE_* and
+# Tech availability is WA_AI_PRODUCTION_has_*_tech (WA_AI_PRODUCTION_air_tech.txt), which also
+# owns the AI's "not worth a factory yet" rungs; identity is WA_AI_CONFIG_AIRFORCE_* and
 # WA_AI_CONFIG_TECH_TREE_*; a force cap is a deployed park size, never an industry reading.
 
 ########################## shared observations ##########################
@@ -72,7 +73,7 @@ WA_AI_PRODUCTION_should_build_fighters = {
 }
 
 WA_AI_PRODUCTION_should_build_multiroles = {
-	WA_has_multirole_fighter_tech = yes
+	WA_AI_PRODUCTION_has_multirole_tech = yes
 	WA_AI_PRODUCTION_fighter_park_is_below_cap = yes
 }
 
@@ -82,7 +83,7 @@ WA_AI_PRODUCTION_should_build_fighters_and_multiroles = {
 }
 
 WA_AI_PRODUCTION_should_build_interceptors = {
-	WA_has_interceptor_fighter_tech = yes
+	WA_AI_PRODUCTION_has_interceptor_tech = yes
 	if = {
 		limit = {
 			OR = {
@@ -99,25 +100,12 @@ WA_AI_PRODUCTION_should_build_interceptors = {
 
 WA_AI_PRODUCTION_should_build_cv_fighters = {
 	WA_AI_CONFIG_is_carrier_navy = yes
-	OR = {
-		has_tech = jap_cv_fighter_2
-		has_tech = jap_cv_fighter_ad_tech_2
-	}
+	WA_AI_PRODUCTION_has_worthwhile_cv_fighter = yes
 	check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe < constant:wa_ai_production.air.cv_fighter_cap }
 }
 
 WA_AI_PRODUCTION_should_build_heavy_fighters = {
-	# the British line is not worth a factory before its second rung; every other tree at WA_has_*
-	if = {
-		limit = { WA_AI_CONFIG_TECH_TREE_is_british = yes }
-		OR = {
-			has_tech = eng_heavy_fighter_2
-			has_tech = eng_heavy_fighter_ad_tech_2
-		}
-	}
-	else = {
-		WA_has_heavy_fighter_tech = yes
-	}
+	WA_AI_PRODUCTION_has_worthwhile_heavy_fighter = yes
 	NOT = { WA_AI_CONFIG_TECH_TREE_is_italian = yes }
 	NOT = { WA_AI_CONFIG_TECH_TREE_is_german = yes }
 	NOT = { WA_AI_CONFIG_TECH_TREE_is_soviet = yes }
@@ -140,7 +128,7 @@ WA_AI_PRODUCTION_should_build_heavy_fighters = {
 }
 
 WA_AI_PRODUCTION_should_build_attackers = {
-	WA_has_attacker_tech = yes
+	WA_AI_PRODUCTION_has_attacker_tech = yes
 	WA_AI_CONFIG_AIRFORCE_uses_attackers = yes
 	check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe < constant:wa_ai_production.air.attacker_cap }
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
@@ -149,17 +137,10 @@ WA_AI_PRODUCTION_should_build_attackers = {
 ########################## close support ##########################
 
 WA_AI_PRODUCTION_should_build_cas = {
-	# the American line is its late land CAS only (its carrier CAS is a separate line); every other tree at WA_has_*
-	if = {
-		limit = { WA_AI_CONFIG_TECH_TREE_is_american = yes }
-		has_tech = usa_cas_7
-	}
-	else = {
-		WA_has_cas_tech = yes
-	}
+	WA_AI_PRODUCTION_has_worthwhile_cas = yes
 	OR = {
 		WA_AI_CONFIG_AIRFORCE_cas_is_strong = yes
-		WA_has_multirole_fighter_tech = no
+		WA_AI_PRODUCTION_has_multirole_tech = no
 	}
 	NOT = { WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes }
 	NOT = { WA_AI_CONFIG_AIRFORCE_cas_is_weak = yes }
@@ -173,7 +154,7 @@ WA_AI_PRODUCTION_should_build_cas = {
 
 WA_AI_PRODUCTION_should_build_cv_cas = {
 	WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes
-	has_tech = usa_cv_cas_ad_tech_3
+	WA_AI_PRODUCTION_has_worthwhile_cv_cas = yes
 	# [cv-cas-own-bar] Its own archetype park, not the engine `type = cas` role: that role also
 	# holds the LAND cas archetype, so the shared 1600 bar always bound before this line's own
 	# 2500 and left cv_cas_cap dead. Assumes cv_small_bomber_airframe is the only carrier
@@ -192,24 +173,14 @@ WA_AI_PRODUCTION_medium_bomber_park_is_below_cap = {
 }
 
 WA_AI_PRODUCTION_should_build_fast_bombers = {
-	WA_has_fast_bomber_tech = yes
+	WA_AI_PRODUCTION_has_fast_bomber_tech = yes
 	WA_AI_CONFIG_AIRFORCE_produces_fast_bombers = yes
 	WA_AI_PRODUCTION_medium_bomber_park_is_below_cap = yes
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
 WA_AI_PRODUCTION_should_build_strike_bombers = {
-	# the American line is not worth a factory before its second rung; every other tree at WA_has_*
-	if = {
-		limit = { WA_AI_CONFIG_TECH_TREE_is_american = yes }
-		OR = {
-			has_tech = usa_strike_bomber_2
-			has_tech = usa_strike_bomber_ad_tech_3
-		}
-	}
-	else = {
-		WA_has_strike_bomber_tech = yes
-	}
+	WA_AI_PRODUCTION_has_worthwhile_strike_bomber = yes
 	WA_AI_PRODUCTION_medium_bomber_park_is_below_cap = yes
 	OR = {
 		WA_AI_CONFIG_is_major_country = yes
@@ -218,24 +189,14 @@ WA_AI_PRODUCTION_should_build_strike_bombers = {
 }
 
 WA_AI_PRODUCTION_should_build_tactical_bombers = {
-	# the American line is not worth a factory before its sixth rung; every other tree at WA_has_*
-	if = {
-		limit = { WA_AI_CONFIG_TECH_TREE_is_american = yes }
-		OR = {
-			has_tech = usa_tactical_bomber_6
-			has_tech = usa_tactical_bomber_ad_tech_5
-		}
-	}
-	else = {
-		WA_has_tac_bomber_tech = yes
-	}
+	WA_AI_PRODUCTION_has_worthwhile_tactical_bomber = yes
 	NOT = { WA_AI_CONFIG_TECH_TREE_is_italian = yes }
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 	WA_AI_PRODUCTION_medium_bomber_park_is_below_cap = yes
 }
 
 WA_AI_PRODUCTION_should_build_naval_bombers = {
-	WA_has_nav_tech = yes
+	WA_AI_PRODUCTION_has_naval_bomber_tech = yes
 	any_owned_state = {
 		is_coastal = yes
 	}
@@ -254,12 +215,7 @@ WA_AI_PRODUCTION_should_build_naval_bombers = {
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes }
 		if = {
-			limit = {
-				OR = {
-					has_tech = usa_cv_naval_bomber_3
-					has_tech = usa_cv_naval_bomber_ad_tech_3
-				}
-			}
+			limit = { WA_AI_PRODUCTION_has_late_cv_naval_bomber = yes }
 			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier_late type = naval_bomber }
 		}
 		else = {
@@ -277,18 +233,7 @@ WA_AI_PRODUCTION_should_build_naval_bombers = {
 }
 
 WA_AI_PRODUCTION_should_build_strategic_bombers = {
-	# the British line is not worth a factory before its second rung; every other tree at WA_has_*
-	if = {
-		limit = { WA_AI_CONFIG_TECH_TREE_is_british = yes }
-		OR = {
-			has_tech = eng_strategic_bomber_2
-			has_tech = eng_strategic_bomber_ad_tech_3
-			has_tech = eng_heavy_strategic_bomber_ad_tech_3
-		}
-	}
-	else = {
-		WA_has_strat_tech = yes
-	}
+	WA_AI_PRODUCTION_has_worthwhile_strategic_bomber = yes
 	WA_AI_CONFIG_AIRFORCE_builds_strategic_bombers = yes
 	surrender_progress < constant:wa_ai_production.air.max_surrender
 	OR = {
@@ -321,7 +266,7 @@ WA_AI_PRODUCTION_should_build_strategic_bombers = {
 ########################## support types ##########################
 
 WA_AI_PRODUCTION_should_build_scout_planes = {
-	WA_has_scout_plane_tech = yes
+	WA_AI_PRODUCTION_has_scout_plane_tech = yes
 	has_deployed_air_force_size = { size < constant:wa_ai_production.air.scout_cap type = scout_plane }
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
