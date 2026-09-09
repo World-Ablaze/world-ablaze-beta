@@ -434,6 +434,33 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   cv_fighter 60, cv_naval_bomber 40, heavy_fighter 15 - no cv_cas row (Q9 live), the land rows
   unchanged next to the cv rows. Phase 4 verified engine-side; land/carrier pooling inside the
   engine stays doc-sourced (the rows are separate entries, what the engine sums is not visible).
+- **Owner screenshot 2026-09-09, ENG 1936 production lines (MEASURED): Hawker Nimrod 1/7,
+  Fairey Swordfish 1/7, Gloster Gauntlet 2/9.** The 7 is the carrier FLOOR pair of
+  `cv_plane.txt` (base 2 + carrier-major 5, additive, ENG > 3 hulls), and the Nimrod ran while
+  its line was CLOSED (`eng_cv_fighter_3` rung not held: the floor forced a model the AI judged
+  not worth a factory - the floor-vs-CANCEL contradiction recorded at phase 4). Change: the four
+  floor gates (`WA_AI_PRODUCTION_carrier_planes_floor_* / _major_*`) now require the role's
+  funded-type decision (deck x line open x tech x cap). Reviews (architecture CONFLICT on
+  comments/doc, lessons CONCERNS) applied: (1) the carrier-fighter line block's own
+  `min_factories 1` is gone, so the floors of `cv_plane.txt` are the whole floor - base 1 per
+  role, carrier-MAJOR +6 (7) and the major bar moves from > 3 to > 9 hulls: both measured
+  big-fleet cells (9be92c89 USA 35 hulls on 5, f9321934 USA 47 hulls on 8) ran EXACTLY on the
+  old floor sum, so that sum is kept for fleets and denied to a 1936 navy with six decks;
+  whether the engine's deck demand carries a fleet ABOVE the floor is ASSUMED (both cells read
+  requested = floor) - killing read: a many-deck USA save with unfilled wings, requested vs
+  floor sum on the production screen; (2) carrier naval bombers get their OWN want and line
+  (`should_build_cv_naval_bombers` = deck x naval rung x `naval_cap_carrier` pair on the carrier
+  archetype; `should_open_cv_naval_bomber_line` = not BoB) and their own purge key - the land
+  naval line's `is_maritime_air_power` / oceanic-enemy / coast terms no longer govern a deck
+  (a USA at peace had no carrier naval-bomber floor under the previous wiring);
+  `AI_purge_small_naval_bomber_production` is the new LAND key (`plane_airframes.txt` land
+  block), the cv key stays on the cv block; (3) Q2 decided: a deck holder below its carrier-
+  fighter rung builds NO carrier fighters until the rung - the `[rung-1940]` ruling wins over a
+  1-factory fallback (recorded, owner may overturn); (4) the harness `carrier:` line prints the
+  four floor gates, the walk carries `cvnav` as its own line, VERDICT still 4 values; (5) doc
+  §4: floor requests through the -1000 CANCEL is now MEASURED (the ENG screenshot), not ASSUMED.
+  Signal: USA carrier-fighter wing fill on the next scored campaign (`cvair.py`). Expected on the
+  ENG 1936 save after a cold boot: Nimrod 0 factories requested, Swordfish 1.
 - **Owner retune 2026-09-09:** (a) carrier split 50 / 50 (`cv_weight_fighter 50`,
   `cv_weight_naval_bomber 50`) - "la composition IA des porte-avions", the cv unit_ratio also sets
   the AI's deck composition (`cv_plane.txt` header); (b) `weight_naval` 20 -> 10, land naval

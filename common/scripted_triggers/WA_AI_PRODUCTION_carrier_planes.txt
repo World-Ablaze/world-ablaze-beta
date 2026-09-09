@@ -8,19 +8,21 @@ WA_AI_PRODUCTION_production_carrier_planes_base_ratios = {
 	WA_AI_PRODUCTION_needs_cv_planes = yes
 }
 
-# Carrier major: enough decks that the 2-factory modernization floor cannot feed them
-# (campaign 9be92c89: USA ran 35 carriers / 3250 deck on 5 cv-plane factories).
+# Carrier major: a deck FLEET the base floor cannot feed - ten hulls and up, the USA / JAP shape;
+# a navy with a handful of old decks (the 1936 Royal Navy) stays on the base floor.
 WA_AI_PRODUCTION_carrier_planes_major = {
 	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
-	has_navy_size = { size > 3 unit = carrier }
+	has_navy_size = { size > 9 unit = carrier }
 }
 
 # ============================================================================
 # [equipment-selection] - carrier-plane saturation brake
 # ============================================================================
-# WHY THIS EXISTS. Carrier-plane output is set ENTIRELY by the
+# WHY THIS EXISTS. Carrier-plane output was set ENTIRELY by the
 # equipment_production_min_factories floors in WA_AI_PRODUCTION_DEFAULT_cv_plane.txt,
-# and those floors are deck-blind. Measured on campaign f9321934 at 1944.6 AND 1946.8:
+# and those floors were deck-blind (since [air-budget] they are line-gated minimums: 1 per role,
+# 1 + 6 for a fleet of ten decks and more - the measured USA cells sat exactly ON the old 8, so
+# the big-fleet sum is kept, not the small-navy one). Measured on campaign f9321934 at 1944.6 AND 1946.8:
 # every carrier-fighter and carrier-naval-bomber line of ENG, JAP and USA ran at
 # requested = active = EXACTLY 8 factories - the additive sum of the base floor (2)
 # and the carrier-major floor (6) - at both dates. Six independent cells, one number.
@@ -130,23 +132,30 @@ WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = {
 }
 
 # The four floor gates consumed by WA_AI_PRODUCTION_DEFAULT_cv_plane.txt.
-# Base = "has a deck at all"; major = "has a deck fleet the 2-factory floor cannot feed".
+# Base = "has a deck at all"; major = "has a deck fleet the base floor cannot feed".
+# [air-budget] A floor is a VOLUME lever and follows the same decision as the line, the weight
+# and the CANCEL (deck held x line open x tech worthwhile x park below cap): a floor on a role
+# whose line the AI judged not worth a factory forces a model it would never fund. Assumes the
+# should_fund_cv_*_type gates are the only line decision; gone when a carrier line opens or
+# closes anywhere but in WA_AI_PRODUCTION_air.txt.
 WA_AI_PRODUCTION_carrier_planes_floor_fighter = {
-	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
+	WA_AI_PRODUCTION_should_fund_cv_fighter_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
 }
 
 WA_AI_PRODUCTION_carrier_planes_floor_nav_bomber = {
-	WA_AI_PRODUCTION_production_carrier_planes_base_ratios = yes
+	WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
 }
 
 WA_AI_PRODUCTION_carrier_planes_major_fighter = {
 	WA_AI_PRODUCTION_carrier_planes_major = yes
+	WA_AI_PRODUCTION_should_fund_cv_fighter_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
 }
 
 WA_AI_PRODUCTION_carrier_planes_major_nav_bomber = {
 	WA_AI_PRODUCTION_carrier_planes_major = yes
+	WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
 }

@@ -56,13 +56,20 @@ Fighter floor 40 %: `w_fighter = max(60, others × 40 / 60)`. All six open: othe
 Carrier pool (separate engine pool, sized from deck capacity, no floor): `cv_fighter` 50,
 `cv_cas` 30, `cv_naval_bomber` 50 — fighters and naval bombers at parity because the cv ratio also
 sets the AI's deck composition (owner ruling 2026-09-09) — each funded while the country holds a deck AND its line is open
-(`WA_AI_PRODUCTION_should_fund_cv_<type>_type`). Carrier naval bombers ride the naval-bomber line.
+(`WA_AI_PRODUCTION_should_fund_cv_<type>_type`). Carrier naval bombers have their own line
+(`should_open_cv_naval_bomber_line`: deck, naval rung, the `naval_cap_carrier` pair on the carrier
+archetype, not the BoB programme) and their own purge key — the land naval line's archetype and
+oceanic-enemy terms are about land-based maritime air and do not govern a deck.
 A carrier navy outside the archetype (ENG) therefore weighs cv_naval_bomber only. **This is a
 value change**: the removed static block gave every deck-holding navy cv_fighter 150 / cv_naval
 100, so ENG's carrier pool went 60 % fighters; it is now 100 % naval bombers, the shape campaign
-f9321934 measured as ENG's waste. Its carrier fighters come from the deck-gated min-factory
-floors of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt` alone (ASSUMED a floor builds through the
--1000 variant CANCEL — phase 0b). Owner ruling Q8 (2026-09-09): carrier FIGHTERS follow the
+f9321934 measured as ENG's waste. The min-factory floors of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`
+(1 base per role, +6 for a fleet of ten decks and more) are gated on the same funded-type decision,
+so floor, weight, CANCEL and purge share one decision. MEASURED (owner screenshot, ENG 1936): a
+floor REQUESTS factories through the -1000 variant CANCEL, which is why a floor on a closed line
+was a defect. A deck holder below its carrier-fighter rung builds no carrier fighters until the
+rung (the `[rung-1940]` ruling: a pre-1940 model is not worth a factory) — a 1-factory deck-only
+fallback was considered and not taken. Owner ruling Q8 (2026-09-09): carrier FIGHTERS follow the
 deck — `should_build_cv_fighters` reads `needs_cv_planes` (holds a carrier), not the
 `is_carrier_navy` archetype — so every deck holder with a worthwhile rung opens the line, gets the
 weight and keeps the floors; the CANCEL and the purge follow the same decision. Carrier CAS stays
@@ -119,7 +126,8 @@ country carrying hundreds of persistent `unit_ratio` entries has a flapping deci
 
 ## 7. Retuning
 
-- A weight or the floor: `common/script_constants/wa_ai_production.txt` `air_budget` — full restart,
+- A weight or the fighter floor: `common/script_constants/wa_ai_production.txt` `air_budget` (the
+  carrier min-factory floors are `ai_strategy` literals in `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`) — full restart,
   the reconcile diffs against stored books.
 - A cap: `air` group, cap and `_reopen` together.
 - A tech rung or an excluded model: `tools/air_tech_registry.json`, then

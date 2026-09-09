@@ -284,29 +284,32 @@ WA_AI_PRODUCTION_should_build_naval_bombers = {
 		}
 	}
 	if = {
-		limit = { WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes }
-		if = {
-			limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier type = naval_bomber }
-		}
-		else = {
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier_reopen type = naval_bomber }
-		}
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap type = naval_bomber }
 	}
 	else = {
-		if = {
-			limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap type = naval_bomber }
-		}
-		else = {
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_reopen type = naval_bomber }
-		}
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_reopen type = naval_bomber }
 	}
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_drops_naval_air_in_eastern_war = yes }
 		NOT = { any_enemy_country = { WA_AI_CONFIG_is_eastern_continental_power = yes } }
 	}
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
+}
+
+# Carrier naval bombers: their own want, on the deck and the carrier archetype's park - NOT the
+# land naval line, whose archetype / oceanic-enemy / coast terms are about land-based maritime air.
+# The naval_cap_carrier pair is this archetype's bar; the land line reads naval_cap.
+WA_AI_PRODUCTION_should_build_cv_naval_bombers = {
+	WA_AI_PRODUCTION_needs_cv_planes = yes
+	WA_AI_PRODUCTION_has_worthwhile_naval_bomber = yes
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_naval_bomber }
+		check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe < constant:wa_ai_production.air.naval_cap_carrier }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@cv_small_naval_bomber_airframe < constant:wa_ai_production.air.naval_cap_carrier_reopen }
+	}
 }
 
 WA_AI_PRODUCTION_should_build_strategic_bombers = {
@@ -544,6 +547,11 @@ WA_AI_PRODUCTION_should_open_scout_plane_line = {
 	WA_AI_PRODUCTION_should_build_scout_planes = yes
 }
 
+WA_AI_PRODUCTION_should_open_cv_naval_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_cv_naval_bombers = yes
+}
+
 WA_AI_PRODUCTION_should_open_cv_fighter_line = {
 	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 	WA_AI_PRODUCTION_should_build_cv_fighters = yes
@@ -608,8 +616,7 @@ WA_AI_PRODUCTION_should_fund_heavy_fighter_type = {
 }
 
 # Carrier pool - the engine sizes it from deck capacity and splits it by the cv_* unit_ratio, so a
-# type is funded only while the country holds a deck AND its line is open. Carrier naval bombers
-# have no line of their own: they ride the naval-bomber line (one purge key for both archetypes).
+# type is funded only while the country holds a deck AND its line is open.
 WA_AI_PRODUCTION_should_fund_cv_fighter_type = {
 	WA_AI_PRODUCTION_needs_cv_planes = yes
 	WA_AI_PRODUCTION_should_open_cv_fighter_line = yes
@@ -622,5 +629,5 @@ WA_AI_PRODUCTION_should_fund_cv_cas_type = {
 
 WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = {
 	WA_AI_PRODUCTION_needs_cv_planes = yes
-	WA_AI_PRODUCTION_should_open_naval_bomber_line = yes
+	WA_AI_PRODUCTION_should_open_cv_naval_bomber_line = yes
 }
