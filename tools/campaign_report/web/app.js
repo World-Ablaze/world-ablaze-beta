@@ -53,7 +53,7 @@ async function boot(text) {
   const shortDate = value => monthFormatter.format(new Date(value));
   const fmt = (n, digits = 0) => {if(!finite(n))return "—";if(!numberFormatters.has(digits))numberFormatters.set(digits,new Intl.NumberFormat("en-GB",{maximumFractionDigits:digits}));return numberFormatters.get(digits).format(n);};
   function compact(n) { if (!finite(n)) return "—"; const a = Math.abs(n); return a >= 1e6 ? `${fmt(n/1e6,1)} M` : a >= 1e3 ? `${fmt(n/1e3,1)} k` : fmt(n,Math.abs(n)<10 ? 1 : 0); }
-  const S = {tags:new Set(D.default_tags.filter(t => allTags.includes(t))),from:0,to:snapshots.length-1,at:snapshots.length-1,tab:"overview",force:"land",scope:"controlled",resource:"steel",equipment:"tanks",families:new Set(),percent:false,indexed:false,hidden:new Set(),convoy:"month"};
+  const S = {tags:new Set(D.default_tags.filter(t => allTags.includes(t))),from:0,to:snapshots.length-1,at:snapshots.length-1,tab:"overview",force:"land",scope:"controlled",resource:"steel",equipment:"tanks",families:new Set(),unitTypes:new Set(),percent:false,indexed:false,hidden:new Set(),convoy:"month"};
   const tabs = {overview:["Overview","Compare capabilities, follow their evolution, and identify pressures to investigate."],forces:["Forces","Compare force sizes and inspect the composition behind the totals."],industry:["Industry & resources","Track installed industry and the balance of resources."],equipment:["Equipment","Stockpiles, deployed equipment, recorded requests and assigned factories — army, tanks and air."],wars:["Wars & casualties","Follow casualties in the context of the wars included in each observation."],country:["Country status","Stability, war support, command power, and available experience."]};
   const tags = () => allTags.filter(t => S.tags.has(t));
   const current = tag => snapshots[S.at].countries[tag];
@@ -147,7 +147,7 @@ async function boot(text) {
     if(options.note || indexWarnings.length)card.insertAdjacentHTML("beforeend",`<div class="chart-note">${esc(options.note || "")}${indexWarnings.length?` Cannot rebase: ${esc(indexWarnings.join(", "))}.`:""}</div>`);
     return card;
   }
-  function appendMetric(parent,id,options={}) {const m=metric(id);parent.append(chart(m.label,metricSeries(id),percentIds.has(id)?"%":m.unit,{...options,note:options.note ?? m.note}));}
+  function appendMetric(parent,id,options={}) {const m=metric(id);parent.append(chart(m.label,options.series || metricSeries(id),percentIds.has(id)?"%":m.unit,{...options,note:options.note ?? m.note}));}
   // Column sorting for every data table: click a header for ascending, again for descending, a
   // third time for the original order. Numbers sort numerically (formatted "1,234" and "-5" included),
   // anything else alphabetically; missing values ("—" or empty) always sink to the bottom. Rows are
@@ -193,13 +193,24 @@ async function boot(text) {
     el.innerHTML=`<div class="chart-header"><div><h3>${esc(labelCountry(tag))}</h3><p>${esc(title)} · ${fmt(total)} in total</p></div><div class="chart-tools"><button>Detail</button></div></div>${entries.length?`<div class="stack-bar">${top.map(([name,n],i)=>`<span class="stack-segment" style="width:${total?Math.max(0,n/total*100):0}%;background:${palette[i%palette.length]}" title="${esc(labelType(name))} : ${fmt(n)}"></span>`).join("")}</div>${top.map(([name,n],i)=>`<div class="composition-row"><span class="type-name" title="${esc(name)}">${esc(labelType(name))}</span><div class="track"><div class="bar" style="--bar-color:${palette[i%palette.length]};width:${top[0][1]>0?Math.max(0,n/top[0][1]*100):0}%"></div></div><span class="amount">${S.percent&&total?`${fmt(n/total*100,1)} %`:fmt(n)}</span></div>`).join("")}`:`<div class="chart-empty">${counts?"No units recorded.":"Data unavailable."}</div>`}`;
     el.querySelector("button").onclick=()=>showTable(`${labelCountry(tag)} · ${title}`,["Type","Count","Share %"],entries.map(([k,v])=>[labelType(k),v,total?v/total*100:0]),`${snapshots[S.at].file} · ${dateText(times[S.at])}`);parent.append(el);
   }
-  function forces(){const el=$("content"),bar=controlBar();segment(bar,[["land","Army"],["sea","Navy"],["air","Air"]],S.force,v=>S.force=v);
+  function forces(){const el=$("content"),bar=controlBar();segment(bar,[["land","Army"],["sea","Navy"],["air","Air"]],S.force,v=>{S.force=v;S.unitTypes=new Set();});
+    const section_=S.force==="land"?"army":S.force==="sea"?"navy":"air",typeWhat=S.force==="land"?"division families":S.force==="sea"?"ship types":"aircraft roles";
+    const typeKeys=[...new Set(snapshots.slice(S.from,S.to+1).flatMap(s=>tags().flatMap(t=>Object.keys(s.countries[t]?.[section_]?.types || {}))))].sort((a,b)=>labelType(a).localeCompare(labelType(b),"en"));
+    S.unitTypes=new Set([...S.unitTypes].filter(k=>typeKeys.includes(k)));
+    if(typeKeys.length)checkPicker(bar,typeKeys,{label:"Types",what:typeWhat,selected:S.unitTypes,apply:v=>S.unitTypes=v,keep:"keepTypePanel"});
     const percent=document.createElement("label");percent.innerHTML=`<input type="checkbox" ${S.percent?"checked":""}> Composition in %`;percent.querySelector("input").onchange=e=>{S.percent=e.target.checked;render();};bar.append(percent);
-    const charts=grid();if(S.force==="land"){appendMetric(charts,"divisions");appendMetric(charts,"army_manpower");}else if(S.force==="sea"){appendMetric(charts,"ships");appendMetric(charts,"dockyards");appendMetric(charts,"admirals",{indexable:false});}else{appendMetric(charts,"aircraft");appendMetric(charts,"aircraft_stock");}
-    el.append(heading("Force composition",dateText(times[S.at])));const comps=grid();tags().forEach(tag=>{const c=current(tag),available=finite(c?.metrics?.[S.force==="land"?"divisions":S.force==="sea"?"ships":"aircraft"]);composition(comps,tag,available?c?.[S.force==="land"?"army":S.force==="sea"?"navy":"air"]?.types:null,S.force==="land"?"Divisions by family":S.force==="sea"?"Ships by type":"Aircraft by role");});
+    // The count metric of the current force is re-summed from the picked types, so the curve
+    // answers the same question as the composition below it; the other charts have no type split.
+    const countId=S.force==="land"?"divisions":S.force==="sea"?"ships":"aircraft",typeList=[...S.unitTypes].map(labelType).join(", ");
+    const typed=S.unitTypes.size?{subtitle:`${typeList} only`,series:tags().map(tag=>({name:labelCountry(tag),color:color(tag),
+      meta:{...metric(countId),evidence:"DERIVED",source:`${section_}/types, picked keys summed`,note:`Selected ${typeWhat} only: ${typeList}.`},
+      points:points(s=>{const c=s.countries[tag];return finite(c?.metrics?.[countId])?catSum(pickedTypes(c[section_]?.types)):null;})}))}:{};
+    const charts=grid();if(S.force==="land"){appendMetric(charts,"divisions",typed);appendMetric(charts,"army_manpower");}else if(S.force==="sea"){appendMetric(charts,"ships",typed);appendMetric(charts,"dockyards");appendMetric(charts,"admirals",{indexable:false});}else{appendMetric(charts,"aircraft",typed);appendMetric(charts,"aircraft_stock");}
+    if(S.unitTypes.size)el.append(notice(`Type filter: ${typeList}. The "${metric(countId).label}" curve, the compositions, their shares and the template table below cover the selected types only; the other trend charts stay at the country total.`));
+    el.append(heading("Force composition",dateText(times[S.at])));const comps=grid();tags().forEach(tag=>{const c=current(tag),available=finite(c?.metrics?.[S.force==="land"?"divisions":S.force==="sea"?"ships":"aircraft"]);composition(comps,tag,available?pickedTypes(c?.[section_]?.types):null,S.force==="land"?"Divisions by family":S.force==="sea"?"Ships by type":"Aircraft by role");});
     if(S.force==="land"){
       el.append(heading("Division templates","Composition at the inspection date"));
-      const rows=tags().flatMap(tag=>(current(tag)?.army?.templates || []).map(t=>[countryCell(tag),esc(t.name || t.id),esc(labelType(t.family)),fmt(t.count),fmt(t.manpower)]));
+      const rows=tags().flatMap(tag=>(current(tag)?.army?.templates || []).filter(t=>unitTypePicked(t.family)).map(t=>[countryCell(tag),esc(t.name || t.id),esc(labelType(t.family)),fmt(t.count),fmt(t.manpower)]));
       if(rows.length)el.append(tablePanel(["Country","Template","Family","Divisions","Men present"],rows));
       el.append(notice("Counts describe commanded units. Foreign manpower contributions and expeditionary forces require reconciliation before country totals can be combined."));
       countryPanels(section(el,"Generals and field marshals","Unit leaders the country holds at each save, one panel per country"),["generals","field_marshals"],"leaders",{indexable:false});
@@ -232,33 +243,37 @@ async function boot(text) {
   }
   // Registry entries without a `name` are the base chassis; the game displays their localised key.
   const variantName=v=>(v.name&&v.name!==v.definition)?v.name:((D.equipment_names||{})[v.definition]||v.name||v.definition||v.id);
-  const domainOf={army:"army",tanks:"armor",air:"air"},domainLabel={army:"Army equipment",tanks:"Tanks and derivatives",air:"Aircraft"};
+  const domainOf={army:"army",tanks:"armor",air:"air",trains:"rail"},domainLabel={army:"Army equipment",tanks:"Tanks and derivatives",air:"Aircraft",trains:"Trains"};
   const familyPicked=k=>S.families.size===0||S.families.has(k);
   function equipmentFamilies(country){const fs=country?.equipment?.families;if(!fs)return [];const d=domainOf[S.equipment];return Object.entries(fs).filter(([k,f])=>f.domain===d&&familyPicked(k)).map(([,f])=>f);}
   function equipmentVariants(country){const d=domainOf[S.equipment];return (country?.equipment?.variants || []).filter(v=>v.domain===d&&familyPicked(v.family));}
-  // Additive family filter: a dropdown of checkboxes; several families add up, none checked = all.
-  function familyPicker(bar,keys,what){const box=document.createElement("div");box.className="family-filter";const picked=keys.filter(k=>S.families.has(k));
-    box.innerHTML=`<label>Families</label><button type="button" class="family-toggle" aria-expanded="false">${esc(picked.length?picked.length===1?labelType(picked[0]):`${picked.length} families`:`All ${what.toLowerCase()}`)} <span>⌄</span></button><div class="family-panel" hidden><div class="family-actions"><button type="button" data-act="all">All</button><button type="button" data-act="none">Clear</button></div><div class="family-options">${keys.map(k=>`<label><input type="checkbox" value="${esc(k)}" ${S.families.has(k)?"checked":""}> ${esc(labelType(k))}</label>`).join("")}</div></div>`;
+  const unitTypePicked=k=>S.unitTypes.size===0||S.unitTypes.has(k);
+  const pickedTypes=counts=>counts?Object.fromEntries(Object.entries(counts).filter(([k])=>unitTypePicked(k))):counts;
+  // Additive checkbox dropdown: several keys add up, none checked = all. `only` isolates one row.
+  function checkPicker(bar,keys,{label,what,selected,apply,keep}){const box=document.createElement("div");box.className="family-filter";const picked=keys.filter(k=>selected.has(k));
+    box.innerHTML=`<label>${esc(label)}</label><button type="button" class="family-toggle" aria-expanded="false">${esc(picked.length?picked.length===1?labelType(picked[0]):`${picked.length} selected`:`All ${what.toLowerCase()}`)} <span>⌄</span></button><div class="family-panel" hidden><div class="family-actions"><button type="button" data-act="all">All</button><button type="button" data-act="none">Clear</button></div><div class="family-options">${keys.map(k=>`<div class="family-row"><label><input type="checkbox" value="${esc(k)}" ${selected.has(k)?"checked":""}> <span>${esc(labelType(k))}</span></label><button type="button" class="only-btn" data-only="${esc(k)}" title="Select only ${esc(labelType(k))}">only</button></div>`).join("")}</div></div>`;
     const panel=box.querySelector(".family-panel"),toggle=box.querySelector(".family-toggle");toggle.onclick=e=>{e.stopPropagation();panel.hidden=!panel.hidden;toggle.setAttribute("aria-expanded",String(!panel.hidden));};
     panel.onclick=e=>e.stopPropagation();
-    panel.querySelectorAll("input").forEach(input=>input.onchange=()=>{if(input.checked)S.families.add(input.value);else S.families.delete(input.value);S.keepFamilyPanel=true;render();});
-    panel.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{S.families=new Set(b.dataset.act==="all"?keys:[]);S.keepFamilyPanel=true;render();});
-    if(S.keepFamilyPanel){panel.hidden=false;toggle.setAttribute("aria-expanded","true");S.keepFamilyPanel=false;}
+    panel.querySelectorAll("input").forEach(input=>input.onchange=()=>{const next=new Set(selected);if(input.checked)next.add(input.value);else next.delete(input.value);S[keep]=true;apply(next);render();});
+    panel.querySelectorAll("[data-only]").forEach(b=>b.onclick=()=>{S[keep]=true;apply(new Set([b.dataset.only]));render();});
+    panel.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{S[keep]=true;apply(new Set(b.dataset.act==="all"?keys:[]));render();});
+    if(S[keep]){panel.hidden=false;toggle.setAttribute("aria-expanded","true");S[keep]=false;}
     document.addEventListener("click",()=>{panel.hidden=true;toggle.setAttribute("aria-expanded","false");},{once:true});bar.append(box);}
+  function familyPicker(bar,keys,what){checkPicker(bar,keys,{label:"Families",what,selected:S.families,apply:v=>S.families=v,keep:"keepFamilyPanel"});}
   function equipmentSum(country,key){if(!country?.equipment)return null;const values=equipmentFamilies(country);if(values.length)return sumKnown(values.map(v=>v[key]));if(["production_per_day","training_need","deficit"].includes(key))return null;return finite(country.metrics?.[["stock","stock_deficit","active_factories"].includes(key)?"aircraft_stock":"divisions"])?0:null;}
-  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"]],S.equipment,v=>{S.equipment=v;S.families=new Set();});
-    const d=domainOf[S.equipment],air=S.equipment==="air",what=domainLabel[S.equipment];
+  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"],["trains","Trains"]],S.equipment,v=>{S.equipment=v;S.families=new Set();});
+    const d=domainOf[S.equipment],air=S.equipment==="air",rail=S.equipment==="trains",what=domainLabel[S.equipment];
     const keys=[...new Set(snapshots.slice(S.from,S.to+1).flatMap(s=>tags().flatMap(t=>Object.entries(s.countries[t]?.equipment?.families || {}).filter(([,f])=>f.domain===d).map(([k])=>k))))].sort();
     S.families=new Set([...S.families].filter(k=>keys.includes(k)));
     familyPicker(bar,keys,what);
-    el.append(notice(air?"Stockpiles are signed. Aircraft serve in wings, not divisions: the save records no reinforcement request for them, so no shortfall is derived; wings come from the strategic_air section. Daily output is not computed.":"Stockpiles are signed. Reinforcement requests are recorded by compatible family; they cannot be attributed to individual variants. Shortfall = recorded reinforcement requests - stock (DERIVED): requests may include equipment already in transit, so it is pressure, not a certified shortage. Training requirement and daily output are not computed.",true));
+    el.append(notice(rail?"Stockpiles are signed. Trains never enter a division: nothing is deployed and no reinforcement request is recorded for them, so no shortfall is derived. Their factories share the same military lines as army, tank and aircraft equipment. Daily output and the railway capacity they serve are not computed.":air?"Stockpiles are signed. Aircraft serve in wings, not divisions: the save records no reinforcement request for them, so no shortfall is derived; wings come from the strategic_air section. Daily output is not computed.":"Stockpiles are signed. Reinforcement requests are recorded by compatible family; they cannot be attributed to individual variants. Shortfall = recorded reinforcement requests - stock (DERIVED): requests may include equipment already in transit, so it is pressure, not a certified shortage. Training requirement and daily output are not computed.",true));
     // Captured or received stock explains a family a country never produced (SOV medium tank
     // destroyers after Germany's collapse): say it beside the charts instead of leaving a puzzle.
     const foreignLines=tags().map(tag=>{const vs=equipmentVariants(current(tag));const total=sumKnown(vs.map(v=>Math.max(0,v.stock ?? 0))),foreign=sumKnown(vs.filter(v=>v.creator&&v.creator!==tag).map(v=>Math.max(0,v.stock ?? 0)));return total>0&&foreign/total>=.5?`${labelCountry(tag)}: ${fmt(foreign)} of ${fmt(total)} in stock (${Math.round(foreign/total*100)} %) were built by other countries (captured or received), factories assigned ${fmt(equipmentSum(current(tag),"active_factories"))}.`:null;}).filter(Boolean);
     if(foreignLines.length)el.append(notice(`Foreign-built stock at ${dateText(times[S.at])} — ${foreignLines.join(" ")}`));
     const meta=(key,unit="equipment")=>({unit,evidence:"DERIVED",source:key==="stock"?"production/equipments → variant registry":key==="active_factories"?"production/military_lines":air&&key==="deployed"?"strategic_air/TAG/air_wing_pool/air_wings/equipment → variant registry":`units/division → equipment/${key}`,note:air&&key==="deployed"?"Aircraft listed in wings with their variant amounts, aggregated by airframe family.":"Aggregated by equipment-definition family."});
     const g=grid();
-    const charts=air?[["stock","Aircraft stockpile","aircraft"],["deployed","Aircraft in wings","aircraft"],["active_factories","Factories assigned to aircraft","factories"]]:[["stock",`${what}: stockpile`,"equipment"],["deployed",`${what}: in divisions`,"equipment"],["reinforcement_need","Recorded reinforcement requests","equipment"],["active_factories",`Factories assigned to ${what.toLowerCase()}`,"factories"]];
+    const charts=rail?[["stock","Train stockpile","trains"],["active_factories","Factories assigned to trains","factories"]]:air?[["stock","Aircraft stockpile","aircraft"],["deployed","Aircraft in wings","aircraft"],["active_factories","Factories assigned to aircraft","factories"]]:[["stock",`${what}: stockpile`,"equipment"],["deployed",`${what}: in divisions`,"equipment"],["reinforcement_need","Recorded reinforcement requests","equipment"],["active_factories",`Factories assigned to ${what.toLowerCase()}`,"factories"]];
     for(const [key,title,unit] of charts){const m=meta(key,unit);g.append(chart(title,countriesSeries(c=>equipmentSum(c,key),m),unit,{note:m.note}));}
     if(air){
       // Roles come from the airframe families of the current selection, so both compositions follow the family filter.
@@ -272,7 +287,7 @@ async function boot(text) {
     const lineMeta=(key,note)=>({unit:"factories",evidence:"MEASURED",source:`production/military_lines/${key}`,note});
     const fg=section(el,"Factories requested, assigned and damaged","Per country · what the lines ask for, what they received, and how much of that is currently damaged");
     tags().forEach(tag=>{const series=[["requested_factories","Requested (theoretical)",lineMeta("requested_factories","Factories the lines of the selected family ask for.")],["active_factories","Assigned (practical)",lineMeta("active_factories","Factories the engine actually assigned; a queued line without the field counts 0.")],["damaged_factories","Assigned but damaged",lineMeta("damaged_factories","Assigned factories currently damaged (bombing, sabotage, occupation); the field is omitted when 0.")]].map(([key,name,meta],i)=>({name,color:i===2?"#a8483d":palette[i],meta,points:points(s=>linesSum(s.countries[tag],key))}));fg.append(chart(labelCountry(tag),series,"factories",{indexable:false}));});
-    if(!air){
+    if(!air&&!rail){
       // Stock and recorded demand on one panel per country, with the shortfall between them.
       const shortfallMeta={unit:"equipment",evidence:"DERIVED",source:"max(0, reinforcement requests - stock)",note:"Requests may include equipment already in transit: pressure, not a certified shortage."};
       const shortfall=c=>{const need=equipmentSum(c,"reinforcement_need"),stock=equipmentSum(c,"stock");return finite(need)&&finite(stock)?Math.max(0,need-stock):null;};

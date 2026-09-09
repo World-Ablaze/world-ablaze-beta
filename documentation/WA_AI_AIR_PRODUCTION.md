@@ -22,7 +22,7 @@ when the table alone would put fighters under 40 % of the pool.
 | **Line** | One `ai_strategy` block per archetype-and-mode, enabled by `WA_AI_PRODUCTION_should_open_<line>_line`. | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` |
 | **Weight** | `constant:wa_ai_production.air_budget.weight_<type>`; share = weight / Σ open weights. | `common/script_constants/wa_ai_production.txt` |
 | **Book** | `WA_AI_AIR_BUDGET_<type>`, the value currently applied to the role id (country variable, save-visible). | `common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt` |
-| **Purge book** | `WA_AI_PRODUCTION_AIR_open_<archetype>` country flag: the line funded this archetype at the last pulse. Its open→closed edge fires the archetype's `AI_purge_*` flag (1 day), which `can_be_produced` reads — the engine cancels the running lines. | `common/scripted_effects/WA_production_strategy_effects.txt` (`WA_aircraft_production_strategies`) |
+| **Purge book** | `WA_AI_PRODUCTION_AIR_open_<archetype>` country flag: the line funded this archetype at the last pulse. Its open→closed edge fires the archetype's `AI_purge_*` flag (1 day), which `can_be_produced` reads. That edge fires ONCE and is **not on its own sufficient to cancel a running line**: MEASURED on campaign `2ee8a4ba`, SOV's five `small_naval_bomber_airframe` lines survived the edge and kept 287 → 3 factories over five months, their efficiency climbing monotonically 17 % → 110 % (never cancelled and re-added), while the archetypes that also carry a `_CANCEL` block were deleted from the save within one month of the same edge (USA fighters 1943.12→1944.1, ENG fighters 1944.5→1944.6, reopening at efficiency 9.00 = engine base). Treat the purge as the *ban on a new line* and the `_CANCEL` block as the *continuous denial*; an archetype with only the first keeps building. | `common/scripted_effects/WA_production_strategy_effects.txt` (`WA_aircraft_production_strategies`) |
 
 ## 3. Layers
 
@@ -82,7 +82,8 @@ air_attack per IC 1.91 (attacker) vs 1.90 (heavy fighter) vs 1.14 (CAS).
 ## 5. Closing a line
 
 Two closures. **Hard** (archetype not allowed, tech not worthwhile, Battle of Britain programme,
-bomber bases lost, own-air-arm test): the purge book cancels the running lines. **Cap** (park at its
+bomber bases lost, own-air-arm test): the purge book bans a new line, and the archetype's `_CANCEL`
+block is what actually ends the running one (see the Purge book row in §2 for the measurement). **Cap** (park at its
 cap): the line closes at the cap and REOPENS only at the `_reopen` bar (90 %), read through the purge
 book — a Schmitt pair, so a mature park at its cap does not flip the line, and the monthly budget
 entry, on every pulse. No book yet (fresh 1936, a save from a build before this system, a
