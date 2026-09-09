@@ -176,7 +176,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 ### air-budget — SHIPPED-UNTESTED (2026-09-09)
 - State: phases 1-4 committed; harness runs pasted below for GER / ENG / MAL / USA on the
   pre-retune constants. One `event wa_airb.4 USA` on the 50/50 + naval 10 constants (cold boot)
-  moves this to TESTED; phase 5 (TLM probe + campaign) and phase 0b remain.
+  moves this to TESTED; phase 0b remains optional. Phase 5 (2026-09-09): TLM family
+  `WA_TLM_air_*` (standing, v36 - `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §6g), the counter
+  `WA_TLM_air_emit_n` written by the 18 emitters, the closing criterion re-stated on it. Boot
+  test owed (WA_TLM_core.txt touched: a parse fault there silences every telemetry family).
 - Owner order 2026-09-09 ("je veux une refactorisation du système de production aérien pour l'IA
   ... on veut par exemple que la somme des usines allouées sur les chasseurs fasse au moins 40 % du
   total des usines aériennes ... une IA chasseurs + cas doit faire du 60/40"). Intended behaviour:
@@ -447,15 +450,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   factories (drain) or is it untouched (then the purge stays for cap closures too). (c) `tag GER`
   1939.9, `imgui show ai-strategy`: paste every `unit_ratio` / `equipment_production_factor` /
   `air_factory_balance` row - the MEASURED baseline the phase-3 weights are calibrated against.
-- Verification (campaign): the save-side "line open" fingerprint is the country flag set
-  `WA_AI_PRODUCTION_AIR_open_<archetype>` (replaces the `WORLD_ABLAZE_PRODUCTION_*` flags; a line
-  whose block should be armed with no such flag on the country = the pulse is not running); phase
-  3 adds `wa_tlm_air_w_<type>` (weight emitted) and the share of air factories per type read from
-  the save's production lines.
-- Closed when: on one scored campaign, GER 1939-1941 fighter share of air factories is within
-  [40 %, 60 %] on 3 consecutive monthly saves; USA and ENG strategic share >= 25 % after 1942.1; no
-  country carries > 200 persistent `unit_ratio` entries; `check_ai_layers` baseline lower than
-  before phase 2.
+- Verification (campaign): `tlm <TAG>` -> `wa_tlm_air_w_fighter_pct` (the decision, exact),
+  `wa_tlm_air_park_fighter` / `_park_bomber` (the effect, 6-month window), `wa_tlm_air_emit_n`
+  (entry accumulation), `wa_tlm_air_types_open`; second signal `wa_ai_air_budget_<type>` (books)
+  and the purge books `wa_ai_production_air_open_<archetype>` (a line whose block should be armed
+  with no such flag = the pulse is not running). The share of air FACTORIES per type is read from
+  the save's production lines by the analysis script (script cannot read it); it must match
+  `w_fighter_pct` within the engine's own allocation noise.
+- Closed when: on one scored campaign, GER 1939-1941 `wa_tlm_air_w_fighter_pct` in [40, 60] AND
+  its fighter share of air factories (production lines) within [40 %, 60 %] on 3 consecutive
+  monthly saves; USA and ENG strategic share >= 25 % after 1942.1; `wa_tlm_air_emit_n` < 200 on
+  every country at the last save; `check_ai_layers` baseline lower than before phase 2 (DONE:
+  306 -> 305).
 
 ### pc-lost-state-purge — PARKED (2026-09-09)
 - Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: TESTED 2026-09-08 (owner console run pasted); the only item owed is the campaign probe (`wa_tlm_pc_lost_n` > 0 on a side-switch) - nothing to do in a session until a scored campaign is read.

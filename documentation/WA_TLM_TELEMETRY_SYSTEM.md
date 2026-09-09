@@ -304,6 +304,12 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_armor_gap_n` | counter | same site, only while `armor_gap = 1` | standing — months the gap held. One month at a class handoff is a transient; a run is the defect | v34 |
 | `WA_TLM_armor_gap_first_t` / `_gap_t` | stamps | same site, `_first_t` under a `= 0` guard | standing — brackets the gap run (rule 2: never a bare one-shot stamp). Read `_gap_n > 0` first, not `_first_t > 0` | v34 |
 | `WA_TLM_armor_last_t` | stamp | monthly, all AI (written with the family's widest gauge) | `armor_*` absence contract | v34 |
+| `WA_TLM_air_w_fighter_pct` | gauge (derived from the six land budget books) | monthly, all AI | `[air-budget]` standing (§6g) | v36 |
+| `WA_TLM_air_types_open` | gauge | monthly, all AI | `[air-budget]` standing | v36 |
+| `WA_TLM_air_floor` | gauge (0/1) | monthly, all AI | `[air-budget]` standing | v36 |
+| `WA_TLM_air_park_fighter` / `WA_TLM_air_park_bomber` | gauges, deployed airframes by archetype family | monthly, all AI | `[air-budget]` standing (verified effect) | v36 |
+| `WA_TLM_air_emit_n` | counter, one per emitted `unit_ratio` entry | at the emitter (monthly reconcile + startup) | `[air-budget]` standing (entry accumulation) | v36 |
+| `WA_TLM_air_last_t` | stamp | monthly, all AI | `[air-budget]` absence contract | v36 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
 | `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
@@ -684,6 +690,34 @@ three books at 0 means the two layers agree the country wants no armour, and is 
 
 **Probe**: `tlm <TAG> <saves>` → `armor_gap_n`, `armor_gap_first_t`, `armor_gap_t`. Pass = every
 major reads `armor_gap_n ≤ 1`. Absence contract per §3.5.
+
+## 6g. Air production split (standing, v36)
+
+`[air-budget]`. The AI's air factories are split by runtime `unit_ratio` weights
+(`WA_AI_AIR_BUDGET_reconcile`, `documentation/WA_AI_AIR_PRODUCTION.md`); the owner's symptom was
+"GER 20 % fighters / 80 % bombers" and no save named the split. Standing under §3.8 criterion 3:
+"what share does the AI give fighters, and does the park follow" is asked of every campaign.
+
+| Metric | Reads |
+| --- | --- |
+| `WA_TLM_air_w_fighter_pct` | fighter weight over the sum of the six land books, 0-100 — the DECISION |
+| `WA_TLM_air_types_open` | how many land types carry a weight (0-6) |
+| `WA_TLM_air_floor` | 1 while the 40 % floor holds the fighter weight above its table value |
+| `WA_TLM_air_park_fighter` / `_park_bomber` | deployed airframes, fighter archetypes vs bomber archetypes — the EFFECT; the park share must drift towards the weight share over months |
+| `WA_TLM_air_emit_n` | weight entries emitted since 1936 (each is one persistent `unit_ratio` entry) — the entry-accumulation reading; hundreds = a flapping decision |
+| `WA_TLM_air_last_t` | freshness |
+
+**Reading rule.** `w_fighter_pct` is exact and monthly; the park share lags it by the production
+time of the wings and the losses of the front, so score the park over a 6-month window, never one
+save. `types_open = 0` with `last_t > 0` is a country with no air line (minor under a patron):
+correct, not a defect. Script cannot read factories per production line, so the "share of air
+FACTORIES" of the subject's closing criterion is read from the save's production lines by the
+analysis script, with `w_fighter_pct` as the decision it must match. Second signal:
+`wa_ai_air_budget_<type>` (the books) and `wa_ai_production_air_open_<archetype>` (the purge books).
+
+**Probe**: `tlm <TAG> <saves>` → `air_w_fighter_pct`, `air_park_fighter`, `air_park_bomber`,
+`air_emit_n`. Pass = GER 1939-41 `w_fighter_pct` in [40, 60] on 3 consecutive saves and
+`air_emit_n` < 200 on every country at the last save.
 
 ## 7. Adding a metric — checklist for authors
 

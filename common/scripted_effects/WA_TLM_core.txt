@@ -55,7 +55,7 @@
 #	v31 sq_adds_by_type^8            fuel silos joined the shared-slot standard ([silo-breadth])
 #	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
 #	v34 armor_*                      armour-template coverage ([armor-class-handoff])
-@WA_TLM_VERSION = 35
+@WA_TLM_VERSION = 36
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -107,6 +107,19 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap_first_t } } set_variable = { WA_TLM_armor_gap_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_armor_gap_t } } set_variable = { WA_TLM_armor_gap_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_armor_last_t } } set_variable = { WA_TLM_armor_last_t = 0 } }
+
+	# [air-budget] air production split (standing, v36; write sites: WA_TLM_sample_air below and
+	# the WA_AI_AIR_BUDGET_emit_* effects). Standing under 3.8 criterion 3: "what share of its air
+	# pool does the AI give fighters, and does the park follow" is a system-health invariant asked
+	# of every campaign. Second signal: wa_ai_air_budget_<type> (the books the weights are copied
+	# from) and the deployed park read by the two _park gauges.
+	if = { limit = { NOT = { has_variable = WA_TLM_air_w_fighter_pct } } set_variable = { WA_TLM_air_w_fighter_pct = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_types_open } } set_variable = { WA_TLM_air_types_open = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_floor } } set_variable = { WA_TLM_air_floor = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_park_fighter } } set_variable = { WA_TLM_air_park_fighter = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_park_bomber } } set_variable = { WA_TLM_air_park_bomber = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_emit_n } } set_variable = { WA_TLM_air_emit_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_air_last_t } } set_variable = { WA_TLM_air_last_t = 0 } }
 
 	# [scripted-invasion-reservation] target-reservation stamps (v30; write site:
 	# WA_AI_LANDING_stamp_reservation, WA_AI_LANDING_effects.txt). Counter = stamp sweeps
@@ -411,6 +424,7 @@ WA_TLM_monthly_sample = {
 	}
 	WA_TLM_sample_composition = yes
 	WA_TLM_sample_armor_templates = yes
+	WA_TLM_sample_air = yes
 	WA_TLM_sample_navy = yes
 	WA_TLM_sample_pc = yes
 	WA_TLM_sample_sq = yes
@@ -691,6 +705,58 @@ WA_TLM_sample_armor_templates = {
 
 	# tlm: armor_last_t - family freshness stamp - consumer standing
 	set_variable = { WA_TLM_armor_last_t = global.WA_TLM_clock }
+}
+
+############################################################################################################
+#	[air-budget] air production split (standing, v36). Scope: country, is_ai gated by the caller.
+#	w_fighter_pct is the fighter WEIGHT over the sum of the six land books (the decision);
+#	park_fighter / park_bomber are deployed airframes by archetype (the verified effect the
+#	decision must move). floor = 1 when the fighter book sits above its table weight, i.e. the
+#	40 % floor raised it. emit_n counts weight changes at the emitters (entry accumulation).
+############################################################################################################
+WA_TLM_sample_air = {
+	# tlm: air_types_open / air_w_fighter_pct / air_floor - gauges from the budget books - consumer standing
+	set_temp_variable = { _tlm_air_sum = 0 }
+	set_variable = { WA_TLM_air_types_open = 0 }
+	set_temp_variable = { _tlm_air_f = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_fighter } set_temp_variable = { _tlm_air_f = WA_AI_AIR_BUDGET_fighter } }
+	add_to_temp_variable = { _tlm_air_sum = _tlm_air_f }
+	if = { limit = { check_variable = { _tlm_air_f > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cas } add_to_temp_variable = { _tlm_air_sum = WA_AI_AIR_BUDGET_cas } }
+	if = { limit = { check_variable = { WA_AI_AIR_BUDGET_cas > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_tactical } add_to_temp_variable = { _tlm_air_sum = WA_AI_AIR_BUDGET_tactical } }
+	if = { limit = { check_variable = { WA_AI_AIR_BUDGET_tactical > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_strategic } add_to_temp_variable = { _tlm_air_sum = WA_AI_AIR_BUDGET_strategic } }
+	if = { limit = { check_variable = { WA_AI_AIR_BUDGET_strategic > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_naval } add_to_temp_variable = { _tlm_air_sum = WA_AI_AIR_BUDGET_naval } }
+	if = { limit = { check_variable = { WA_AI_AIR_BUDGET_naval > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_heavy_fighter } add_to_temp_variable = { _tlm_air_sum = WA_AI_AIR_BUDGET_heavy_fighter } }
+	if = { limit = { check_variable = { WA_AI_AIR_BUDGET_heavy_fighter > 0 } } add_to_variable = { WA_TLM_air_types_open = 1 } }
+	set_variable = { WA_TLM_air_w_fighter_pct = 0 }
+	if = {
+		limit = { check_variable = { _tlm_air_sum > 0 } }
+		set_variable = { WA_TLM_air_w_fighter_pct = _tlm_air_f }
+		multiply_variable = { WA_TLM_air_w_fighter_pct = 100 }
+		divide_variable = { WA_TLM_air_w_fighter_pct = _tlm_air_sum }
+		round_variable = WA_TLM_air_w_fighter_pct
+	}
+	set_variable = { WA_TLM_air_floor = 0 }
+	if = { limit = { check_variable = { _tlm_air_f > constant:wa_ai_production.air_budget.weight_fighter } } set_variable = { WA_TLM_air_floor = 1 } }
+
+	# tlm: air_park_fighter / air_park_bomber - gauges, deployed airframes (verified effect) - consumer standing
+	set_variable = { WA_TLM_air_park_fighter = num_deployed_planes_with_type@small_fighter_airframe }
+	add_to_variable = { WA_TLM_air_park_fighter = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+	add_to_variable = { WA_TLM_air_park_fighter = num_deployed_planes_with_type@small_fighter_interceptor_airframe }
+	set_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@small_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@fast_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@medium_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@medium_heavy_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@large_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@large_heavy_bomber_airframe }
+	add_to_variable = { WA_TLM_air_park_bomber = num_deployed_planes_with_type@small_naval_bomber_airframe }
+
+	# tlm: air_last_t - family freshness stamp - consumer standing
+	set_variable = { WA_TLM_air_last_t = global.WA_TLM_clock }
 }
 
 ############################################################################################################
