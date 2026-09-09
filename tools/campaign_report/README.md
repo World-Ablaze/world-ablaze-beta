@@ -61,9 +61,9 @@ selected initially; cards and compositions use the last observation in that wind
 | Tab | Views |
 | --- | --- |
 | Overview | Country snapshot, changes within the window, force trends, resource shortfalls |
-| Forces | Army, navy and air totals; generals and field marshals (army), admirals (navy); composition by family/type; division templates |
+| Forces | Army, navy and air totals; generals and field marshals (army), admirals (navy); composition by family/type; division templates. The **Types** filter restricts the count curve (Deployed divisions / Warships / Aircraft), the compositions, their shares and the template table to the chosen division families / ship types / aircraft roles (additive, none ticked = all, `only` isolates one row, `Clear` restores all); the other trend charts stay at the country total |
 | Industry & resources | Installed civilian/military factories and dockyards; three refinery families with hydro variants and active/inactive detail; production, trade, balances and unmet demand |
-| Equipment | Three sub-tabs — Army (infantry, artillery, anti-tank, anti-air, motorized, mechanized), Tanks (chassis families) and Air (airframes): signed stockpiles, deployed equipment and recorded reinforcement requests (land), aircraft in wings with stock and deployed compositions by role (air), assigned factories; variants and raw production-line fields. The family filter is additive: tick several families to add them up, none ticked = all |
+| Equipment | Three sub-tabs — Army (infantry, artillery, anti-tank, anti-air, motorized, mechanized), Tanks (chassis families) and Air (airframes): signed stockpiles, deployed equipment and recorded reinforcement requests (land), aircraft in wings with stock and deployed compositions by role (air), assigned factories; variants and raw production-line fields. The family filter is additive: tick several families to add them up, none ticked = all, `only` isolates one family |
 | Wars & casualties | Counters for wars present at each observation, opponent detail, disappearing relations |
 | Country status | Displayed stability and war support (rebuilt, DERIVED); army/navy/air XP; command power; political power |
 
