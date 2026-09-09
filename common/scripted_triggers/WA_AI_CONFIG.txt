@@ -245,82 +245,31 @@ WA_AI_CONFIG_is_tactical_bombing_airforce = {
 # ============================================================================
 # AIRFORCE ARCHETYPE CONFIGURATIONS
 # ============================================================================
-# These triggers define which specific aircraft archetypes each country uses.
-# Each nation's airforce focuses on different aircraft types based on doctrine.
+# [techtree-capability] SIX triggers were REMOVED from here on 2026-09-09, not stubbed:
+# WA_AI_CONFIG_AIRFORCE_uses_{interceptors, multirole_fighters, strike_bombers, fast_bombers,
+# heavy_fighters, attackers}. Each was a hand-written tag list that MEANT "these are the trees with
+# a Zerstoerer / an interceptor / a schnellbomber", and each said so in its own comment ("Only
+# France has a separate interceptor tech tree", over a list of FRA, ITA and SOV). A tag cannot
+# answer that question and CONFIG is not where it is answered: their eight readers in
+# WA_AI_RESEARCH_air.txt and WA_AI_PRODUCTION_air.txt now call
+# WA_AI_PRODUCTION_has_branch_<line> directly (GENERATED, WA_AI_PRODUCTION_air_tech.txt, from the
+# air registry's rungs plus the folder ownership of common/technology_tags/00_technology.txt - tag
+# OR tree flag, so an ADOPTED air tree is answered on the tree it owns).
+# Do not re-add a tag list here for an archetype the tech data already knows about.
 # ============================================================================
 
-# Fighter archetypes - which type of fighter does the country use
-WA_AI_CONFIG_AIRFORCE_uses_interceptors = {
-	# Interceptors are high-speed point defense fighters (MB.152, Me 163)
-	# Only France has a separate interceptor tech tree
-	OR = {
-		original_tag = FRA
-		original_tag = ITA
-		original_tag = SOV
-	}
-}
-
-WA_AI_CONFIG_AIRFORCE_uses_multirole_fighters = {
-	# Multirole fighters (Fw 190, Typhoon, P-47) combine fighter and ground attack
-	OR = {
-		original_tag = GER
-		original_tag = ENG
-		original_tag = USA
-		original_tag = SOV
-		original_tag = FRA
-		original_tag = ITA
-		original_tag = JAP
-	}
-}
-
-# Bomber archetypes - which bomber type does the country prefer
-WA_AI_CONFIG_AIRFORCE_uses_strike_bombers = {
-	# Strike bombers (Ju 88, Mosquito) are fast precision bombers
-	OR = {
-		original_tag = GER
-		original_tag = ENG
-	}
-}
-
-WA_AI_CONFIG_AIRFORCE_uses_fast_bombers = {
-	# Fast bombers are similar to strike bombers (schnellbomber concept)
-	OR = {
-		original_tag = GER
-		original_tag = ENG
-	}
-}
-
+# [techtree-capability] The ONE archetype still written as a tag list, and on purpose: "heavy
+# strategic" is a sub-class of the strategic bomber (B-24 / B-29 / Lancaster, not B-17) that the air
+# registry does not model - there is no has_worthwhile_heavy_strategic line, so there is no
+# has_branch twin to point at. Its second gate is already WA_AI_CONFIG_is_strategic_bombing_airforce
+# (WA_AI_RESEARCH_needs_heavy_strategic_bombers ANDs the two), so this list is the industrial-scale
+# term, not the tree term. Give the registry a heavy-strategic line and this trigger goes away too.
 WA_AI_CONFIG_AIRFORCE_uses_heavy_strategic = {
 	# Heavy strategic bombers (B-24, B-29, Lancaster) are very heavy bombers
 	# Only strategic bombing nations with industrial capacity use these
 	OR = {
 		original_tag = ENG
 		original_tag = USA
-	}
-}
-
-# Special archetypes - specialized aircraft types
-WA_AI_CONFIG_AIRFORCE_uses_heavy_fighters = {
-	# Heavy fighters (Bf 110, Me 410, Mosquito NF) are twin-engine fighters
-	# Used for night fighting, bomber escort, or Zerstörer role
-	OR = {
-		original_tag = GER
-		original_tag = ENG
-		original_tag = USA
-	}
-}
-
-WA_AI_CONFIG_AIRFORCE_uses_attackers = {
-	# Attackers (IL-2, Hs 129, Bf 110 ground attack) are specialized ground attack
-	# Different from CAS dive bombers - these are armored ground attackers
-	OR = {
-		original_tag = GER
-		original_tag = ENG
-		original_tag = USA
-		original_tag = SOV
-		original_tag = FRA
-		original_tag = ITA
-		original_tag = JAP
 	}
 }
 
@@ -375,8 +324,13 @@ WA_AI_CONFIG_AIRFORCE_needs_british_bases = {
 	original_tag = USA
 }
 
-# Fast (schnell) bomber production lines. Deliberately NOT WA_AI_CONFIG_AIRFORCE_uses_fast_bombers
-# (the research set, GER + ENG): the production set differs, owner to reconcile the two.
+# Fast (schnell) bomber production lines. The research counterpart it used to point at
+# (WA_AI_CONFIG_AIRFORCE_uses_fast_bombers = GER + ENG) is GONE - it was a tag list standing in for
+# a tech-tree fact, and the fact is that the fra, ger and jap air trees carry a fast bomber and the
+# English one does NOT. So most of the divergence the old comment asked the owner to reconcile was
+# the research set being wrong about ENG; what remains is a genuine production choice - this list
+# is GER + JAP, i.e. FRA is allowed the research but not a production line. Reconcile by adding
+# WA_AI_PRODUCTION_has_branch_fast_bomber here if that was never intended.
 WA_AI_CONFIG_AIRFORCE_produces_fast_bombers = {
 	OR = {
 		original_tag = GER
@@ -609,7 +563,6 @@ WA_AI_CONFIG_DIVISIONS_use_armored_divisions = {
 }
 
 
-
 # [mech-window] These five are EXEMPT from WA_AI_CONFIG_DIVISIONS_mechanization_window_open below:
 # they reach the mechanized armour templates by identity, ungated, at any date. Owner scope 2026-08-29
 # - the request was to gate the industrial path, and this list is the [mech-divisions-usa-only]
@@ -683,7 +636,6 @@ WA_AI_CONFIG_DIVISIONS_uses_motorized_hq = {
 WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major = {
 	original_tag = USA
 }
-
 
 
 WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = {
@@ -863,54 +815,16 @@ WA_AI_CONFIG_switch_from_light_to_medium_armor = {
 }
 
 # ============================================================================
-# TANK VARIANT CONFIGURATIONS
+# TANK / MECH VARIANT CONFIGURATIONS - EMPTY, and meant to stay that way
 # ============================================================================
-# These triggers determine if a country uses specific tank variant types
-# ============================================================================
-
-
-WA_AI_CONFIG_DIVISIONS_use_light_tank_destroyers = {
-	OR = {
-		original_tag = ITA
-		original_tag = JAP
-		original_tag = GER
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ============================================================================
-# MECH VARIANT CONFIGURATIONS
-# ============================================================================
-# These triggers determine if a country uses specific tank variant types
+# [techtree-capability] The two triggers that lived here (use_light_tank_destroyers = ITA/JAP/GER,
+# use_mechanized_self_propelled_aa = SOV) were tag lists whose only meaning was "these trees carry
+# the branch". The tree question moved to WA_AI_TECHTREE_has_branch_* and the doctrine half moved
+# down to the ALWAYS-FLAGS section with its fourteen siblings, where a yes/no switch belongs.
+# A new variant switch goes in ALWAYS-FLAGS; a new "which trees have this" question goes in
+# tools/techtree_registry.json. Neither goes here.
 # ============================================================================
 
-
-
-
-
-
-WA_AI_CONFIG_DIVISIONS_use_mechanized_self_propelled_aa = {
-	original_tag = SOV
-}
 
 # ============================================================================
 # INFANTRY CONFIGURATIONS
@@ -971,7 +885,6 @@ WA_AI_CONFIG_DIVISIONS_use_rocket_artillery = {
 }
 
 
-
 # ============================================================================
 # GROUND PRODUCTION SYSTEM CONFIGURATIONS
 # ============================================================================
@@ -979,11 +892,6 @@ WA_AI_CONFIG_DIVISIONS_use_rocket_artillery = {
 # By default, all countries use their existing production logic (always = no)
 # Add countries here as they are tested and migrated to the new system
 # ============================================================================
-
-
-
-
-
 
 
 WA_AI_CONFIG_early_game_army_expansion_override = {
@@ -1358,7 +1266,6 @@ WA_AI_CONFIG_MILITARY_is_western_european_bulwark_bloc = {
 WA_AI_CONFIG_MILITARY_is_german_homeland_power = {
 	original_tag = GER
 }
-
 
 
 # Who actually stands on the colonial frontier. ENG owns the theatre; RAJ is the East-Africa
@@ -1912,6 +1819,23 @@ WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_aa = {
 }
 
 WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_aa = {
+	always = yes
+}
+
+# [techtree-capability] DOCTRINE switch only, like its siblings in the ALWAYS-FLAGS section.
+# The old ITA/JAP/GER tag list was not a doctrine choice at all: it was a hand-copy of "these are
+# the trees that contain a light-TD branch", which is now asked where it belongs, by
+# WA_AI_TECHTREE_has_branch_light_td at the one read site (WA_AI_RESEARCH_needs_light_tank_destroyers).
+# Flipping this to no bars light TDs for everyone, tree or no tree.
+WA_AI_CONFIG_DIVISIONS_use_light_tank_destroyers = {
+	always = yes
+}
+
+# [techtree-capability] DOCTRINE switch only. The old `original_tag = SOV` was a hand-copy of
+# "the Soviet tree is the one with a mechanized SPAA branch"; that question is now asked by
+# WA_AI_TECHTREE_has_branch_mechanized_spaa at the read sites in WA_AI_RESEARCH_tanks.txt, which
+# also admits the German and American trees - they carry the branch too and were silently barred.
+WA_AI_CONFIG_DIVISIONS_use_mechanized_self_propelled_aa = {
 	always = yes
 }
 

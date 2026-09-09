@@ -4,6 +4,17 @@
 # These triggers determine when the AI should prioritize researching tank/mech techs.
 # They are based on strategic desire/config, NOT on whether equipment is already unlocked,
 # to avoid circular logic (AI needs research to unlock, but needs unlock to research).
+#
+# [techtree-capability] Each variant trigger below asks THREE separate questions, one per layer:
+#   WA_AI_TEMPLATES_use_armor_templates      does this country field armour at all
+#   WA_AI_CONFIG_DIVISIONS_use_<variant>     do we WANT this variant (doctrine switch)
+#   WA_AI_TECHTREE_has_branch_<cap>          does this country's TREE contain the branch
+# The third one is new. Every trigger here used to carry the comment "has X tech tree" while
+# asking only the first two - so the tree question was answered by hand-written tag lists inside
+# WA_AI_CONFIG (light TD = "ITA JAP GER", mechanized SPAA = "SOV"). Those lists are gone; the
+# question is now asked against common/technology_tags/00_technology.txt, tag OR tree flag, so a
+# country that ADOPTED another tree (common/decisions/_unique_technologies_adoption.txt sets
+# <x>_technologies_tree_flag) is answered on the tree it actually owns.
 # ============================================================================
 
 WA_AI_RESEARCH_needs_light_armor = {
@@ -83,27 +94,27 @@ WA_AI_RESEARCH_needs_mechanized = {
 # ============================================================================
 
 WA_AI_RESEARCH_needs_mechanized_tank_destroyers = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_mechanized_tank_destroyers = yes
+	WA_AI_TECHTREE_has_branch_mechanized_td = yes
 }
 
 WA_AI_RESEARCH_needs_light_tank_destroyers = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_light_tank_destroyers = yes
+	WA_AI_TECHTREE_has_branch_light_td = yes
 }
 
 WA_AI_RESEARCH_needs_medium_tank_destroyers = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_medium_tank_destroyers = yes
+	WA_AI_TECHTREE_has_branch_medium_td = yes
 }
 
 WA_AI_RESEARCH_needs_heavy_tank_destroyers = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_heavy_tank_destroyers = yes
+	WA_AI_TECHTREE_has_branch_heavy_td = yes
 }
 
 # [modern-chassis-tier] Modern VARIANTS (TD / SPAA / SPG / assault / infantry support) are researched
@@ -112,116 +123,120 @@ WA_AI_RESEARCH_needs_heavy_tank_destroyers = {
 # `resources` (common/units/equipment/x_tank_chassis.txt); if a country's modern variants stop
 # drawing chromium this gate holds back a tech it could afford. The hull is not gated here.
 WA_AI_RESEARCH_needs_modern_tank_destroyers = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_modern_tank_destroyers = yes
 	WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+	WA_AI_TECHTREE_has_branch_modern_td = yes
 }
 
 WA_AI_RESEARCH_needs_light_assault = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_light_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_light_assault = yes
 }
 
 WA_AI_RESEARCH_needs_medium_assault = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_medium_assault = yes
 }
 
 WA_AI_RESEARCH_needs_heavy_assault = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_heavy_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_heavy_assault = yes
 }
 
 WA_AI_RESEARCH_needs_modern_assault = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_gun = yes
 	WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+	WA_AI_TECHTREE_has_branch_modern_assault = yes
 }
 
 WA_AI_RESEARCH_needs_light_infantry_support = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_light_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_light_inf_support = yes
 }
 
 WA_AI_RESEARCH_needs_medium_infantry_support = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_medium_inf_support = yes
 }
 
 WA_AI_RESEARCH_needs_heavy_infantry_support = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_heavy_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_heavy_inf_support = yes
 }
 
+# [techtree-capability] The one variant with NO has_branch term, because no tree could satisfy one:
+# no technology anywhere in common/technologies/ unlocks a modern_infantry_support_tank chassis,
+# so tools/techtree_registry.json has no entry to build the gate from and no generated ai_will_do
+# block reads this trigger. Left as it stands rather than forced to always = no, so that adding
+# the chassis one day is a registry entry plus one line here.
 WA_AI_RESEARCH_needs_modern_infantry_support = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_gun = yes
 	WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
 }
 
 WA_AI_RESEARCH_needs_mechanized_self_propelled_guns = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_mechanized_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_mechanized_spg = yes
 }
 
 WA_AI_RESEARCH_needs_light_self_propelled_guns = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_light_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_light_spg = yes
 }
 
 WA_AI_RESEARCH_needs_medium_self_propelled_guns = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_medium_spg = yes
 }
 
 WA_AI_RESEARCH_needs_heavy_self_propelled_guns = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_heavy_self_propelled_gun = yes
+	WA_AI_TECHTREE_has_branch_heavy_spg = yes
 }
 
 WA_AI_RESEARCH_needs_modern_self_propelled_guns = {
-	# Nation uses armor templates and has SPG tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_gun = yes
 	WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+	WA_AI_TECHTREE_has_branch_modern_spg = yes
 }
 
 WA_AI_RESEARCH_needs_mechanized_self_propelled_aa = {
-	# Nation uses armor templates and has tank destroyer tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_mechanized_self_propelled_aa = yes
+	WA_AI_TECHTREE_has_branch_mechanized_spaa = yes
 }
 
 WA_AI_RESEARCH_needs_light_self_propelled_aa = {
-	# Nation uses armor templates and has SPAA tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_light_self_propelled_aa = yes
+	WA_AI_TECHTREE_has_branch_light_spaa = yes
 }
 
 WA_AI_RESEARCH_needs_medium_self_propelled_aa = {
-	# Nation uses armor templates and has SPAA tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_aa = yes
+	WA_AI_TECHTREE_has_branch_medium_spaa = yes
 }
 
 WA_AI_RESEARCH_needs_modern_self_propelled_aa = {
-	# Nation uses armor templates and has SPAA tech tree
 	WA_AI_TEMPLATES_use_armor_templates = yes
 	WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_aa = yes
 	WA_AI_EQUIPMENT_can_absorb_chromium_shock_small = yes
+	WA_AI_TECHTREE_has_branch_modern_spaa = yes
 }
 
 # Tier-agnostic variants, read by the GENERATED ai_will_do blocks in
@@ -237,6 +252,13 @@ WA_AI_RESEARCH_needs_self_propelled_guns = {
 		WA_AI_CONFIG_DIVISIONS_use_heavy_self_propelled_gun = yes
 		WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_gun = yes
 	}
+	OR = {
+		WA_AI_TECHTREE_has_branch_mechanized_spg = yes
+		WA_AI_TECHTREE_has_branch_light_spg = yes
+		WA_AI_TECHTREE_has_branch_medium_spg = yes
+		WA_AI_TECHTREE_has_branch_heavy_spg = yes
+		WA_AI_TECHTREE_has_branch_modern_spg = yes
+	}
 }
 
 WA_AI_RESEARCH_needs_self_propelled_aa = {
@@ -247,6 +269,12 @@ WA_AI_RESEARCH_needs_self_propelled_aa = {
 		WA_AI_CONFIG_DIVISIONS_use_medium_self_propelled_aa = yes
 		WA_AI_CONFIG_DIVISIONS_use_modern_self_propelled_aa = yes
 	}
+	OR = {
+		WA_AI_TECHTREE_has_branch_mechanized_spaa = yes
+		WA_AI_TECHTREE_has_branch_light_spaa = yes
+		WA_AI_TECHTREE_has_branch_medium_spaa = yes
+		WA_AI_TECHTREE_has_branch_modern_spaa = yes
+	}
 }
 
 # Amphibious mechanized equipment: only worth a slot to a country that wants BOTH
@@ -254,6 +282,7 @@ WA_AI_RESEARCH_needs_self_propelled_aa = {
 WA_AI_RESEARCH_needs_amphibious_mechanized = {
 	WA_AI_RESEARCH_needs_mechanized = yes
 	WA_AI_RESEARCH_needs_amphibious = yes
+	WA_AI_TECHTREE_has_branch_amphibious_mechanized = yes
 }
 
 # ============================================================================

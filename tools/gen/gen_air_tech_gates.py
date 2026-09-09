@@ -60,6 +60,14 @@ HEADER = """\
 # job (WA_AI_CONFIG), never this file's. A tree with no entry in a line is barred from that line
 # outright - the registry check reports such gaps so they stay decisions.
 #
+# [techtree-capability] Each gate has a has_branch_<line> twin asking the OTHER question: not "has it
+# reached the rung" but "does its TREE carry this line at all". has_tech cannot answer that - a
+# country that has not researched the rung yet looks the same as one whose tree has no such plane -
+# and that is the question the AIRFORCE archetype tag lists in WA_AI_CONFIG used to answer by hand.
+# The twin is built from the folder ownership of common/technology_tags/00_technology.txt
+# (registry key `tree_folders` -> WA_AI_TECHTREE_has_<folder>), so tag OR tree flag: a country that
+# ADOPTED another air tree is answered on the tree it owns, not on the tag it was born with.
+#
 # [ai-owns-its-tech-list] Nothing here calls the player-facing WA_has_*_tech of WA_triggers.txt:
 # the player asks "does this country hold the tech", the AI asks "may it spend a factory on this".
 # The two are free to diverge, so a retune here must never be able to move player content.
@@ -86,6 +94,7 @@ def declared_techs() -> set[str]:
 
 def render(reg: dict) -> str:
     lines = [HEADER]
+    folders = reg.get("tree_folders", {})
     for name, spec in reg["triggers"].items():
         lines.append("")
         note = spec.get("note", "").strip()
@@ -106,7 +115,34 @@ def render(reg: dict) -> str:
             lines.append(f"\t\thas_tech = {tid}")
         lines.append("\t}")
         lines.append("}")
+
+        # CAPABILITY twin - "could this country EVER fund this line", answered by tree ownership.
+        if folders:
+            owning = []
+            for tree in spec["trees"]:
+                folder = folders.get(tree)
+                if folder and folder not in owning:
+                    owning.append(folder)
+            if owning:
+                lines.append("")
+                lines.append(f"{capability_name(name)} = {{")
+                lines.append("\tOR = {")
+                for folder in owning:
+                    lines.append(f"\t\tWA_AI_TECHTREE_has_{folder} = yes")
+                lines.append("\t}")
+                lines.append("}")
     return "\n".join(lines) + "\n"
+
+
+def capability_name(trigger: str) -> str:
+    """WA_AI_PRODUCTION_has_worthwhile_cas -> WA_AI_PRODUCTION_has_branch_cas."""
+    for prefix in ("WA_AI_PRODUCTION_has_worthwhile_", "WA_AI_PRODUCTION_has_"):
+        if trigger.startswith(prefix):
+            tail = trigger[len(prefix):]
+            if prefix.endswith("has_") and tail.endswith("_tech"):
+                tail = tail[: -len("_tech")]
+            return "WA_AI_PRODUCTION_has_branch_" + tail
+    return trigger + "_has_branch"
 
 
 def wrap(text: str, width: int) -> list[str]:

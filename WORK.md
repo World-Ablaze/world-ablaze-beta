@@ -173,6 +173,114 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### techtree-capability — OPEN (2026-09-09)
+- Owner order 2026-09-09 ("j'aimerais une refactorisation de la AI_CONFIG et des triggers utilisant
+  la tech ... on abstracte des critères de tech à un pays, le sous entendu étant (ce pays a X arbre
+  de tech) ... faire dépendre les triggers de tech des arbres de tech associés, et relier ces arbres
+  de tech aux tags de pays qui les ont"). Owner decisions in the same session: table generated from
+  `00_technology.txt`, scope = all five folder families, and the tree FLAG is taken now rather than
+  in a second commit.
+- Intended behaviour: no WA_AI trigger answers "does this country have technology X available to it"
+  with a country tag. A tag answers WHO a country is; a technology FOLDER answers what it may
+  research; `has_tech` answers what it holds today. The three stay separate and each is asked where
+  it is defined.
+- Symptom, MEASURED (script): `WA_AI_CONFIG_DIVISIONS_use_light_tank_destroyers = { ITA JAP GER }`
+  and `..._use_mechanized_self_propelled_aa = { SOV }` are tag lists whose only meaning is "these
+  trees carry the branch"; the seven `WA_AI_CONFIG_AIRFORCE_uses_*` archetypes say so in their own
+  comments ("Only France has a separate interceptor tech tree", over a list of FRA/ITA/SOV); and the
+  33 `WA_AI_TEMPLATES_has_*_unlocked` gates were flat ORs of 965 `has_tech` ids with the tree named
+  only in a comment (one of them mislabelled `# Soviet Union` over three `eng_` ids).
+- MEASURED, the fact the tag lists were dropping: every folder in
+  `common/technology_tags/00_technology.txt` is owned by `original_tag = X` **OR**
+  `has_country_flag = <x>_technologies_tree_flag`, and
+  `common/decisions/_unique_technologies_adoption.txt` hands that flag out (21 `set_country_flag`).
+  A country that adopted the German tree was still classified on the tag it was born with.
+- MEASURED, the fact that decided the DESIGN: 40 further sites grant a national-tree rung WITHOUT
+  the flag — `common/national_focus/finland.txt` grants one rung from each of seven foreign trees,
+  plus bulgaria / canada / sweden / japan / turkey / uk, `history/countries/CHI`, `ROM`, `RIT`,
+  `USP`, `FSM` and the French colonies. So membership answers CAPABILITY only. Availability
+  (`WA_AI_TECHTREE_has_<cap>`) carries no membership term: ANDing it in would have taken Finland's
+  armour templates away. Written into the generated file's header so it is not "simplified" later.
+- Shipped:
+  - `tools/gen/gen_techtree_membership.py` → `common/scripted_triggers/WA_AI_TECHTREE_membership.txt`
+    (56 folders). Copies each folder's `available` verbatim; the only rewrite is dropping the
+    startup escape `NOT = { has_global_flag = tech_tree_startup_flag }`, which is a UI concern.
+  - `tools/techtree_registry.json` + `tools/gen/gen_techtree_gates.py` →
+    `common/scripted_triggers/WA_AI_TECHTREE_gates.txt`: 33 capabilities × (`has_branch_`, `has_`).
+    Armour and artillery families. Rung sets verified identical to the 33 old triggers.
+  - `WA_AI_TEMPLATES_triggers.txt`: 2033 → 973 lines, the 33 gates now one line each.
+  - `WA_AI_RESEARCH_tanks.txt`: 22 variant `needs_*` triggers gain `WA_AI_TECHTREE_has_branch_*`,
+    plus the two tier-agnostic SPG/SPAA triggers. Their comments said "has X tech tree" already.
+  - `gen_air_tech_gates.py` emits a `WA_AI_PRODUCTION_has_branch_<line>` twin per line from the new
+    registry key `tree_folders`; the six `WA_AI_CONFIG_AIRFORCE_uses_*` tag lists were DELETED and their seven readers now call it directly.
+- Behaviour deltas, all deliberate (a tech outside a country's folder is not researchable, so a
+  widening only reaches trees that carry the branch): light TD ITA/JAP/GER → + cze/minor/usa trees;
+  mechanized SPAA SOV → + ger/usa; interceptor FRA/ITA/SOV → + jap/usa; heavy fighter GER/ENG/USA →
+  + fra/ita/jap/generic; multirole, strike bomber and attacker → + the ROM and minor air trees; and
+  **ENG LOSES the fast bomber** — no rung of the English air tree unlocks one, it was weighting a
+  tech it cannot research.
+  CORRECTION to the first statement of this list, which said "all in the RESEARCH-weighting layer":
+  the attacker delta is NOT research-only. `WA_AI_PRODUCTION_should_build_attackers`
+  (`WA_AI_PRODUCTION_air.txt:176`) read the same archetype, so the minor and adopted air trees now
+  also reach an attacker PRODUCTION line. DERIVED bounded: that block also ANDs
+  `has_worthwhile_attacker` and the attacker park cap, so it cannot fire before the rung is
+  actually researched.
+- Left alone, on purpose: `WA_AI_CONFIG_AIRFORCE_uses_heavy_strategic` (no `has_worthwhile_heavy_strategic`
+  line exists to build a twin from — it is a sub-class of the strategic bomber);
+  `WA_AI_CONFIG_TEMPLATES_admits_medium_armor`, `..._focus_on_heavy_armor` and
+  `WA_AI_CONFIG_switch_from_light_to_medium_armor`, which mix per-tree rungs with the
+  `[armor-class-handoff]` era logic and an owner ruling — structural only, worth its own pass.
+- Findings recorded, NOT acted on: `WA_AI_TEMPLATES_has_modern_inf_support_unlocked` was an empty
+  `OR = { }` (now `always = no` with the reason: no technology anywhere unlocks a
+  `modern_infantry_support_tank`, so its reader is dead). `WA_AI_TEMPLATES_has_medium_support_armor_unlocked`
+  lists only three `eng_` rungs while `fra_support_tank_chassis_1..2` and `usa_support_tank_chassis_1..2`
+  exist unlisted (5 rungs), and `sov_medium_spg_tank_4` is absent from `medium_spg`; the full audit
+  found only those 6 candidate rungs missing across all 33 capabilities, so the old lists were
+  otherwise complete. `minor_armour_folder` lacks the startup escape and excludes only the Swedish
+  flag, so a country carrying `german_technologies_tree_flag` holds BOTH folders.
+- Reviews 2026-09-09, both run before shipping, both CONCERNS, every required item applied:
+  - **wa-architecture-reviewer** — (1) the header it flagged over the unlock aliases was FALSE:
+    written for the first design (membership ANDed into availability) and never updated when that
+    design was dropped, i.e. the one sentence most likely to make the next author re-add the AND
+    that deletes Finland's templates. Rewritten to say what the gate does and why. (2)
+    `documentation/WA_AI_LAYERS.md` §1/§3/§5/§7 updated — the layer-1 material list, the routing
+    rows for "has tree X" / "tree has branch Y", the named exception for `original_tag` outside
+    CONFIG, and the naming note. (3) the layer-1 inversion (CONFIG reading a layer-2 trigger) is
+    gone: the six AIRFORCE archetypes were DELETED from CONFIG, not stubbed, and their seven
+    readers now call `WA_AI_PRODUCTION_has_branch_<line>` directly. (4) `can_ever_` RENAMED to
+    `has_branch_` — `_can_` is the layer-3 DECISION verb in `tools/check_ai_layers.py`, so the old
+    name would have let a future `enable = { …_can_ever_x = yes }` gate on an observation and still
+    satisfy LAYER4-NON-DECISION. (5) the empty-`OR` equivalence is now labelled ASSUMED at the site.
+  - **wa-lessons-reviewer** — its lead concern (the ai_template decommission pass) is FALSIFIED for
+    this change: MEASURED, the transitive read closure of the eight widened triggers reaches 57
+    files and NONE under `common/ai_templates/` or `common/ai_equipment/`, and the 33 gates that DO
+    feed template selection are value-identical. Its "no half-removed legacy gate" rule (owner
+    2026-08-16) IS applied: the two armour switches moved bodily into the ALWAYS-FLAGS section with
+    their fourteen `always =` siblings, the six air ones were deleted outright. Its "mechanical set
+    diff, not an eyeball pass" is satisfied and now automated (below).
+  - It also, indirectly, caught a REAL defect. Making the research gates conditional can only
+    subtract where the registry is incomplete, and it was: `has_branch_medium_spg` had no Soviet
+    folder while `sov_medium_spg_tank_4` is researchable, so SOV would have stopped weighting
+    medium-SPG research. Same shape for `medium_support_armor` (fra/usa support chassis). Fixed by
+    a `branch_extra` registry field (capability counts the folder, availability does not, reason
+    recorded), and the audit that found it is now a generator ERROR: `BRANCH-GAP` re-derives the
+    candidate folders from `common/technologies/` — never from the registry, so the registry cannot
+    vouch for itself — and exits 2. Self-tested: stripping `branch_extra` makes it fire on exactly
+    those three, restoring it returns exit 0.
+- Closed when: (a) a boot leaves `logs/error.log` free of parse errors for the three new/rewritten
+  trigger files AND an armour-fielding AI still holds armour templates in the first save (the
+  regression the 33 rewritten gates could cause); and (b) one campaign save shows a country carrying
+  a `*_technologies_tree_flag` researching or fielding the ADOPTED tree's variants - the behaviour
+  the whole layer exists for, and the one thing the old tag lists could not do.
+- **F9 PASSED 2026-09-09** (owner-run launch, working tree, uncommitted). Discharges the parse risk:
+  three new/rewritten trigger files load, and the six triggers deleted from WA_AI_CONFIG.txt left no
+  orphan reader. That is the FIRST HALF of criterion (a) only. Still owed: the templates-intact
+  observation in a save, and criterion (b) entirely - both need a campaign, neither is boot-visible.
+- Verification: a campaign save where a country that ADOPTED a foreign tree is answered on it. Probe: pick any AI with `has_country_flag = *_technologies_tree_flag` and check it
+  fields/researches the adopted tree's variants. Until then the cheap gate is the pair of
+  `--check` runs plus a boot with no parse error in `logs/error.log` — three new/rewritten trigger
+  files load or the armour template system goes silent.
+
 ### air-budget — SHIPPED-UNTESTED (2026-09-09)
 - State: phases 1-4 committed; harness runs pasted below for GER / ENG / MAL / USA on the
   pre-retune constants. One `event wa_airb.4 USA` on the 50/50 + naval 10 constants (cold boot)
@@ -751,7 +859,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `extensive_conscription` only after its free pool drops under its floor, and no AI law change in
   the table happens with the previous save's pool above the floor.
 
-### train-variant-choice — OPEN (2026-09-05)
+### train-variant-choice — PARKED (2026-09-09)
+- PARKED 2026-09-09 by the `techtree-capability` session, for the WIP limit only - nothing about
+  it changed. State is unchanged from below: code shipped 2026-09-05, waiting on the F9 boot test
+  that says whether a scripted trigger resolves inside equipment `can_be_produced`. Resume by
+  running that boot; no re-diagnosis needed.
 - Owner order 2026-09-05: AI train lines run on the Simplified / War Austerity trains when available;
   the Armored Train is produced only with 10000 trains in reserve. All AI countries, every tech tree.
 - State before, MEASURED (`common/units/equipment/trains.txt`): Armored Train `priority = 30` >
