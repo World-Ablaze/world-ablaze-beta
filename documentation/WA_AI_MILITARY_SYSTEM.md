@@ -20,7 +20,7 @@ All system content lives in `common/ai_strategy/WA_AI_MILITARY_*.txt` and is gat
 
 | Layer | Files | Gating | Country tags allowed? |
 | --- | --- | --- | --- |
-| **Default** | `WA_AI_MILITARY_DEFAULT_*.txt` | Archetype triggers only (`WA_AI_MILITARY_has_mass_army`, `WA_AI_MILITARY_has_ocean_going_fleet`, `WA_AI_CONFIG_is_minor_country`, etc.) | No |
+| **Default** | `WA_AI_MILITARY_DEFAULT_*.txt` | Archetype triggers only (`WA_AI_MILITARY_has_mass_army`, `WA_AI_MILITARY_has_ocean_going_fleet`, `WA_AI_COUNTRY_is_minor`, etc.) | No |
 | **Region** | `WA_AI_MILITARY_REGION_<NAME>.txt` | Geography triggers (e.g. `WA_AI_CONFIG_MILITARY_is_south_america`) | No |
 | **Faction** | `WA_AI_MILITARY_FACTION_<NAME>[_<DOMAIN>].txt` | Faction-membership triggers (`WA_AI_MILITARY_is_allies_member`, `_is_axis_member`, `_is_comintern_member`, `_is_co_prosperity_member`, `_is_china_front_member`, `_is_commonwealth_member`) plus optional `WA_AI_CONFIG_MILITARY_*` archetype refinement | No |
 | **Country** | `WA_AI_MILITARY_COUNTRY_<TAG>[_<DOMAIN>].txt` | Country gating; `tag = <TAG>` and `original_tag = <TAG>` are allowed and expected | Yes |

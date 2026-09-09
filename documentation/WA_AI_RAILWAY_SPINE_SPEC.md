@@ -163,7 +163,7 @@ Berlin read level 5. Cause, MEASURED in code (lessons review): the prewar strate
 dispatched under `has_war = no` only, and on the historical path GER is at war with ENG for the
 whole GER→SOV window — the peace mode never ran for GER (ASSUMED for the run: no save before
 1941.10; the war with ENG is the historical path the window is gated on). Shipped 2026-09-05:
-the strategy is dispatched at war too when `WA_AI_CONFIG_RAILWAY_has_scripted_override` holds
+the strategy is dispatched at war too when `WA_AI_RAILWAY_has_scripted_override` holds
 (CONFIG targets alone; the wargoal population stays peace-only), the window opens 1940.7.1
 (`WA_AI_CONFIG.txt`), a country whose prewar strategy found a target keeps the WAR interval in
 peace (`_rail_peace_work_`, pass tail of `WA_AI_PC_railway`), and the momentum refill applies

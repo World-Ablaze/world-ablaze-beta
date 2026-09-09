@@ -36,25 +36,6 @@ WA_AI_DIFFICULTY_is_competitive = { # 3-4
 	difficulty > 2
 }
 
-WA_AI_CONFIG_cheats_enabled = { # 1 or 4 = the two Hard buttons - see [difficulty-mapping] above
-	OR = {
-		WA_AI_DIFFICULTY_is_historical_hard = yes
-		WA_AI_DIFFICULTY_is_competitive_hard = yes
-	}
-}
-
-# Securities = the two Hard buttons PLUS Historical Normal: scripted assists that keep the WW2
-# sequence on track (a doctrine catch-up, not an edge over the player). Off only on Historical
-# Easy and Competitive Normal. Owner ruling 2026-09-04 - see [difficulty-mapping] above.
-WA_AI_CONFIG_securities_enabled = {
-	OR = {
-		WA_AI_DIFFICULTY_is_historical_normal = yes
-		WA_AI_DIFFICULTY_is_historical_hard = yes
-		WA_AI_DIFFICULTY_is_competitive_normal = yes
-		WA_AI_DIFFICULTY_is_competitive_hard = yes
-	}
-}
-
 WA_AI_DIFFICULTY_is_historical_easy = { # 0
 	difficulty < 1
 }
@@ -94,12 +75,6 @@ WA_AI_CONFIG_is_major_country = {
 		original_tag = ITA
 		original_tag = JAP
 		original_tag = SOV
-	}
-}
-
-WA_AI_CONFIG_is_minor_country = {
-	NOT = {
-		WA_AI_CONFIG_is_major_country = yes
 	}
 }
 
@@ -155,12 +130,10 @@ WA_AI_CONFIG_is_reserve_undersized_dumper = {
 	original_tag = GER
 }
 
+# [atlantic-naval] Allied membership as the AI reads it: in a faction with either western leader.
+# Two terms, deliberately - a third is a third COUNTRY, not a repeat of one of these.
 WA_AI_CONFIG_is_in_allies = {
 	OR = {
-		# [atlantic-naval] (2026-08-14): `is_in_faction_with = USA` was listed twice. Harmless
-		# to the engine - an OR of a term with itself - but this trigger gates a
-		# large share of the Allied AI, so a reader checking it should not have to
-		# wonder whether the third line was meant to be a third country.
 		is_in_faction_with = ENG
 		is_in_faction_with = USA
 	}
@@ -205,13 +178,6 @@ WA_AI_CONFIG_is_superior_firepower = {
 	original_tag = USA
 }
 
-WA_AI_CONFIG_is_grand_battle_plan = {
-	OR = {
-		WA_AI_CONFIG_is_grand_battle_plan_defensive = yes
-		WA_AI_CONFIG_is_grand_battle_plan_offensive = yes
-	}
-}
-
 # ============================================================================
 # AIR DOCTRINE TYPE CONFIGURATIONS
 # ============================================================================
@@ -236,7 +202,7 @@ WA_AI_CONFIG_is_close_air_support_airforce = {
 
 WA_AI_CONFIG_is_tactical_bombing_airforce = {
 	OR = {
-		WA_AI_CONFIG_is_minor_country = yes
+		NOT = { WA_AI_CONFIG_is_major_country = yes }
 		original_tag = JAP
 		original_tag = FRA
 	}
@@ -257,21 +223,6 @@ WA_AI_CONFIG_is_tactical_bombing_airforce = {
 # OR tree flag, so an ADOPTED air tree is answered on the tree it owns).
 # Do not re-add a tag list here for an archetype the tech data already knows about.
 # ============================================================================
-
-# [techtree-capability] The ONE archetype still written as a tag list, and on purpose: "heavy
-# strategic" is a sub-class of the strategic bomber (B-24 / B-29 / Lancaster, not B-17) that the air
-# registry does not model - there is no has_worthwhile_heavy_strategic line, so there is no
-# has_branch twin to point at. Its second gate is already WA_AI_CONFIG_is_strategic_bombing_airforce
-# (WA_AI_RESEARCH_needs_heavy_strategic_bombers ANDs the two), so this list is the industrial-scale
-# term, not the tree term. Give the registry a heavy-strategic line and this trigger goes away too.
-WA_AI_CONFIG_AIRFORCE_uses_heavy_strategic = {
-	# Heavy strategic bombers (B-24, B-29, Lancaster) are very heavy bombers
-	# Only strategic bombing nations with industrial capacity use these
-	OR = {
-		original_tag = ENG
-		original_tag = USA
-	}
-}
 
 # ============================================================================
 # AIR PRODUCTION ARCHETYPES
@@ -351,16 +302,6 @@ WA_AI_CONFIG_AIRFORCE_drops_naval_air_in_eastern_war = {
 	original_tag = GER
 }
 
-# Strategic bomber builders. Deliberately NOT WA_AI_CONFIG_is_strategic_bombing_airforce
-# (ENG + USA): the junior partner below builds too.
-WA_AI_CONFIG_AIRFORCE_builds_strategic_bombers = {
-	OR = {
-		original_tag = USA
-		original_tag = ENG
-		original_tag = CAN
-	}
-}
-
 # Junior strategic partner: its bomber arm is fed by the faction, not its own MIL count or
 # its own majority - it builds under the supermajor bar and under a major patron.
 WA_AI_CONFIG_AIRFORCE_is_strategic_bomber_junior = {
@@ -419,10 +360,8 @@ WA_AI_CONFIG_is_submarine_navy = {
 		original_tag = GER
 		original_tag = SOV
 		AND = {
-			WA_AI_CONFIG_is_minor_country = yes
-			NOT = {
-				WA_AI_CONFIG_is_in_allies = yes
-			}
+			NOT = { WA_AI_CONFIG_is_major_country = yes }
+			NOT = { WA_AI_CONFIG_is_in_allies = yes }
 		}
 	}
 }
@@ -432,13 +371,6 @@ WA_AI_CONFIG_is_battleship_navy = {
 		original_tag = ENG
 		original_tag = FRA
 		original_tag = ITA
-	}
-}
-
-WA_AI_CONFIG_is_escort_navy = {
-	AND = {
-		WA_AI_CONFIG_is_minor_country = yes
-		WA_AI_CONFIG_is_in_allies = yes
 	}
 }
 
@@ -454,13 +386,6 @@ WA_AI_CONFIG_is_escort_navy = {
 # These triggers determine if a country needs to produce types of ships
 # ============================================================================
 
-# Main focus on carriers for production
-WA_AI_CONFIG_main_focus_on_carriers = {
-	OR = {
-		WA_AI_CONFIG_is_carrier_navy = yes
-	}
-}
-
 # Secondary focus on carriers for production : only one from time to time
 WA_AI_CONFIG_secondary_focus_on_carriers = {
 	OR = {
@@ -470,17 +395,11 @@ WA_AI_CONFIG_secondary_focus_on_carriers = {
 	}
 }
 
-# Main focus on submarines for production
-WA_AI_CONFIG_main_focus_on_submarines = {
+# The navies that fund a convoy-escort arm on their own account, whatever their size: their war
+# effort crosses an ocean they must keep open. The escort verdict that unions this with the small
+# Allied escort navies is WA_AI_NAVY_is_escort_focused (WA_AI_NAVY_triggers.txt).
+WA_AI_CONFIG_is_convoy_escort_power = {
 	OR = {
-		WA_AI_CONFIG_is_submarine_navy = yes
-	}
-}
-
-# Main focus on convoy escorts
-WA_AI_CONFIG_focus_on_escorts = {
-	OR = {
-		WA_AI_CONFIG_is_escort_navy = yes
 		original_tag = ENG
 		original_tag = FRA
 		original_tag = USA
@@ -490,9 +409,7 @@ WA_AI_CONFIG_focus_on_escorts = {
 
 # Focus on minelayers
 WA_AI_CONFIG_focus_on_minelayers = {
-	OR = {
-		original_tag = ENG
-	}
+	original_tag = ENG
 }
 
 # The naval-treaty era is over by the calendar alone - the fallback bound of the capital-ship
@@ -534,7 +451,7 @@ WA_AI_CONFIG_focus_on_cruiser_submarines = {
 # ============================================================================
 
 # NOTE: these three DIVISIONS_use_* triggers are country IDENTITY markers, not production switches.
-# They are also read by WA_AI_CONFIG_DIVISIONS_uses_motorized_hq (which drives
+# They are also read by WA_AI_TEMPLATES_has_motorized_hq (which drives
 # history/general/taog_hq_template.txt), WA_AI_RESEARCH_needs_maintenance_company and
 # WA_AI_RESEARCH_needs_mechanized. Widening them changes army HQ templates and research weighting for
 # every country, not just the production mix.
@@ -612,19 +529,6 @@ WA_AI_CONFIG_DIVISIONS_mechanization_window_open = {
 			has_army_manpower = { size > 1600000 }
 			date > 1940.1.1
 		}
-	}
-}
-
-# Army HQ (TAOG) line-battalion type.
-# Rule: a country that fields motorized, mechanized or armored divisions gets a
-# motorized army HQ so the staff keeps up with the spearhead; everyone else gets
-# an infantry HQ. Consumed by history/general/taog_hq_template.txt and by
-# common/ai_templates/WA_AI_TEMPLATES_hq.txt, which gates the matching HQ role target.
-WA_AI_CONFIG_DIVISIONS_uses_motorized_hq = {
-	OR = {
-		WA_AI_CONFIG_DIVISIONS_use_armored_divisions = yes
-		WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = yes
-		WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = yes
 	}
 }
 
@@ -992,14 +896,6 @@ WA_AI_CONFIG_has_amphibious_doctrine = {
 # where AI should prepare railways before formal war justification.
 # ============================================================================
 
-# Master check: Does ROOT have any railway override active?
-WA_AI_CONFIG_RAILWAY_has_scripted_override = {
-	OR = {
-		WA_AI_RAILWAY_should_override_GER_to_SOV = yes
-		# Add more overrides here as needed
-	}
-}
-
 # Germany -> Soviet Union (Barbarossa preparation) - the SETUP half only: who, which mode,
 # which calendar window, which focus. The LIVE half (SOV exists / not at war / not allied)
 # lives with the verdict, WA_AI_RAILWAY_should_override_GER_to_SOV (WA_AI_CONSTRUCTION_triggers.txt).
@@ -1038,7 +934,7 @@ WA_AI_CONFIG_GER_is_pursuing_barbarossa = {
 
 WA_AI_CONFIG_MILITARY_is_axis_minor = {
 	is_in_faction_with = GER
-	WA_AI_CONFIG_is_minor_country = yes
+	NOT = { WA_AI_CONFIG_is_major_country = yes }
 }
 
 WA_AI_CONFIG_MILITARY_is_axis_non_german_member = {
@@ -1056,20 +952,12 @@ WA_AI_CONFIG_MILITARY_is_axis_non_german_member = {
 # WA_AI_CONFIG_MILITARY_is_chinese_warlord below.
 WA_AI_CONFIG_MILITARY_is_china_front_member = {
 	OR = {
+		# The leaders, then the warlord subset - which is the whole rest of the old list, so it is
+		# read from its own trigger instead of copied here.
 		tag = CHI
 		tag = PRC
-		tag = SHA
-		tag = HPC
 		tag = SHX
-		tag = GUC
-		tag = GXC
-		tag = YUN
-		tag = XIK
-		tag = TUG
-		tag = SIC
-		tag = XSM
-		tag = SIK
-		tag = NEA
+		WA_AI_CONFIG_MILITARY_is_chinese_warlord = yes
 		is_in_faction_with = CHI
 	}
 }
@@ -1093,8 +981,7 @@ WA_AI_CONFIG_MILITARY_is_commonwealth_member = {
 # / Africa-push staging blocks where ENG and USA lead and CAN supports.
 WA_AI_CONFIG_MILITARY_is_western_allies_major = {
 	OR = {
-		tag = ENG
-		tag = USA
+		WA_AI_CONFIG_MILITARY_is_anglo_major = yes
 		tag = CAN
 	}
 }
@@ -1308,61 +1195,21 @@ WA_AI_CONFIG_MILITARY_pacific_offensive_posture = {
 	has_completed_focus = JAP_strike_south
 }
 
-# Western-allies invasion staging pool. Uses original_tag for exiled-government
-# stability so FRA continues to gate even after capitulation. Norway / Italy /
-# D-Day staging gate.
-WA_AI_CONFIG_MILITARY_is_western_invasion_pool = {
+# The western Allied powers and their dominions - THE membership list the three archetypes below
+# share (owner ruling 2026-09-09: they had drifted into three character-identical copies of the
+# same eight tags). original_tag for exiled-government stability, so FRA keeps gating after
+# capitulation. Membership only: each archetype below says what its members are asked to DO, and
+# an archetype that must stop covering one of them adds its own exclusion term there, never by
+# editing this list.
+# [usa-refactor] AST, not AUS: Australia belongs here; landlocked Austria was a typo that
+# excluded Australia from all 8 reader blocks.
+WA_AI_CONFIG_MILITARY_is_western_allied_power = {
 	OR = {
 		original_tag = ENG
 		original_tag = USA
 		original_tag = CAN
 		original_tag = FRA
 		original_tag = RAJ
-		original_tag = SAF
-		# [usa-refactor] AST, not AUS: Australia belongs in the western invasion pool;
-		# landlocked Austria was a typo that excluded Australia from all 8 reader blocks.
-		original_tag = AST
-		original_tag = NZL
-	}
-}
-
-# Allied countries that should inherit coalition naval routing through Suez/Cape
-# and Atlantic corridors.
-#
-# [atlantic-naval] (2026-08-14, checklist R36): added FRA and SAF. Both are Allied Atlantic
-# powers by geography - FRA has a real fleet in 1936-40 and Atlantic ports, SAF sits
-# on the Cape leg - and until this fix their mid-ocean gap avoidance came from
-# WA_AI_NAVAL_COUNTRY_ENG_legacy_ENG_azores_safe, a Country-layer block that had no
-# `allowed` gate and therefore leaked to the whole faction. That block is removed in
-# the same commit, so without this line they would have been left with no Atlantic
-# routing at all. Adding them here re-homes the coverage at the layer that owns it
-# rather than restoring the leak.
-WA_AI_CONFIG_MILITARY_is_allied_naval_corridor_user = {
-	OR = {
-		original_tag = ENG
-		original_tag = CAN
-		original_tag = RAJ
-		original_tag = AST
-		original_tag = NZL
-		original_tag = USA
-		original_tag = FRA
-		original_tag = SAF
-	}
-}
-
-# The western Allied air powers whose air forces the coalition AIR family (WA_AI_MILITARY_FACTION_ALLIES_AIR.txt,
-# Phase 7d) tells to AVOID occupied Europe / Italy / out-of-theatre airspace while there is no front there.
-# Uses original_tag for exiled-government stability (FRA keeps gating after capitulation, as the legacy
-# ENG.txt blocks did). Deliberately the legacy eight-tag list, NOT every Allies member: a continental
-# member (GRE / YUG / NOR / BEL / HOL / POL / CZE, or an ahistorical joiner) must never be told to avoid its
-# own homeland - the push blocks of that family are open to every member, the suppressions are not.
-WA_AI_CONFIG_MILITARY_is_western_allies_air_power = {
-	OR = {
-		original_tag = ENG
-		original_tag = FRA
-		original_tag = USA
-		original_tag = RAJ
-		original_tag = CAN
 		original_tag = SAF
 		original_tag = AST
 		original_tag = NZL
@@ -1769,7 +1616,7 @@ WA_AI_CONFIG_before_1946 = {
 # reads nothing else, so the target template and the role_ratio share both close here, together.
 # OFF by default - a motorised division is a slower-to-supply infantry division that also eats the trucks
 # the support companies, the tank divisions and the supply hubs need first. Trucks are NOT gated here.
-# Marking a tag also gives it a motorised army HQ (WA_AI_CONFIG_DIVISIONS_uses_motorized_hq below).
+# Marking a tag also gives it a motorised army HQ (WA_AI_TEMPLATES_has_motorized_hq below).
 WA_AI_CONFIG_DIVISIONS_use_motorized_divisions = {
 	always = no
 }

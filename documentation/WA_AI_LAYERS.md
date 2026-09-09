@@ -54,6 +54,7 @@ consommateurs opposés d'un même verdict n'existe encore, donc le checker ne la
 | Donnée | Véhicule | Jamais |
 | --- | --- | --- |
 | Tag / liste de pays | trigger `WA_AI_CONFIG_*` (archétype) | dans un gate de couche 4 hors adressage Country |
+| **Verdict composé UNIQUEMENT d'autres triggers** | **trigger de couche 2 dans le fichier du système propriétaire** (`WA_AI_COUNTRY_triggers.txt`, `WA_AI_DIFFICULTY_triggers.txt`, `WA_AI_NAVY_triggers.txt`, `WA_AI_DOCTRINES_land.txt`, `WA_AI_TEMPLATES_triggers.txt`, `WA_AI_MILITARY_triggers.txt`…) | **dans `WA_AI_CONFIG*` — une déclaration ne lit rien, donc un corps qui n'est QUE des appels de triggers n'est pas une déclaration ; et CONFIG qui relit ce verdict est une inversion de couche** |
 | **« ce pays a l'arbre de tech X »** | **`WA_AI_TECHTREE_has_<folder>`** (GÉNÉRÉ depuis le bloc `available` du dossier dans `common/technology_tags/00_technology.txt`) | **une liste de tags, où que ce soit — le `available` dit `original_tag` OU `<x>_technologies_tree_flag`, et une liste de tags perd la seconde moitié** |
 | **« l'arbre de ce pays contient la branche Y »** | **`WA_AI_TECHTREE_has_branch_<cap>`** / `WA_AI_PRODUCTION_has_branch_<line>` (GÉNÉRÉS depuis `tools/techtree_registry.json` / `tools/air_tech_registry.json`) | un `has_tech` — il ne distingue pas « pas encore cherché » de « absent de mon arbre » |
 | Nombre partagé | `common/script_constants/wa_ai_<système>.txt` (`constant:`) | un `@` lu par deux fichiers |

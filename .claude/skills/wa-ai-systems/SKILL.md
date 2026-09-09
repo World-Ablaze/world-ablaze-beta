@@ -49,8 +49,8 @@ Rules of thumb for adding recurring work:
 
 `common/scripted_triggers/WA_AI_CONFIG.txt` is the central classifier. Before writing `original_tag = X` anywhere in a WA_AI file, look for an existing trigger there. Families present:
 
-- Difficulty: `WA_AI_DIFFICULTY_is_historical`, `_is_competitive`, `WA_AI_CONFIG_cheats_enabled`
-- Size: `WA_AI_CONFIG_is_major_country`, `_is_minor_country`
+- Difficulty: `WA_AI_DIFFICULTY_is_historical`, `_is_competitive`, `WA_AI_DIFFICULTY_has_cheats_enabled`
+- Size: `WA_AI_CONFIG_is_major_country`; its complement `WA_AI_COUNTRY_is_minor` is a layer-2 verdict in `common/scripted_triggers/WA_AI_COUNTRY_triggers.txt`
 - Faction: `WA_AI_CONFIG_is_in_allies`, and `WA_AI_MILITARY_is_<faction>_member` in `WA_AI_MILITARY_triggers.txt`
 - Doctrine: `_is_mobile_warfare`, `_is_deep_battle`, `_is_superior_firepower`, `_is_grand_battle_plan[_offensive|_defensive]`
 - Airforce: `_is_strategic_bombing_airforce`, `_is_close_air_support_airforce`, `_AIRFORCE_uses_interceptors`, `_uses_multirole_fighters`, …

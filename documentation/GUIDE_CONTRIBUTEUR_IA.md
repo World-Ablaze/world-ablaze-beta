@@ -43,7 +43,7 @@ Le mod ne dit jamais qu'il s'est trompé. Celles-ci sont mesurées, pas théoriq
 4. **Ne compare jamais `difficulty` à un nombre hors de CONFIG.** L'ordre des valeurs n'est pas
    l'ordre des boutons (voir la table `[difficulty-mapping]` en tête de `WA_AI_CONFIG.txt`) :
    `difficulty > 1` ne veut PAS dire « normal ou plus dur ». Utilise `WA_AI_DIFFICULTY_*` /
-   `WA_AI_CONFIG_cheats_enabled`.
+   `WA_AI_DIFFICULTY_has_cheats_enabled`.
 5. **Un `if` dans un `OR` ne restreint rien** : à `limit` faux il vaut VRAI et satisfait tout
    l'OR (mesuré). Écris un membre `AND = { condition résultat }` à la place.
 6. **`always = no` ne veut pas dire « désactivé proprement ».** Un interrupteur éteint dont les

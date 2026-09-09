@@ -285,7 +285,7 @@ runs one. Same save, same ladder, same `default_unit_production` composition.
 The twelve design groups of `common/ai_equipment/ENG_naval.txt` were all `available_for = { ENG }`,
 and every design in `generic_naval.txt` — which they *are* allowed to use — is gated on
 `has_tech = generic_frigate_1` / `generic_destroyer_*`, of which they hold **none**. WA meanwhile
-classes them as escort navies (`WA_AI_CONFIG_is_escort_navy` = minor AND in the Allies) and gives
+classes them as escort navies (`WA_AI_NAVY_is_escort_navy` = minor AND in the Allies) and gives
 them `role_ratio naval_escort 50`, which had nothing to bind to. A frigate hull costs **80 IC**.
 Fix 129 adds `AST CAN NZL RAJ SAF MAL BRM` to `available_for` on five groups — screens, escorts,
 light cruisers (owner ruling), mine sweepers and mine layers — and leaves the capital, super-heavy,
