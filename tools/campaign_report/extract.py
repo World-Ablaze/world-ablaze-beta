@@ -596,6 +596,11 @@ def equipment_catalog(repo):
             inherited.update(domain="air", role=air_roles[0])
         elif "armor" not in kinds and set(kinds) & {"infantry", "artillery", "anti_tank", "anti_air", "motorized", "mechanized", "rocket", "railway_gun"}:
             inherited["domain"] = "army"
+        # `train` is a military-line equipment like the three above: without a domain its factories
+        # were dropped from every total (GER 1942.12: 149 of 710 assigned). Separate from "army"
+        # because trains never enter a division, so deployed and reinforcement stay 0 by nature.
+        elif "train" in kinds:
+            inherited["domain"] = "rail"
         if row["is_archetype"] or not inherited["family"]:
             inherited["family"] = key
         return inherited
@@ -800,7 +805,7 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
             result["issues"].append(f"Definition {definition['definition']} is absent from the checkout: classification incomplete.")
         if classification.get("domain") == "air":
             aircraft_stock[classification.get("role") or classification["family"]] += inventory[eid]
-        if classification.get("domain") not in ("armor", "army", "air"):
+        if classification.get("domain") not in ("armor", "army", "air", "rail"):
             continue
         family, domain = classification["family"], classification["domain"]
         # A serialised line without `active_factories=` is a queued line with none assigned yet: the
@@ -823,7 +828,7 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
                 aggregate[key] += row[key]
     for archetype, need in requirements.items():
         classification = catalog.get(archetype, {})
-        if classification.get("domain") in ("armor", "army", "air"):
+        if classification.get("domain") in ("armor", "army", "air", "rail"):
             family_row(classification["family"], classification["domain"])["reinforcement_need"] += need
     result["equipment"].update(families=families, variants=variants)
     result["air"]["stock_types"] = dict(aircraft_stock)

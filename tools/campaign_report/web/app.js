@@ -232,7 +232,7 @@ async function boot(text) {
   }
   // Registry entries without a `name` are the base chassis; the game displays their localised key.
   const variantName=v=>(v.name&&v.name!==v.definition)?v.name:((D.equipment_names||{})[v.definition]||v.name||v.definition||v.id);
-  const domainOf={army:"army",tanks:"armor",air:"air"},domainLabel={army:"Army equipment",tanks:"Tanks and derivatives",air:"Aircraft"};
+  const domainOf={army:"army",tanks:"armor",air:"air",trains:"rail"},domainLabel={army:"Army equipment",tanks:"Tanks and derivatives",air:"Aircraft",trains:"Trains"};
   const familyPicked=k=>S.families.size===0||S.families.has(k);
   function equipmentFamilies(country){const fs=country?.equipment?.families;if(!fs)return [];const d=domainOf[S.equipment];return Object.entries(fs).filter(([k,f])=>f.domain===d&&familyPicked(k)).map(([,f])=>f);}
   function equipmentVariants(country){const d=domainOf[S.equipment];return (country?.equipment?.variants || []).filter(v=>v.domain===d&&familyPicked(v.family));}
@@ -246,19 +246,19 @@ async function boot(text) {
     if(S.keepFamilyPanel){panel.hidden=false;toggle.setAttribute("aria-expanded","true");S.keepFamilyPanel=false;}
     document.addEventListener("click",()=>{panel.hidden=true;toggle.setAttribute("aria-expanded","false");},{once:true});bar.append(box);}
   function equipmentSum(country,key){if(!country?.equipment)return null;const values=equipmentFamilies(country);if(values.length)return sumKnown(values.map(v=>v[key]));if(["production_per_day","training_need","deficit"].includes(key))return null;return finite(country.metrics?.[["stock","stock_deficit","active_factories"].includes(key)?"aircraft_stock":"divisions"])?0:null;}
-  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"]],S.equipment,v=>{S.equipment=v;S.families=new Set();});
-    const d=domainOf[S.equipment],air=S.equipment==="air",what=domainLabel[S.equipment];
+  function equipment(){const el=$("content"),bar=controlBar();segment(bar,[["army","Army"],["tanks","Tanks"],["air","Air"],["trains","Trains"]],S.equipment,v=>{S.equipment=v;S.families=new Set();});
+    const d=domainOf[S.equipment],air=S.equipment==="air",rail=S.equipment==="trains",what=domainLabel[S.equipment];
     const keys=[...new Set(snapshots.slice(S.from,S.to+1).flatMap(s=>tags().flatMap(t=>Object.entries(s.countries[t]?.equipment?.families || {}).filter(([,f])=>f.domain===d).map(([k])=>k))))].sort();
     S.families=new Set([...S.families].filter(k=>keys.includes(k)));
     familyPicker(bar,keys,what);
-    el.append(notice(air?"Stockpiles are signed. Aircraft serve in wings, not divisions: the save records no reinforcement request for them, so no shortfall is derived; wings come from the strategic_air section. Daily output is not computed.":"Stockpiles are signed. Reinforcement requests are recorded by compatible family; they cannot be attributed to individual variants. Shortfall = recorded reinforcement requests - stock (DERIVED): requests may include equipment already in transit, so it is pressure, not a certified shortage. Training requirement and daily output are not computed.",true));
+    el.append(notice(rail?"Stockpiles are signed. Trains never enter a division: nothing is deployed and no reinforcement request is recorded for them, so no shortfall is derived. Their factories share the same military lines as army, tank and aircraft equipment. Daily output and the railway capacity they serve are not computed.":air?"Stockpiles are signed. Aircraft serve in wings, not divisions: the save records no reinforcement request for them, so no shortfall is derived; wings come from the strategic_air section. Daily output is not computed.":"Stockpiles are signed. Reinforcement requests are recorded by compatible family; they cannot be attributed to individual variants. Shortfall = recorded reinforcement requests - stock (DERIVED): requests may include equipment already in transit, so it is pressure, not a certified shortage. Training requirement and daily output are not computed.",true));
     // Captured or received stock explains a family a country never produced (SOV medium tank
     // destroyers after Germany's collapse): say it beside the charts instead of leaving a puzzle.
     const foreignLines=tags().map(tag=>{const vs=equipmentVariants(current(tag));const total=sumKnown(vs.map(v=>Math.max(0,v.stock ?? 0))),foreign=sumKnown(vs.filter(v=>v.creator&&v.creator!==tag).map(v=>Math.max(0,v.stock ?? 0)));return total>0&&foreign/total>=.5?`${labelCountry(tag)}: ${fmt(foreign)} of ${fmt(total)} in stock (${Math.round(foreign/total*100)} %) were built by other countries (captured or received), factories assigned ${fmt(equipmentSum(current(tag),"active_factories"))}.`:null;}).filter(Boolean);
     if(foreignLines.length)el.append(notice(`Foreign-built stock at ${dateText(times[S.at])} — ${foreignLines.join(" ")}`));
     const meta=(key,unit="equipment")=>({unit,evidence:"DERIVED",source:key==="stock"?"production/equipments → variant registry":key==="active_factories"?"production/military_lines":air&&key==="deployed"?"strategic_air/TAG/air_wing_pool/air_wings/equipment → variant registry":`units/division → equipment/${key}`,note:air&&key==="deployed"?"Aircraft listed in wings with their variant amounts, aggregated by airframe family.":"Aggregated by equipment-definition family."});
     const g=grid();
-    const charts=air?[["stock","Aircraft stockpile","aircraft"],["deployed","Aircraft in wings","aircraft"],["active_factories","Factories assigned to aircraft","factories"]]:[["stock",`${what}: stockpile`,"equipment"],["deployed",`${what}: in divisions`,"equipment"],["reinforcement_need","Recorded reinforcement requests","equipment"],["active_factories",`Factories assigned to ${what.toLowerCase()}`,"factories"]];
+    const charts=rail?[["stock","Train stockpile","trains"],["active_factories","Factories assigned to trains","factories"]]:air?[["stock","Aircraft stockpile","aircraft"],["deployed","Aircraft in wings","aircraft"],["active_factories","Factories assigned to aircraft","factories"]]:[["stock",`${what}: stockpile`,"equipment"],["deployed",`${what}: in divisions`,"equipment"],["reinforcement_need","Recorded reinforcement requests","equipment"],["active_factories",`Factories assigned to ${what.toLowerCase()}`,"factories"]];
     for(const [key,title,unit] of charts){const m=meta(key,unit);g.append(chart(title,countriesSeries(c=>equipmentSum(c,key),m),unit,{note:m.note}));}
     if(air){
       // Roles come from the airframe families of the current selection, so both compositions follow the family filter.
@@ -272,7 +272,7 @@ async function boot(text) {
     const lineMeta=(key,note)=>({unit:"factories",evidence:"MEASURED",source:`production/military_lines/${key}`,note});
     const fg=section(el,"Factories requested, assigned and damaged","Per country · what the lines ask for, what they received, and how much of that is currently damaged");
     tags().forEach(tag=>{const series=[["requested_factories","Requested (theoretical)",lineMeta("requested_factories","Factories the lines of the selected family ask for.")],["active_factories","Assigned (practical)",lineMeta("active_factories","Factories the engine actually assigned; a queued line without the field counts 0.")],["damaged_factories","Assigned but damaged",lineMeta("damaged_factories","Assigned factories currently damaged (bombing, sabotage, occupation); the field is omitted when 0.")]].map(([key,name,meta],i)=>({name,color:i===2?"#a8483d":palette[i],meta,points:points(s=>linesSum(s.countries[tag],key))}));fg.append(chart(labelCountry(tag),series,"factories",{indexable:false}));});
-    if(!air){
+    if(!air&&!rail){
       // Stock and recorded demand on one panel per country, with the shortfall between them.
       const shortfallMeta={unit:"equipment",evidence:"DERIVED",source:"max(0, reinforcement requests - stock)",note:"Requests may include equipment already in transit: pressure, not a certified shortage."};
       const shortfall=c=>{const need=equipmentSum(c,"reinforcement_need"),stock=equipmentSum(c,"stock");return finite(need)&&finite(stock)?Math.max(0,need-stock):null;};
