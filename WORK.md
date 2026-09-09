@@ -173,7 +173,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### techtree-capability — OPEN (2026-09-09)
+### techtree-capability — TESTED (2026-09-09)
+- State: shipped as `7aac08324e` on `ai-rework`, pushed. TESTED, not SHIPPED-UNTESTED: this change
+  is scripted TRIGGERS only - no `WA_AI_*` effect called by an on_action changed signature or scope,
+  so no `WA_TEST_*` console harness applies and none is owed. The test that gates it is the boot,
+  and F9 PASSED (owner-run, below). CAMPAIGN-OK still owed: criterion (b) and the templates-intact
+  half of (a) are only visible in a campaign.
 - Owner order 2026-09-09 ("j'aimerais une refactorisation de la AI_CONFIG et des triggers utilisant
   la tech ... on abstracte des critères de tech à un pays, le sous entendu étant (ce pays a X arbre
   de tech) ... faire dépendre les triggers de tech des arbres de tech associés, et relier ces arbres
