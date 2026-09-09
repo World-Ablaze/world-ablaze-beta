@@ -1,7 +1,11 @@
 # ============================================================================
 # [air-budget] Air production lines, DEFAULT tier. One block per LINE, enabled by the layer-3
-# decision WA_AI_PRODUCTION_should_open_<line>_line (WA_AI_PRODUCTION_air.txt) that the purge
-# pulse reads too; a CANCEL block is its complement (-1000 on an archetype no open line funds).
+# decision WA_AI_PRODUCTION_should_keep_<line>_line (WA_AI_PRODUCTION_air.txt) = that line is
+# open OR maintained; a CANCEL block is its complement (-1000 on an archetype no kept line funds).
+# [air-budget] `keep`, not `open`, on purpose: a line whose park reached its cap keeps its
+# archetype factor and its floor so the park still modernises. What retires at the cap is the
+# unit_ratio weight and the category factor, both read from should_fund_<type>_type, which stays
+# the open-only gate. The maintenance FLOORS are the last section of this file.
 # The LAND pool's unit_ratio is NOT here: WA_AI_AIR_BUDGET_reconcile emits it monthly from the
 # open types (WA_AI_PRODUCTION_air_budget.txt). The category factor is ONE block per TYPE (end of
 # file), never per line - factors of one id SUM across enabled blocks, so three open tactical
@@ -14,7 +18,7 @@
 ########################## fighters ##########################
 
 WA_AI_PRODUCTION_air_line_interceptor = {
-	enable = { WA_AI_PRODUCTION_should_open_interceptor_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_interceptor_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = role_ratio id = air_fighter_int										value = 300 }
@@ -22,7 +26,7 @@ WA_AI_PRODUCTION_air_line_interceptor = {
 }
 
 WA_AI_PRODUCTION_air_line_fighter_multirole = {
-	enable = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_fighter_multirole_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_fighter_airframe				value = 100 }
@@ -32,7 +36,7 @@ WA_AI_PRODUCTION_air_line_fighter_multirole = {
 }
 
 WA_AI_PRODUCTION_air_line_fighter = {
-	enable = { WA_AI_PRODUCTION_should_open_fighter_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_fighter_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_fighter_airframe				value = 100 }
@@ -41,7 +45,7 @@ WA_AI_PRODUCTION_air_line_fighter = {
 }
 
 WA_AI_PRODUCTION_air_line_multirole = {
-	enable = { WA_AI_PRODUCTION_should_open_multirole_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_multirole_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_fighter_multirole_airframe	value = 100 }
@@ -55,8 +59,8 @@ WA_AI_PRODUCTION_air_line_multirole = {
 # the cancel-per-pulse. Assumes the trio above is the only funding of these two archetypes.
 WA_AI_PRODUCTION_air_line_small_fighter_CANCEL = {
 	enable = {
-		NOT = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes }
-		NOT = { WA_AI_PRODUCTION_should_open_fighter_line = yes }
+		NOT = { WA_AI_PRODUCTION_should_keep_fighter_multirole_line = yes }
+		NOT = { WA_AI_PRODUCTION_should_keep_fighter_line = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -65,8 +69,8 @@ WA_AI_PRODUCTION_air_line_small_fighter_CANCEL = {
 
 WA_AI_PRODUCTION_air_line_small_fighter_multirole_CANCEL = {
 	enable = {
-		NOT = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes }
-		NOT = { WA_AI_PRODUCTION_should_open_multirole_line = yes }
+		NOT = { WA_AI_PRODUCTION_should_keep_fighter_multirole_line = yes }
+		NOT = { WA_AI_PRODUCTION_should_keep_multirole_line = yes }
 	}
 	abort_when_not_enabled = yes
 
@@ -76,7 +80,7 @@ WA_AI_PRODUCTION_air_line_small_fighter_multirole_CANCEL = {
 ########################## close support ##########################
 
 WA_AI_PRODUCTION_air_line_cas_lowered = {
-	enable = { WA_AI_PRODUCTION_should_open_cas_lowered_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_cas_lowered_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_bomber_airframe				value = 100 }
@@ -85,7 +89,7 @@ WA_AI_PRODUCTION_air_line_cas_lowered = {
 }
 
 WA_AI_PRODUCTION_air_line_cas = {
-	enable = { WA_AI_PRODUCTION_should_open_cas_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_cas_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_bomber_airframe				value = 100 }
@@ -99,7 +103,7 @@ WA_AI_PRODUCTION_air_line_cas = {
 # script_enum_equipment_category (ASSUMED no-op, carried from the old file): the carrier
 # reconcile must not inherit them as a working lever - the variant factor is the live one.
 WA_AI_PRODUCTION_air_line_cv_cas = {
-	enable = { WA_AI_PRODUCTION_should_open_cv_cas_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_cv_cas_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_bomber_airframe			value = 100 }
@@ -112,7 +116,7 @@ WA_AI_PRODUCTION_air_line_cv_cas = {
 # [carrier-needs-config] Unguarded CANCEL on purpose: a country the archetype did not name never
 # opens the line, and must therefore produce no carrier CAS at all.
 WA_AI_PRODUCTION_air_line_cv_cas_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_cv_cas_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_cv_cas_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_bomber_airframe			value = -1000 }
@@ -131,7 +135,7 @@ WA_AI_PRODUCTION_air_line_land_cas_CANCEL_for_carrier_power = {
 ########################## carrier fighters ##########################
 
 WA_AI_PRODUCTION_air_line_cv_fighter = {
-	enable = { WA_AI_PRODUCTION_should_open_cv_fighter_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_cv_fighter_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_fighter_airframe			value = 100 }
@@ -143,7 +147,7 @@ WA_AI_PRODUCTION_air_line_cv_fighter = {
 # navies that hold carriers outside the archetype (ENG): giving them the aircraft is an archetype
 # decision, not something the absence of a suppression should grant.
 WA_AI_PRODUCTION_air_line_cv_fighter_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_cv_fighter_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_cv_fighter_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = cv_small_fighter_airframe			value = -1000 }
@@ -154,7 +158,7 @@ WA_AI_PRODUCTION_air_line_cv_fighter_CANCEL = {
 # Both lines write the engine role `heavy_fighter`: medium_fighter_airframe and the attacker are
 # allowed_types = { heavy_fighter }, and the two lines are exclusive by decision, so they never stack.
 WA_AI_PRODUCTION_air_line_heavy_fighter = {
-	enable = { WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_heavy_fighter_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_fighter_airframe				value = 100 }
@@ -163,7 +167,7 @@ WA_AI_PRODUCTION_air_line_heavy_fighter = {
 }
 
 WA_AI_PRODUCTION_air_line_attacker = {
-	enable = { WA_AI_PRODUCTION_should_open_attacker_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_attacker_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_fighter_multirole_airframe	value = 100 }
@@ -172,7 +176,7 @@ WA_AI_PRODUCTION_air_line_attacker = {
 }
 
 WA_AI_PRODUCTION_air_line_attacker_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_attacker_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_attacker_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_fighter_multirole_airframe	value = -1000 }
@@ -181,7 +185,7 @@ WA_AI_PRODUCTION_air_line_attacker_CANCEL = {
 ########################## medium bombers ##########################
 
 WA_AI_PRODUCTION_air_line_tactical_bomber = {
-	enable = { WA_AI_PRODUCTION_should_open_tactical_bomber_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_tactical_bomber_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_heavy_bomber_airframe		value = 100 }
@@ -190,14 +194,14 @@ WA_AI_PRODUCTION_air_line_tactical_bomber = {
 }
 
 WA_AI_PRODUCTION_air_line_tactical_bomber_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_tactical_bomber_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_tactical_bomber_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_heavy_bomber_airframe		value = -1000 }
 }
 
 WA_AI_PRODUCTION_air_line_fast_bomber = {
-	enable = { WA_AI_PRODUCTION_should_open_fast_bomber_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_fast_bomber_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = fast_bomber_airframe				value = 100 }
@@ -206,14 +210,14 @@ WA_AI_PRODUCTION_air_line_fast_bomber = {
 }
 
 WA_AI_PRODUCTION_air_line_fast_bomber_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_fast_bomber_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_fast_bomber_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = fast_bomber_airframe				value = -1000 }
 }
 
 WA_AI_PRODUCTION_air_line_strike_bomber = {
-	enable = { WA_AI_PRODUCTION_should_open_strike_bomber_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_strike_bomber_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_bomber_airframe				value = 100 }
@@ -222,7 +226,7 @@ WA_AI_PRODUCTION_air_line_strike_bomber = {
 }
 
 WA_AI_PRODUCTION_air_line_strike_bomber_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_strike_bomber_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_strike_bomber_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_bomber_airframe				value = -1000 }
@@ -231,7 +235,7 @@ WA_AI_PRODUCTION_air_line_strike_bomber_CANCEL = {
 ########################## strategic bombers ##########################
 
 WA_AI_PRODUCTION_air_line_strategic_bomber = {
-	enable = { WA_AI_PRODUCTION_should_open_strategic_bomber_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_strategic_bomber_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = large_bomber_airframe				value = 100 }
@@ -242,7 +246,7 @@ WA_AI_PRODUCTION_air_line_strategic_bomber = {
 ########################## naval bombers ##########################
 
 WA_AI_PRODUCTION_air_line_naval_bomber = {
-	enable = { WA_AI_PRODUCTION_should_open_naval_bomber_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_naval_bomber_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_naval_bomber_airframe			value = 100 }
@@ -254,7 +258,7 @@ WA_AI_PRODUCTION_air_line_naval_bomber = {
 # denial kept their factories and their park for months past the cap. Assumes the block above is
 # the only funder of this archetype - a second funder would fight this one.
 WA_AI_PRODUCTION_air_line_naval_bomber_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_naval_bomber_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_naval_bomber_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = small_naval_bomber_airframe			value = -1000 }
@@ -263,7 +267,7 @@ WA_AI_PRODUCTION_air_line_naval_bomber_CANCEL = {
 ########################## support types ##########################
 
 WA_AI_PRODUCTION_air_line_scout_plane = {
-	enable = { WA_AI_PRODUCTION_should_open_scout_plane_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_scout_plane_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_scout_airframe				value = 100 }
@@ -271,14 +275,14 @@ WA_AI_PRODUCTION_air_line_scout_plane = {
 }
 
 WA_AI_PRODUCTION_air_line_scout_plane_CANCEL = {
-	enable = { NOT = { WA_AI_PRODUCTION_should_open_scout_plane_line = yes } }
+	enable = { NOT = { WA_AI_PRODUCTION_should_keep_scout_plane_line = yes } }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = medium_scout_airframe				value = -500 }
 }
 
 WA_AI_PRODUCTION_air_line_transport = {
-	enable = { WA_AI_PRODUCTION_should_open_transport_line = yes }
+	enable = { WA_AI_PRODUCTION_should_keep_transport_line = yes }
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = transport_plane_equipment			value = 1 }
@@ -332,4 +336,151 @@ WA_AI_PRODUCTION_air_category_heavy_fighter = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_production_factor id = heavy_fighter								value = 100 }
+}
+
+########################## maintenance floors, one pair per TYPE ##########################
+
+# [air-budget] The factory floor a role keeps while its park sits at its cap. Without it the
+# type's weight and category factor are gone, the engine allocates zero factories, and a mature
+# park flies the airframe it had for the rest of the campaign - a stock full of obsolete planes
+# and nothing replacing them. Two blocks per role, ADDITIVE with each other and with the
+# `min_factories 1` its line block already carries (MEASURED additive on the carrier floors,
+# WA_AI_PRODUCTION_carrier_planes.txt): 2 factories for a wartime industry, 5 above the large
+# band. Gated on WA_AI_PRODUCTION_should_maintain_<type>_type, which is false whenever any line of
+# that role is OPEN - a role being funded normally never reaches these blocks.
+#
+# Two known deviations from the 2 / 5 pair, both deliberate:
+#   - tactical_bomber: fast, strike and tactical are non-exclusive when open, so a country running
+#     all three archetypes carries all three line floors and lands above 5. Three airframes to
+#     modernise, three floors.
+#   - fighter with the interceptor line alone maintained: the interceptor block carries no
+#     min_factories of its own (it never did), so that country floors at 1 / 4 instead of 2 / 5.
+#
+# WHAT THIS FLOOR ASSUMES, and how to tell the assumption is gone. A floor is a REPLACEMENT rate
+# only while it is small against the park it maintains, and the same pair of numbers is not small
+# against every park: 5 factories are about 1 % a month of a 5000-plane fighter park and several
+# times that of the 150-plane scout park or the 200-plane transport park (scout_cap /
+# transport_cap, common/script_constants/wa_ai_production.txt). A maintained line keeps producing
+# while the park stays above its cap and neither support role takes attrition, so both drift well
+# past their bar: at the deep floor, +380 scouts and +652 transports over three years, i.e. 3.5x
+# and 4.3x their cap. That is an accepted cost, not an oversight.
+# The fact is gone when a support park reads far above its cap in a save; the fix is 1 flat for
+# scout and transport, not a change to the six combat roles.
+#
+# The carrier roles are NOT here: their volume lever is the deck-derived ladder of
+# WA_AI_PRODUCTION_DEFAULT_cv_plane.txt behind the saturation brake, and that ladder now survives
+# a cap closure by itself (should_keep_cv_*_type).
+
+WA_AI_PRODUCTION_air_maintenance_floor_fighter = {
+	enable = { WA_AI_PRODUCTION_should_maintain_fighter_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = fighter								value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_fighter_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_fighter_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = fighter								value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_cas = {
+	enable = { WA_AI_PRODUCTION_should_maintain_cas_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = cas									value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_cas_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_cas_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = cas									value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_heavy_fighter = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_fighter_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = heavy_fighter							value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_heavy_fighter_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_heavy_fighter_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = heavy_fighter							value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_tactical = {
+	enable = { WA_AI_PRODUCTION_should_maintain_tactical_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = tactical_bomber						value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_tactical_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_tactical_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = tactical_bomber						value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_strategic = {
+	enable = { WA_AI_PRODUCTION_should_maintain_strategic_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = strategic_bomber						value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_strategic_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_strategic_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = strategic_bomber						value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_naval = {
+	enable = { WA_AI_PRODUCTION_should_maintain_naval_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = naval_bomber							value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_naval_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_naval_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = naval_bomber							value = 3 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_scout = {
+	enable = { WA_AI_PRODUCTION_should_maintain_scout_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = scout_plane							value = 1 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_scout_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_scout_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = scout_plane							value = 3 }
+}
+
+# The transport line block carries no min_factories of its own, so this pair is the whole floor:
+# 2 and 5, not 1 and 4.
+WA_AI_PRODUCTION_air_maintenance_floor_transport = {
+	enable = { WA_AI_PRODUCTION_should_maintain_transport_type = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = air_transport							value = 2 }
+}
+
+WA_AI_PRODUCTION_air_maintenance_floor_transport_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_transport_maintenance = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories id = air_transport							value = 3 }
 }

@@ -19,7 +19,9 @@ when the table alone would put fighters under 40 % of the pool.
 | --- | --- | --- |
 | **Type** | The engine role that receives a `unit_ratio`: `fighter`, `cas`, `tactical_bomber`, `strategic_bomber`, `naval_bomber`, `heavy_fighter`; carrier pool `cv_fighter`, `cv_cas`, `cv_naval_bomber`; support `scout_plane`, `air_transport` (min-factory lines, no weight). | DECLARATION |
 | **Archetype** | An airframe inside a type. fighter = {small_fighter, small_fighter_multirole, small_fighter_interceptor}; tactical = {fast_bomber, medium_bomber (strike), medium_heavy_bomber (tactical)}; heavy_fighter = {medium_fighter, medium_fighter_multirole (attacker)}; strategic = {large, large_heavy}. | `common/units/equipment/plane_airframes.txt` (`allowed_types`) |
-| **Line** | One `ai_strategy` block per archetype-and-mode, enabled by `WA_AI_PRODUCTION_should_open_<line>_line`. | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` |
+| **Line** | One `ai_strategy` block per archetype-and-mode, enabled by `WA_AI_PRODUCTION_should_keep_<line>_line` = that line is open OR maintained. | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` |
+| **Line state** | OPEN (want holds, park below cap) / MAINTAINED (want holds, park at cap) / CLOSED (want false). `should_open_*` is the first, `should_maintain_*` the second, `should_keep_*` their union. | `common/scripted_triggers/WA_AI_PRODUCTION_air.txt` section MAINTENANCE |
+| **Maintenance floor** | The `equipment_production_min_factories` a role keeps while its park sits at its cap: 2 factories, 5 above the large industry band. It is what still modernises a saturated park - at zero factories nothing ever replaces the airframes it has. | `WA_AI_PRODUCTION_DEFAULT_air.txt`, maintenance-floor blocks |
 | **Weight** | `constant:wa_ai_production.air_budget.weight_<type>`; share = weight / Σ open weights. | `common/script_constants/wa_ai_production.txt` |
 | **Book** | `WA_AI_AIR_BUDGET_<type>`, the value currently applied to the role id (country variable, save-visible). | `common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt` |
 | **Purge book** | `WA_AI_PRODUCTION_AIR_open_<archetype>` country flag: the line funded this archetype at the last pulse. Its open→closed edge fires the archetype's `AI_purge_*` flag (1 day), which `can_be_produced` reads. That edge fires ONCE and is **not on its own sufficient to cancel a running line**: MEASURED on campaign `2ee8a4ba`, SOV's five `small_naval_bomber_airframe` lines survived the edge and kept 287 → 3 factories over five months, their efficiency climbing monotonically 17 % → 110 % (never cancelled and re-added), while the archetypes that also carry a `_CANCEL` block were deleted from the save within one month of the same edge (USA fighters 1943.12→1944.1, ENG fighters 1944.5→1944.6, reopening at efficiency 9.00 = engine base). Treat the purge as the *ban on a new line* and the `_CANCEL` block as the *continuous denial*; an archetype with only the first keeps building. | `common/scripted_effects/WA_production_strategy_effects.txt` (`WA_aircraft_production_strategies`) |
@@ -33,8 +35,8 @@ when the table alone would put fighters under 40 % of the pool.
 | DECLARATION | `tools/air_tech_registry.json` | per line, per tech tree, the rung the AI will fund (base / ad_tech); `exclude.airframes` = models the evaluator must never adopt |
 | OBSERVATION | `common/scripted_triggers/WA_AI_PRODUCTION_air_tech.txt` (**GENERATED** by `tools/gen/gen_air_tech_gates.py`) | `WA_AI_PRODUCTION_has_worthwhile_<line>`, jet vetoes |
 | OBSERVATION | `common/scripted_triggers/WA_AI_PRODUCTION_air.txt` (top) | park-below-cap pairs, bomber bases lost, own air arm |
-| DECISION | `common/scripted_triggers/WA_AI_PRODUCTION_air.txt` | `should_build_<line>` (want) and `should_open_<line>_line` (want + industry band + exclusions) |
-| CONSUMPTION | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` | one block per line: archetype factor at parity (100), category factor at parity (100), `min_factories 1`; CANCEL blocks (-1000) as complements. **No land `unit_ratio` here.** |
+| DECISION | `common/scripted_triggers/WA_AI_PRODUCTION_air.txt` | `wants_<x>` (want without the cap), `should_build_<x>` (= wants + cap), `should_open_<line>_line` (want + industry band + exclusions), `should_maintain_<line>_line` (want + band, cap closed, no line of the role open), `should_keep_<line>_line` (their union) |
+| CONSUMPTION | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` | one block per line: archetype factor at parity (100), category factor at parity (100), `min_factories 1`; CANCEL blocks (-1000) as complements; the maintenance floors, one pair per role. **No land `unit_ratio` here.** |
 | CONSUMPTION | `common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt` | `WA_AI_AIR_BUDGET_reconcile`: open types → weights → diff vs books → `add_ai_strategy unit_ratio ±delta` (meta_effect). Monthly + on_startup. |
 | CONSUMPTION | `common/scripted_effects/WA_production_strategy_effects.txt` | the ~2-day pulse: land fighter park variable, BoB flag, purge books |
 | Legacy | `common/ai_strategy/World_Ablaze_production_air_strategies.txt` | `air_factory_balance` per tag + date — the AIR SHARE of the industry, subject `air-share-windows`, out of this model |
@@ -84,13 +86,32 @@ air_attack per IC 1.91 (attacker) vs 1.90 (heavy fighter) vs 1.14 (CAS).
 Two closures. **Hard** (archetype not allowed, tech not worthwhile, Battle of Britain programme,
 bomber bases lost, own-air-arm test): the purge book bans a new line, and the archetype's `_CANCEL`
 block is what actually ends the running one (see the Purge book row in §2 for the measurement). **Cap** (park at its
-cap): the line closes at the cap and REOPENS only at the `_reopen` bar (90 %), read through the purge
-book — a Schmitt pair, so a mature park at its cap does not flip the line, and the monthly budget
-entry, on every pulse. No book yet (fresh 1936, a save from a build before this system, a
-human-to-AI switch): the trigger reads the reopen bar, so a park already in [90 %, cap) stays
-closed with no purge until attrition takes it under 90 %; the pair reaches its fixed point on the
-first pulse. Whether a cap closure should skip the purge (weight 0 and CANCEL only)
-waits on the phase-0b measurement (`WA_TEST_AIRB_probe_cancel_tactical`).
+cap): the line is not closed at all, it is MAINTAINED. It loses its `unit_ratio` weight and its
+category factor, keeps its archetype factor and takes a floor of 2 factories (5 above the large
+industry band), and fires NO purge. The park therefore keeps modernising instead of flying to the
+end of the campaign the airframe it had when it hit the bar, and the engine's production line
+survives, so the ramp after a reopening starts from the efficiency it had rather than from the
+engine base (MEASURED 9.00 on the USA 1943.12 and ENG 1944.5 reopenings). The `_reopen` bar (90 %)
+still governs when the WEIGHT comes back, read through the purge book - a Schmitt pair, so a mature
+park at its cap does not flip the weight on every pulse. No book yet (fresh 1936, a save from a
+build before this system, a human-to-AI switch): the trigger reads the reopen bar, so a park already
+in [90 %, cap) is maintained until attrition takes it under 90 %; the pair reaches its fixed point
+on the first pulse. This answers the phase-0b question the earlier text left open (should a cap
+closure skip the purge): it does, and it keeps a floor as well.
+
+The three states are kept disjoint inside one engine role by two rules, both in the MAINTENANCE
+section of `WA_AI_PRODUCTION_air.txt`: a line is maintained only while `should_fund_<type>_type` is
+false (no line of its role is open), and inside the maintained set the open set's exclusion order is
+repeated on `should_maintain_*`. Section G of the console harness measures both
+(`maintenance-disjoint` in the verdict line). Two deliberate deviations from the 2 / 5 pair: the
+three medium-bomber lines are non-exclusive when open, so a country running all three archetypes
+carries all three line floors; and a country maintaining only its interceptor line floors at 1 / 4,
+because the interceptor block has never carried a `min_factories` of its own.
+
+The carrier roles have no maintenance floor of their own: their volume lever is the deck-derived
+ladder of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt` behind the saturation brake, and a second
+cap-driven floor on top of it is the very thing that brake exists to remove. What changed for them
+is that the ladder now survives a cap closure (`should_keep_cv_*_type`).
 
 ## 6. Cadence and bounds
 
@@ -131,6 +152,10 @@ country carrying hundreds of persistent `unit_ratio` entries has a flapping deci
   carrier min-factory floors are `ai_strategy` literals in `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`) — full restart,
   the reconcile diffs against stored books.
 - A cap: `air` group, cap and `_reopen` together.
+- The maintenance floor (2 / 5): the `ai_strategy` literals of the maintenance-floor blocks at the
+  end of `WA_AI_PRODUCTION_DEFAULT_air.txt`; the industry band that picks between them is
+  `WA_AI_PRODUCTION_should_deepen_<type>_maintenance`. A role that must never be maintained loses
+  its `should_maintain_<line>_line`, not its floor.
 - A tech rung or an excluded model: `tools/air_tech_registry.json`, then
   `python tools/gen/gen_air_tech_gates.py` (`--check` in CI; `TREE-GAP` WARN = a tree deliberately
   barred from a line).

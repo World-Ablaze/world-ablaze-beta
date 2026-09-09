@@ -317,6 +317,79 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   files load or the armour template system goes silent.
 
 ### air-budget — SHIPPED-UNTESTED (2026-09-09)
+- **Maintenance floor SHIPPED 2026-09-09 (owner order: "je veux un filet d'usines minimum en
+  permanence, pour continuer a un peu moderniser le parc"; N = 2 / 5, every type).** A line closed
+  by its park CAP is no longer treated like one closed by a want: it enters a third state,
+  MAINTAINED - archetype factor kept, `equipment_production_min_factories` floor of 2 (5 above
+  `tier_large_mils`), `unit_ratio` weight and category factor retired, no `AI_purge_*`. The defect
+  it fixes, MEASURED on campaign `2ee8a4ba`: USA 0 fighter factories 1943.12-1945.1, ENG 0 for the
+  whole of 1943 - a park at its cap flies the airframe it had when it hit the bar for the rest of
+  the campaign, because nothing is produced to replace it. This DELIVERS the maintenance half of
+  the proposal recorded below ("80 % reopen or a maintenance weight at cap") and leaves the
+  reopen-bar half untouched: it is a FLOOR, not a weight, so the type's share of the air pool is
+  still 0 while capped and the fighter-floor arithmetic is unchanged. Secondary gain, DERIVED from
+  the same campaign's MEASURED reopenings (ENG 1944.10 at efficiency 9.00 = engine base): the
+  engine's production line is never deleted, so a reopening ramps from the efficiency it had.
+- Mechanics: `should_open_<line>_line` UNCHANGED (it still drives the purge books, the type gates
+  and the monthly weights); new `should_maintain_<line>_line` / `should_keep_<line>_line` (= open
+  OR maintained) in a MAINTENANCE section of `WA_AI_PRODUCTION_air.txt`; every `should_build_<x>`
+  split into `wants_<x>` + a named `<x>_park_is_below_cap`; the line blocks and every `_CANCEL`
+  complement of `WA_AI_PRODUCTION_DEFAULT_air.txt` moved from `should_open_*` to `should_keep_*`;
+  16 land maintenance-floor blocks; the purge pulse still writes its book from `should_open_*` (it
+  IS the "was open" side of every Schmitt pair) but fires `AI_purge_*` only when no funder line is
+  even kept. Reviewer MEASURED the wants/cap split equivalent to the old `should_build_*` for all
+  18 arms by AST compare of HEAD against the tree.
+- Impact analysis, changed protected behaviours (P3(a)/(e)): (1)
+  `should_cancel_land_cas_for_carrier_power` now reads `should_keep_cv_cas_line`, so a carrier
+  strike power whose carrier-CAS line is closed BY ITS CAP no longer gets the
+  `equipment_production_factor id = cas = -1000` land-CAS denial of `[carrier-needs-config]`. That
+  matches the OPEN state, which never carried it - the denial is for a power the archetype never
+  gave a carrier CAS line, not for one that filled its decks - but it is a behaviour change and it
+  is listed here rather than left to be found. (2) The Schmitt cap pair still reopens at 90 %, but
+  a maintained line adds to the very park that must fall to reach the bar, so for a role with low
+  attrition the reopen bar is now effectively unreachable and MAINTAINED is an absorbing state.
+  Accepted: the floor is the point, and the weight staying at 0 is what the reopen bar guards.
+- Carrier roles: the deck-derived `1 + 4` ladder of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt` stays
+  gated on the line being OPEN, and a cap closure hands the role to a separate ONE-factory floor
+  behind the same `[equipment-selection]` saturation brake. A first pass ungated the ladder itself
+  and `wa-lessons-reviewer` returned CONFLICT on it, correctly: min-factories is need-blind and
+  additive (Fix 66 / R43), and for a big fleet the brake bar sits far above the park cap - fighters
+  cap 2000 vs bar 3510 at 20-39 hulls (1510 planes of headroom) and vs 5400 at 40+ (3400); naval
+  bombers 1800 vs 2340 (540) and vs 3600 (1800). DERIVED at 5 factories that band takes ~8 years to
+  cross, i.e. the rest of the campaign with the engine's own deck demand already at zero - the exact
+  Fix 66 failure mode. At 1 factory it is +114 planes over three years and no bar is ever reached.
+- **Park trajectory, the number instead of the adjective (P3(f))** - full table with its inputs in
+  scratchpad `air_maintenance_floor_trajectory.md`. MEASURED `POWERED_FACTORY_SPEED_MIL = 2.5`
+  IC/day (`05_defines.lua:192`, `BASE_FACTORY_SPEED_MIL` is 0), so 1 factory = 76 IC/month at 100 %
+  efficiency. DERIVED park growth above the cap at the DEEP (5-factory) floor, t+12 / t+36 months,
+  no attrition: fighter +190/+570 (+11 % of cap), cas +190/+570 (+19 %), heavy fighter +127/+380
+  (+13 %), tactical +109/+326 (+16 %), strategic +67/+202 (+7 %), naval bomber +190/+570 (+38 %),
+  **scout +127/+380 (+253 %)**, **transport +217/+652 (+326 %)**; carrier roles at their 1-factory
+  floor +38/+114 (+6 %). The six combat roles are a replacement rate. Scout and transport are not:
+  their caps are 150 and 200 and neither role takes attrition, so the cap stops binding for the
+  rest of the campaign. Shipped as ruled ("tous les types") with the end-state numbers recorded at
+  the code site; the one-line exception (drop their two `_large` blocks, transport base 2 -> 1) is
+  written out in the scratchpad file and NOT applied.
+- ASSUMED and NOT verified: that newly produced planes reach the EXISTING wings rather than sitting
+  in the stockpile. If the engine does not refit a wing in place, modernisation only runs at the
+  rate of wing turnover and the floor should be retuned or dropped. First thing to read on a save.
+- Reviewers: `wa-lessons-reviewer` CONFLICT on the carrier ladder (fixed above, its two other
+  required items - the trajectory table and the stale `cv_plane.txt` header - also applied);
+  `wa-architecture-reviewer` CONCERNS, all six required items applied (floor total no longer
+  re-typed as a literal in the harness, the harness no longer prints a factory expectation it
+  cannot honour for the two documented deviations, this impact line, the carrier headroom numbers,
+  the dated ruling stripped from the code comment, and the `[air-maintenance]` comment slug renamed
+  to `[air-budget]` - this subject owns the work, no new subject opened).
+- Checkers green: `check_ai_layers` 0 ERROR (the industry band moved out of the `ai_strategy`
+  enable blocks into `should_deepen_<type>_maintenance` to keep LAYER4-RAW-GATE at 0),
+  `check_constants` 0, `check_worklist` 0.
+- Verification (maintenance floor): `event wa_airb.4 <TAG>` after a COLD boot on a save where a
+  park is at its cap (USA or ENG fighters 1943-44 in `2ee8a4ba` are the known cells) must read
+  `maintenance-disjoint=1`, `lines: f=0` with `maint: f=1` for that country, and `floors:
+  fighter=2` (deep gate armed). In the production tab that country must show a small non-zero
+  fighter factory count instead of 0. Harness section G is the new probe; the verdict line now
+  carries FIVE values, all of which must read 1 - G1 and G3 restate terms the maintain triggers
+  already assert and only catch a deletion, G2 re-derives the role set from the section C walk.
 - **Campaign `2ee8a4ba` scored 2026-09-09 (133 saves 1936.2-1947.2, instrumented build, owner
   report HTML).** Decision side PASS: GER 1939-41 `wa_tlm_air_w_fighter_pct` 40/40/40/48/48, floor
   live, `air_emit_n` ≤ 41 on every major. **Factory side FAIL**: from the saves' military_lines

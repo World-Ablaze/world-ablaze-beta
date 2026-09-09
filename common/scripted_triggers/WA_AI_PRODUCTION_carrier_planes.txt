@@ -66,6 +66,17 @@ WA_AI_PRODUCTION_carrier_planes_major = {
 # needed: every smaller band also applies to a small fleet, so the OR naturally
 # selects the tightest applicable bar.
 #
+# [air-budget] The bars were derived while the 1 + 4 ladder was the ONLY floor and while a
+# park cap could take it away. Both still hold: the ladder stays cap-gated, and what a cap closure
+# leaves behind is one factory, also behind these bars. What the bars do NOT do is bound a capped
+# fleet - for 20 hulls and up the bar sits above the park cap, so between cap and bar the ONLY
+# brake is the size of the maintained floor. The headroom, stated as a number rather than as "the
+# brake removes it": fighters cap 2000 vs bar 3510 (20-39 hulls) = 1510 planes, vs bar 5400 (40+
+# hulls) = 3400; naval bombers cap 1800 vs bar 2340 = 540, vs bar 3600 = 1800. At the 1 + 4 ladder
+# a capped fleet covers the 40-hull fighter band in about 7 years (DERIVED: 5 factories x 2.5 IC/day
+# / 24 IC a plane = 190 planes a year) - the rest of the campaign. At the one factory this floor
+# grants it covers 114 planes in three years and never reaches any bar. That is why it is 1.
+#
 # Against the measured data the bars brake exactly the right things:
 #   JAP (20 hulls, bars 3510/2340): fighters 4 159 TRIP, naval bombers 5 840 TRIP
 #   ENG (17 hulls, bars 1710/1140): fighters   727 keep, naval bombers 2 268 TRIP
@@ -134,10 +145,14 @@ WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = {
 # The four floor gates consumed by WA_AI_PRODUCTION_DEFAULT_cv_plane.txt.
 # Base = "has a deck at all"; major = "has a deck fleet the base floor cannot feed".
 # [air-budget] A floor is a VOLUME lever and follows the same decision as the line, the weight
-# and the CANCEL (deck held x line open x tech worthwhile x park below cap): a floor on a role
+# and the CANCEL (deck held x line OPEN x tech worthwhile x park below cap): a floor on a role
 # whose line the AI judged not worth a factory forces a model it would never fund. Assumes the
 # should_fund_cv_*_type gates are the only line decision; gone when a carrier line opens or
 # closes anywhere but in WA_AI_PRODUCTION_air.txt.
+# [air-budget] This ladder stays OPEN-gated on purpose. A cap closure hands the role to the
+# one-factory maintenance floor below instead - 1 + 4 need-blind factories walking a fleet from
+# its cap up to the far higher saturation bar is exactly the over-production the brake above
+# exists to remove.
 WA_AI_PRODUCTION_carrier_planes_floor_fighter = {
 	WA_AI_PRODUCTION_should_fund_cv_fighter_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
@@ -157,5 +172,18 @@ WA_AI_PRODUCTION_carrier_planes_major_fighter = {
 WA_AI_PRODUCTION_carrier_planes_major_nav_bomber = {
 	WA_AI_PRODUCTION_carrier_planes_major = yes
 	WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
+}
+
+# [air-budget] The carrier maintenance floor: ONE factory for a role whose park reached its
+# cap, so a deck fleet still modernises without the need-blind 1 + 4 ladder above walking it up to
+# the saturation bar. Still behind the brake - a fleet already drowning in aircraft gets nothing.
+WA_AI_PRODUCTION_should_maintain_cv_fighter_floor = {
+	WA_AI_PRODUCTION_should_maintain_cv_fighter_type = yes
+	WA_AI_PRODUCTION_carrier_planes_saturated_fighter = no
+}
+
+WA_AI_PRODUCTION_should_maintain_cv_nav_bomber_floor = {
+	WA_AI_PRODUCTION_should_maintain_cv_naval_bomber_type = yes
 	WA_AI_PRODUCTION_carrier_planes_saturated_nav_bomber = no
 }

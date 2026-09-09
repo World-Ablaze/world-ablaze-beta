@@ -22,6 +22,10 @@
 # [equipment-selection] gated per role on that role not being saturated. When the gate closes the
 # floor disappears and the role falls back to the engine's own deck-derived demand,
 # which for a saturated country is already zero - that is the whole point.
+# [air-budget] this ladder is for an OPEN line only. A line closed by its park cap keeps the
+# separate one-factory maintenance floor at the end of this file, never this pair: 1 + 4 need-blind
+# factories would walk a capped fleet all the way to the saturation bar, which for a big fleet sits
+# far above the cap (cv_fighter_cap 2000 vs a 3510 bar at 20-39 hulls).
 # [air-budget] and gated on the role's line being open (deck x tech x cap). Base 1 per role;
 # the carrier-MAJOR floor (+4) needs ten decks, denied to a navy with a handful of decks where
 # that sum would be most of its air industry. The floor IS the volume: every measured big-fleet
@@ -67,4 +71,31 @@ WA_DEFAULT_production_carrier_planes_major_nav_bomber = {
     abort_when_not_enabled = yes
 
     ai_strategy = { type = equipment_production_min_factories  id = cv_naval_bomber	value = 4 }
+}
+
+
+# [air-budget] Carrier maintenance floor - the role's park is AT its cap, so the ladder above
+# is gone and this single factory is the whole production. It is the carrier answer to the land
+# maintenance floors of WA_AI_PRODUCTION_DEFAULT_air.txt (2 / 5): deliberately smaller, with no
+# carrier-major term, because the engine's own deck demand at this point is already zero and a
+# min-factories floor is need-blind. The saturation brake still applies on top.
+# Carrier CAS is not here: its line block in WA_AI_PRODUCTION_DEFAULT_air.txt already carries
+# `min_factories cv_cas 1` and that block is kept through a cap closure, so its maintained floor
+# is the same 1 by construction.
+WA_DEFAULT_production_carrier_planes_maintenance_fighter = {
+    enable = {
+        WA_AI_PRODUCTION_should_maintain_cv_fighter_floor = yes
+    }
+    abort_when_not_enabled = yes
+
+    ai_strategy = { type = equipment_production_min_factories  id = cv_fighter	value = 1 }
+}
+
+WA_DEFAULT_production_carrier_planes_maintenance_nav_bomber = {
+    enable = {
+        WA_AI_PRODUCTION_should_maintain_cv_nav_bomber_floor = yes
+    }
+    abort_when_not_enabled = yes
+
+    ai_strategy = { type = equipment_production_min_factories  id = cv_naval_bomber	value = 1 }
 }

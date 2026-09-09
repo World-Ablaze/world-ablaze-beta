@@ -16,7 +16,10 @@
 #	the re-derived set; a freshly LOADED save can read every book 0 until the 2-day pulse runs
 #	(the books are written by the pulse only) - wa_airb.3 runs the pulse first.
 #
-#	READ THE VERDICT LINE AT THE BOTTOM. All four values must read 1.
+#	Section G measures the third line state (MAINTAINED: park at its cap, floor kept, no weight)
+#	and proves it stays disjoint from OPEN.
+#
+#	READ THE VERDICT LINE AT THE BOTTOM. All five values must read 1.
 ############################################################################################################
 
 WA_TEST_AIRB_report = {
@@ -476,13 +479,205 @@ WA_TEST_AIRB_report = {
 	if = { limit = { WA_AI_PRODUCTION_carrier_planes_major_fighter = yes } set_temp_variable = { _airb_fm_f = 1 } }
 	set_temp_variable = { _airb_fm_n = 0 }
 	if = { limit = { WA_AI_PRODUCTION_carrier_planes_major_nav_bomber = yes } set_temp_variable = { _airb_fm_n = 1 } }
-	log = "  carrier: decks=[?_airb_deck|.0]  expect cvf=[?_airb_y_cvf|.0] cvcas=[?_airb_y_cvcas|.0] cvnav=[?_airb_y_cvnav|.0]  books cvf=[?_airb_bcv_f|.0] cvcas=[?_airb_bcv_cas|.0] cvnav=[?_airb_bcv_nav|.0]  floors f=[?_airb_fl_f|.0]+[?_airb_fm_f|.0] nav=[?_airb_fl_n|.0]+[?_airb_fm_n|.0] (base 1, major +6 at 10 decks)"
+	# [air-budget] the one-factory floor a cap-closed carrier role keeps instead of the ladder
+	set_temp_variable = { _airb_mf_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cv_fighter_floor = yes } set_temp_variable = { _airb_mf_f = 1 } }
+	set_temp_variable = { _airb_mf_n = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cv_nav_bomber_floor = yes } set_temp_variable = { _airb_mf_n = 1 } }
+	log = "  carrier: decks=[?_airb_deck|.0]  expect cvf=[?_airb_y_cvf|.0] cvcas=[?_airb_y_cvcas|.0] cvnav=[?_airb_y_cvnav|.0]  books cvf=[?_airb_bcv_f|.0] cvcas=[?_airb_bcv_cas|.0] cvnav=[?_airb_bcv_nav|.0]  floors f=[?_airb_fl_f|.0]+[?_airb_fm_f|.0] nav=[?_airb_fl_n|.0]+[?_airb_fm_n|.0] (base 1, major +4 at 10 decks)  maintained f=[?_airb_mf_f|.0] nav=[?_airb_mf_n|.0] (1 factory each, ladder off)"
 	set_temp_variable = { _airb_cv_mism = 0 }
 	if = { limit = { NOT = { check_variable = { _airb_bcv_f = _airb_y_cvf } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
 	if = { limit = { NOT = { check_variable = { _airb_bcv_cas = _airb_y_cvcas } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
 	if = { limit = { NOT = { check_variable = { _airb_bcv_nav = _airb_y_cvnav } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
 	set_temp_variable = { _airb_v4 = 0 }
 	if = { limit = { check_variable = { _airb_cv_mism = 0 } } set_temp_variable = { _airb_v4 = 1 } }
+
+	############################################################
+	# G. Maintenance - the third line state, and the invariants that keep it disjoint from OPEN
+	############################################################
+	# [air-budget] A line whose park reached its cap is MAINTAINED: archetype factor and a
+	# floor, no weight, no purge. Section B/C above measure OPEN, section D the books; this section
+	# measures the middle state and proves three things the model rests on:
+	#   G1  no line is OPEN and MAINTAINED at once
+	#   G2  no line of a role is maintained while that role has an open line - and the role is read
+	#       from the section C WALK, not from should_fund_<type>_type, so a broken type gate fails
+	#       here even though the shipped trigger names the same term
+	#   G3  the exclusive groups stay exclusive inside the maintained set (fighter trio, cas pair,
+	#       heavy-fighter pair) - the medium bombers are excluded on purpose, they are not
+	#       exclusive when open either
+	# Honest about the strength: G1 and G3 restate terms that are literally written in every
+	# maintain trigger, so they only catch an edit that deletes one. G2 is the one that measures
+	# something the triggers do not already assert, because its role set is re-derived. The lines
+	# that carry the real signal are `maint` and `floors` above.
+	# Read alongside the walk line: a line that reads 0 in `lines` and 1 in `maint` is a cap
+	# closure; 0 in both while its want is 1 is a want closure (tech, patron, band, BoB).
+
+	set_temp_variable = { _airb_m_int = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_interceptor_line = yes } set_temp_variable = { _airb_m_int = 1 } }
+	set_temp_variable = { _airb_m_fm = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_fighter_multirole_line = yes } set_temp_variable = { _airb_m_fm = 1 } }
+	set_temp_variable = { _airb_m_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_fighter_line = yes } set_temp_variable = { _airb_m_f = 1 } }
+	set_temp_variable = { _airb_m_mr = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_multirole_line = yes } set_temp_variable = { _airb_m_mr = 1 } }
+	set_temp_variable = { _airb_m_casl = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cas_lowered_line = yes } set_temp_variable = { _airb_m_casl = 1 } }
+	set_temp_variable = { _airb_m_cas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cas_line = yes } set_temp_variable = { _airb_m_cas = 1 } }
+	set_temp_variable = { _airb_m_cvcas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cv_cas_line = yes } set_temp_variable = { _airb_m_cvcas = 1 } }
+	set_temp_variable = { _airb_m_hf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_fighter_line = yes } set_temp_variable = { _airb_m_hf = 1 } }
+	set_temp_variable = { _airb_m_att = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_attacker_line = yes } set_temp_variable = { _airb_m_att = 1 } }
+	set_temp_variable = { _airb_m_fast = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_fast_bomber_line = yes } set_temp_variable = { _airb_m_fast = 1 } }
+	set_temp_variable = { _airb_m_strike = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_strike_bomber_line = yes } set_temp_variable = { _airb_m_strike = 1 } }
+	set_temp_variable = { _airb_m_tac = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_tactical_bomber_line = yes } set_temp_variable = { _airb_m_tac = 1 } }
+	set_temp_variable = { _airb_m_nav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_naval_bomber_line = yes } set_temp_variable = { _airb_m_nav = 1 } }
+	set_temp_variable = { _airb_m_strat = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_strategic_bomber_line = yes } set_temp_variable = { _airb_m_strat = 1 } }
+	set_temp_variable = { _airb_m_scout = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_scout_plane_line = yes } set_temp_variable = { _airb_m_scout = 1 } }
+	set_temp_variable = { _airb_m_cvf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cv_fighter_line = yes } set_temp_variable = { _airb_m_cvf = 1 } }
+	set_temp_variable = { _airb_m_cvnav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cv_naval_bomber_line = yes } set_temp_variable = { _airb_m_cvnav = 1 } }
+	set_temp_variable = { _airb_m_trn = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_transport_line = yes } set_temp_variable = { _airb_m_trn = 1 } }
+	log = "  maint : int=[?_airb_m_int|.0] f+mr=[?_airb_m_fm|.0] f=[?_airb_m_f|.0] mr=[?_airb_m_mr|.0] cas_low=[?_airb_m_casl|.0] cas=[?_airb_m_cas|.0] cvcas=[?_airb_m_cvcas|.0] hf=[?_airb_m_hf|.0] att=[?_airb_m_att|.0] fast=[?_airb_m_fast|.0] strike=[?_airb_m_strike|.0] tac=[?_airb_m_tac|.0] nav=[?_airb_m_nav|.0] strat=[?_airb_m_strat|.0] scout=[?_airb_m_scout|.0] cvf=[?_airb_m_cvf|.0] cvnav=[?_airb_m_cvnav|.0] trn=[?_airb_m_trn|.0]"
+
+	# Which floor gate each role is on: 0 = not maintained, 1 = base gate, 2 = base + deep gate.
+	# Deliberately NOT a factory count: the count is the gate's own block PLUS whatever the role's
+	# line block already carries, which differs per role (interceptor-only fighters read one less,
+	# three maintained medium-bomber lines read two more). Read the real number in the production
+	# tab; this line says which gates are armed.
+	set_temp_variable = { _airb_fl_ty_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_fighter_type = yes } set_temp_variable = { _airb_fl_ty_f = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_fighter_maintenance = yes } set_temp_variable = { _airb_fl_ty_f = 2 } }
+	set_temp_variable = { _airb_fl_ty_cas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_cas_type = yes } set_temp_variable = { _airb_fl_ty_cas = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_cas_maintenance = yes } set_temp_variable = { _airb_fl_ty_cas = 2 } }
+	set_temp_variable = { _airb_fl_ty_hf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_fighter_type = yes } set_temp_variable = { _airb_fl_ty_hf = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_fighter_maintenance = yes } set_temp_variable = { _airb_fl_ty_hf = 2 } }
+	set_temp_variable = { _airb_fl_ty_tac = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_tactical_type = yes } set_temp_variable = { _airb_fl_ty_tac = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_tactical_maintenance = yes } set_temp_variable = { _airb_fl_ty_tac = 2 } }
+	set_temp_variable = { _airb_fl_ty_strat = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_strategic_type = yes } set_temp_variable = { _airb_fl_ty_strat = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_strategic_maintenance = yes } set_temp_variable = { _airb_fl_ty_strat = 2 } }
+	set_temp_variable = { _airb_fl_ty_nav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_naval_type = yes } set_temp_variable = { _airb_fl_ty_nav = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_naval_maintenance = yes } set_temp_variable = { _airb_fl_ty_nav = 2 } }
+	set_temp_variable = { _airb_fl_ty_scout = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_scout_type = yes } set_temp_variable = { _airb_fl_ty_scout = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_scout_maintenance = yes } set_temp_variable = { _airb_fl_ty_scout = 2 } }
+	set_temp_variable = { _airb_fl_ty_trn = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_transport_type = yes } set_temp_variable = { _airb_fl_ty_trn = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_transport_maintenance = yes } set_temp_variable = { _airb_fl_ty_trn = 2 } }
+	log = "  floors: gate armed (0 none / 1 base / 2 deep) - fighter=[?_airb_fl_ty_f|.0] cas=[?_airb_fl_ty_cas|.0] heavy=[?_airb_fl_ty_hf|.0] tactical=[?_airb_fl_ty_tac|.0] strategic=[?_airb_fl_ty_strat|.0] naval=[?_airb_fl_ty_nav|.0] scout=[?_airb_fl_ty_scout|.0] transport=[?_airb_fl_ty_trn|.0]   (0 on a role whose line is OPEN or wanted by nobody; the factory count is in the production tab)"
+
+	# G1 - open and maintained are disjoint, line by line (shipped B set vs shipped maint set)
+	set_temp_variable = { _airb_mt_mism = 0 }
+	set_temp_variable = { _airb_z = _airb_s_int }
+	multiply_temp_variable = { _airb_z = _airb_m_int }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_fm }
+	multiply_temp_variable = { _airb_z = _airb_m_fm }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_f }
+	multiply_temp_variable = { _airb_z = _airb_m_f }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_mr }
+	multiply_temp_variable = { _airb_z = _airb_m_mr }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_casl }
+	multiply_temp_variable = { _airb_z = _airb_m_casl }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_cas }
+	multiply_temp_variable = { _airb_z = _airb_m_cas }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_cvcas }
+	multiply_temp_variable = { _airb_z = _airb_m_cvcas }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_hf }
+	multiply_temp_variable = { _airb_z = _airb_m_hf }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_att }
+	multiply_temp_variable = { _airb_z = _airb_m_att }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_fast }
+	multiply_temp_variable = { _airb_z = _airb_m_fast }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_strike }
+	multiply_temp_variable = { _airb_z = _airb_m_strike }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_tac }
+	multiply_temp_variable = { _airb_z = _airb_m_tac }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_nav }
+	multiply_temp_variable = { _airb_z = _airb_m_nav }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_strat }
+	multiply_temp_variable = { _airb_z = _airb_m_strat }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_scout }
+	multiply_temp_variable = { _airb_z = _airb_m_scout }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_cvf }
+	multiply_temp_variable = { _airb_z = _airb_m_cvf }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_cvnav }
+	multiply_temp_variable = { _airb_z = _airb_m_cvnav }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_s_trn }
+	multiply_temp_variable = { _airb_z = _airb_m_trn }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+
+	# G2 - a role with an open line has no maintained line. Roles are re-derived from the WALK
+	# (section C), never from should_fund_*, so a broken type gate shows up here.
+	set_temp_variable = { _airb_z = _airb_m_int }
+	add_to_temp_variable = { _airb_z = _airb_m_fm }
+	add_to_temp_variable = { _airb_z = _airb_m_f }
+	add_to_temp_variable = { _airb_z = _airb_m_mr }
+	clamp_temp_variable = { var = _airb_z max = 1 }
+	multiply_temp_variable = { _airb_z = _airb_t_f }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_m_cas }
+	add_to_temp_variable = { _airb_z = _airb_m_casl }
+	clamp_temp_variable = { var = _airb_z max = 1 }
+	multiply_temp_variable = { _airb_z = _airb_t_cas }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_m_fast }
+	add_to_temp_variable = { _airb_z = _airb_m_strike }
+	add_to_temp_variable = { _airb_z = _airb_m_tac }
+	clamp_temp_variable = { var = _airb_z max = 1 }
+	multiply_temp_variable = { _airb_z = _airb_t_tac }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+	set_temp_variable = { _airb_z = _airb_m_hf }
+	add_to_temp_variable = { _airb_z = _airb_m_att }
+	clamp_temp_variable = { var = _airb_z max = 1 }
+	multiply_temp_variable = { _airb_z = _airb_t_hf }
+	add_to_temp_variable = { _airb_mt_mism = _airb_z }
+
+	# G3 - the exclusive groups are still exclusive inside the maintained set
+	set_temp_variable = { _airb_z = _airb_m_fm }
+	add_to_temp_variable = { _airb_z = _airb_m_f }
+	add_to_temp_variable = { _airb_z = _airb_m_mr }
+	if = { limit = { check_variable = { _airb_z > 1 } } add_to_temp_variable = { _airb_mt_mism = 1 } }
+	set_temp_variable = { _airb_z = _airb_m_cas }
+	add_to_temp_variable = { _airb_z = _airb_m_casl }
+	if = { limit = { check_variable = { _airb_z > 1 } } add_to_temp_variable = { _airb_mt_mism = 1 } }
+	set_temp_variable = { _airb_z = _airb_m_hf }
+	add_to_temp_variable = { _airb_z = _airb_m_att }
+	if = { limit = { check_variable = { _airb_z > 1 } } add_to_temp_variable = { _airb_mt_mism = 1 } }
+
+	set_temp_variable = { _airb_v5 = 0 }
+	if = { limit = { check_variable = { _airb_mt_mism = 0 } } set_temp_variable = { _airb_v5 = 1 } }
 
 	# purge flags currently armed (informational: a 1 here means a line was cancelled this pulse)
 	set_temp_variable = { _airb_purges = 0 }
@@ -503,7 +698,7 @@ WA_TEST_AIRB_report = {
 	if = { limit = { has_country_flag = AI_purge_cv_small_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
 	if = { limit = { has_country_flag = AI_purge_transport_production } add_to_temp_variable = { _airb_purges = 1 } }
 
-	log = "  VERDICT [Root.GetName]: lines-match-walk=[?_airb_v1|.0] (mismatches [?_airb_mism|.0])  books-match-walk=[?_airb_v2|.0] (mismatches [?_airb_bk_mism|.0])  budget-match-walk=[?_airb_v3|.0] (mismatches [?_airb_bg_mism|.0])  cv-budget-match-walk=[?_airb_v4|.0] (mismatches [?_airb_cv_mism|.0])  purges-armed=[?_airb_purges|.0]"
+	log = "  VERDICT [Root.GetName]: lines-match-walk=[?_airb_v1|.0] (mismatches [?_airb_mism|.0])  books-match-walk=[?_airb_v2|.0] (mismatches [?_airb_bk_mism|.0])  budget-match-walk=[?_airb_v3|.0] (mismatches [?_airb_bg_mism|.0])  cv-budget-match-walk=[?_airb_v4|.0] (mismatches [?_airb_cv_mism|.0])  maintenance-disjoint=[?_airb_v5|.0] (violations [?_airb_mt_mism|.0])  purges-armed=[?_airb_purges|.0]"
 	log = "=== END AIR LINES TEST === [Root.GetName]"
 }
 
