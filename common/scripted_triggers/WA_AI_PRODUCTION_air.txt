@@ -18,14 +18,19 @@ WA_AI_PRODUCTION_has_no_major_air_patron = {
 	}
 }
 
-# Fighter park below the cap that keeps a fighter line open (mass producers run double).
+# [land-fighter-park] Land fighter park below the cap that keeps a fighter line open (mass
+# producers run double). Reads WA_AI_PRODUCTION_land_fighter_park, the sum of the small_fighter
+# and small_fighter_multirole archetypes written at the top of WA_aircraft_production_strategies,
+# and NOT `has_deployed_air_force_size type = fighter`: that role bucket also holds the
+# interceptor and carrier-fighter archetypes, whose lines have their own bars.
+# Assumes the pulse wrote the variable first - every reader is inside that same effect.
 WA_AI_PRODUCTION_fighter_park_is_below_cap = {
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_is_mass_producer = yes }
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.fighter_cap_mass type = fighter }
+		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap_mass }
 	}
 	else = {
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.fighter_cap type = fighter }
+		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap }
 	}
 }
 
@@ -88,7 +93,7 @@ WA_AI_PRODUCTION_should_build_interceptors = {
 		check_variable = { num_deployed_planes_with_type@small_fighter_interceptor_airframe < constant:wa_ai_production.air.interceptor_cap }
 	}
 	else = {
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.fighter_cap type = fighter }
+		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap }
 	}
 }
 
@@ -165,7 +170,11 @@ WA_AI_PRODUCTION_should_build_cas = {
 WA_AI_PRODUCTION_should_build_cv_cas = {
 	WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes
 	has_tech = usa_cv_cas_ad_tech_3
-	has_deployed_air_force_size = { size < constant:wa_ai_production.air.cas_cap type = cas }
+	# [cv-cas-own-bar] Its own archetype park, not the engine `type = cas` role: that role also
+	# holds the LAND cas archetype, so the shared 1600 bar always bound before this line's own
+	# 2500 and left cv_cas_cap dead. Assumes cv_small_bomber_airframe is the only carrier
+	# close-support archetype (common/units/equipment/plane_airframes.txt).
+	check_variable = { num_deployed_planes_with_type@cv_small_bomber_airframe < constant:wa_ai_production.air.cv_cas_cap }
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
@@ -344,10 +353,10 @@ WA_AI_PRODUCTION_should_build_bob_fighters = {
 	NOT = { GER = { has_war_with = SOV } }
 	has_global_flag = fall_of_france
 	OR = {
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.bob_fighter_cap type = fighter }
+		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap }
 		AND = {
 			WA_AI_PRODUCTION_is_soviet_union_gone = yes
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.bob_fighter_cap_sov_gone type = fighter }
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap_sov_gone }
 		}
 	}
 }
