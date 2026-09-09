@@ -1,0 +1,517 @@
+############################################################################################################
+#	World Ablaze - AIR PRODUCTION LINES console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[air-budget] Instrument for the air production lines: which lines the layer-3 decisions
+#	WA_AI_PRODUCTION_should_open_<line>_line (WA_AI_PRODUCTION_air.txt) hold open, and whether the
+#	purge books of WA_aircraft_production_strategies (WA_production_strategy_effects.txt) agree.
+#	Nothing in a savegame names an ai_strategy block by line, so the only way to see the ladder is
+#	to print it.
+#
+#	Recipe: events/wa_test_air_budget.txt header. Fire `event wa_airb.1 GER` from ANY tag - do NOT
+#	tag into the country under test. Output: logs/game.log, "AIR LINES TEST".
+#
+#	Section C RE-DERIVES every line from the should_build_* wants and retyped band / exclusion
+#	terms (contract rule 4) - it never calls a should_open_* trigger. When B and C disagree the
+#	fault is in one of the two, not hidden between them. Section D compares the purge books to
+#	the re-derived set; a freshly LOADED save can read every book 0 until the 2-day pulse runs
+#	(the books are written by the pulse only) - wa_airb.3 runs the pulse first.
+#
+#	READ THE VERDICT LINE AT THE BOTTOM. All four values must read 1.
+############################################################################################################
+
+WA_TEST_AIRB_report = {
+
+	log = "=== AIR LINES TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _airb_e1_ = 0 }
+	set_temp_variable = { _airb_e2_ = 0 }
+	set_temp_variable = { _airb_e3_ = 0 }
+	set_temp_variable = { _airb_e4_ = 0 }
+	set_temp_variable = { _airb_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _airb_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _airb_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _airb_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _airb_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _airb_e5_ = 1 } }
+	log = "  scope : always=[?_airb_e1_|.0]  I-am-ROOT=[?_airb_e2_|.0]  I-am-THIS=[?_airb_e3_|.0]  ROOT-scope-usable=[?_airb_e4_|.0]  control-false=[?_airb_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	############################################################
+	# A. Inputs
+	############################################################
+
+	set_temp_variable = { _airb_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _airb_ai = 1 } }
+	set_temp_variable = { _airb_mils = num_of_military_factories }
+	# the park, re-summed here; the shipped variable is what the triggers read
+	set_temp_variable = { _airb_park = num_deployed_planes_with_type@small_fighter_airframe }
+	add_to_temp_variable = { _airb_park = num_deployed_planes_with_type@small_fighter_multirole_airframe }
+	set_temp_variable = { _airb_park_var = 0 }
+	if = { limit = { has_variable = WA_AI_PRODUCTION_land_fighter_park } set_temp_variable = { _airb_park_var = WA_AI_PRODUCTION_land_fighter_park } }
+	set_temp_variable = { _airb_bobflag = 0 }
+	if = { limit = { has_country_flag = WA_bob_production_flag } set_temp_variable = { _airb_bobflag = 1 } }
+	set_temp_variable = { _airb_patron = 0 }
+	if = { limit = { WA_AI_PRODUCTION_has_no_major_air_patron = yes } set_temp_variable = { _airb_patron = 1 } }
+	log = "  inputs: is_ai=[?_airb_ai|.0]  mils=[?_airb_mils|.0]  park(resum)=[?_airb_park|.0]  park(var)=[?_airb_park_var|.0]  bob_flag=[?_airb_bobflag|.0]  own_air_arm=[?_airb_patron|.0]"
+
+	# the wants the lines are built from (shipped layer-3 decisions, printed as inputs)
+	set_temp_variable = { _airb_w_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_fighters = yes } set_temp_variable = { _airb_w_f = 1 } }
+	set_temp_variable = { _airb_w_mr = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_multiroles = yes } set_temp_variable = { _airb_w_mr = 1 } }
+	set_temp_variable = { _airb_w_int = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_interceptors = yes } set_temp_variable = { _airb_w_int = 1 } }
+	set_temp_variable = { _airb_w_hf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_heavy_fighters = yes } set_temp_variable = { _airb_w_hf = 1 } }
+	set_temp_variable = { _airb_w_att = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_attackers = yes } set_temp_variable = { _airb_w_att = 1 } }
+	set_temp_variable = { _airb_w_cas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_cas = yes } set_temp_variable = { _airb_w_cas = 1 } }
+	set_temp_variable = { _airb_w_cvcas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_cv_cas = yes } set_temp_variable = { _airb_w_cvcas = 1 } }
+	set_temp_variable = { _airb_w_fast = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_fast_bombers = yes } set_temp_variable = { _airb_w_fast = 1 } }
+	set_temp_variable = { _airb_w_strike = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_strike_bombers = yes } set_temp_variable = { _airb_w_strike = 1 } }
+	set_temp_variable = { _airb_w_tac = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_tactical_bombers = yes } set_temp_variable = { _airb_w_tac = 1 } }
+	set_temp_variable = { _airb_w_nav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_naval_bombers = yes } set_temp_variable = { _airb_w_nav = 1 } }
+	set_temp_variable = { _airb_w_strat = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_strategic_bombers = yes } set_temp_variable = { _airb_w_strat = 1 } }
+	set_temp_variable = { _airb_w_scout = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_scout_planes = yes } set_temp_variable = { _airb_w_scout = 1 } }
+	set_temp_variable = { _airb_w_cvf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_cv_fighters = yes } set_temp_variable = { _airb_w_cvf = 1 } }
+	set_temp_variable = { _airb_w_trn = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_transport_planes = yes } set_temp_variable = { _airb_w_trn = 1 } }
+	set_temp_variable = { _airb_w_bob = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_build_bob_fighters = yes } set_temp_variable = { _airb_w_bob = 1 } }
+	set_temp_variable = { _airb_jetf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_has_jet_fighter_tech = yes } set_temp_variable = { _airb_jetf = 1 } }
+	set_temp_variable = { _airb_jett = 0 }
+	if = { limit = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes } set_temp_variable = { _airb_jett = 1 } }
+	set_temp_variable = { _airb_delayed = 0 }
+	if = { limit = { WA_AI_CONFIG_AIRFORCE_has_delayed_strategic_arm = yes } set_temp_variable = { _airb_delayed = 1 } }
+	set_temp_variable = { _airb_after416 = 0 }
+	if = { limit = { WA_AI_CONFIG_after_1941_6 = yes } set_temp_variable = { _airb_after416 = 1 } }
+	log = "  wants : f=[?_airb_w_f|.0] mr=[?_airb_w_mr|.0] int=[?_airb_w_int|.0] hf=[?_airb_w_hf|.0] att=[?_airb_w_att|.0] cas=[?_airb_w_cas|.0] cvcas=[?_airb_w_cvcas|.0] fast=[?_airb_w_fast|.0] strike=[?_airb_w_strike|.0] tac=[?_airb_w_tac|.0] nav=[?_airb_w_nav|.0] strat=[?_airb_w_strat|.0] scout=[?_airb_w_scout|.0] cvf=[?_airb_w_cvf|.0] trn=[?_airb_w_trn|.0] bob=[?_airb_w_bob|.0]"
+	log = "  vetoes: jet_fighter=[?_airb_jetf|.0] jet_tac=[?_airb_jett|.0] delayed_strat=[?_airb_delayed|.0] after_1941_6=[?_airb_after416|.0]"
+
+	############################################################
+	# B. Shipped line decisions (what the ai_strategy blocks enable on)
+	############################################################
+
+	set_temp_variable = { _airb_s_int = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_interceptor_line = yes } set_temp_variable = { _airb_s_int = 1 } }
+	set_temp_variable = { _airb_s_fm = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes } set_temp_variable = { _airb_s_fm = 1 } }
+	set_temp_variable = { _airb_s_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_fighter_line = yes } set_temp_variable = { _airb_s_f = 1 } }
+	set_temp_variable = { _airb_s_mr = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_multirole_line = yes } set_temp_variable = { _airb_s_mr = 1 } }
+	set_temp_variable = { _airb_s_casl = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_cas_lowered_line = yes } set_temp_variable = { _airb_s_casl = 1 } }
+	set_temp_variable = { _airb_s_cas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_cas_line = yes } set_temp_variable = { _airb_s_cas = 1 } }
+	set_temp_variable = { _airb_s_cvcas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_cv_cas_line = yes } set_temp_variable = { _airb_s_cvcas = 1 } }
+	set_temp_variable = { _airb_s_hf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes } set_temp_variable = { _airb_s_hf = 1 } }
+	set_temp_variable = { _airb_s_att = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_attacker_line = yes } set_temp_variable = { _airb_s_att = 1 } }
+	set_temp_variable = { _airb_s_fast = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_fast_bomber_line = yes } set_temp_variable = { _airb_s_fast = 1 } }
+	set_temp_variable = { _airb_s_strike = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_strike_bomber_line = yes } set_temp_variable = { _airb_s_strike = 1 } }
+	set_temp_variable = { _airb_s_tac = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_tactical_bomber_line = yes } set_temp_variable = { _airb_s_tac = 1 } }
+	set_temp_variable = { _airb_s_nav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_naval_bomber_line = yes } set_temp_variable = { _airb_s_nav = 1 } }
+	set_temp_variable = { _airb_s_strat = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_strategic_bomber_line = yes } set_temp_variable = { _airb_s_strat = 1 } }
+	set_temp_variable = { _airb_s_scout = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_scout_plane_line = yes } set_temp_variable = { _airb_s_scout = 1 } }
+	set_temp_variable = { _airb_s_cvf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_cv_fighter_line = yes } set_temp_variable = { _airb_s_cvf = 1 } }
+	set_temp_variable = { _airb_s_trn = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_open_transport_line = yes } set_temp_variable = { _airb_s_trn = 1 } }
+	log = "  lines : int=[?_airb_s_int|.0] f+mr=[?_airb_s_fm|.0] f=[?_airb_s_f|.0] mr=[?_airb_s_mr|.0] cas_low=[?_airb_s_casl|.0] cas=[?_airb_s_cas|.0] cvcas=[?_airb_s_cvcas|.0] hf=[?_airb_s_hf|.0] att=[?_airb_s_att|.0] fast=[?_airb_s_fast|.0] strike=[?_airb_s_strike|.0] tac=[?_airb_s_tac|.0] nav=[?_airb_s_nav|.0] strat=[?_airb_s_strat|.0] scout=[?_airb_s_scout|.0] cvf=[?_airb_s_cvf|.0] trn=[?_airb_s_trn|.0]"
+
+	############################################################
+	# C. Independent walk - the same ladder re-typed from the wants (contract rule 4)
+	############################################################
+
+	# bands retyped as the shipped constants read them
+	set_temp_variable = { _airb_b20 = 0 }
+	if = { limit = { check_variable = { _airb_mils > constant:wa_ai_production.industry.wartime_min_mils } } set_temp_variable = { _airb_b20 = 1 } }
+	set_temp_variable = { _airb_b29 = 0 }
+	if = { limit = { check_variable = { _airb_mils > constant:wa_ai_production.industry.tier_medium_mils } } set_temp_variable = { _airb_b29 = 1 } }
+	set_temp_variable = { _airb_b49 = 0 }
+	if = { limit = { check_variable = { _airb_mils > constant:wa_ai_production.industry.tier_large_mils } } set_temp_variable = { _airb_b49 = 1 } }
+	set_temp_variable = { _airb_nobob = 1 }
+	subtract_from_temp_variable = { _airb_nobob = _airb_w_bob }
+
+	# fighter trio - exclusive by construction
+	set_temp_variable = { _airb_c_fm = _airb_w_f }
+	multiply_temp_variable = { _airb_c_fm = _airb_w_mr }
+	multiply_temp_variable = { _airb_c_fm = _airb_b20 }
+	set_temp_variable = { _airb_c_f = 1 }
+	subtract_from_temp_variable = { _airb_c_f = _airb_c_fm }
+	multiply_temp_variable = { _airb_c_f = _airb_w_f }
+	multiply_temp_variable = { _airb_c_f = _airb_b20 }
+	set_temp_variable = { _airb_c_mr = 1 }
+	subtract_from_temp_variable = { _airb_c_mr = _airb_c_fm }
+	subtract_from_temp_variable = { _airb_c_mr = _airb_c_f }
+	clamp_temp_variable = { var = _airb_c_mr min = 0 }
+	multiply_temp_variable = { _airb_c_mr = _airb_w_mr }
+	multiply_temp_variable = { _airb_c_mr = _airb_b20 }
+	set_temp_variable = { _airb_c_int = _airb_w_int }
+	multiply_temp_variable = { _airb_c_int = _airb_b20 }
+
+	# close support
+	set_temp_variable = { _airb_c_casl = _airb_nobob }
+	multiply_temp_variable = { _airb_c_casl = _airb_w_cas }
+	multiply_temp_variable = { _airb_c_casl = _airb_w_mr }
+	multiply_temp_variable = { _airb_c_casl = _airb_b49 }
+	set_temp_variable = { _airb_c_cas = 1 }
+	subtract_from_temp_variable = { _airb_c_cas = _airb_c_casl }
+	multiply_temp_variable = { _airb_c_cas = _airb_w_cas }
+	multiply_temp_variable = { _airb_c_cas = _airb_b49 }
+	set_temp_variable = { _airb_c_cvcas = _airb_w_cvcas }
+
+	# heavy fighters - attacker yields to heavy fighter and to a jet fighter tree
+	set_temp_variable = { _airb_c_hf = _airb_nobob }
+	multiply_temp_variable = { _airb_c_hf = _airb_w_hf }
+	multiply_temp_variable = { _airb_c_hf = _airb_b49 }
+	set_temp_variable = { _airb_c_att = 1 }
+	subtract_from_temp_variable = { _airb_c_att = _airb_c_hf }
+	multiply_temp_variable = { _airb_c_att = _airb_w_att }
+	multiply_temp_variable = { _airb_c_att = _airb_b49 }
+	set_temp_variable = { _airb_nojetf = 1 }
+	subtract_from_temp_variable = { _airb_nojetf = _airb_jetf }
+	multiply_temp_variable = { _airb_c_att = _airb_nojetf }
+
+	# medium bombers - fast and strike yield to a jet tactical tree, tactical to the BoB programme
+	set_temp_variable = { _airb_nojett = 1 }
+	subtract_from_temp_variable = { _airb_nojett = _airb_jett }
+	set_temp_variable = { _airb_c_fast = _airb_w_fast }
+	multiply_temp_variable = { _airb_c_fast = _airb_b49 }
+	multiply_temp_variable = { _airb_c_fast = _airb_nojett }
+	set_temp_variable = { _airb_c_strike = _airb_w_strike }
+	multiply_temp_variable = { _airb_c_strike = _airb_b49 }
+	multiply_temp_variable = { _airb_c_strike = _airb_nojett }
+	set_temp_variable = { _airb_c_tac = _airb_w_tac }
+	multiply_temp_variable = { _airb_c_tac = _airb_b49 }
+	multiply_temp_variable = { _airb_c_tac = _airb_nobob }
+
+	# naval, strategic, support, carrier fighters, transport
+	set_temp_variable = { _airb_c_nav = _airb_w_nav }
+	multiply_temp_variable = { _airb_c_nav = _airb_b29 }
+	multiply_temp_variable = { _airb_c_nav = _airb_nobob }
+	set_temp_variable = { _airb_c_strat = _airb_w_strat }
+	multiply_temp_variable = { _airb_c_strat = _airb_nobob }
+	if = {
+		limit = {
+			check_variable = { _airb_delayed = 1 }
+			check_variable = { _airb_after416 = 0 }
+		}
+		set_temp_variable = { _airb_c_strat = 0 }
+	}
+	set_temp_variable = { _airb_c_scout = _airb_w_scout }
+	multiply_temp_variable = { _airb_c_scout = _airb_nobob }
+	set_temp_variable = { _airb_c_cvf = _airb_w_cvf }
+	multiply_temp_variable = { _airb_c_cvf = _airb_nobob }
+	set_temp_variable = { _airb_c_trn = _airb_w_trn }
+	multiply_temp_variable = { _airb_c_trn = _airb_b49 }
+	multiply_temp_variable = { _airb_c_trn = _airb_nobob }
+	log = "  walk  : int=[?_airb_c_int|.0] f+mr=[?_airb_c_fm|.0] f=[?_airb_c_f|.0] mr=[?_airb_c_mr|.0] cas_low=[?_airb_c_casl|.0] cas=[?_airb_c_cas|.0] cvcas=[?_airb_c_cvcas|.0] hf=[?_airb_c_hf|.0] att=[?_airb_c_att|.0] fast=[?_airb_c_fast|.0] strike=[?_airb_c_strike|.0] tac=[?_airb_c_tac|.0] nav=[?_airb_c_nav|.0] strat=[?_airb_c_strat|.0] scout=[?_airb_c_scout|.0] cvf=[?_airb_c_cvf|.0] trn=[?_airb_c_trn|.0]"
+
+	# v1: every shipped line equals its re-derived twin
+	set_temp_variable = { _airb_mism = 0 }
+	if = { limit = { NOT = { check_variable = { _airb_s_int = _airb_c_int } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_fm = _airb_c_fm } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_f = _airb_c_f } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_mr = _airb_c_mr } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_casl = _airb_c_casl } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_cas = _airb_c_cas } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_cvcas = _airb_c_cvcas } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_hf = _airb_c_hf } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_att = _airb_c_att } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_fast = _airb_c_fast } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_strike = _airb_c_strike } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_tac = _airb_c_tac } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_nav = _airb_c_nav } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_strat = _airb_c_strat } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_scout = _airb_c_scout } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_cvf = _airb_c_cvf } } } add_to_temp_variable = { _airb_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_s_trn = _airb_c_trn } } } add_to_temp_variable = { _airb_mism = 1 } }
+	set_temp_variable = { _airb_v1 = 0 }
+	if = { limit = { check_variable = { _airb_mism = 0 } } set_temp_variable = { _airb_v1 = 1 } }
+
+	############################################################
+	# D. Purge books vs the re-derived funded set (one book per archetype)
+	############################################################
+
+	set_temp_variable = { _airb_bk_mism = 0 }
+
+	# small_fighter_interceptor
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_interceptor } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_int } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_int = _airb_k }
+	# small_fighter = f+mr or f
+	set_temp_variable = { _airb_x = _airb_c_fm }
+	add_to_temp_variable = { _airb_x = _airb_c_f }
+	clamp_temp_variable = { var = _airb_x max = 1 }
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_x } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_f = _airb_k }
+	# small_fighter_multirole = f+mr or mr
+	set_temp_variable = { _airb_x = _airb_c_fm }
+	add_to_temp_variable = { _airb_x = _airb_c_mr }
+	clamp_temp_variable = { var = _airb_x max = 1 }
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_multirole } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_x } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_mr = _airb_k }
+	# small_bomber = cas or cas_low
+	set_temp_variable = { _airb_x = _airb_c_cas }
+	add_to_temp_variable = { _airb_x = _airb_c_casl }
+	clamp_temp_variable = { var = _airb_x max = 1 }
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_x } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_cas = _airb_k }
+	# cv_small_bomber
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_cvcas } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_cvcas = _airb_k }
+	# medium_fighter
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_hf } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_hf = _airb_k }
+	# medium_fighter_multirole
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter_multirole } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_att } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_att = _airb_k }
+	# fast_bomber
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_fast_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_fast } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_fast = _airb_k }
+	# medium_bomber
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_strike } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_strike = _airb_k }
+	# medium_heavy_bomber
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_heavy_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_tac } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_tac = _airb_k }
+	# naval
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_nav } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_nav = _airb_k }
+	# large_bomber
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_strat } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_strat = _airb_k }
+	# medium_scout
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_scout } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_scout } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_scout = _airb_k }
+	# cv_small_fighter
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_fighter } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_cvf } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_cvf = _airb_k }
+	# transport
+	set_temp_variable = { _airb_k = 0 }
+	if = { limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_transport } set_temp_variable = { _airb_k = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_k = _airb_c_trn } } } add_to_temp_variable = { _airb_bk_mism = 1 } }
+	set_temp_variable = { _airb_k_trn = _airb_k }
+	log = "  books : int=[?_airb_k_int|.0] f=[?_airb_k_f|.0] mr=[?_airb_k_mr|.0] cas=[?_airb_k_cas|.0] cvcas=[?_airb_k_cvcas|.0] hf=[?_airb_k_hf|.0] att=[?_airb_k_att|.0] fast=[?_airb_k_fast|.0] strike=[?_airb_k_strike|.0] tac=[?_airb_k_tac|.0] nav=[?_airb_k_nav|.0] strat=[?_airb_k_strat|.0] scout=[?_airb_k_scout|.0] cvf=[?_airb_k_cvf|.0] trn=[?_airb_k_trn|.0]   (a loaded save reads all 0 until the pulse - use wa_airb.3)"
+
+	set_temp_variable = { _airb_v2 = 0 }
+	if = { limit = { check_variable = { _airb_bk_mism = 0 } } set_temp_variable = { _airb_v2 = 1 } }
+
+	############################################################
+	# E. Air budget - the weights re-derived from the walk's open lines vs the reconcile books
+	############################################################
+	# Types from the walk (never from the reconcile): fighter = int|f+mr|f|mr, cas = cas|cas_low,
+	# tactical = fast|strike|tac, heavy = hf|att. Weights are the declared constants (layer 1).
+	set_temp_variable = { _airb_t_f = _airb_c_int }
+	add_to_temp_variable = { _airb_t_f = _airb_c_fm }
+	add_to_temp_variable = { _airb_t_f = _airb_c_f }
+	add_to_temp_variable = { _airb_t_f = _airb_c_mr }
+	clamp_temp_variable = { var = _airb_t_f max = 1 }
+	set_temp_variable = { _airb_t_cas = _airb_c_cas }
+	add_to_temp_variable = { _airb_t_cas = _airb_c_casl }
+	clamp_temp_variable = { var = _airb_t_cas max = 1 }
+	set_temp_variable = { _airb_t_tac = _airb_c_fast }
+	add_to_temp_variable = { _airb_t_tac = _airb_c_strike }
+	add_to_temp_variable = { _airb_t_tac = _airb_c_tac }
+	clamp_temp_variable = { var = _airb_t_tac max = 1 }
+	set_temp_variable = { _airb_t_hf = _airb_c_hf }
+	add_to_temp_variable = { _airb_t_hf = _airb_c_att }
+	clamp_temp_variable = { var = _airb_t_hf max = 1 }
+
+	set_temp_variable = { _airb_x_f = constant:wa_ai_production.air_budget.weight_fighter }
+	multiply_temp_variable = { _airb_x_f = _airb_t_f }
+	set_temp_variable = { _airb_x_cas = constant:wa_ai_production.air_budget.weight_cas }
+	multiply_temp_variable = { _airb_x_cas = _airb_t_cas }
+	set_temp_variable = { _airb_x_tac = constant:wa_ai_production.air_budget.weight_tactical }
+	multiply_temp_variable = { _airb_x_tac = _airb_t_tac }
+	set_temp_variable = { _airb_x_strat = constant:wa_ai_production.air_budget.weight_strategic }
+	multiply_temp_variable = { _airb_x_strat = _airb_c_strat }
+	set_temp_variable = { _airb_x_nav = constant:wa_ai_production.air_budget.weight_naval }
+	multiply_temp_variable = { _airb_x_nav = _airb_c_nav }
+	set_temp_variable = { _airb_x_hf = constant:wa_ai_production.air_budget.weight_heavy_fighter }
+	multiply_temp_variable = { _airb_x_hf = _airb_t_hf }
+	set_temp_variable = { _airb_x_oth = _airb_x_cas }
+	add_to_temp_variable = { _airb_x_oth = _airb_x_tac }
+	add_to_temp_variable = { _airb_x_oth = _airb_x_strat }
+	add_to_temp_variable = { _airb_x_oth = _airb_x_nav }
+	add_to_temp_variable = { _airb_x_oth = _airb_x_hf }
+	set_temp_variable = { _airb_x_floor = 0 }
+	if = {
+		limit = { check_variable = { _airb_t_f = 1 } }
+		set_temp_variable = { _airb_x_min = _airb_x_oth }
+		multiply_temp_variable = { _airb_x_min = constant:wa_ai_production.air_budget.fighter_floor_pct }
+		set_temp_variable = { _airb_x_den = 100 }
+		subtract_from_temp_variable = { _airb_x_den = constant:wa_ai_production.air_budget.fighter_floor_pct }
+		divide_temp_variable = { _airb_x_min = _airb_x_den }
+		round_temp_variable = _airb_x_min
+		if = {
+			limit = { check_variable = { _airb_x_f < _airb_x_min } }
+			set_temp_variable = { _airb_x_f = _airb_x_min }
+			set_temp_variable = { _airb_x_floor = 1 }
+		}
+	}
+	# fighter share in percent, from the re-derived weights
+	set_temp_variable = { _airb_x_sum = _airb_x_f }
+	add_to_temp_variable = { _airb_x_sum = _airb_x_oth }
+	set_temp_variable = { _airb_x_pct = 0 }
+	if = {
+		limit = { check_variable = { _airb_x_sum > 0 } }
+		set_temp_variable = { _airb_x_pct = _airb_x_f }
+		multiply_temp_variable = { _airb_x_pct = 100 }
+		divide_temp_variable = { _airb_x_pct = _airb_x_sum }
+	}
+	log = "  budget: expect f=[?_airb_x_f|.0] cas=[?_airb_x_cas|.0] tac=[?_airb_x_tac|.0] strat=[?_airb_x_strat|.0] nav=[?_airb_x_nav|.0] hf=[?_airb_x_hf|.0] floor=[?_airb_x_floor|.0] fighter_share=[?_airb_x_pct|.0]%"
+
+	set_temp_variable = { _airb_b_f = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_fighter } set_temp_variable = { _airb_b_f = WA_AI_AIR_BUDGET_fighter } }
+	set_temp_variable = { _airb_b_cas = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cas } set_temp_variable = { _airb_b_cas = WA_AI_AIR_BUDGET_cas } }
+	set_temp_variable = { _airb_b_tac = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_tactical } set_temp_variable = { _airb_b_tac = WA_AI_AIR_BUDGET_tactical } }
+	set_temp_variable = { _airb_b_strat = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_strategic } set_temp_variable = { _airb_b_strat = WA_AI_AIR_BUDGET_strategic } }
+	set_temp_variable = { _airb_b_nav = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_naval } set_temp_variable = { _airb_b_nav = WA_AI_AIR_BUDGET_naval } }
+	set_temp_variable = { _airb_b_hf = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_heavy_fighter } set_temp_variable = { _airb_b_hf = WA_AI_AIR_BUDGET_heavy_fighter } }
+	log = "  budget: books  f=[?_airb_b_f|.0] cas=[?_airb_b_cas|.0] tac=[?_airb_b_tac|.0] strat=[?_airb_b_strat|.0] nav=[?_airb_b_nav|.0] hf=[?_airb_b_hf|.0]   (books are written by the MONTHLY pulse and on_startup - use wa_airb.4 on a loaded save)"
+
+	set_temp_variable = { _airb_bg_mism = 0 }
+	if = { limit = { NOT = { check_variable = { _airb_b_f = _airb_x_f } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_b_cas = _airb_x_cas } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_b_tac = _airb_x_tac } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_b_strat = _airb_x_strat } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_b_nav = _airb_x_nav } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_b_hf = _airb_x_hf } } } add_to_temp_variable = { _airb_bg_mism = 1 } }
+	set_temp_variable = { _airb_v3 = 0 }
+	if = { limit = { check_variable = { _airb_bg_mism = 0 } } set_temp_variable = { _airb_v3 = 1 } }
+
+	############################################################
+	# F. Carrier pool - re-derived from the walk (deck held x line open) vs the books
+	############################################################
+	set_temp_variable = { _airb_deck = 0 }
+	if = { limit = { WA_AI_PRODUCTION_needs_cv_planes = yes } set_temp_variable = { _airb_deck = 1 } }
+	set_temp_variable = { _airb_y_cvf = constant:wa_ai_production.air_budget.cv_weight_fighter }
+	multiply_temp_variable = { _airb_y_cvf = _airb_c_cvf }
+	multiply_temp_variable = { _airb_y_cvf = _airb_deck }
+	set_temp_variable = { _airb_y_cvcas = constant:wa_ai_production.air_budget.cv_weight_cas }
+	multiply_temp_variable = { _airb_y_cvcas = _airb_c_cvcas }
+	multiply_temp_variable = { _airb_y_cvcas = _airb_deck }
+	set_temp_variable = { _airb_y_cvnav = constant:wa_ai_production.air_budget.cv_weight_naval_bomber }
+	multiply_temp_variable = { _airb_y_cvnav = _airb_c_nav }
+	multiply_temp_variable = { _airb_y_cvnav = _airb_deck }
+	set_temp_variable = { _airb_bcv_f = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_fighter } set_temp_variable = { _airb_bcv_f = WA_AI_AIR_BUDGET_cv_fighter } }
+	set_temp_variable = { _airb_bcv_cas = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_cas } set_temp_variable = { _airb_bcv_cas = WA_AI_AIR_BUDGET_cv_cas } }
+	set_temp_variable = { _airb_bcv_nav = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_naval } set_temp_variable = { _airb_bcv_nav = WA_AI_AIR_BUDGET_cv_naval } }
+	log = "  carrier: decks=[?_airb_deck|.0]  expect cvf=[?_airb_y_cvf|.0] cvcas=[?_airb_y_cvcas|.0] cvnav=[?_airb_y_cvnav|.0]  books cvf=[?_airb_bcv_f|.0] cvcas=[?_airb_bcv_cas|.0] cvnav=[?_airb_bcv_nav|.0]"
+	set_temp_variable = { _airb_cv_mism = 0 }
+	if = { limit = { NOT = { check_variable = { _airb_bcv_f = _airb_y_cvf } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_bcv_cas = _airb_y_cvcas } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
+	if = { limit = { NOT = { check_variable = { _airb_bcv_nav = _airb_y_cvnav } } } add_to_temp_variable = { _airb_cv_mism = 1 } }
+	set_temp_variable = { _airb_v4 = 0 }
+	if = { limit = { check_variable = { _airb_cv_mism = 0 } } set_temp_variable = { _airb_v4 = 1 } }
+
+	# purge flags currently armed (informational: a 1 here means a line was cancelled this pulse)
+	set_temp_variable = { _airb_purges = 0 }
+	if = { limit = { has_country_flag = AI_purge_small_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_small_fighter_multirole_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_small_fighter_interceptor_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_small_bomber_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_cv_small_bomber_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_heavy_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_attacker_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_fast_multirole_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_medium_multirole_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_medium_bomber_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_cv_small_naval_bomber_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_large_bomber_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_scout_plane_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_cv_small_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
+	if = { limit = { has_country_flag = AI_purge_transport_production } add_to_temp_variable = { _airb_purges = 1 } }
+
+	log = "  VERDICT [Root.GetName]: lines-match-walk=[?_airb_v1|.0] (mismatches [?_airb_mism|.0])  books-match-walk=[?_airb_v2|.0] (mismatches [?_airb_bk_mism|.0])  budget-match-walk=[?_airb_v3|.0] (mismatches [?_airb_bg_mism|.0])  cv-budget-match-walk=[?_airb_v4|.0] (mismatches [?_airb_cv_mism|.0])  purges-armed=[?_airb_purges|.0]"
+	log = "=== END AIR LINES TEST === [Root.GetName]"
+}
+
+############################################################
+# Phase 0 probes - console `effect WA_TEST_AIRB_probe_<name> = yes` on the TAGGED country
+# (`tag GER` first: the console effect runs in the player's scope). Read the result in
+# `imgui show ai-strategy` before and after each call; the log line only records the call.
+############################################################
+
+# 0a. Is add_ai_strategy unit_ratio ADDITIVE per id? Read the `unit_ratio fighter` row, fire
+# _ratio_add, read, fire _ratio_sub, read: additive = the third reading equals the first.
+WA_TEST_AIRB_probe_ratio_add = {
+	add_ai_strategy = { type = unit_ratio id = fighter value = 50 }
+	log = "=== AIR PROBE === [Root.GetName] [GetDateText] unit_ratio fighter +50 applied - read imgui show ai-strategy"
+}
+
+WA_TEST_AIRB_probe_ratio_sub = {
+	add_ai_strategy = { type = unit_ratio id = fighter value = -50 }
+	log = "=== AIR PROBE === [Root.GetName] [GetDateText] unit_ratio fighter -50 applied - read imgui show ai-strategy"
+}
+
+# 0b. Does a -1000 variant factor DRAIN a running line? Fire on a country with a running tactical
+# line, `tag` back to the observer so it returns to AI, run 3-4 weeks, read its production screen.
+# _cancel_undo reverses it (+1000) once the reading is taken.
+WA_TEST_AIRB_probe_cancel_tactical = {
+	add_ai_strategy = { type = equipment_variant_production_factor id = medium_heavy_bomber_airframe value = -1000 }
+	log = "=== AIR PROBE === [Root.GetName] [GetDateText] variant factor medium_heavy_bomber_airframe -1000 applied - watch the tactical line for 3-4 weeks"
+}
+
+WA_TEST_AIRB_probe_cancel_tactical_undo = {
+	add_ai_strategy = { type = equipment_variant_production_factor id = medium_heavy_bomber_airframe value = 1000 }
+	log = "=== AIR PROBE === [Root.GetName] [GetDateText] variant factor medium_heavy_bomber_airframe +1000 applied (undo)"
+}

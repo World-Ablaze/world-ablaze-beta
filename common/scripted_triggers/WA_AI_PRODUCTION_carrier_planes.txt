@@ -41,9 +41,11 @@ WA_AI_PRODUCTION_carrier_planes_major = {
 #
 # It deliberately does NOT touch unit_ratio. Per common/ai_strategy/documentation.info
 # (### UNIT RATIOS, AIR) land-based and carrier plane types are pooled COMPLETELY
-# SEPARATELY, and unit_ratio only splits an already-computed pool total between the
-# cv roles - it cannot raise the total and therefore cannot over-build. The
-# cv_fighter 150 / cv_naval_bomber 100 split from a5ea1fb84 stays as written.
+# SEPARATELY (doc-sourced, ASSUMED - not measured in any campaign), and unit_ratio only
+# splits an already-computed pool total between the cv roles - it cannot raise the total
+# and therefore cannot over-build. [air-budget] the split is now emitted monthly by
+# WA_AI_AIR_BUDGET_reconcile from cv_weight_fighter 50 / cv_weight_cas 30 /
+# cv_weight_naval_bomber 50 while each type is funded (deck held x line open).
 #
 # PER-ROLE ON PURPOSE. ENG's surplus is naval bombers (1 799 of its 2 026 land pile)
 # while its carrier fighters are genuinely scarce (227); a combined test would brake
@@ -51,11 +53,13 @@ WA_AI_PRODUCTION_carrier_planes_major = {
 #
 # THE BARS. Deck capacity in this mod measures 57-86 planes per hull (f9321934
 # 1946.8: JAP 1380/20, ENG 969/17, USA 4040/47 - all three have a land surplus, so
-# their decks are full and on-deck == capacity). Taking ~75/hull and the 150:100
-# unit_ratio split gives ~45 fighter and ~30 naval-bomber deck slots per hull. The
-# bars are set at 2x that (90 fighter / 60 naval-bomber per hull), i.e. well ABOVE
-# the engine's own 1.5x target, so the brake trips only on genuine surplus and never
-# on a fleet that is merely well supplied. Banded on hull count using each band's
+# their decks are full and on-deck == capacity). The bars were derived from ~75/hull
+# and the old 150:100 split (~45 fighter / ~30 naval-bomber slots per hull) at 2x =
+# 90 fighter / 60 naval-bomber per hull. Under the [air-budget] weights a role's share
+# is 50/100 with the two usual types funded (38 slots per hull each) and at least
+# 50/130 if a carrier-CAS nation is ever named (29): the unchanged bars sit at 2x to 3x
+# the deck slots, so the brake trips LATER than before - the conservative direction.
+# Retune the bars if a cv weight rises above 60. Banded on hull count using each band's
 # UPPER bound, which biases every band towards NOT braking. Only upper bounds are
 # needed: every smaller band also applies to a small fleet, so the OR naturally
 # selects the tightest applicable bar.

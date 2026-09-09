@@ -1,0 +1,317 @@
+############################################################################################################
+#	[air-budget] AIR BUDGET. Runtime unit_ratio emitter for the LAND air pool. ROOT = country, monthly
+#	(WA_AI_misc_on_actions.txt, right after WA_AI_ARMOR_BUDGET_reconcile) and on_startup. A type's
+#	weight (common/script_constants/wa_ai_production.txt, air_budget) is emitted while the type has
+#	an open line and retired when it has none; the engine normalises over the open set, so the
+#	shares are the weights over their sum - the fighter floor raises its weight when that falls short.
+#	Books: WA_AI_AIR_BUDGET_<type> = the value currently applied to that engine role id. There is no
+#	remove_ai_strategy; unit_ratio entries are additive per id, so a change is emitted as the exact
+#	difference through meta_effect, and an unchanged month emits NOTHING. If the AIR BUDGET log
+#	line's weights and `imgui show ai-strategy` ever differ, that additivity is gone: retire the
+#	diff and emit full values.
+#	Type = engine role: fighter (fighter / multirole / interceptor lines), cas (cas / cas_lowered),
+#	tactical_bomber (fast / strike / tactical), strategic_bomber, naval_bomber, heavy_fighter
+#	(heavy fighter / attacker). Section 4 does the same for the CARRIER pool (cv_fighter / cv_cas /
+#	cv_naval_bomber), which the engine sizes from deck capacity and splits by the same rule; no floor.
+############################################################################################################
+
+WA_AI_AIR_BUDGET_reconcile = {
+
+	############################################################
+	# 1. Which types have an open line this month
+	############################################################
+
+	set_temp_variable = { _abw_o_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_fighter_type = yes } set_temp_variable = { _abw_o_f = 1 } }
+	set_temp_variable = { _abw_o_cas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_cas_type = yes } set_temp_variable = { _abw_o_cas = 1 } }
+	set_temp_variable = { _abw_o_tac = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_tactical_type = yes } set_temp_variable = { _abw_o_tac = 1 } }
+	set_temp_variable = { _abw_o_strat = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_strategic_type = yes } set_temp_variable = { _abw_o_strat = 1 } }
+	set_temp_variable = { _abw_o_nav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_naval_type = yes } set_temp_variable = { _abw_o_nav = 1 } }
+	set_temp_variable = { _abw_o_hf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_heavy_fighter_type = yes } set_temp_variable = { _abw_o_hf = 1 } }
+
+	############################################################
+	# 2. Weights: the table for an open type, 0 for a closed one, then the fighter floor
+	############################################################
+
+	set_temp_variable = { _abw_w_f = constant:wa_ai_production.air_budget.weight_fighter }
+	multiply_temp_variable = { _abw_w_f = _abw_o_f }
+	set_temp_variable = { _abw_w_cas = constant:wa_ai_production.air_budget.weight_cas }
+	multiply_temp_variable = { _abw_w_cas = _abw_o_cas }
+	set_temp_variable = { _abw_w_tac = constant:wa_ai_production.air_budget.weight_tactical }
+	multiply_temp_variable = { _abw_w_tac = _abw_o_tac }
+	set_temp_variable = { _abw_w_strat = constant:wa_ai_production.air_budget.weight_strategic }
+	multiply_temp_variable = { _abw_w_strat = _abw_o_strat }
+	set_temp_variable = { _abw_w_nav = constant:wa_ai_production.air_budget.weight_naval }
+	multiply_temp_variable = { _abw_w_nav = _abw_o_nav }
+	set_temp_variable = { _abw_w_hf = constant:wa_ai_production.air_budget.weight_heavy_fighter }
+	multiply_temp_variable = { _abw_w_hf = _abw_o_hf }
+
+	set_temp_variable = { _abw_others = _abw_w_cas }
+	add_to_temp_variable = { _abw_others = _abw_w_tac }
+	add_to_temp_variable = { _abw_others = _abw_w_strat }
+	add_to_temp_variable = { _abw_others = _abw_w_nav }
+	add_to_temp_variable = { _abw_others = _abw_w_hf }
+
+	# fighter floor: share >= floor  <=>  w_f >= others x floor / (100 - floor). Nearest integer;
+	# a rounding of one weight point is below the resolution anything downstream can see.
+	set_temp_variable = { _abw_floor_applied = 0 }
+	if = {
+		limit = { check_variable = { _abw_o_f = 1 } }
+		set_temp_variable = { _abw_min = _abw_others }
+		multiply_temp_variable = { _abw_min = constant:wa_ai_production.air_budget.fighter_floor_pct }
+		set_temp_variable = { _abw_den = 100 }
+		subtract_from_temp_variable = { _abw_den = constant:wa_ai_production.air_budget.fighter_floor_pct }
+		divide_temp_variable = { _abw_min = _abw_den }
+		round_temp_variable = _abw_min
+		if = {
+			limit = { check_variable = { _abw_w_f < _abw_min } }
+			set_temp_variable = { _abw_w_f = _abw_min }
+			set_temp_variable = { _abw_floor_applied = 1 }
+		}
+	}
+
+	############################################################
+	# 3. Diff each book against its target, emit only the difference
+	############################################################
+
+	# fighter
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_fighter } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_fighter } }
+	set_temp_variable = { _abw_delta = _abw_w_f }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_fighter_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_fighter_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_fighter = _abw_w_f }
+
+	# cas
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cas } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_cas } }
+	set_temp_variable = { _abw_delta = _abw_w_cas }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_cas_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_cas_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_cas = _abw_w_cas }
+
+	# tactical_bomber
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_tactical } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_tactical } }
+	set_temp_variable = { _abw_delta = _abw_w_tac }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_tactical_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_tactical_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_tactical = _abw_w_tac }
+
+	# strategic_bomber
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_strategic } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_strategic } }
+	set_temp_variable = { _abw_delta = _abw_w_strat }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_strategic_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_strategic_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_strategic = _abw_w_strat }
+
+	# naval_bomber
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_naval } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_naval } }
+	set_temp_variable = { _abw_delta = _abw_w_nav }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_naval_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_naval_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_naval = _abw_w_nav }
+
+	# heavy_fighter
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_heavy_fighter } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_heavy_fighter } }
+	set_temp_variable = { _abw_delta = _abw_w_hf }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_heavy_fighter_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_heavy_fighter_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_heavy_fighter = _abw_w_hf }
+
+	############################################################
+	# 4. Carrier pool - same books-and-diff, three roles, no floor
+	############################################################
+
+	set_temp_variable = { _abw_o_cvf = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_cv_fighter_type = yes } set_temp_variable = { _abw_o_cvf = 1 } }
+	set_temp_variable = { _abw_o_cvcas = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_cv_cas_type = yes } set_temp_variable = { _abw_o_cvcas = 1 } }
+	set_temp_variable = { _abw_o_cvnav = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = yes } set_temp_variable = { _abw_o_cvnav = 1 } }
+
+	set_temp_variable = { _abw_w_cvf = constant:wa_ai_production.air_budget.cv_weight_fighter }
+	multiply_temp_variable = { _abw_w_cvf = _abw_o_cvf }
+	set_temp_variable = { _abw_w_cvcas = constant:wa_ai_production.air_budget.cv_weight_cas }
+	multiply_temp_variable = { _abw_w_cvcas = _abw_o_cvcas }
+	set_temp_variable = { _abw_w_cvnav = constant:wa_ai_production.air_budget.cv_weight_naval_bomber }
+	multiply_temp_variable = { _abw_w_cvnav = _abw_o_cvnav }
+
+	# cv_fighter
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_fighter } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_cv_fighter } }
+	set_temp_variable = { _abw_delta = _abw_w_cvf }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_cv_fighter_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_cv_fighter_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_cv_fighter = _abw_w_cvf }
+
+	# cv_cas
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_cas } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_cv_cas } }
+	set_temp_variable = { _abw_delta = _abw_w_cvcas }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_cv_cas_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_cv_cas_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_cv_cas = _abw_w_cvcas }
+
+	# cv_naval_bomber
+	set_temp_variable = { _abw_cur = 0 }
+	if = { limit = { has_variable = WA_AI_AIR_BUDGET_cv_naval } set_temp_variable = { _abw_cur = WA_AI_AIR_BUDGET_cv_naval } }
+	set_temp_variable = { _abw_delta = _abw_w_cvnav }
+	subtract_from_temp_variable = { _abw_delta = _abw_cur }
+	if = { limit = { check_variable = { _abw_delta > 0 } } WA_AI_AIR_BUDGET_emit_cv_naval_add = yes }
+	else_if = { limit = { check_variable = { _abw_delta < 0 } } multiply_temp_variable = { _abw_delta = -1 } WA_AI_AIR_BUDGET_emit_cv_naval_sub = yes }
+	set_variable = { WA_AI_AIR_BUDGET_cv_naval = _abw_w_cvnav }
+
+	if = {
+		limit = { has_country_flag = WA_AI_logging }
+		log = "[GetYear] [GetMonth] | AI | [Root.GetName] | AIR BUDGET: open f=[?_abw_o_f|.0] cas=[?_abw_o_cas|.0] tac=[?_abw_o_tac|.0] strat=[?_abw_o_strat|.0] nav=[?_abw_o_nav|.0] hf=[?_abw_o_hf|.0] | weights f=[?_abw_w_f|.0] cas=[?_abw_w_cas|.0] tac=[?_abw_w_tac|.0] strat=[?_abw_w_strat|.0] nav=[?_abw_w_nav|.0] hf=[?_abw_w_hf|.0] floor=[?_abw_floor_applied|.0] | carrier cvf=[?_abw_w_cvf|.0] cvcas=[?_abw_w_cvcas|.0] cvnav=[?_abw_w_cvnav|.0]"
+	}
+}
+
+############################################################
+#	Entry emitters. ROOT = country scope, _abw_delta = POSITIVE magnitude. One role id per effect -
+#	the id is a token, not a tag, so it cannot be rendered from a variable; the sign lives in the
+#	literal text. Same form as WA_AI_ARMOR_BUDGET_emit_* (proven in-engine).
+############################################################
+
+WA_AI_AIR_BUDGET_emit_fighter_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = fighter value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_fighter_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = fighter value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cas_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cas value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cas_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cas value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_tactical_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = tactical_bomber value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_tactical_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = tactical_bomber value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_strategic_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = strategic_bomber value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_strategic_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = strategic_bomber value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_naval_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = naval_bomber value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_naval_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = naval_bomber value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_heavy_fighter_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = heavy_fighter value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_heavy_fighter_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = heavy_fighter value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_fighter_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_fighter value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_fighter_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_fighter value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_cas_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_cas value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_cas_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_cas value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_naval_add = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_naval_bomber value = [V] } }
+		V = "[?_abw_delta]"
+	}
+}
+
+WA_AI_AIR_BUDGET_emit_cv_naval_sub = {
+	meta_effect = {
+		text = { add_ai_strategy = { type = unit_ratio id = cv_naval_bomber value = -[V] } }
+		V = "[?_abw_delta]"
+	}
+}

@@ -1,9 +1,11 @@
-# Air production decisions - one per aircraft line the AI can open. Read by
-# WA_aircraft_production_strategies (WA_production_strategy_effects.txt, ~2-day event in
-# events/WA_AI_misc.txt), which sets the WORLD_ABLAZE_PRODUCTION_* flags the air strategies enable on.
-# Tech availability is WA_AI_PRODUCTION_has_*_tech (WA_AI_PRODUCTION_air_tech.txt), which also
-# owns the AI's "not worth a factory yet" rungs; identity is WA_AI_CONFIG_AIRFORCE_* and
-# WA_AI_CONFIG_TECH_TREE_*; a force cap is a deployed park size, never an industry reading.
+# Air production decisions - one per aircraft line the AI can open. The should_build_* decisions
+# say whether a line is wanted; the should_open_*_line decisions at the end of this file add the
+# industry band and the line exclusions and are read DIRECTLY by the ai_strategy blocks of
+# WA_AI_PRODUCTION_DEFAULT_air.txt and by WA_aircraft_production_strategies (the ~2-day pulse of
+# events/WA_AI_misc.txt, which only keeps the purge books now). Tech availability is
+# WA_AI_PRODUCTION_has_worthwhile_* (WA_AI_PRODUCTION_air_tech.txt, GENERATED from
+# tools/air_tech_registry.json); identity is WA_AI_CONFIG_AIRFORCE_*; a force cap is a deployed
+# park size, never an industry reading.
 
 ########################## shared observations ##########################
 
@@ -25,13 +27,35 @@ WA_AI_PRODUCTION_has_no_major_air_patron = {
 # and NOT `has_deployed_air_force_size type = fighter`: that role bucket also holds the
 # interceptor and carrier-fighter archetypes, whose lines have their own bars.
 # Assumes the pulse wrote the variable first - every reader is inside that same effect.
+# [air-budget] every park cap below is a Schmitt pair: closes at the cap, reopens at the
+# `_reopen` bar (90 %), the "was open" side read from the archetype's purge book. Without it a
+# mature park sitting at its cap flips the line on every pulse.
+WA_AI_PRODUCTION_fighter_line_was_open = {
+	OR = {
+		has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter
+		has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_multirole
+	}
+}
+
 WA_AI_PRODUCTION_fighter_park_is_below_cap = {
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_is_mass_producer = yes }
-		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap_mass }
+		if = {
+			limit = { WA_AI_PRODUCTION_fighter_line_was_open = yes }
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap_mass }
+		}
+		else = {
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap_mass_reopen }
+		}
 	}
 	else = {
-		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap }
+		if = {
+			limit = { WA_AI_PRODUCTION_fighter_line_was_open = yes }
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap }
+		}
+		else = {
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap_reopen }
+		}
 	}
 }
 
@@ -91,22 +115,46 @@ WA_AI_PRODUCTION_should_build_interceptors = {
 				WA_AI_PRODUCTION_should_build_multiroles = yes
 			}
 		}
-		check_variable = { num_deployed_planes_with_type@small_fighter_interceptor_airframe < constant:wa_ai_production.air.interceptor_cap }
+		if = {
+			limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_interceptor }
+			check_variable = { num_deployed_planes_with_type@small_fighter_interceptor_airframe < constant:wa_ai_production.air.interceptor_cap }
+		}
+		else = {
+			check_variable = { num_deployed_planes_with_type@small_fighter_interceptor_airframe < constant:wa_ai_production.air.interceptor_cap_reopen }
+		}
 	}
 	else = {
+		# deliberately unpaired: while both land fighter lines are closed (CANCEL -1000) the land
+		# park cannot rise, so this bar cannot flap
 		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.fighter_cap }
 	}
 }
 
+# Owner ruling 2026-09-09 (Q8a): carrier FIGHTERS follow the deck, not the archetype - a navy
+# holding carriers with a worthwhile carrier-fighter rung funds the line, the weight and the
+# floors alike, so no deck is left without fighters (the f9321934 ENG shape). Carrier CAS keeps
+# its archetype gate below.
 WA_AI_PRODUCTION_should_build_cv_fighters = {
-	WA_AI_CONFIG_is_carrier_navy = yes
+	WA_AI_PRODUCTION_needs_cv_planes = yes
 	WA_AI_PRODUCTION_has_worthwhile_cv_fighter = yes
-	check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe < constant:wa_ai_production.air.cv_fighter_cap }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_fighter }
+		check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe < constant:wa_ai_production.air.cv_fighter_cap }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@cv_small_fighter_airframe < constant:wa_ai_production.air.cv_fighter_cap_reopen }
+	}
 }
 
 WA_AI_PRODUCTION_should_build_heavy_fighters = {
 	WA_AI_PRODUCTION_has_worthwhile_heavy_fighter = yes
-	check_variable = { num_deployed_planes_with_type@medium_fighter_airframe < constant:wa_ai_production.air.heavy_fighter_cap }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter }
+		check_variable = { num_deployed_planes_with_type@medium_fighter_airframe < constant:wa_ai_production.air.heavy_fighter_cap }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@medium_fighter_airframe < constant:wa_ai_production.air.heavy_fighter_cap_reopen }
+	}
 	OR = {
 		AND = {
 			has_war = yes
@@ -126,7 +174,13 @@ WA_AI_PRODUCTION_should_build_heavy_fighters = {
 WA_AI_PRODUCTION_should_build_attackers = {
 	WA_AI_PRODUCTION_has_worthwhile_attacker = yes
 	WA_AI_CONFIG_AIRFORCE_uses_attackers = yes
-	check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe < constant:wa_ai_production.air.attacker_cap }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter_multirole }
+		check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe < constant:wa_ai_production.air.attacker_cap }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@medium_fighter_multirole_airframe < constant:wa_ai_production.air.attacker_cap_reopen }
+	}
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
@@ -144,7 +198,13 @@ WA_AI_PRODUCTION_should_build_cas = {
 	# holds cv_small_bomber_airframe, so a carrier close-support arm counted against the LAND bar.
 	# Assumes small_bomber_airframe is the only land close-support archetype
 	# (common/units/equipment/plane_airframes.txt).
-	check_variable = { num_deployed_planes_with_type@small_bomber_airframe < constant:wa_ai_production.air.cas_cap }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_bomber }
+		check_variable = { num_deployed_planes_with_type@small_bomber_airframe < constant:wa_ai_production.air.cas_cap }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@small_bomber_airframe < constant:wa_ai_production.air.cas_cap_reopen }
+	}
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
@@ -155,7 +215,13 @@ WA_AI_PRODUCTION_should_build_cv_cas = {
 	# holds the LAND cas archetype, so the shared 1600 bar always bound before this line's own
 	# 2500 and left cv_cas_cap dead. Assumes cv_small_bomber_airframe is the only carrier
 	# close-support archetype (common/units/equipment/plane_airframes.txt).
-	check_variable = { num_deployed_planes_with_type@cv_small_bomber_airframe < constant:wa_ai_production.air.cv_cas_cap }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_bomber }
+		check_variable = { num_deployed_planes_with_type@cv_small_bomber_airframe < constant:wa_ai_production.air.cv_cas_cap }
+	}
+	else = {
+		check_variable = { num_deployed_planes_with_type@cv_small_bomber_airframe < constant:wa_ai_production.air.cv_cas_cap_reopen }
+	}
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
@@ -164,8 +230,22 @@ WA_AI_PRODUCTION_should_build_cv_cas = {
 # [medium-bomber-one-park] The single park the fast, strike and tactical lines share, because the
 # engine gives their three archetypes one role (type = tactical_bomber). One bar for the three,
 # flat for every country - see medium_bomber_cap.
+WA_AI_PRODUCTION_medium_bomber_line_was_open = {
+	OR = {
+		has_country_flag = WA_AI_PRODUCTION_AIR_open_fast_bomber
+		has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_bomber
+		has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_heavy_bomber
+	}
+}
+
 WA_AI_PRODUCTION_medium_bomber_park_is_below_cap = {
-	has_deployed_air_force_size = { size < constant:wa_ai_production.air.medium_bomber_cap type = tactical_bomber }
+	if = {
+		limit = { WA_AI_PRODUCTION_medium_bomber_line_was_open = yes }
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.medium_bomber_cap type = tactical_bomber }
+	}
+	else = {
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.medium_bomber_cap_reopen type = tactical_bomber }
+	}
 }
 
 WA_AI_PRODUCTION_should_build_fast_bombers = {
@@ -205,10 +285,22 @@ WA_AI_PRODUCTION_should_build_naval_bombers = {
 	}
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes }
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier type = naval_bomber }
+		if = {
+			limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
+			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier type = naval_bomber }
+		}
+		else = {
+			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_carrier_reopen type = naval_bomber }
+		}
 	}
 	else = {
-		has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap type = naval_bomber }
+		if = {
+			limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
+			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap type = naval_bomber }
+		}
+		else = {
+			has_deployed_air_force_size = { size < constant:wa_ai_production.air.naval_cap_reopen type = naval_bomber }
+		}
 	}
 	if = {
 		limit = { WA_AI_CONFIG_AIRFORCE_drops_naval_air_in_eastern_war = yes }
@@ -229,16 +321,34 @@ WA_AI_PRODUCTION_should_build_strategic_bombers = {
 	OR = {
 		AND = {
 			NOT = { WA_AI_CONFIG_AIRFORCE_is_mass_producer = yes }
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap type = strategic_bomber }
+			if = {
+				limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber }
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap type = strategic_bomber }
+			}
+			else = {
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_reopen type = strategic_bomber }
+			}
 		}
 		AND = {
 			WA_AI_CONFIG_AIRFORCE_is_mass_producer = yes
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_mass type = strategic_bomber }
+			if = {
+				limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber }
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_mass type = strategic_bomber }
+			}
+			else = {
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_mass_reopen type = strategic_bomber }
+			}
 		}
 		AND = {
 			WA_AI_CONFIG_AIRFORCE_has_delayed_strategic_arm = yes
 			WA_AI_CONFIG_after_1944 = yes
-			has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_late_surge type = strategic_bomber }
+			if = {
+				limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber }
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_late_surge type = strategic_bomber }
+			}
+			else = {
+				has_deployed_air_force_size = { size < constant:wa_ai_production.air.strategic_cap_late_surge_reopen type = strategic_bomber }
+			}
 			NOT = { has_global_flag = soviet_union_defeated }
 		}
 	}
@@ -252,7 +362,13 @@ WA_AI_PRODUCTION_should_build_strategic_bombers = {
 
 WA_AI_PRODUCTION_should_build_scout_planes = {
 	WA_AI_PRODUCTION_has_worthwhile_scout_plane = yes
-	has_deployed_air_force_size = { size < constant:wa_ai_production.air.scout_cap type = scout_plane }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_scout }
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.scout_cap type = scout_plane }
+	}
+	else = {
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.scout_cap_reopen type = scout_plane }
+	}
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
 }
 
@@ -260,7 +376,13 @@ WA_AI_PRODUCTION_should_build_transport_planes = {
 	NOT = { WA_AI_CONFIG_AIRFORCE_skips_transports = yes }
 	alliance_strength_ratio > constant:wa_ai_production.air.min_alliance_strength
 	WA_AI_PRODUCTION_has_no_major_air_patron = yes
-	has_deployed_air_force_size = { size < constant:wa_ai_production.air.transport_cap type = air_transport }
+	if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_transport }
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.transport_cap type = air_transport }
+	}
+	else = {
+		has_deployed_air_force_size = { size < constant:wa_ai_production.air.transport_cap_reopen type = air_transport }
+	}
 }
 
 ########################## Battle of Britain ##########################
@@ -283,11 +405,222 @@ WA_AI_PRODUCTION_should_build_bob_fighters = {
 	NOT = { country_exists = REN }
 	NOT = { GER = { has_war_with = SOV } }
 	has_global_flag = fall_of_france
-	OR = {
-		check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap }
-		AND = {
-			WA_AI_PRODUCTION_is_soviet_union_gone = yes
-			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap_sov_gone }
+	# an absent park reads 0 = "below cap" = programme ON, which closes every bomber line; the pulse
+	# writes the park, so before its first pass (fresh load, human->AI switch) the answer is unknown
+	has_variable = WA_AI_PRODUCTION_land_fighter_park
+	# Schmitt pair the other way round (the programme CLOSES lines): engaged while the park is
+	# under the cap once running, engages only under the reopen bar when not - read through the
+	# flag the pulse sets from this very trigger
+	if = {
+		limit = { has_country_flag = WA_bob_production_flag }
+		OR = {
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap }
+			AND = {
+				WA_AI_PRODUCTION_is_soviet_union_gone = yes
+				check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap_sov_gone }
+			}
 		}
 	}
+	else = {
+		OR = {
+			check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap_reopen }
+			AND = {
+				WA_AI_PRODUCTION_is_soviet_union_gone = yes
+				check_variable = { WA_AI_PRODUCTION_land_fighter_park < constant:wa_ai_production.air.bob_fighter_cap_sov_gone_reopen }
+			}
+		}
+	}
+}
+
+########################## line gates (read by ai_strategy enable) ##########################
+
+# [air-budget] One decision per production LINE: the should_build_* want above, plus the industry
+# band and the exclusions between lines. These are the triggers WA_AI_PRODUCTION_DEFAULT_air.txt
+# enables on and the purge books of WA_aircraft_production_strategies read - one source, no flag.
+# They read WA_AI_PRODUCTION_land_fighter_park, a country variable written by the pulse only: the
+# pulse is mean_time_to_happen 2 days on is_ai (7 days under WA_AI_delay in performance mode,
+# events/WA_AI_misc.txt) - a distribution, not a bound - and an enable is evaluated at the engine's
+# own cadence (not measured). The fighter trio is exclusive by construction (each later line denies the earlier),
+# the attacker line yields to the heavy-fighter line, and the Battle of Britain programme closes
+# every bomber and carrier line while it runs - all as the flag ladder did.
+
+WA_AI_PRODUCTION_should_run_bob_programme = {
+	WA_AI_PRODUCTION_should_build_bob_fighters = yes
+}
+
+WA_AI_PRODUCTION_should_open_interceptor_line = {
+	WA_AI_PRODUCTION_should_build_interceptors = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+}
+
+WA_AI_PRODUCTION_should_open_fighter_multirole_line = {
+	WA_AI_PRODUCTION_should_build_fighters_and_multiroles = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+}
+
+WA_AI_PRODUCTION_should_open_fighter_line = {
+	NOT = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes }
+	WA_AI_PRODUCTION_should_build_fighters = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+}
+
+WA_AI_PRODUCTION_should_open_multirole_line = {
+	NOT = { WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes }
+	NOT = { WA_AI_PRODUCTION_should_open_fighter_line = yes }
+	WA_AI_PRODUCTION_should_build_multiroles = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+}
+
+WA_AI_PRODUCTION_should_open_cas_lowered_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_cas = yes
+	WA_AI_PRODUCTION_should_build_multiroles = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+# Deliberately NOT closed by the Battle of Britain programme: the flag ladder fell through to this
+# branch during the programme, and the defender's CAS line is tech-barred anyway (cas_is_weak).
+WA_AI_PRODUCTION_should_open_cas_line = {
+	NOT = { WA_AI_PRODUCTION_should_open_cas_lowered_line = yes }
+	WA_AI_PRODUCTION_should_build_cas = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_cv_cas_line = {
+	WA_AI_PRODUCTION_should_build_cv_cas = yes
+}
+
+WA_AI_PRODUCTION_should_open_heavy_fighter_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_heavy_fighters = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_attacker_line = {
+	NOT = { WA_AI_PRODUCTION_has_jet_fighter_tech = yes }
+	NOT = { WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes }
+	WA_AI_PRODUCTION_should_build_attackers = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_fast_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
+	WA_AI_PRODUCTION_should_build_fast_bombers = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_strike_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
+	WA_AI_PRODUCTION_should_build_strike_bombers = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_tactical_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_tactical_bombers = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_open_naval_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_naval_bombers = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_medium_mils
+}
+
+# [commonwealth-handoff] the delayed arm waits for 1941.6 and nothing else - a landing in France is
+# never a reason to close this line, because closing it CANCELS the running lines through the purge
+# book; the force caps inside should_build_strategic_bombers are what bound the arm.
+WA_AI_PRODUCTION_should_open_strategic_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_strategic_bombers = yes
+	if = {
+		limit = { WA_AI_CONFIG_AIRFORCE_has_delayed_strategic_arm = yes }
+		WA_AI_CONFIG_after_1941_6 = yes
+	}
+}
+
+WA_AI_PRODUCTION_should_open_scout_plane_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_scout_planes = yes
+}
+
+WA_AI_PRODUCTION_should_open_cv_fighter_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_cv_fighters = yes
+}
+
+WA_AI_PRODUCTION_should_open_transport_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
+	WA_AI_PRODUCTION_should_build_transport_planes = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+# A carrier strike power whose carrier close-support line is shut builds no land CAS either:
+# the archetype flies close support from decks, never from the land line.
+WA_AI_PRODUCTION_should_cancel_land_cas_for_carrier_power = {
+	WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power = yes
+	NOT = { WA_AI_PRODUCTION_should_open_cv_cas_line = yes }
+}
+
+########################## type gates (one engine role, any of its lines) ##########################
+
+# [air-budget] A TYPE is funded while any of its lines is open. Read by the category-factor
+# blocks of WA_AI_PRODUCTION_DEFAULT_air.txt (one factor per type, never per line - factors of
+# one id SUM across enabled blocks) and by WA_AI_AIR_BUDGET_reconcile for the weights.
+
+WA_AI_PRODUCTION_should_fund_fighter_type = {
+	OR = {
+		WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes
+		WA_AI_PRODUCTION_should_open_fighter_line = yes
+		WA_AI_PRODUCTION_should_open_multirole_line = yes
+		WA_AI_PRODUCTION_should_open_interceptor_line = yes
+	}
+}
+
+WA_AI_PRODUCTION_should_fund_cas_type = {
+	OR = {
+		WA_AI_PRODUCTION_should_open_cas_line = yes
+		WA_AI_PRODUCTION_should_open_cas_lowered_line = yes
+	}
+}
+
+WA_AI_PRODUCTION_should_fund_tactical_type = {
+	OR = {
+		WA_AI_PRODUCTION_should_open_fast_bomber_line = yes
+		WA_AI_PRODUCTION_should_open_strike_bomber_line = yes
+		WA_AI_PRODUCTION_should_open_tactical_bomber_line = yes
+	}
+}
+
+WA_AI_PRODUCTION_should_fund_strategic_type = {
+	WA_AI_PRODUCTION_should_open_strategic_bomber_line = yes
+}
+
+WA_AI_PRODUCTION_should_fund_naval_type = {
+	WA_AI_PRODUCTION_should_open_naval_bomber_line = yes
+}
+
+WA_AI_PRODUCTION_should_fund_heavy_fighter_type = {
+	OR = {
+		WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes
+		WA_AI_PRODUCTION_should_open_attacker_line = yes
+	}
+}
+
+# Carrier pool - the engine sizes it from deck capacity and splits it by the cv_* unit_ratio, so a
+# type is funded only while the country holds a deck AND its line is open. Carrier naval bombers
+# have no line of their own: they ride the naval-bomber line (one purge key for both archetypes).
+WA_AI_PRODUCTION_should_fund_cv_fighter_type = {
+	WA_AI_PRODUCTION_needs_cv_planes = yes
+	WA_AI_PRODUCTION_should_open_cv_fighter_line = yes
+}
+
+WA_AI_PRODUCTION_should_fund_cv_cas_type = {
+	WA_AI_PRODUCTION_needs_cv_planes = yes
+	WA_AI_PRODUCTION_should_open_cv_cas_line = yes
+}
+
+WA_AI_PRODUCTION_should_fund_cv_naval_bomber_type = {
+	WA_AI_PRODUCTION_needs_cv_planes = yes
+	WA_AI_PRODUCTION_should_open_naval_bomber_line = yes
 }

@@ -173,7 +173,292 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### pc-lost-state-purge — TESTED (2026-09-08)
+### air-budget — SHIPPED-UNTESTED (2026-09-09)
+- State: phases 1-4 committed; harness runs pasted below for GER / ENG / MAL / USA on the
+  pre-retune constants. One `event wa_airb.4 USA` on the 50/50 + naval 10 constants (cold boot)
+  moves this to TESTED; phase 5 (TLM probe + campaign) and phase 0b remain.
+- Owner order 2026-09-09 ("je veux une refactorisation du système de production aérien pour l'IA
+  ... on veut par exemple que la somme des usines allouées sur les chasseurs fasse au moins 40 % du
+  total des usines aériennes ... une IA chasseurs + cas doit faire du 60/40"). Intended behaviour:
+  every AI's air factories are split between the air TYPES it is allowed and able to build by a
+  declared weight per type, renormalised over the OPEN types, with a fighter floor; the archetype
+  inside a type is a parity choice; a tech rung the AI should not fund is declared in one registry.
+  Full plan (diagnosis, model, phases, decisions): session scratchpad `PLAN_air_production_refactor.md`,
+  to be moved to `documentation/WA_AI_AIR_PRODUCTION.md` with phase 3.
+- Symptom, MEASURED (script, `common/ai_strategy/World_Ablaze_production_air_strategies.txt`): three
+  stacked levers, none normalised - `unit_ratio` (fighter 300 vs cas 80 / heavy_fighter 130 /
+  `interceptor` 100 / tactical 80+40+40 / naval 10 / strategic 150), `equipment_production_factor`
+  (fighter **25** vs every bomber category **100**), `equipment_variant_production_factor` (55-200 per
+  airframe). DERIVED: GER with every line open gets 300/780 = 38 % of wanted planes, then
+  38 x 1.25 vs 62 x 2 = **28 % of air factories** - the owner's "20 % chasseurs / 80 % bombardiers".
+  MEASURED: the heavy-fighter block writes `unit_ratio id = interceptor` while `medium_fighter_airframe`
+  is `allowed_types = { heavy_fighter }` - a ratio on no airframe. MEASURED: lines open on
+  `WORLD_ABLAZE_PRODUCTION_*` flags set by a ~2-day event and close by `AI_purge_*` flags read in
+  `can_be_produced` (cancels running lines); tanks and navy read triggers in `enable`.
+- Engine model, MEASURED (`common/ai_strategy/documentation.info` § UNIT RATIOS / AIR): a land air
+  type's share = `unit_ratio / sum(land unit_ratio)` x wanted planes, no base 100; carrier planes a
+  separate pool. So integer weights emitted at runtime give exact shares; the model is the armour
+  budget (`WA_AI_ARMOR_BUDGET_reconcile`, meta_effect emitters, books + diff).
+- Decisions (owner 2026-09-09): Q1 `heavy_fighter` is its own type and the ATTACKER archetype
+  belongs to it, not to cas - MEASURED over every `ai_equipment` plane design (evaluator
+  `StatModel`, 35 attackers / 37 heavy fighters / 75 CAS): air_attack per IC 1.91 vs 1.90 vs 1.14,
+  ground_attack per IC 0.52 vs 0.30 vs 0.69, and every `ai_equipment` file already files attackers
+  under `air_heavy_fighter`. Q2 two closures: HARD (archetype not allowed / tech not worthwhile /
+  BoB / bases lost) keeps the `can_be_produced` purge; CAP (park saturated) = weight 0 + hysteresis
+  (reopen at 90 % of the cap), no purge - conditional on phase 0b. Q3 weights fighter 60 / cas 40 /
+  tactical 40 / strategic 40 / naval 20 / heavy_fighter 15, fighter floor 40 %; Q4 fighter
+  archetypes at parity; Q5 `air_factory_balance` tag+date blocks stay out of scope (separate subject
+  `air-share-windows`); Q6 monthly reconcile.
+- Phases: **0** owner console measurements - (a) is `add_ai_strategy unit_ratio` additive per id
+  (BLOCKING for phase 3), (b) does weight 0 / `-1000` drain a running line, (c) `imgui show
+  ai-strategy` GER 1939 effective ratios; **1** `tools/air_tech_registry.json` +
+  `tools/gen/gen_air_tech_gates.py` generating `WA_AI_PRODUCTION_air_tech.txt` (semantic diff empty
+  first, then the evaluator reads the registry's exclusions); **2** flags -> `_is_open` triggers,
+  values unchanged, heavy-fighter id fixed, `check_ai_layers` debt DOWN; **3** reconcile
+  `WA_AI_AIR_BUDGET_reconcile` + constants + lever parity + harness `WA_TEST_air_budget`;
+  **4** carrier pool; **5** TLM probe + campaign.
+- **Phases 1 + 2 in the working tree 2026-09-09 (uncommitted at the time of writing).** Phase 1:
+  `tools/air_tech_registry.json` (127 tree entries, every id verified against `common/technologies/`)
+  + `tools/gen/gen_air_tech_gates.py` (`--check` exit 0; the rendered file's has_tech SETS are
+  identical to HEAD, 17/17 triggers, MEASURED by set comparison); the evaluator reads
+  `exclude.airframes` as forced KEEP_OLD (`registry_excluded` flag; list empty until a model is
+  named). Phase 2: `WA_AI_PRODUCTION_should_open_<line>_line` x17 + `should_run_bob_programme` +
+  `should_cancel_land_cas_for_carrier_power` (end of `WA_AI_PRODUCTION_air.txt`); new
+  `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` (line blocks, values unchanged);
+  `World_Ablaze_production_air_strategies.txt` trimmed to the `air_factory_balance` blocks; the
+  pulse effect rewritten as purge books (`WA_AI_PRODUCTION_AIR_open_<archetype>` country flags).
+  Three deliberate deviations from value-neutral: (a) heavy-fighter ratios move from the DEAD id
+  `interceptor` to `heavy_fighter` (min_factories 10 becomes live, same as the mutually exclusive
+  attacker line); (b) carrier CAS gets `AI_purge_cv_small_bomber_production` (`plane_airframes.txt`
+  cv block) instead of sharing the land flag - closing one no longer cancels the other; (c) a
+  fighter-mode switch no longer purges the archetype the country keeps; (d) (architecture review)
+  HEAD re-set both land-fighter purge flags on EVERY pulse while no fighter line qualified (the
+  `else` of the trio) - the edge purge alone would have left the engine free to run fighter lines
+  there, so `small_fighter` / `small_fighter_multirole` now carry a CANCEL block (-1000 while no
+  line funds them), the same denial without the cancel-per-pulse; (e) (lessons review, "two
+  states of one object") fast / strike / tactical each read ONE purge key now
+  (`plane_airframes.txt`: the shared `medium_bomber` / `medium_multirole` second key removed from
+  each pair) so a book cancels its own archetype only - HEAD's jet-tactical veto closed fast+strike
+  and its purge cancelled the still-open tactical line, and the BoB close of tactical cancelled
+  fast+strike. Guard added (lessons "absent variable reads 0"): `should_build_bob_fighters` requires
+  `has_variable = WA_AI_PRODUCTION_land_fighter_park`, so a fresh load or a human->AI switch does
+  not run the BoB programme (which closes every bomber line) before the first pulse writes the park.
+  Cadence, DERIVED for a line that flips between pulses (pulse = MTTH 2 d on `is_ai`, 7 d under
+  `WA_AI_delay`; `enable` ASSUMED daily): t0 decision flips closed -> the block disables the same
+  day (engine cadence), no purge yet; t1 next pulse (expected 2 d, 7 d in performance mode) -> book
+  clears, purge fires, the running line is cancelled; t2 next pulse -> nothing. Open direction: t0
+  block enables the same day, the line starts at the engine's own pace; t1 book set, no purge.
+  Worst case = a line cancelled up to one pulse late, never early. Out of subject, recorded:
+  `WA_AI_stop_air_production` (`WA_AI_misc_effects.txt`) is write-only on HEAD as well - no reader
+  in the old flag ladder either (MEASURED `git show HEAD:` grep). Pre-existing, not moved:
+  `should_build_bob_fighters` keys on `fall_of_france` / `REN` / `GER` (principle 1 debt, already
+  in the trigger file at HEAD). One-shot on a save from a HEAD build
+  (DERIVED): orphaned `WORLD_ABLAZE_PRODUCTION_*` flags stay unread; a line that closed between
+  builds has no book and gets no purge - it runs to its end or to its CANCEL -1000; from the
+  second pulse everything is edge-normal. Gates: `check_ai_layers`
+  0 ERROR, ratchet unchanged (the new DEFAULT file reads only `_should_` triggers);
+  `check_constants` clean; `check_worklist` clean. Pre-existing, unrelated: pytest
+  `test_usa_medium_is_the_canonical_regression` fails on HEAD too.
+- Harness: `common/scripted_effects/WA_TEST_air_budget.txt` + `events/wa_test_air_budget.txt`
+  (contract v1). `event wa_airb.3 GER` (runs the pulse, then reports), `wa_airb.2` for every AI
+  major. Section C re-derives the 17 lines from the wants + retyped bands; VERDICT
+  `lines-match-walk=1 books-match-walk=1`.
+- **Owner boot + console run 2026-09-09 ("boot start OK"), GER 1940.10.1, cold boot (game.log pasted):**
+  ```
+  scope : always=1  I-am-ROOT=1  I-am-THIS=1  ROOT-scope-usable=1  control-false=0
+  inputs: is_ai=1  mils=454  park(resum)=3624  park(var)=3624  bob_flag=0  own_air_arm=1
+  wants : f=1 mr=0 int=0 hf=1 att=1 cas=1 cvcas=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0 bob=0
+  vetoes: jet_fighter=0 jet_tac=0 delayed_strat=0 after_1941_6=0
+  lines : int=0 f+mr=0 f=1 mr=0 cas_low=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  walk  : int=0 f+mr=0 f=1 mr=0 cas_low=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  books : int=0 f=1 mr=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  VERDICT German Reich: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: the shipped decisions, the independent walk and the purge books agree on all 17
+  lines; the attacker line yields to the open heavy-fighter line as designed; the park variable
+  equals its re-sum (the `has_variable` guard was live).
+- **Same run, ENG 1940.10.1 (Battle of Britain) and British Malaya (control), game.log pasted:**
+  ```
+  ENG  inputs: is_ai=1  mils=187  park(resum)=700  park(var)=700  bob_flag=1  own_air_arm=1
+       wants : f=1 mr=1 int=0 hf=0 att=0 cas=0 cvcas=0 fast=0 strike=1 tac=1 nav=1 strat=0 scout=0 cvf=0 trn=1 bob=1
+       vetoes: jet_fighter=0 jet_tac=0 delayed_strat=1 after_1941_6=0
+       lines : int=0 f+mr=1 f=0 mr=0 cas_low=0 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=0 nav=0 strat=0 scout=0 cvf=0 trn=0
+       walk  : (identical)   books : int=0 f=1 mr=1 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=0 nav=0 strat=0 scout=0 cvf=0 trn=0
+       VERDICT United Kingdom: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  MAL  inputs: is_ai=1  mils=0  park=0/0  bob_flag=0  own_air_arm=0   wants/lines/walk/books: all 0
+       VERDICT British Malaya: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: the BoB programme closes tactical, naval and transport while their wants read 1, the
+  fighter+multirole line stays open, the fighter book carries both archetypes; the minor with no
+  own air arm reads every line 0 (patron control). Observation, pre-existing and out of this
+  phase: the strike line is NOT closed by the BoB programme (HEAD's flag ladder never gated fast /
+  strike on it either) - ENG keeps a strike-bomber line through the battle; the phase-3 weights
+  are where that gets decided. Still owed: USA 1942+ (carrier lines).
+- **Phase 0a MEASURED 2026-09-09 (owner console, GER 1940.10, cold boot):** `unit_ratio fighter`
+  read 300; `effect WA_TEST_AIRB_probe_ratio_add` (+50) -> 350; `_probe_ratio_sub` (-50) -> back
+  to 300 ("sub marche aussi"). `add_ai_strategy unit_ratio` is additive per id in both directions:
+  the book-and-diff reconcile is buildable. Phase 0b (drain by -1000) not run yet - Q2(b) stays on
+  the purge for cap closures; hysteresis on the reopen bar ships with phase 3 regardless.
+- **Phase 3 in the working tree 2026-09-09 (uncommitted).** `WA_AI_AIR_BUDGET_reconcile`
+  (`common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt`; monthly after the armour reconcile +
+  on_startup): open types from the `should_open_*_line` decisions -> table weights (script constants
+  `air_budget`: 60/40/40/40/20/15, fighter floor 40 %) -> diff vs books `WA_AI_AIR_BUDGET_<type>` ->
+  `add_ai_strategy unit_ratio ±delta` through meta_effect (the armour emitter form). The 13 static
+  land `unit_ratio` lines left `WA_AI_PRODUCTION_DEFAULT_air.txt`; category factors and funded
+  archetype factors are at parity 100 (fighter was 25 - the measured 20/80 lever); heavy-fighter
+  `min_factories` 10 -> 1. Carrier-pool ratios untouched (phase 4). Hysteresis: every park cap now
+  a Schmitt pair (close at cap, reopen at the `_reopen` bar = 90 %, 16 new constants) read through
+  the purge books. Doc: `documentation/WA_AI_AIR_PRODUCTION.md`. Harness section E re-derives the
+  weights from the walk and compares them to the books (`budget-match-walk`), `event wa_airb.4`
+  runs pulse + reconcile first. Gates: `check_constants` clean (all 23 new constants read),
+  `check_ai_layers` 0 ERROR ratchet unchanged, `check_worklist` clean. Owner runs owed:
+  `wa_airb.4 GER` 1939-41 (expect f=60 cas=40 tac=40 nav=20 hf=15, fighter_share 34 % -> floor
+  raises f to 77 -> 40 %), `wa_airb.4 ENG` in the BoB (expect fighter only), USA 1942+. TLM probe
+  `wa_tlm_air_*` deferred to phase 5: the books are country variables, already save-visible.
+- Reviews on phase 3 (architecture CONCERNS, lessons CONCERNS), all applied: (1) the category
+  factor is ONE block per TYPE (`WA_AI_PRODUCTION_air_category_<type>`, enabled by new
+  `WA_AI_PRODUCTION_should_fund_<type>_type` decisions that the reconcile reads too) - factors of
+  one id SUM across enabled blocks, so per-line factors gave three open tactical lines 300 against
+  fighters 100, the skew coming back by another door; (2) the Battle of Britain bar is a Schmitt
+  pair the other way round (engages under `bob_fighter_cap_reopen` 4500 / `_sov_gone_reopen`
+  7200, releases at the cap, read through `WA_bob_production_flag`); (3) doc §6 carries the
+  entry-accumulation bound (6/month/country), the three unpaired decision inputs (patron, mil
+  band, jet vetoes) with the t0-t4 walk, and the save fingerprint; (4) `armor-prod-category`
+  carries a baseline re-cut line (fighter factor 25 -> 100 raises the air pull vs `armor` 60 -
+  stated regression risk, no counter-term chosen: the level 100 is what every bomber line
+  already carried); (5) `cv_cas` / `cv_fighter` category factors noted as outside
+  `script_enum_equipment_category` (ASSUMED no-op) so phase 4 does not inherit them as a lever;
+  (6) comment tells added (additivity gone = log weights differ from `imgui`; purge books written
+  by the pulse only; `fighter_floor_pct` < 100).
+- **Owner console run 2026-09-09, `event wa_airb.4 ENG`, 1939.9.1, fired twice (game.log pasted):**
+  ```
+  scope : always=1  I-am-ROOT=1  I-am-THIS=1  ROOT-scope-usable=1  control-false=0
+  inputs: is_ai=1  mils=120  park(resum)=200  park(var)=200  bob_flag=0  own_air_arm=1
+  lines : int=0 f+mr=1 f=0 mr=0 cas_low=0 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=1 nav=1 strat=0 scout=0 cvf=0 trn=1
+  budget: expect f=60 cas=0 tac=40 strat=0 nav=20 hf=0 floor=0 fighter_share=50%
+  budget: books  f=60 cas=0 tac=40 strat=0 nav=20 hf=0
+  VERDICT United Kingdom: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  budget-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: three open types (fighter, tactical, naval), books = re-derived weights, floor not
+  needed (60/120 = 50 % > 40 %); the second firing reads the same books (idempotent, no
+  re-emission).
+- **Engine-side MEASURED 2026-09-09 (owner `imgui show ai-strategy`, 1940.10 save, screenshots):**
+  GER `unit_ratio`: convoy 15, fighter **77**, cas 40, tactical_bomber 40, naval_bomber 20,
+  heavy_fighter 15 - the floor case exactly as derived (others 115 -> 77 -> 40 %). ENG (in the BoB):
+  fighter 60, tactical_bomber 40 (the strike line is not BoB-gated), no naval entry (BoB closed it),
+  plus the static carrier rows cv_fighter 150 / cv_cas -1000 / cv_naval_bomber 100 from
+  `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`. Phase 3 verified script-side (harness) and engine-side.
+  **Phase 4 finding, DERIVED from that ENG row**: the carrier base block puts cv_cas at -1000 for
+  every carrier navy while the USA cv_cas line adds +80 -> net -920: the carrier strike power never
+  gets a carrier-CAS share. Pre-existing; the carrier reconcile replaces both.
+- **Phase 4 in the working tree 2026-09-09 (owner order "pars phase 4").** The carrier pool joins
+  the reconcile (section 4, three books `WA_AI_AIR_BUDGET_cv_*`, six emitters): weights
+  `cv_weight_fighter 60 / cv_weight_cas 30 / cv_weight_naval_bomber 40`, a type funded while the
+  country holds a deck (`WA_AI_PRODUCTION_needs_cv_planes`) AND its line is open
+  (`should_fund_cv_<type>_type`; carrier naval bombers ride the naval-bomber line). Removed: the
+  static `WA_DEFAULT_production_carrier_planes_base_ratios` block (150 / 100 / -1000) and the
+  `cv_cas 80` / `cv_fighter 80` lines of the two carrier line blocks - the -920 net is gone. The
+  deck-gated min-factory floors of `cv_plane.txt` are untouched (volume lever, saturation brake).
+  Observation, pre-existing, owner ruling `[carrier-needs-config]` kept: a carrier navy outside
+  the archetype (ENG) has its cv fighters CANCELLED (-1000 variant factor) yet still gets the
+  2 / 5 factory floors - the two levers disagree; not changed here. Harness section F
+  (`cv-budget-match-walk`, VERDICT 4 values). Expected on the 1940.10 save: ENG cvf=0 cvcas=0
+  cvnav=40 (naval closed by the BoB -> cvnav=0 during the battle); USA 1942+ cvf=60 cvcas=30
+  cvnav=40; GER decks=0 -> all 0. **Regression risk stated (principle 3e)**: a carrier navy
+  outside the archetype (ENG) loses its cv_fighter POOL share - the static block gave it
+  150/250 = 60 % of its deck-sized pool, the archetype-gated type gives 0 - so only the 2/5
+  deck-gated floors feed its carrier fighters. Signal on the next scored campaign: ENG
+  carrier-fighter wing fill and the `imgui show ai-strategy` cv rows; if ENG decks run empty, the
+  fix is the archetype (`WA_AI_CONFIG_is_carrier_navy`), not this emitter. Lessons review
+  corrected the wording: this is NOT "unchanged" - MEASURED at HEAD the static block gave ENG
+  cv_fighter 150 / cv_naval 100 (60 % fighters); phase 4 gives it 0 / 40 (100 % naval bombers,
+  the ENG waste shape of f9321934). **Q8 for the owner**: (a) fund cv_fighter for EVERY deck
+  holder whose carrier-fighter tech is worthwhile (weight while `needs_cv_planes` and
+  `has_worthwhile_cv_fighter`, archetype keeps only the purge/CANCEL), or (b) keep the archetype
+  gate and drop the deck-gated floors so one lever decides, or (c) as shipped (ENG fighters on
+  the 2/5 floors alone, ASSUMED a floor builds through the -1000 CANCEL - phase 0b measures it).
+  Recommendation: (a) - a deck without fighters is the measured failure, and the archetype was
+  written to stop UNASKED carrier lines, not to starve existing decks. Cadence of the deck gate
+  (DERIVED, monthly): t0 last deck sunk day 5 -> engine pool 0 at once (deck-sized), stale
+  weights move no factory; t1 monthly pulse -> -60/-30/-40 emitted, books 0; t2 new deck ->
+  engine pool > 0 at once, split re-emitted at the next monthly pulse (<= 30 d with no split, the
+  floors cover it). HEAD's static block was engine-cadence; the lag is new and bounded by one
+  pulse. `carrier_planes.txt` header re-derived: the saturation bars now sit at 2-4x the deck
+  slots (less braking, conservative). ASSUMED and to close on the USA 1942 `imgui` read: land
+  and carrier pools separate (doc-sourced only) - the land `fighter` row must not move when the
+  cv rows appear.
+- **Q8 = (a), owner 2026-09-09.** `WA_AI_PRODUCTION_should_build_cv_fighters` reads
+  `WA_AI_PRODUCTION_needs_cv_planes` (holds a deck) instead of `WA_AI_CONFIG_is_carrier_navy`:
+  a deck holder with a worthwhile carrier-fighter rung opens the line, gets the weight, keeps
+  the floors, and its `cv_small_fighter` CANCEL / purge follow the same decision - one lever.
+  Carrier CAS keeps the carrier-strike-power archetype. `WA_AI_CONFIG_is_carrier_navy` loses its
+  only production reader (other readers listed by grep at the time of the change, see commit).
+- **Owner console run 2026-09-09, `event wa_airb.4 USA` 1942.11.1 (game.log pasted):** land pool
+  PASS - `expect f=77 cas=0 tac=40 strat=40 nav=20 hf=15 floor=1 fighter_share=40%`, books equal,
+  `imgui` rows fighter 77 / tactical 40 / strategic 40 / naval 20 / heavy_fighter 15 (cas 0 =
+  carrier strike power, no land CAS line: correct). Carrier pool read **0 everywhere** with
+  `decks=1` and the cvf / cvcas lines open - both the harness EXPECT (constants x walk) and the
+  books. DERIVED cause: the `cv_weight_*` constants read 0 in that session while the land
+  `weight_*` (loaded at the earlier boot) read fine, and the harness's new section F was present
+  - the shape of a `reload`/`reloadfile` of the effect files without a restart: script constants
+  are not re-read by it (lessons: hot reload). MEASURED on disk: the three constants sit inside
+  `air_budget`, LF, no BOM, `check_constants` clean. CONFIRMED: `logs/game.log` shows the cold
+  boot at 12:44, after the 12:39 run, and `common/script_constants/documentation.md` states
+  "reloading the script database is not enough to propagate the constants" (MEASURED, engine doc).
+- **Owner console run 2026-09-09 after the cold boot, `event wa_airb.4 USA` 1942.9.7 (pasted):**
+  ```
+  budget: expect f=77 cas=0 tac=40 strat=40 nav=20 hf=15 floor=1 fighter_share=40%   books equal
+  carrier: decks=1  expect cvf=60 cvcas=30 cvnav=40  books cvf=60 cvcas=30 cvnav=40
+  VERDICT United States of America: lines-match-walk=1  books-match-walk=1  budget-match-walk=1  cv-budget-match-walk=1  purges-armed=0
+  ```
+  Phase 4 PASS script-side: the carrier pool is emitted from the deck x line gates; the land
+  fighter weight stayed 77 with the cv books present. Owed: the `imgui` read of the USA cv rows
+  (cv_fighter 60 / cv_cas 30 / cv_naval_bomber 40, land `fighter` still 77 = the pool-separation
+  ASSUMPTION closed engine-side) and one ENG run (Q8a: cvf=60 expected outside the BoB).
+- **Q9, owner 2026-09-09 ("pourquoi l'usa veut faire des cv cas ? ... jamais si pas configurée
+  explicitement" -> option 2):** `WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power` is now
+  `always = no`. MEASURED before: the archetype named the USA (`WA_AI_CONFIG.txt:361`, carried
+  by `dcfe18a8` from the old tag-gated `WA_usa_cas_strategy`), and the static `cv_cas -1000` of
+  `cv_plane.txt` masked it (net -920), so the config never produced a plane the owner could see;
+  phase 4 removed the mask and the config surfaced. Consequences (DERIVED): no AI opens the
+  carrier-CAS line or gets a cv_cas weight (CANCEL -1000 stays on everywhere); the USA gets no
+  land CAS either (`should_build_cas` needs `cas_is_strong` or no worthwhile multirole - the USA
+  has multiroles); the `naval_cap_carrier` 1800 ladder branch is unreachable, the USA reads
+  `naval_cap` 2000. The archetype stays declared so naming a nation is a one-line change.
+  Expected on re-run: USA `cvcas=0` in wants, lines, books and `carrier:` (cvf=60 cvnav=40).
+- **Engine-side MEASURED 2026-09-09 (owner `imgui`, USA 1942, after Q9, screenshot):** `unit_ratio`
+  rows convoy 100, fighter 77, tactical_bomber 40, strategic_bomber 40, naval_bomber 20,
+  cv_fighter 60, cv_naval_bomber 40, heavy_fighter 15 - no cv_cas row (Q9 live), the land rows
+  unchanged next to the cv rows. Phase 4 verified engine-side; land/carrier pooling inside the
+  engine stays doc-sourced (the rows are separate entries, what the engine sums is not visible).
+- **Owner retune 2026-09-09:** (a) carrier split 50 / 50 (`cv_weight_fighter 50`,
+  `cv_weight_naval_bomber 50`) - "la composition IA des porte-avions", the cv unit_ratio also sets
+  the AI's deck composition (`cv_plane.txt` header); (b) `weight_naval` 20 -> 10, land naval
+  bombers halved. New expectations (DERIVED): GER 1940.10 others 105 -> f=70 (floor), nav=10;
+  USA 1942 f=70 nav=10 cvf=50 cvnav=50; ENG 1939.9 f=60 tac=40 nav=10 (share 55 %). Constants
+  changed = cold restart before the re-run.
+- Phase 0 console procedure (owner, any 1939 save, observer tag): (a) `tag GER`, `imgui show
+  ai-strategy`, note the `unit_ratio fighter` row; `effect add_ai_strategy = { type = unit_ratio
+  id = fighter value = 50 }`; re-read; `effect add_ai_strategy = { type = unit_ratio id = fighter
+  value = -50 }`; re-read - additive means the row returns to its first value (BLOCKING for phase 3).
+  (b) on a GER save with a running tactical line: `effect add_ai_strategy = { type =
+  equipment_variant_production_factor id = medium_heavy_bomber_airframe value = -1000 }`, `tag
+  BHU` back (GER returns to AI), run 3-4 weeks, read the production screen: does the line lose its
+  factories (drain) or is it untouched (then the purge stays for cap closures too). (c) `tag GER`
+  1939.9, `imgui show ai-strategy`: paste every `unit_ratio` / `equipment_production_factor` /
+  `air_factory_balance` row - the MEASURED baseline the phase-3 weights are calibrated against.
+- Verification (campaign): the save-side "line open" fingerprint is the country flag set
+  `WA_AI_PRODUCTION_AIR_open_<archetype>` (replaces the `WORLD_ABLAZE_PRODUCTION_*` flags; a line
+  whose block should be armed with no such flag on the country = the pulse is not running); phase
+  3 adds `wa_tlm_air_w_<type>` (weight emitted) and the share of air factories per type read from
+  the save's production lines.
+- Closed when: on one scored campaign, GER 1939-1941 fighter share of air factories is within
+  [40 %, 60 %] on 3 consecutive monthly saves; USA and ENG strategic share >= 25 % after 1942.1; no
+  country carries > 200 persistent `unit_ratio` entries; `check_ai_layers` baseline lower than
+  before phase 2.
+
+### pc-lost-state-purge — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: TESTED 2026-09-08 (owner console run pasted); the only item owed is the campaign probe (`wa_tlm_pc_lost_n` > 0 on a side-switch) - nothing to do in a session until a scored campaign is read.
 - Owner order 2026-09-08 ("corrige la purge"), from the ITA side-switch audit (campaign `6fcbbe0d`,
   1943.9 vs 1944.1). Intended behaviour: when a state changes hands to a party the old controller may
   not build through (not itself, not faction, not subject either way, not in its
@@ -267,7 +552,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   save (`savegame.py pc TAG --limit 0` joined with `control`).
 - Closed when: the remainder is committed and one campaign shows the two verification lines.
 
-### research-rush — TESTED (2026-09-08)
+### research-rush — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: TESTED 2026-09-08 (owner console run pasted); the only item owed is the campaign probe - nothing to do in a session until a scored campaign is read.
 - **Owner console run 2026-09-08 18:13, save `1937.4_Apr.hoi4`, ENG** (game.log, pasted):
   ```
   Q7    : WA_rb_uses_cat_transport=0 ahead2=0   uses_industry=0   uses_cat_light_armor=0   uses_t_eng_fighter_multirole_ad_tech_1=0
@@ -938,7 +1224,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
   fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
 
-### posture-v3 — SHIPPED-UNTESTED (2026-09-04)
+### posture-v3 — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED since 2026-09-04 (UNTESTED-STALE); code committed, the owner console harness run is the only thing owed - paste it here and move to TESTED, no session work pending.
 - Owner order 2026-09-04 ("vas-y pour les points 1 à 5" on the posture-formula review). Intended
   behaviour: the weekly offensive-posture verdict counts the whole contact line without a cap,
   weighs armoured AND mechanised divisions, never sends a globally strong army balanced into local
@@ -1113,7 +1400,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: harness output pasted (both the report and one weekly series), and probes
   (i)-(iv) pass on one scored campaign.
 
-### usa-pacific-hoard — SHIPPED-UNTESTED (2026-09-04)
+### usa-pacific-hoard — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED since 2026-09-04 (UNTESTED-STALE); code committed, the owner console harness run is the only thing owed - paste it here and move to TESTED, no session work pending.
 - Owner order 2026-09-04: "à aucun moment, tant que USA est en guerre en Europe et vs le Japon,
   l'armée US ne doit avoir plus de 50 % de son armée (quand au-dessus de 75 divisions) dans le
   Pacifique". Intended behaviour: a two-ocean US army above 75 divisions keeps at most half of
@@ -1360,6 +1648,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   ships under this slug, OR the owner accepts a written no-fix ruling.
 
 ### armor-prod-category — PARKED (2026-09-04)
+- 2026-09-09 `[air-budget]` phase 3 moves the arbitration this subject measures: the air category
+  factors are now ONE block per type at 100 (fighter was 25, the other bomber lines summed their
+  per-line 100s), so the air pull against `armor` 60 changes. The "tank share of military lines vs
+  4aeb8327" baseline is re-cut on the first campaign after that commit before any verdict here.
 - Parked 2026-09-04 (WIP limit, `modern-chassis-tier` re-enters). Code SHIPPED `eefd8b5ea`; its only
   exit is the campaign probe below (three post-fix runs read so far: `d8467fcf`, `5de66942`,
   `5d2a391c` — variants up on GER/SOV/JAP/ITA, run-to-run noise ±0.1-0.3, no verdict yet). Unpark
@@ -1980,7 +2272,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
   signature absent.
 
-### light-support-conversion — SHIPPED-UNTESTED (2026-09-08)
+### light-support-conversion — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED 2026-09-08; owner in-game report 2026-09-09 "les changements locaux marchent", harness output not yet pasted - paste it here and move to TESTED, no session work pending.
 - Owner in-game report 2026-09-09, cold boot, working tree without Change 14: "les changements
   locaux marchent". Harness output not yet pasted, so the status stays. Owner live edit the same
   day, in the tree and this commit: the "Tankovaya brigada" deletion is removed from BOTH mission

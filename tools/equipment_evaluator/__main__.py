@@ -441,6 +441,9 @@ def main(argv: List[str] = None) -> int:
                       multiply_base_only=cfg.multiply_base_only,
                       thrust_weight_agility_factor=cfg.thrust_weight_agility_factor)
     evaluator = Evaluator(db, model, cfg, diag, TechnologyGraph(mod_root, diag))
+    evaluator.excluded_airframes = Evaluator.load_excluded_airframes(mod_root)
+    if evaluator.excluded_airframes:
+        print(f"  {len(evaluator.excluded_airframes)} airframe(s) excluded by tools/air_tech_registry.json")
     evaluator.build_availability(groups_by_country)
 
     transitions: List[Transition] = []

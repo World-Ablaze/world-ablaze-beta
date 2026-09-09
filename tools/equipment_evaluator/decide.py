@@ -25,8 +25,10 @@ UNRESOLVED          the tool could not resolve the airframe or a module; the
 from __future__ import annotations
 
 import itertools
+import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .config import Config
@@ -286,6 +288,18 @@ class Evaluator:
         self.availability: Dict[str, Dict[str, float]] = {}
         self.search: Optional[RedesignSearch] = None
         self.tech_graph = tech_graph
+        # [air-budget] airframes the owner has excluded outright (tools/air_tech_registry.json,
+        # `exclude.airframes`): a transition INTO one is KEEP_OLD whatever the stats say. Shared
+        # with gen_air_tech_gates.py so the AI's "tech not worth a factory" list has one home.
+        self.excluded_airframes: set[str] = set()
+
+    @staticmethod
+    def load_excluded_airframes(mod_root: Path) -> set[str]:
+        registry = mod_root / "tools" / "air_tech_registry.json"
+        if not registry.exists():
+            return set()
+        data = json.loads(registry.read_text(encoding="utf-8"))
+        return set(data.get("exclude", {}).get("airframes", []))
 
     # -- module availability proxy ---------------------------------------
     def build_availability(self, groups_by_country: Dict[str, List[DesignGroup]]) -> None:
@@ -440,6 +454,15 @@ class Evaluator:
         t.res_delta = resource_delta(old_stats, new_stats)
         t.res_significant = significant_resources(t.res_delta, self.cfg)
         t.gain = weighted_gain(old_stats, new_stats, self.cfg, role)
+
+        # -- owner exclusion: the registry names the airframe, no stats are consulted ----------
+        if new.airframe and new.airframe in self.excluded_airframes:
+            t.verdict = KEEP_OLD
+            t.flags.append("registry_excluded")
+            t.notes.append(
+                f"`{new.airframe}` is listed in tools/air_tech_registry.json exclude.airframes - "
+                f"never adopted, whatever the stats say")
+            return t
 
         # -- is this pair a generation step at all? --------------------------
         # File position is the generation chain, but a design group may hold

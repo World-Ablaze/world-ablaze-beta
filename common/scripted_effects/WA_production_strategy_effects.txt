@@ -1,10 +1,16 @@
 
+############################################################################################################
+#	[air-budget] AIR PRODUCTION PULSE. ROOT = country, ~2-day event (events/WA_AI_misc.txt). Writes the
+#	land fighter park, the Battle-of-Britain flag the equipment files read, and one purge BOOK per
+#	archetype (flag WA_AI_PRODUCTION_AIR_open_<archetype>): on the open->closed edge of the lines that
+#	fund it - WA_AI_PRODUCTION_should_open_<line>_line, the triggers the ai_strategy blocks enable on -
+#	the AI_purge_* flag fires once (1 day; can_be_produced in plane_airframes.txt cancels the lines).
+############################################################################################################
+
 WA_aircraft_production_strategies = {
 
-	set_temp_variable = { aircraft_production_was_adjusted = 0 }
-
 	# [land-fighter-park] The park the land fighter lines are capped on, written before any
-	# decision below reads it. The engine `type = fighter` role also holds the interceptor and
+	# decision reads it. The engine `type = fighter` role also holds the interceptor and
 	# carrier-fighter archetypes, which run their own lines behind interceptor_cap and
 	# cv_fighter_cap - counting them in the land bar bridled those arms twice and let a carrier
 	# air group close the land fighter line. Assumes these two archetypes are the whole land
@@ -12,415 +18,201 @@ WA_aircraft_production_strategies = {
 	set_variable = { WA_AI_PRODUCTION_land_fighter_park = num_deployed_planes_with_type@small_fighter_airframe }
 	add_to_variable = { WA_AI_PRODUCTION_land_fighter_park = num_deployed_planes_with_type@small_fighter_multirole_airframe }
 
-	########################## Interceptor ##########################
-
+	# Battle of Britain: the flag stays because plane_airframes.txt / x_plane_airframes.txt read
+	# it in can_be_produced (no carrier fighters while the programme runs).
 	if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_interceptors = yes
-			num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_interceptor_flag
-	}
-	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_interceptor_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_interceptor_flag
-		set_country_flag = { flag = AI_purge_small_fighter_interceptor_production value = 1 days = 1 }
-	}
-
-	########################## Fighters ##########################
-
-	if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_fighters_and_multiroles = yes
-			num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-			set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
-		}
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-			set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
-		}
-	}
-	else_if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_fighters = yes
-			num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-		}
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-			set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
-			set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-			set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
-		}
-	}
-	else_if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_multiroles = yes
-			num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-		}
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-			set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
-			set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
-		}
-		if = {
-			limit = {
-				has_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-			}
-			clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-			set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-	}
-	else = {
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_multirole_flag
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_fighter_flag
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_multirole_flag
-		set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
-		set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
-	}
-
-	### Battle of Britain
-
-	if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_bob_fighters = yes
-		}
+		limit = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 		set_country_flag = WA_bob_production_flag
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WA_bob_production_flag
-		}
+		limit = { has_country_flag = WA_bob_production_flag }
 		clr_country_flag = WA_bob_production_flag
 	}
 
-	########################## CAS ##########################
+	# ---- purge books, one per archetype ---------------------------------------------------
 
+	# small_fighter_interceptor_airframe
+	if = {
+		limit = { WA_AI_PRODUCTION_should_open_interceptor_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_interceptor
+	}
+	else_if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_interceptor }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_interceptor
+		set_country_flag = { flag = AI_purge_small_fighter_interceptor_production value = 1 days = 1 }
+	}
+
+	# small_fighter_airframe - funded by the fighter+multirole line or the fighter line
 	if = {
 		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
+			OR = {
+				WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes
+				WA_AI_PRODUCTION_should_open_fighter_line = yes
 			}
-			WA_AI_PRODUCTION_should_build_cas = yes
-			WA_AI_PRODUCTION_should_build_multiroles = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_cas_lowered_flag
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter
 	}
 	else_if = {
-		limit = {
-			WA_AI_PRODUCTION_should_build_cas = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_cas_flag
-	}
-	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_cas_lowered_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_cas_lowered_flag
-		set_country_flag = { flag = AI_purge_small_bomber_production value = 1 days = 1 }
-	}
-	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_cas_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_cas_flag
-		set_country_flag = { flag = AI_purge_small_bomber_production value = 1 days = 1 }
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter
+		set_country_flag = { flag = AI_purge_small_fighter_production value = 1 days = 1 }
 	}
 
+	# small_fighter_multirole_airframe - funded by the fighter+multirole line or the multirole line
 	if = {
 		limit = {
-			WA_AI_PRODUCTION_should_build_cv_cas = yes
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_cv_cas_flag
-	}
-	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_cas_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_cv_cas_flag
-		set_country_flag = { flag = AI_purge_small_bomber_production value = 1 days = 1 }
-	}
-
-	########################## Heavy Fighters ##########################
-
-	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
+			OR = {
+				WA_AI_PRODUCTION_should_open_fighter_multirole_line = yes
+				WA_AI_PRODUCTION_should_open_multirole_line = yes
 			}
-			WA_AI_PRODUCTION_should_build_heavy_fighters = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_heavy_fighter_flag
-
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_multirole
 	}
 	else_if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_multirole }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_small_fighter_multirole
+		set_country_flag = { flag = AI_purge_small_fighter_multirole_production value = 1 days = 1 }
+	}
+
+	# small_bomber_airframe (land CAS) - the full or the lowered line
+	if = {
 		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_heavy_fighter_flag
+			OR = {
+				WA_AI_PRODUCTION_should_open_cas_line = yes
+				WA_AI_PRODUCTION_should_open_cas_lowered_line = yes
+			}
 		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_heavy_fighter_flag
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_small_bomber
+	}
+	else_if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_small_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_small_bomber
+		set_country_flag = { flag = AI_purge_small_bomber_production value = 1 days = 1 }
+	}
+
+	# cv_small_bomber_airframe (carrier CAS) - its own purge flag; it used to share the land one,
+	# so closing either close-support line cancelled both.
+	if = {
+		limit = { WA_AI_PRODUCTION_should_open_cv_cas_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_bomber
+	}
+	else_if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_bomber
+		set_country_flag = { flag = AI_purge_cv_small_bomber_production value = 1 days = 1 }
+	}
+
+	# medium_fighter_airframe (heavy fighter)
+	if = {
+		limit = { WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter
+	}
+	else_if = {
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter
 		set_country_flag = { flag = AI_purge_heavy_fighter_production value = 1 days = 1 }
-
 	}
 
-	########################## Attackers ##########################
-
+	# medium_fighter_multirole_airframe (attacker)
 	if = {
-		limit = {
-			NOT = { WA_AI_PRODUCTION_has_jet_fighter_tech = yes }
-			WA_AI_PRODUCTION_should_build_attackers = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-			NOT = {has_country_flag = WORLD_ABLAZE_PRODUCTION_heavy_fighter_flag }
-		}
-
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_attacker_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_attacker_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter_multirole
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_attacker_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_attacker_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter_multirole }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_medium_fighter_multirole
 		set_country_flag = { flag = AI_purge_attacker_fighter_production value = 1 days = 1 }
-
 	}
 
-	########################## Fast Bombers ##########################
-
+	# fast_bomber_airframe
 	if = {
-		limit = {
-			NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
-			WA_AI_PRODUCTION_should_build_fast_bombers = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-		}
-
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_fast_bomber_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_fast_bomber_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_fast_bomber
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_fast_bomber_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_fast_bomber_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_fast_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_fast_bomber
 		set_country_flag = { flag = AI_purge_fast_multirole_production value = 1 days = 1 }
-
 	}
 
-	########################## Strike Bombers ##########################
-
+	# medium_bomber_airframe (strike bomber) - one purge key per archetype: plane_airframes.txt used
+	# to read two keys on each medium bomber, so closing tactical cancelled fast and strike too
 	if = {
-		limit = {
-			NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
-			WA_AI_PRODUCTION_should_build_strike_bombers = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-		}
-
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_strike_bomber_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_strike_bomber_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_medium_bomber
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_strike_bomber_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_strike_bomber_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_medium_bomber
 		set_country_flag = { flag = AI_purge_medium_multirole_production value = 1 days = 1 }
-
 	}
 
-	########################## Tactical Bombers ##########################
-
+	# medium_heavy_bomber_airframe (tactical bomber)
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_tactical_bombers = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_tactical_bomber_flag
+		limit = { WA_AI_PRODUCTION_should_open_tactical_bomber_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_medium_heavy_bomber
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_tactical_bomber_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_tactical_bomber_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_heavy_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_medium_heavy_bomber
 		set_country_flag = { flag = AI_purge_medium_bomber_production value = 1 days = 1 }
 	}
 
-	########################## Naval Bombers ##########################
-
+	# small_naval_bomber_airframe + cv_small_naval_bomber_airframe - one line, one purge flag
+	# (both archetypes read AI_purge_cv_small_naval_bomber_production in plane_airframes.txt)
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_naval_bombers = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_medium_mils
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_naval_bomber_flag
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_cv_naval_bomber_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_naval_bomber_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_naval_bomber_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_cv_naval_bomber_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_naval_bomber
 		set_country_flag = { flag = AI_purge_cv_small_naval_bomber_production value = 1 days = 1 }
 	}
 
-	########################## Patrol Bombers ##########################
-
-	#	if = {
-	#		limit = {
-	#			WA_AI_PRODUCTION_has_patrol_tech = yes
-	#			WA_need_nav = yes
-	#			has_deployed_air_force_size = { size < 2000 type = naval_bomber }
-	#			num_of_military_factories > constant:wa_ai_production.industry.tier_supermajor_mils
-	#			OR = {
-	#				is_major = yes
-	#				NOT = {
-	#					any_allied_country = {
-	#						is_major = yes
-	#					}
-	#				}
-	#			}
-	#		}
-	#
-	#		set_country_flag = WA_patrol_bomber_production_flag
-	#
-	#	}
-	#	else = {
-	#		clr_country_flag = WA_patrol_bomber_production_flag
-	#		set_country_flag = { flag = AI_purge_scout_plane_production value = 1 days = 1 }
-	#	}
-
-	########################## Strategic Bombers ##########################
-
+	# large_bomber_airframe + large_heavy_bomber_airframe
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_strategic_bombers = yes
-			if = {
-				limit = {
-					WA_AI_CONFIG_AIRFORCE_has_delayed_strategic_arm = yes
-				}
-				# [commonwealth-handoff] the "we are ashore in France" gate used to sit here (date > 1944.1.1 +
-				# any of nine French coastal states faction-controlled + war with GER). Losing
-				# WORLD_ABLAZE_PRODUCTION_strategic_bomber_flag does NOT merely stop new lines:
-				# the else_if below then sets AI_purge_large_bomber_production, which
-				# plane_airframes.txt reads inside can_be_produced, so the engine CANCELS the
-				# running lines. Campaign 5078fe10: the USA lost B-17G (87 factories) and B-24D
-				# (35 factories) the month Normandy was held, and no Allied aircraft bombed a
-				# German strategic region in ten years. The Combined Bomber Offensive peaks
-				# AFTER D-Day historically - landing in France is not a reason to scrap the
-				# bomber arm. The force caps further down (< 3000 / < 4500 / < 10000 deployed)
-				# remain the mechanism that stops the arm growing without bound.
-				WA_AI_CONFIG_after_1941_6 = yes
-			}
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_strategic_bomber_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_strategic_bomber_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_strategic_bomber_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_strategic_bomber_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_large_bomber
 		set_country_flag = { flag = AI_purge_large_bomber_production value = 1 days = 1 }
 	}
 
-	########################## Scout Planes ##########################
-
+	# medium_scout_airframe
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_scout_planes = yes
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_scout_plane_flag
+		limit = { WA_AI_PRODUCTION_should_open_scout_plane_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_medium_scout
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_scout_plane_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_scout_plane_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_medium_scout }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_medium_scout
 		set_country_flag = { flag = AI_purge_scout_plane_production value = 1 days = 1 }
 	}
 
-	########################## Carrier Planes ##########################
-
+	# cv_small_fighter_airframe
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_cv_fighters = yes
-		}
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_cv_fighter_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_cv_fighter_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_fighter
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_cv_fighter_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_cv_fighter_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_fighter }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_cv_small_fighter
 		set_country_flag = { flag = AI_purge_cv_small_fighter_production value = 1 days = 1 }
 	}
 
-	########################## Transport ##########################
-
+	# transport_plane_equipment
 	if = {
-		limit = {
-			NOT = {
-				has_country_flag = WA_bob_production_flag
-			}
-			WA_AI_PRODUCTION_should_build_transport_planes = yes
-			num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-		}
-
-		set_country_flag = WORLD_ABLAZE_PRODUCTION_transport_flag
-
+		limit = { WA_AI_PRODUCTION_should_open_transport_line = yes }
+		set_country_flag = WA_AI_PRODUCTION_AIR_open_transport
 	}
 	else_if = {
-		limit = {
-			has_country_flag = WORLD_ABLAZE_PRODUCTION_transport_flag
-		}
-		clr_country_flag = WORLD_ABLAZE_PRODUCTION_transport_flag
+		limit = { has_country_flag = WA_AI_PRODUCTION_AIR_open_transport }
+		clr_country_flag = WA_AI_PRODUCTION_AIR_open_transport
 		set_country_flag = { flag = AI_purge_transport_production value = 1 days = 1 }
 	}
-
-	#WA_aircraft_production_strategy_fix = yes
 }
 
 ############################################################################################################

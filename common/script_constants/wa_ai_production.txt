@@ -167,6 +167,64 @@ wa_ai_production = {
 		# what a transport or naval line would produce.
 		max_surrender              = 0.1
 		min_alliance_strength      = 0.5
+
+		# [air-budget] REOPEN bars, one per cap above, each 90 % of its cap: a line closed by its
+		# cap reopens only once the park has fallen this far (hysteresis, read through the purge
+		# book of the archetype). Without them a mature park oscillating around its cap flips the
+		# line - and the monthly budget entry - on every pulse. Same ladder as the caps; retune the
+		# pair together. Assumes the purge book flags are written by WA_aircraft_production_strategies
+		# only - a second writer breaks the pair.
+		fighter_cap_reopen         = 4500
+		fighter_cap_mass_reopen    = 9000
+		interceptor_cap_reopen     = 1350
+		cv_fighter_cap_reopen      = 1800
+		heavy_fighter_cap_reopen   = 2700
+		attacker_cap_reopen        = 1800
+		cv_cas_cap_reopen          = 2250
+		cas_cap_reopen             = 1440
+		medium_bomber_cap_reopen   = 1800
+		naval_cap_reopen           = 1800
+		naval_cap_carrier_reopen   = 1620
+		strategic_cap_reopen       = 2700
+		strategic_cap_mass_reopen  = 5400
+		strategic_cap_late_surge_reopen = 4050
+		scout_cap_reopen           = 135
+		transport_cap_reopen       = 180
+		# the Battle of Britain programme is a CLOSURE of every bomber line, so its pair runs the
+		# other way: the programme engages under the reopen bar and releases at the cap, read
+		# through WA_bob_production_flag - the one battle where attrition around the bar is certain
+		bob_fighter_cap_reopen          = 4500
+		bob_fighter_cap_sov_gone_reopen = 7200
+	}
+
+	# [air-budget] The LAND air pool split. The engine gives a type `unit_ratio / sum(unit_ratio)`
+	# of the planes it wants (documentation.info, UNIT RATIOS / AIR - pure weights, no base 100), so
+	# a type's share is its weight over the sum of the OPEN types' weights, whatever their number.
+	# WA_AI_AIR_BUDGET_reconcile (WA_AI_PRODUCTION_air_budget.txt, monthly) emits the weights and
+	# reconciles them against its books; a closed type weighs 0 and the others share its part.
+	# fighter_floor_pct: while the fighter type is open its share never drops below this - the
+	# fighter weight is raised to floor x others / (100 - floor) when the table alone falls short -
+	# fighter_floor_pct must stay below 100 (100 divides by zero).
+	# Owner examples this table reproduces: fighter+cas 60/40; fighter+cas+strategic 43/29/29.
+	# weight_naval halved on the owner ruling of 2026-09-09 (land naval bombers are a side arm).
+	air_budget = {
+		weight_fighter        = 60
+		weight_cas            = 40
+		weight_tactical       = 40
+		weight_strategic      = 40
+		weight_naval          = 10
+		weight_heavy_fighter  = 15
+		fighter_floor_pct     = 40
+
+		# Carrier pool, same rule, no floor: the engine sizes it from deck capacity and the three
+		# cv roles share it by these weights while their type is funded (deck held x line open).
+		# The old static block read 150 / -1000 / 100 with the carrier strike power's own line
+		# adding 80 on top of the -1000: a net -920 that gave it no carrier-CAS share at all.
+		# fighter / naval bomber at parity: the cv unit_ratio also sets the AI's deck composition,
+		# and the owner wants a half-and-half air group (ruling 2026-09-09)
+		cv_weight_fighter       = 50
+		cv_weight_cas           = 30
+		cv_weight_naval_bomber  = 50
 	}
 
 	# [industry-tiers] The mil-factory size ladder every production read shares. A tier bound is
