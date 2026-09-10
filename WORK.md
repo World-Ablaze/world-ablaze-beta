@@ -173,6 +173,131 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armoured-waves — PARKED (2026-09-10)
+- State: code ships with this subject update; **the console harness has NOT been run**. Parked,
+  not `SHIPPED-UNTESTED`, only because the four live slots were already taken
+  (`resource-infra-targeting` precedent, 2026-09-09). Promote to `SHIPPED-UNTESTED` and run
+  `event wa_test_tmpl.1 SOV` the moment a slot frees; until then the behaviour is unverified.
+- Owner order 2026-09-10 ("oui, branche-le"). Intended behaviour: a country holding the
+  `armoured_waves` sub-doctrine fields the ARMOURED_WAVES twin of whatever 30-width armour
+  composition its ladder already chose, instead of the base twin.
+- Symptom, **MEASURED** (mod files): 48 `*_ARMOURED_WAVES` ai_template blocks exist — 17 medium
+  (`6200-6216`), 17 modern mirror (`6700-6716`), 14 heavy (`7200-7213`) — and NO code path in
+  `common/` or `events/` ever wrote a `_template_value` in those bands. Dead code since
+  `51bbac508e` "Finished AI Armoured Wave Templates".
+- Cause, **MEASURED** (script): `WA_AI_TEMPLATES_calculate_medium_armor_template` writes only
+  `6000/6001/6100-6116` (plus the `+500` modern-chassis `_tier_offset`) and
+  `WA_AI_TEMPLATES_calculate_heavy_armor_template` only `7000/7001/7100-7113`. Neither ladder,
+  and neither `WA_AI_TEMPLATES_*` trigger file, ever read the sub-doctrine.
+- Change: `[armoured-waves]` adds the decision trigger
+  `WA_AI_TEMPLATES_use_armoured_waves_templates` (`has_doctrine = armoured_waves`) and the
+  effect `WA_AI_TEMPLATES_apply_armoured_waves_mirror` (`+100` on `_template_value`, copying the
+  existing `WA_AI_TEMPLATES_apply_motorized_hospital_mirror` lever). Called in the medium ladder
+  guarded on `_template_value > 6099` and BEFORE the `+500` chassis offset, and in the heavy
+  ladder guarded on `> 7099`.
+- Why `+100` is the whole change, **MEASURED**: the pairing is 1:1 for all 48 pairs — base value
+  `+100` = wave value, wave block name = base block name + `_ARMOURED_WAVES` — and the only
+  composition difference in every pair is battalion/company COUNTS. No wave twin names an
+  equipment type its base twin did not, so the ladder's existing composition validation still
+  holds and no branch needs re-validating at the wave tier.
+- Impact, **DERIVED**: the `armoured_waves` sub-doctrine cuts armour combat width by 40 %
+  (24 battalion lines, `common/doctrines/subdoctrines/land/armor_subdoctrines.txt`). With the
+  doctrine the wave twins land at 26.4-28.2 width against 30-33 for the base twins; without it
+  they would be 36-40. Today the doctrine is reached by historical difficulty +
+  `WA_AI_CONFIG_is_deep_battle` (SOV) and by the GER Barbarossa catch-up fallback; competitive
+  never picks it. The gate reads the live doctrine, so any country that acquires it is covered.
+- Regression risk, **DERIVED**: the `+100` lever is shared with the motorised-hospital mirror,
+  whose six call sites are all in the infantry / mountaineer / marines ladders — no collision on
+  armour values (verified by grep). The order matters and is asserted in the code comment: after
+  the chassis offset, `6500 + 100` would land on `6600` (20-width modern MEC → 30-width modern
+  MOT). A country that gains the doctrine mid-campaign flips at the next monthly pass and its
+  divisions converge in the field (`can_upgrade_in_field = yes` on every wave block).
+- Readers of the changed value, **MEASURED** (principle 3(a), full enumeration): outside
+  `common/ai_templates/` exactly three files read a literal `WA_MEDIUM/HEAVY_ARMOR_TEMPLATE`
+  value. Two of them broke on this change and are fixed in the same commit:
+  - `WA_AI_TEMPLATES_is_medium_mis_family` listed only `6105-6110`. With the doctrine the flag
+    reads `6205-6210`, the trigger fell to false, and the light ladder's MIS redirect plus the
+    `..._FINAL_MIS` enable went silent — conversion would land on the pure 9+6 that
+    `[armor-class-handoff]` exists to prevent, on SOV, which is both the only wave country and
+    the light-support park country. Added `6205-6210`. The MODERN bands `6605-6610` /
+    `6705-6710` deliberately stay out: the FINAL is built from `medium_armor` /
+    `medium_infantry_support` battalions, so a modern-chassis role would be pointed at a
+    composition it never claims — that also explains the pre-existing absence of `6605-6610`,
+    which is therefore NOT a gap to close here.
+  - `WA_TEST_armor_budget.txt` band lists `_abt_bandmed` / `_abt_bandmod` omitted the wave
+    values; its own header says a missing value "reads as no template and looks like a
+    template-system failure". Added `6200-6216` to the medium band and `6700-6716` to the
+    modern one — the doctrine moves the value, not the chassis.
+  - the third, `WA_AI_TEMPLATES_effects.txt`, reads only `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE`
+    `15007/15008` — unaffected.
+- Checker updated: `tools/check_templates.py` modelled only the motorised-hospital `+100`, and
+  reported all 48 wave blocks as `TEMPLATE-NO-VALUE`. It now reads the waves mirror's floor out
+  of the script (`waves_mirror_floor`) instead of carrying its own copy, and applies it BEFORE
+  the `+500` tier offset. Run: 0 WARN, 4 pre-existing `SLOT-SUFFIX-MISMATCH` ERRORs in
+  `WA_AI_TEMPLATES_hq.txt`, untouched by this subject.
+- Timeline of a doctrine pick, **MEASURED** except where marked (no "self-healing" adjective
+  without this table, AGENTS.md 3(f)):
+
+  | t | event | cadence | state |
+  | --- | --- | --- | --- |
+  | t0 | AI picks `armoured_waves` | whenever it spends army XP | flag still `61xx`/`71xx` |
+  | t1 | monthly template pulse (`WA_AI_misc_on_actions.txt:274`) | ≤ 31 days after t0 | `update_target_template` clears the flag and sets `62xx`/`72xx`; INTENT has moved |
+  | t2 | engine best-template / field-upgrade pass | **ASSUMED**, not measurable from script | fielded divisions walk to the new target (`can_upgrade_in_field = { always = yes }` on all 48 wave blocks, MEASURED) |
+
+  My gate needs no latch-ordering slot in the monthly pulse: unlike the mechanization / chassis /
+  hospital latches it reads the doctrine directly, not a WA flag another latch writes this tick.
+- Shape check before arming, **MEASURED**: every wave block is 18 line battalions with 8-10
+  regimental-support companies. Neither number is new to this mod — 20- and 22-battalion
+  templates already ship live (`COUNTRY_SWI_MILITIA_20_HRS`, `COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_
+  TEMPORARY`) and 37 live templates already carry 10 regimental-support companies on only 15
+  battalions. Whether the engine's designer can reach these targets by greedy edits is the
+  engine boundary and stays **ASSUMED** until the harness runs.
+- Residual NOT fixed, **DERIVED**: the light-support conversion FINALs
+  (`..._TRANSITION_HVY_MOT_FINAL` and siblings) are compositional mirrors of `7100` / `7105`, so
+  on a wave country they present 9+6 while the heavy role targets 11+7. Their `enable` blocks key
+  on `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` values only, so nothing goes silently false — the residual
+  is a count mismatch the field upgrade closes, not a dead redirect. Naming it rather than
+  claiming it is harmless: closing it means authoring wave FINALs, a design call for the owner.
+- Recon drift fixed on owner order 2026-09-10 ("corrige aussi le recon de 6200"), **MEASURED**:
+  three blocks had been missed by the `7f7cde47ef` sweep — `6200` in the hand-maintained medium
+  file, `6600` and `6700` in the generated mirror. All three now read
+  `recon_light_tank_company_divisional`, and the three armour template files are internally
+  consistent: 36/36 medium, 36/36 modern, 30/30 heavy. The two mirror lines were applied by hand
+  ONLY because they move the file TOWARD its generated form — the generator emits exactly them —
+  so they do not collide with the divergence recorded below.
+- **The modern mirror and its generator had both diverged. Resolved on owner order 2026-09-10
+  ("option 1, reporte les reglages dans l'original") — the generator now reproduces the committed
+  file byte for byte, verified.** Two separate faults were behind it:
+  - The generator silently dropped the whole wave band. `build()` iterated exactly two width
+    groups, `value % 1000` in `[0,100)` and `[100,200)`; `6200-6216` matched neither and was
+    emitted nowhere, with no error and no count check — 19 blocks written where the source has
+    36. Fixed by adding the `(200, "30 Width Armoured Waves")` group, with a comment saying the
+    band list IS the contract with the source file.
+  - Six modern twins had been hand-tuned in the OUTPUT: `6602`/`6603` and `6702`/`6703` promote 3
+    of their own assault guns from regimental support to the LINE, and `6700`/`6701` shave one
+    hull for one infantry battalion. The reason is cost — a modern hull is far dearer than a
+    medium one, so these variants trade hulls away rather than field twelve.
+  - **Where the tuning went, and why not into the medium source, MEASURED**: medium `6102` has no
+    `light_assault_gun_battalion_line` at all; writing one there to satisfy the mirror would
+    change the MEDIUM template, which is live for every non-modern country. The numbers therefore
+    live in `COMPOSITION_OVERRIDE` in the generator — the thing that owns the output — keyed by
+    medium value, each entry carrying its reason. `build()` raises on a key that no longer matches
+    a medium block, so a stale override cannot silently stop applying (both guards exercised).
+  - Closing check: `build()` output vs the committed file = 0 divergent lines, and a real run
+    reports "up to date". The file is reproducible from its source again.
+- Harness: `WA_TEST_TMPL_armoured_waves` added to `common/scripted_effects/WA_TEST_templates.txt`,
+  called from both `wa_test_tmpl.1` (report) and `wa_test_tmpl.2` (pre/post of a real pass). It
+  logs `doc` / `med_set` / `med` / `hvy_set` / `hvy`. `doc=1 med_set=1 med=0` = the mirror did not
+  fire; `doc=0` with `med>0` or `hvy>0` = an overwidth target and a stop-the-campaign reading.
+- No WA_TLM metric: §3.8 "standing" is a system-health invariant asked of EVERY campaign, and one
+  country holds this doctrine on the historical path. The console harness is the decisive read.
+- Verification (owner console): on a save where SOV holds `armoured_waves`, `event wa_test_tmpl.1
+  SOV` must read `doc=1` with `med` in `6200-6216` or `6700-6716`. Control: any country without
+  the doctrine must read `doc=0 med=0 hvy=0` while `med_set=1`.
+- Closed when: the harness reads `doc=1` with a wave value on a doctrine-holding country, the
+  control country reads `doc=0` with no wave value, and one campaign shows no country carrying a
+  wave value with `doc=0`.
+
 ### resource-infra-targeting — PARKED (2026-09-09)
 - State: implementation ships with this subject update; parked only because the four OPEN slots
   are already occupied. Re-open when one slot is free for owner-game verification.

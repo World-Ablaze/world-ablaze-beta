@@ -42,12 +42,19 @@ EFFECTS = REPO / "common" / "scripted_effects" / "WA_AI_TEMPLATES_effects.txt"
 LOC = REPO / "common" / "scripted_localisation" / "WA_AI_templates_scripted_loc.txt"
 TEMPLATE_DIR = REPO / "common" / "ai_templates"
 
-# The two value-rewriting effects the calculators call. Each turns one written value N into a
+# The three value-rewriting effects the calculators call. Each turns one written value N into a
 # second reachable value; a checker that ignores them reports every mirror target as orphaned.
 #   +100 : WA_AI_TEMPLATES_apply_motorized_hospital_mirror   [mot-field-hospital]
+#   +100 : WA_AI_TEMPLATES_apply_armoured_waves_mirror       [armoured-waves]
 #   +500 : add_to_temp_variable = { _template_value = _tier_offset }   [modern-chassis-tier]
+# The two +100 levers attach differently and must not be modelled the same way: the hospital
+# mirror is called INSIDE a branch and rewrites that branch's value, while the waves mirror is
+# called ONCE at the end of the ladder, under a `_template_value > N` floor, and so rewrites
+# every value the ladder can leave above that floor.
 HOSPITAL_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_motorized_hospital_mirror"
 HOSPITAL_MIRROR_OFFSET = 100
+WAVES_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_armoured_waves_mirror"
+WAVES_MIRROR_OFFSET = 100
 TIER_OFFSET = 500
 
 # A unit name carries the slot it belongs to as its last word, and the convention holds without a
@@ -413,6 +420,30 @@ def claim_guards(calc, issues, path):
                                % (calc.key, writes[0].block[0].scalar, " and ".join(missing))))
 
 
+def waves_mirror_floor(block):
+    """The `_template_value > N` floor guarding the armoured-waves mirror, or None if uncalled.
+
+    Read from the script rather than hard-coded per role: the floor is what decides which values
+    have a wave twin, so a checker carrying its own copy would keep passing after the guard moved.
+    """
+    for node in block:
+        if node.key == "if" and node.block:
+            calls = any(n.key == WAVES_MIRROR_EFFECT for n in node.block)
+            limit = node.get("limit")
+            if calls and limit is not None and limit.block:
+                for cv in limit.block:
+                    if cv.key != "check_variable" or not cv.block:
+                        continue
+                    kv = cv.block[0]
+                    if kv.key == "_template_value" and kv.scalar and kv.scalar.isdigit():
+                        return int(kv.scalar)
+        if node.block:
+            found = waves_mirror_floor(node.block)
+            if found is not None:
+                return found
+    return None
+
+
 def sets_tier_offset(block):
     """True when this calculator can add the +500 chassis tier anywhere in its body."""
     for n in block:
@@ -551,6 +582,11 @@ def run(root):
         walk_values(calc.block, set(), written, mirrors, sink)
         vals = {v for v, _, _ in written if v != 0}
         vals |= {v + HOSPITAL_MIRROR_OFFSET for v in mirrors if v != 0}
+        # [armoured-waves] before the tier offset, exactly as the ladder applies it: after +500
+        # the floor would admit 6500 and turn the 20-width modern twin into the 30-width one.
+        waves_floor = waves_mirror_floor(calc.block)
+        if waves_floor is not None:
+            vals |= {v + WAVES_MIRROR_OFFSET for v in set(vals) if v > waves_floor}
         if offset_500:
             vals |= {v + TIER_OFFSET for v in set(vals)}
         reachable.setdefault(flag, set()).update(vals)

@@ -282,6 +282,20 @@ WA_AI_TEMPLATES_use_heavy_armor_templates = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [armoured-waves] The wave twins pack 2-3 extra tank battalions into the same slot, and that
+# only fits because the sub-doctrine cuts every armour battalion's combat width by 40 %
+# (common/doctrines/subdoctrines/land/armor_subdoctrines.txt, armoured_waves). Without the
+# doctrine the same target is 36-40 width instead of ~27, so this gate is the whole safety of the
+# +100 mirror. Live read, no latch: the surrounding latches exist because their terms are NON-
+# monotone (factory counts, deployed manpower); this one is monotone by construction - every
+# set_sub_doctrine into tier_2_armour sits under NOT = { has_subdoctrine_in_track }, and no
+# clear/reset path exists in the mod. Were one ever added, the monthly pass would write the
+# 61xx/71xx base back within 31 days; how fast the FIELDED park follows is the engine's
+# best-template pass and is not measurable from script.
+WA_AI_TEMPLATES_use_armoured_waves_templates = {
+	has_doctrine = armoured_waves
+}
+
 # [modern-chassis-tier] Modern armour is the last CHASSIS GENERATION of the medium weight class,
 # not a class of division: there is no `role = modern_armor` any more. This answers "does
 # the medium role field the modern chassis", and the selector adds +500 to the medium template
@@ -325,10 +339,17 @@ WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
-# [armor-class-handoff] The medium role's SELECTED template sits in the 6/3/6 inf-support
-# family (values 6105-6110 all share that line composition). Read by the light ladder's MIS
-# redirect and the MIS FINAL enable, so the light->medium conversion ends on the composition
-# the medium role actually targets. Reads the FLAG, i.e. calculator intent, not the armed role.
+# [armor-class-handoff] The medium role's SELECTED template sits in the inf-support family
+# (armour / medium-inf-support / mechanized on the line). Read by the light ladder's MIS redirect
+# and the MIS FINAL enable, so the light->medium conversion ends on the composition the medium
+# role actually targets. Reads the FLAG, i.e. calculator intent, not the armed role.
+# [armoured-waves] 6205-6210 are the same family one band up: same three line types, more armour
+# battalions. Without them the doctrine silently switched the redirect off and conversion fell
+# back to the pure 9+6 this trigger exists to avoid.
+# The MODERN bands 6605-6610 / 6705-6710 stay out on purpose: the FINAL this gate enables is
+# built from medium_armor / medium_infantry_support battalions, so a modern-chassis role would be
+# pointed at a composition it never claims. Adding a modern band here means authoring a modern
+# FINAL first.
 WA_AI_TEMPLATES_is_medium_mis_family = {
 	OR = {
 		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6105 }
@@ -337,6 +358,12 @@ WA_AI_TEMPLATES_is_medium_mis_family = {
 		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6108 }
 		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6109 }
 		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6110 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6205 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6206 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6207 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6208 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6209 }
+		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6210 }
 	}
 }
 

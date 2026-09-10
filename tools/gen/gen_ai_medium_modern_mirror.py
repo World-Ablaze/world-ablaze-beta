@@ -158,6 +158,89 @@ def shift_name(name: str) -> str:
     return f"{head}GENERIC_MODERN_ARMOR_{tail}"
 
 
+
+# ---------------------------------------------------------------------------------------------
+# [modern-composition-override] The one place where the modern twin is NOT its medium block with
+# the hull stepped up. A modern hull battalion costs far more than a medium one, so six variants
+# trade hull battalions away rather than field twelve of them: an assault-gun variant promotes 3
+# of its own assault guns from regimental support to the LINE, and the two plain wave variants
+# shave one hull for one infantry battalion. These numbers were tuned by hand in the OUTPUT file
+# before this table existed; they live here because the medium source cannot carry them - putting
+# `light_assault_gun_battalion_line = 3` into medium 6102 would change the MEDIUM template too,
+# and that one is live for every non-modern country.
+#
+# Keyed by MEDIUM value; the emitted twin is that value + 500. An entry replaces the named slot
+# ENTIRELY. A key that no longer matches a medium block is a hard error in build() - a stale
+# override is how this file silently drifted from its generator in the first place.
+COMPOSITION_OVERRIDE = {
+    # 6602: 10 modern hulls is the naive mirror; 3 become light assault guns on the line.
+    6102: {
+        "regiments": [("modern_armor_battalion_line", 7),
+                      ("light_assault_gun_battalion_line", 3),
+                      ("infantry_heavy_mechanized_battalion_line", 5)],
+    },
+    # 6603: same trade with the medium assault gun.
+    6103: {
+        "regiments": [("modern_armor_battalion_line", 6),
+                      ("medium_assault_gun_battalion_line", 3),
+                      ("infantry_heavy_mechanized_battalion_line", 6)],
+    },
+    # 6700 / 6701: no assault-gun theme to promote, so one hull becomes one infantry battalion.
+    6200: {
+        "regiments": [("modern_armor_battalion_line", 11),
+                      ("infantry_heavy_motorized_battalion_line", 7)],
+    },
+    6201: {
+        "regiments": [("modern_armor_battalion_line", 11),
+                      ("infantry_heavy_mechanized_battalion_line", 7)],
+    },
+    # 6702 / 6703: the wave twins of 6602 / 6603 - same promotion, and the regimental pair goes
+    # 4 -> 5 because the wave line is three battalions longer.
+    6202: {
+        "regiments": [("modern_armor_battalion_line", 9),
+                      ("light_assault_gun_battalion_line", 3),
+                      ("infantry_heavy_mechanized_battalion_line", 6)],
+        "regimental_support": [("light_assault_gun_company_regimental", 5),
+                               ("anti_tank_mot_company_regimental", 5)],
+    },
+    6203: {
+        "regiments": [("modern_armor_battalion_line", 9),
+                      ("medium_assault_gun_battalion_line", 3),
+                      ("infantry_heavy_mechanized_battalion_line", 6)],
+        "regimental_support": [("medium_assault_gun_company_regimental", 5),
+                               ("anti_tank_mot_company_regimental", 5)],
+    },
+}
+
+
+def apply_override(lines: list[str], value: int) -> list[str]:
+    """Replace whole `regiments` / `regimental_support` slot bodies from COMPOSITION_OVERRIDE."""
+    over = COMPOSITION_OVERRIDE.get(value)
+    if not over:
+        return lines
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = re.match(r"^(\t+)(regiments|regimental_support) = \{$", line)
+        if not m or m.group(2) not in over:
+            out.append(line)
+            i += 1
+            continue
+        indent, slot = m.group(1), m.group(2)
+        out.append(line)
+        depth = 1
+        i += 1
+        while i < len(lines) and depth:
+            depth += lines[i].count("{") - lines[i].count("}")
+            if depth:
+                i += 1
+        for unit, count in over[slot]:
+            out.append(f"{indent}\t{unit} = {count}")
+        out.append(lines[i])   # the slot's closing brace
+        i += 1
+    return out
+
 def mirror(block: Block, used_names: set[str]) -> list[str]:
     out: list[str] = []
     name = shift_name(block.name)
@@ -197,7 +280,7 @@ def mirror(block: Block, used_names: set[str]) -> list[str]:
             out.append(f"{indent}{TIER_UP[key]} = {count}")
             continue
         out.append(line)
-    return out
+    return apply_override(out, block.value)
 
 
 HEADER = """\
@@ -243,9 +326,22 @@ def build(blocks: list[Block]) -> str:
     medium = [b for b in blocks if b.flag == "WA_MEDIUM_ARMOR_TEMPLATE"]
     if not medium:
         raise SystemExit(f"ERROR {SRC.name}: no WA_MEDIUM_ARMOR_TEMPLATE blocks found")
+    known = {b.value for b in medium}
+    stale = sorted(set(COMPOSITION_OVERRIDE) - known)
+    if stale:
+        raise SystemExit(
+            f"ERROR {Path(__file__).name}: COMPOSITION_OVERRIDE names medium value(s) "
+            f"{stale} that no longer exist in {SRC.name}. Remove them or fix the key - a stale "
+            f"override silently stops applying."
+        )
     used: set[str] = set()
     out = [HEADER]
-    for width, label in ((0, "20 Width"), (100, "30 Width")):
+    # [armoured-waves] The band list is the WHOLE contract with the source file: a band absent
+    # here is dropped in SILENCE, with no error and no count mismatch to notice - which is how the
+    # 62xx wave band went missing from a file whose header says it is generated. Add a band here
+    # the moment the medium ladder can write one.
+    for width, label in ((0, "20 Width"), (100, "30 Width"),
+                         (200, "30 Width Armoured Waves")):
         group = [b for b in medium if width <= b.value % 1000 < width + 100]
         if not group:
             continue

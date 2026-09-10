@@ -230,6 +230,19 @@ WA_AI_TEMPLATES_apply_motorized_hospital_mirror = {
 	}
 }
 
+# [armoured-waves] +100 turns a 30-width armour target into its ARMOURED_WAVES twin: the same
+# composition, 2-3 more tank battalions, which only fits because the sub-doctrine cuts armour
+# combat width by 40 % (WA_AI_TEMPLATES_use_armoured_waves_templates carries that fact).
+# Call it ONLY on a 30-width armour value - 6100-6116 and 7100-7113. The 20-width values
+# 6000/6001/7000/7001 have no twin and +100 would land them on an unrelated 30-width template;
+# call it before the modern chassis offset, or +100 on 6500 lands on 6600, not 6700.
+WA_AI_TEMPLATES_apply_armoured_waves_mirror = {
+	if = {
+		limit = { WA_AI_TEMPLATES_use_armoured_waves_templates = yes }
+		add_to_temp_variable = { _template_value = 100 }
+	}
+}
+
 # [mech-window] One-way latch: once the mechanization window has opened it never closes.
 # Same reason as the four latches above - the flag decides WHICH ai_template is enabled, and a
 # gate that flickers re-runs the engine's template decommission pass. The window's GER branch
@@ -1257,6 +1270,12 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 		set_temp_variable = { _template_value = 6100 }
 		set_temp_variable = { _template_claimed = 1 }
 	}
+	# [armoured-waves] the wave COMPOSITION, applied before the chassis offset so the guard can
+	# name the 30-width band by value. Excludes 6000/6001 (20 width, no twin) and 0 (blocked role).
+	if = {
+		limit = { check_variable = { _template_value > 6099 } }
+		WA_AI_TEMPLATES_apply_armoured_waves_mirror = yes
+	}
 	# [modern-chassis-tier] the CHASSIS decision, applied once to whatever composition
 	# the ladder picked. Guarded on non-zero so a blocked role stays blocked instead of
 	# becoming value 500.
@@ -1439,6 +1458,12 @@ WA_AI_TEMPLATES_calculate_heavy_armor_template = {
 		}
 		set_temp_variable = { _template_value = 7100 }
 		set_temp_variable = { _template_claimed = 1 }
+	}
+	# [armoured-waves] Excludes 7000/7001 (20 width, no twin) and 0 (blocked role). Heavy has no
+	# chassis offset, so this is the only mirror on the heavy value.
+	if = {
+		limit = { check_variable = { _template_value > 7099 } }
+		WA_AI_TEMPLATES_apply_armoured_waves_mirror = yes
 	}
 	WA_AI_TEMPLATES_update_target_template = yes
 }
