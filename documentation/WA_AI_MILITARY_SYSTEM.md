@@ -1601,6 +1601,27 @@ while the war is elsewhere; the garrison comes back the moment somebody can actu
 The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
 +150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
 
+### Axis-minor home reserve ([axis-minor-home-buffer], 2026-09-10)
+
+The owner request adds a deliberate exception for non-major members of the German faction:
+while at war, the standard minor writers keep a 0.25 `put_unit_buffers` reserve in the home
+capital. The shared decision gate is
+`WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`; state-level writers live in the
+Country THEATRE files because `put_unit_buffers` accepts literal state IDs, not a dynamic
+"each member's home" selector.
+
+The current anchors are FIN 111, HUN 889, ROM 46, BUL 48, SLO 70 and CRO 109. The buffer uses
+order 9620, explicitly sets both `subtract_*_from_need` flags to `no`, and omits `area` so the
+reserve is sealed to home rather than becoming a remote-front pool. It intentionally coexists
+with `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home`: the generic area-defence release
+still stands down, while this explicit reserve keeps the requested quarter at home.
+
+The remaining engine arbitration is unmeasured: existing area-defence orders can persist after a
+negative `garrison`, and the exact realised share of separate buffer orders must be checked in a
+campaign. The verification is therefore a boot parse check plus a campaign read of home-state
+buffer/army counts for the six anchors, including a safe-war case where
+`total_commitment_active` is true.
+
 ### What it replaced (all deleted 2026-08-25, `[allied-total-commitment]`)
 
 Per-tag releases: `ALLIES_pacific_quiet_release_garrison` (AST/NZL/RAJ), `CAN_FRONT_release_home_garrison`

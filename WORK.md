@@ -173,7 +173,37 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### techtree-capability — TESTED (2026-09-09)
+### resource-infra-targeting — PARKED (2026-09-09)
+- State: implementation ships with this subject update; parked only because the four OPEN slots
+  are already occupied. Re-open when one slot is free for owner-game verification.
+- Owner order 2026-09-09 ("implémente le fix"). Intended behaviour: resource-extraction
+  infrastructure targets only a state carrying a resource that currently justifies this strategy.
+- Symptom, **MEASURED** (owner playthrough): with SOV `WA_AI_needs_bauxite = 3`, priority
+  construction selected states 876 and 226; their state files contain no bauxite.
+- Cause, **MEASURED** (script): `WA_AI_resource_extraction` proved only that one qualifying state
+  existed, then `WA_AI_get_resource_slot_scores` admitted every rich controlled state and
+  `WA_AI_priority_queue_INF_resource` accepted the first buildable score without rechecking need.
+- Change: `[resource-infra-targeting]` centralises the existing seven active branches in the
+  state-scope observation `WA_AI_CONSTRUCTION_has_needed_resource_for_infrastructure`, reused by
+  the existence gate, score-list admission, standard queue consumer and PC queue consumer.
+- Impact, **DERIVED**: historical SOV with only bauxite at need 3 excludes 876/226 and retains its
+  bauxite states; an ahistorical country with another need at 3 retains states matching that need.
+  Multiple simultaneous needs remain composable. The legacy standard consumer now gets the same
+  final guard; it has no live caller in `common/` or `events/` at this revision.
+- Regression risk, **DERIVED**: a state can disappear from resource scoring when it contains no
+  currently needed resource. This is the intended restriction; resource thresholds, scores,
+  priority, budget, cadence and controlled-state perimeter are unchanged.
+- Harness: none owed — 36 changed PDXScript lines, no on-action effect signature/scope change, and
+  non-rail priority construction has no existing `WA_TEST_*` harness.
+- Verification (owner game): with only `WA_AI_needs_bauxite = 3`, first inspect the type-25 PC
+  target state, then let that project complete; its state has bauxite >15 and 876/226 are absent
+  from type-25 starts. Repeat with one non-bauxite need at 3 to prove the generic branch.
+- Closed when: the owner game verifies both queue admission and one completed infrastructure level
+  for bauxite-only and one other-resource scenario, with no type-25 start in an unrelated state.
+
+### techtree-capability — PARKED (2026-09-09)
+- PARKED 2026-09-09 at state TESTED (WIP limit, owner ruling): nothing is owed on the code side,
+  only the CAMPAIGN-OK run below. Reopen at TESTED when a campaign is scored.
 - State: shipped as `7aac08324e` on `ai-rework`, pushed. TESTED, not SHIPPED-UNTESTED: this change
   is scripted TRIGGERS only - no `WA_AI_*` effect called by an on_action changed signature or scope,
   so no `WA_TEST_*` console harness applies and none is owed. The test that gates it is the boot,
@@ -287,6 +317,79 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   files load or the armour template system goes silent.
 
 ### air-budget — SHIPPED-UNTESTED (2026-09-09)
+- **Maintenance floor SHIPPED 2026-09-09 (owner order: "je veux un filet d'usines minimum en
+  permanence, pour continuer a un peu moderniser le parc"; N = 2 / 5, every type).** A line closed
+  by its park CAP is no longer treated like one closed by a want: it enters a third state,
+  MAINTAINED - archetype factor kept, `equipment_production_min_factories` floor of 2 (5 above
+  `tier_large_mils`), `unit_ratio` weight and category factor retired, no `AI_purge_*`. The defect
+  it fixes, MEASURED on campaign `2ee8a4ba`: USA 0 fighter factories 1943.12-1945.1, ENG 0 for the
+  whole of 1943 - a park at its cap flies the airframe it had when it hit the bar for the rest of
+  the campaign, because nothing is produced to replace it. This DELIVERS the maintenance half of
+  the proposal recorded below ("80 % reopen or a maintenance weight at cap") and leaves the
+  reopen-bar half untouched: it is a FLOOR, not a weight, so the type's share of the air pool is
+  still 0 while capped and the fighter-floor arithmetic is unchanged. Secondary gain, DERIVED from
+  the same campaign's MEASURED reopenings (ENG 1944.10 at efficiency 9.00 = engine base): the
+  engine's production line is never deleted, so a reopening ramps from the efficiency it had.
+- Mechanics: `should_open_<line>_line` UNCHANGED (it still drives the purge books, the type gates
+  and the monthly weights); new `should_maintain_<line>_line` / `should_keep_<line>_line` (= open
+  OR maintained) in a MAINTENANCE section of `WA_AI_PRODUCTION_air.txt`; every `should_build_<x>`
+  split into `wants_<x>` + a named `<x>_park_is_below_cap`; the line blocks and every `_CANCEL`
+  complement of `WA_AI_PRODUCTION_DEFAULT_air.txt` moved from `should_open_*` to `should_keep_*`;
+  16 land maintenance-floor blocks; the purge pulse still writes its book from `should_open_*` (it
+  IS the "was open" side of every Schmitt pair) but fires `AI_purge_*` only when no funder line is
+  even kept. Reviewer MEASURED the wants/cap split equivalent to the old `should_build_*` for all
+  18 arms by AST compare of HEAD against the tree.
+- Impact analysis, changed protected behaviours (P3(a)/(e)): (1)
+  `should_cancel_land_cas_for_carrier_power` now reads `should_keep_cv_cas_line`, so a carrier
+  strike power whose carrier-CAS line is closed BY ITS CAP no longer gets the
+  `equipment_production_factor id = cas = -1000` land-CAS denial of `[carrier-needs-config]`. That
+  matches the OPEN state, which never carried it - the denial is for a power the archetype never
+  gave a carrier CAS line, not for one that filled its decks - but it is a behaviour change and it
+  is listed here rather than left to be found. (2) The Schmitt cap pair still reopens at 90 %, but
+  a maintained line adds to the very park that must fall to reach the bar, so for a role with low
+  attrition the reopen bar is now effectively unreachable and MAINTAINED is an absorbing state.
+  Accepted: the floor is the point, and the weight staying at 0 is what the reopen bar guards.
+- Carrier roles: the deck-derived `1 + 4` ladder of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt` stays
+  gated on the line being OPEN, and a cap closure hands the role to a separate ONE-factory floor
+  behind the same `[equipment-selection]` saturation brake. A first pass ungated the ladder itself
+  and `wa-lessons-reviewer` returned CONFLICT on it, correctly: min-factories is need-blind and
+  additive (Fix 66 / R43), and for a big fleet the brake bar sits far above the park cap - fighters
+  cap 2000 vs bar 3510 at 20-39 hulls (1510 planes of headroom) and vs 5400 at 40+ (3400); naval
+  bombers 1800 vs 2340 (540) and vs 3600 (1800). DERIVED at 5 factories that band takes ~8 years to
+  cross, i.e. the rest of the campaign with the engine's own deck demand already at zero - the exact
+  Fix 66 failure mode. At 1 factory it is +114 planes over three years and no bar is ever reached.
+- **Park trajectory, the number instead of the adjective (P3(f))** - full table with its inputs in
+  scratchpad `air_maintenance_floor_trajectory.md`. MEASURED `POWERED_FACTORY_SPEED_MIL = 2.5`
+  IC/day (`05_defines.lua:192`, `BASE_FACTORY_SPEED_MIL` is 0), so 1 factory = 76 IC/month at 100 %
+  efficiency. DERIVED park growth above the cap at the DEEP (5-factory) floor, t+12 / t+36 months,
+  no attrition: fighter +190/+570 (+11 % of cap), cas +190/+570 (+19 %), heavy fighter +127/+380
+  (+13 %), tactical +109/+326 (+16 %), strategic +67/+202 (+7 %), naval bomber +190/+570 (+38 %),
+  **scout +127/+380 (+253 %)**, **transport +217/+652 (+326 %)**; carrier roles at their 1-factory
+  floor +38/+114 (+6 %). The six combat roles are a replacement rate. Scout and transport are not:
+  their caps are 150 and 200 and neither role takes attrition, so the cap stops binding for the
+  rest of the campaign. Shipped as ruled ("tous les types") with the end-state numbers recorded at
+  the code site; the one-line exception (drop their two `_large` blocks, transport base 2 -> 1) is
+  written out in the scratchpad file and NOT applied.
+- ASSUMED and NOT verified: that newly produced planes reach the EXISTING wings rather than sitting
+  in the stockpile. If the engine does not refit a wing in place, modernisation only runs at the
+  rate of wing turnover and the floor should be retuned or dropped. First thing to read on a save.
+- Reviewers: `wa-lessons-reviewer` CONFLICT on the carrier ladder (fixed above, its two other
+  required items - the trajectory table and the stale `cv_plane.txt` header - also applied);
+  `wa-architecture-reviewer` CONCERNS, all six required items applied (floor total no longer
+  re-typed as a literal in the harness, the harness no longer prints a factory expectation it
+  cannot honour for the two documented deviations, this impact line, the carrier headroom numbers,
+  the dated ruling stripped from the code comment, and the `[air-maintenance]` comment slug renamed
+  to `[air-budget]` - this subject owns the work, no new subject opened).
+- Checkers green: `check_ai_layers` 0 ERROR (the industry band moved out of the `ai_strategy`
+  enable blocks into `should_deepen_<type>_maintenance` to keep LAYER4-RAW-GATE at 0),
+  `check_constants` 0, `check_worklist` 0.
+- Verification (maintenance floor): `event wa_airb.4 <TAG>` after a COLD boot on a save where a
+  park is at its cap (USA or ENG fighters 1943-44 in `2ee8a4ba` are the known cells) must read
+  `maintenance-disjoint=1`, `lines: f=0` with `maint: f=1` for that country, and `floors:
+  fighter=2` (deep gate armed). In the production tab that country must show a small non-zero
+  fighter factory count instead of 0. Harness section G is the new probe; the verdict line now
+  carries FIVE values, all of which must read 1 - G1 and G3 restate terms the maintain triggers
+  already assert and only catch a deletion, G2 re-derives the role set from the section C walk.
 - **Campaign `2ee8a4ba` scored 2026-09-09 (133 saves 1936.2-1947.2, instrumented build, owner
   report HTML).** Decision side PASS: GER 1939-41 `wa_tlm_air_w_fighter_pct` 40/40/40/48/48, floor
   live, `air_emit_n` ≤ 41 on every major. **Factory side FAIL**: from the saves' military_lines
@@ -800,6 +903,35 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   2-year ahead focus (GER `GER_synthetic_breakthroughs`, ITA `ITA_mare_nostrum`) has the covered
   `start_year+2` tech in progress within a year.
 - Closed when: (1) pasted with the counter returning to 0, (2) clean, (3) observed on one campaign.
+
+### ger-labour-law — OPEN (2026-09-09)
+- Owner order 2026-09-09 ("testons de garder l'allemagne 100% en mandatory army service").
+  Intended behaviour: the German AI holds `mandatory_army_service` in the `ministry_of_labour`
+  slot for the whole game and never swaps to `factory_conscription`.
+- Symptom: none - this is an owner-ordered experiment, not a measured defect.
+- Previous behaviour, MEASURED (`common/ideas/zzz_ministries.txt`, both `ai_will_do` blocks of the
+  slot): the two laws carried mirrored GER weights around a hard-coded `1942.2.1` - before it
+  mandatory x200 / factory x0, after it the reverse, with the pre-1942 weights restored whenever
+  GER took `surrender_progress` against SOV or reached `scraping_the_barrel`. So GER swapped to
+  factory conscription on 1942.2.1 and could swap back later.
+- Change: both GER modifier pairs replaced by one unconditional weight each - `factor = 200 / tag = GER`
+  in `mandatory_army_service`, `factor = 0 / tag = GER` in `factory_conscription`. The date literal,
+  the surrender/scraping clauses and the `NOT = { has_completed_focus = GER_prepare_the_opposition }`
+  term disappear with them. No other tag touched. DERIVED: the slot's two other laws already read 0
+  for GER (`offer_better_wages` `factor = 0`; `incentivise_employability_oppertunities` x0 on
+  `is_major = yes`), so mandatory is the only positive weight GER can see.
+- Regression risk, DERIVED: GER loses the +0.30 `industrial_capacity_factory` of factory conscription
+  from 1942.2 on and keeps +0.10 `conscription_factor` / -0.20 `training_time_factor` instead - a
+  deliberate trade, expected to show as lower late-war German equipment output and a larger manpower
+  pool. ASSUMED: the human player is unaffected (this is an `ai_will_do` weight, the law stays
+  selectable and its `available` block is untouched).
+- No harness owed: `ai_will_do` weights in an idea file, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): the report law-change table shows GER on `Mandatory Army Service` at every
+  monthly save from the first labour-law pick to the end of the run, and no `-> Factory Conscription`
+  row for GER; German military-factory output and manpower pool compared with `1ac7e4ea` to price the
+  trade.
+- Closed when: one campaign shows zero GER labour-law changes after its first pick, and the owner
+  rules on the output-versus-manpower trade the run measures.
 
 ### repeatable-pp-decisions — OPEN (2026-09-08)
 - Owner order 2026-09-08 ("certaines pays IA ont des décisions répétables qui coutent des PP ... ces
@@ -4244,6 +4376,48 @@ power capitulates.
 
 
 ## PARKED
+
+### axis-minor-home-buffer — PARKED (2026-09-10)
+- Parked because the four OPEN slots are occupied. The implementation is committed as
+  `SHIPPED-UNTESTED`; keep it parked until a slot frees up for the owner console run.
+- Owner request: non-major Axis faction members keep 25% of their army at home while at war.
+- Implementation: shared dynamic gate `WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`;
+  Country THEATRE writers for FIN, HUN, ROM, BUL, SLO and CRO target their own capital anchors
+  with `put_unit_buffers`, order 9620, ratio 0.25, and both `subtract_*_from_need = no`.
+- Impact: this deliberately coexists with `WA_AI_MILITARY_total_commitment_active`; the existing
+  generic `garrison = -5000` release remains, while the explicit buffer preserves the requested
+  home reserve. The lessons review required explicit subtract flags and rejected a shared Faction
+  state list; the architecture review required Country-tier writers.
+- Verification: boot with no strategy parse errors; then campaign-check FIN/HUN/ROM/BUL/SLO/CRO in
+  a German-faction war, including a safe-war `total_commitment_active` window, for an armed 9620
+  home buffer and approximately 25% of fielded divisions at the home anchor. Confirm GER/ITA are
+  unchanged and a non-Axis minor has no 9620 entry.
+- Closed when: the boot check and the campaign checks pass without a regression in the existing
+  total-commitment release behavior.
+
+### war-start-suppression-template — PARKED (2026-09-10)
+- Parked at creation because the four OPEN slots are occupied. The implementation is applied in
+  the working tree and remains uncommitted; move it to SHIPPED-UNTESTED when a slot frees up.
+- Owner order 2026-09-10: on war start, give each AI a named `Suppression template` using a
+  50-width cavalry design with military police when `tech_military_police` is researched, and a
+  5-width fallback otherwise; do nothing when the named template already exists.
+- Change: `WA_AI_TEMPLATES_create_war_suppression_template` is called by the existing engine
+  `on_war` hook and guards both branches with `is_ai` plus `NOT has_template`.
+- Change addendum: before creation, the effect deletes every `Light Cavalry template A` through `Z`
+  with `disband = yes`, including when `Suppression template` already exists.
+- Harness: `event wa_test_tmpl.3 <AI_TAG>` logs the AI/MP/existing state and the A/Z purge boundaries
+  before and after two direct calls; the resulting regiment/support composition still requires the
+  owner’s manual template check.
+- Regression risk, DERIVED: only AI countries entering a war are affected; existing named templates
+  and the separate WA suppression `ai_template` role are untouched. The purge intentionally removes
+  any divisions using those lettered templates because it uses `disband = yes`. The fallback uses one
+  2-width cavalry battalion plus one 3-width artillery battalion because the active suppression units
+  in `common/units/land_cavalry.txt` and `common/units/land_artillery.txt` have those widths.
+- Verification (owner game): start a war with an AI that has and one that lacks `tech_military_police`;
+  inspect both countries' `Suppression template` designs, then fire another war entry after the
+  template exists and confirm it is not duplicated or replaced.
+- Closed when: the owner console confirms the 50-width + horse-MP branch, the exact 5-width fallback,
+  and the idempotent existing-template branch in-game.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,

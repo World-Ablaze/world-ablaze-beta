@@ -159,3 +159,33 @@ WA_TEST_TMPL_execute = {
 	WA_TEST_TMPL_role_other = yes
 	log = "            (pre and post must match line for line; any difference is a missing claim guard)"
 }
+
+# Direct named-template probe for the war-start suppression creator and its A..Z purge.
+# Run on an AI country with `event wa_test_tmpl.3 TAG`; the second call checks the existing-name
+# guard. The exact regiment/support composition remains a manual template-screen check.
+WA_TEST_TMPL_war_suppression = {
+	log = "=== WAR SUPPRESSION TEMPLATE [This.GetName] [GetDateText] ==="
+	set_temp_variable = { _tm_ws_ai = 0 }
+	set_temp_variable = { _tm_ws_mp = 0 }
+	set_temp_variable = { _tm_ws_before = 0 }
+	set_temp_variable = { _tm_ws_after = 0 }
+	set_temp_variable = { _tm_ws_second = 0 }
+	set_temp_variable = { _tm_ws_lc_a_before = 0 }
+	set_temp_variable = { _tm_ws_lc_z_before = 0 }
+	set_temp_variable = { _tm_ws_lc_a_after = 0 }
+	set_temp_variable = { _tm_ws_lc_z_after = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _tm_ws_ai = 1 } }
+	if = { limit = { has_tech = tech_military_police } set_temp_variable = { _tm_ws_mp = 1 } }
+	if = { limit = { has_template = "Suppression template" } set_temp_variable = { _tm_ws_before = 1 } }
+	if = { limit = { has_template = "Light Cavalry template A" } set_temp_variable = { _tm_ws_lc_a_before = 1 } }
+	if = { limit = { has_template = "Light Cavalry template Z" } set_temp_variable = { _tm_ws_lc_z_before = 1 } }
+	log = "  pre : ai=[?_tm_ws_ai|.0] mp=[?_tm_ws_mp|.0] exists=[?_tm_ws_before|.0] light_cavalry_A/Z=[?_tm_ws_lc_a_before|.0]/[?_tm_ws_lc_z_before|.0]"
+	WA_AI_TEMPLATES_create_war_suppression_template = yes
+	if = { limit = { has_template = "Suppression template" } set_temp_variable = { _tm_ws_after = 1 } }
+	if = { limit = { has_template = "Light Cavalry template A" } set_temp_variable = { _tm_ws_lc_a_after = 1 } }
+	if = { limit = { has_template = "Light Cavalry template Z" } set_temp_variable = { _tm_ws_lc_z_after = 1 } }
+	log = "  post: exists=[?_tm_ws_after|.0] light_cavalry_A/Z=[?_tm_ws_lc_a_after|.0]/[?_tm_ws_lc_z_after|.0] (AI=1 + exists=0 before must create it; AI=0 must not)"
+	WA_AI_TEMPLATES_create_war_suppression_template = yes
+	if = { limit = { has_template = "Suppression template" } set_temp_variable = { _tm_ws_second = 1 } }
+	log = "  re-run: exists=[?_tm_ws_second|.0] (an existing named template must remain present)"
+}
