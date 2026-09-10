@@ -4377,6 +4377,48 @@ power capitulates.
 
 ## PARKED
 
+### axis-minor-home-buffer — PARKED (2026-09-10)
+- Parked because the four OPEN slots are occupied. The implementation is committed as
+  `SHIPPED-UNTESTED`; keep it parked until a slot frees up for the owner console run.
+- Owner request: non-major Axis faction members keep 25% of their army at home while at war.
+- Implementation: shared dynamic gate `WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`;
+  Country THEATRE writers for FIN, HUN, ROM, BUL, SLO and CRO target their own capital anchors
+  with `put_unit_buffers`, order 9620, ratio 0.25, and both `subtract_*_from_need = no`.
+- Impact: this deliberately coexists with `WA_AI_MILITARY_total_commitment_active`; the existing
+  generic `garrison = -5000` release remains, while the explicit buffer preserves the requested
+  home reserve. The lessons review required explicit subtract flags and rejected a shared Faction
+  state list; the architecture review required Country-tier writers.
+- Verification: boot with no strategy parse errors; then campaign-check FIN/HUN/ROM/BUL/SLO/CRO in
+  a German-faction war, including a safe-war `total_commitment_active` window, for an armed 9620
+  home buffer and approximately 25% of fielded divisions at the home anchor. Confirm GER/ITA are
+  unchanged and a non-Axis minor has no 9620 entry.
+- Closed when: the boot check and the campaign checks pass without a regression in the existing
+  total-commitment release behavior.
+
+### war-start-suppression-template — PARKED (2026-09-10)
+- Parked at creation because the four OPEN slots are occupied. The implementation is applied in
+  the working tree and remains uncommitted; move it to SHIPPED-UNTESTED when a slot frees up.
+- Owner order 2026-09-10: on war start, give each AI a named `Suppression template` using a
+  50-width cavalry design with military police when `tech_military_police` is researched, and a
+  5-width fallback otherwise; do nothing when the named template already exists.
+- Change: `WA_AI_TEMPLATES_create_war_suppression_template` is called by the existing engine
+  `on_war` hook and guards both branches with `is_ai` plus `NOT has_template`.
+- Change addendum: before creation, the effect deletes every `Light Cavalry template A` through `Z`
+  with `disband = yes`, including when `Suppression template` already exists.
+- Harness: `event wa_test_tmpl.3 <AI_TAG>` logs the AI/MP/existing state and the A/Z purge boundaries
+  before and after two direct calls; the resulting regiment/support composition still requires the
+  owner’s manual template check.
+- Regression risk, DERIVED: only AI countries entering a war are affected; existing named templates
+  and the separate WA suppression `ai_template` role are untouched. The purge intentionally removes
+  any divisions using those lettered templates because it uses `disband = yes`. The fallback uses one
+  2-width cavalry battalion plus one 3-width artillery battalion because the active suppression units
+  in `common/units/land_cavalry.txt` and `common/units/land_artillery.txt` have those widths.
+- Verification (owner game): start a war with an AI that has and one that lacks `tech_military_police`;
+  inspect both countries' `Suppression template` designs, then fire another war entry after the
+  template exists and confirm it is not duplicated or replaced.
+- Closed when: the owner console confirms the 50-width + horse-MP branch, the exact 5-width fallback,
+  and the idempotent existing-template branch in-game.
+
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,
   deterministic extraction, maintainable generator in the repository, ignored cache.
