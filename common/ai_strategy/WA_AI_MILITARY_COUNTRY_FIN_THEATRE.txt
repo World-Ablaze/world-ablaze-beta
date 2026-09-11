@@ -39,9 +39,11 @@ WA_AI_MILITARY_FIN_winter_war_garrison_2_THEATRE = {
 # Phase 2 split: THEATRE domain blocks.
 # Phase 2 split: THEATRE domain blocks.
 
-# [axis-minor-home-buffer] Keep one quarter of the Finnish army in the home capital while FIN is
-# actually a non-major member of the German faction. This is a Country-layer writer because
-# put_unit_buffers targets literal states; the shared gate supplies the dynamic faction/war test.
+# [axis-minor-home-buffer] The frontier half of the home reserve: Finland keeps 0.15 of its army on its
+# border states while it is a non-major member of the German faction and at war. Split from the interior
+# tier by order_id because ONE flat state list does not spread - the nine-state Italian Southern France
+# buffer put six divisions inland and none on the invasion shore. ASSUMED: the engine drops a state that
+# is not friendly and arms the rest; it documents only "if no state is friendly, strat is invalid".
 WA_AI_MILITARY_COUNTRY_FIN_axis_minor_home_buffer_THEATRE = {
 	allowed = {
 		original_tag = FIN
@@ -55,11 +57,42 @@ WA_AI_MILITARY_COUNTRY_FIN_axis_minor_home_buffer_THEATRE = {
 		type = put_unit_buffers
 		order_id = 9620
 		states = {
-			111 # Uusimaa / Helsinki
+			1045 # Terijoki - Soviet border
+			1044 # Raja Karjala - Soviet border
+			147  # Salla - Soviet border
+			722  # Petsamo - Soviet border
+			148  # Lappi - Norwegian / Swedish border
 		}
-		ratio = 0.25
+		ratio = 0.15
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no # pool: this is the explicit home reserve and must not yield to remote demand
+		subtract_fronts_from_need = no # pool: the frontier reserve is the half that must survive a remote front - a border left bare is what the capital-only buffer produced
+	}
+}
+
+# [axis-minor-home-buffer] The interior half: 0.10 around the capital, and this one YIELDS to front
+# demand - only the frontier tier above must not be drained. Own order_id so the two pools are sized
+# independently (E4b: entries sharing an order_id share one ratio).
+WA_AI_MILITARY_COUNTRY_FIN_axis_minor_home_buffer_interior_THEATRE = {
+	allowed = {
+		original_tag = FIN
+	}
+	enable = {
+		WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9621
+		states = {
+			111 # Uusimaa / Helsinki - capital
+			150 # Savo
+			149 # Pohjanmaa
+			870 # Ostrobothnia
+			879 # Satakunta
+		}
+		ratio = 0.10
+		subtract_invasions_from_need = no
 	}
 }
 

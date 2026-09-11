@@ -1601,26 +1601,70 @@ while the war is elsewhere; the garrison comes back the moment somebody can actu
 The Faction pulls that already existed (`ALLIES_europe_first` +150/+75, `ALLIES_east_africa_contested`
 +150, `ALLIES_theatre_boost_north_africa` id 447) are unchanged and compose with these.
 
-### Axis-minor home reserve ([axis-minor-home-buffer], 2026-09-10)
+### Axis-minor home reserve ([axis-minor-home-buffer], 2026-09-10, retargeted 2026-09-11)
 
-The owner request adds a deliberate exception for non-major members of the German faction:
-while at war, the standard minor writers keep a 0.25 `put_unit_buffers` reserve in the home
-capital. The shared decision gate is
-`WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`; state-level writers live in the
-Country THEATRE files because `put_unit_buffers` accepts literal state IDs, not a dynamic
-"each member's home" selector.
+The owner request adds a deliberate exception for non-major members of the German faction: while
+at war, the standard minor writers keep a 0.25 `put_unit_buffers` reserve at home. The shared
+decision gate is `WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`; state-level writers
+live in the Country THEATRE files because `put_unit_buffers` accepts literal state IDs, not a
+dynamic "each member's home" selector.
 
-The current anchors are FIN 111, HUN 889, ROM 46, BUL 48, SLO 70 and CRO 109. The buffer uses
-order 9620, explicitly sets both `subtract_*_from_need` flags to `no`, and omits `area` so the
-reserve is sealed to home rather than becoming a remote-front pool. It intentionally coexists
-with `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home`: the generic area-defence release
-still stands down, while this explicit reserve keeps the requested quarter at home.
+**The reserve is the country and its borders, not the capital (owner request 2026-09-11).** The
+first version listed one state per country - the capital - which parked the whole quarter in a
+single interior province. Each country now carries TWO blocks with DIFFERENT order ids, because
+one flat state list is MEASURED not to spread: Fix 110 (campaign `07270b64`, §"Italian theatre")
+found the nine-state Italian Southern France buffer had put six divisions on five inland states
+and none on the invasion shore, and the remedy was to split the list by order id, not to lengthen
+it. Same remedy here.
+
+| Tier | Block | Order | Ratio | `subtract_fronts_from_need` | States |
+| --- | --- | --- | --- | --- | --- |
+| Frontier | `WA_AI_MILITARY_COUNTRY_<TAG>_axis_minor_home_buffer_THEATRE` | 9620 | 0.15 | `no` (the half that must not be drained) | FIN 1045/1044/147/722/148, HUN 43/155/890/891/154, ROM 76/83/82/81/80/78/766/79/77/899, BUL 875/211/905/212, SLO 664/71/73, CRO 887/1022/999/103/104 |
+| Interior | `WA_AI_MILITARY_COUNTRY_<TAG>_axis_minor_home_buffer_interior_THEATRE` | 9621 | 0.10 | default `yes` (it yields to real front demand) | FIN 111/150/149/870/879, HUN 889, ROM 46/900/84, BUL 48, SLO 70, CRO 109 |
+
+The two tiers sum to the owner's 0.25. FIN omits Aland 145 (an island the reserve should not sit
+on) and omits 146 / 972 from both tiers because its own winter-war blocks already hold those two
+states at 0.5 (order 2) and 0.25 (order 3) - the point is not to stack a third order on the same
+ground. Neither tier declares `area`, matching the 62 of 154 buffer blocks mod-wide that omit it.
+
+Three engine facts this rests on are **ASSUMED**, not measured, and the verification below is
+their falsifier:
+
+- that a listed state which is not friendly is dropped while the rest of the list still arms. The
+  engine documents only "if no state is friendly, strat is invalid" (`documentation.info` section
+  `put_unit_buffers`); the partial case is undocumented. Note **friendly is not the same as
+  owned** - an ally-held state (GER-held Stajerska, ITA-held Dalmatia, HUN-held North
+  Transylvania) may well take a garrison order, so CRO and ROM could be garrisoning an ally's
+  soil. This is also what would let the Second Vienna Award and the Dalmatian transfers move the
+  reserve with no date gate.
+- how one block's N listed states split into engine order instances, and therefore whether
+  `ratio` is the whole list's share or each instance's. Do not derive a per-state figure from it.
+- what an `area`-less buffer means for which orders may draw on it. No sizing argument here rests
+  on it.
+
+**E4c debt, pre-existing and unresolved (`WA_AI_MILITARY_ECONOMY.md`):** FIN's non-yielding buffer
+sum is order 2 (0.5) + order 3 (0.25) + order 9620 (0.15) = **0.90**, over the 0.75 per-country
+budget. It was 1.00 before this change and the split reduced it; closing the rest means retuning
+the winter-war blocks, which belong to a different subject.
+
+It intentionally coexists with `WA_AI_MILITARY_ARCHETYPE_committed_minor_releases_home`: the
+generic area-defence release still stands down, while this explicit reserve keeps the requested
+quarter at home.
 
 The remaining engine arbitration is unmeasured: existing area-defence orders can persist after a
-negative `garrison`, and the exact realised share of separate buffer orders must be checked in a
-campaign. The verification is therefore a boot parse check plus a campaign read of home-state
-buffer/army counts for the six anchors, including a safe-war case where
-`total_commitment_active` is true.
+negative `garrison`, and the realised share of separate buffer orders must be checked in a
+campaign. The verification is a boot parse check plus a campaign read for the six countries in a
+German-faction war, including a safe-war window where `total_commitment_active` is true, carrying
+four readings:
+
+1. **divisions PER LISTED STATE**, not a total - the even-spread claim is the whole change, and
+   Fix 110 is the precedent for it failing silently;
+2. at least one FRONTIER state garrisoned in each country, which is the owner's actual request;
+3. the buffer order states per country BEFORE and AFTER the Second Vienna Award and the Dalmatian
+   transfers - the partial-ownership and friendly-versus-owned test;
+4. the realised home share against 0.15 / 0.10, plus FIN's stacked areadef share. At or above
+   70 % areadef is the failure signature the `minors_home_first` lesson names: a minor held at
+   home rather than under-asked.
 
 ### What it replaced (all deleted 2026-08-25, `[allied-total-commitment]`)
 

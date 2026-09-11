@@ -3,8 +3,11 @@
 ############################################################################################################
 # Canonical domain: THEATRE. See documentation/WA_AI_MILITARY_TYPES_REFERENCE.md.
 
-# [axis-minor-home-buffer] Keep one quarter of Bulgaria's army in Sofia while Bulgaria is a
-# non-major member of the German faction and at war. The state target belongs in the Country layer.
+# [axis-minor-home-buffer] The frontier half of the home reserve: Bulgaria keeps 0.15 of its army on its
+# border states while it is a non-major member of the German faction and at war. Split from the interior
+# tier by order_id because ONE flat state list does not spread - the nine-state Italian Southern France
+# buffer put six divisions inland and none on the invasion shore. ASSUMED: the engine drops a state that
+# is not friendly and arms the rest; it documents only "if no state is friendly, strat is invalid".
 WA_AI_MILITARY_COUNTRY_BUL_axis_minor_home_buffer_THEATRE = {
 	allowed = {
 		original_tag = BUL
@@ -18,10 +21,36 @@ WA_AI_MILITARY_COUNTRY_BUL_axis_minor_home_buffer_THEATRE = {
 		type = put_unit_buffers
 		order_id = 9620
 		states = {
-			48 # Sofia
+			875 # Danubian Plain - Romanian border
+			211 # Burgas - Turkish border
+			905 # Struma Valley - Greek / Yugoslav border
+			212 # Plovdiv - Greek / Turkish border
 		}
-		ratio = 0.25
+		ratio = 0.15
 		subtract_invasions_from_need = no
-		subtract_fronts_from_need = no # pool: this is the explicit home reserve and must not yield to remote demand
+		subtract_fronts_from_need = no # pool: the frontier reserve is the half that must survive a remote front - a border left bare is what the capital-only buffer produced
+	}
+}
+
+# [axis-minor-home-buffer] The interior half: 0.10 around the capital, and this one YIELDS to front
+# demand - only the frontier tier above must not be drained. Own order_id so the two pools are sized
+# independently (E4b: entries sharing an order_id share one ratio).
+WA_AI_MILITARY_COUNTRY_BUL_axis_minor_home_buffer_interior_THEATRE = {
+	allowed = {
+		original_tag = BUL
+	}
+	enable = {
+		WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = put_unit_buffers
+		order_id = 9621
+		states = {
+			48 # Sofia - capital
+		}
+		ratio = 0.10
+		subtract_invasions_from_need = no
 	}
 }

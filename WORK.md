@@ -4507,15 +4507,33 @@ power capitulates.
   `SHIPPED-UNTESTED`; keep it parked until a slot frees up for the owner console run.
 - Owner request: non-major Axis faction members keep 25% of their army at home while at war.
 - Implementation: shared dynamic gate `WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`;
-  Country THEATRE writers for FIN, HUN, ROM, BUL, SLO and CRO target their own capital anchors
+  Country THEATRE writers for FIN, HUN, ROM, BUL, SLO and CRO target their own home states
   with `put_unit_buffers`, order 9620, ratio 0.25, and both `subtract_*_from_need = no`.
+- Amendment 2026-09-11 (owner): the writers listed only the capital state, which parked the whole
+  reserve in one interior province. Each country now carries TWO blocks - a frontier tier (order
+  9620, ratio 0.15, `subtract_fronts_from_need = no`) over its border states and an interior tier
+  (order 9621, ratio 0.10, yielding) around the capital. They sum to the owner's 0.25. The split by
+  order id rather than one longer list follows Fix 110: MEASURED on campaign `07270b64`, a flat
+  nine-state Italian buffer put six divisions inland and none on the invasion shore.
+- Amendment residuals, all ASSUMED: that an unfriendly listed state is dropped while the rest of
+  the list arms (the engine documents only "if no state is friendly, strat is invalid"); that
+  "friendly" excludes an ally-held state (it probably does not - CRO 887/103 and ROM 76 may be
+  ally-held); how N listed states split into engine order instances, hence what `ratio` means per
+  state. FIN drops 146/972 from both tiers because its winter-war orders 2/3 already hold them; its
+  non-yielding sum is still 0.90 against the 0.75 E4c budget - pre-existing debt, reduced from 1.00
+  by this split, closable only by retuning the winter-war blocks (different subject).
 - Impact: this deliberately coexists with `WA_AI_MILITARY_total_commitment_active`; the existing
   generic `garrison = -5000` release remains, while the explicit buffer preserves the requested
   home reserve. The lessons review required explicit subtract flags and rejected a shared Faction
   state list; the architecture review required Country-tier writers.
 - Verification: boot with no strategy parse errors; then campaign-check FIN/HUN/ROM/BUL/SLO/CRO in
-  a German-faction war, including a safe-war `total_commitment_active` window, for an armed 9620
-  home buffer and approximately 25% of fielded divisions at the home anchor. Confirm GER/ITA are
+  a German-faction war, including a safe-war `total_commitment_active` window, for armed 9620 and
+  9621 buffers and approximately 25% of fielded divisions across the home states. The reading is
+  divisions PER LISTED STATE, not a total: at least one FRONTIER state garrisoned in every country
+  is the owner's actual request, and a flat total hides the Fix 110 failure. Also read the buffer
+  order states before and after the Second Vienna Award and the Dalmatian transfers (the
+  partial-ownership and friendly-versus-owned test), and FIN's total areadef share - at or above
+  70% is the `minors_home_first` failure signature. Confirm GER/ITA are
   unchanged and a non-Axis minor has no 9620 entry.
 - Closed when: the boot check and the campaign checks pass without a regression in the existing
   total-commitment release behavior.
