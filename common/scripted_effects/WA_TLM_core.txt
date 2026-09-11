@@ -55,7 +55,8 @@
 #	v31 sq_adds_by_type^8            fuel silos joined the shared-slot standard ([silo-breadth])
 #	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
 #	v34 armor_*                      armour-template coverage ([armor-class-handoff])
-@WA_TLM_VERSION = 36
+#	v37 r115_maint_*                 land maintenance floor, probe ([maintenance-floor])
+@WA_TLM_VERSION = 37
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -120,6 +121,24 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_air_park_bomber } } set_variable = { WA_TLM_air_park_bomber = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_air_emit_n } } set_variable = { WA_TLM_air_emit_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_air_last_t } } set_variable = { WA_TLM_air_last_t = 0 } }
+
+	# [maintenance-floor] land maintenance floors (PROBE r115, v37; write site:
+	# WA_TLM_sample_maintenance below). Probe under 3.8: it asks "did this specific gate hold", not
+	# a system-health invariant. HONESTY (3.6): `floor` is the number of factories WA REQUESTED
+	# through equipment_production_min_factories_archetype - never what the engine allocated (no
+	# script getter reads factories per production line) and never the country total on those ids
+	# (POL/HUN/SWE, the CZE plan and the lend-lease donors floor the same TYPES, and floors sum).
+	# Second signal that validates it: `at_ratio`, free anti-tank spares over what the armies
+	# require - the shortage the system reacts to. It must RISE month over month on a country
+	# reading ground_n > 0; if it does not, the floor is taking no factories and the F1 assumption
+	# of WA_AI_PRODUCTION_DEFAULT_maintenance.txt is gone.
+	# The r115 number is not yet attached to a checklist item - attach it when the subject is
+	# admitted to WORK.md, or retire the probe (3.8: that is the normal fate).
+	if = { limit = { NOT = { has_variable = WA_TLM_r115_maint_armor_n } } set_variable = { WA_TLM_r115_maint_armor_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r115_maint_ground_n } } set_variable = { WA_TLM_r115_maint_ground_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r115_maint_floor } } set_variable = { WA_TLM_r115_maint_floor = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r115_maint_at_ratio } } set_variable = { WA_TLM_r115_maint_at_ratio = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_r115_maint_last_t } } set_variable = { WA_TLM_r115_maint_last_t = 0 } }
 
 	# [scripted-invasion-reservation] target-reservation stamps (v30; write site:
 	# WA_AI_LANDING_stamp_reservation, WA_AI_LANDING_effects.txt). Counter = stamp sweeps
@@ -431,6 +450,98 @@ WA_TLM_monthly_sample = {
 	WA_TLM_sample_italy_guard = yes
 	WA_TLM_sample_east_africa = yes
 	WA_TLM_sample_tunis_bridge = yes
+	WA_TLM_sample_maintenance = yes
+}
+
+############################################################################################################
+#	[maintenance-floor] Land maintenance-floor sample (PROBE r115). Scope: country, is_ai gated by
+#	the caller. Design: documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md.
+#	armor_n / ground_n are the DECISIONS (how many archetypes are maintained); floor is the factory
+#	count WA REQUESTED, never what the engine allocated and never the country total on those ids.
+#	at_ratio is the verified EFFECT and the reading that falsifies the whole system: free anti-tank
+#	spares over what the armies require, the shortage the floors exist to relieve.
+#	All five are written unconditionally so a country that stops being maintained reads 0 rather
+#	than a stale value, and so the _last_t stamp keeps the absence contract for every AI country.
+############################################################################################################
+WA_TLM_sample_maintenance = {
+	# tlm: r115_maint_armor_n / r115_maint_ground_n / r115_maint_floor - gauges, the DECISION and
+	# the REQUEST - consumer probe r115
+	set_variable = { WA_TLM_r115_maint_armor_n = 0 }
+	set_variable = { WA_TLM_r115_maint_ground_n = 0 }
+	set_variable = { WA_TLM_r115_maint_floor = 0 }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_anti_air = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_air_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_anti_air = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_anti_air_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_artillery_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_pack_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_pack_artillery_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_amtrac = yes }
+		add_to_variable = { WA_TLM_r115_maint_ground_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_base }
+		if = { limit = { WA_AI_PRODUCTION_should_deepen_amtrac_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.ground_floor_deep_add } }
+	}
+
+	# tlm: r115_maint_at_ratio - gauge, free anti-tank spares over what the armies require (the
+	# verified effect; 0 when the templates ask for none) - consumer probe r115
+	set_variable = { WA_TLM_r115_maint_at_ratio = 0 }
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@anti_tank_equipment > 0 } }
+		set_variable = { WA_TLM_r115_maint_at_ratio = num_equipment@anti_tank_equipment }
+		divide_variable = { WA_TLM_r115_maint_at_ratio = 1000 }
+		divide_variable = { WA_TLM_r115_maint_at_ratio = num_target_equipment_in_armies_k@anti_tank_equipment }
+	}
+
+	# tlm: r115_maint_last_t - probe freshness stamp - consumer probe r115
+	set_variable = { WA_TLM_r115_maint_last_t = global.WA_TLM_clock }
 }
 
 ############################################################################################################
