@@ -173,6 +173,71 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### dead-template-spawns — OPEN (2026-09-11)
+- Owner order 2026-09-11 ("supprime armor 928 et GER_Norway, ENG_operation_husky_ai et ENG_sicily,
+  corrige HUN_equip_the_rongyos_garda, refactorise MAN_expand_the_imperial_guards pour que l'IA
+  aie comme un joueur"). Intended behaviour: no script spawns or gates on a division template
+  that nothing creates; where a focus raises divisions for a player, the AI raises the same ones.
+- Symptom, MEASURED (scratchpad audit of every `has_template` / `create_unit` / `load_oob` in
+  `common/` + `events/` against every `division_template = { name = }` in the mod): MAN's focus
+  spawned 4 x "Manchurian Infantry Division" for the AI (no creator); HUN's focus had no AI branch
+  that could fire (`infantry_template_hun` flag never set); `ENG_operation_husky_ai` gated on
+  "British Heavy Tank Division" and loaded `ENG_sicily`, 20/20 divisions on dead templates;
+  `ger_armor.928` loaded `GER_Norway`, 9/15 divisions on the dead "Gebirgsjäger Division".
+- Change: `ger_armor.928` (`events/WA_AI_GER.txt`) and `history/units/GER_Norway.txt` deleted;
+  `ENG_operation_husky_ai` (`common/decisions/z_WA_ai_ENG.txt`) and `history/units/ENG_sicily.txt`
+  deleted; HUN focus: the dead flag branch becomes the AI `else` - same "Rongyos Gárda" template
+  with `obsolete = yes`, same 3 divisions, `rongyos_garda_flag` set under Trianon like the player
+  branch; MAN focus: template created for both (AI copy `obsolete = yes`), one shared spawn of the
+  4 named Guards divisions. Orphans left in place, harmless: `prevent_husky_ai_flag` writer
+  (`FRA.txt`), `GER_ai_norway_fired` writer (`wa_den_events.txt`), `history/units/ENG_sicily_2.txt`
+  (no caller before or after), the Husky decision's localisation keys.
+- Not touched (owner did not name them): SOV/JAP border-conflict spawns (`SOV.txt:18181`), ITA
+  "Banda Irregolare" spawns, FFI Demi-Brigade on_action spawns, `GER_upgrade_spanish_template`
+  gate, dead `ger_armor.927`.
+- Regression risk, DERIVED: the German AI no longer receives 6 free divisions on Norway (the
+  living part of `GER_Norway`); the British AI loses its scripted Sicily landing decision - both
+  campaigns now depend on the generic invasion layer. ASSUMED: `rongyos_garda_flag` readers
+  (`DOD_Hungary.txt`, `hungary.txt`, `wa_hun_events.txt`) now also fire for an AI HUN under
+  Trianon, as they do for a player.
+- No harness owed: focus rewards and deletions, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): an AI MAN save after `MAN_expand_the_imperial_guards` holds 4
+  "Imperial Guards Division"; an AI HUN save after `HUN_equip_the_rongyos_garda` holds 3
+  "Rongyos Gárda" and no more; no `ENG_sicily` / `GER_Norway` division names appear in any save.
+- Closed when: one campaign shows both AI focus spawns and neither deleted OOB.
+
+### sov-conscript-troops — OPEN (2026-09-11)
+- Owner order 2026-09-11 ("SOV_Army_conscript_troops a été cassé par le rework des templates").
+  Intended behaviour: the Soviet AI and the human player take the same conscript-wave decision on
+  the same template, gated on men actually in the field.
+- Symptom, MEASURED (`common/decisions/SOV_factions.txt`, git): the AI branch gated on and spawned
+  `"Soviet Rifle Division"`, a template whose only creators (`events/WA_AI_CHEATS_SOV.txt`,
+  `history/units/SOV_infantry.txt`) were deleted in `b2e800e2d1` (2026-02-04). `available` was
+  false for every AI SOV since, so the AI never took the decision.
+- Change: (a) `SOV_rebuild_the_army` creates `"Prízyvnaya dívízíya"` for the AI too (the
+  `is_ai = no` wrapper is gone; `obsolete = yes` / `division_cap = 240` unchanged); (b) one
+  `available` for both: `has_manpower > 206400`, `has_army_manpower = { size < 4000000 }`,
+  `has_template`; the reserves-variable block and both `has_army_size` gates are gone; (c) one
+  `remove_effect`: `add_manpower = -206400`, two 6-division waves on the existing state chains,
+  `start_equipment_factor = 0.02`, `start_manpower_factor = 1`, no stockpile prelevement - the
+  divisions reinforce organically. Owner rulings: same template for both, stockpile untouched,
+  2 % equipment, manpower factor 1 because the effect removes the men.
+- Manpower, DERIVED from `common/units/` sub-unit `manpower` values: 9 x 1000 heavy horse infantry
+  + 4 x 500 horse artillery + 2 x 500 horse AT + 6 x 300 regimental companies + support
+  800 + 500 x 5 + 300 x 2 = 17 200 per division; 12 per decision = 206 400 (was 135 600 human /
+  171 600 AI, both unexplained).
+- Regression risk, DERIVED: the human path drops from 10 % to 2 % starting equipment and from a
+  135 600 to a 206 400 manpower cost, and loses the `< 241 infantry / < 91 motorized` size gates
+  (replaced by the 4 M field-manpower gate). ASSUMED: the engine AI does not recruit the obsolete
+  template on its own and the infantry ai_templates role does not decommission it (same capture
+  mechanism as the garrison note in `WA_AI_TEMPLATES_garrison.txt`).
+- No harness owed: a decision file and a focus reward, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): a monthly SOV save after Barbarossa shows divisions of template
+  `Prízyvnaya dívízíya` owned by an AI SOV, their count rising in steps of 12 while
+  `has_army_manpower` stays under 4 M, and stable between steps.
+- Closed when: one AI SOV campaign shows at least one conscript wave after Barbarossa and no
+  Prízyvnaya division outside the waves.
+
 ### armoured-waves — PARKED (2026-09-10)
 - State: code ships with this subject update; **the console harness has NOT been run**. Parked,
   not `SHIPPED-UNTESTED`, only because the four live slots were already taken
