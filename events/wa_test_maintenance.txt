@@ -1,0 +1,105 @@
+############################################################################################################
+#	World Ablaze - MAINTENANCE FLOOR harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human and is_ai reads no.
+#	From any tag (observer included):
+#
+#		event wa_maint.1 GER    one country report: ten archetype rows + the verdict
+#		event wa_maint.2        the same report for every AI country with a fielded army
+#		event wa_maint.3 GER    the FIELD PROBE: prints the gates and the free spares, then tells you
+#		                        what to read in the production panel. Fire it, wait a month, fire it
+#		                        again - the spares of a maintained archetype must GROW.
+#
+#	Output: logs/game.log under "MAINTENANCE TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line: all five values must read 1.
+#
+#	HOW TO READ A ROW. `require` is what this country armies ask for, in thousands; `spares` is the
+#	free stockpile; `ratio` is spares over require. The floor arms under the arm bar and is released
+#	over the release bar - the two bars are printed on the `bars :` line. A row with require = 0 is a
+#	country whose templates do not mount that equipment: no floor is owed, and that is not a fault.
+#
+#	TWO REASONS A ROW CAN BE MAINTAINED, and the report does not distinguish them for you:
+#	the four CHASSIS rows also require every armour line to be closed (WA closes them); the six
+#	SUPPORT rows have no line to close, so the shortage is their whole gate. Amtrac is a support row
+#	that does carry a closure term, because peace closes its line.
+#
+#	WHAT TO FIRE IT ON
+#	------------------
+#		any AI major at war       the support rows are the interesting ones - a 200-division army is
+#		                          where anti-tank and heavy artillery run dry. The chassis rows
+#		                          should read floor 0 while its armour lines are open: that is the
+#		                          CONTROL for the exclusivity invariant
+#		a minor that built tanks then fell under 150 mils with no mobile_warfare_drive_tech
+#		                          use_armor_templates goes false, every class decision closes, the
+#		                          divisions still require chassis: chassis rows maintained
+#		a conquered / collapsed major with tanks still in its armies
+#		                          same shape from the other direction
+#		USA or JAP at peace       the amtrac case: build_amphibious_mech carries has_war, so peace
+#		                          closes the line and takes its 3/8/15 floors with it while the
+#		                          marine divisions keep their amtracs
+#		any country in 1936       require is small and spares are full: every row floor 0. The
+#		                          control that answers "no maintenance factories in 1936"
+#
+#	Effects: common/scripted_effects/WA_TEST_maintenance.txt.
+#	Design: documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md. Marker: [maintenance-floor].
+############################################################################################################
+
+add_namespace = wa_maint
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_maint.1
+	title = wa_maint.1.t
+	desc = wa_maint.1.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_MAINT_report = yes
+	}
+
+	option = { name = wa_maint.1.a }
+}
+
+# Fan-out: one report per AI country with an army (contract rule 5 - per-country firing). Gated so
+# the log is not eighty countries of zero rows.
+country_event = {
+	id = wa_maint.2
+	title = wa_maint.2.t
+	desc = wa_maint.2.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_ai = yes
+				num_divisions > 10
+			}
+			country_event = { id = wa_maint.1 }
+		}
+	}
+
+	option = { name = wa_maint.2.a }
+}
+
+# Field probe on ROOT - the two engine facts script cannot decide.
+country_event = {
+	id = wa_maint.3
+	title = wa_maint.3.t
+	desc = wa_maint.3.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_MAINT_probe_field = yes
+	}
+
+	option = { name = wa_maint.3.a }
+}

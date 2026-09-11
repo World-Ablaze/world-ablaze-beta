@@ -1,0 +1,313 @@
+############################################################################################################
+#	World Ablaze - MAINTENANCE FLOOR console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[maintenance-floor] Instrument for the land maintenance floors: which equipment archetypes are
+#	MAINTAINED (free spares short against what the armies require), at what floor, and whether the
+#	shipped decisions agree with a walk that re-derives the ratio from its own terms. Nothing in a
+#	savegame names an ai_strategy block, so the only way to see the gate is to print it.
+#
+#	Recipe: events/wa_test_maintenance.txt header. Fire `event wa_maint.1 GER` from ANY tag - do NOT
+#	tag into the country under test (tag-switching makes it human and is_ai reads no).
+#	Output: logs/game.log, "MAINTENANCE TEST".
+#
+#	Section B prints one row per archetype: what the armies REQUIRE, the free spares, the ratio
+#	between them, and the floor that follows. Section C re-derives the ratio independently for one
+#	key (contract rule 4). Section D is the verdict.
+#
+#	READ THE VERDICT LINE AT THE BOTTOM. All five values must read 1.
+############################################################################################################
+
+WA_TEST_MAINT_report = {
+
+	log = "=== MAINTENANCE TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _mnt_e1_ = 0 }
+	set_temp_variable = { _mnt_e2_ = 0 }
+	set_temp_variable = { _mnt_e3_ = 0 }
+	set_temp_variable = { _mnt_e4_ = 0 }
+	set_temp_variable = { _mnt_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _mnt_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _mnt_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _mnt_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _mnt_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _mnt_e5_ = 1 } }
+	log = "  scope : always=[?_mnt_e1_|.0]  I-am-ROOT=[?_mnt_e2_|.0]  I-am-THIS=[?_mnt_e3_|.0]  ROOT-scope-usable=[?_mnt_e4_|.0]  control-false=[?_mnt_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	############################################################
+	# A. Inputs
+	############################################################
+
+	set_temp_variable = { _mnt_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _mnt_ai = 1 } }
+	set_temp_variable = { _mnt_mils = num_of_military_factories }
+	set_temp_variable = { _mnt_en = constant:wa_ai_production.maintenance.shortage_enable }
+	set_temp_variable = { _mnt_ab = constant:wa_ai_production.maintenance.shortage_abort }
+	set_temp_variable = { _mnt_tm = constant:wa_ai_production.maintenance.target_min_k }
+	set_temp_variable = { _mnt_fb = constant:wa_ai_production.maintenance.floor_base }
+	set_temp_variable = { _mnt_fd = constant:wa_ai_production.maintenance.floor_deep_add }
+	set_temp_variable = { _mnt_gb = constant:wa_ai_production.maintenance.ground_floor_base }
+	set_temp_variable = { _mnt_gd = constant:wa_ai_production.maintenance.ground_floor_deep_add }
+	set_temp_variable = { _mnt_push = 0 }
+	if = { limit = { WA_AI_PRODUCTION_armor_category_push = yes } set_temp_variable = { _mnt_push = 1 } }
+	log = "  inputs: is_ai=[?_mnt_ai|.0]  mils=[?_mnt_mils|.0]  armor_category_push=[?_mnt_push|.0]"
+	log = "  bars  : arm<[?_mnt_en|.2]  release>[?_mnt_ab|.2]  target_min_k=[?_mnt_tm|.2]  floor armour [?_mnt_fb|.0]+[?_mnt_fd|.0]  ground [?_mnt_gb|.0]+[?_mnt_gd|.0]"
+
+	############################################################
+	# B. One row per archetype. ratio = free spares / what the armies require.
+	#    require 0 = this country templates do not ask for it: no floor is owed, not a fault.
+	############################################################
+
+	set_temp_variable = { _mnt_n = 0 }
+	set_temp_variable = { _mnt_sum = 0 }
+	set_temp_variable = { _mnt_ok_schmitt = 1 }
+	set_temp_variable = { _mnt_ok_excl = 1 }
+	set_temp_variable = { _mnt_ok_use = 1 }
+	set_temp_variable = { _mnt_ok_deep = 1 }
+
+	set_temp_variable = { _mnt_lt_t = num_target_equipment_in_armies_k@light_tank_chassis }
+	set_temp_variable = { _mnt_lt_s = num_equipment@light_tank_chassis }
+	set_temp_variable = { _mnt_lt_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_lt_t > 0 } }
+		set_temp_variable = { _mnt_lt_r = _mnt_lt_s }
+		divide_temp_variable = { _mnt_lt_r = 1000 }
+		divide_temp_variable = { _mnt_lt_r = _mnt_lt_t }
+	}
+	set_temp_variable = { _mnt_lt_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } set_temp_variable = { _mnt_lt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes } add_to_temp_variable = { _mnt_lt_f = _mnt_fd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_lt_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_light_tank_short = yes WA_AI_PRODUCTION_is_light_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes WA_AI_PRODUCTION_build_light_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	log = "  light_tank      : require=[?_mnt_lt_t|.2]k  spares=[?_mnt_lt_s|.0]  ratio=[?_mnt_lt_r|.2]  -> floor=[?_mnt_lt_f|.0]"
+
+	set_temp_variable = { _mnt_mt_t = num_target_equipment_in_armies_k@medium_tank_chassis }
+	set_temp_variable = { _mnt_mt_s = num_equipment@medium_tank_chassis }
+	set_temp_variable = { _mnt_mt_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_mt_t > 0 } }
+		set_temp_variable = { _mnt_mt_r = _mnt_mt_s }
+		divide_temp_variable = { _mnt_mt_r = 1000 }
+		divide_temp_variable = { _mnt_mt_r = _mnt_mt_t }
+	}
+	set_temp_variable = { _mnt_mt_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } set_temp_variable = { _mnt_mt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes } add_to_temp_variable = { _mnt_mt_f = _mnt_fd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_mt_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_medium_tank_short = yes WA_AI_PRODUCTION_is_medium_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes WA_AI_PRODUCTION_build_medium_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	log = "  medium_tank     : require=[?_mnt_mt_t|.2]k  spares=[?_mnt_mt_s|.0]  ratio=[?_mnt_mt_r|.2]  -> floor=[?_mnt_mt_f|.0]"
+
+	set_temp_variable = { _mnt_ht_t = num_target_equipment_in_armies_k@heavy_tank_chassis }
+	set_temp_variable = { _mnt_ht_s = num_equipment@heavy_tank_chassis }
+	set_temp_variable = { _mnt_ht_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_ht_t > 0 } }
+		set_temp_variable = { _mnt_ht_r = _mnt_ht_s }
+		divide_temp_variable = { _mnt_ht_r = 1000 }
+		divide_temp_variable = { _mnt_ht_r = _mnt_ht_t }
+	}
+	set_temp_variable = { _mnt_ht_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes } set_temp_variable = { _mnt_ht_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes } add_to_temp_variable = { _mnt_ht_f = _mnt_fd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_ht_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_heavy_tank_short = yes WA_AI_PRODUCTION_is_heavy_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes WA_AI_PRODUCTION_build_heavy_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	log = "  heavy_tank      : require=[?_mnt_ht_t|.2]k  spares=[?_mnt_ht_s|.0]  ratio=[?_mnt_ht_r|.2]  -> floor=[?_mnt_ht_f|.0]"
+
+	set_temp_variable = { _mnt_xt_t = num_target_equipment_in_armies_k@modern_tank_chassis }
+	set_temp_variable = { _mnt_xt_s = num_equipment@modern_tank_chassis }
+	set_temp_variable = { _mnt_xt_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_xt_t > 0 } }
+		set_temp_variable = { _mnt_xt_r = _mnt_xt_s }
+		divide_temp_variable = { _mnt_xt_r = 1000 }
+		divide_temp_variable = { _mnt_xt_r = _mnt_xt_t }
+	}
+	set_temp_variable = { _mnt_xt_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes } set_temp_variable = { _mnt_xt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes } add_to_temp_variable = { _mnt_xt_f = _mnt_fd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_xt_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_modern_tank_short = yes WA_AI_PRODUCTION_is_modern_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes WA_AI_PRODUCTION_build_modern_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	log = "  modern_tank     : require=[?_mnt_xt_t|.2]k  spares=[?_mnt_xt_s|.0]  ratio=[?_mnt_xt_r|.2]  -> floor=[?_mnt_xt_f|.0]"
+
+	set_temp_variable = { _mnt_at_t = num_target_equipment_in_armies_k@anti_tank_equipment }
+	set_temp_variable = { _mnt_at_s = num_equipment@anti_tank_equipment }
+	set_temp_variable = { _mnt_at_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_at_t > 0 } }
+		set_temp_variable = { _mnt_at_r = _mnt_at_s }
+		divide_temp_variable = { _mnt_at_r = 1000 }
+		divide_temp_variable = { _mnt_at_r = _mnt_at_t }
+	}
+	set_temp_variable = { _mnt_at_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes } set_temp_variable = { _mnt_at_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_tank_maintenance = yes } add_to_temp_variable = { _mnt_at_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_at_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_anti_tank_short = yes WA_AI_PRODUCTION_is_anti_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	log = "  anti_tank       : require=[?_mnt_at_t|.2]k  spares=[?_mnt_at_s|.0]  ratio=[?_mnt_at_r|.2]  -> floor=[?_mnt_at_f|.0]"
+
+	set_temp_variable = { _mnt_aa_t = num_target_equipment_in_armies_k@anti_air_equipment }
+	set_temp_variable = { _mnt_aa_s = num_equipment@anti_air_equipment }
+	set_temp_variable = { _mnt_aa_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_aa_t > 0 } }
+		set_temp_variable = { _mnt_aa_r = _mnt_aa_s }
+		divide_temp_variable = { _mnt_aa_r = 1000 }
+		divide_temp_variable = { _mnt_aa_r = _mnt_aa_t }
+	}
+	set_temp_variable = { _mnt_aa_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_anti_air = yes } set_temp_variable = { _mnt_aa_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_air_maintenance = yes } add_to_temp_variable = { _mnt_aa_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_aa_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_anti_air_short = yes WA_AI_PRODUCTION_is_anti_air_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_anti_air_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_anti_air = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	log = "  anti_air        : require=[?_mnt_aa_t|.2]k  spares=[?_mnt_aa_s|.0]  ratio=[?_mnt_aa_r|.2]  -> floor=[?_mnt_aa_f|.0]"
+
+	set_temp_variable = { _mnt_ha_t = num_target_equipment_in_armies_k@heavy_anti_air_equipment }
+	set_temp_variable = { _mnt_ha_s = num_equipment@heavy_anti_air_equipment }
+	set_temp_variable = { _mnt_ha_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_ha_t > 0 } }
+		set_temp_variable = { _mnt_ha_r = _mnt_ha_s }
+		divide_temp_variable = { _mnt_ha_r = 1000 }
+		divide_temp_variable = { _mnt_ha_r = _mnt_ha_t }
+	}
+	set_temp_variable = { _mnt_ha_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_anti_air = yes } set_temp_variable = { _mnt_ha_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_anti_air_maintenance = yes } add_to_temp_variable = { _mnt_ha_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_ha_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_heavy_anti_air_short = yes WA_AI_PRODUCTION_is_heavy_anti_air_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_anti_air_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_heavy_anti_air = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	log = "  heavy_anti_air  : require=[?_mnt_ha_t|.2]k  spares=[?_mnt_ha_s|.0]  ratio=[?_mnt_ha_r|.2]  -> floor=[?_mnt_ha_f|.0]"
+
+	set_temp_variable = { _mnt_hy_t = num_target_equipment_in_armies_k@heavy_artillery_equipment }
+	set_temp_variable = { _mnt_hy_s = num_equipment@heavy_artillery_equipment }
+	set_temp_variable = { _mnt_hy_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_hy_t > 0 } }
+		set_temp_variable = { _mnt_hy_r = _mnt_hy_s }
+		divide_temp_variable = { _mnt_hy_r = 1000 }
+		divide_temp_variable = { _mnt_hy_r = _mnt_hy_t }
+	}
+	set_temp_variable = { _mnt_hy_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_artillery = yes } set_temp_variable = { _mnt_hy_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_artillery_maintenance = yes } add_to_temp_variable = { _mnt_hy_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_hy_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_heavy_artillery_short = yes WA_AI_PRODUCTION_is_heavy_artillery_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_artillery_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_heavy_artillery = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	log = "  heavy_artillery : require=[?_mnt_hy_t|.2]k  spares=[?_mnt_hy_s|.0]  ratio=[?_mnt_hy_r|.2]  -> floor=[?_mnt_hy_f|.0]"
+
+	set_temp_variable = { _mnt_pk_t = num_target_equipment_in_armies_k@pack_artillery_equipment }
+	set_temp_variable = { _mnt_pk_s = num_equipment@pack_artillery_equipment }
+	set_temp_variable = { _mnt_pk_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_pk_t > 0 } }
+		set_temp_variable = { _mnt_pk_r = _mnt_pk_s }
+		divide_temp_variable = { _mnt_pk_r = 1000 }
+		divide_temp_variable = { _mnt_pk_r = _mnt_pk_t }
+	}
+	set_temp_variable = { _mnt_pk_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_pack_artillery = yes } set_temp_variable = { _mnt_pk_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_pack_artillery_maintenance = yes } add_to_temp_variable = { _mnt_pk_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_pk_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_pack_artillery_short = yes WA_AI_PRODUCTION_is_pack_artillery_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_pack_artillery_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_pack_artillery = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	log = "  pack_artillery  : require=[?_mnt_pk_t|.2]k  spares=[?_mnt_pk_s|.0]  ratio=[?_mnt_pk_r|.2]  -> floor=[?_mnt_pk_f|.0]"
+
+	set_temp_variable = { _mnt_am_t = num_target_equipment_in_armies_k@amphibious_mechanized_equipment }
+	set_temp_variable = { _mnt_am_s = num_equipment@amphibious_mechanized_equipment }
+	set_temp_variable = { _mnt_am_r = 0 }
+	if = {
+		limit = { check_variable = { _mnt_am_t > 0 } }
+		set_temp_variable = { _mnt_am_r = _mnt_am_s }
+		divide_temp_variable = { _mnt_am_r = 1000 }
+		divide_temp_variable = { _mnt_am_r = _mnt_am_t }
+	}
+	set_temp_variable = { _mnt_am_f = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_amtrac = yes } set_temp_variable = { _mnt_am_f = _mnt_gb } add_to_temp_variable = { _mnt_n = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_amtrac_maintenance = yes } add_to_temp_variable = { _mnt_am_f = _mnt_gd } }
+	add_to_temp_variable = { _mnt_sum = _mnt_am_f }
+	# Schmitt: short and supplied are two different bars, so they may never both hold.
+	if = { limit = { WA_AI_PRODUCTION_is_amtrac_short = yes WA_AI_PRODUCTION_is_amtrac_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_deepen_amtrac_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_amtrac = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_amtrac = yes WA_AI_PRODUCTION_build_amphibious_mech = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	log = "  amtrac          : require=[?_mnt_am_t|.2]k  spares=[?_mnt_am_s|.0]  ratio=[?_mnt_am_r|.2]  -> floor=[?_mnt_am_f|.0]"
+
+	log = "  totals: [?_mnt_n|.0] of 10 archetypes maintained, [?_mnt_sum|.0] factories requested in all"
+
+	############################################################
+	# C. Independent re-derivation of one key (contract rule 4).
+	#    Re-runs the anti-tank verdict from the numbers section B read, never calling the shipped
+	#    trigger. When B and C disagree the fault is in one of the two, not hidden between them.
+	############################################################
+
+	set_temp_variable = { _mnt_c_short = 0 }
+	if = {
+		limit = { check_variable = { _mnt_at_t > _mnt_tm } check_variable = { _mnt_at_r < _mnt_en } }
+		set_temp_variable = { _mnt_c_short = 1 }
+	}
+	set_temp_variable = { _mnt_b_short = 0 }
+	if = { limit = { WA_AI_PRODUCTION_is_anti_tank_short = yes } set_temp_variable = { _mnt_b_short = 1 } }
+	set_temp_variable = { _mnt_ok_agree = 0 }
+	if = { limit = { check_variable = { _mnt_b_short = _mnt_c_short } } set_temp_variable = { _mnt_ok_agree = 1 } }
+	log = "  C walk: anti_tank short - shipped=[?_mnt_b_short|.0]  re-derived=[?_mnt_c_short|.0]"
+
+	############################################################
+	# D. Verdict
+	#    agree      B and C ask the same question of anti-tank and get the same answer
+	#    schmitt    no key is both short and supplied - the two bars have not crossed
+	#    exclusive  no ARMOUR key is maintained while the armour category push is armed
+	#               (a need-blind floor under a raised demand double-counts)
+	#    useful     no key is maintained while its own build decision still holds
+	#    deep       the deep half never arms without the base half
+	############################################################
+
+	log = "  VERDICT: shipped-vs-walk=[?_mnt_ok_agree|.0]  schmitt-disjoint=[?_mnt_ok_schmitt|.0]  exclusive-with-category-push=[?_mnt_ok_excl|.0]  floor-is-useful=[?_mnt_ok_use|.0]  deep-implies-base=[?_mnt_ok_deep|.0]   (all five must read 1)"
+	log = "=== END MAINTENANCE TEST ==="
+}
+
+############################################################################################################
+#	FIELD PROBE - the two ASSUMED engine facts the floors rest on. Neither is decidable from script:
+#	fire this, then READ THE PRODUCTION PANEL of the country.
+#	(1) does a min_factories_archetype floor take factories on an archetype the engine perceives no
+#	    need for
+#	(2) do those factories land on the NEWEST producible variant (the AI walks the parent chain)
+#	Fire it on a country the report says is maintained, note the lines, wait a month, fire it again:
+#	the spares of a maintained archetype must GROW.
+############################################################################################################
+WA_TEST_MAINT_probe_field = {
+	log = "=== MAINTENANCE FIELD PROBE === [Root.GetName] [GetDateText]"
+	set_temp_variable = { _mnt_q1 = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes } set_temp_variable = { _mnt_q1 = 1 } }
+	set_temp_variable = { _mnt_q2 = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } set_temp_variable = { _mnt_q2 = 1 } }
+	set_temp_variable = { _mnt_q3 = num_equipment@anti_tank_equipment }
+	set_temp_variable = { _mnt_q4 = num_equipment@medium_tank_chassis }
+	log = "  gate  : anti_tank maintained=[?_mnt_q1|.0]  medium_tank maintained=[?_mnt_q2|.0]"
+	log = "  stock : anti_tank=[?_mnt_q3|.0]  medium_tank_chassis=[?_mnt_q4|.0]   (must GROW over the next month where the gate reads 1)"
+	log = "  NOW READ THE PRODUCTION PANEL: how many factories on each archetype, and which variant."
+	log = "=== END MAINTENANCE FIELD PROBE ==="
+}

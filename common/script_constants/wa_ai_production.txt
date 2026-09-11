@@ -238,4 +238,37 @@ wa_ai_production = {
 		tier_supermajor_mils = 199	# supermajor industry (old literal 190 / < 200)
 		tier_superpower_mils = 299	# superpower industry (old literals 299 / < 300)
 	}
+
+	# [maintenance-floor] The maintenance floors: a small factory allocation that keeps a fielded
+	# park supplied and modernising. Read by WA_AI_PRODUCTION_maintenance_triggers.txt.
+	#
+	# THE SHORTAGE IS MEASURED AS A RATIO, never as an absolute stock. The question is "how much
+	# spare equipment does this country hold against what its armies REQUIRE", which scales itself
+	# with army size - an absolute bar would be wrong for every country but the one it was tuned on.
+	# The denominator is `num_target_equipment_in_armies_k@<archetype>` (engine variable, MEASURED in
+	# the 1.19.2 install's documentation/dynamic_variables_documentation.md: "number of equipment
+	# required in armies of the country in thousands"); WA already reads it in
+	# WA_AI_MILITARY_posture_effects.txt and WA_AI_misc_effects.txt. Form and bars follow Expert AI
+	# 5.0's EAI_PROD_EQUIP_REDUCE_infantry_equipment, which runs the same ratio the other way round.
+	#
+	# enable / abort are a SCHMITT PAIR and must never be equal: the floor arms at `shortage_enable`
+	# and is held until `shortage_abort`. Collapse them and a park sitting on the bar toggles the
+	# block every evaluation.
+	# Assumes the engine keeps that variable per archetype; the fact is gone when a country whose
+	# templates clearly demand an equipment reads a target of 0 in the console harness.
+	maintenance = {
+		target_min_k    = 0.1	# the armies must require at least ~100 of it before a floor is owed
+		shortage_enable = 0.10	# arm: free spares under 10 % of what the armies require
+		shortage_abort  = 0.25	# release: spares back to 25 % - hysteresis, never equal to the above
+
+		# Floor sizes. Source of truth for every reader EXCEPT the `ai_strategy value =` literals,
+		# which cannot resolve `constant:` (wa-constants-registry) and are kept equal by hand.
+		# Armour is the deeper pair: a chassis is two orders of magnitude dearer than a towed gun
+		# (MEASURED build_cost_ic 200 per chassis), so one factory is a trickle there and a real
+		# flow for a support gun.
+		floor_base            = 2	# armour chassis
+		floor_deep_add        = 3	# added above industry.tier_large_mils -> 5
+		ground_floor_base     = 1	# support equipment
+		ground_floor_deep_add = 2	# -> 3
+	}
 }

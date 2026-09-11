@@ -1,0 +1,576 @@
+# ============================================================================
+# MAINTENANCE FLOORS - keeping a fielded park supplied when nothing else does
+# ============================================================================
+# [maintenance-floor] A small factory floor so a park that the AI has stopped expanding still
+# receives new equipment, and therefore still MODERNISES: at zero factories a mature park drives
+# the chassis and fires the guns it had when the line went quiet, for the rest of the campaign.
+# Design and measurements: documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md.
+#
+# TWO REASONS A PARK GOES UNSUPPLIED, and they need different gates:
+#   ARMOUR   WA itself closes the lines (the class ladder, the era boundary, a fielded cap). The
+#            four chassis keys below therefore carry the negation of their own build decision.
+#   GROUND   nothing closes anything - anti-tank, AA, heavy AA, heavy and pack artillery have no
+#            line to close and, before this file, no factory floor anywhere in the DEFAULT tier,
+#            so the engine's need heuristic alone decided whether they were built. Their gate is
+#            the shortage and nothing else. Amtrac is the exception: its line DOES close (peace),
+#            so it carries a closure term like the armour keys.
+#
+# THE SHORTAGE IS A RATIO, never an absolute stock: free spares over what the armies REQUIRE
+# (`num_target_equipment_in_armies_k@<archetype>`, engine variable, documented in the 1.19.2
+# install). It scales itself with army size, so no per-archetype stock bar has to be guessed. The
+# `if / else = { always = no }` wrapper is the division-by-zero guard and is the shape Expert AI 5.0
+# uses for the same computation (EAI_PROD_EQUIP_REDUCE_infantry_equipment).
+#
+# `_short` ARMS the floor, `_supplied` RELEASES it, at two different bars - a Schmitt pair read by
+# the `enable` and `abort` blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt.
+# `abort` is NOT the negation of `enable`: it must also fire when a closure term comes back, or a
+# reopened line would keep its floor. That is why every `_should_hold_*` repeats the closure terms.
+#
+# WHY THE CATEGORY PUSH IS NEGATED ON THE ARMOUR KEYS. `WA_AI_PRODUCTION_armor_category_push`
+# raises the engine's perceived NEED for armour; a floor FORCES allocation regardless of need. The
+# two together double-count, which is why the per-chassis floors were dropped once before
+# (`[armor-prod-category]`, WA_AI_PRODUCTION_DEFAULT_tanks.txt). Negating it makes them mutually
+# exclusive by construction: this floor can only run while that lever has nothing to multiply.
+#
+# ALSO FLOORED ELSEWHERE, and floors on one id SUM: `minor_unit_production` (POL/HUN/SWE) and the
+# CZE historical plan floor the `armor` TYPE; WA_AI_PRODUCTION_lend_lease.txt floors the `anti_tank`,
+# `anti_air` and `artillery` types on donors. Those countries maintain deeper. The harness prints it.
+# ============================================================================
+
+##################### light_tank (light_tank_chassis) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_light_tank_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@light_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_light_tank = num_equipment@light_tank_chassis }
+		divide_temp_variable = { _mnt_r_light_tank = 1000 }
+		divide_temp_variable = { _mnt_r_light_tank = num_target_equipment_in_armies_k@light_tank_chassis }
+		check_variable = { _mnt_r_light_tank < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_light_tank_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@light_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_light_tank = num_equipment@light_tank_chassis }
+		divide_temp_variable = { _mnt_r_light_tank = 1000 }
+		divide_temp_variable = { _mnt_r_light_tank = num_target_equipment_in_armies_k@light_tank_chassis }
+		check_variable = { _mnt_r_light_tank > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_light_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_light_tank_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_light_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_light_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_light_tank_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_light_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_light_tank_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_light_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### medium_tank (medium_tank_chassis) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_medium_tank_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@medium_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_medium_tank = num_equipment@medium_tank_chassis }
+		divide_temp_variable = { _mnt_r_medium_tank = 1000 }
+		divide_temp_variable = { _mnt_r_medium_tank = num_target_equipment_in_armies_k@medium_tank_chassis }
+		check_variable = { _mnt_r_medium_tank < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_medium_tank_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@medium_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_medium_tank = num_equipment@medium_tank_chassis }
+		divide_temp_variable = { _mnt_r_medium_tank = 1000 }
+		divide_temp_variable = { _mnt_r_medium_tank = num_target_equipment_in_armies_k@medium_tank_chassis }
+		check_variable = { _mnt_r_medium_tank > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_medium_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_medium_tank_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_medium_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_medium_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_medium_tank_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_medium_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_medium_tank_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_medium_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### heavy_tank (heavy_tank_chassis) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_heavy_tank_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_tank = num_equipment@heavy_tank_chassis }
+		divide_temp_variable = { _mnt_r_heavy_tank = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_tank = num_target_equipment_in_armies_k@heavy_tank_chassis }
+		check_variable = { _mnt_r_heavy_tank < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_heavy_tank_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_tank = num_equipment@heavy_tank_chassis }
+		divide_temp_variable = { _mnt_r_heavy_tank = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_tank = num_target_equipment_in_armies_k@heavy_tank_chassis }
+		check_variable = { _mnt_r_heavy_tank > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_heavy_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_heavy_tank_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_heavy_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_heavy_tank_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_heavy_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_heavy_tank_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### modern_tank (modern_tank_chassis) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_modern_tank_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@modern_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_modern_tank = num_equipment@modern_tank_chassis }
+		divide_temp_variable = { _mnt_r_modern_tank = 1000 }
+		divide_temp_variable = { _mnt_r_modern_tank = num_target_equipment_in_armies_k@modern_tank_chassis }
+		check_variable = { _mnt_r_modern_tank < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_modern_tank_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@modern_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_modern_tank = num_equipment@modern_tank_chassis }
+		divide_temp_variable = { _mnt_r_modern_tank = 1000 }
+		divide_temp_variable = { _mnt_r_modern_tank = num_target_equipment_in_armies_k@modern_tank_chassis }
+		check_variable = { _mnt_r_modern_tank > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_modern_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_modern_tank_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_modern_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
+	NOT = { WA_AI_PRODUCTION_build_modern_armor = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_modern_tank_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_modern_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_modern_tank_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_modern_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### anti_tank (anti_tank_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_anti_tank_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@anti_tank_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_anti_tank = num_equipment@anti_tank_equipment }
+		divide_temp_variable = { _mnt_r_anti_tank = 1000 }
+		divide_temp_variable = { _mnt_r_anti_tank = num_target_equipment_in_armies_k@anti_tank_equipment }
+		check_variable = { _mnt_r_anti_tank < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_anti_tank_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@anti_tank_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_anti_tank = num_equipment@anti_tank_equipment }
+		divide_temp_variable = { _mnt_r_anti_tank = 1000 }
+		divide_temp_variable = { _mnt_r_anti_tank = num_target_equipment_in_armies_k@anti_tank_equipment }
+		check_variable = { _mnt_r_anti_tank > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_anti_tank = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_anti_tank_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_anti_tank = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_anti_tank_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_anti_tank_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_anti_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_anti_tank_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_anti_tank = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### anti_air (anti_air_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_anti_air_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@anti_air_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_anti_air = num_equipment@anti_air_equipment }
+		divide_temp_variable = { _mnt_r_anti_air = 1000 }
+		divide_temp_variable = { _mnt_r_anti_air = num_target_equipment_in_armies_k@anti_air_equipment }
+		check_variable = { _mnt_r_anti_air < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_anti_air_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@anti_air_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_anti_air = num_equipment@anti_air_equipment }
+		divide_temp_variable = { _mnt_r_anti_air = 1000 }
+		divide_temp_variable = { _mnt_r_anti_air = num_target_equipment_in_armies_k@anti_air_equipment }
+		check_variable = { _mnt_r_anti_air > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_anti_air = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_anti_air_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_anti_air = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_anti_air_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_anti_air_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_anti_air = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_anti_air_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_anti_air = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### heavy_anti_air (heavy_anti_air_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_heavy_anti_air_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_anti_air_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_anti_air = num_equipment@heavy_anti_air_equipment }
+		divide_temp_variable = { _mnt_r_heavy_anti_air = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_anti_air = num_target_equipment_in_armies_k@heavy_anti_air_equipment }
+		check_variable = { _mnt_r_heavy_anti_air < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_heavy_anti_air_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_anti_air_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_anti_air = num_equipment@heavy_anti_air_equipment }
+		divide_temp_variable = { _mnt_r_heavy_anti_air = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_anti_air = num_target_equipment_in_armies_k@heavy_anti_air_equipment }
+		check_variable = { _mnt_r_heavy_anti_air > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_anti_air = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_heavy_anti_air_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_anti_air = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_heavy_anti_air_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_heavy_anti_air_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_heavy_anti_air = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_heavy_anti_air_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_heavy_anti_air = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### heavy_artillery (heavy_artillery_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_heavy_artillery_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_artillery_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_artillery = num_equipment@heavy_artillery_equipment }
+		divide_temp_variable = { _mnt_r_heavy_artillery = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_artillery = num_target_equipment_in_armies_k@heavy_artillery_equipment }
+		check_variable = { _mnt_r_heavy_artillery < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_heavy_artillery_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_artillery_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_heavy_artillery = num_equipment@heavy_artillery_equipment }
+		divide_temp_variable = { _mnt_r_heavy_artillery = 1000 }
+		divide_temp_variable = { _mnt_r_heavy_artillery = num_target_equipment_in_armies_k@heavy_artillery_equipment }
+		check_variable = { _mnt_r_heavy_artillery > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_artillery = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_heavy_artillery_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_artillery = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_heavy_artillery_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_heavy_artillery_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_heavy_artillery = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_heavy_artillery_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_heavy_artillery = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### pack_artillery (pack_artillery_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_pack_artillery_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@pack_artillery_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_pack_artillery = num_equipment@pack_artillery_equipment }
+		divide_temp_variable = { _mnt_r_pack_artillery = 1000 }
+		divide_temp_variable = { _mnt_r_pack_artillery = num_target_equipment_in_armies_k@pack_artillery_equipment }
+		check_variable = { _mnt_r_pack_artillery < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_pack_artillery_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@pack_artillery_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_pack_artillery = num_equipment@pack_artillery_equipment }
+		divide_temp_variable = { _mnt_r_pack_artillery = 1000 }
+		divide_temp_variable = { _mnt_r_pack_artillery = num_target_equipment_in_armies_k@pack_artillery_equipment }
+		check_variable = { _mnt_r_pack_artillery > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_pack_artillery = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_pack_artillery_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_pack_artillery = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_pack_artillery_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_pack_artillery_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_pack_artillery = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_pack_artillery_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_pack_artillery = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+##################### amtrac (amphibious_mechanized_equipment) #####################
+
+# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
+WA_AI_PRODUCTION_is_amtrac_short = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@amphibious_mechanized_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_amtrac = num_equipment@amphibious_mechanized_equipment }
+		divide_temp_variable = { _mnt_r_amtrac = 1000 }
+		divide_temp_variable = { _mnt_r_amtrac = num_target_equipment_in_armies_k@amphibious_mechanized_equipment }
+		check_variable = { _mnt_r_amtrac < constant:wa_ai_production.maintenance.shortage_enable }
+	}
+	else = { always = no }
+}
+
+# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
+WA_AI_PRODUCTION_is_amtrac_supplied = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies_k@amphibious_mechanized_equipment > constant:wa_ai_production.maintenance.target_min_k } }
+		set_temp_variable = { _mnt_r_amtrac = num_equipment@amphibious_mechanized_equipment }
+		divide_temp_variable = { _mnt_r_amtrac = 1000 }
+		divide_temp_variable = { _mnt_r_amtrac = num_target_equipment_in_armies_k@amphibious_mechanized_equipment }
+		check_variable = { _mnt_r_amtrac > constant:wa_ai_production.maintenance.shortage_abort }
+	}
+	else = { always = no }
+}
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_amtrac = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_build_amphibious_mech = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	WA_AI_PRODUCTION_is_amtrac_short = yes
+}
+
+# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
+# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+WA_AI_PRODUCTION_should_hold_maintain_amtrac = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	NOT = { WA_AI_PRODUCTION_build_amphibious_mech = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	NOT = { WA_AI_PRODUCTION_is_amtrac_supplied = yes }
+}
+
+# DECISION - the deep half of the pair, above the large industry band.
+WA_AI_PRODUCTION_should_deepen_amtrac_maintenance = {
+	WA_AI_PRODUCTION_should_maintain_amtrac = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
+
+WA_AI_PRODUCTION_should_hold_deepen_amtrac_maintenance = {
+	WA_AI_PRODUCTION_should_hold_maintain_amtrac = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+}
