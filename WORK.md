@@ -173,6 +173,53 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### heavy-in-support — SHIPPED-UNTESTED (2026-09-12)
+- Owner order 2026-09-12 ("ajouter des bataillons de chars lourds en support dans les templates IA
+  de chars moyens et modernes", then option 2 = SUBSTITUTION over complement). Intended behaviour:
+  a country whose heavy chassis is the Tiger generation stops fielding heavy DIVISIONS and instead
+  carries one heavy tank company as divisional support inside every medium / modern armour
+  division, the way the schwere Panzer-Abteilung was attached to a panzer division.
+- MEASURED before the change: `heavy_armor_company_divisional` exists
+  (`common/units/armor_tanks.txt:388-447`, need 12 heavy_tank_chassis, combat_width 0,
+  `affects_speed = no`, `same_support_type = divisional_support_armor`, battalion_mult +0.2
+  armor_value on category_all_armor) and was referenced by ZERO ai_templates. 05_defines.lua:346-347
+  gives 10 divisional slots; of the 36 medium templates 22 used 9 and 14 used 10, and the
+  `divisional_support_armor` family was unused in all 36.
+- Change:
+  - `WA_AI_CONFIG_TEMPLATES_mounts_heavy_in_support` (CONFIG, body `has_tech =
+    ger_heavy_tank_chassis_3`) - the same term that already admits GER to `focus_on_heavy_armor`,
+    so both gates flip on one tick and no fielded heavy division is ever orphaned.
+  - `WA_AI_TEMPLATES_use_heavy_armor_support_templates` reads a one-way latch
+    (`WA_AI_TEMPLATES_update_heavy_support_latch`, wired before `calculate_templates` in both
+    on_actions) because `use_medium_armor_templates` is non-monotone.
+  - `WA_AI_TEMPLATES_use_heavy_armor_templates` gains `NOT = { ..._support_templates = yes }`: the
+    heavy-DIVISION role closes, so `WA_AI_PRODUCTION_build_army_heavy_armor` closes and the whole
+    armour budget goes to medium.
+  - `WA_AI_TEMPLATES_apply_heavy_support_mirror` (+20), applied before the waves (+100) and modern
+    (+500) mirrors. 36 twins hand-added to `WA_AI_TEMPLATES_armored_medium.txt`, 36 regenerated
+    into `_armored_medium_modern.txt` by `tools/gen/gen_ai_medium_modern_mirror.py`.
+  - Full-slot twins trade away `heavy_artillery_mot_company_divisional` - the same trade rungs
+    6111-6116 already make when they gain an armoured gun company.
+  - Production: new `WA_AI_PRODUCTION_should_build_heavy_armor_support` + a +20
+    `equipment_variant_production_factor` on heavy_tank_chassis, replacing the +60 that closes with
+    the role; `WA_AI_PRODUCTION_focus_on_heavy_armor` now excludes the support path so its +75 on
+    heavy TD / assault / infantry-support / artillery stops pushing equipment no template consumes.
+- Regression risk, DERIVED: nothing migrates, because GER only ever passed `focus_on_heavy_armor`
+  through `ger_heavy_tank_chassis_3` - the heavy role never opens for it, so there are no heavy
+  divisions to decommission. FRA / ENG / SOV are untouched (their admission terms are unchanged and
+  none is in the new CONFIG list). ASSUMED: the +20 production push covers 12 chassis per medium
+  division; too low and the companies sit unequipped, too high and it eats the medium line.
+- Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): owner runs
+  `WA_TEST_templates` and `WA_TEST_armor_budget` as a Tiger-era GER. Both now print the fifth gate
+  (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +20
+  band (60xx-6136 / 62xx-6236 / 65xx-6636 / 67xx-6736). `heavy=1` and `hvysup=1` together is the
+  defect: it means the NOT is not reading the latch.
+- Verification (campaign): a post-Tiger GER save holds zero heavy-armour divisions, and its medium
+  divisions carry `heavy_armor_company_divisional`; `WA_AI_ARMOR_BUDGET_heavy = 0` while
+  `WA_AI_ARMOR_BUDGET_medium` carries the share heavy used to take.
+- Closed when: the harness output above is pasted here, then one campaign shows a Tiger-era GER
+  medium division with the company and no heavy division.
+
 ### dead-template-spawns — OPEN (2026-09-11)
 - Owner order 2026-09-11 ("supprime armor 928 et GER_Norway, ENG_operation_husky_ai et ENG_sicily,
   corrige HUN_equip_the_rongyos_garda, refactorise MAN_expand_the_imperial_guards pour que l'IA
@@ -4566,6 +4613,45 @@ power capitulates.
 
 
 ## PARKED
+
+### ammo-slot-designs — PARKED (2026-09-12)
+- Parked for the WIP limit (OPEN is over budget already); the code is APPLIED and needs only the
+  boot check below. Owner ruling 2026-09-12: **the AI default ammunition is `_ap_he_apcr`.**
+- Symptom (MEASURED): `ammo_type_slot` is `required = yes` on every tank chassis
+  (`common/units/equipment/tank_chassis.txt`), but not one of the 541 AI tank designs in
+  `common/ai_equipment/*_tank.txt` named it. Vanilla's own designs name every slot, down to
+  `special_type_slot_N = empty` (install `common/ai_equipment/GER_tank.txt`). Whether the engine
+  falls back to the chassis `default_modules` or fails to build the design is ASSUMED - the boot
+  check decides it.
+- Implementation: `python tools/migrations/ammo_slot/fill_ammo_slot.py --apply` writes each
+  chassis' own `default_modules` ammo entry into `target_variant.modules` and into
+  `allowed_modules`. That resolves to APCR in 360 of 541 designs and to the best legal fallback in
+  the other 181, because `forbid_equipment_type` bars APCR from artillery (SPG), flame, amphibious
+  and anti_air, and there is no tiny-calibre APCR at all. MEASURED over all 541: the chassis
+  default is legal everywhere and is already APCR everywhere APCR is legal, so the owner ruling and
+  the chassis defaults agree with no exception. The same pass deletes 189 commented
+  `#special_type_slot_N = ammo_*` lines - ammo does not live in a special slot (those accept
+  `tank_special_module` / `tank_radio_module` only), so uncommenting one would break the match.
+- Impact: behaviour-neutral IF the engine was already falling back to `default_modules`; a
+  correction IF it was not. Either way the slot becomes the explicit anchor that a later shortage
+  system flips. No priority, trigger or gate was touched, so no design ranking moves.
+- Not in scope, deliberately: switching ammunition down on a tungsten shortage. The
+  `WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small/large` gates already exist
+  (`common/scripted_triggers/WA_AI_EQUIPMENT_triggers.txt`), but this same pattern shipped as
+  `88e516780` and failed all five probes on campaign `bec4d829` because `ai_equipment priority` is
+  the DESIGN layer, not the production-line layer. Whether the engine refits an existing line DOWN
+  a module is ASSUMED and unmeasured; measure it before writing that system. Same verdict for
+  `cutting_corners` and any future low-grade-alloy module, with one extra constraint: they are
+  `tank_special_module`, so they compete with the radio for `special_type_slot_1/2` - unlike
+  ammunition, which has its own dedicated slot.
+- Verification: boot the mod, confirm no `ai_equipment` parse error in `error.log`; then in a
+  campaign read one AI-designed variant per calibre family and confirm its ammunition module is the
+  one this pass wrote (APCR for a gun tank or TD, `ammo_*_ap_he` for an SPG or assault gun,
+  `ammo_*_aa_cannon` for an SPAA, `ammo_bullets` for a machine-gun light). A variant carrying no
+  ammunition module at all is the signature that the engine was NOT falling back to
+  `default_modules`, and makes this a real fix rather than hygiene.
+- Closed when: the boot check is clean and one campaign confirms the written module on a gun tank
+  and on an SPG.
 
 ### axis-minor-home-buffer — PARKED (2026-09-10)
 - Parked because the four OPEN slots are occupied. The implementation is committed as
