@@ -4567,6 +4567,45 @@ power capitulates.
 
 ## PARKED
 
+### ammo-slot-designs — PARKED (2026-09-12)
+- Parked for the WIP limit (OPEN is over budget already); the code is APPLIED and needs only the
+  boot check below. Owner ruling 2026-09-12: **the AI default ammunition is `_ap_he_apcr`.**
+- Symptom (MEASURED): `ammo_type_slot` is `required = yes` on every tank chassis
+  (`common/units/equipment/tank_chassis.txt`), but not one of the 541 AI tank designs in
+  `common/ai_equipment/*_tank.txt` named it. Vanilla's own designs name every slot, down to
+  `special_type_slot_N = empty` (install `common/ai_equipment/GER_tank.txt`). Whether the engine
+  falls back to the chassis `default_modules` or fails to build the design is ASSUMED - the boot
+  check decides it.
+- Implementation: `python tools/migrations/ammo_slot/fill_ammo_slot.py --apply` writes each
+  chassis' own `default_modules` ammo entry into `target_variant.modules` and into
+  `allowed_modules`. That resolves to APCR in 360 of 541 designs and to the best legal fallback in
+  the other 181, because `forbid_equipment_type` bars APCR from artillery (SPG), flame, amphibious
+  and anti_air, and there is no tiny-calibre APCR at all. MEASURED over all 541: the chassis
+  default is legal everywhere and is already APCR everywhere APCR is legal, so the owner ruling and
+  the chassis defaults agree with no exception. The same pass deletes 189 commented
+  `#special_type_slot_N = ammo_*` lines - ammo does not live in a special slot (those accept
+  `tank_special_module` / `tank_radio_module` only), so uncommenting one would break the match.
+- Impact: behaviour-neutral IF the engine was already falling back to `default_modules`; a
+  correction IF it was not. Either way the slot becomes the explicit anchor that a later shortage
+  system flips. No priority, trigger or gate was touched, so no design ranking moves.
+- Not in scope, deliberately: switching ammunition down on a tungsten shortage. The
+  `WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small/large` gates already exist
+  (`common/scripted_triggers/WA_AI_EQUIPMENT_triggers.txt`), but this same pattern shipped as
+  `88e516780` and failed all five probes on campaign `bec4d829` because `ai_equipment priority` is
+  the DESIGN layer, not the production-line layer. Whether the engine refits an existing line DOWN
+  a module is ASSUMED and unmeasured; measure it before writing that system. Same verdict for
+  `cutting_corners` and any future low-grade-alloy module, with one extra constraint: they are
+  `tank_special_module`, so they compete with the radio for `special_type_slot_1/2` - unlike
+  ammunition, which has its own dedicated slot.
+- Verification: boot the mod, confirm no `ai_equipment` parse error in `error.log`; then in a
+  campaign read one AI-designed variant per calibre family and confirm its ammunition module is the
+  one this pass wrote (APCR for a gun tank or TD, `ammo_*_ap_he` for an SPG or assault gun,
+  `ammo_*_aa_cannon` for an SPAA, `ammo_bullets` for a machine-gun light). A variant carrying no
+  ammunition module at all is the signature that the engine was NOT falling back to
+  `default_modules`, and makes this a real fix rather than hygiene.
+- Closed when: the boot check is clean and one campaign confirms the written module on a gun tank
+  and on an SPG.
+
 ### axis-minor-home-buffer — PARKED (2026-09-10)
 - Parked because the four OPEN slots are occupied. The implementation is committed as
   `SHIPPED-UNTESTED`; keep it parked until a slot frees up for the owner console run.
