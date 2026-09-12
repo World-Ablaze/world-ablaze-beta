@@ -46,6 +46,7 @@ TEMPLATE_DIR = REPO / "common" / "ai_templates"
 # second reachable value; a checker that ignores them reports every mirror target as orphaned.
 #   +100 : WA_AI_TEMPLATES_apply_motorized_hospital_mirror   [mot-field-hospital]
 #   +100 : WA_AI_TEMPLATES_apply_armoured_waves_mirror       [armoured-waves]
+#   + 20 : WA_AI_TEMPLATES_apply_heavy_support_mirror        [heavy-in-support]
 #   +500 : add_to_temp_variable = { _template_value = _tier_offset }   [modern-chassis-tier]
 # The two +100 levers attach differently and must not be modelled the same way: the hospital
 # mirror is called INSIDE a branch and rewrites that branch's value, while the waves mirror is
@@ -55,6 +56,11 @@ HOSPITAL_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_motorized_hospital_mirror"
 HOSPITAL_MIRROR_OFFSET = 100
 WAVES_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_armoured_waves_mirror"
 WAVES_MIRROR_OFFSET = 100
+# [heavy-in-support] the third rewriting effect. Unlike the two above it has NO floor: it
+# twins every value the ladder can leave, because the same flag closes the heavy-division
+# role and a value without a twin would leave the country with neither.
+HEAVY_SUPPORT_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_heavy_support_mirror"
+HEAVY_SUPPORT_MIRROR_OFFSET = 20
 TIER_OFFSET = 500
 
 # A unit name carries the slot it belongs to as its last word, and the convention holds without a
@@ -444,6 +450,16 @@ def waves_mirror_floor(block):
     return None
 
 
+def calls_heavy_support_mirror(block):
+    """True when this calculator can add the +20 heavy-support twin anywhere in its body."""
+    for n in block:
+        if n.key == HEAVY_SUPPORT_MIRROR_EFFECT:
+            return True
+        if n.block and calls_heavy_support_mirror(n.block):
+            return True
+    return False
+
+
 def sets_tier_offset(block):
     """True when this calculator can add the +500 chassis tier anywhere in its body."""
     for n in block:
@@ -582,6 +598,10 @@ def run(root):
         walk_values(calc.block, set(), written, mirrors, sink)
         vals = {v for v, _, _ in written if v != 0}
         vals |= {v + HOSPITAL_MIRROR_OFFSET for v in mirrors if v != 0}
+        # [heavy-in-support] first, exactly as the ladder applies it: the twin must stay inside
+        # the band the waves floor names, and the tier offset is flat either way.
+        if calls_heavy_support_mirror(calc.block):
+            vals |= {v + HEAVY_SUPPORT_MIRROR_OFFSET for v in set(vals)}
         # [armoured-waves] before the tier offset, exactly as the ladder applies it: after +500
         # the floor would admit 6500 and turn the 20-width modern twin into the 30-width one.
         waves_floor = waves_mirror_floor(calc.block)

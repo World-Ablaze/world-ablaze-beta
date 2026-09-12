@@ -243,6 +243,35 @@ WA_AI_TEMPLATES_apply_armoured_waves_mirror = {
 	}
 }
 
+# [heavy-in-support] One-way latch: same reason as the four latches above - the flag decides WHICH
+# ai_template is enabled, and a gate that flickers re-runs the engine's template decommission pass.
+# use_medium_armor_templates is the non-monotone term (it falls under the early-expansion override).
+# It is also the flag the heavy-DIVISION gate reads through its NOT, so both sides flip on one tick.
+WA_AI_TEMPLATES_update_heavy_support_latch = {
+	if = {
+		limit = {
+			NOT = { has_country_flag = WA_AI_TEMPLATES_heavy_support_earned }
+			WA_AI_TEMPLATES_use_medium_armor_templates = yes
+			WA_AI_TEMPLATES_has_heavy_armor_unlocked = yes
+			WA_AI_CONFIG_TEMPLATES_mounts_heavy_in_support = yes
+		}
+		set_country_flag = WA_AI_TEMPLATES_heavy_support_earned
+	}
+}
+
+# [heavy-in-support] +20 turns any medium target into its twin carrying one
+# heavy_armor_company_divisional. Applied to EVERY value the ladder can leave, 20-width included -
+# unlike the waves mirror there is no floor, because the heavy-division role closes on the same
+# flag and a value with no twin would leave the country with neither. Call it BEFORE the waves
+# mirror and BEFORE the modern offset: 6116 -> 6136 -> 6236 -> 6736, and the 20-width 6020 stays
+# under the waves floor of 6099 so the +100 never reaches it.
+WA_AI_TEMPLATES_apply_heavy_support_mirror = {
+	if = {
+		limit = { WA_AI_TEMPLATES_use_heavy_armor_support_templates = yes }
+		add_to_temp_variable = { _template_value = 20 }
+	}
+}
+
 # [mech-window] One-way latch: once the mechanization window has opened it never closes.
 # Same reason as the four latches above - the flag decides WHICH ai_template is enabled, and a
 # gate that flickers re-runs the engine's template decommission pass. The window's GER branch
@@ -1269,6 +1298,14 @@ WA_AI_TEMPLATES_calculate_medium_armor_template = {
 		}
 		set_temp_variable = { _template_value = 6100 }
 		set_temp_variable = { _template_claimed = 1 }
+	}
+	# [heavy-in-support] the heavy SUPPORT COMPANY, applied first so the two mirrors below still see
+	# the band they name: 61xx stays above the waves floor as 61xx+20, and the chassis offset is a
+	# flat +500 either way. Guarded on non-zero so a blocked role stays blocked instead of becoming
+	# value 20.
+	if = {
+		limit = { NOT = { check_variable = { _template_value = 0 } } }
+		WA_AI_TEMPLATES_apply_heavy_support_mirror = yes
 	}
 	# [armoured-waves] the wave COMPOSITION, applied before the chassis offset so the guard can
 	# name the 30-width band by value. Excludes 6000/6001 (20 width, no twin) and 0 (blocked role).

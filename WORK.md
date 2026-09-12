@@ -173,6 +173,53 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### heavy-in-support — SHIPPED-UNTESTED (2026-09-12)
+- Owner order 2026-09-12 ("ajouter des bataillons de chars lourds en support dans les templates IA
+  de chars moyens et modernes", then option 2 = SUBSTITUTION over complement). Intended behaviour:
+  a country whose heavy chassis is the Tiger generation stops fielding heavy DIVISIONS and instead
+  carries one heavy tank company as divisional support inside every medium / modern armour
+  division, the way the schwere Panzer-Abteilung was attached to a panzer division.
+- MEASURED before the change: `heavy_armor_company_divisional` exists
+  (`common/units/armor_tanks.txt:388-447`, need 12 heavy_tank_chassis, combat_width 0,
+  `affects_speed = no`, `same_support_type = divisional_support_armor`, battalion_mult +0.2
+  armor_value on category_all_armor) and was referenced by ZERO ai_templates. 05_defines.lua:346-347
+  gives 10 divisional slots; of the 36 medium templates 22 used 9 and 14 used 10, and the
+  `divisional_support_armor` family was unused in all 36.
+- Change:
+  - `WA_AI_CONFIG_TEMPLATES_mounts_heavy_in_support` (CONFIG, body `has_tech =
+    ger_heavy_tank_chassis_3`) - the same term that already admits GER to `focus_on_heavy_armor`,
+    so both gates flip on one tick and no fielded heavy division is ever orphaned.
+  - `WA_AI_TEMPLATES_use_heavy_armor_support_templates` reads a one-way latch
+    (`WA_AI_TEMPLATES_update_heavy_support_latch`, wired before `calculate_templates` in both
+    on_actions) because `use_medium_armor_templates` is non-monotone.
+  - `WA_AI_TEMPLATES_use_heavy_armor_templates` gains `NOT = { ..._support_templates = yes }`: the
+    heavy-DIVISION role closes, so `WA_AI_PRODUCTION_build_army_heavy_armor` closes and the whole
+    armour budget goes to medium.
+  - `WA_AI_TEMPLATES_apply_heavy_support_mirror` (+20), applied before the waves (+100) and modern
+    (+500) mirrors. 36 twins hand-added to `WA_AI_TEMPLATES_armored_medium.txt`, 36 regenerated
+    into `_armored_medium_modern.txt` by `tools/gen/gen_ai_medium_modern_mirror.py`.
+  - Full-slot twins trade away `heavy_artillery_mot_company_divisional` - the same trade rungs
+    6111-6116 already make when they gain an armoured gun company.
+  - Production: new `WA_AI_PRODUCTION_should_build_heavy_armor_support` + a +20
+    `equipment_variant_production_factor` on heavy_tank_chassis, replacing the +60 that closes with
+    the role; `WA_AI_PRODUCTION_focus_on_heavy_armor` now excludes the support path so its +75 on
+    heavy TD / assault / infantry-support / artillery stops pushing equipment no template consumes.
+- Regression risk, DERIVED: nothing migrates, because GER only ever passed `focus_on_heavy_armor`
+  through `ger_heavy_tank_chassis_3` - the heavy role never opens for it, so there are no heavy
+  divisions to decommission. FRA / ENG / SOV are untouched (their admission terms are unchanged and
+  none is in the new CONFIG list). ASSUMED: the +20 production push covers 12 chassis per medium
+  division; too low and the companies sit unequipped, too high and it eats the medium line.
+- Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): owner runs
+  `WA_TEST_templates` and `WA_TEST_armor_budget` as a Tiger-era GER. Both now print the fifth gate
+  (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +20
+  band (60xx-6136 / 62xx-6236 / 65xx-6636 / 67xx-6736). `heavy=1` and `hvysup=1` together is the
+  defect: it means the NOT is not reading the latch.
+- Verification (campaign): a post-Tiger GER save holds zero heavy-armour divisions, and its medium
+  divisions carry `heavy_armor_company_divisional`; `WA_AI_ARMOR_BUDGET_heavy = 0` while
+  `WA_AI_ARMOR_BUDGET_medium` carries the share heavy used to take.
+- Closed when: the harness output above is pasted here, then one campaign shows a Tiger-era GER
+  medium division with the company and no heavy division.
+
 ### dead-template-spawns — OPEN (2026-09-11)
 - Owner order 2026-09-11 ("supprime armor 928 et GER_Norway, ENG_operation_husky_ai et ENG_sicily,
   corrige HUN_equip_the_rongyos_garda, refactorise MAN_expand_the_imperial_guards pour que l'IA
