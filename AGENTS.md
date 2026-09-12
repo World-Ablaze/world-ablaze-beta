@@ -197,6 +197,7 @@ Use this table to find the existing source of truth before adding new logic.
 | `_GENERATED_` localisation files | Existing generator workflow for their corresponding content |
 | `.claude/skills/wa-constants-registry/references/registry.md` | `python tools/check_constants.py --markdown` from `tools/constants_registry.json` |
 | `tools/ai_layers_baseline.json` | `python tools/check_ai_layers.py --update-baseline` (ratchet reference counts of the layer checker) |
+| the `__wa` / `__la` / `__wa_la` (and `__cc_*`) design twins in `common/ai_equipment/*_tank.txt`, and the `NOT = { WA_AI_EQUIPMENT_should_mount_* }` enable terms on their base designs | `tools/gen/gen_grade_pairs.py` (`--dry-run` / `--check` / `--apply` / `--remove`). Twins are a COPY of the base as it stands: run it AFTER any `tools/equipment_evaluator` apply, never edit a twin (`# [resource-grade-downshift] GENERATED` line); `--check` fails on drift |
 
 Generators live in `tools/gen/` and resolve the mod root from their own location, so they run from any directory:
 

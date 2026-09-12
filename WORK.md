@@ -4614,6 +4614,130 @@ power capitulates.
 
 ## PARKED
 
+### resource-grade-downshift — PARKED (2026-09-12)
+- Parked heading only for the WIP limit (7 under OPEN for 4). **Owner boot 2026-09-12: OK, no
+  parse error; COMMITTED + PUSHED on owner order ("boot ok, commit et push").** The console run
+  below (DOWN / UP legs) is still OWED before this is anything but a hypothesis. Owner order 2026-09-12: "l'IA doit passer à weakened armor / réduire la
+  qualité des munitions en fonction des déficits de ressources (et une mécanique anti-hystérésis)".
+- Intended behaviour: an AI country whose net chromium (tungsten) balance sits below −1 for two
+  consecutive monthly pulses redesigns its tanks with `tank_weakened_armor` (the non-APCR shell:
+  `_ap_he` / `_hefit`), the production lines follow, and it redesigns BACK once the economy has
+  held equilibrium — without oscillating. Modules MEASURED (`01_generic_tank_modules.txt`):
+  strong armour = chromium 1/unit, APCR = tungsten 1..5/unit; the weak grades cost no resource
+  (weak armour: hardness −0.2, breakthrough −5 and ×−0.5, max_strength ×−0.8 — the −80 % is a
+  modder value, flagged; non-APCR shell: breakthrough ×−0.4, hard_attack ×−0.5).
+- Mechanism (the only one MEASURED to move a variant's modules, `sov-cutting-corners-module`):
+  enable-EXCLUSIVE design twins + the `equipment_variant` XP lever. `tools/gen/gen_grade_pairs.py`
+  writes, for each of the 541 base designs (39 `__cc` designs included), `NOT = { should_mount_* }`
+  terms and the twins `__wa`, `__la` (370 APCR designs only), `__wa_la` — 1281 twins, partition
+  asserted by the tool (exactly one enabled design per type per state), every twin's modules and
+  polarity verified against its base (1281/1281). Twins are a COPY of the base and carry no
+  `WA_EQUIPGEN` markers: regenerate after any evaluator apply (`--check` fails on drift).
+  `tools/equipment_evaluator/parse_ai_equipment.py` skips the twins (they squared its transition
+  table: 2924 twin rows in the first dry analysis); the tanks analysis runs clean (exit 0) after it.
+- Latch (`WA_AI_EQUIPMENT_update_shortage_latch_<r>`, `WA_AI_EQUIPMENT_effects.txt`, monthly):
+  ENTER = two consecutive pulses with `resource@<r> < −1` (45-day armed flag). EXIT = dwell
+  elapsed AND two consecutive pulses with no deficit (45-day recover flag). Dwell = 6 months,
+  doubled on every re-entry, capped at 24. Every transition opens a 120-day flag that arms
+  `land_xp_spend_priority id = equipment_variant value = 500` (new tag-free block
+  `WA_AI_PRODUCTION_DEFAULT_equipment_grade.txt`, which also absorbs SOV's cc lever — one writer
+  of that type+id, ORed gates, no stacking question). Triggers: `WA_AI_EQUIPMENT_has_<r>_deficit`
+  (Tier 1), `WA_AI_EQUIPMENT_should_mount_weak_armor` / `_low_ammo` / `_should_spend_xp_on_grade_redesign`
+  (Tier 2). Fail-safe: no pulse (human) = no flag = strong grade.
+- Reviews 2026-09-12: lessons CONFLICT → repaired: the first draft exited on
+  `can_absorb_<r>_shock_large` (net > 15), unreachable for an importer because the trade AI buys
+  to equilibrium and never past it (lessons-log "trade AI never builds a reserve"); exit is now
+  equilibrium-based, and the reachability line is written in the effect header (the flip removes
+  the draw, so both branches return to "no deficit"; a return the economy cannot carry re-trips
+  after two months and doubles the dwell). Architecture CONCERNS → repaired: tool moved to
+  `tools/gen/` with the ORDER rule in AGENTS.md, SOV lever folded, both file headers updated,
+  compound qualifiers in the naming vocabulary, `gdn_flip_n` writers documented (drivers bypass
+  it). Pre-existing on the clean tree, NOT this subject: `check_ai_layers` NAME-COLLISION
+  `is_strategic_chromium_exporter` (CONFIG vs WA_AI_ twin) — owner to name or rename.
+- Timeline at the real cadences (monthly pulse, weekly equipment pass, 120-day window), per
+  resource, worst case = the country cannot carry the strong grade at all:
+
+  - t=0 months: first deficit pulse, armed 45 d.
+  - t=1: second deficit pulse, LATCHED, months = 0, dwell = 6, XP window 120 d; twins enabled,
+    bases disabled.
+  - t=1 → 5: the weekly equipment pass redesigns each chassis holding a variant, 5 XP each, once
+    army XP ≥ 50 (cc: T-34 redesigned inside 2 months at natural XP — MEASURED; N chassis all
+    finished inside the 120 d window — ASSUMED).
+  - t=8: months = 7 > 6 and no deficit (the draw is gone): recover armed.
+  - t=9: EXIT, strong designs back, window 120 d, redesigns UP.
+  - t=11: if the strong grade re-opens the deficit, re-LATCH with dwell 12.
+  - t=25 → 27: exit, re-latch with dwell 24; later swings at t≈53, 81, 109.
+
+  Worst case over a 10-year campaign: 5 entries + 4 exits per resource = 18 transitions for both,
+  ≤ 5 XP × N live chassis each (N ≈ 10-30) → ≤ ~150 XP per transition, ≤ ~2700 XP over the
+  campaign against a template desire of 100/day. A healthy economy makes 0 transitions.
+- Objection kept on record (this file, `armor-grade-designs`, 2026-09-12 morning): "Measure it
+  with a two-way console probe before building anything adaptive." Mine covers it because the
+  harness `wa_gdn.2` / `wa_gdn.3` IS that probe, runnable on one country in one session before any
+  campaign, and `gen_grade_pairs.py --remove` returns the tree to the pre-subject state in one
+  command if the DOWN or UP leg fails — the 1281 twins cost nothing until a latch fires.
+- Verification (owner console, `events/wa_test_grade_downshift.txt` recipe): (0) positive control
+  — the fielded variant carries the strong modules (if not, the 27 modules no tech enables are the
+  blocker, see `armor-grade-designs`); (1) `event wa_gdn.2 SOV`, 2-3 months, save: a NEW variant of
+  a chassis in production with `tank_weakened_armor` + `_ap_he`, line pointing at it = DOWN PASS;
+  (2) `event wa_gdn.3 SOV`, 2-3 months, save: variant back on strong + `_apcr`, line following =
+  UP PASS. Paste the game.log "GRADE DOWNSHIFT" blocks here. Then a campaign: `tlm <TAG>` →
+  `gdn_chr_n` / `gdn_tun_n` rise only after ≥ 2 deficit months in the resource series, `gdn_flip_n`
+  ≤ 4 per resource.
+- Closed when: DOWN and UP both PASS in the console run, and one campaign shows a latch that
+  tripped on a real deficit with the redesigned variant in production and `gdn_flip_n ≤ 4`.
+
+### armor-grade-designs — PARKED (2026-09-12)
+- Parked for the WIP limit (7 under OPEN for 4). **Owner ruling 2026-09-12: the AI default steel
+  grade is `tank_strengthend_armor`.** Code APPLIED with that grade (541 designs, `--check`
+  clean); **owner boot 2026-09-12 OK, COMMITTED + PUSHED.** Campaign read of both slots owed. Sister of `ammo-slot-designs`, same pattern.
+- Symptom (MEASURED, `common/units/equipment/tank_chassis.txt` + `x_tank_chassis.txt` after
+  `6291e3b5b0`): `armor_type_slot` is now `required = yes` and accepts only the two steel grades
+  (`tank_armor_type`: `tank_strengthend_armor` = chromium +1, no stat change;
+  `tank_weakened_armor` = hardness −0.2, breakthrough −5 and ×−0.5, max_strength ×−0.8, no
+  resource). The armour PLATES moved to a new optional `extra_armor_slot` (`tank_extra_armor`).
+  Before that commit the plates WERE `tank_armor_type` and the slot was optional. Consequence on
+  the 541 AI designs of `common/ai_equipment/*_tank.txt` (every one sits on a chassis carrying
+  both slots): 231 say `armor_type_slot = tank_armor_plate_N` (a module the slot no longer
+  accepts), 106 say `armor_type_slot = empty` (on a required slot), 204 name nothing. 566 chassis
+  default the slot to `tank_strengthend_armor`; 27 chassis declare the slot with NO default
+  (`tank_sov_heavy_chassis_spg_2/3/7/8`, `tank_ger_light_chassis_td/assault/aa_1`, … — the
+  tool prints the list as `NO-DEFAULT`) and 20 designs sit on them.
+- Gap for the modders (MEASURED): `tank_strengthend_armor` appears in NO `enable_equipment_modules`
+  of any `common/technologies/armor_*.txt`; only `tank_weakened_armor` does, on each tree's first
+  chassis tech. Vanilla enables its own default `tank_riveted_armor` in `gwtank_chassis` (install
+  `common/technologies/NSB_armor.txt`). ASSUMED (engine): a module no tech enables cannot be
+  mounted, so today the chassis default grade is unreachable and only the weak grade is. Whether
+  the engine still creates the chassis default variant with an un-enabled module is ASSUMED.
+- Decided: `tank_strengthend_armor` (the chassis default, same reading as the ammo ruling). The
+  27 modules no technology enables (strong armour, every APCR shell, the plates, six suspensions —
+  MEASURED over `common/technologies/*.txt`; vanilla's own default `tank_riveted_armor` IS enabled
+  by `gwtank_chassis`, and vanilla's 13 never-enabled modules are the landcruiser `lc_*` set that
+  the chassis default_modules name) are a modder question: whether a chassis-default module needs
+  no unlock is ASSUMED, and the harness positive control of `resource-grade-downshift` settles it.
+- Implementation (ready): `python tools/migrations/armor_slot/fill_armor_slot.py
+  [--grade auto|tank_strengthend_armor|tank_weakened_armor] [--fallback G] --apply` — plates
+  → `extra_armor_slot`, `empty` → grade, missing → grade inserted after `ammo_type_slot`, grade
+  added to `allowed_modules`; `auto` = chassis default, `--fallback` covers the 27 defaultless
+  chassis. Idempotent, `--check` for CI, `--out DIR` writes to a scratch dir. Dry run 2026-09-12:
+  11 files, 231 moved, 106 replaced, 435 inserted, 541 `allowed_modules` lines; braces 0,
+  `WA_EQUIPGEN` marker counts unchanged, no BOM, CRLF preserved, second run changes nothing.
+- Not in scope: a shortage-driven flip to `tank_weakened_armor`. The mechanism such a flip needs
+  is already MEASURED by `sov-cutting-corners-module` (CLOSED 2026-09-09, campaign `4b032e23`):
+  enable-EXCLUSIVE design pairs on the same type (`<type>` / `<type>__cc`) sharing one scripted
+  trigger + `land_xp_spend_priority id = equipment_variant` → the AI redesigns on mismatch and
+  the production line follows the new variant (SOV medium line on the `_cc` T-34 at 45/45
+  factories). A higher-priority twin on a type that already holds a design is INVISIBLE (killed
+  in iteration 1) — so `priority.modifier` gates (the `88e516780` pattern) stay rejected. Still
+  ASSUMED: a REVERSIBLE flip (shortage on → weak, shortage off → strong) and its XP bill (5 XP
+  per redesign × ~30 chassis per swing); the cc latch was made monotone precisely to avoid that
+  churn. Measure it with a two-way console probe before building anything adaptive.
+- Verification: boot the mod, `error.log` clean on `ai_equipment`; in a campaign one AI variant
+  per tree carries the written grade in `armor_type_slot` AND its plate in `extra_armor_slot`
+  (a variant with the plate missing is the signature that the move broke the design match).
+- Closed when: applied with the owner's grade, boot clean, one campaign variant confirms both
+  slots on a plated design.
+
 ### ammo-slot-designs — PARKED (2026-09-12)
 - Parked for the WIP limit (OPEN is over budget already); the code is APPLIED and needs only the
   boot check below. Owner ruling 2026-09-12: **the AI default ammunition is `_ap_he_apcr`.**

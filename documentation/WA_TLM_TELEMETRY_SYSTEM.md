@@ -310,6 +310,9 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_air_park_fighter` / `WA_TLM_air_park_bomber` | gauges, deployed airframes by archetype family | monthly, all AI | `[air-budget]` standing (verified effect) | v36 |
 | `WA_TLM_air_emit_n` | counter, one per emitted `unit_ratio` entry | at the emitter (monthly reconcile + startup) | `[air-budget]` standing (entry accumulation) | v36 |
 | `WA_TLM_air_last_t` | stamp | monthly, all AI | `[air-budget]` absence contract | v36 |
+| `WA_TLM_gdn_chr_n` / `WA_TLM_gdn_tun_n` | counters, months the chromium / tungsten shortage latch is up, sampled AFTER the monthly update (the gate as the design twins see it) | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | `[resource-grade-downshift]` probe (§6h) | v38 |
+| `WA_TLM_gdn_flip_n` | counter, latch transitions (both directions, both resources). Two gameplay writers (entry, exit) in `WA_AI_EQUIPMENT_update_shortage_latch_<r>`; the console drivers `wa_gdn.2/.3` set the flags WITHOUT touching it, so a harness session never skews it | at the transition | `[resource-grade-downshift]` probe (§6h) - a flapping latch reads here first | v38 |
+| `WA_TLM_gdn_last_t` | stamp | monthly, all AI | `gdn_*` absence contract | v38 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
 | `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
@@ -723,6 +726,34 @@ analysis script, with `w_fighter_pct` as the decision it must match. Second sign
 **Probe**: `tlm <TAG> <saves>` → `air_w_fighter_pct`, `air_park_fighter`, `air_park_bomber`,
 `air_emit_n`. Pass = GER 1939-41 `w_fighter_pct` in [40, 60] on 3 consecutive saves and
 `air_emit_n` < 200 on every country at the last save.
+
+## 6h. Steel-grade / ammunition-grade shortage latches (probe, v38)
+
+`[resource-grade-downshift]`. When a country's net chromium (tungsten) runs below −1 for two
+consecutive monthly pulses, a two-way latch flips its AI tank designs to `tank_weakened_armor`
+(the non-APCR shell) through enable-exclusive design twins; it flips back after a back-off dwell
+(6 → 12 → 24 months) and two consecutive pulses at equilibrium. Born a probe under §3.8: the
+question it answers is "does the latch trip, hold, and release at the designed cadence" — a
+health question (criterion 3) once the first campaign has scored it; promotion to standing is a
+later decision.
+
+| Metric | Reads |
+| --- | --- |
+| `WA_TLM_gdn_chr_n` / `_tun_n` | months the shortage latch was up — PERSISTENCE, the reading the r47 counters were built for |
+| `WA_TLM_gdn_flip_n` | transitions since 1936 — a value above ~10 per resource on a full campaign is a flapping latch, whatever the dwell says |
+| `WA_TLM_gdn_last_t` | freshness |
+
+**Reading rule.** The counters prove the GATE, not the redesign: script cannot read a variant's
+modules, so the verified effect is read from the save's variant list (a variant of a chassis
+already in production carrying `tank_weakened_armor` / an `_ap_he` shell, created after the
+latch's first month, with the production line pointing at it — wa-savegame-analysis). A latch
+with `gdn_chr_n > 0` and no such variant is the XP auction failing (05_defines.lua starves
+variant desire), not the latch. Second signal: the country's `resource@chromium` series in the
+same saves must show the deficit the latch claims.
+
+**Probe**: `tlm <TAG> <saves>` → `gdn_chr_n`, `gdn_tun_n`, `gdn_flip_n`, `gdn_last_t`. Pass =
+on a country that shows ≥ 2 consecutive deficit months in its resource series, `gdn_*_n` rises
+from the following save on, and `gdn_flip_n ≤ 4` per resource over the campaign.
 
 ## 7. Adding a metric — checklist for authors
 

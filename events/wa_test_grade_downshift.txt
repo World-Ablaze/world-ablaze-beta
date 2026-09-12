@@ -1,0 +1,71 @@
+############################################################################################################
+#	GRADE DOWNSHIFT - console harness for [resource-grade-downshift] (weakened armour / non-APCR
+#	ammunition on a chromium / tungsten deficit, two-way latch with back-off dwell).
+#
+#	Effects: common/scripted_effects/WA_TEST_grade_downshift.txt
+#
+#	CONSOLE (stay on the observer tag - BHU or whatever you play - and TARGET the event):
+#	    event wa_gdn.1 SOV        report only (any AI country with tank lines: SOV, GER, USA...)
+#	    event wa_gdn.2 SOV        DRIVER: force both shortage latches IN  (+ 120-day XP window)
+#	    event wa_gdn.3 SOV        DRIVER: force both shortage latches OUT (+ 120-day XP window)
+#	  Then read logs/game.log and search for "GRADE DOWNSHIFT".
+#	  NEVER `tag SOV` first: a tagged country is human, the monthly latch runs inside the
+#	  on_monthly `is_ai = yes` block, and a console reload of an effect file poisons country
+#	  triggers (restart the exe instead).
+#
+#	THE MEASUREMENT THIS HARNESS EXISTS FOR (the one ASSUMED link): does the AI redesign an
+#	EXISTING tank variant DOWN to the cheap modules, does the production line follow, and does it
+#	come BACK. Protocol, on a 1941+ save where the country runs at least one tank line:
+#	  0. POSITIVE CONTROL first: save, and confirm in the save (savegame.py, wa-savegame-analysis)
+#	     that the fielded variant carries `armor_type_slot=tank_strengthend_armor` and an `_apcr`
+#	     shell. If it does not, the strong design itself is not being created (the 27 modules no
+#	     technology enables - WORK.md) and nothing below measures the flip: STOP and report.
+#	  1. event wa_gdn.2 SOV, then wa_gdn.1 SOV: ship line must read weak_armor=1 low_ammo=1
+#	     should_spend_xp=1. Run 2-3 game months (the equipment pass is weekly, army XP >= 50 is
+#	     the cutoff, 05_defines.lua), save.
+#	  2. In that save: a NEW variant of the same chassis with `tank_weakened_armor` and the
+#	     `_ap_he` shell, and the production line pointing at it = DOWN PASS. Old variant still on
+#	     the line after 3 months with army XP > 50 = DOWN FAIL (report army XP).
+#	  3. event wa_gdn.3 SOV, run 2-3 months, save: a variant back on `tank_strengthend_armor` +
+#	     `_apcr` with the line following = UP PASS. This is the reverse redesign the cc latch was
+#	     made monotone to avoid - its XP bill per chassis is what the owner reads here.
+#	  Reading the latch WITHOUT the drivers (real shortage): wa_gdn.1 monthly; entry is two
+#	  consecutive pulses with deficit=1, exit two consecutive eligible pulses after the dwell.
+#
+#	Own file, own namespace on purpose (wa-testing SKILL, harness contract v1): a report fired from
+#	events/wa_events_test.txt once read every country-valued trigger false.
+############################################################################################################
+
+add_namespace = wa_gdn
+
+# Report - one country: target it.
+country_event = {
+	id = wa_gdn.1
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_grade_downshift_report = yes
+	}
+}
+
+# Driver - force both shortage latches IN, then print the report.
+country_event = {
+	id = wa_gdn.2
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_grade_downshift_force_short = yes
+		WA_TEST_grade_downshift_report = yes
+	}
+}
+
+# Driver - force both shortage latches OUT, then print the report.
+country_event = {
+	id = wa_gdn.3
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		WA_TEST_grade_downshift_force_recover = yes
+		WA_TEST_grade_downshift_report = yes
+	}
+}

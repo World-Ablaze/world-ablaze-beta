@@ -25,6 +25,8 @@ Shape (see `common/ai_equipment/_documentation.info`):
 
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -38,6 +40,9 @@ _GROUP_META = {
     "category", "blocked_for", "available_for", "roles", "priority",
     "allowed_modules", "requirements", "target_variant", "enable",
 }
+
+
+_DERIVED_TWIN = re.compile(r"__(?:cc_)?(?:wa|la|wa_la)$")
 
 
 @dataclass
@@ -168,6 +173,11 @@ def parse_country_file(path: Path, country: str, diag: Diagnostics,
         index = 0
         for dname, dbody in gbody.named_blocks():
             if dname in _GROUP_META:
+                continue
+            if _DERIVED_TWIN.search(dname):
+                # [resource-grade-downshift] `__wa` / `__la` twins are a generated COPY of their
+                # base (tools/gen/gen_grade_pairs.py, run after this tool): scoring them would
+                # square the transition table and any rewrite on them is lost at regeneration.
                 continue
             design = Design(
                 name=dname, index=index, country=country, group=gname,

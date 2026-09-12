@@ -46,6 +46,8 @@
 #
 # Consumers: common/ai_equipment/SOV_planes.txt (SOV_fighter_mr, Pilot A),
 #            common/ai_equipment/ENG_planes.txt (ENG_heavy_strategic_bomber, Pilot B).
+#            common/ai_equipment/*_tank.txt design twins `__cc` / `__wa` / `__la` (enable blocks),
+#            common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_equipment_grade.txt (the XP lever).
 # Writer of the latches: common/scripted_effects/WA_AI_EQUIPMENT_effects.txt.
 ###############################################################################
 
@@ -290,4 +292,47 @@ WA_AI_EQUIPMENT_faces_strategic_bombing = {
 # THIS = country.
 WA_AI_EQUIPMENT_should_mount_cutting_corners = {
 	has_country_flag = WA_AI_EQUIPMENT_cc_latched
+}
+
+###############################################################################
+# [resource-grade-downshift] steel-grade / ammunition-grade shortage gates
+###############################################################################
+
+# Tier 1 - instantaneous. `resource@<r>` is the NET daily balance and the trade AI imports back
+# to ~0, so a negative reading means trade could NOT close the gap: factories are already losing
+# output. `< -1`, not `< 0`: an importer hovers around 0 on trade noise. Read by the monthly latch
+# effect only, never by ai_equipment.
+# THIS = country
+WA_AI_EQUIPMENT_has_chromium_deficit = {
+	check_variable = { resource@chromium < -1 }
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_has_tungsten_deficit = {
+	check_variable = { resource@tungsten < -1 }
+}
+
+# Tier 2 - LATCHED, two-way. Written by WA_AI_EQUIPMENT_update_shortage_latch_<r>
+# (WA_AI_EQUIPMENT_effects.txt): in after two deficit months, out after the back-off dwell AND
+# two consecutive months at equilibrium (no deficit) - NOT on a positive surplus, which trade
+# never builds for an importer. Read by the `__wa` / `__la` design twins of ai_equipment/*_tank.txt
+# (tools/migrations/grade_pairs/gen_grade_pairs.py) and by nothing else; every pair is
+# enable-EXCLUSIVE on this one trigger, which is why it is one trigger. Absent flag (human
+# player, no pulse) = strong grade = status quo.
+# THIS = country
+WA_AI_EQUIPMENT_should_mount_weak_armor = {
+	has_country_flag = WA_AI_EQUIPMENT_chr_short_latched
+}
+
+# THIS = country
+WA_AI_EQUIPMENT_should_mount_low_ammo = {
+	has_country_flag = WA_AI_EQUIPMENT_tun_short_latched
+}
+
+# Arms the equipment_variant XP lever (ai_strategy/WA_AI_PRODUCTION_DEFAULT_equipment_grade.txt)
+# for 120 days after every latch transition: without it the redesign loses the XP auction
+# (05_defines.lua starves variant desire to 0.1/day against 100/day for templates).
+# THIS = country
+WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign = {
+	has_country_flag = WA_AI_EQUIPMENT_grade_redesign_window
 }
