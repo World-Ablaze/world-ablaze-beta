@@ -1,0 +1,126 @@
+############################################################################################################
+#	WA_TEST - steel-grade / ammunition-grade shortage latches ([resource-grade-downshift]), console-driven.
+#
+#	Fired by wa_gdn.1 / .2 / .3 (one country, TARGET it from the observer) in
+#	events/wa_test_grade_downshift.txt. Read the recipe there, not here.
+#
+#	Report: the raw facts the latches read (net chromium / tungsten, the flags, the counters), an
+#	INDEPENDENT walk of the deficit and exit facts, then the shipped triggers' own verdicts beside
+#	it. The two driver effects force the latch in / out so the owner can measure the one ASSUMED
+#	link - does the AI redesign an EXISTING variant DOWN and back UP - without waiting for a real
+#	shortage. Drivers write the same flags/variables the monthly effect writes and NOTHING else
+#	(no WA_TLM counter: a harness session must not skew gdn_flip_n).
+############################################################################################################
+
+# ROOT = country under test.
+WA_TEST_grade_downshift_report = {
+
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | GRADE DOWNSHIFT TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _gdn_e1_ = 0 }
+	set_temp_variable = { _gdn_e2_ = 0 }
+	set_temp_variable = { _gdn_e3_ = 0 }
+	set_temp_variable = { _gdn_e4_ = 0 }
+	set_temp_variable = { _gdn_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _gdn_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _gdn_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _gdn_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _gdn_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _gdn_e5_ = 1 } }
+	log = "  scope : always=[?_gdn_e1_|.0]  I-am-ROOT=[?_gdn_e2_|.0]  I-am-THIS=[?_gdn_e3_|.0]  ROOT-scope-usable=[?_gdn_e4_|.0]  control-false=[?_gdn_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Restart the exe - a console reload poisons country triggers - and re-fire from this same event file before editing a line of this effect.)"
+
+	### Raw facts (engine getters + the latch state)
+	set_temp_variable = { _gdn_chr_ = resource@chromium }
+	set_temp_variable = { _gdn_tun_ = resource@tungsten }
+	set_temp_variable = { _gdn_chr_l_ = 0 }
+	set_temp_variable = { _gdn_tun_l_ = 0 }
+	set_temp_variable = { _gdn_chr_a_ = 0 }
+	set_temp_variable = { _gdn_tun_a_ = 0 }
+	set_temp_variable = { _gdn_chr_r_ = 0 }
+	set_temp_variable = { _gdn_tun_r_ = 0 }
+	set_temp_variable = { _gdn_win_ = 0 }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_latched } set_temp_variable = { _gdn_chr_l_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_latched } set_temp_variable = { _gdn_tun_l_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_armed } set_temp_variable = { _gdn_chr_a_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_armed } set_temp_variable = { _gdn_tun_a_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_chr_recover_armed } set_temp_variable = { _gdn_chr_r_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_tun_recover_armed } set_temp_variable = { _gdn_tun_r_ = 1 } }
+	if = { limit = { has_country_flag = WA_AI_EQUIPMENT_grade_redesign_window } set_temp_variable = { _gdn_win_ = 1 } }
+	log = "  facts : net chromium=[?_gdn_chr_|.1]  tungsten=[?_gdn_tun_|.1]   latched chr=[?_gdn_chr_l_|.0] tun=[?_gdn_tun_l_|.0]   entry-armed chr=[?_gdn_chr_a_|.0] tun=[?_gdn_tun_a_|.0]   recover-armed chr=[?_gdn_chr_r_|.0] tun=[?_gdn_tun_r_|.0]   xp-window=[?_gdn_win_|.0]"
+	log = "  count : chr months=[?WA_AI_EQUIPMENT_chr_short_months|.0] dwell=[?WA_AI_EQUIPMENT_chr_dwell_months|.0]   tun months=[?WA_AI_EQUIPMENT_tun_short_months|.0] dwell=[?WA_AI_EQUIPMENT_tun_dwell_months|.0]   tlm chr_n=[?WA_TLM_gdn_chr_n|.0] tun_n=[?WA_TLM_gdn_tun_n|.0] flip_n=[?WA_TLM_gdn_flip_n|.0]"
+	if = {
+		limit = { is_ai = no }
+		log = "  WARN  : this country is HUMAN (you tagged it) - the monthly latch runs in the is_ai block, so the latch can never move here. Fire the events with a target tag from the observer instead (event wa_gdn.1 SOV)."
+	}
+
+	### Independent walk (duplicates the shipped terms, shares no helper)
+	set_temp_variable = { _gdn_i_chr_d_ = 0 }
+	set_temp_variable = { _gdn_i_tun_d_ = 0 }
+	set_temp_variable = { _gdn_i_chr_x_ = 0 }
+	set_temp_variable = { _gdn_i_tun_x_ = 0 }
+	if = { limit = { check_variable = { _gdn_chr_ < -1 } } set_temp_variable = { _gdn_i_chr_d_ = 1 } }
+	if = { limit = { check_variable = { _gdn_tun_ < -1 } } set_temp_variable = { _gdn_i_tun_d_ = 1 } }
+	if = {
+		limit = {
+			check_variable = { _gdn_chr_l_ = 1 }
+			check_variable = { WA_AI_EQUIPMENT_chr_short_months > WA_AI_EQUIPMENT_chr_dwell_months }
+			check_variable = { _gdn_i_chr_d_ = 0 }
+		}
+		set_temp_variable = { _gdn_i_chr_x_ = 1 }
+	}
+	if = {
+		limit = {
+			check_variable = { _gdn_tun_l_ = 1 }
+			check_variable = { WA_AI_EQUIPMENT_tun_short_months > WA_AI_EQUIPMENT_tun_dwell_months }
+			check_variable = { _gdn_i_tun_d_ = 0 }
+		}
+		set_temp_variable = { _gdn_i_tun_x_ = 1 }
+	}
+	log = "  indep : deficit chr=[?_gdn_i_chr_d_|.0] tun=[?_gdn_i_tun_d_|.0]   exit-eligible chr=[?_gdn_i_chr_x_|.0] tun=[?_gdn_i_tun_x_|.0]   (entry = deficit two pulses running; exit = eligible two pulses running)"
+
+	### Shipped verdicts (the code under test)
+	set_temp_variable = { _gdn_s_chr_d_ = 0 }
+	set_temp_variable = { _gdn_s_tun_d_ = 0 }
+	set_temp_variable = { _gdn_s_wa_ = 0 }
+	set_temp_variable = { _gdn_s_la_ = 0 }
+	set_temp_variable = { _gdn_s_xp_ = 0 }
+	if = { limit = { WA_AI_EQUIPMENT_has_chromium_deficit = yes } set_temp_variable = { _gdn_s_chr_d_ = 1 } }
+	if = { limit = { WA_AI_EQUIPMENT_has_tungsten_deficit = yes } set_temp_variable = { _gdn_s_tun_d_ = 1 } }
+	if = { limit = { WA_AI_EQUIPMENT_should_mount_weak_armor = yes } set_temp_variable = { _gdn_s_wa_ = 1 } }
+	if = { limit = { WA_AI_EQUIPMENT_should_mount_low_ammo = yes } set_temp_variable = { _gdn_s_la_ = 1 } }
+	if = { limit = { WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign = yes } set_temp_variable = { _gdn_s_xp_ = 1 } }
+	log = "  ship  : has_deficit chr=[?_gdn_s_chr_d_|.0] tun=[?_gdn_s_tun_d_|.0]   should_mount weak_armor=[?_gdn_s_wa_|.0] low_ammo=[?_gdn_s_la_|.0]   should_spend_xp=[?_gdn_s_xp_|.0]"
+	log = "          (PASS shape: has_deficit == indep deficit; weak_armor == latched chr; low_ammo == latched tun; should_spend_xp == xp-window)"
+	log = "=========================================================================================="
+}
+
+# ROOT = country under test. Forces BOTH latches in, dwell 24 so the monthly pulse cannot undo it
+# during the observation window; opens the XP window exactly as a real entry does.
+WA_TEST_grade_downshift_force_short = {
+	set_country_flag = WA_AI_EQUIPMENT_chr_short_latched
+	set_country_flag = WA_AI_EQUIPMENT_tun_short_latched
+	clr_country_flag = WA_AI_EQUIPMENT_chr_short_armed
+	clr_country_flag = WA_AI_EQUIPMENT_tun_short_armed
+	set_variable = { WA_AI_EQUIPMENT_chr_short_months = 0 }
+	set_variable = { WA_AI_EQUIPMENT_tun_short_months = 0 }
+	set_variable = { WA_AI_EQUIPMENT_chr_dwell_months = 24 }
+	set_variable = { WA_AI_EQUIPMENT_tun_dwell_months = 24 }
+	set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+	log = "[GetYear].[GetMonth] | GRADE DOWNSHIFT DRIVER | [Root.GetName] | forced SHORT (chr+tun latched, dwell 24, xp-window 120d)"
+}
+
+# ROOT = country under test. Forces both latches out, dwell reset so a later real entry starts at 6.
+WA_TEST_grade_downshift_force_recover = {
+	clr_country_flag = WA_AI_EQUIPMENT_chr_short_latched
+	clr_country_flag = WA_AI_EQUIPMENT_tun_short_latched
+	clr_country_flag = WA_AI_EQUIPMENT_chr_recover_armed
+	clr_country_flag = WA_AI_EQUIPMENT_tun_recover_armed
+	set_variable = { WA_AI_EQUIPMENT_chr_dwell_months = 0 }
+	set_variable = { WA_AI_EQUIPMENT_tun_dwell_months = 0 }
+	set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+	log = "[GetYear].[GetMonth] | GRADE DOWNSHIFT DRIVER | [Root.GetName] | forced RECOVER (latches cleared, xp-window 120d)"
+}

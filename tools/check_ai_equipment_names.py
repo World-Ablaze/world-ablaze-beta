@@ -50,6 +50,13 @@ QUALIFIERS = {
     "atk": "ground-attack fit",
     "int": "interceptor fit",
     "conv": "conversion of an older airframe",
+    # [resource-grade-downshift] steel-grade / ammunition-grade twins (gen_grade_pairs.py)
+    "wa": "weakened-armour twin (WA_AI_EQUIPMENT_should_mount_weak_armor)",
+    "la": "low-ammunition twin, non-APCR shell (WA_AI_EQUIPMENT_should_mount_low_ammo)",
+    "wa_la": "weakened armour AND low ammunition",
+    "cc_wa": "cutting-corners + weakened armour",
+    "cc_la": "cutting-corners + low ammunition",
+    "cc_wa_la": "cutting-corners + weakened armour + low ammunition",
 }
 OLD_SUFFIX_TO_QUALIFIER = {
     "_cc": "cc", "_lr": "lr", "_aa_upgrade": "aa", "_aa": "aa",
