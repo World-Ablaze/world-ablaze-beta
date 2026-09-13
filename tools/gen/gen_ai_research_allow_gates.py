@@ -40,6 +40,8 @@ from pathlib import Path
 BLOCKED_TECHS = [
     "sov_light_spg_tank_1",  # SU-5
     "sov_light_spg_tank_2",  # SU-26
+    "sov_heavy_spg_tank_3",  # 212a
+    "sov_heavy_spg_tank_4",  # S 51
     "ger_heavy_tank_chassis_1",  # VK 36.01 (VK 30.01 upstream is already allow = { always = no })
     "ger_heavy_tank_chassis_2",  # Tiger P (Tiger I stays open via Panzer IV F, owner choice 2026-09-06)
     "ger_landkruiser_tank_chassis_1",  # Ratte
