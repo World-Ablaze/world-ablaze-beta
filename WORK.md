@@ -180,9 +180,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   category; heavy support's config number now +50 instead of +20"). Owner order 2026-09-14: review
   it, then fix everything except the GER research gate (rocket techs 2/3/4 staying at `factor = 0`
   behind `needs_mechanized_self_propelled_guns` is intended). Intended behaviour: medium ladder
-  6100-6124 - rocket company rungs 6104-6108 (`WA_AI_TECHTREE_has_mechanized_rocket_artillery`),
-  inf-support demoted to a divisional company once the successor chassis is held (6116), SPG-based
-  late rungs 6117-6124 - with every value the ladder can leave answered by exactly one template.
+  6100-6129 - rocket company rungs 6104-6108 and 6117-6121 (`WA_AI_TECHTREE_has_mechanized_rocket_artillery`;
+  6117-6121 added by `46d4240441` "More Rocket Templates" 2026-09-14, which shifted the SPG rungs
+  to 6122-6129), inf-support demoted to a divisional company once the successor chassis is held
+  (6116), SPG-based late rungs 6122-6129 - with every value the ladder can leave answered by exactly
+  one template.
 - MEASURED before the fix (`tools/check_templates.py` with the offset corrected to 50, 0 on
   `bdecf680b3`): 64 reachable values with no template - 6050/6051 (the 20-width heavy twins were
   deleted while the effect still adds +50 to 6000/6001), 6617-6619/6717-6719 (new rungs, never
@@ -208,7 +210,9 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   - The 50 now lives in: the effect, `tools/check_templates.py` (`HEAVY_SUPPORT_MIRROR_OFFSET`),
     the effect's comments, the generator comment, `WA_TEST_templates.txt`, this file. The value
     lists of `WA_TEST_armor_budget` (bandmed/bandmod) and `WA_TEST_templates` (waves) regenerated
-    from the two ai_templates files: 104 + 104 and 50 values.
+    from the two ai_templates files: 124 + 124 and 60 values (after the merge of `46d4240441`,
+    which again added rungs without regenerating: 20 modern values 6625-6629 / 6675-6679 /
+    6725-6729 / 6775-6779 were orphaned until the mirror was regenerated a second time).
   - `gen_ai_research_allow_gates.py` and `gen_research_bonus_tracking.py` run (armor_sov allow
     blocks; soviet/germany `WA_RB_GRANT` regions restored - the manual early `_1` opener in the
     SOV focus is kept, so that counter over-counts by one after the guards-mortars focus: harmless,
@@ -227,7 +231,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   SOV medium flag inside 6104-6108 (or +100/+500 bands) once the rocket rung is held.
 - Verification (campaign): a 1943+ SOV save holds medium divisions carrying
   `mechanized_sp_rocket_artillery_company_regimental`; no country with `WA_MEDIUM_ARMOR_TEMPLATE`
-  set carries a value outside the 208 declared ones (`savegame.py` flag dump vs the two files).
+  set carries a value outside the 248 declared ones (`savegame.py` flag dump vs the two files).
 - Closed when: `python tools/check_templates.py` exit 0 (done: 4 pre-existing hq SLOT-SUFFIX only),
   the harness output above is pasted here, then one campaign shows the SOV rocket division.
 
@@ -270,7 +274,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): owner runs
   `WA_TEST_templates` and `WA_TEST_armor_budget` as a Tiger-era GER. Both now print the fifth gate
   (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +50
-  band (6050-6051 / 6150-6174 / 6250-6274 / 6550-6551 / 6650-6674 / 6750-6774). `heavy=1` and `hvysup=1` together is the
+  band (6050-6051 / 6150-6179 / 6250-6279 / 6550-6551 / 6650-6679 / 6750-6779). `heavy=1` and `hvysup=1` together is the
   defect: it means the NOT is not reading the latch.
 - Verification (campaign): a post-Tiger GER save holds zero heavy-armour divisions, and its medium
   divisions carry `heavy_armor_company_divisional`; `WA_AI_ARMOR_BUDGET_heavy = 0` while
