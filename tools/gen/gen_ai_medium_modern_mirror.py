@@ -63,6 +63,7 @@ TIER_UP = {
     "light_assault_gun_company_divisional": "light_assault_gun_company_divisional",
     "light_assault_gun_company_regimental": "light_assault_gun_company_regimental",
     "light_infantry_support_armor_battalion_line": "light_infantry_support_armor_battalion_line",
+    "light_infantry_support_company_divisional": "light_infantry_support_company_divisional",
     "light_self_propelled_anti_air_company_divisional": "light_self_propelled_anti_air_company_divisional",
     "light_self_propelled_gun_battalion_line": "light_self_propelled_gun_battalion_line",
     "light_self_propelled_gun_company_divisional": "light_self_propelled_gun_company_divisional",
@@ -92,6 +93,8 @@ TIER_UP = {
     "modern_tank_destroyer_company_divisional": "modern_tank_destroyer_company_divisional",
     "modern_tank_destroyer_company_regimental": "modern_tank_destroyer_company_regimental",
     "pack_artillery_mot_company_regimental": "pack_artillery_mot_company_regimental",
+    # the rocket company is a mechanized (half-track) mount, not a tank tier: nothing to step up
+    "mechanized_sp_rocket_artillery_company_regimental": "mechanized_sp_rocket_artillery_company_regimental",
     # [heavy-in-support] the heavy company keeps its HEAVY chassis: only the hull steps up,
     # and the point of the company is the heavy armour value it lends the division.
     "heavy_armor_company_divisional": "heavy_armor_company_divisional",
@@ -213,34 +216,36 @@ COMPOSITION_OVERRIDE = {
         "regimental_support": [("medium_assault_gun_company_regimental", 5),
                                ("anti_tank_mot_company_regimental", 5)],
     },
-    # [heavy-in-support] the +20 heavy twins of the six above. The company sits in `support`, so
+    # [heavy-in-support] the +50 heavy twins of the six above. The company sits in `support`, so
     # the regiments trade is identical - these entries exist only because the table is keyed by value.
-    6122: {
+    # Keyed on the TWIN value (base + 50): a key on the base band would land on an unrelated rung
+    # the day the ladder grows past it, silently, because build() only rejects keys nobody writes.
+    6152: {
         "regiments": [("modern_armor_battalion_line", 7),
                       ("light_assault_gun_battalion_line", 3),
                       ("infantry_heavy_mechanized_battalion_line", 5)],
     },
-    6123: {
+    6153: {
         "regiments": [("modern_armor_battalion_line", 6),
                       ("medium_assault_gun_battalion_line", 3),
                       ("infantry_heavy_mechanized_battalion_line", 6)],
     },
-    6220: {
+    6250: {
         "regiments": [("modern_armor_battalion_line", 11),
                       ("infantry_heavy_motorized_battalion_line", 7)],
     },
-    6221: {
+    6251: {
         "regiments": [("modern_armor_battalion_line", 11),
                       ("infantry_heavy_mechanized_battalion_line", 7)],
     },
-    6222: {
+    6252: {
         "regiments": [("modern_armor_battalion_line", 9),
                       ("light_assault_gun_battalion_line", 3),
                       ("infantry_heavy_mechanized_battalion_line", 6)],
         "regimental_support": [("light_assault_gun_company_regimental", 5),
                                ("anti_tank_mot_company_regimental", 5)],
     },
-    6223: {
+    6253: {
         "regiments": [("modern_armor_battalion_line", 9),
                       ("medium_assault_gun_battalion_line", 3),
                       ("infantry_heavy_mechanized_battalion_line", 6)],

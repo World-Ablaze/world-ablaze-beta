@@ -173,6 +173,64 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### medium-ladder-rocket-inf-support — SHIPPED-UNTESTED (2026-09-14)
+- Origin: uncharted85's push of 2026-09-13 (`0c9e83c979` `1f2a8eda4b` `b591be489b` `300d12ab82`,
+  Discord: "new templates pushed for the ai, mainly for the soviets to use rocket mech, germans to
+  get rid of outdated inf support in their line and for allies to use inf support in their support
+  category; heavy support's config number now +50 instead of +20"). Owner order 2026-09-14: review
+  it, then fix everything except the GER research gate (rocket techs 2/3/4 staying at `factor = 0`
+  behind `needs_mechanized_self_propelled_guns` is intended). Intended behaviour: medium ladder
+  6100-6124 - rocket company rungs 6104-6108 (`WA_AI_TECHTREE_has_mechanized_rocket_artillery`),
+  inf-support demoted to a divisional company once the successor chassis is held (6116), SPG-based
+  late rungs 6117-6124 - with every value the ladder can leave answered by exactly one template.
+- MEASURED before the fix (`tools/check_templates.py` with the offset corrected to 50, 0 on
+  `bdecf680b3`): 64 reachable values with no template - 6050/6051 (the 20-width heavy twins were
+  deleted while the effect still adds +50 to 6000/6001), 6617-6619/6717-6719 (new rungs, never
+  mirrored), 6650-6674/6750-6774 (heavy-support + modern). And the stale +20 twins of the modern
+  mirror (6620-6624 / 6720-6724, `MODERN_30_MOT_HEAVY_SUPPORT` ...) answered the NEW rungs
+  6120-6124 + 500 - wrong template served, with a heavy company. `gen_ai_medium_modern_mirror.py`
+  refused to run (rocket company absent from `TIER_UP`) and its override table keyed 6122/6123 on the
+  old twins. `WA_AI_TECHTREE_gates.txt` hand-edited (STALE; regeneration would have deleted the four
+  rocket triggers the ladder and research gates read). `WA_AI_CONFIG_*_infantry_support_is_outdated`:
+  `has_tech` observations in the DECLARATION file, `light_` with zero readers (CONFIG-DEAD).
+  Generators edited without a run (`gen_ai_research_allow_gates.py`, blacklist inert in game) or
+  bypassed (`# WA_RB_GRANT` line moved by hand in `soviet.txt`).
+- Change (2026-09-14):
+  - `tools/techtree_registry.json`: capabilities `mechanized_rocket_artillery` (GER/SOV rungs, out
+    of `mechanized_spg`), `tank_rocket_artillery` (USA), `medium_inf_support_successor_chassis`
+    (ENG 4 / GER 3 / USA 3; the seven other armour folders admitted under `branch_extra` so the
+    undecided generation marker stays visible); `ger_medium_td_tank_4` in `medium_td`. Gates regenerated.
+  - Ladder 6116 reads `WA_AI_TECHTREE_has_medium_inf_support_successor_chassis`; the two CONFIG
+    `_is_outdated` triggers deleted.
+  - `gen_ai_medium_modern_mirror.py`: rocket + light-inf-support company in `TIER_UP`, heavy-twin
+    override keys retargeted to the +50 band (6152/6153/6250-6253); mirror regenerated (104 twins).
+  - `WA_AI_TEMPLATES_armored_medium.txt`: 20-width heavy twins back at 6050/6051.
+  - The 50 now lives in: the effect, `tools/check_templates.py` (`HEAVY_SUPPORT_MIRROR_OFFSET`),
+    the effect's comments, the generator comment, `WA_TEST_templates.txt`, this file. The value
+    lists of `WA_TEST_armor_budget` (bandmed/bandmod) and `WA_TEST_templates` (waves) regenerated
+    from the two ai_templates files: 104 + 104 and 50 values.
+  - `gen_ai_research_allow_gates.py` and `gen_research_bonus_tracking.py` run (armor_sov allow
+    blocks; soviet/germany `WA_RB_GRANT` regions restored - the manual early `_1` opener in the
+    SOV focus is kept, so that counter over-counts by one after the guards-mortars focus: harmless,
+    the rush stays open only on a tech already researched).
+  - Left as is, owner decision owed: the `tank_rocket_artillery` chain (CONFIG switch, research
+    gate on two USA techs, `WA_AI_TEMPLATES_use_tank_rocket_artillery_armor`) has no ladder rung
+    reading it - USA researches a branch no template consumes until one is written.
+- Regression risk, DERIVED: the base band 6100-6116 keeps its values and compositions, so no
+  country migrates; 6117-6124 and the +50 twins are only reachable through gates that were false
+  before the push (rocket, SPG rungs, heavy latch). ASSUMED: `motorized_rocket_equipment` (6 per
+  rocket company) is produced on template demand like `mechanized_artillery_equipment` - neither has
+  a `WA_AI_PRODUCTION_*` line.
+- Harness owed (`WA_AI_*` scripted effect + existing `WA_TEST_templates` / `WA_TEST_armor_budget`):
+  owner runs both as SOV after `sov_mechanized_rocket_artillery_1` and as a Tiger-era GER. PASS =
+  `band: medium-chassis-value=1` or `modern-chassis-value=1` (never both 0) on every tick, and the
+  SOV medium flag inside 6104-6108 (or +100/+500 bands) once the rocket rung is held.
+- Verification (campaign): a 1943+ SOV save holds medium divisions carrying
+  `mechanized_sp_rocket_artillery_company_regimental`; no country with `WA_MEDIUM_ARMOR_TEMPLATE`
+  set carries a value outside the 208 declared ones (`savegame.py` flag dump vs the two files).
+- Closed when: `python tools/check_templates.py` exit 0 (done: 4 pre-existing hq SLOT-SUFFIX only),
+  the harness output above is pasted here, then one campaign shows the SOV rocket division.
+
 ### heavy-in-support — SHIPPED-UNTESTED (2026-09-12)
 - Owner order 2026-09-12 ("ajouter des bataillons de chars lourds en support dans les templates IA
   de chars moyens et modernes", then option 2 = SUBSTITUTION over complement). Intended behaviour:
@@ -195,7 +253,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   - `WA_AI_TEMPLATES_use_heavy_armor_templates` gains `NOT = { ..._support_templates = yes }`: the
     heavy-DIVISION role closes, so `WA_AI_PRODUCTION_build_army_heavy_armor` closes and the whole
     armour budget goes to medium.
-  - `WA_AI_TEMPLATES_apply_heavy_support_mirror` (+20), applied before the waves (+100) and modern
+  - `WA_AI_TEMPLATES_apply_heavy_support_mirror` (+50 since 2026-09-13, was +20), applied before the waves (+100) and modern
     (+500) mirrors. 36 twins hand-added to `WA_AI_TEMPLATES_armored_medium.txt`, 36 regenerated
     into `_armored_medium_modern.txt` by `tools/gen/gen_ai_medium_modern_mirror.py`.
   - Full-slot twins trade away `heavy_artillery_mot_company_divisional` - the same trade rungs
@@ -211,8 +269,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   division; too low and the companies sit unequipped, too high and it eats the medium line.
 - Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): owner runs
   `WA_TEST_templates` and `WA_TEST_armor_budget` as a Tiger-era GER. Both now print the fifth gate
-  (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +20
-  band (60xx-6136 / 62xx-6236 / 65xx-6636 / 67xx-6736). `heavy=1` and `hvysup=1` together is the
+  (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +50
+  band (6050-6051 / 6150-6174 / 6250-6274 / 6550-6551 / 6650-6674 / 6750-6774). `heavy=1` and `hvysup=1` together is the
   defect: it means the NOT is not reading the latch.
 - Verification (campaign): a post-Tiger GER save holds zero heavy-armour divisions, and its medium
   divisions carry `heavy_armor_company_divisional`; `WA_AI_ARMOR_BUDGET_heavy = 0` while

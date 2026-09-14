@@ -46,7 +46,7 @@ TEMPLATE_DIR = REPO / "common" / "ai_templates"
 # second reachable value; a checker that ignores them reports every mirror target as orphaned.
 #   +100 : WA_AI_TEMPLATES_apply_motorized_hospital_mirror   [mot-field-hospital]
 #   +100 : WA_AI_TEMPLATES_apply_armoured_waves_mirror       [armoured-waves]
-#   + 20 : WA_AI_TEMPLATES_apply_heavy_support_mirror        [heavy-in-support]
+#   + 50 : WA_AI_TEMPLATES_apply_heavy_support_mirror        [heavy-in-support]
 #   +500 : add_to_temp_variable = { _template_value = _tier_offset }   [modern-chassis-tier]
 # The two +100 levers attach differently and must not be modelled the same way: the hospital
 # mirror is called INSIDE a branch and rewrites that branch's value, while the waves mirror is
@@ -60,7 +60,7 @@ WAVES_MIRROR_OFFSET = 100
 # twins every value the ladder can leave, because the same flag closes the heavy-division
 # role and a value without a twin would leave the country with neither.
 HEAVY_SUPPORT_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_heavy_support_mirror"
-HEAVY_SUPPORT_MIRROR_OFFSET = 20
+HEAVY_SUPPORT_MIRROR_OFFSET = 50
 TIER_OFFSET = 500
 
 # A unit name carries the slot it belongs to as its last word, and the convention holds without a
@@ -451,7 +451,7 @@ def waves_mirror_floor(block):
 
 
 def calls_heavy_support_mirror(block):
-    """True when this calculator can add the +20 heavy-support twin anywhere in its body."""
+    """True when this calculator can add the +50 heavy-support twin anywhere in its body."""
     for n in block:
         if n.key == HEAVY_SUPPORT_MIRROR_EFFECT:
             return True
