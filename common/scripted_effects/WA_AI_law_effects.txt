@@ -72,7 +72,25 @@ WA_AI_upgrade_economy_law = {
 	}
 }
 
+# [sov-conscription-oscillation] WA_AI_LAW_pool_floor is the free-manpower level under which the
+# conscription ladder climbs one rung: max(floor_min, army_share x deployed army manpower). Persistent
+# on purpose: the engine ai_will_do in common/ideas/_manpower.txt reads it through
+# WA_AI_LAW_is_pool_short, and a temp would not survive to the engine's own evaluation.
+# Country scope. Reads the engine variable deployed_army_manpower_k (thousands).
+WA_AI_LAW_update_pool_floor = {
+	set_temp_variable = { _law_floor_ = deployed_army_manpower_k }
+	multiply_temp_variable = { _law_floor_ = 1000 }
+	multiply_temp_variable = { _law_floor_ = constant:wa_ai_law.pool.army_share }
+	if = {
+		limit = { check_variable = { _law_floor_ < constant:wa_ai_law.pool.floor_min } }
+		set_temp_variable = { _law_floor_ = constant:wa_ai_law.pool.floor_min }
+	}
+	set_variable = { WA_AI_LAW_pool_floor = _law_floor_ }
+}
+
 WA_AI_upgrade_conscription_law = {
+	WA_AI_LAW_update_pool_floor = yes
+
     if = {
 		limit = {
 			WA_AI_can_upgrade_manpower_law = yes

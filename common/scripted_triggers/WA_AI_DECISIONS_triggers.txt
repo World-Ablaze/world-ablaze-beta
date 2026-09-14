@@ -1,0 +1,19 @@
+############################################################################################################
+#	World Ablaze AI - decision triggers
+#	OBSERVATION: WA_AI_DECISIONS_has_* / _is_*   DECISION: WA_AI_DECISIONS_can_* / _should_*
+############################################################################################################
+
+# [repeatable-pp-decisions] the country holds more than the spare-PP floor. Country scope. Native
+# trigger on purpose: an unresolved constant reads 0 and the brake below never trips (today's
+# behaviour), where a variable read would block every gated decision silently.
+WA_AI_DECISIONS_has_spare_pp = {
+	has_political_power > constant:wa_ai_decisions.pp.spare_floor
+}
+
+# [repeatable-pp-decisions] may the AI spend PP on a repeatable decision now? Named by every gated
+# ai_will_do (`factor = 0` unless true). Assumes repeatable decisions compete daily with laws and
+# advisors for the same PP; the fact is gone if the AI's law/advisor timing (WORK.md probe) no longer
+# lags while these decisions fire.
+WA_AI_DECISIONS_can_spend_on_repeatable = {
+	WA_AI_DECISIONS_has_spare_pp = yes
+}

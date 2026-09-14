@@ -1,0 +1,72 @@
+add_namespace = WA_AI_landings
+
+############################################################################################################
+#	WA AI LANDINGS - player-facing announcement of a WA-scripted amphibious landing
+############################################################################################################
+#	[landing-announcement] Flavour only. These three events tell the HUMAN players on either side of a
+#	scripted landing that it has just happened, and they are the only player-facing part of the landing
+#	system. They carry NO effects: nothing here may change gameplay state, or an AI-only calendar would
+#	start depending on who is playing.
+#
+#	WHO GETS WHICH
+#	  .1  a human in the INVADER's faction (or its subject)   - our side is ashore
+#	  .2  the invaded country itself, if human                - the enemy is ashore on our soil
+#	  .3  a human in the INVADED country's faction (or subject) - an ally's coast has been breached
+#	The invader itself never receives one: WA_AI_DIVISION_spawn_invasion only runs for an AI country.
+#
+#	FIRED BY  common/scripted_effects/WA_AI_LANDING_effects.txt (WA_AI_LANDING_announce_landing),
+#	from the same guarded marker point as the invasion freeze - one announcement per
+#	(invader, target, 14 days), so a six-wave operation such as Weserubung produces ONE popup naming
+#	the first landing state, not six.
+#	SWITCH    WA_AI_LANDING_announcements_enabled (common/scripted_triggers/WA_AI_LANDING_triggers.txt)
+#
+#	THE THREE NAMES IN THE TEXT come from global event targets set by the firing effect:
+#	WA_AI_LANDING_invader / WA_AI_LANDING_defender / WA_AI_LANDING_site (a state). ASSUMED limit: a
+#	second scripted landing executed before the player has clicked an earlier popup away overwrites
+#	those targets, so the older popup would then name the newer landing. Bounded to flavour text.
+############################################################################################################
+
+# Our side has landed. Receiver = a human allied to (or subject of) the invader.
+country_event = {
+	id = WA_AI_landings.1
+	title = WA_AI_landings.1.t
+	desc = WA_AI_landings.1.d
+
+	picture = GFX_report_event_ast_troops_landing
+
+	is_triggered_only = yes
+
+	option = {
+		name = WA_AI_landings.1.a
+	}
+}
+
+# The enemy has landed on our own coast. Receiver = the invaded country, human.
+country_event = {
+	id = WA_AI_landings.2
+	title = WA_AI_landings.2.t
+	desc = WA_AI_landings.2.d
+
+	picture = GFX_report_event_bunker_01
+
+	is_triggered_only = yes
+
+	option = {
+		name = WA_AI_landings.2.a
+	}
+}
+
+# An ally's coast has been breached. Receiver = a human allied to (or subject of) the invaded country.
+country_event = {
+	id = WA_AI_landings.3
+	title = WA_AI_landings.3.t
+	desc = WA_AI_landings.3.d
+
+	picture = GFX_report_event_bunker_01
+
+	is_triggered_only = yes
+
+	option = {
+		name = WA_AI_landings.3.a
+	}
+}

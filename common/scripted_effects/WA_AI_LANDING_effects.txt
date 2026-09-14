@@ -291,3 +291,64 @@ WA_AI_LANDING_stamp_reservation = {
 		}
 	}
 }
+
+############################################################################################################
+#	[landing-announcement] WA_AI_LANDING_announce_landing - tell the human players a landing just happened
+#
+#	SCOPE:  ROOT = THIS = the invading country (the scope WA_AI_DIVISION_spawn_invasion runs in).
+#	INPUT:  _invasion_state (state id) and _target_country (country id) - both temps already set by the
+#	        caller; the call site sits inside spawn_invasion's has_relation_modifier guard, so this runs
+#	        ONCE per (invader, target, 14 days), not once per landing wave.
+#	OUTPUT: one flavour event per human on either side (events/WA_AI_landings.txt), and three global
+#	        event targets the event text reads. No gameplay state is written anywhere.
+#
+#	Global rather than per-country event targets because localisation can only name a scope through a
+#	saved target. ASSUMED consequence: a second landing executing before a player clicks the first popup
+#	away re-points the targets, so the stale popup would name the newer landing. Flavour text only.
+############################################################################################################
+WA_AI_LANDING_announce_landing = {
+	if = {
+		limit = {
+			WA_AI_LANDING_announcements_enabled = yes
+			check_variable = { _invasion_state > 0 }
+			check_variable = { _target_country > 0 }
+		}
+		save_global_event_target_as = WA_AI_LANDING_invader
+		var:_invasion_state = { save_global_event_target_as = WA_AI_LANDING_site }
+		var:_target_country = { save_global_event_target_as = WA_AI_LANDING_defender }
+
+		# Invader's side. The invader itself is AI by construction (spawn_invasion's own is_ai gate),
+		# so every_OTHER_country loses nobody who could read the popup.
+		every_other_country = {
+			limit = {
+				exists = yes
+				is_ai = no
+				OR = {
+					is_in_faction_with = ROOT
+					is_subject_of = ROOT
+				}
+			}
+			country_event = { id = WA_AI_landings.1 }
+		}
+
+		# Defender's side. PREV inside the iterator is the target country, not ROOT - the two sweeps
+		# are deliberately anchored on different scopes.
+		var:_target_country = {
+			if = {
+				limit = { is_ai = no }
+				country_event = { id = WA_AI_landings.2 }
+			}
+			every_other_country = {
+				limit = {
+					exists = yes
+					is_ai = no
+					OR = {
+						is_in_faction_with = PREV
+						is_subject_of = PREV
+					}
+				}
+				country_event = { id = WA_AI_landings.3 }
+			}
+		}
+	}
+}

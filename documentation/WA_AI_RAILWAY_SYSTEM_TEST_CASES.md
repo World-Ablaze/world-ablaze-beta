@@ -514,7 +514,7 @@ OR = {
 **Scenario:** Germany has a scripted override for SOV (Barbarossa preparation).
 
 **Expected:**
-- `WA_AI_CONFIG_RAILWAY_has_scripted_override = yes` triggers (line 581)
+- `WA_AI_RAILWAY_has_scripted_override = yes` triggers (line 581)
 - `WA_AI_PC_railway_get_scripted_override_targets` populates `_scripted_override_targets_` (line 582)
 - Override targets added to `_target_countries_` with safety checks (lines 589-602)
 - Standard wargoal/claims targets also detected (no duplication via line 613 check)

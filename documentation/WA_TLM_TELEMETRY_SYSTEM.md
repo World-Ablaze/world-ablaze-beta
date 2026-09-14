@@ -304,6 +304,15 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_armor_gap_n` | counter | same site, only while `armor_gap = 1` | standing — months the gap held. One month at a class handoff is a transient; a run is the defect | v34 |
 | `WA_TLM_armor_gap_first_t` / `_gap_t` | stamps | same site, `_first_t` under a `= 0` guard | standing — brackets the gap run (rule 2: never a bare one-shot stamp). Read `_gap_n > 0` first, not `_first_t > 0` | v34 |
 | `WA_TLM_armor_last_t` | stamp | monthly, all AI (written with the family's widest gauge) | `armor_*` absence contract | v34 |
+| `WA_TLM_air_w_fighter_pct` | gauge (derived from the six land budget books) | monthly, all AI | `[air-budget]` standing (§6g) | v36 |
+| `WA_TLM_air_types_open` | gauge | monthly, all AI | `[air-budget]` standing | v36 |
+| `WA_TLM_air_floor` | gauge (0/1) | monthly, all AI | `[air-budget]` standing | v36 |
+| `WA_TLM_air_park_fighter` / `WA_TLM_air_park_bomber` | gauges, deployed airframes by archetype family | monthly, all AI | `[air-budget]` standing (verified effect) | v36 |
+| `WA_TLM_air_emit_n` | counter, one per emitted `unit_ratio` entry | at the emitter (monthly reconcile + startup) | `[air-budget]` standing (entry accumulation) | v36 |
+| `WA_TLM_air_last_t` | stamp | monthly, all AI | `[air-budget]` absence contract | v36 |
+| `WA_TLM_gdn_chr_n` / `WA_TLM_gdn_tun_n` | counters, months the chromium / tungsten shortage latch is up, sampled AFTER the monthly update (the gate as the design twins see it) | monthly, all AI (`WA_AI_EQUIPMENT_update_context_flags`) | `[resource-grade-downshift]` probe (§6h) | v38 |
+| `WA_TLM_gdn_flip_n` | counter, latch transitions (both directions, both resources). Two gameplay writers (entry, exit) in `WA_AI_EQUIPMENT_update_shortage_latch_<r>`; the console drivers `wa_gdn.2/.3` set the flags WITHOUT touching it, so a harness session never skews it | at the transition | `[resource-grade-downshift]` probe (§6h) - a flapping latch reads here first | v38 |
+| `WA_TLM_gdn_last_t` | stamp | monthly, all AI | `gdn_*` absence contract | v38 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
 | `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
@@ -394,6 +403,11 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r67_aifc_arm_first_t` / `_last_t` | stamps | same effect, written only on ticks that actually emitted | R67 — persistence. `_first_t` under a `= 0` guard, so read `entries_n > 0` first. A frozen `_last_t` on a healthy tag is the **expected** reading (ENG's reconcile did zero work for 24 months), not an alarm — pair it with `retire_n = 0` to tell health from a dead code path | v24 |
 | `WA_TLM_r51_local_hold_first_t` / `_last_t` | stamps | same site | R51 — **timing is the pass criterion**: `_first_t` must fall inside the landing's contested window (the D-Day month + 3 on an `af003548`-shaped run), not years later on some other front. Written under a `= 0` guard; read `_n > 0` first. `_last_t` running to the war's end with `_n` climbing is the band being the *only* thing keeping orders on — pair with the front-movement proxy before calling that healthy | v16 |
 | `WA_TLM_resv_stamp_n` / `_first_t` / `_last_t` | counter + stamps | **in `WA_AI_LANDING_stamp_reservation`** (`WA_AI_LANDING_effects.txt`), one per reservation sweep actually executed — the flag write is on the adjacent lines, monthly per pending OP whose target is at war (two ops against the same target in one sweep count twice) | [scripted-invasion-reservation] — **the target-reservation system armed.** `stamp_n = 0` on USA/ENG/GER/JAP/AST at war on historical difficulty = the loader or the monthly gate never fired. Second signal: the `WA_AI_LANDING_reserved_for_<TAG>` timed flags serialized on the target countries — flags present with engine invasions of that target anyway = the `@FROM` country_trigger rendering failed (the block's stated ASSUMED) | v30 |
+| `WA_TLM_r115_maint_armor_n` | gauge (0-4 tank chassis maintained) | monthly, all AI | probe r115 - `[maintenance-floor]` | v37 |
+| `WA_TLM_r115_maint_ground_n` | gauge (0-6 support archetypes maintained - their gate is a SHORTAGE, so a high count is a country running its support companies dry) | monthly, all AI | probe r115 | v37 |
+| `WA_TLM_r115_maint_floor` | gauge (factories WA **requested** across all ten - never what the engine allocated, and never the country TOTAL on those ids: POL/HUN/SWE, the CZE plan and the lend-lease donors floor the same types and floors sum) | monthly, all AI | probe r115 | v37 |
+| `WA_TLM_r115_maint_at_ratio` | gauge (free anti-tank spares over what the armies require - the verified EFFECT: it must RISE while `ground_n` > 0) | monthly, all AI | probe r115 | v37 |
+| `WA_TLM_r115_maint_last_t` | stamp | monthly, all AI | probe r115 absence contract | v37 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and
@@ -684,6 +698,62 @@ three books at 0 means the two layers agree the country wants no armour, and is 
 
 **Probe**: `tlm <TAG> <saves>` → `armor_gap_n`, `armor_gap_first_t`, `armor_gap_t`. Pass = every
 major reads `armor_gap_n ≤ 1`. Absence contract per §3.5.
+
+## 6g. Air production split (standing, v36)
+
+`[air-budget]`. The AI's air factories are split by runtime `unit_ratio` weights
+(`WA_AI_AIR_BUDGET_reconcile`, `documentation/WA_AI_AIR_PRODUCTION.md`); the owner's symptom was
+"GER 20 % fighters / 80 % bombers" and no save named the split. Standing under §3.8 criterion 3:
+"what share does the AI give fighters, and does the park follow" is asked of every campaign.
+
+| Metric | Reads |
+| --- | --- |
+| `WA_TLM_air_w_fighter_pct` | fighter weight over the sum of the six land books, 0-100 — the DECISION |
+| `WA_TLM_air_types_open` | how many land types carry a weight (0-6) |
+| `WA_TLM_air_floor` | 1 while the 40 % floor holds the fighter weight above its table value |
+| `WA_TLM_air_park_fighter` / `_park_bomber` | deployed airframes, fighter archetypes vs bomber archetypes — the EFFECT; the park share must drift towards the weight share over months |
+| `WA_TLM_air_emit_n` | weight entries emitted since 1936 (each is one persistent `unit_ratio` entry) — the entry-accumulation reading; hundreds = a flapping decision |
+| `WA_TLM_air_last_t` | freshness |
+
+**Reading rule.** `w_fighter_pct` is exact and monthly; the park share lags it by the production
+time of the wings and the losses of the front, so score the park over a 6-month window, never one
+save. `types_open = 0` with `last_t > 0` is a country with no air line (minor under a patron):
+correct, not a defect. Script cannot read factories per production line, so the "share of air
+FACTORIES" of the subject's closing criterion is read from the save's production lines by the
+analysis script, with `w_fighter_pct` as the decision it must match. Second signal:
+`wa_ai_air_budget_<type>` (the books) and `wa_ai_production_air_open_<archetype>` (the purge books).
+
+**Probe**: `tlm <TAG> <saves>` → `air_w_fighter_pct`, `air_park_fighter`, `air_park_bomber`,
+`air_emit_n`. Pass = GER 1939-41 `w_fighter_pct` in [40, 60] on 3 consecutive saves and
+`air_emit_n` < 200 on every country at the last save.
+
+## 6h. Steel-grade / ammunition-grade shortage latches (probe, v38)
+
+`[resource-grade-downshift]`. When a country's net chromium (tungsten) runs below −1 for two
+consecutive monthly pulses, a two-way latch flips its AI tank designs to `tank_weakened_armor`
+(the non-APCR shell) through enable-exclusive design twins; it flips back after a back-off dwell
+(6 → 12 → 24 months) and two consecutive pulses at equilibrium. Born a probe under §3.8: the
+question it answers is "does the latch trip, hold, and release at the designed cadence" — a
+health question (criterion 3) once the first campaign has scored it; promotion to standing is a
+later decision.
+
+| Metric | Reads |
+| --- | --- |
+| `WA_TLM_gdn_chr_n` / `_tun_n` | months the shortage latch was up — PERSISTENCE, the reading the r47 counters were built for |
+| `WA_TLM_gdn_flip_n` | transitions since 1936 — a value above ~10 per resource on a full campaign is a flapping latch, whatever the dwell says |
+| `WA_TLM_gdn_last_t` | freshness |
+
+**Reading rule.** The counters prove the GATE, not the redesign: script cannot read a variant's
+modules, so the verified effect is read from the save's variant list (a variant of a chassis
+already in production carrying `tank_weakened_armor` / an `_ap_he` shell, created after the
+latch's first month, with the production line pointing at it — wa-savegame-analysis). A latch
+with `gdn_chr_n > 0` and no such variant is the XP auction failing (05_defines.lua starves
+variant desire), not the latch. Second signal: the country's `resource@chromium` series in the
+same saves must show the deficit the latch claims.
+
+**Probe**: `tlm <TAG> <saves>` → `gdn_chr_n`, `gdn_tun_n`, `gdn_flip_n`, `gdn_last_t`. Pass =
+on a country that shows ≥ 2 consecutive deficit months in its resource series, `gdn_*_n` rises
+from the following save on, and `gdn_flip_n ≤ 4` per resource over the campaign.
 
 ## 7. Adding a metric — checklist for authors
 

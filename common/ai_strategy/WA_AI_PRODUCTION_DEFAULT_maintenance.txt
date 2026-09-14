@@ -1,0 +1,174 @@
+# ============================================================================
+# [maintenance-floor] MAINTENANCE FLOORS - land equipment, DEFAULT tier.
+# ============================================================================
+# The factory floor that keeps a fielded park supplied, and therefore modernising, when nothing
+# else does. One pair of blocks per equipment ARCHETYPE; the gates, the two reasons a park goes
+# unsupplied and the Schmitt pair are all in
+# common/scripted_triggers/WA_AI_PRODUCTION_maintenance_triggers.txt.
+#
+# `_archetype`, never the TYPE. An engine type is shared: `armor` is all 36 tank chassis, so a
+# floor on it cannot tell a light park from a modern one; `anti_tank` is towed AT plus the four
+# tank destroyers, `artillery` every gun plus the five SPG chassis, `anti_air` towed AA plus the
+# five SPAA (MEASURED, the `type =` blocks of common/units/equipment/). A type floor would be
+# satisfied by tracked production while the towed park stayed empty. Expert AI 5.0 reaches the same
+# conclusion in a larger sample: 115 of its 116 floors are `_archetype`, one is a type (`train`).
+#
+# `enable` / `abort` rather than `abort_when_not_enabled`: the two blocks read DIFFERENT bars, so
+# the floor arms on a real shortage and is held until the stock genuinely recovers. Same form as
+# Expert AI's EAI_PROD_EQUIP_REDUCE_infantry_equipment.
+#
+# The values are the one place `constant:` cannot be used (`ai_strategy value =` takes a literal).
+# Source of truth: wa_ai_production.maintenance.floor_base / .floor_deep_add for the chassis,
+# .ground_floor_base / .ground_floor_deep_add for the support guns - keep these literals equal.
+#
+# WHAT THESE FLOORS ASSUME, and how to tell each fact is gone.
+# (1) `equipment_production_min_factories_archetype` forces allocation on an archetype whose
+#     perceived need is ~0 - the engine doc says it "forces" but also that it ignores how many
+#     factories are available, and that sentence is about the POOL, not about need. Gone when a
+#     country the harness reads as maintained shows 0 factories on that archetype.
+# (2) The line runs the NEWEST producible variant (the AI walks the `parent` chain), i.e. the floor
+#     modernises rather than merely producing. Gone when a maintained park keeps receiving its
+#     oldest variant.
+# Both are ASSUMED and owed an owner console reading - `event wa_maint.3 <TAG>`, then the
+# production panel.
+# ============================================================================
+
+WA_AI_PRODUCTION_maintenance_floor_light_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_chassis		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_tank_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_light_tank_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_chassis		value = 3 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_medium_tank_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis		value = 3 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_chassis		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_tank_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_heavy_tank_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_chassis		value = 3 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_tank_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_modern_tank_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis		value = 3 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_anti_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_anti_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = anti_tank_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_anti_tank_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_anti_tank_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_anti_tank_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = anti_tank_equipment		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_anti_air = {
+	enable = { WA_AI_PRODUCTION_should_maintain_anti_air = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_anti_air = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = anti_air_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_anti_air_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_anti_air_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_anti_air_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = anti_air_equipment		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_anti_air = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_anti_air = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_anti_air = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_anti_air_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_anti_air_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_heavy_anti_air_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_heavy_anti_air_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_anti_air_equipment		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_artillery_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_artillery_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_heavy_artillery_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_heavy_artillery_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_artillery_equipment		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_pack_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_pack_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_pack_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = pack_artillery_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_pack_artillery_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_pack_artillery_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_pack_artillery_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = pack_artillery_equipment		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_amtrac = {
+	enable = { WA_AI_PRODUCTION_should_maintain_amtrac = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_amtrac = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = amphibious_mechanized_equipment		value = 1 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_amtrac_large = {
+	enable = { WA_AI_PRODUCTION_should_deepen_amtrac_maintenance = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_amtrac_maintenance = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = amphibious_mechanized_equipment		value = 2 }
+}

@@ -48,43 +48,12 @@ equipments = {
 		}
 	}
 
-	# armored trains
-	train_equipment_4 = {
-		year = 1936
-
-		archetype = train_equipment
-		parent = train_equipment_1
-
-		type = {
-			train
-		}
-		armor_value = 250 # HP = BASE_TRAIN_HP + armor_value
-		air_attack = 18
-		priority = 30
-		# [train-variant-choice] AI gate reads a FLAG, never a variable. can_be_produced is evaluated at
-		# load OUTSIDE any country scope, so a check_variable / num_equipment@ / constant: here dereferences
-		# null and crashes the game on launch (MEASURED 2026-09-05). The flag is latched monthly by the
-		# is_ai pulse in WA_AI_misc_on_actions.txt from WA_AI_PRODUCTION_should_build_armored_trains, where
-		# those tokens are safe. Humans are never gated.
-		can_be_produced = {
-			OR = {
-				is_ai = no
-				has_country_flag = WA_AI_armored_trains_allowed
-			}
-		}
-		build_cost_ic = 65
-		resources = {
-			steel = 8
-			coal = 5
-		}
-	}
-
 	# simplified trains
 	train_equipment_2 = {
 		year = 1939
 
 		archetype = train_equipment
-		parent = train_equipment_4
+		parent = train_equipment_1
 		family = train_equipment_1
 
 		type = {
@@ -130,6 +99,42 @@ equipments = {
 		resources = {
 			steel = 4
 			coal = 3
+		}
+	}
+
+	# armored trains
+	# [train-variant-choice] The AI moves a train line along the `parent` chain to the deepest variant it
+	# can produce, and it does NOT skip an unproducible link: with the old chain _1 -> _4 -> _2 -> _3 the
+	# AI gate on _4 froze every AI line on the Civilian train (campaign e57efdea, 8 saves, 7 majors, 0
+	# lines off _1; pre-gate controls ran _2 then _3). Chain is therefore _1 -> _2 -> _3 -> _4: under the
+	# bar the walk stops at War Austerity, above it reaches the Armored Train. `priority` is not the pick.
+	train_equipment_4 = {
+		year = 1936
+
+		archetype = train_equipment
+		parent = train_equipment_3
+
+		type = {
+			train
+		}
+		armor_value = 250 # HP = BASE_TRAIN_HP + armor_value
+		air_attack = 18
+		priority = 30
+		# [train-variant-choice] AI gate reads a FLAG, never a variable. can_be_produced is evaluated at
+		# load OUTSIDE any country scope, so a check_variable / num_equipment@ / constant: here dereferences
+		# null and crashes the game on launch (MEASURED 2026-09-05). The flag is latched monthly by the
+		# is_ai pulse in WA_AI_misc_on_actions.txt from WA_AI_PRODUCTION_should_build_armored_trains, where
+		# those tokens are safe. Humans are never gated.
+		can_be_produced = {
+			OR = {
+				is_ai = no
+				has_country_flag = WA_AI_armored_trains_allowed
+			}
+		}
+		build_cost_ic = 65
+		resources = {
+			steel = 8
+			coal = 5
 		}
 	}
 

@@ -337,6 +337,48 @@ Army composition triggers:
 
 In `WA_AI_PRODUCTION_DEFAULT_army_composition.txt`, keep role-ratio strategies additive. The current base is infantry `100`; each role modifier subtracts from infantry and adds the same amount to the new role.
 
+### Historical Soviet park after the mission
+
+The mission's own AI cleanup (`common/decisions/SOV_factions.txt`, `complete_effect` /
+`timeout_effect`) disbands the DIVISIONS on the two cavalry templates with `delete_units` (owner
+decision: dead weight; the templates themselves stay). The 18-width "Tankovaya brigada" is left
+alone since 2026-09-09: its brigades keep their units and template and bridge to the 30w MIX
+through STARTER_MIX under 15009. So only the
+corps and its field-upgraded copies carry over. Three script sites then carry the park to its
+conversion:
+
+1. **Target liveness** - `WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY` enables
+   on flag value 15006 alone. The calculator moves the park to 15009 only at the monthly pulse
+   after the mission ends; a mission term in that enable left the role with zero enabled targets
+   until then, and the `light_armor` row vanished from the AI production panel with its
+   divisions (MEASURED 1938.11, owner screenshots).
+2. **Wanted count** - `WA_AI_PRODUCTION_DEFAULT_historical_tank_park_hold` applies
+   `build_army id = light_armor value = 30` while
+   `WA_AI_PRODUCTION_should_hold_historical_tank_park` holds: historical difficulty, park
+   country, mission over, park latched and not retired, no major enemy, training allowed, and
+   `WA_AI_CONFIG_switch_from_light_to_medium_armor` still closed (T-34 / KV-1 not researched,
+   before 1942). DERIVED from the panel: the mission's `value = 100` read as wanted 100, so 30
+   reads as wanted 30. No `force_build_armies`: wanted sits above current.
+3. **Budget slot** - `WA_AI_PRODUCTION_build_army_light_armor` keeps the ordinary light share
+   open for the historical park while `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` is carried, the park is
+   not retired and `WA_AI_CONFIG_before_global_war_begins` holds. Complementary to 1 and 2: the
+   FINAL (medium / heavy) targets still live in the `light_armor` role group, so a want above
+   zero funds the converted divisions until the 1942 retirement. Mission completion, fielded
+   caps, major war and the light-to-medium switch do not end this slot; the no-training brake
+   still zeroes the whole budget.
+
+Owner check: full game restart, post-mission pre-T-34 AI SOV save, `event wa_abg.3 SOV` without
+tagging into SOV. Expect `continues=0`, `force-500=0`, `hold-30=1`, `light-role-open=1`,
+`target-live=1`, a positive light book and four verdicts at 1. `hold-30` reads the shipped gate
+(like `continues` / `force-500`), it is not an independent retype; `target-live` is set
+membership over the declared values, not an enable evaluation. The killing measurement is the AI
+production panel: the `light_armor` row must show wanted exactly 30 - the "value 100 = wanted
+100" reading was taken with `force_build_armies 300` and the role_ratio slot both live, so
+"30 + share" or a normalised percent refutes the wanted-count reading and the 30 is then
+recomputed, not tuned. After the T-34 or KV-1: `hold-30=0`, `light-role-open=1`. At/after 1942:
+both 0. Control: competitive SOV (`hold-30=0`). A save whose mission ended on a build predating
+the temporary latch never arms the hold (the latch is written only while the mission is live).
+
 ## Technology `ai_will_do` Workflow
 
 Technology `ai_will_do` blocks are tool-managed. Before changing them manually, check whether the relevant replacer already supports the file.

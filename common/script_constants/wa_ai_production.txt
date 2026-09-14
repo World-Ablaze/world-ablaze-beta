@@ -50,6 +50,11 @@ wa_ai_production = {
 		# gives 6 medium and 3 heavy.
 		# Assumes the cost gap is the heavy one; modern armour is on the standard weight, which is the
 		# owner rule as given and NOT a claim that modern is cheap.
+		# [heavy-in-support] These weights price DIVISIONS. A country that mounts heavies as a
+		# divisional support company has no heavy role at all - its heavy chassis draw (12 per medium
+		# division) is inside the MEDIUM share and invisible here, so the medium slot buys fewer
+		# divisions than its weight suggests. Tell it is gone: WA_TEST_armor_budget prints
+		# hvysup=1 with heavy=0 while the medium role is open.
 		armor_weight_standard = 2	# light, medium, modern
 		armor_weight_heavy    = 1	# heavy
 
@@ -74,6 +79,15 @@ wa_ai_production = {
 		# it happens to equal today's armor_budget_1940 and is NOT derived from it - retune apart.
 		tank_park_light_floor = 15
 
+		# [light-support-conversion] Monthly pulses the PONT bridge (44w corps -> 30w MIX) stays
+		# armed before the type-14 calculator drops it for the MIX alone. It bounds the ARROW, not
+		# the divisions: a chain that is going to fire does so within one 7-day pass, and the MIX
+		# stays the sole target afterwards for whatever has not moved yet; past that the armed
+		# source only re-selects itself by priority and walks the moved divisions back. The
+		# CONVERT rung needs no such bound - its source shape has a trigger (a template containing
+		# a support battalion). Read by the calculator and re-typed by WA_TEST_armor_budget.
+		light_support_phase_pulses = 2
+
 		# [modern-chassis-tier] Existence bar of the variant-component seed (WA_AI_TEMPLATES_use_<class>_
 		# <component>_armor): a component counts as EXISTING once more than this many chassis sit in the
 		# stockpile or in the armies. Owner rule 2026-09-04: 100, not 0 - captured stock or a trickle line
@@ -91,6 +105,133 @@ wa_ai_production = {
 		armored_reserve = 10000
 	}
 
+	# [air-park-caps] Force caps of the air production decisions (WA_AI_PRODUCTION_air.txt): the
+	# deployed park size above which a line closes, so a cap is a SATURATION bar, never an industry
+	# reading - the mil-factory bands are the `industry` group above. A cap named `_mass` is the
+	# ladder of WA_AI_CONFIG_AIRFORCE_is_mass_producer, `_carrier_*` the carrier strike power's
+	# own cv-tech rungs.
+	# Assumes the engine reads a constant in `has_deployed_air_force_size = { size < ... }`: the
+	# block-plus-`<` form is shipped elsewhere (has_equipment, has_manpower, surrender_progress) but
+	# THIS trigger was probed only with `size >` (wa-constants-registry, 2026-08-16). If the fact is
+	# gone the game says "Malformed token" for this file at launch - check error.log on the first
+	# boot after any change here, and re-probe before adding a cap in a new trigger.
+	air = {
+		# [land-fighter-park] fighters - measured on the country variable
+		# WA_AI_PRODUCTION_land_fighter_park (small_fighter + small_fighter_multirole), NOT on the
+		# engine `type = fighter` role. That role bucket also holds the interceptor and
+		# carrier-fighter archetypes, whose lines run behind interceptor_cap and cv_fighter_cap
+		# below: counting them here bridled those two arms twice and let a carrier air group close
+		# the land fighter line.
+		fighter_cap                = 5000
+		fighter_cap_mass           = 10000
+
+		# Battle of Britain emergency programme: the defender's own bar, deliberately NOT
+		# fighter_cap - it must be retunable without moving every other fighter line. Same
+		# land-only park as fighter_cap: a carrier air group does not defend Britain.
+		bob_fighter_cap            = 5000
+		bob_fighter_cap_sov_gone   = 8000
+
+		# per-airframe parks (check_variable on num_deployed_planes_with_type@<airframe>)
+		interceptor_cap            = 1500	# small_fighter_interceptor_airframe
+		cv_fighter_cap             = 2000	# cv_small_fighter_airframe
+		heavy_fighter_cap          = 3000	# medium_fighter_airframe
+		attacker_cap               = 2000	# medium_fighter_multirole_airframe
+		cv_cas_cap                 = 2000	# cv_small_bomber_airframe
+
+		# close support - land and carrier arms each on their own archetype park, never the
+		# shared `type = cas` role
+		cas_cap                    = 3000	# small_bomber_airframe
+
+		# [medium-bomber-one-park] ONE bar for the fast, strike and tactical lines together, flat
+		# for every country (owner ruling 2026-09-09). The engine counts aircraft by ROLE: the
+		# fast_bomber, medium_bomber and medium_heavy_bomber archetypes all declare
+		# type = tactical_bomber, so the three lines always spent ONE park - the four old bars
+		# (fast/strike 3000, tactical 2400/1000/500) only made them close each other at different
+		# heights. Assumes the three archetypes keep that role; give one its own role and it needs
+		# its own bar again (common/units/equipment/plane_airframes.txt).
+		medium_bomber_cap          = 2000
+
+		# naval bombers. The carrier strike power keeps its own park bar; the two-rung ladder it used
+		# to climb on its late cv torpedo tech (1800 then 3500) was collapsed to one bar, so this is
+		# the LOWER of the two old rungs - the calibrated number that was already in use before the
+		# late tech landed. Retune here, not at the call site.
+		naval_cap                  = 1500
+		naval_cap_carrier          = 1800	# the CARRIER naval-bomber archetype's own park (its own line since [air-budget])
+
+		# strategic bombers
+		strategic_cap              = 3000
+		strategic_cap_mass         = 6000
+		strategic_cap_late_surge   = 4500	# the delayed arm, after 1944, while the SOV stands
+
+		# support types
+		scout_cap                  = 150
+		transport_cap              = 200
+
+		# non-park bars of the same decisions. max_surrender: a country this far into collapse
+		# stops opening bomber lines. min_alliance_strength: below it the coalition cannot escort
+		# what a transport or naval line would produce.
+		max_surrender              = 0.1
+		min_alliance_strength      = 0.5
+
+		# [air-budget] REOPEN bars, one per cap above, each 90 % of its cap: a line closed by its
+		# cap reopens only once the park has fallen this far (hysteresis, read through the purge
+		# book of the archetype). Without them a mature park oscillating around its cap flips the
+		# line - and the monthly budget entry - on every pulse. Same ladder as the caps; retune the
+		# pair together. Assumes the purge book flags are written by WA_aircraft_production_strategies
+		# only - a second writer breaks the pair.
+		fighter_cap_reopen         = 4500
+		fighter_cap_mass_reopen    = 9000
+		interceptor_cap_reopen     = 1350
+		cv_fighter_cap_reopen      = 1800
+		heavy_fighter_cap_reopen   = 2700
+		attacker_cap_reopen        = 1800
+		cv_cas_cap_reopen          = 1800
+		cas_cap_reopen             = 2800
+		medium_bomber_cap_reopen   = 1800
+		naval_cap_reopen           = 1400
+		naval_cap_carrier_reopen   = 1620
+		strategic_cap_reopen       = 2700
+		strategic_cap_mass_reopen  = 5400
+		strategic_cap_late_surge_reopen = 4050
+		scout_cap_reopen           = 135
+		transport_cap_reopen       = 180
+		# the Battle of Britain programme is a CLOSURE of every bomber line, so its pair runs the
+		# other way: the programme engages under the reopen bar and releases at the cap, read
+		# through WA_bob_production_flag - the one battle where attrition around the bar is certain
+		bob_fighter_cap_reopen          = 4500
+		bob_fighter_cap_sov_gone_reopen = 7200
+	}
+
+	# [air-budget] The LAND air pool split. The engine gives a type `unit_ratio / sum(unit_ratio)`
+	# of the planes it wants (documentation.info, UNIT RATIOS / AIR - pure weights, no base 100), so
+	# a type's share is its weight over the sum of the OPEN types' weights, whatever their number.
+	# WA_AI_AIR_BUDGET_reconcile (WA_AI_PRODUCTION_air_budget.txt, monthly) emits the weights and
+	# reconciles them against its books; a closed type weighs 0 and the others share its part.
+	# fighter_floor_pct: while the fighter type is open its share never drops below this - the
+	# fighter weight is raised to floor x others / (100 - floor) when the table alone falls short -
+	# fighter_floor_pct must stay below 100 (100 divides by zero).
+	# Owner examples this table reproduces: fighter+cas 60/40; fighter+cas+strategic 43/29/29.
+	# weight_naval halved on the owner ruling of 2026-09-09 (land naval bombers are a side arm).
+	air_budget = {
+		weight_fighter        = 50
+		weight_cas            = 40
+		weight_tactical       = 40
+		weight_strategic      = 40
+		weight_naval          = 10
+		weight_heavy_fighter  = 15
+		fighter_floor_pct     = 40
+
+		# Carrier pool, same rule, no floor: the engine sizes it from deck capacity and the three
+		# cv roles share it by these weights while their type is funded (deck held x line open).
+		# The old static block read 150 / -1000 / 100 with the carrier strike power's own line
+		# adding 80 on top of the -1000: a net -920 that gave it no carrier-CAS share at all.
+		# fighter / naval bomber at parity: the cv unit_ratio also sets the AI's deck composition,
+		# and the owner wants a half-and-half air group (ruling 2026-09-09)
+		cv_weight_fighter       = 50
+		cv_weight_cas           = 0
+		cv_weight_naval_bomber  = 50
+	}
+
 	# [industry-tiers] The mil-factory size ladder every production read shares. A tier bound is
 	# read as `> tier_x` (at least that size) or `NOT = { > tier_x }` (strictly below the next
 	# band) - integer factory counts make the NOT form exactly the old `< bound+1` literal.
@@ -99,6 +240,40 @@ wa_ai_production = {
 		tier_medium_mils   = 29	# medium producer (old literals 29 / < 30)
 		tier_large_mils    = 49	# large producer (old literals 49 / < 50)
 		tier_major_mils    = 99	# major industry (old literals 99 / < 100)
+		tier_supermajor_mils = 199	# supermajor industry (old literal 190 / < 200)
 		tier_superpower_mils = 299	# superpower industry (old literals 299 / < 300)
+	}
+
+	# [maintenance-floor] The maintenance floors: a small factory allocation that keeps a fielded
+	# park supplied and modernising. Read by WA_AI_PRODUCTION_maintenance_triggers.txt.
+	#
+	# THE SHORTAGE IS MEASURED AS A RATIO, never as an absolute stock. The question is "how much
+	# spare equipment does this country hold against what its armies REQUIRE", which scales itself
+	# with army size - an absolute bar would be wrong for every country but the one it was tuned on.
+	# The denominator is `num_target_equipment_in_armies_k@<archetype>` (engine variable, MEASURED in
+	# the 1.19.2 install's documentation/dynamic_variables_documentation.md: "number of equipment
+	# required in armies of the country in thousands"); WA already reads it in
+	# WA_AI_MILITARY_posture_effects.txt and WA_AI_misc_effects.txt. Form and bars follow Expert AI
+	# 5.0's EAI_PROD_EQUIP_REDUCE_infantry_equipment, which runs the same ratio the other way round.
+	#
+	# enable / abort are a SCHMITT PAIR and must never be equal: the floor arms at `shortage_enable`
+	# and is held until `shortage_abort`. Collapse them and a park sitting on the bar toggles the
+	# block every evaluation.
+	# Assumes the engine keeps that variable per archetype; the fact is gone when a country whose
+	# templates clearly demand an equipment reads a target of 0 in the console harness.
+	maintenance = {
+		target_min_k    = 0.1	# the armies must require at least ~100 of it before a floor is owed
+		shortage_enable = 0.10	# arm: free spares under 10 % of what the armies require
+		shortage_abort  = 0.25	# release: spares back to 25 % - hysteresis, never equal to the above
+
+		# Floor sizes. Source of truth for every reader EXCEPT the `ai_strategy value =` literals,
+		# which cannot resolve `constant:` (wa-constants-registry) and are kept equal by hand.
+		# Armour is the deeper pair: a chassis is two orders of magnitude dearer than a towed gun
+		# (MEASURED build_cost_ic 200 per chassis), so one factory is a trickle there and a real
+		# flow for a support gun.
+		floor_base            = 2	# armour chassis
+		floor_deep_add        = 3	# added above industry.tier_large_mils -> 5
+		ground_floor_base     = 1	# support equipment
+		ground_floor_deep_add = 2	# -> 3
 	}
 }

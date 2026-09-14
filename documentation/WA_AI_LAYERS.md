@@ -14,7 +14,7 @@ couche 4 qui appellent des triggers de couche 3.
 
 | # | Couche | Question | Matière | A le droit de lire |
 | --- | --- | --- | --- | --- |
-| 1 | **DÉCLARATION** | « Quelle est la valeur ? » | `common/script_constants/wa_ai_*.txt` + `common/scripted_triggers/WA_AI_CONFIG*.txt` | rien |
+| 1 | **DÉCLARATION** | « Quelle est la valeur ? » | `common/script_constants/wa_ai_*.txt` + `common/scripted_triggers/WA_AI_CONFIG*.txt` + `common/scripted_triggers/WA_AI_TECHTREE_membership.txt` (GÉNÉRÉ, cf. §5) | rien |
 | 2 | **OBSERVATION** | « Qu'est-ce qui est vrai, maintenant ? » | `WA_AI_<SYS>_is_*` / `_has_*` / `_holds_*` dans `common/scripted_triggers/WA_AI_<SYS>_*.txt` | couche 1 |
 | 3 | **DÉCISION** | « Faut-il agir ? » | `WA_AI_<SYS>_should_*` / `_can_*`, mêmes fichiers | couches 1 + 2 |
 | 4 | **CONSOMMATION** | — | `common/ai_strategy/`, `common/scripted_effects/`, `events/`, `common/decisions/` | couche 3 (plus l'adressage Country `allowed = { tag = X }`) |
@@ -29,7 +29,8 @@ invariant déjà vrai.
 **Frontière 1/2 — donnée d'identité/de setup vs état du monde vivant.** Une déclaration de
 couche 1 lit des **données d'identité et de setup** : `tag`, `original_tag`, `date`, seuils,
 `has_tech`, `has_completed_focus`, `has_idea`, `has_government`, `has_autonomy_state`,
-`difficulty`. Elle ne lit pas l'**état du monde vivant** : `any_enemy_country`,
+`difficulty`, et un `has_country_flag` de **setup** (flag posé une fois par une décision ou un
+fichier `history/`, jamais par un pulse : les `*_technologies_tree_flag` d'adoption d'arbre). Elle ne lit pas l'**état du monde vivant** : `any_enemy_country`,
 `any_country_of`, `has_war*`, `controls_state`, `owns_state`, `surrender_progress`,
 `check_variable`, `num_divisions`, tout balayage de pays. Cas limite tranché :
 `is_in_faction_with` est toléré en couche 1 **uniquement** quand les tags sont la donnée et
@@ -53,6 +54,9 @@ consommateurs opposés d'un même verdict n'existe encore, donc le checker ne la
 | Donnée | Véhicule | Jamais |
 | --- | --- | --- |
 | Tag / liste de pays | trigger `WA_AI_CONFIG_*` (archétype) | dans un gate de couche 4 hors adressage Country |
+| **Verdict composé UNIQUEMENT d'autres triggers** | **trigger de couche 2 dans le fichier du système propriétaire** (`WA_AI_COUNTRY_triggers.txt`, `WA_AI_DIFFICULTY_triggers.txt`, `WA_AI_NAVY_triggers.txt`, `WA_AI_DOCTRINES_land.txt`, `WA_AI_TEMPLATES_triggers.txt`, `WA_AI_MILITARY_triggers.txt`…) | **dans `WA_AI_CONFIG*` — une déclaration ne lit rien, donc un corps qui n'est QUE des appels de triggers n'est pas une déclaration ; et CONFIG qui relit ce verdict est une inversion de couche** |
+| **« ce pays a l'arbre de tech X »** | **`WA_AI_TECHTREE_has_<folder>`** (GÉNÉRÉ depuis le bloc `available` du dossier dans `common/technology_tags/00_technology.txt`) | **une liste de tags, où que ce soit — le `available` dit `original_tag` OU `<x>_technologies_tree_flag`, et une liste de tags perd la seconde moitié** |
+| **« l'arbre de ce pays contient la branche Y »** | **`WA_AI_TECHTREE_has_branch_<cap>`** / `WA_AI_PRODUCTION_has_branch_<line>` (GÉNÉRÉS depuis `tools/techtree_registry.json` / `tools/air_tech_registry.json`) | un `has_tech` — il ne distingue pas « pas encore cherché » de « absent de mon arbre » |
 | Nombre partagé | `common/script_constants/wa_ai_<système>.txt` (`constant:`) | un `@` lu par deux fichiers |
 | **Date partagée** | **trigger CONFIG nommé portant le littéral** | **un script constant — `date > constant:` est silencieusement toujours vrai (MEASURED 2026-08-29)** |
 | Niveau de difficulté | les triggers `WA_AI_DIFFICULTY_*` et leurs compositions | une comparaison brute `difficulty > N` hors CONFIG — le mapping est non monotone (`[difficulty-mapping]`), `> N` ne peut pas dire « normal ou plus dur » |
@@ -80,6 +84,7 @@ Tenues dans `tools/check_ai_layers.py` (données, pas commentaires) :
 | paires `is_strategic_<r>_exporter` (CONFIG vs WA_AI) | capacité-compose-identité ; lecteurs dans des décisions générées, renommage différé |
 | triggers à `is_in_faction_with` en couche 1 | les tags sont la donnée (frontière 1/2 ci-dessus) |
 | renommage des triggers antérieurs au modèle | au fil de l'eau uniquement, jamais de commit de renommage massif |
+| `WA_AI_TECHTREE_membership.txt` porte des `original_tag` hors `WA_AI_CONFIG*` | matière de couche 1, mais **copiée** du bloc `available` de chaque dossier de `common/technology_tags/00_technology.txt` par `tools/gen/gen_techtree_membership.py` (`--check` en porte). La règle « un seul fichier CONFIG » protège contre la dispersion **manuelle** de la classification ; ici la source est le fichier de données du jeu et une copie manuelle dans CONFIG serait exactement le défaut corrigé le 2026-09-09 — elle a déjà perdu la moitié `has_country_flag` une fois. Ne jamais éditer ce fichier à la main, ne jamais recopier ses tags ailleurs. |
 
 ## 6. Le motif `explain`
 
@@ -105,6 +110,12 @@ Un gate de couche 3 s'écrit `WA_AI_<SYS>_should_[<tag>_][not_]<intention>[_N]` 
   `_10/_11`) : légitime tant que la séquence existe ; un `_2` qui ne fait pas partie d'une
   échelle est un nom à finir d'écrire.
 - Suffixe `_allowed` : la moitié `allowed` d'un bloc converti dont l'`enable` a son propre gate.
+
+- `has_branch_<cap>` est une OBSERVATION de couche 2, pas une décision : le nom dit `has_`, et
+  c'est délibéré. La première écriture s'appelait `can_ever_<cap>` — `_can_` est le verbe de
+  couche 3 (`DECISION_VERB` dans `tools/check_ai_layers.py`), donc un futur
+  `enable = { …_can_ever_x = yes }` aurait satisfait `LAYER4-NON-DECISION` en gatant sur une
+  observation. Renommé le 2026-09-09 avant livraison.
 
 Une observation de couche 2 contient `is_` / `has_` / `holds_` (`is_at_war_with_european_axis`,
 `axis_holds_southern_sicily`).

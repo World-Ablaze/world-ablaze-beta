@@ -2649,3 +2649,122 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Evidence:** WORK.md `light-support-conversion` (Change 7 defect + Change 8 decision); the heavy
   target `WA_AI_TEMPLATES_armored_heavy.txt` value 7105 vs medium 6111; the per-value generator on
   branch `parked/armor-conversion-finals` (`e26ab824f`), parked by owner order pending a decision.
+
+## 2026-09-07 - The AI picks an equipment VARIANT by walking the `parent` chain, not by `priority` - and an unproducible link freezes the line
+
+- **Date:** 2026-09-07
+- **Symptom:** `train-variant-choice` gated the Armored Train (`train_equipment_4`) behind an AI-only
+  `can_be_produced`. On the next campaign (`e57efdea`, 8 saves, 7 majors, 409 countries) every AI train
+  line ran the Civilian train `_1` - none on Simplified `_2` or War Austerity `_3`, both researched
+  since 1942. Seven pre-gate saves (1942.4-1945.4) had the majors on `_2` then `_3`.
+- **Cause:** WA's chain was `_1 -> _4 -> _2 -> _3` (`parent =` in `trains.txt`, since 2024). The AI
+  moves a line to the deepest variant it can produce along that chain and does not skip a link it
+  cannot produce; gating `_4` therefore cut `_2`/`_3` off from every line sitting on `_1`. Two
+  measurements settle the pick rule: pre-gate, `_4` (`priority = 30`) was producible for every
+  major and none chose it over `_3` (25) - the chain end wins, not the priority; ROM/POL ran `_4`
+  only while it was the sole child of `_1` they held, and moved to `_2` the month Simplified landed.
+- **Rule:** to make a variant the AI's choice, put it at the END of the `parent` chain; to withhold a
+  variant from the AI, make it a LEAF (nothing behind it), never a link. A `can_be_produced` gate on
+  a mid-chain variant is a silent ban on everything below it. `priority` is not the AI's pick
+  (ASSUMED role: tie-break / human UI order). Fix: chain `_1 -> _2 -> _3 -> _4`.
+- **Evidence:** `common/units/equipment/trains.txt` (chain + comment); WORK.md `train-variant-choice`
+  probe of 2026-09-07 with the campaign ids; the sibling entry of 2026-08-13 on
+  `production_upgrade_desire_offset` (which is the OTHER lever that acts on a chain step).
+
+## 2026-09-07 - `check_variable` with `>= constant:` does not parse, and one bad token desyncs the whole effects file
+
+- **Date:** 2026-09-07 (`light-support-conversion` Change 11, owner boot log 14:18)
+- **Symptom:** `parser.cpp:1111 Error: unexpected token ... near line 1410 (constant:wa_ai_production.army_composition.light_support_phase_pulses)`,
+  followed by `Invalid trigger 'set_country_flag'` / `'set_variable'` on the effect lines right after it
+  and a trigger error 130 lines later inside an unrelated effect (`WA_AI_TEMPLATES_retire_light_support_park`).
+  Every Python checker (`check_templates`, `check_constants`, brace balance) had passed.
+- **Cause:** the offending line was `check_variable = { WA_AI_TEMPLATES_ls_phase_pulses >= constant:... }`.
+  The repo held ZERO `>=` inside a `check_variable` before it (MEASURED grep), while the `> constant:` form
+  (`WA_AI_AIFC_core.txt:83`) boots. Whether `>=` alone or `>=` followed by a `constant:` token is the
+  unparseable part is ASSUMED; both readings forbid the same line. Once the trigger parser gives up
+  inside a `limit`, it keeps reading the effect body as triggers and reports errors far from the cause:
+  the "near line 1556" error was the cascade, not a second defect.
+- **Rule:** in `check_variable`, compare with `<`, `>` or `=` only; for "at least K" compute K-1 into a
+  temp (`set_temp_variable` + `subtract_from_temp_variable`) and test `> temp`. And a change to a
+  `WA_AI_*` effect is not shipped until a game boot (or the owner's boot log) shows 0 errors on the
+  file - no offline checker parses PDXScript the way the engine does.
+- **Evidence:** WORK.md `light-support-conversion` Change 11 boot bullet; commit `943011b142` (broken)
+  and its follow-up fix; `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` PONT exit.
+
+## 2026-09-08 - `has_tech_bonus` does not read bonus availability: the `technology =` form ignores the tech, the `category =` form latches on spent records
+
+- **Date:** 2026-09-08 (`research-rush`; harness `WA_TEST_research_bonus`, 6 owner console runs on 1.19.2)
+- **Symptom:** the generated ai_will_do date gate was given `NOT = { has_tech_bonus = { technology = X } }`
+  as "no bonus covers X"; the next campaign had ENG starting four 1938 techs in August 1936 with no
+  bonus on any of them (save `6fcbbe0d` 1936.9; owner observe run reproduced on the Hampden, 12 Aug).
+- **Cause (MEASURED, 13 probes ENG + LUX, then 1937.4 with technology-declared bonuses):**
+  `has_tech_bonus = { technology = X }` reads true with no bonus at all (LUX), true on a tech a bonus
+  targets directly and unclaimed, and false only on techs covered by a record CLAIMED by a running
+  research - it never means "a bonus covers X". `has_tech_bonus = { category = C }` reads true while
+  a `limited_use_bonus` record of C EXISTS: records are never deleted (20-save trace, `uses`
+  decremented at claim time and omitted at 0), so it stays true for the whole game after the first
+  bonus of C is consumed; it does not see bonuses declared by `technology =`, nor permanent
+  `research_bonus` idea modifiers (the `league_of_nations` control). Console `research all` completes
+  a tech without the normal consumption (record keeps `claim=1`) - unusable to test consumption.
+- **Rule:** never gate anything on `has_tech_bonus`. Bonus availability is the WA_rb_* ledger
+  (`documentation/WA_RESEARCH_RUSH.md`): grant lines after every `add_tech_bonus`, per-tech
+  `on_research_complete` consume chains, both generated by `tools/gen/gen_research_bonus_tracking.py`.
+  And an engine trigger whose semantics matter to a gate gets a console harness with a known-false
+  country (LUX) and a grant/consume cycle before it ships - the docs alone lied here.
+- **Evidence:** `common/scripted_effects/WA_TEST_research_bonus.txt` header (runs 1-6);
+  `events/wa_test_research_bonus.txt`; commit `b829393945` (the defective gate) and its follow-up;
+  scratchpad bug report sent to Paradox (`has_tech_bonus_bug_report.md`).
+
+## 2026-09-08 - Console script reload poisons country-valued triggers: name interpolation still works, `tag = ROOT` reads false
+
+- **Date:** 2026-09-08 (`pc-lost-state-purge`; harness `WA_TEST_pc_lost_purge`, 4 owner console runs on 1.19.2)
+- **Symptom:** the harness `scope :` self-check (contract v1: `always` / `I-am-ROOT` / `I-am-THIS`
+  / `ROOT-scope-usable` / `control-false`) read `1 1 1 1 0` on a cold-started game (19:10, 19:26)
+  and `1 0 0 1 0` on the two runs in between (19:17, 19:21), from a BYTE-IDENTICAL event file. In
+  the poisoned runs `[Root.GetName]`, `[This.GetName]` and `ROOT = { always = yes }` all still read
+  correctly (all "Republican Italy"), while `tag = ROOT`, `tag = THIS` and `is_controlled_by = ROOT`
+  read FALSE everywhere - Rome, which ITA controls, printed `ROOT-controls=0`.
+- **Cause (MEASURED by the cold-restart control):** between the clean runs the owner had reloaded
+  the scripted-effects file in the console (`reload` / `reloadfile`) after an edit. A hot script
+  reload leaves the scope's DISPLAY binding intact (GetName, `X = { always = yes }`) but breaks
+  every trigger that COMPARES the scope as a country (`tag =`, `is_controlled_by =`, `original_tag =`).
+  A full executable restart with the same files restored `1 1 1 1 0`. This is the same signature the
+  older "Two call sites, one effect" entry recorded as *cause unknown* - the discriminating pair
+  (cold vs reloaded, identical bytes) names the cause: it is the reload, not the call site.
+- **Rule:** never trust a console harness reading taken after a `reload`/`reloadfile` of the effect
+  or trigger file. Restart the executable and reload the save before measuring. The contract-v1
+  `scope :` line is what catches it - a run whose self-check is not `1 1 1 1 0` measures nothing,
+  whatever the rows below say. When a harness's country-valued triggers all read false while its
+  value triggers and name interpolation read true, suspect a stale reload before touching the effect.
+- **Evidence:** `common/scripted_effects/WA_TEST_pc_lost_purge.txt` (contract-v1 header); WORK.md
+  `pc-lost-state-purge` runs 1-2 (19:10 clean FAIL-on-fixture, 19:17/19:21 void, 19:26 clean 3x PASS).
+
+### A hot script reload can also stall the AI's own template upgrades - restart before reading the designer
+
+- **Date:** 2026-09-09
+- **Symptom (owner report, ASSUMED until reproduced with a cold-vs-reloaded pair):** in a session
+  where scripted files had been hot-reloaded in the console (`reload` / `reloadfile`), the engine's
+  AI template upgrade machinery (`imgui show ai_templates`: role targets, best-match, copy-and-edit
+  of division templates, field upgrades) appeared to stop acting for the AI; after a full
+  executable restart on the same files and save it worked again. Seen while chasing the Soviet
+  44w -> 30w conversion (`light-support-conversion`, WORK.md Change 14), where a save later showed a
+  genuine script-side cause too (army XP starvation) - the two are not the same failure.
+- **Cause:** not established. Consistent with the previous entry (a hot reload leaves scope
+  DISPLAY bindings intact but breaks country-valued triggers): every `ai_templates` `enable` block
+  and role-level `upgrade_prio` modifier is a country-scope trigger evaluated by the engine, so a
+  reload that poisons `tag =` / `has_country_flag =` reads would silently disable every target and
+  zero every role weight - which is exactly "the designer does nothing". ASSUMED mechanism.
+- **Rule:** any reading of the AI template designer (`imgui show ai_templates`,
+  `ai_division_production`, a lettered template appearing or not, a field upgrade firing or not)
+  taken in a session that hot-reloaded scripts is void. Restart the executable, reload the save,
+  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass, then read. Before concluding "the AI
+  never designs X", ask how the session was started - and only then look for a script cause.
+- **Detection:** the session history (a `reload` in the console log); a `WA_TEST_*` harness whose
+  contract-v1 scope line is not `1 1 1 1 0` in the same session; the designer resuming after a
+  cold restart with byte-identical files.
+- **Evidence:** owner report 2026-09-09, then the owner's cold-boot control the same day: with
+  byte-identical files and a fresh executable the AI template upgrades ran ("les changements
+  locaux marchent") - one half of the discriminating pair, the reloaded half not re-run, so the
+  entry stays class C; the cold-restart pair of the previous entry
+  (`WA_TEST_pc_lost_purge.txt`, WORK.md `pc-lost-state-purge` runs 1-2) for the trigger-poisoning
+  half; engine doc `common/ai_templates/_documentation.md` for what the designer evaluates.

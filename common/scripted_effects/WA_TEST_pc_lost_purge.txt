@@ -1,0 +1,194 @@
+############################################################################################################
+#	World Ablaze - priority-construction LOST-STATE PURGE console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[pc-lost-state-purge] instrument for on_state_control_changed (WA_AI_misc_on_actions.txt): when ROOT
+#	loses a state to a party it may not build through, its PC projects there must be cancelled and
+#	counted in WA_TLM_pc_lost_n; when the state goes to a faction member nothing must move.
+#
+#	Recipe: events/wa_test_pc_lost_purge.txt header. Fire `event wa_pclost.1 ITA` from ANY tag - do
+#	NOT tag into the country under test. Output: logs/game.log, "PC LOST PURGE TEST".
+#
+#	The walk below reads the SAME arrays the purge reads (they are the state under test) but applies
+#	its own expectation (a slot whose WA_AI_PC_target_state is this state, plain-id compare in ROOT's
+#	scope) - contract rule 4: when the report's "expect" and the purge's result disagree, the fault
+#	is on one side only.
+############################################################################################################
+
+############################################################
+#	One state row. THIS = state, ROOT = builder.
+#	Reads _pcl_fixture_state_ (plain state id); writes _pcl_here_ = ROOT slots still targeting THIS state.
+############################################################
+WA_TEST_PCLOST_state_row = {
+	set_temp_variable = { _pcl_here_ = 0 }
+	set_temp_variable = { _pcl_n_ = WA_AI_PC_projects_in_state_of_@ROOT^num }
+	CONTROLLER = { log = "    state [Prev.GetName]: controller=[This.GetName]" }
+	log = "      projects_in_state_of_[Root.GetTag]^num = [?_pcl_n_|.0]"
+	for_each_loop = { array = WA_AI_PC_projects_in_state_of_@ROOT value = _pcl_id_
+		set_temp_variable = { _pcl_tgt_ = 0 }
+		set_temp_variable = { _pcl_bt_ = 0 }
+		set_temp_variable = { _pcl_match_ = 0 }
+		ROOT = {
+			set_temp_variable = { _pcl_tgt_ = WA_AI_PC_target_state^_pcl_id_ }
+			set_temp_variable = { _pcl_bt_ = WA_AI_PC_building_type^_pcl_id_ }
+		}
+		# plain-id compare on purpose: both sides are stored state numbers, no scope .id involved
+		if = { limit = { check_variable = { _pcl_tgt_ = _pcl_fixture_state_ } }
+			set_temp_variable = { _pcl_match_ = 1 }
+			add_to_temp_variable = { _pcl_here_ = 1 }
+		}
+		log = "        id=[?_pcl_id_|.0] target_state=[?_pcl_tgt_|.0] building_type=[?_pcl_bt_|.0] targets_this_state=[?_pcl_match_|.0]"
+	}
+}
+
+############################################################
+#	Builder counters. THIS = ROOT = builder.
+############################################################
+WA_TEST_PCLOST_counters = {
+	set_temp_variable = { _pcl_q_ = WA_AI_PC_queue^num }
+	log = "    builder [This.GetName]: queue^num=[?_pcl_q_|.0] active_projects=[?WA_AI_PC_active_projects|.0] active_nonrail=[?WA_AI_PC_active_nonrail_projects|.0] wa_tlm_pc_lost_n=[?WA_TLM_pc_lost_n|.0]"
+}
+
+############################################################
+#	Report only (no state change). THIS = ROOT = builder.
+############################################################
+WA_TEST_PCLOST_report = {
+	log = "PC LOST PURGE TEST | [GetDateText] | report"
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _pcl_e1_ = 0 }
+	set_temp_variable = { _pcl_e2_ = 0 }
+	set_temp_variable = { _pcl_e3_ = 0 }
+	set_temp_variable = { _pcl_e4_ = 0 }
+	set_temp_variable = { _pcl_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _pcl_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _pcl_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _pcl_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _pcl_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _pcl_e5_ = 1 } }
+	log = "  scope : always=[?_pcl_e1_|.0]  I-am-ROOT=[?_pcl_e2_|.0]  I-am-THIS=[?_pcl_e3_|.0]  ROOT-scope-usable=[?_pcl_e4_|.0]  control-false=[?_pcl_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+	WA_TEST_PCLOST_counters = yes
+	# every queued project: where it is and who holds that ground
+	for_each_loop = { array = WA_AI_PC_queue value = _pcl_id_
+		set_temp_variable = { _pcl_tgt_ = WA_AI_PC_target_state^_pcl_id_ }
+		set_temp_variable = { _pcl_bt_ = WA_AI_PC_building_type^_pcl_id_ }
+		set_temp_variable = { _pcl_own_ = 0 }
+		if = { limit = { check_variable = { _pcl_tgt_ > 0 } }
+			var:_pcl_tgt_ = {
+				if = { limit = { is_controlled_by = ROOT } set_temp_variable = { _pcl_own_ = 1 } }
+				CONTROLLER = { log = "    queued id=[?_pcl_id_|.0] type=[?_pcl_bt_|.0] state=[?_pcl_tgt_|.0] [Prev.GetName] controller=[This.GetName] ROOT-controls=[?_pcl_own_|.0]" }
+			}
+		}
+		else = {
+			log = "    queued id=[?_pcl_id_|.0] type=[?_pcl_bt_|.0] state=0 (no target)"
+		}
+	}
+}
+
+############################################################
+#	One leg. THIS = ROOT = builder.
+#	Inputs: _pcl_fixture_state_ (plain state id), _pcl_to_enemy_ (1 = hand it to an enemy, 0 = to a faction member).
+#	Step 1 hands the state to ROOT (so ROOT is the old controller of step 2), step 2 hands it to the partner.
+#	HOI4 has no trigger asking whether a global event target is set, so the partner is resolved by the
+#	same condition twice (any_country guard, then random_country save) - the WA_TEST_air_actors idiom.
+############################################################
+WA_TEST_PCLOST_leg = {
+	log = "PC LOST PURGE TEST | [GetDateText] | leg state=[?_pcl_fixture_state_|.0] to_enemy=[?_pcl_to_enemy_|.0]"
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _pcl_e1_ = 0 }
+	set_temp_variable = { _pcl_e2_ = 0 }
+	set_temp_variable = { _pcl_e3_ = 0 }
+	set_temp_variable = { _pcl_e4_ = 0 }
+	set_temp_variable = { _pcl_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _pcl_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _pcl_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _pcl_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _pcl_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _pcl_e5_ = 1 } }
+	log = "  scope : always=[?_pcl_e1_|.0]  I-am-ROOT=[?_pcl_e2_|.0]  I-am-THIS=[?_pcl_e3_|.0]  ROOT-scope-usable=[?_pcl_e4_|.0]  control-false=[?_pcl_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	set_temp_variable = { _pcl_has_partner_ = 0 }
+	if = { limit = { check_variable = { _pcl_to_enemy_ = 1 } }
+		if = { limit = { any_country = { has_war_with = ROOT exists = yes is_major = yes } }
+			random_country = {
+				limit = { has_war_with = ROOT exists = yes is_major = yes }
+				save_global_event_target_as = wa_pcl_partner
+			}
+			set_temp_variable = { _pcl_has_partner_ = 1 }
+		}
+		else_if = { limit = { any_country = { has_war_with = ROOT exists = yes } }
+			random_country = {
+				limit = { has_war_with = ROOT exists = yes }
+				save_global_event_target_as = wa_pcl_partner
+			}
+			set_temp_variable = { _pcl_has_partner_ = 1 }
+		}
+	}
+	else = {
+		if = { limit = { any_country = { is_in_faction_with = ROOT NOT = { tag = ROOT } exists = yes is_major = yes } }
+			random_country = {
+				limit = { is_in_faction_with = ROOT NOT = { tag = ROOT } exists = yes is_major = yes }
+				save_global_event_target_as = wa_pcl_partner
+			}
+			set_temp_variable = { _pcl_has_partner_ = 1 }
+		}
+		else_if = { limit = { any_country = { is_in_faction_with = ROOT NOT = { tag = ROOT } exists = yes } }
+			random_country = {
+				limit = { is_in_faction_with = ROOT NOT = { tag = ROOT } exists = yes }
+				save_global_event_target_as = wa_pcl_partner
+			}
+			set_temp_variable = { _pcl_has_partner_ = 1 }
+		}
+	}
+
+	if = { limit = { check_variable = { _pcl_has_partner_ = 0 } }
+		log = "  STOP  : no partner found (to_enemy=[?_pcl_to_enemy_|.0]) - leg not run"
+	}
+	else = {
+		event_target:wa_pcl_partner = { log = "  partner: [This.GetName]" }
+
+		log = "  before:"
+		WA_TEST_PCLOST_counters = yes
+		set_temp_variable = { _pcl_q0_ = WA_AI_PC_queue^num }
+		set_temp_variable = { _pcl_lost0_ = WA_TLM_pc_lost_n }
+
+		# step 1 - the state becomes ROOT's, so that ROOT is the OLD controller of step 2
+		# set_state_controller is the COUNTRY-scope form taking a STATE; inside a state the effect is
+		# set_state_controller_to (engine effects_documentation.md) - run 1 used the wrong one and the
+		# fixture silently stayed British.
+		var:_pcl_fixture_state_ = { set_state_controller_to = ROOT }
+		log = "  after step 1 (state -> [Root.GetName]):"
+		var:_pcl_fixture_state_ = { WA_TEST_PCLOST_state_row = yes }
+		set_temp_variable = { _pcl_expect_ = _pcl_here_ }
+		if = { limit = { check_variable = { _pcl_to_enemy_ = 0 } } set_temp_variable = { _pcl_expect_ = 0 } }
+
+		# step 2 - the state goes to the partner: this is the transition under test
+		event_target:wa_pcl_partner = { var:_pcl_fixture_state_ = { set_state_controller_to = PREV } }
+		log = "  after step 2 (state -> partner):"
+		WA_TEST_PCLOST_counters = yes
+		var:_pcl_fixture_state_ = { WA_TEST_PCLOST_state_row = yes }
+
+		set_temp_variable = { _pcl_dq_ = _pcl_q0_ }
+		subtract_from_temp_variable = { _pcl_dq_ = WA_AI_PC_queue^num }
+		set_temp_variable = { _pcl_dlost_ = WA_TLM_pc_lost_n }
+		subtract_from_temp_variable = { _pcl_dlost_ = _pcl_lost0_ }
+		log = "  expect cancelled=[?_pcl_expect_|.0]   measured: queue shrank by [?_pcl_dq_|.0], pc_lost_n rose by [?_pcl_dlost_|.0], slots still targeting the state=[?_pcl_here_|.0]"
+		if = {
+			limit = {
+				check_variable = { _pcl_dq_ = _pcl_expect_ }
+				check_variable = { _pcl_dlost_ = _pcl_expect_ }
+				OR = {
+					check_variable = { _pcl_to_enemy_ = 0 }
+					check_variable = { _pcl_here_ = 0 }
+				}
+			}
+			log = "  VERDICT: PASS"
+		}
+		else = {
+			log = "  VERDICT: FAIL"
+		}
+		clear_global_event_target = wa_pcl_partner
+	}
+}

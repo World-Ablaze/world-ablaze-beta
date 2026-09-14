@@ -8,8 +8,11 @@
 #          common/on_actions/WA_AI_misc_on_actions.txt, inside the is_ai gate.
 #          No new on_action - see AGENTS.md / wa-ai-systems on cadence.
 # INPUTS:  the Tier-1 instantaneous triggers in WA_AI_EQUIPMENT_triggers.txt.
-# OUTPUTS: six timed country flags read by the Tier-2 public triggers, plus the
-#          WA_TLM_r47_* probes (write-only telemetry, never read by gameplay).
+# OUTPUTS: the timed context flags read by the Tier-2 public triggers, the permanent
+#          cutting_corners latch, the two-way shortage latches of
+#          [resource-grade-downshift] (flags + the persistent `_short_months` /
+#          `_dwell_months` hysteresis memory - system state, kept across saves), plus
+#          the WA_TLM_r47_* / WA_TLM_gdn_* probes (write-only telemetry).
 #
 # WHY LATCH AT ALL
 # An ai_equipment design switch is not free: it spends air/army XP on the
@@ -199,5 +202,152 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			has_war = yes
 		}
 		set_country_flag = WA_AI_EQUIPMENT_cc_latched
+	}
+
+	### ------------------------------------------------------------------
+	### [resource-grade-downshift] shortage latches - TWO-WAY, back-off dwell
+	### ------------------------------------------------------------------
+
+	WA_AI_EQUIPMENT_update_shortage_latch_chromium = yes
+	WA_AI_EQUIPMENT_update_shortage_latch_tungsten = yes
+
+	# tlm: gdn_last_t - freshness of the shortage latches - consumer: [resource-grade-downshift]
+	set_variable = { WA_TLM_gdn_last_t = global.WA_TLM_clock }
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_latched }
+		# tlm: gdn_chr_n - months the chromium shortage latch is up, sampled AFTER the update
+		# (the gate as the design twins see it this month) - consumer: [resource-grade-downshift]
+		add_to_variable = { WA_TLM_gdn_chr_n = 1 }
+	}
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_latched }
+		# tlm: gdn_tun_n - months the tungsten shortage latch is up - consumer: [resource-grade-downshift]
+		add_to_variable = { WA_TLM_gdn_tun_n = 1 }
+	}
+}
+
+# [resource-grade-downshift] chromium shortage latch. Protects: the design twins of
+# ai_equipment/*_tank.txt flip on a signal that cannot chatter, and flip BACK when the economy
+# recovers. Assumes: `resource@chromium < 0` only when trade could not close the gap. Gone when:
+# the strong module stops costing chromium (01_generic_tank_modules.txt) - the pair is then dead weight.
+# ENTER after two consecutive deficit months (the 45-day armed flag carries the first sample over
+# the month gap). EXIT when the dwell has elapsed AND two consecutive months read no deficit
+# (equilibrium; the 45-day recover flag carries the first). NOT on a surplus bar: the trade AI
+# buys to equilibrium and never past it, so `> N` is unreachable for an importer (lessons-log).
+# Reachability: the flip itself removes the chromium draw, so an importer returns to ~0 and a
+# producer to its retained surplus - both read "no deficit" - hence the return is ALWAYS
+# reachable, and a return the economy cannot carry re-trips the entry after two months. Dwell =
+# 6 months on first entry, doubled on every re-entry, capped at 24: each failed return slows
+# the next swing (6 -> 12 -> 24 months between swings). Every transition opens the 120-day
+# XP window read by WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign.
+# THIS = country. Monthly, from WA_AI_EQUIPMENT_update_context_flags only.
+WA_AI_EQUIPMENT_update_shortage_latch_chromium = {
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_latched }
+		add_to_variable = { WA_AI_EQUIPMENT_chr_short_months = 1 }
+		if = {
+			limit = {
+				check_variable = { WA_AI_EQUIPMENT_chr_short_months > WA_AI_EQUIPMENT_chr_dwell_months }
+				NOT = { WA_AI_EQUIPMENT_has_chromium_deficit = yes }
+			}
+			if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_chr_recover_armed }
+				clr_country_flag = WA_AI_EQUIPMENT_chr_recover_armed
+				clr_country_flag = WA_AI_EQUIPMENT_chr_short_latched
+				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+				# tlm: gdn_flip_n - latch transitions, both directions, both resources - consumer: [resource-grade-downshift]
+				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
+			}
+			else = {
+				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_recover_armed value = 1 days = 45 }
+			}
+		}
+	}
+	else = {
+		if = {
+			limit = { WA_AI_EQUIPMENT_has_chromium_deficit = yes }
+			if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_armed }
+				clr_country_flag = WA_AI_EQUIPMENT_chr_short_armed
+				set_country_flag = WA_AI_EQUIPMENT_chr_short_latched
+				set_variable = { WA_AI_EQUIPMENT_chr_short_months = 0 }
+				if = {
+					limit = { check_variable = { WA_AI_EQUIPMENT_chr_dwell_months < 6 } }
+					set_variable = { WA_AI_EQUIPMENT_chr_dwell_months = 6 }
+				}
+				else = {
+					multiply_variable = { WA_AI_EQUIPMENT_chr_dwell_months = 2 }
+					clamp_variable = { var = WA_AI_EQUIPMENT_chr_dwell_months min = 6 max = 24 }
+				}
+				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
+			}
+			else = {
+				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_short_armed value = 1 days = 45 }
+			}
+		}
+	}
+}
+
+# [resource-grade-downshift] tungsten shortage latch. Protects: the design twins of
+# ai_equipment/*_tank.txt flip on a signal that cannot chatter, and flip BACK when the economy
+# recovers. Assumes: `resource@tungsten < 0` only when trade could not close the gap. Gone when:
+# the strong module stops costing tungsten (01_generic_tank_modules.txt) - the pair is then dead weight.
+# ENTER after two consecutive deficit months (the 45-day armed flag carries the first sample over
+# the month gap). EXIT when the dwell has elapsed AND two consecutive months read no deficit
+# (equilibrium; the 45-day recover flag carries the first). NOT on a surplus bar: the trade AI
+# buys to equilibrium and never past it, so `> N` is unreachable for an importer (lessons-log).
+# Reachability: the flip itself removes the tungsten draw, so an importer returns to ~0 and a
+# producer to its retained surplus - both read "no deficit" - hence the return is ALWAYS
+# reachable, and a return the economy cannot carry re-trips the entry after two months. Dwell =
+# 6 months on first entry, doubled on every re-entry, capped at 24: each failed return slows
+# the next swing (6 -> 12 -> 24 months between swings). Every transition opens the 120-day
+# XP window read by WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign.
+# THIS = country. Monthly, from WA_AI_EQUIPMENT_update_context_flags only.
+WA_AI_EQUIPMENT_update_shortage_latch_tungsten = {
+	if = {
+		limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_latched }
+		add_to_variable = { WA_AI_EQUIPMENT_tun_short_months = 1 }
+		if = {
+			limit = {
+				check_variable = { WA_AI_EQUIPMENT_tun_short_months > WA_AI_EQUIPMENT_tun_dwell_months }
+				NOT = { WA_AI_EQUIPMENT_has_tungsten_deficit = yes }
+			}
+			if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_tun_recover_armed }
+				clr_country_flag = WA_AI_EQUIPMENT_tun_recover_armed
+				clr_country_flag = WA_AI_EQUIPMENT_tun_short_latched
+				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+				# tlm: gdn_flip_n - latch transitions, both directions, both resources - consumer: [resource-grade-downshift]
+				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
+			}
+			else = {
+				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_recover_armed value = 1 days = 45 }
+			}
+		}
+	}
+	else = {
+		if = {
+			limit = { WA_AI_EQUIPMENT_has_tungsten_deficit = yes }
+			if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_armed }
+				clr_country_flag = WA_AI_EQUIPMENT_tun_short_armed
+				set_country_flag = WA_AI_EQUIPMENT_tun_short_latched
+				set_variable = { WA_AI_EQUIPMENT_tun_short_months = 0 }
+				if = {
+					limit = { check_variable = { WA_AI_EQUIPMENT_tun_dwell_months < 6 } }
+					set_variable = { WA_AI_EQUIPMENT_tun_dwell_months = 6 }
+				}
+				else = {
+					multiply_variable = { WA_AI_EQUIPMENT_tun_dwell_months = 2 }
+					clamp_variable = { var = WA_AI_EQUIPMENT_tun_dwell_months min = 6 max = 24 }
+				}
+				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
+				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
+			}
+			else = {
+				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_short_armed value = 1 days = 45 }
+			}
+		}
 	}
 }

@@ -223,6 +223,10 @@ class BaseFileProcessor(ABC):
         if 'WA_AI_RESEARCH' in ai_will_do_block and 'date <' in ai_will_do_block:
             if 'WA_AI_unused_research_slots' not in ai_will_do_block:
                 return True
+            # [research-rush] a date gate without the WA_rb_* counter exemptions is stale - that
+            # covers every earlier shape (none, has_tech_bonus one-liner / floored / category block)
+            if "check_variable = { WA_rb_uses_" not in ai_will_do_block:
+                return True
 
         # Check for excessive blank lines
         lines = ai_will_do_block.split('\n')
@@ -325,7 +329,7 @@ class BaseFileProcessor(ABC):
 
             # Generate new block
             triggers = [trigger] if isinstance(trigger, str) else trigger
-            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t")
+            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name, categories=categories)
 
             # Only replace if the block actually changed
             old_block = content[block_start:block_end]

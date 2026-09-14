@@ -126,8 +126,8 @@ def extract_categories(tech_block: str) -> list[str]:
     categories = []
     cat_match = re.search(r'categories\s*=\s*\{([^}]+)\}', tech_block, re.DOTALL)
     if cat_match:
-        cat_content = cat_match.group(1)
-        # Find all category names
+        # drop `# comments` line by line: a commented-out category is not a category
+        cat_content = "\n".join(line.split('#', 1)[0] for line in cat_match.group(1).splitlines())
         categories = re.findall(r'(\w+)', cat_content)
     return categories
 
@@ -219,7 +219,8 @@ def is_already_new_pattern(ai_will_do_block: str) -> bool:
     return True
 
 
-def generate_new_ai_will_do(trigger: str, start_year: int, indent: str = "\t\t") -> str:
+def generate_new_ai_will_do(trigger: str, start_year: int, indent: str = "\t\t",
+                            tech_name: Optional[str] = None, categories: Optional[list[str]] = None) -> str:
     """
     Generate a new ai_will_do block with the specified trigger and start_year.
     
@@ -247,6 +248,18 @@ def generate_new_ai_will_do(trigger: str, start_year: int, indent: str = "\t\t")
     lines.append("")
     lines.append(f"{indent}\tmodifier = {{")
     lines.append(f"{indent}\t\tfactor = 0")
+    if tech_name:  # [research-rush] WA_rb_* counters, same shape as ai_replacer_base/generator.py
+        keys = list(categories or []) + [f"t_{tech_name}"]
+        for fam, years in (("uses", 1), ("ahead2", 2)):
+            lines.append(f"{indent}\t\tOR = {{")
+            lines.append(f"{indent}\t\t\tNOT = {{")
+            lines.append(f"{indent}\t\t\t\tOR = {{")
+            for k in keys:
+                lines.append(f"{indent}\t\t\t\t\tcheck_variable = {{ WA_rb_{fam}_{k} > 0 }}")
+            lines.append(f"{indent}\t\t\t\t}}")
+            lines.append(f"{indent}\t\t\t}}")
+            lines.append(f"{indent}\t\t\tdate < {start_year - years}.1.1")
+            lines.append(f"{indent}\t\t}}")
     lines.append(f"{indent}\t\tOR = {{")
     lines.append(f"{indent}\t\t\tAND = {{")
     lines.append(f"{indent}\t\t\t\tNOT = {{ has_country_flag = WA_AI_unused_research_slots }}")
@@ -400,6 +413,9 @@ def process_file(filepath: Path, dry_run: bool = False, verbose: bool = False) -
         if 'WA_AI_RESEARCH' in block_content and 'date <' in block_content:
             if 'WA_AI_unused_research_slots' not in block_content:
                 needs_date_update = True
+            # [research-rush] a date gate without the WA_rb_* counter exemptions is stale
+            if "check_variable = { WA_rb_uses_" not in block_content:
+                needs_date_update = True
         
         # Skip if already using new pattern (including new date pattern)
         if is_already_new_pattern(block_content) and not needs_date_update:
@@ -456,7 +472,7 @@ def process_file(filepath: Path, dry_run: bool = False, verbose: bool = False) -
                 break
         
         # Generate new block
-        new_block = generate_new_ai_will_do(trigger, start_year, indent)
+        new_block = generate_new_ai_will_do(trigger, start_year, indent, tech_name=tech_name, categories=categories)
 
         # Add a single newline before the block if we removed blank lines
         if prefix_start < block_start:

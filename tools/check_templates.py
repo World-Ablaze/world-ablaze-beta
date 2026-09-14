@@ -42,12 +42,25 @@ EFFECTS = REPO / "common" / "scripted_effects" / "WA_AI_TEMPLATES_effects.txt"
 LOC = REPO / "common" / "scripted_localisation" / "WA_AI_templates_scripted_loc.txt"
 TEMPLATE_DIR = REPO / "common" / "ai_templates"
 
-# The two value-rewriting effects the calculators call. Each turns one written value N into a
+# The three value-rewriting effects the calculators call. Each turns one written value N into a
 # second reachable value; a checker that ignores them reports every mirror target as orphaned.
 #   +100 : WA_AI_TEMPLATES_apply_motorized_hospital_mirror   [mot-field-hospital]
+#   +100 : WA_AI_TEMPLATES_apply_armoured_waves_mirror       [armoured-waves]
+#   + 50 : WA_AI_TEMPLATES_apply_heavy_support_mirror        [heavy-in-support]
 #   +500 : add_to_temp_variable = { _template_value = _tier_offset }   [modern-chassis-tier]
+# The two +100 levers attach differently and must not be modelled the same way: the hospital
+# mirror is called INSIDE a branch and rewrites that branch's value, while the waves mirror is
+# called ONCE at the end of the ladder, under a `_template_value > N` floor, and so rewrites
+# every value the ladder can leave above that floor.
 HOSPITAL_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_motorized_hospital_mirror"
 HOSPITAL_MIRROR_OFFSET = 100
+WAVES_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_armoured_waves_mirror"
+WAVES_MIRROR_OFFSET = 100
+# [heavy-in-support] the third rewriting effect. Unlike the two above it has NO floor: it
+# twins every value the ladder can leave, because the same flag closes the heavy-division
+# role and a value without a twin would leave the country with neither.
+HEAVY_SUPPORT_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_heavy_support_mirror"
+HEAVY_SUPPORT_MIRROR_OFFSET = 50
 TIER_OFFSET = 500
 
 # A unit name carries the slot it belongs to as its last word, and the convention holds without a
@@ -413,6 +426,40 @@ def claim_guards(calc, issues, path):
                                % (calc.key, writes[0].block[0].scalar, " and ".join(missing))))
 
 
+def waves_mirror_floor(block):
+    """The `_template_value > N` floor guarding the armoured-waves mirror, or None if uncalled.
+
+    Read from the script rather than hard-coded per role: the floor is what decides which values
+    have a wave twin, so a checker carrying its own copy would keep passing after the guard moved.
+    """
+    for node in block:
+        if node.key == "if" and node.block:
+            calls = any(n.key == WAVES_MIRROR_EFFECT for n in node.block)
+            limit = node.get("limit")
+            if calls and limit is not None and limit.block:
+                for cv in limit.block:
+                    if cv.key != "check_variable" or not cv.block:
+                        continue
+                    kv = cv.block[0]
+                    if kv.key == "_template_value" and kv.scalar and kv.scalar.isdigit():
+                        return int(kv.scalar)
+        if node.block:
+            found = waves_mirror_floor(node.block)
+            if found is not None:
+                return found
+    return None
+
+
+def calls_heavy_support_mirror(block):
+    """True when this calculator can add the +50 heavy-support twin anywhere in its body."""
+    for n in block:
+        if n.key == HEAVY_SUPPORT_MIRROR_EFFECT:
+            return True
+        if n.block and calls_heavy_support_mirror(n.block):
+            return True
+    return False
+
+
 def sets_tier_offset(block):
     """True when this calculator can add the +500 chassis tier anywhere in its body."""
     for n in block:
@@ -446,22 +493,37 @@ def load_templates(template_dir):
                 enable = entry.get("enable")
                 if enable is None:
                     continue
-                flag = enable.get("has_country_flag")
-                if flag is None or flag.block is None:
-                    continue
-                fname = fval = None
-                for kv in flag.block:
-                    if kv.key == "flag":
-                        fname = kv.scalar
-                    elif kv.key == "value":
-                        fval = kv.scalar
-                if fname and fval and fval.isdigit():
-                    by_flag.setdefault(fname, {}).setdefault(int(fval), []).append(
-                        (entry.key, f, entry.line))
+                # An entry enables on N wherever `has_country_flag value = N` sits under its
+                # enable - directly, or inside an OR / AND (one template, several values: the
+                # conversion FINALs and the STABLE-phase MIX). A flag under NOT is a value the
+                # entry does NOT answer, so NOT is not descended.
+                for flag in _flags_under(enable):
+                    fname = fval = None
+                    for kv in flag.block:
+                        if kv.key == "flag":
+                            fname = kv.scalar
+                        elif kv.key == "value":
+                            fval = kv.scalar
+                    if fname and fval and fval.isdigit():
+                        by_flag.setdefault(fname, {}).setdefault(int(fval), []).append(
+                            (entry.key, f, entry.line))
             for name, lines in names.items():
                 if len(lines) > 1:
                     entries.append(("DUP", f, group.key, (name, lines)))
     return by_flag, entries
+
+
+def _flags_under(node):
+    """Every `has_country_flag = { ... }` block under `node`, descending OR / AND only."""
+    out = []
+    for n in node.block or []:
+        if n.block is None:
+            continue
+        if n.key == "has_country_flag":
+            out.append(n)
+        elif n.key in ("OR", "AND"):
+            out.extend(_flags_under(n))
+    return out
 
 
 def load_type_map(loc_file):
@@ -536,6 +598,15 @@ def run(root):
         walk_values(calc.block, set(), written, mirrors, sink)
         vals = {v for v, _, _ in written if v != 0}
         vals |= {v + HOSPITAL_MIRROR_OFFSET for v in mirrors if v != 0}
+        # [heavy-in-support] first, exactly as the ladder applies it: the twin must stay inside
+        # the band the waves floor names, and the tier offset is flat either way.
+        if calls_heavy_support_mirror(calc.block):
+            vals |= {v + HEAVY_SUPPORT_MIRROR_OFFSET for v in set(vals)}
+        # [armoured-waves] before the tier offset, exactly as the ladder applies it: after +500
+        # the floor would admit 6500 and turn the 20-width modern twin into the 30-width one.
+        waves_floor = waves_mirror_floor(calc.block)
+        if waves_floor is not None:
+            vals |= {v + WAVES_MIRROR_OFFSET for v in set(vals) if v > waves_floor}
         if offset_500:
             vals |= {v + TIER_OFFSET for v in set(vals)}
         reachable.setdefault(flag, set()).update(vals)
@@ -673,7 +744,7 @@ FIXTURE_TEMPLATES = """WA_infantry_role = {
 \t\t}
 \t}
 \tWA_T_1001 = {
-\t\tenable = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1001 } }
+\t\tenable = { OR = { has_country_flag = { flag = WA_INFANTRY_TEMPLATE value = 1001 } } }
 \t\ttarget_template = {
 \t\t\tregiments = { infantry_battalion_line = 10 }
 \t\t\tsupport = { engineer_company_divisional = 1 }

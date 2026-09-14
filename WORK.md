@@ -173,64 +173,1186 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
-### train-variant-choice — OPEN (2026-09-05)
-- Owner order 2026-09-05: AI train lines run on the Simplified / War Austerity trains when available;
-  the Armored Train is produced only with 10000 trains in reserve. All AI countries, every tech tree.
-- State before, MEASURED (`common/units/equipment/trains.txt`): Armored Train `priority = 30` >
-  Simplified 20 = Austerity 20 > Civilian 10 (the vanilla order), parent chain _1 -> _4 -> _2 -> _3;
-  the only train strategy was the archetype-level `equipment_variant_production_factor id =
-  train_equipment` (+5 / -50, both on the always-yes ground gate, net -45 - pre-existing, not touched).
-  One train tech chain only (`common/technologies/support.txt`), no country-specific train equipment,
-  so one rule covers every tree. `AI_purge_train_equipment_production` (trains.txt:8) has no setter
-  anywhere in the repo - dead vanilla residue, not built on.
-- Change: (1) `train_equipment_4` gets an AI-only `can_be_produced` = `is_ai = no` OR
-  `WA_AI_PRODUCTION_should_build_armored_trains`; `priority` stays 30 so that, once producible, it is
-  the AI's top pick; War Austerity `priority` 20 -> 25 (cheapest variant wins the tie with Simplified).
-  (2) constant `wa_ai_production.trains.armored_reserve = 10000`. (3) decision triggers
-  `WA_AI_PRODUCTION_should_build_cheap_trains` / `_armored_trains`, exact complements on
-  `check_variable = { num_equipment@train_equipment > constant }` (free stockpile, strict >; the
-  `num_equipment@` idiom is the one shipped in `WA_AI_LEND_LEASE_triggers.txt`). (4) blocks
-  `WA_AI_PRODUCTION_build_cheap_trains` (`production_upgrade_desire_offset` +100 on _2/_3, -100 on _4)
-  and `_build_armored_trains` (+100 on _4) for EXISTING lines only, per the 2026-08-13 lesson (the type
-  waives the surplus check on a line, it never chooses what a new line builds).
-- Lessons review 2026-09-05 (two passes: CONFLICT, then CONCERNS all applied) -> resolved: the first draft armed the ON case with `priority = 5`
-  + `+100 on _4`, which the lesson records as a no-op for a line on a NEWER variant; the ON lever is
-  now the `can_be_produced` gate (armored unproducible for AI under the bar, producible and top
-  priority above it). Architecture review CONCERNS all applied (no date in the constant comment, no
-  ladder copy in the strategy comment, `WA_AI_DIVISION_TEMPLATES.md` trigger list).
-- ASSUMED (engine): equipment `priority` is the AI's pick among the variants it can produce (wiki:
-  `# ?`); a scripted trigger resolves inside equipment `can_be_produced` (repo precedent is flags/
-  ideas/DLC only; `is_ai` there is MEASURED to resolve, convoys.txt). Fail direction if it does NOT
-  resolve is ALSO ASSUMED: the one measurement in the log (2026-08-16 meta_trigger, unparsed token)
-  read TRUE, i.e. armored ALWAYS for AI = today's behaviour, not a new failure. The F9 boot test
-  arbitrates (Armored greyed on an AI-tagged production tab under the bar + no unknown-trigger line
-  in error.log); if either fails the gate moves to a flag set by a WA_AI effect (the vanilla
-  `AI_purge_*` shape already on trains.txt:8). A running armored line whose `can_be_produced` turns
-  false stops (ASSUMED). `num_equipment@train_equipment` = free stockpile = the owner's "en réserve".
-  The two triggers carry no `ground_is_enabled` term (second lessons pass): `WA_AI_CONFIG_uses_
-  default_ground_production` is `always = yes` today (MEASURED `WA_AI_CONFIG.txt:1786`), but a
-  future restriction would have turned the gate into a silent armored ban for the excluded AIs.
-- Bar timeline, (f) table (cadences ASSUMED: `enable` re-evaluated daily, `can_be_produced` checked
-  at line creation and each production tick): t0 = free stock crosses 10000 upward -> cheap block
-  aborts, armored block arms, `can_be_produced` opens; new lines pick armored (priority 30), a
-  Civilian line converts (+100), Simplified/Austerity lines keep running (backward upgrade, no-op).
-  t1 = stock falls under 10000 (consumption, lend-lease, losses) -> gate closes, armored lines stop,
-  the AI reopens cheap lines (efficiency loss on a cross-family line, `_4` has no `family`).
-  t2 = steady under the bar (the expected state: the FRA failsafe in `100_wa_on_actions.txt:4388`
-  treats 720 TOTAL trains as the floor, so 10000 FREE trains is a bar most AIs never reach - armored
-  "effectively never" is the owner's number, stated here so it is not read as a bug). Flip rate,
-  worst case: at the ASSUMED daily `enable` cadence a stock oscillating across 10000 flips the pair
-  once per DAY, each flip costing the armored line its efficiency; no hysteresis band because the
-  expected state is t2 and the owner gave one number. If a campaign shows a stock hovering at the
-  bar, add a re-arm constant below it (second key in the `trains` group).
-- Probe (campaign): on every save 1940+ of an AI major with free train stock < 10000, the train
-  production lines (`savegame.py` production lines) carry train_equipment_2/_3 (or _1 before 1939),
-  never train_equipment_4, INCLUDING at least one line CREATED after 1939.1.1 (creation is the
-  `priority` path, the one the lesson has never measured); armored lines appear only on a save whose
-  free stock reads > 10000, or none does and the stock never crossed the bar.
-- Closed when: F9 boot test passes (the five files parse, no unknown-trigger line in error.log, the
-  Armored Train greyed on an AI-tagged production tab under the bar) and the probe passes on one
-  scored campaign.
+### medium-ladder-rocket-inf-support — SHIPPED-UNTESTED (2026-09-14)
+- Origin: uncharted85's push of 2026-09-13 (`0c9e83c979` `1f2a8eda4b` `b591be489b` `300d12ab82`,
+  Discord: "new templates pushed for the ai, mainly for the soviets to use rocket mech, germans to
+  get rid of outdated inf support in their line and for allies to use inf support in their support
+  category; heavy support's config number now +50 instead of +20"). Owner order 2026-09-14: review
+  it, then fix everything except the GER research gate (rocket techs 2/3/4 staying at `factor = 0`
+  behind `needs_mechanized_self_propelled_guns` is intended). Intended behaviour: medium ladder
+  6100-6129 - rocket company rungs 6104-6108 and 6117-6121 (`WA_AI_TECHTREE_has_mechanized_rocket_artillery`;
+  6117-6121 added by `46d4240441` "More Rocket Templates" 2026-09-14, which shifted the SPG rungs
+  to 6122-6129), inf-support demoted to a divisional company once the successor chassis is held
+  (6116), SPG-based late rungs 6122-6129 - with every value the ladder can leave answered by exactly
+  one template.
+- MEASURED before the fix (`tools/check_templates.py` with the offset corrected to 50, 0 on
+  `bdecf680b3`): 64 reachable values with no template - 6050/6051 (the 20-width heavy twins were
+  deleted while the effect still adds +50 to 6000/6001), 6617-6619/6717-6719 (new rungs, never
+  mirrored), 6650-6674/6750-6774 (heavy-support + modern). And the stale +20 twins of the modern
+  mirror (6620-6624 / 6720-6724, `MODERN_30_MOT_HEAVY_SUPPORT` ...) answered the NEW rungs
+  6120-6124 + 500 - wrong template served, with a heavy company. `gen_ai_medium_modern_mirror.py`
+  refused to run (rocket company absent from `TIER_UP`) and its override table keyed 6122/6123 on the
+  old twins. `WA_AI_TECHTREE_gates.txt` hand-edited (STALE; regeneration would have deleted the four
+  rocket triggers the ladder and research gates read). `WA_AI_CONFIG_*_infantry_support_is_outdated`:
+  `has_tech` observations in the DECLARATION file, `light_` with zero readers (CONFIG-DEAD).
+  Generators edited without a run (`gen_ai_research_allow_gates.py`, blacklist inert in game) or
+  bypassed (`# WA_RB_GRANT` line moved by hand in `soviet.txt`).
+- Change (2026-09-14):
+  - `tools/techtree_registry.json`: capabilities `mechanized_rocket_artillery` (GER/SOV rungs, out
+    of `mechanized_spg`), `tank_rocket_artillery` (USA), `medium_inf_support_successor_chassis`
+    (ENG 4 / GER 3 / USA 3; the seven other armour folders admitted under `branch_extra` so the
+    undecided generation marker stays visible); `ger_medium_td_tank_4` in `medium_td`. Gates regenerated.
+  - Ladder 6116 reads `WA_AI_TECHTREE_has_medium_inf_support_successor_chassis`; the two CONFIG
+    `_is_outdated` triggers deleted.
+  - `gen_ai_medium_modern_mirror.py`: rocket + light-inf-support company in `TIER_UP`, heavy-twin
+    override keys retargeted to the +50 band (6152/6153/6250-6253); mirror regenerated (104 twins).
+  - `WA_AI_TEMPLATES_armored_medium.txt`: 20-width heavy twins back at 6050/6051.
+  - The 50 now lives in: the effect, `tools/check_templates.py` (`HEAVY_SUPPORT_MIRROR_OFFSET`),
+    the effect's comments, the generator comment, `WA_TEST_templates.txt`, this file. The value
+    lists of `WA_TEST_armor_budget` (bandmed/bandmod) and `WA_TEST_templates` (waves) regenerated
+    from the two ai_templates files: 124 + 124 and 60 values (after the merge of `46d4240441`,
+    which again added rungs without regenerating: 20 modern values 6625-6629 / 6675-6679 /
+    6725-6729 / 6775-6779 were orphaned until the mirror was regenerated a second time).
+  - `gen_ai_research_allow_gates.py` and `gen_research_bonus_tracking.py` run (armor_sov allow
+    blocks; soviet/germany `WA_RB_GRANT` regions restored - the manual early `_1` opener in the
+    SOV focus is kept, so that counter over-counts by one after the guards-mortars focus: harmless,
+    the rush stays open only on a tech already researched).
+  - Left as is, owner decision owed: the `tank_rocket_artillery` chain (CONFIG switch, research
+    gate on two USA techs, `WA_AI_TEMPLATES_use_tank_rocket_artillery_armor`) has no ladder rung
+    reading it - USA researches a branch no template consumes until one is written.
+- Regression risk, DERIVED: the base band 6100-6116 keeps its values and compositions, so no
+  country migrates; 6117-6124 and the +50 twins are only reachable through gates that were false
+  before the push (rocket, SPG rungs, heavy latch). ASSUMED: `motorized_rocket_equipment` (6 per
+  rocket company) is produced on template demand like `mechanized_artillery_equipment` - neither has
+  a `WA_AI_PRODUCTION_*` line.
+- Harness owed (`WA_AI_*` scripted effect + existing `WA_TEST_templates` / `WA_TEST_armor_budget`):
+  owner runs both as SOV after `sov_mechanized_rocket_artillery_1` and as a Tiger-era GER. PASS =
+  `band: medium-chassis-value=1` or `modern-chassis-value=1` (never both 0) on every tick, and the
+  SOV medium flag inside 6104-6108 (or +100/+500 bands) once the rocket rung is held.
+- Verification (campaign): a 1943+ SOV save holds medium divisions carrying
+  `mechanized_sp_rocket_artillery_company_regimental`; no country with `WA_MEDIUM_ARMOR_TEMPLATE`
+  set carries a value outside the 248 declared ones (`savegame.py` flag dump vs the two files).
+- Closed when: `python tools/check_templates.py` exit 0 (done: 4 pre-existing hq SLOT-SUFFIX only),
+  the harness output above is pasted here, then one campaign shows the SOV rocket division.
+
+### heavy-in-support — SHIPPED-UNTESTED (2026-09-12)
+- Owner order 2026-09-12 ("ajouter des bataillons de chars lourds en support dans les templates IA
+  de chars moyens et modernes", then option 2 = SUBSTITUTION over complement). Intended behaviour:
+  a country whose heavy chassis is the Tiger generation stops fielding heavy DIVISIONS and instead
+  carries one heavy tank company as divisional support inside every medium / modern armour
+  division, the way the schwere Panzer-Abteilung was attached to a panzer division.
+- MEASURED before the change: `heavy_armor_company_divisional` exists
+  (`common/units/armor_tanks.txt:388-447`, need 12 heavy_tank_chassis, combat_width 0,
+  `affects_speed = no`, `same_support_type = divisional_support_armor`, battalion_mult +0.2
+  armor_value on category_all_armor) and was referenced by ZERO ai_templates. 05_defines.lua:346-347
+  gives 10 divisional slots; of the 36 medium templates 22 used 9 and 14 used 10, and the
+  `divisional_support_armor` family was unused in all 36.
+- Change:
+  - `WA_AI_CONFIG_TEMPLATES_mounts_heavy_in_support` (CONFIG, body `has_tech =
+    ger_heavy_tank_chassis_3`) - the same term that already admits GER to `focus_on_heavy_armor`,
+    so both gates flip on one tick and no fielded heavy division is ever orphaned.
+  - `WA_AI_TEMPLATES_use_heavy_armor_support_templates` reads a one-way latch
+    (`WA_AI_TEMPLATES_update_heavy_support_latch`, wired before `calculate_templates` in both
+    on_actions) because `use_medium_armor_templates` is non-monotone.
+  - `WA_AI_TEMPLATES_use_heavy_armor_templates` gains `NOT = { ..._support_templates = yes }`: the
+    heavy-DIVISION role closes, so `WA_AI_PRODUCTION_build_army_heavy_armor` closes and the whole
+    armour budget goes to medium.
+  - `WA_AI_TEMPLATES_apply_heavy_support_mirror` (+50 since 2026-09-13, was +20), applied before the waves (+100) and modern
+    (+500) mirrors. 36 twins hand-added to `WA_AI_TEMPLATES_armored_medium.txt`, 36 regenerated
+    into `_armored_medium_modern.txt` by `tools/gen/gen_ai_medium_modern_mirror.py`.
+  - Full-slot twins trade away `heavy_artillery_mot_company_divisional` - the same trade rungs
+    6111-6116 already make when they gain an armoured gun company.
+  - Production: new `WA_AI_PRODUCTION_should_build_heavy_armor_support` + a +20
+    `equipment_variant_production_factor` on heavy_tank_chassis, replacing the +60 that closes with
+    the role; `WA_AI_PRODUCTION_focus_on_heavy_armor` now excludes the support path so its +75 on
+    heavy TD / assault / infantry-support / artillery stops pushing equipment no template consumes.
+- Regression risk, DERIVED: nothing migrates, because GER only ever passed `focus_on_heavy_armor`
+  through `ger_heavy_tank_chassis_3` - the heavy role never opens for it, so there are no heavy
+  divisions to decommission. FRA / ENG / SOV are untouched (their admission terms are unchanged and
+  none is in the new CONFIG list). ASSUMED: the +20 production push covers 12 chassis per medium
+  division; too low and the companies sit unequipped, too high and it eats the medium line.
+- Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): owner runs
+  `WA_TEST_templates` and `WA_TEST_armor_budget` as a Tiger-era GER. Both now print the fifth gate
+  (`hvy_sup` / `hvysup`). PASS = `hvysup=1` with `heavy=0` and the medium flag value inside a +50
+  band (6050-6051 / 6150-6179 / 6250-6279 / 6550-6551 / 6650-6679 / 6750-6779). `heavy=1` and `hvysup=1` together is the
+  defect: it means the NOT is not reading the latch.
+- Verification (campaign): a post-Tiger GER save holds zero heavy-armour divisions, and its medium
+  divisions carry `heavy_armor_company_divisional`; `WA_AI_ARMOR_BUDGET_heavy = 0` while
+  `WA_AI_ARMOR_BUDGET_medium` carries the share heavy used to take.
+- Closed when: the harness output above is pasted here, then one campaign shows a Tiger-era GER
+  medium division with the company and no heavy division.
+
+### dead-template-spawns — OPEN (2026-09-11)
+- Owner order 2026-09-11 ("supprime armor 928 et GER_Norway, ENG_operation_husky_ai et ENG_sicily,
+  corrige HUN_equip_the_rongyos_garda, refactorise MAN_expand_the_imperial_guards pour que l'IA
+  aie comme un joueur"). Intended behaviour: no script spawns or gates on a division template
+  that nothing creates; where a focus raises divisions for a player, the AI raises the same ones.
+- Symptom, MEASURED (scratchpad audit of every `has_template` / `create_unit` / `load_oob` in
+  `common/` + `events/` against every `division_template = { name = }` in the mod): MAN's focus
+  spawned 4 x "Manchurian Infantry Division" for the AI (no creator); HUN's focus had no AI branch
+  that could fire (`infantry_template_hun` flag never set); `ENG_operation_husky_ai` gated on
+  "British Heavy Tank Division" and loaded `ENG_sicily`, 20/20 divisions on dead templates;
+  `ger_armor.928` loaded `GER_Norway`, 9/15 divisions on the dead "Gebirgsjäger Division".
+- Change: `ger_armor.928` (`events/WA_AI_GER.txt`) and `history/units/GER_Norway.txt` deleted;
+  `ENG_operation_husky_ai` (`common/decisions/z_WA_ai_ENG.txt`) and `history/units/ENG_sicily.txt`
+  deleted; HUN focus: the dead flag branch becomes the AI `else` - same "Rongyos Gárda" template
+  with `obsolete = yes`, same 3 divisions, `rongyos_garda_flag` set under Trianon like the player
+  branch; MAN focus: template created for both (AI copy `obsolete = yes`), one shared spawn of the
+  4 named Guards divisions. Orphans left in place, harmless: `prevent_husky_ai_flag` writer
+  (`FRA.txt`), `GER_ai_norway_fired` writer (`wa_den_events.txt`), `history/units/ENG_sicily_2.txt`
+  (no caller before or after), the Husky decision's localisation keys.
+- Not touched (owner did not name them): SOV/JAP border-conflict spawns (`SOV.txt:18181`), ITA
+  "Banda Irregolare" spawns, FFI Demi-Brigade on_action spawns, `GER_upgrade_spanish_template`
+  gate, dead `ger_armor.927`.
+- Regression risk, DERIVED: the German AI no longer receives 6 free divisions on Norway (the
+  living part of `GER_Norway`); the British AI loses its scripted Sicily landing decision - both
+  campaigns now depend on the generic invasion layer. ASSUMED: `rongyos_garda_flag` readers
+  (`DOD_Hungary.txt`, `hungary.txt`, `wa_hun_events.txt`) now also fire for an AI HUN under
+  Trianon, as they do for a player.
+- No harness owed: focus rewards and deletions, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): an AI MAN save after `MAN_expand_the_imperial_guards` holds 4
+  "Imperial Guards Division"; an AI HUN save after `HUN_equip_the_rongyos_garda` holds 3
+  "Rongyos Gárda" and no more; no `ENG_sicily` / `GER_Norway` division names appear in any save.
+- Closed when: one campaign shows both AI focus spawns and neither deleted OOB.
+
+### sov-conscript-troops — OPEN (2026-09-11)
+- Owner order 2026-09-11 ("SOV_Army_conscript_troops a été cassé par le rework des templates").
+  Intended behaviour: the Soviet AI and the human player take the same conscript-wave decision on
+  the same template, gated on men actually in the field.
+- Symptom, MEASURED (`common/decisions/SOV_factions.txt`, git): the AI branch gated on and spawned
+  `"Soviet Rifle Division"`, a template whose only creators (`events/WA_AI_CHEATS_SOV.txt`,
+  `history/units/SOV_infantry.txt`) were deleted in `b2e800e2d1` (2026-02-04). `available` was
+  false for every AI SOV since, so the AI never took the decision.
+- Change: (a) `SOV_rebuild_the_army` creates `"Prízyvnaya dívízíya"` for the AI too (the
+  `is_ai = no` wrapper is gone; `obsolete = yes` / `division_cap = 240` unchanged); (b) one
+  `available` for both: `has_manpower > 206400`, `has_army_manpower = { size < 4000000 }`,
+  `has_template`; the reserves-variable block and both `has_army_size` gates are gone; (c) one
+  `remove_effect`: `add_manpower = -206400`, two 6-division waves on the existing state chains,
+  `start_equipment_factor = 0.02`, `start_manpower_factor = 1`, no stockpile prelevement - the
+  divisions reinforce organically. Owner rulings: same template for both, stockpile untouched,
+  2 % equipment, manpower factor 1 because the effect removes the men.
+- Manpower, DERIVED from `common/units/` sub-unit `manpower` values: 9 x 1000 heavy horse infantry
+  + 4 x 500 horse artillery + 2 x 500 horse AT + 6 x 300 regimental companies + support
+  800 + 500 x 5 + 300 x 2 = 17 200 per division; 12 per decision = 206 400 (was 135 600 human /
+  171 600 AI, both unexplained).
+- Regression risk, DERIVED: the human path drops from 10 % to 2 % starting equipment and from a
+  135 600 to a 206 400 manpower cost, and loses the `< 241 infantry / < 91 motorized` size gates
+  (replaced by the 4 M field-manpower gate). ASSUMED: the engine AI does not recruit the obsolete
+  template on its own and the infantry ai_templates role does not decommission it (same capture
+  mechanism as the garrison note in `WA_AI_TEMPLATES_garrison.txt`).
+- No harness owed: a decision file and a focus reward, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): a monthly SOV save after Barbarossa shows divisions of template
+  `Prízyvnaya dívízíya` owned by an AI SOV, their count rising in steps of 12 while
+  `has_army_manpower` stays under 4 M, and stable between steps.
+- Closed when: one AI SOV campaign shows at least one conscript wave after Barbarossa and no
+  Prízyvnaya division outside the waves.
+
+### armoured-waves — PARKED (2026-09-10)
+- State: code ships with this subject update; **the console harness has NOT been run**. Parked,
+  not `SHIPPED-UNTESTED`, only because the four live slots were already taken
+  (`resource-infra-targeting` precedent, 2026-09-09). Promote to `SHIPPED-UNTESTED` and run
+  `event wa_test_tmpl.1 SOV` the moment a slot frees; until then the behaviour is unverified.
+- Owner order 2026-09-10 ("oui, branche-le"). Intended behaviour: a country holding the
+  `armoured_waves` sub-doctrine fields the ARMOURED_WAVES twin of whatever 30-width armour
+  composition its ladder already chose, instead of the base twin.
+- Symptom, **MEASURED** (mod files): 48 `*_ARMOURED_WAVES` ai_template blocks exist — 17 medium
+  (`6200-6216`), 17 modern mirror (`6700-6716`), 14 heavy (`7200-7213`) — and NO code path in
+  `common/` or `events/` ever wrote a `_template_value` in those bands. Dead code since
+  `51bbac508e` "Finished AI Armoured Wave Templates".
+- Cause, **MEASURED** (script): `WA_AI_TEMPLATES_calculate_medium_armor_template` writes only
+  `6000/6001/6100-6116` (plus the `+500` modern-chassis `_tier_offset`) and
+  `WA_AI_TEMPLATES_calculate_heavy_armor_template` only `7000/7001/7100-7113`. Neither ladder,
+  and neither `WA_AI_TEMPLATES_*` trigger file, ever read the sub-doctrine.
+- Change: `[armoured-waves]` adds the decision trigger
+  `WA_AI_TEMPLATES_use_armoured_waves_templates` (`has_doctrine = armoured_waves`) and the
+  effect `WA_AI_TEMPLATES_apply_armoured_waves_mirror` (`+100` on `_template_value`, copying the
+  existing `WA_AI_TEMPLATES_apply_motorized_hospital_mirror` lever). Called in the medium ladder
+  guarded on `_template_value > 6099` and BEFORE the `+500` chassis offset, and in the heavy
+  ladder guarded on `> 7099`.
+- Why `+100` is the whole change, **MEASURED**: the pairing is 1:1 for all 48 pairs — base value
+  `+100` = wave value, wave block name = base block name + `_ARMOURED_WAVES` — and the only
+  composition difference in every pair is battalion/company COUNTS. No wave twin names an
+  equipment type its base twin did not, so the ladder's existing composition validation still
+  holds and no branch needs re-validating at the wave tier.
+- Impact, **DERIVED**: the `armoured_waves` sub-doctrine cuts armour combat width by 40 %
+  (24 battalion lines, `common/doctrines/subdoctrines/land/armor_subdoctrines.txt`). With the
+  doctrine the wave twins land at 26.4-28.2 width against 30-33 for the base twins; without it
+  they would be 36-40. Today the doctrine is reached by historical difficulty +
+  `WA_AI_CONFIG_is_deep_battle` (SOV) and by the GER Barbarossa catch-up fallback; competitive
+  never picks it. The gate reads the live doctrine, so any country that acquires it is covered.
+- Regression risk, **DERIVED**: the `+100` lever is shared with the motorised-hospital mirror,
+  whose six call sites are all in the infantry / mountaineer / marines ladders — no collision on
+  armour values (verified by grep). The order matters and is asserted in the code comment: after
+  the chassis offset, `6500 + 100` would land on `6600` (20-width modern MEC → 30-width modern
+  MOT). A country that gains the doctrine mid-campaign flips at the next monthly pass and its
+  divisions converge in the field (`can_upgrade_in_field = yes` on every wave block).
+- Readers of the changed value, **MEASURED** (principle 3(a), full enumeration): outside
+  `common/ai_templates/` exactly three files read a literal `WA_MEDIUM/HEAVY_ARMOR_TEMPLATE`
+  value. Two of them broke on this change and are fixed in the same commit:
+  - `WA_AI_TEMPLATES_is_medium_mis_family` listed only `6105-6110`. With the doctrine the flag
+    reads `6205-6210`, the trigger fell to false, and the light ladder's MIS redirect plus the
+    `..._FINAL_MIS` enable went silent — conversion would land on the pure 9+6 that
+    `[armor-class-handoff]` exists to prevent, on SOV, which is both the only wave country and
+    the light-support park country. Added `6205-6210`. The MODERN bands `6605-6610` /
+    `6705-6710` deliberately stay out: the FINAL is built from `medium_armor` /
+    `medium_infantry_support` battalions, so a modern-chassis role would be pointed at a
+    composition it never claims — that also explains the pre-existing absence of `6605-6610`,
+    which is therefore NOT a gap to close here.
+  - `WA_TEST_armor_budget.txt` band lists `_abt_bandmed` / `_abt_bandmod` omitted the wave
+    values; its own header says a missing value "reads as no template and looks like a
+    template-system failure". Added `6200-6216` to the medium band and `6700-6716` to the
+    modern one — the doctrine moves the value, not the chassis.
+  - the third, `WA_AI_TEMPLATES_effects.txt`, reads only `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE`
+    `15007/15008` — unaffected.
+- Checker updated: `tools/check_templates.py` modelled only the motorised-hospital `+100`, and
+  reported all 48 wave blocks as `TEMPLATE-NO-VALUE`. It now reads the waves mirror's floor out
+  of the script (`waves_mirror_floor`) instead of carrying its own copy, and applies it BEFORE
+  the `+500` tier offset. Run: 0 WARN, 4 pre-existing `SLOT-SUFFIX-MISMATCH` ERRORs in
+  `WA_AI_TEMPLATES_hq.txt`, untouched by this subject.
+- Timeline of a doctrine pick, **MEASURED** except where marked (no "self-healing" adjective
+  without this table, AGENTS.md 3(f)):
+
+  | t | event | cadence | state |
+  | --- | --- | --- | --- |
+  | t0 | AI picks `armoured_waves` | whenever it spends army XP | flag still `61xx`/`71xx` |
+  | t1 | monthly template pulse (`WA_AI_misc_on_actions.txt:274`) | ≤ 31 days after t0 | `update_target_template` clears the flag and sets `62xx`/`72xx`; INTENT has moved |
+  | t2 | engine best-template / field-upgrade pass | **ASSUMED**, not measurable from script | fielded divisions walk to the new target (`can_upgrade_in_field = { always = yes }` on all 48 wave blocks, MEASURED) |
+
+  My gate needs no latch-ordering slot in the monthly pulse: unlike the mechanization / chassis /
+  hospital latches it reads the doctrine directly, not a WA flag another latch writes this tick.
+- Shape check before arming, **MEASURED**: every wave block is 18 line battalions with 8-10
+  regimental-support companies. Neither number is new to this mod — 20- and 22-battalion
+  templates already ship live (`COUNTRY_SWI_MILITIA_20_HRS`, `COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_
+  TEMPORARY`) and 37 live templates already carry 10 regimental-support companies on only 15
+  battalions. Whether the engine's designer can reach these targets by greedy edits is the
+  engine boundary and stays **ASSUMED** until the harness runs.
+- Residual NOT fixed, **DERIVED**: the light-support conversion FINALs
+  (`..._TRANSITION_HVY_MOT_FINAL` and siblings) are compositional mirrors of `7100` / `7105`, so
+  on a wave country they present 9+6 while the heavy role targets 11+7. Their `enable` blocks key
+  on `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` values only, so nothing goes silently false — the residual
+  is a count mismatch the field upgrade closes, not a dead redirect. Naming it rather than
+  claiming it is harmless: closing it means authoring wave FINALs, a design call for the owner.
+- Recon drift fixed on owner order 2026-09-10 ("corrige aussi le recon de 6200"), **MEASURED**:
+  three blocks had been missed by the `7f7cde47ef` sweep — `6200` in the hand-maintained medium
+  file, `6600` and `6700` in the generated mirror. All three now read
+  `recon_light_tank_company_divisional`, and the three armour template files are internally
+  consistent: 36/36 medium, 36/36 modern, 30/30 heavy. The two mirror lines were applied by hand
+  ONLY because they move the file TOWARD its generated form — the generator emits exactly them —
+  so they do not collide with the divergence recorded below.
+- **The modern mirror and its generator had both diverged. Resolved on owner order 2026-09-10
+  ("option 1, reporte les reglages dans l'original") — the generator now reproduces the committed
+  file byte for byte, verified.** Two separate faults were behind it:
+  - The generator silently dropped the whole wave band. `build()` iterated exactly two width
+    groups, `value % 1000` in `[0,100)` and `[100,200)`; `6200-6216` matched neither and was
+    emitted nowhere, with no error and no count check — 19 blocks written where the source has
+    36. Fixed by adding the `(200, "30 Width Armoured Waves")` group, with a comment saying the
+    band list IS the contract with the source file.
+  - Six modern twins had been hand-tuned in the OUTPUT: `6602`/`6603` and `6702`/`6703` promote 3
+    of their own assault guns from regimental support to the LINE, and `6700`/`6701` shave one
+    hull for one infantry battalion. The reason is cost — a modern hull is far dearer than a
+    medium one, so these variants trade hulls away rather than field twelve.
+  - **Where the tuning went, and why not into the medium source, MEASURED**: medium `6102` has no
+    `light_assault_gun_battalion_line` at all; writing one there to satisfy the mirror would
+    change the MEDIUM template, which is live for every non-modern country. The numbers therefore
+    live in `COMPOSITION_OVERRIDE` in the generator — the thing that owns the output — keyed by
+    medium value, each entry carrying its reason. `build()` raises on a key that no longer matches
+    a medium block, so a stale override cannot silently stop applying (both guards exercised).
+  - Closing check: `build()` output vs the committed file = 0 divergent lines, and a real run
+    reports "up to date". The file is reproducible from its source again.
+- Harness: `WA_TEST_TMPL_armoured_waves` added to `common/scripted_effects/WA_TEST_templates.txt`,
+  called from both `wa_test_tmpl.1` (report) and `wa_test_tmpl.2` (pre/post of a real pass). It
+  logs `doc` / `med_set` / `med` / `hvy_set` / `hvy`. `doc=1 med_set=1 med=0` = the mirror did not
+  fire; `doc=0` with `med>0` or `hvy>0` = an overwidth target and a stop-the-campaign reading.
+- No WA_TLM metric: §3.8 "standing" is a system-health invariant asked of EVERY campaign, and one
+  country holds this doctrine on the historical path. The console harness is the decisive read.
+- Verification (owner console): on a save where SOV holds `armoured_waves`, `event wa_test_tmpl.1
+  SOV` must read `doc=1` with `med` in `6200-6216` or `6700-6716`. Control: any country without
+  the doctrine must read `doc=0 med=0 hvy=0` while `med_set=1`.
+- Closed when: the harness reads `doc=1` with a wave value on a doctrine-holding country, the
+  control country reads `doc=0` with no wave value, and one campaign shows no country carrying a
+  wave value with `doc=0`.
+
+### resource-infra-targeting — PARKED (2026-09-09)
+- State: implementation ships with this subject update; parked only because the four OPEN slots
+  are already occupied. Re-open when one slot is free for owner-game verification.
+- Owner order 2026-09-09 ("implémente le fix"). Intended behaviour: resource-extraction
+  infrastructure targets only a state carrying a resource that currently justifies this strategy.
+- Symptom, **MEASURED** (owner playthrough): with SOV `WA_AI_needs_bauxite = 3`, priority
+  construction selected states 876 and 226; their state files contain no bauxite.
+- Cause, **MEASURED** (script): `WA_AI_resource_extraction` proved only that one qualifying state
+  existed, then `WA_AI_get_resource_slot_scores` admitted every rich controlled state and
+  `WA_AI_priority_queue_INF_resource` accepted the first buildable score without rechecking need.
+- Change: `[resource-infra-targeting]` centralises the existing seven active branches in the
+  state-scope observation `WA_AI_CONSTRUCTION_has_needed_resource_for_infrastructure`, reused by
+  the existence gate, score-list admission, standard queue consumer and PC queue consumer.
+- Impact, **DERIVED**: historical SOV with only bauxite at need 3 excludes 876/226 and retains its
+  bauxite states; an ahistorical country with another need at 3 retains states matching that need.
+  Multiple simultaneous needs remain composable. The legacy standard consumer now gets the same
+  final guard; it has no live caller in `common/` or `events/` at this revision.
+- Regression risk, **DERIVED**: a state can disappear from resource scoring when it contains no
+  currently needed resource. This is the intended restriction; resource thresholds, scores,
+  priority, budget, cadence and controlled-state perimeter are unchanged.
+- Harness: none owed — 36 changed PDXScript lines, no on-action effect signature/scope change, and
+  non-rail priority construction has no existing `WA_TEST_*` harness.
+- Verification (owner game): with only `WA_AI_needs_bauxite = 3`, first inspect the type-25 PC
+  target state, then let that project complete; its state has bauxite >15 and 876/226 are absent
+  from type-25 starts. Repeat with one non-bauxite need at 3 to prove the generic branch.
+- Closed when: the owner game verifies both queue admission and one completed infrastructure level
+  for bauxite-only and one other-resource scenario, with no type-25 start in an unrelated state.
+
+### techtree-capability — PARKED (2026-09-09)
+- PARKED 2026-09-09 at state TESTED (WIP limit, owner ruling): nothing is owed on the code side,
+  only the CAMPAIGN-OK run below. Reopen at TESTED when a campaign is scored.
+- State: shipped as `7aac08324e` on `ai-rework`, pushed. TESTED, not SHIPPED-UNTESTED: this change
+  is scripted TRIGGERS only - no `WA_AI_*` effect called by an on_action changed signature or scope,
+  so no `WA_TEST_*` console harness applies and none is owed. The test that gates it is the boot,
+  and F9 PASSED (owner-run, below). CAMPAIGN-OK still owed: criterion (b) and the templates-intact
+  half of (a) are only visible in a campaign.
+- Owner order 2026-09-09 ("j'aimerais une refactorisation de la AI_CONFIG et des triggers utilisant
+  la tech ... on abstracte des critères de tech à un pays, le sous entendu étant (ce pays a X arbre
+  de tech) ... faire dépendre les triggers de tech des arbres de tech associés, et relier ces arbres
+  de tech aux tags de pays qui les ont"). Owner decisions in the same session: table generated from
+  `00_technology.txt`, scope = all five folder families, and the tree FLAG is taken now rather than
+  in a second commit.
+- Intended behaviour: no WA_AI trigger answers "does this country have technology X available to it"
+  with a country tag. A tag answers WHO a country is; a technology FOLDER answers what it may
+  research; `has_tech` answers what it holds today. The three stay separate and each is asked where
+  it is defined.
+- Symptom, MEASURED (script): `WA_AI_CONFIG_DIVISIONS_use_light_tank_destroyers = { ITA JAP GER }`
+  and `..._use_mechanized_self_propelled_aa = { SOV }` are tag lists whose only meaning is "these
+  trees carry the branch"; the seven `WA_AI_CONFIG_AIRFORCE_uses_*` archetypes say so in their own
+  comments ("Only France has a separate interceptor tech tree", over a list of FRA/ITA/SOV); and the
+  33 `WA_AI_TEMPLATES_has_*_unlocked` gates were flat ORs of 965 `has_tech` ids with the tree named
+  only in a comment (one of them mislabelled `# Soviet Union` over three `eng_` ids).
+- MEASURED, the fact the tag lists were dropping: every folder in
+  `common/technology_tags/00_technology.txt` is owned by `original_tag = X` **OR**
+  `has_country_flag = <x>_technologies_tree_flag`, and
+  `common/decisions/_unique_technologies_adoption.txt` hands that flag out (21 `set_country_flag`).
+  A country that adopted the German tree was still classified on the tag it was born with.
+- MEASURED, the fact that decided the DESIGN: 40 further sites grant a national-tree rung WITHOUT
+  the flag — `common/national_focus/finland.txt` grants one rung from each of seven foreign trees,
+  plus bulgaria / canada / sweden / japan / turkey / uk, `history/countries/CHI`, `ROM`, `RIT`,
+  `USP`, `FSM` and the French colonies. So membership answers CAPABILITY only. Availability
+  (`WA_AI_TECHTREE_has_<cap>`) carries no membership term: ANDing it in would have taken Finland's
+  armour templates away. Written into the generated file's header so it is not "simplified" later.
+- Shipped:
+  - `tools/gen/gen_techtree_membership.py` → `common/scripted_triggers/WA_AI_TECHTREE_membership.txt`
+    (56 folders). Copies each folder's `available` verbatim; the only rewrite is dropping the
+    startup escape `NOT = { has_global_flag = tech_tree_startup_flag }`, which is a UI concern.
+  - `tools/techtree_registry.json` + `tools/gen/gen_techtree_gates.py` →
+    `common/scripted_triggers/WA_AI_TECHTREE_gates.txt`: 33 capabilities × (`has_branch_`, `has_`).
+    Armour and artillery families. Rung sets verified identical to the 33 old triggers.
+  - `WA_AI_TEMPLATES_triggers.txt`: 2033 → 973 lines, the 33 gates now one line each.
+  - `WA_AI_RESEARCH_tanks.txt`: 22 variant `needs_*` triggers gain `WA_AI_TECHTREE_has_branch_*`,
+    plus the two tier-agnostic SPG/SPAA triggers. Their comments said "has X tech tree" already.
+  - `gen_air_tech_gates.py` emits a `WA_AI_PRODUCTION_has_branch_<line>` twin per line from the new
+    registry key `tree_folders`; the six `WA_AI_CONFIG_AIRFORCE_uses_*` tag lists were DELETED and their seven readers now call it directly.
+- Behaviour deltas, all deliberate (a tech outside a country's folder is not researchable, so a
+  widening only reaches trees that carry the branch): light TD ITA/JAP/GER → + cze/minor/usa trees;
+  mechanized SPAA SOV → + ger/usa; interceptor FRA/ITA/SOV → + jap/usa; heavy fighter GER/ENG/USA →
+  + fra/ita/jap/generic; multirole, strike bomber and attacker → + the ROM and minor air trees; and
+  **ENG LOSES the fast bomber** — no rung of the English air tree unlocks one, it was weighting a
+  tech it cannot research.
+  CORRECTION to the first statement of this list, which said "all in the RESEARCH-weighting layer":
+  the attacker delta is NOT research-only. `WA_AI_PRODUCTION_should_build_attackers`
+  (`WA_AI_PRODUCTION_air.txt:176`) read the same archetype, so the minor and adopted air trees now
+  also reach an attacker PRODUCTION line. DERIVED bounded: that block also ANDs
+  `has_worthwhile_attacker` and the attacker park cap, so it cannot fire before the rung is
+  actually researched.
+- Left alone, on purpose: `WA_AI_CONFIG_AIRFORCE_uses_heavy_strategic` (no `has_worthwhile_heavy_strategic`
+  line exists to build a twin from — it is a sub-class of the strategic bomber);
+  `WA_AI_CONFIG_TEMPLATES_admits_medium_armor`, `..._focus_on_heavy_armor` and
+  `WA_AI_CONFIG_switch_from_light_to_medium_armor`, which mix per-tree rungs with the
+  `[armor-class-handoff]` era logic and an owner ruling — structural only, worth its own pass.
+- Findings recorded, NOT acted on: `WA_AI_TEMPLATES_has_modern_inf_support_unlocked` was an empty
+  `OR = { }` (now `always = no` with the reason: no technology anywhere unlocks a
+  `modern_infantry_support_tank`, so its reader is dead). `WA_AI_TEMPLATES_has_medium_support_armor_unlocked`
+  lists only three `eng_` rungs while `fra_support_tank_chassis_1..2` and `usa_support_tank_chassis_1..2`
+  exist unlisted (5 rungs), and `sov_medium_spg_tank_4` is absent from `medium_spg`; the full audit
+  found only those 6 candidate rungs missing across all 33 capabilities, so the old lists were
+  otherwise complete. `minor_armour_folder` lacks the startup escape and excludes only the Swedish
+  flag, so a country carrying `german_technologies_tree_flag` holds BOTH folders.
+- Reviews 2026-09-09, both run before shipping, both CONCERNS, every required item applied:
+  - **wa-architecture-reviewer** — (1) the header it flagged over the unlock aliases was FALSE:
+    written for the first design (membership ANDed into availability) and never updated when that
+    design was dropped, i.e. the one sentence most likely to make the next author re-add the AND
+    that deletes Finland's templates. Rewritten to say what the gate does and why. (2)
+    `documentation/WA_AI_LAYERS.md` §1/§3/§5/§7 updated — the layer-1 material list, the routing
+    rows for "has tree X" / "tree has branch Y", the named exception for `original_tag` outside
+    CONFIG, and the naming note. (3) the layer-1 inversion (CONFIG reading a layer-2 trigger) is
+    gone: the six AIRFORCE archetypes were DELETED from CONFIG, not stubbed, and their seven
+    readers now call `WA_AI_PRODUCTION_has_branch_<line>` directly. (4) `can_ever_` RENAMED to
+    `has_branch_` — `_can_` is the layer-3 DECISION verb in `tools/check_ai_layers.py`, so the old
+    name would have let a future `enable = { …_can_ever_x = yes }` gate on an observation and still
+    satisfy LAYER4-NON-DECISION. (5) the empty-`OR` equivalence is now labelled ASSUMED at the site.
+  - **wa-lessons-reviewer** — its lead concern (the ai_template decommission pass) is FALSIFIED for
+    this change: MEASURED, the transitive read closure of the eight widened triggers reaches 57
+    files and NONE under `common/ai_templates/` or `common/ai_equipment/`, and the 33 gates that DO
+    feed template selection are value-identical. Its "no half-removed legacy gate" rule (owner
+    2026-08-16) IS applied: the two armour switches moved bodily into the ALWAYS-FLAGS section with
+    their fourteen `always =` siblings, the six air ones were deleted outright. Its "mechanical set
+    diff, not an eyeball pass" is satisfied and now automated (below).
+  - It also, indirectly, caught a REAL defect. Making the research gates conditional can only
+    subtract where the registry is incomplete, and it was: `has_branch_medium_spg` had no Soviet
+    folder while `sov_medium_spg_tank_4` is researchable, so SOV would have stopped weighting
+    medium-SPG research. Same shape for `medium_support_armor` (fra/usa support chassis). Fixed by
+    a `branch_extra` registry field (capability counts the folder, availability does not, reason
+    recorded), and the audit that found it is now a generator ERROR: `BRANCH-GAP` re-derives the
+    candidate folders from `common/technologies/` — never from the registry, so the registry cannot
+    vouch for itself — and exits 2. Self-tested: stripping `branch_extra` makes it fire on exactly
+    those three, restoring it returns exit 0.
+- Closed when: (a) a boot leaves `logs/error.log` free of parse errors for the three new/rewritten
+  trigger files AND an armour-fielding AI still holds armour templates in the first save (the
+  regression the 33 rewritten gates could cause); and (b) one campaign save shows a country carrying
+  a `*_technologies_tree_flag` researching or fielding the ADOPTED tree's variants - the behaviour
+  the whole layer exists for, and the one thing the old tag lists could not do.
+- **F9 PASSED 2026-09-09** (owner-run launch, working tree, uncommitted). Discharges the parse risk:
+  three new/rewritten trigger files load, and the six triggers deleted from WA_AI_CONFIG.txt left no
+  orphan reader. That is the FIRST HALF of criterion (a) only. Still owed: the templates-intact
+  observation in a save, and criterion (b) entirely - both need a campaign, neither is boot-visible.
+- Verification: a campaign save where a country that ADOPTED a foreign tree is answered on it. Probe: pick any AI with `has_country_flag = *_technologies_tree_flag` and check it
+  fields/researches the adopted tree's variants. Until then the cheap gate is the pair of
+  `--check` runs plus a boot with no parse error in `logs/error.log` — three new/rewritten trigger
+  files load or the armour template system goes silent.
+
+### air-budget — SHIPPED-UNTESTED (2026-09-09)
+- **Maintenance floor SHIPPED 2026-09-09 (owner order: "je veux un filet d'usines minimum en
+  permanence, pour continuer a un peu moderniser le parc"; N = 2 / 5, every type).** A line closed
+  by its park CAP is no longer treated like one closed by a want: it enters a third state,
+  MAINTAINED - archetype factor kept, `equipment_production_min_factories` floor of 2 (5 above
+  `tier_large_mils`), `unit_ratio` weight and category factor retired, no `AI_purge_*`. The defect
+  it fixes, MEASURED on campaign `2ee8a4ba`: USA 0 fighter factories 1943.12-1945.1, ENG 0 for the
+  whole of 1943 - a park at its cap flies the airframe it had when it hit the bar for the rest of
+  the campaign, because nothing is produced to replace it. This DELIVERS the maintenance half of
+  the proposal recorded below ("80 % reopen or a maintenance weight at cap") and leaves the
+  reopen-bar half untouched: it is a FLOOR, not a weight, so the type's share of the air pool is
+  still 0 while capped and the fighter-floor arithmetic is unchanged. Secondary gain, DERIVED from
+  the same campaign's MEASURED reopenings (ENG 1944.10 at efficiency 9.00 = engine base): the
+  engine's production line is never deleted, so a reopening ramps from the efficiency it had.
+- Mechanics: `should_open_<line>_line` UNCHANGED (it still drives the purge books, the type gates
+  and the monthly weights); new `should_maintain_<line>_line` / `should_keep_<line>_line` (= open
+  OR maintained) in a MAINTENANCE section of `WA_AI_PRODUCTION_air.txt`; every `should_build_<x>`
+  split into `wants_<x>` + a named `<x>_park_is_below_cap`; the line blocks and every `_CANCEL`
+  complement of `WA_AI_PRODUCTION_DEFAULT_air.txt` moved from `should_open_*` to `should_keep_*`;
+  16 land maintenance-floor blocks; the purge pulse still writes its book from `should_open_*` (it
+  IS the "was open" side of every Schmitt pair) but fires `AI_purge_*` only when no funder line is
+  even kept. Reviewer MEASURED the wants/cap split equivalent to the old `should_build_*` for all
+  18 arms by AST compare of HEAD against the tree.
+- Impact analysis, changed protected behaviours (P3(a)/(e)): (1)
+  `should_cancel_land_cas_for_carrier_power` now reads `should_keep_cv_cas_line`, so a carrier
+  strike power whose carrier-CAS line is closed BY ITS CAP no longer gets the
+  `equipment_production_factor id = cas = -1000` land-CAS denial of `[carrier-needs-config]`. That
+  matches the OPEN state, which never carried it - the denial is for a power the archetype never
+  gave a carrier CAS line, not for one that filled its decks - but it is a behaviour change and it
+  is listed here rather than left to be found. (2) The Schmitt cap pair still reopens at 90 %, but
+  a maintained line adds to the very park that must fall to reach the bar, so for a role with low
+  attrition the reopen bar is now effectively unreachable and MAINTAINED is an absorbing state.
+  Accepted: the floor is the point, and the weight staying at 0 is what the reopen bar guards.
+- Carrier roles: the deck-derived `1 + 4` ladder of `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt` stays
+  gated on the line being OPEN, and a cap closure hands the role to a separate ONE-factory floor
+  behind the same `[equipment-selection]` saturation brake. A first pass ungated the ladder itself
+  and `wa-lessons-reviewer` returned CONFLICT on it, correctly: min-factories is need-blind and
+  additive (Fix 66 / R43), and for a big fleet the brake bar sits far above the park cap - fighters
+  cap 2000 vs bar 3510 at 20-39 hulls (1510 planes of headroom) and vs 5400 at 40+ (3400); naval
+  bombers 1800 vs 2340 (540) and vs 3600 (1800). DERIVED at 5 factories that band takes ~8 years to
+  cross, i.e. the rest of the campaign with the engine's own deck demand already at zero - the exact
+  Fix 66 failure mode. At 1 factory it is +114 planes over three years and no bar is ever reached.
+- **Park trajectory, the number instead of the adjective (P3(f))** - full table with its inputs in
+  scratchpad `air_maintenance_floor_trajectory.md`. MEASURED `POWERED_FACTORY_SPEED_MIL = 2.5`
+  IC/day (`05_defines.lua:192`, `BASE_FACTORY_SPEED_MIL` is 0), so 1 factory = 76 IC/month at 100 %
+  efficiency. DERIVED park growth above the cap at the DEEP (5-factory) floor, t+12 / t+36 months,
+  no attrition: fighter +190/+570 (+11 % of cap), cas +190/+570 (+19 %), heavy fighter +127/+380
+  (+13 %), tactical +109/+326 (+16 %), strategic +67/+202 (+7 %), naval bomber +190/+570 (+38 %),
+  **scout +127/+380 (+253 %)**, **transport +217/+652 (+326 %)**; carrier roles at their 1-factory
+  floor +38/+114 (+6 %). The six combat roles are a replacement rate. Scout and transport are not:
+  their caps are 150 and 200 and neither role takes attrition, so the cap stops binding for the
+  rest of the campaign. Shipped as ruled ("tous les types") with the end-state numbers recorded at
+  the code site; the one-line exception (drop their two `_large` blocks, transport base 2 -> 1) is
+  written out in the scratchpad file and NOT applied.
+- ASSUMED and NOT verified: that newly produced planes reach the EXISTING wings rather than sitting
+  in the stockpile. If the engine does not refit a wing in place, modernisation only runs at the
+  rate of wing turnover and the floor should be retuned or dropped. First thing to read on a save.
+- Reviewers: `wa-lessons-reviewer` CONFLICT on the carrier ladder (fixed above, its two other
+  required items - the trajectory table and the stale `cv_plane.txt` header - also applied);
+  `wa-architecture-reviewer` CONCERNS, all six required items applied (floor total no longer
+  re-typed as a literal in the harness, the harness no longer prints a factory expectation it
+  cannot honour for the two documented deviations, this impact line, the carrier headroom numbers,
+  the dated ruling stripped from the code comment, and the `[air-maintenance]` comment slug renamed
+  to `[air-budget]` - this subject owns the work, no new subject opened).
+- Checkers green: `check_ai_layers` 0 ERROR (the industry band moved out of the `ai_strategy`
+  enable blocks into `should_deepen_<type>_maintenance` to keep LAYER4-RAW-GATE at 0),
+  `check_constants` 0, `check_worklist` 0.
+- Verification (maintenance floor): `event wa_airb.4 <TAG>` after a COLD boot on a save where a
+  park is at its cap (USA or ENG fighters 1943-44 in `2ee8a4ba` are the known cells) must read
+  `maintenance-disjoint=1`, `lines: f=0` with `maint: f=1` for that country, and `floors:
+  fighter=2` (deep gate armed). In the production tab that country must show a small non-zero
+  fighter factory count instead of 0. Harness section G is the new probe; the verdict line now
+  carries FIVE values, all of which must read 1 - G1 and G3 restate terms the maintain triggers
+  already assert and only catch a deletion, G2 re-derives the role set from the section C walk.
+- **Campaign `2ee8a4ba` scored 2026-09-09 (133 saves 1936.2-1947.2, instrumented build, owner
+  report HTML).** Decision side PASS: GER 1939-41 `wa_tlm_air_w_fighter_pct` 40/40/40/48/48, floor
+  live, `air_emit_n` ≤ 41 on every major. **Factory side FAIL**: from the saves' military_lines
+  (MEASURED) GER air factories on fighters 31 % (1939.1), **19 %** (1939.9), 22 % (1940.1), 50 %
+  (1940.7), 22 % (1941.1), 31 % (1942.1) against a 40-48 % weight share - the original symptom
+  survives on the factory axis. DERIVED: factories per weight point GER = fighter 0.32, cas 0.30,
+  tactical 1.6-2.7, heavy 0.4; IC cost explains x1.7-1.8 of it (MEASURED evaluator medians:
+  tactical 32-46 IC vs fighter 18-29, strategic x2.4-2.7); the rest is the engine's allocation
+  (ASSUMED deficit/loss-driven - USA 1943.1 shows the inverse, tac 0.45 per point). Cap closures
+  MEASURED: USA 0 fighter factories 1944.1-1945.1 (park 9214-10100 vs reopen 9000), ENG 0 for
+  1943 (park 4827 vs 4500), GER 0 air factories at 1943.1 (13000 planes, bases full - engine pool
+  0, ASSUMED). Anomaly: SOV 12000 naval bombers by 1947.2 (0 in 1946.6, war with JAP 1946.3,
+  naval book 10 at 1946.7) against `naval_cap` 2000 - ASSUMED the `has_deployed_air_force_size
+  size < constant:` form does not read the bar; `event wa_airb.5 SOV` (new cap probe) on the
+  1947.2 save is the killing read before any cap retune. USA held 1 carrier fighter until 1943
+  (rung `usa_cv_fighter_3`, Q2 "rung wins"). Full tables and five proposals (cost-corrected
+  weights f60/cas38/tac24/strat15/nav10/hf10, industry-scaled caps, 80 % reopen or a maintenance
+  weight at cap, a 1-factory deck fallback, the cap probe): scratchpad
+  `air_campaign_2ee8a4ba.md`. Not closed; owner decisions pending.
+- **SOV 12000 naval bombers DIAGNOSED 2026-09-09 - the cap was never the fault.** MEASURED (9
+  monthly saves of `2ee8a4ba`): flag `WA_AI_PRODUCTION_AIR_open_naval_bomber` present 1946.6/.7/.8,
+  ABSENT 1946.9 on, and `wa_ai_air_budget_naval` 10 -> 0 by 1946.9. A country flag set without
+  `days` never expires, so its disappearance IS the `else_if` of `WA_production_strategy_effects.txt:167`
+  firing - the Schmitt cap bound at the 2000 bar while the park was between 1000 and 3100.
+  **The standing `ASSUMED the has_deployed_air_force_size size < constant: form does not read the bar`
+  is REFUTED**; `size <` is a vanilla form (install `common/decisions/GER.txt:13076`) and `constant:`
+  in that field was already a validated context. MEASURED cause instead: 287 factories stayed on 5
+  `SOV_il_10t_airframe` lines and drained 287/250/194/124/63/3 over five months (89 further 100-plane
+  wings), efficiency climbing monotonically 17 % -> 110 % - never cancelled. POSITIVE CONTROL,
+  MEASURED: the archetypes that carry a `_CANCEL` block are DELETED from the save within one month of
+  the same edge (USA fighters 1943.12->1944.1, 116 factories at 91-97 % -> line absent; ENG 1944.5->1944.6,
+  53 -> absent with total air factories unchanged 147->148; ENG reopens 1944.10 at efficiency 9.00 =
+  engine base). So the 5-month drain is not engine behaviour. Script line:
+  `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt:244` - `WA_AI_PRODUCTION_air_line_naval_bomber`
+  had no `_CANCEL` twin, so after closure the archetype's net production factor was 0 (SOV leads
+  COMINFORM, MEASURED, so the `-100` of `ENG_allies_we_dont_want_your_planes` never applied). FIX
+  SHIPPED: one additive block `WA_AI_PRODUCTION_air_line_naval_bomber_CANCEL` (`-1000`
+  `equipment_variant_production_factor` on `small_naval_bomber_airframe`, enable = the exact
+  complement of the funder). No constant retuned. Only funder MEASURED by grep: the funding block
+  itself (`:248`/`:249`) plus the category block (`:327`), both aborting on the same trigger; no
+  country file adds `min_factories naval_bomber`. Cadence table for the new cycle - t0 decision flips
+  at the cap (engine cadence, ASSUMED daily); t1 next ~2-day pulse, purge book clears AND the CANCEL
+  arms, MEASURED bound on the fighter control = line gone within <= 1 month; t2 next monthly pulse,
+  naval weight retired; t3 park attrites below the 1800 reopen bar, line reopens at efficiency 9.00
+  and climbs the whole curve again. **Flapping at the bar is therefore NOT covered by this fix**, and
+  the earlier proposal from the same scoring - "80 % reopen or a maintenance weight at cap" - STANDS
+  unrefuted: it addresses the reopen cost, this block addresses the overshoot after closure. Two
+  reviewers returned CONCERNS, none CONFLICT; both concerns applied (header no longer claims the purge
+  cannot cancel - only that purge-alone did not; no `equipment_production_factor` second lever, the
+  category block already withdraws on the same edge). Known-unfixed, same gap, NOT touched:
+  `cv_small_naval_bomber_airframe`, `medium_fighter_airframe`, `small_bomber_airframe`,
+  `large_bomber_airframe`/`large_heavy_bomber_airframe`, `transport_plane_equipment` carry no `_CANCEL`.
+  `documentation/WA_AI_AIR_PRODUCTION.md` sections 2 and 5 corrected (they asserted the purge book
+  cancels running lines). Caveat on the control, stated: both control countries are FIGHTERS, which
+  have a substitute archetype the land naval bomber lacks. Owner run owed: `event wa_airb.5 SOV` on the
+  1947.2 save after a COLD boot - now a confirmation, not the blocking read (expected
+  `below-cap(constant)=0 below-2000(literal)=0 above-2000(literal)=1 should_build_naval=0`); a
+  disagreement between the constant and literal columns would reopen H1. Full tables: scratchpad
+  `sov_naval_bomber_2ee8a4ba.md`.
+- State: phases 1-4 committed; harness runs pasted below for GER / ENG / MAL / USA on the
+  pre-retune constants. One `event wa_airb.4 USA` on the 50/50 + naval 10 constants (cold boot)
+  moves this to TESTED; phase 0b remains optional. Phase 5 (2026-09-09): TLM family
+  `WA_TLM_air_*` (standing, v36 - `documentation/WA_TLM_TELEMETRY_SYSTEM.md` §6g), the counter
+  `WA_TLM_air_emit_n` written by the 18 emitters, the closing criterion re-stated on it. Boot
+  test owed (WA_TLM_core.txt touched: a parse fault there silences every telemetry family).
+- Owner order 2026-09-09 ("je veux une refactorisation du système de production aérien pour l'IA
+  ... on veut par exemple que la somme des usines allouées sur les chasseurs fasse au moins 40 % du
+  total des usines aériennes ... une IA chasseurs + cas doit faire du 60/40"). Intended behaviour:
+  every AI's air factories are split between the air TYPES it is allowed and able to build by a
+  declared weight per type, renormalised over the OPEN types, with a fighter floor; the archetype
+  inside a type is a parity choice; a tech rung the AI should not fund is declared in one registry.
+  Full plan (diagnosis, model, phases, decisions): session scratchpad `PLAN_air_production_refactor.md`,
+  to be moved to `documentation/WA_AI_AIR_PRODUCTION.md` with phase 3.
+- Symptom, MEASURED (script, `common/ai_strategy/World_Ablaze_production_air_strategies.txt`): three
+  stacked levers, none normalised - `unit_ratio` (fighter 300 vs cas 80 / heavy_fighter 130 /
+  `interceptor` 100 / tactical 80+40+40 / naval 10 / strategic 150), `equipment_production_factor`
+  (fighter **25** vs every bomber category **100**), `equipment_variant_production_factor` (55-200 per
+  airframe). DERIVED: GER with every line open gets 300/780 = 38 % of wanted planes, then
+  38 x 1.25 vs 62 x 2 = **28 % of air factories** - the owner's "20 % chasseurs / 80 % bombardiers".
+  MEASURED: the heavy-fighter block writes `unit_ratio id = interceptor` while `medium_fighter_airframe`
+  is `allowed_types = { heavy_fighter }` - a ratio on no airframe. MEASURED: lines open on
+  `WORLD_ABLAZE_PRODUCTION_*` flags set by a ~2-day event and close by `AI_purge_*` flags read in
+  `can_be_produced` (cancels running lines); tanks and navy read triggers in `enable`.
+- Engine model, MEASURED (`common/ai_strategy/documentation.info` § UNIT RATIOS / AIR): a land air
+  type's share = `unit_ratio / sum(land unit_ratio)` x wanted planes, no base 100; carrier planes a
+  separate pool. So integer weights emitted at runtime give exact shares; the model is the armour
+  budget (`WA_AI_ARMOR_BUDGET_reconcile`, meta_effect emitters, books + diff).
+- Decisions (owner 2026-09-09): Q1 `heavy_fighter` is its own type and the ATTACKER archetype
+  belongs to it, not to cas - MEASURED over every `ai_equipment` plane design (evaluator
+  `StatModel`, 35 attackers / 37 heavy fighters / 75 CAS): air_attack per IC 1.91 vs 1.90 vs 1.14,
+  ground_attack per IC 0.52 vs 0.30 vs 0.69, and every `ai_equipment` file already files attackers
+  under `air_heavy_fighter`. Q2 two closures: HARD (archetype not allowed / tech not worthwhile /
+  BoB / bases lost) keeps the `can_be_produced` purge; CAP (park saturated) = weight 0 + hysteresis
+  (reopen at 90 % of the cap), no purge - conditional on phase 0b. Q3 weights fighter 60 / cas 40 /
+  tactical 40 / strategic 40 / naval 20 / heavy_fighter 15, fighter floor 40 %; Q4 fighter
+  archetypes at parity; Q5 `air_factory_balance` tag+date blocks stay out of scope (separate subject
+  `air-share-windows`); Q6 monthly reconcile.
+- Phases: **0** owner console measurements - (a) is `add_ai_strategy unit_ratio` additive per id
+  (BLOCKING for phase 3), (b) does weight 0 / `-1000` drain a running line, (c) `imgui show
+  ai-strategy` GER 1939 effective ratios; **1** `tools/air_tech_registry.json` +
+  `tools/gen/gen_air_tech_gates.py` generating `WA_AI_PRODUCTION_air_tech.txt` (semantic diff empty
+  first, then the evaluator reads the registry's exclusions); **2** flags -> `_is_open` triggers,
+  values unchanged, heavy-fighter id fixed, `check_ai_layers` debt DOWN; **3** reconcile
+  `WA_AI_AIR_BUDGET_reconcile` + constants + lever parity + harness `WA_TEST_air_budget`;
+  **4** carrier pool; **5** TLM probe + campaign.
+- **Phases 1 + 2 in the working tree 2026-09-09 (uncommitted at the time of writing).** Phase 1:
+  `tools/air_tech_registry.json` (127 tree entries, every id verified against `common/technologies/`)
+  + `tools/gen/gen_air_tech_gates.py` (`--check` exit 0; the rendered file's has_tech SETS are
+  identical to HEAD, 17/17 triggers, MEASURED by set comparison); the evaluator reads
+  `exclude.airframes` as forced KEEP_OLD (`registry_excluded` flag; list empty until a model is
+  named). Phase 2: `WA_AI_PRODUCTION_should_open_<line>_line` x17 + `should_run_bob_programme` +
+  `should_cancel_land_cas_for_carrier_power` (end of `WA_AI_PRODUCTION_air.txt`); new
+  `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` (line blocks, values unchanged);
+  `World_Ablaze_production_air_strategies.txt` trimmed to the `air_factory_balance` blocks; the
+  pulse effect rewritten as purge books (`WA_AI_PRODUCTION_AIR_open_<archetype>` country flags).
+  Three deliberate deviations from value-neutral: (a) heavy-fighter ratios move from the DEAD id
+  `interceptor` to `heavy_fighter` (min_factories 10 becomes live, same as the mutually exclusive
+  attacker line); (b) carrier CAS gets `AI_purge_cv_small_bomber_production` (`plane_airframes.txt`
+  cv block) instead of sharing the land flag - closing one no longer cancels the other; (c) a
+  fighter-mode switch no longer purges the archetype the country keeps; (d) (architecture review)
+  HEAD re-set both land-fighter purge flags on EVERY pulse while no fighter line qualified (the
+  `else` of the trio) - the edge purge alone would have left the engine free to run fighter lines
+  there, so `small_fighter` / `small_fighter_multirole` now carry a CANCEL block (-1000 while no
+  line funds them), the same denial without the cancel-per-pulse; (e) (lessons review, "two
+  states of one object") fast / strike / tactical each read ONE purge key now
+  (`plane_airframes.txt`: the shared `medium_bomber` / `medium_multirole` second key removed from
+  each pair) so a book cancels its own archetype only - HEAD's jet-tactical veto closed fast+strike
+  and its purge cancelled the still-open tactical line, and the BoB close of tactical cancelled
+  fast+strike. Guard added (lessons "absent variable reads 0"): `should_build_bob_fighters` requires
+  `has_variable = WA_AI_PRODUCTION_land_fighter_park`, so a fresh load or a human->AI switch does
+  not run the BoB programme (which closes every bomber line) before the first pulse writes the park.
+  Cadence, DERIVED for a line that flips between pulses (pulse = MTTH 2 d on `is_ai`, 7 d under
+  `WA_AI_delay`; `enable` ASSUMED daily): t0 decision flips closed -> the block disables the same
+  day (engine cadence), no purge yet; t1 next pulse (expected 2 d, 7 d in performance mode) -> book
+  clears, purge fires, the running line is cancelled; t2 next pulse -> nothing. Open direction: t0
+  block enables the same day, the line starts at the engine's own pace; t1 book set, no purge.
+  Worst case = a line cancelled up to one pulse late, never early. Out of subject, recorded:
+  `WA_AI_stop_air_production` (`WA_AI_misc_effects.txt`) is write-only on HEAD as well - no reader
+  in the old flag ladder either (MEASURED `git show HEAD:` grep). Pre-existing, not moved:
+  `should_build_bob_fighters` keys on `fall_of_france` / `REN` / `GER` (principle 1 debt, already
+  in the trigger file at HEAD). One-shot on a save from a HEAD build
+  (DERIVED): orphaned `WORLD_ABLAZE_PRODUCTION_*` flags stay unread; a line that closed between
+  builds has no book and gets no purge - it runs to its end or to its CANCEL -1000; from the
+  second pulse everything is edge-normal. Gates: `check_ai_layers`
+  0 ERROR, ratchet unchanged (the new DEFAULT file reads only `_should_` triggers);
+  `check_constants` clean; `check_worklist` clean. Pre-existing, unrelated: pytest
+  `test_usa_medium_is_the_canonical_regression` fails on HEAD too.
+- Harness: `common/scripted_effects/WA_TEST_air_budget.txt` + `events/wa_test_air_budget.txt`
+  (contract v1). `event wa_airb.3 GER` (runs the pulse, then reports), `wa_airb.2` for every AI
+  major. Section C re-derives the 17 lines from the wants + retyped bands; VERDICT
+  `lines-match-walk=1 books-match-walk=1`.
+- **Owner boot + console run 2026-09-09 ("boot start OK"), GER 1940.10.1, cold boot (game.log pasted):**
+  ```
+  scope : always=1  I-am-ROOT=1  I-am-THIS=1  ROOT-scope-usable=1  control-false=0
+  inputs: is_ai=1  mils=454  park(resum)=3624  park(var)=3624  bob_flag=0  own_air_arm=1
+  wants : f=1 mr=0 int=0 hf=1 att=1 cas=1 cvcas=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0 bob=0
+  vetoes: jet_fighter=0 jet_tac=0 delayed_strat=0 after_1941_6=0
+  lines : int=0 f+mr=0 f=1 mr=0 cas_low=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  walk  : int=0 f+mr=0 f=1 mr=0 cas_low=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  books : int=0 f=1 mr=0 cas=1 cvcas=0 hf=1 att=0 fast=1 strike=1 tac=1 nav=1 strat=0 scout=1 cvf=0 trn=0
+  VERDICT German Reich: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: the shipped decisions, the independent walk and the purge books agree on all 17
+  lines; the attacker line yields to the open heavy-fighter line as designed; the park variable
+  equals its re-sum (the `has_variable` guard was live).
+- **Same run, ENG 1940.10.1 (Battle of Britain) and British Malaya (control), game.log pasted:**
+  ```
+  ENG  inputs: is_ai=1  mils=187  park(resum)=700  park(var)=700  bob_flag=1  own_air_arm=1
+       wants : f=1 mr=1 int=0 hf=0 att=0 cas=0 cvcas=0 fast=0 strike=1 tac=1 nav=1 strat=0 scout=0 cvf=0 trn=1 bob=1
+       vetoes: jet_fighter=0 jet_tac=0 delayed_strat=1 after_1941_6=0
+       lines : int=0 f+mr=1 f=0 mr=0 cas_low=0 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=0 nav=0 strat=0 scout=0 cvf=0 trn=0
+       walk  : (identical)   books : int=0 f=1 mr=1 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=0 nav=0 strat=0 scout=0 cvf=0 trn=0
+       VERDICT United Kingdom: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  MAL  inputs: is_ai=1  mils=0  park=0/0  bob_flag=0  own_air_arm=0   wants/lines/walk/books: all 0
+       VERDICT British Malaya: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: the BoB programme closes tactical, naval and transport while their wants read 1, the
+  fighter+multirole line stays open, the fighter book carries both archetypes; the minor with no
+  own air arm reads every line 0 (patron control). Observation, pre-existing and out of this
+  phase: the strike line is NOT closed by the BoB programme (HEAD's flag ladder never gated fast /
+  strike on it either) - ENG keeps a strike-bomber line through the battle; the phase-3 weights
+  are where that gets decided. Still owed: USA 1942+ (carrier lines).
+- **Phase 0a MEASURED 2026-09-09 (owner console, GER 1940.10, cold boot):** `unit_ratio fighter`
+  read 300; `effect WA_TEST_AIRB_probe_ratio_add` (+50) -> 350; `_probe_ratio_sub` (-50) -> back
+  to 300 ("sub marche aussi"). `add_ai_strategy unit_ratio` is additive per id in both directions:
+  the book-and-diff reconcile is buildable. Phase 0b (drain by -1000) not run yet - Q2(b) stays on
+  the purge for cap closures; hysteresis on the reopen bar ships with phase 3 regardless.
+- **Phase 3 in the working tree 2026-09-09 (uncommitted).** `WA_AI_AIR_BUDGET_reconcile`
+  (`common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt`; monthly after the armour reconcile +
+  on_startup): open types from the `should_open_*_line` decisions -> table weights (script constants
+  `air_budget`: 60/40/40/40/20/15, fighter floor 40 %) -> diff vs books `WA_AI_AIR_BUDGET_<type>` ->
+  `add_ai_strategy unit_ratio ±delta` through meta_effect (the armour emitter form). The 13 static
+  land `unit_ratio` lines left `WA_AI_PRODUCTION_DEFAULT_air.txt`; category factors and funded
+  archetype factors are at parity 100 (fighter was 25 - the measured 20/80 lever); heavy-fighter
+  `min_factories` 10 -> 1. Carrier-pool ratios untouched (phase 4). Hysteresis: every park cap now
+  a Schmitt pair (close at cap, reopen at the `_reopen` bar = 90 %, 16 new constants) read through
+  the purge books. Doc: `documentation/WA_AI_AIR_PRODUCTION.md`. Harness section E re-derives the
+  weights from the walk and compares them to the books (`budget-match-walk`), `event wa_airb.4`
+  runs pulse + reconcile first. Gates: `check_constants` clean (all 23 new constants read),
+  `check_ai_layers` 0 ERROR ratchet unchanged, `check_worklist` clean. Owner runs owed:
+  `wa_airb.4 GER` 1939-41 (expect f=60 cas=40 tac=40 nav=20 hf=15, fighter_share 34 % -> floor
+  raises f to 77 -> 40 %), `wa_airb.4 ENG` in the BoB (expect fighter only), USA 1942+. TLM probe
+  `wa_tlm_air_*` deferred to phase 5: the books are country variables, already save-visible.
+- Reviews on phase 3 (architecture CONCERNS, lessons CONCERNS), all applied: (1) the category
+  factor is ONE block per TYPE (`WA_AI_PRODUCTION_air_category_<type>`, enabled by new
+  `WA_AI_PRODUCTION_should_fund_<type>_type` decisions that the reconcile reads too) - factors of
+  one id SUM across enabled blocks, so per-line factors gave three open tactical lines 300 against
+  fighters 100, the skew coming back by another door; (2) the Battle of Britain bar is a Schmitt
+  pair the other way round (engages under `bob_fighter_cap_reopen` 4500 / `_sov_gone_reopen`
+  7200, releases at the cap, read through `WA_bob_production_flag`); (3) doc §6 carries the
+  entry-accumulation bound (6/month/country), the three unpaired decision inputs (patron, mil
+  band, jet vetoes) with the t0-t4 walk, and the save fingerprint; (4) `armor-prod-category`
+  carries a baseline re-cut line (fighter factor 25 -> 100 raises the air pull vs `armor` 60 -
+  stated regression risk, no counter-term chosen: the level 100 is what every bomber line
+  already carried); (5) `cv_cas` / `cv_fighter` category factors noted as outside
+  `script_enum_equipment_category` (ASSUMED no-op) so phase 4 does not inherit them as a lever;
+  (6) comment tells added (additivity gone = log weights differ from `imgui`; purge books written
+  by the pulse only; `fighter_floor_pct` < 100).
+- **Owner console run 2026-09-09, `event wa_airb.4 ENG`, 1939.9.1, fired twice (game.log pasted):**
+  ```
+  scope : always=1  I-am-ROOT=1  I-am-THIS=1  ROOT-scope-usable=1  control-false=0
+  inputs: is_ai=1  mils=120  park(resum)=200  park(var)=200  bob_flag=0  own_air_arm=1
+  lines : int=0 f+mr=1 f=0 mr=0 cas_low=0 cas=0 cvcas=0 hf=0 att=0 fast=0 strike=1 tac=1 nav=1 strat=0 scout=0 cvf=0 trn=1
+  budget: expect f=60 cas=0 tac=40 strat=0 nav=20 hf=0 floor=0 fighter_share=50%
+  budget: books  f=60 cas=0 tac=40 strat=0 nav=20 hf=0
+  VERDICT United Kingdom: lines-match-walk=1 (mismatches 0)  books-match-walk=1 (mismatches 0)  budget-match-walk=1 (mismatches 0)  purges-armed=0
+  ```
+  MEASURED: three open types (fighter, tactical, naval), books = re-derived weights, floor not
+  needed (60/120 = 50 % > 40 %); the second firing reads the same books (idempotent, no
+  re-emission).
+- **Engine-side MEASURED 2026-09-09 (owner `imgui show ai-strategy`, 1940.10 save, screenshots):**
+  GER `unit_ratio`: convoy 15, fighter **77**, cas 40, tactical_bomber 40, naval_bomber 20,
+  heavy_fighter 15 - the floor case exactly as derived (others 115 -> 77 -> 40 %). ENG (in the BoB):
+  fighter 60, tactical_bomber 40 (the strike line is not BoB-gated), no naval entry (BoB closed it),
+  plus the static carrier rows cv_fighter 150 / cv_cas -1000 / cv_naval_bomber 100 from
+  `WA_AI_PRODUCTION_DEFAULT_cv_plane.txt`. Phase 3 verified script-side (harness) and engine-side.
+  **Phase 4 finding, DERIVED from that ENG row**: the carrier base block puts cv_cas at -1000 for
+  every carrier navy while the USA cv_cas line adds +80 -> net -920: the carrier strike power never
+  gets a carrier-CAS share. Pre-existing; the carrier reconcile replaces both.
+- **Phase 4 in the working tree 2026-09-09 (owner order "pars phase 4").** The carrier pool joins
+  the reconcile (section 4, three books `WA_AI_AIR_BUDGET_cv_*`, six emitters): weights
+  `cv_weight_fighter 60 / cv_weight_cas 30 / cv_weight_naval_bomber 40`, a type funded while the
+  country holds a deck (`WA_AI_PRODUCTION_needs_cv_planes`) AND its line is open
+  (`should_fund_cv_<type>_type`; carrier naval bombers ride the naval-bomber line). Removed: the
+  static `WA_DEFAULT_production_carrier_planes_base_ratios` block (150 / 100 / -1000) and the
+  `cv_cas 80` / `cv_fighter 80` lines of the two carrier line blocks - the -920 net is gone. The
+  deck-gated min-factory floors of `cv_plane.txt` are untouched (volume lever, saturation brake).
+  Observation, pre-existing, owner ruling `[carrier-needs-config]` kept: a carrier navy outside
+  the archetype (ENG) has its cv fighters CANCELLED (-1000 variant factor) yet still gets the
+  2 / 5 factory floors - the two levers disagree; not changed here. Harness section F
+  (`cv-budget-match-walk`, VERDICT 4 values). Expected on the 1940.10 save: ENG cvf=0 cvcas=0
+  cvnav=40 (naval closed by the BoB -> cvnav=0 during the battle); USA 1942+ cvf=60 cvcas=30
+  cvnav=40; GER decks=0 -> all 0. **Regression risk stated (principle 3e)**: a carrier navy
+  outside the archetype (ENG) loses its cv_fighter POOL share - the static block gave it
+  150/250 = 60 % of its deck-sized pool, the archetype-gated type gives 0 - so only the 2/5
+  deck-gated floors feed its carrier fighters. Signal on the next scored campaign: ENG
+  carrier-fighter wing fill and the `imgui show ai-strategy` cv rows; if ENG decks run empty, the
+  fix is the archetype (`WA_AI_CONFIG_is_carrier_navy`), not this emitter. Lessons review
+  corrected the wording: this is NOT "unchanged" - MEASURED at HEAD the static block gave ENG
+  cv_fighter 150 / cv_naval 100 (60 % fighters); phase 4 gives it 0 / 40 (100 % naval bombers,
+  the ENG waste shape of f9321934). **Q8 for the owner**: (a) fund cv_fighter for EVERY deck
+  holder whose carrier-fighter tech is worthwhile (weight while `needs_cv_planes` and
+  `has_worthwhile_cv_fighter`, archetype keeps only the purge/CANCEL), or (b) keep the archetype
+  gate and drop the deck-gated floors so one lever decides, or (c) as shipped (ENG fighters on
+  the 2/5 floors alone, ASSUMED a floor builds through the -1000 CANCEL - phase 0b measures it).
+  Recommendation: (a) - a deck without fighters is the measured failure, and the archetype was
+  written to stop UNASKED carrier lines, not to starve existing decks. Cadence of the deck gate
+  (DERIVED, monthly): t0 last deck sunk day 5 -> engine pool 0 at once (deck-sized), stale
+  weights move no factory; t1 monthly pulse -> -60/-30/-40 emitted, books 0; t2 new deck ->
+  engine pool > 0 at once, split re-emitted at the next monthly pulse (<= 30 d with no split, the
+  floors cover it). HEAD's static block was engine-cadence; the lag is new and bounded by one
+  pulse. `carrier_planes.txt` header re-derived: the saturation bars now sit at 2-4x the deck
+  slots (less braking, conservative). ASSUMED and to close on the USA 1942 `imgui` read: land
+  and carrier pools separate (doc-sourced only) - the land `fighter` row must not move when the
+  cv rows appear.
+- **Q8 = (a), owner 2026-09-09.** `WA_AI_PRODUCTION_should_build_cv_fighters` reads
+  `WA_AI_PRODUCTION_needs_cv_planes` (holds a deck) instead of `WA_AI_CONFIG_is_carrier_navy`:
+  a deck holder with a worthwhile carrier-fighter rung opens the line, gets the weight, keeps
+  the floors, and its `cv_small_fighter` CANCEL / purge follow the same decision - one lever.
+  Carrier CAS keeps the carrier-strike-power archetype. `WA_AI_CONFIG_is_carrier_navy` loses its
+  only production reader (other readers listed by grep at the time of the change, see commit).
+- **Owner console run 2026-09-09, `event wa_airb.4 USA` 1942.11.1 (game.log pasted):** land pool
+  PASS - `expect f=77 cas=0 tac=40 strat=40 nav=20 hf=15 floor=1 fighter_share=40%`, books equal,
+  `imgui` rows fighter 77 / tactical 40 / strategic 40 / naval 20 / heavy_fighter 15 (cas 0 =
+  carrier strike power, no land CAS line: correct). Carrier pool read **0 everywhere** with
+  `decks=1` and the cvf / cvcas lines open - both the harness EXPECT (constants x walk) and the
+  books. DERIVED cause: the `cv_weight_*` constants read 0 in that session while the land
+  `weight_*` (loaded at the earlier boot) read fine, and the harness's new section F was present
+  - the shape of a `reload`/`reloadfile` of the effect files without a restart: script constants
+  are not re-read by it (lessons: hot reload). MEASURED on disk: the three constants sit inside
+  `air_budget`, LF, no BOM, `check_constants` clean. CONFIRMED: `logs/game.log` shows the cold
+  boot at 12:44, after the 12:39 run, and `common/script_constants/documentation.md` states
+  "reloading the script database is not enough to propagate the constants" (MEASURED, engine doc).
+- **Owner console run 2026-09-09 after the cold boot, `event wa_airb.4 USA` 1942.9.7 (pasted):**
+  ```
+  budget: expect f=77 cas=0 tac=40 strat=40 nav=20 hf=15 floor=1 fighter_share=40%   books equal
+  carrier: decks=1  expect cvf=60 cvcas=30 cvnav=40  books cvf=60 cvcas=30 cvnav=40
+  VERDICT United States of America: lines-match-walk=1  books-match-walk=1  budget-match-walk=1  cv-budget-match-walk=1  purges-armed=0
+  ```
+  Phase 4 PASS script-side: the carrier pool is emitted from the deck x line gates; the land
+  fighter weight stayed 77 with the cv books present. Owed: the `imgui` read of the USA cv rows
+  (cv_fighter 60 / cv_cas 30 / cv_naval_bomber 40, land `fighter` still 77 = the pool-separation
+  ASSUMPTION closed engine-side) and one ENG run (Q8a: cvf=60 expected outside the BoB).
+- **Q9, owner 2026-09-09 ("pourquoi l'usa veut faire des cv cas ? ... jamais si pas configurée
+  explicitement" -> option 2):** `WA_AI_CONFIG_AIRFORCE_is_carrier_strike_power` is now
+  `always = no`. MEASURED before: the archetype named the USA (`WA_AI_CONFIG.txt:361`, carried
+  by `dcfe18a8` from the old tag-gated `WA_usa_cas_strategy`), and the static `cv_cas -1000` of
+  `cv_plane.txt` masked it (net -920), so the config never produced a plane the owner could see;
+  phase 4 removed the mask and the config surfaced. Consequences (DERIVED): no AI opens the
+  carrier-CAS line or gets a cv_cas weight (CANCEL -1000 stays on everywhere); the USA gets no
+  land CAS either (`should_build_cas` needs `cas_is_strong` or no worthwhile multirole - the USA
+  has multiroles); the `naval_cap_carrier` 1800 ladder branch is unreachable, the USA reads
+  `naval_cap` 2000. The archetype stays declared so naming a nation is a one-line change.
+  Expected on re-run: USA `cvcas=0` in wants, lines, books and `carrier:` (cvf=60 cvnav=40).
+- **Engine-side MEASURED 2026-09-09 (owner `imgui`, USA 1942, after Q9, screenshot):** `unit_ratio`
+  rows convoy 100, fighter 77, tactical_bomber 40, strategic_bomber 40, naval_bomber 20,
+  cv_fighter 60, cv_naval_bomber 40, heavy_fighter 15 - no cv_cas row (Q9 live), the land rows
+  unchanged next to the cv rows. Phase 4 verified engine-side; land/carrier pooling inside the
+  engine stays doc-sourced (the rows are separate entries, what the engine sums is not visible).
+- **Owner screenshot 2026-09-09, ENG 1936 production lines (MEASURED): Hawker Nimrod 1/7,
+  Fairey Swordfish 1/7, Gloster Gauntlet 2/9.** The 7 is the carrier FLOOR pair of
+  `cv_plane.txt` (base 2 + carrier-major 5, additive, ENG > 3 hulls), and the Nimrod ran while
+  its line was CLOSED (`eng_cv_fighter_3` rung not held: the floor forced a model the AI judged
+  not worth a factory - the floor-vs-CANCEL contradiction recorded at phase 4). Change: the four
+  floor gates (`WA_AI_PRODUCTION_carrier_planes_floor_* / _major_*`) now require the role's
+  funded-type decision (deck x line open x tech x cap). Reviews (architecture CONFLICT on
+  comments/doc, lessons CONCERNS) applied: (1) the carrier-fighter line block's own
+  `min_factories 1` is gone, so the floors of `cv_plane.txt` are the whole floor - base 1 per
+  role, carrier-MAJOR +6 (7) and the major bar moves from > 3 to > 9 hulls: both measured
+  big-fleet cells (9be92c89 USA 35 hulls on 5, f9321934 USA 47 hulls on 8) ran EXACTLY on the
+  old floor sum, so that sum is kept for fleets and denied to a 1936 navy with six decks;
+  whether the engine's deck demand carries a fleet ABOVE the floor is ASSUMED (both cells read
+  requested = floor) - killing read: a many-deck USA save with unfilled wings, requested vs
+  floor sum on the production screen; (2) carrier naval bombers get their OWN want and line
+  (`should_build_cv_naval_bombers` = deck x naval rung x `naval_cap_carrier` pair on the carrier
+  archetype; `should_open_cv_naval_bomber_line` = not BoB) and their own purge key - the land
+  naval line's `is_maritime_air_power` / oceanic-enemy / coast terms no longer govern a deck
+  (a USA at peace had no carrier naval-bomber floor under the previous wiring);
+  `AI_purge_small_naval_bomber_production` is the new LAND key (`plane_airframes.txt` land
+  block), the cv key stays on the cv block; (3) Q2 decided: a deck holder below its carrier-
+  fighter rung builds NO carrier fighters until the rung - the `[rung-1940]` ruling wins over a
+  1-factory fallback (recorded, owner may overturn); (4) the harness `carrier:` line prints the
+  four floor gates, the walk carries `cvnav` as its own line, VERDICT still 4 values; (5) doc
+  §4: floor requests through the -1000 CANCEL is now MEASURED (the ENG screenshot), not ASSUMED.
+  Signal: USA carrier-fighter wing fill on the next scored campaign (`cvair.py`). Expected on the
+  ENG 1936 save after a cold boot: Nimrod 0 factories requested, Swordfish 1.
+- **Owner retune 2026-09-09:** (a) carrier split 50 / 50 (`cv_weight_fighter 50`,
+  `cv_weight_naval_bomber 50`) - "la composition IA des porte-avions", the cv unit_ratio also sets
+  the AI's deck composition (`cv_plane.txt` header); (b) `weight_naval` 20 -> 10, land naval
+  bombers halved. New expectations (DERIVED): GER 1940.10 others 105 -> f=70 (floor), nav=10;
+  USA 1942 f=70 nav=10 cvf=50 cvnav=50; ENG 1939.9 f=60 tac=40 nav=10 (share 55 %). Constants
+  changed = cold restart before the re-run.
+- Phase 0 console procedure (owner, any 1939 save, observer tag): (a) `tag GER`, `imgui show
+  ai-strategy`, note the `unit_ratio fighter` row; `effect add_ai_strategy = { type = unit_ratio
+  id = fighter value = 50 }`; re-read; `effect add_ai_strategy = { type = unit_ratio id = fighter
+  value = -50 }`; re-read - additive means the row returns to its first value (BLOCKING for phase 3).
+  (b) on a GER save with a running tactical line: `effect add_ai_strategy = { type =
+  equipment_variant_production_factor id = medium_heavy_bomber_airframe value = -1000 }`, `tag
+  BHU` back (GER returns to AI), run 3-4 weeks, read the production screen: does the line lose its
+  factories (drain) or is it untouched (then the purge stays for cap closures too). (c) `tag GER`
+  1939.9, `imgui show ai-strategy`: paste every `unit_ratio` / `equipment_production_factor` /
+  `air_factory_balance` row - the MEASURED baseline the phase-3 weights are calibrated against.
+- Verification (campaign): `tlm <TAG>` -> `wa_tlm_air_w_fighter_pct` (the decision, exact),
+  `wa_tlm_air_park_fighter` / `_park_bomber` (the effect, 6-month window), `wa_tlm_air_emit_n`
+  (entry accumulation), `wa_tlm_air_types_open`; second signal `wa_ai_air_budget_<type>` (books)
+  and the purge books `wa_ai_production_air_open_<archetype>` (a line whose block should be armed
+  with no such flag = the pulse is not running). The share of air FACTORIES per type is read from
+  the save's production lines by the analysis script (script cannot read it); it must match
+  `w_fighter_pct` within the engine's own allocation noise.
+- Closed when: on one scored campaign, GER 1939-1941 `wa_tlm_air_w_fighter_pct` in [40, 60] AND
+  its fighter share of air factories (production lines) within [40 %, 60 %] on 3 consecutive
+  monthly saves; USA and ENG strategic share >= 25 % after 1942.1; `wa_tlm_air_emit_n` < 200 on
+  every country at the last save; `check_ai_layers` baseline lower than before phase 2 (DONE:
+  306 -> 305).
+
+### pc-lost-state-purge — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: TESTED 2026-09-08 (owner console run pasted); the only item owed is the campaign probe (`wa_tlm_pc_lost_n` > 0 on a side-switch) - nothing to do in a session until a scored campaign is read.
+- Owner order 2026-09-08 ("corrige la purge"), from the ITA side-switch audit (campaign `6fcbbe0d`,
+  1943.9 vs 1944.1). Intended behaviour: when a state changes hands to a party the old controller may
+  not build through (not itself, not faction, not subject either way, not in its
+  `WA_AI_PC_construction_permissions`), the old controller's priority-construction projects in that
+  state are cancelled at once and counted in `wa_tlm_pc_lost_n`.
+- Symptom, MEASURED: `wa_tlm_pc_lost_n = 0` on every country (all 66 tags) at 1944.1 after four
+  years of war - the purge never fired for anyone. ITA keeps 5 non-rail projects (naval_base +
+  3 supply_line in Libya 448/449/450, lost ITA -> FRA between 1943.6 and 1943.8; inf_resource in
+  Veneto 160, RIT-held) at 0 factories, stall 10-13 wk, `active_nonrail = 5` = the `< 5` admission
+  gate, so ITA admits no non-rail project. The state-side arrays ARE populated
+  (`wa_ai_pc_projects_in_state_of_ita^0 = 13` on 448): the data was there, the read was wrong.
+- Cause, DERIVED from the hook's own measured comment: in `on_state_control_changed`
+  (`common/on_actions/WA_AI_misc_on_actions.txt`) the purge read
+  `WA_AI_PC_projects_in_state_of_@FROM` and the permission tests `FROM = { ... }` INSIDE the
+  `FROM.FROM = { }` state block, where FROM re-binds to the state (recorded 30 lines above for
+  `sq_ctrl_reset_n`, local run BHU_1941_11_18_12). Array keyed by the state = empty = no cancel.
+  Rival not killed: the hook itself never fires (ASSUMED engine; `sq_ctrl_reset_n` is 0 everywhere
+  too, but it only counts a live TTL flag, so it does not discriminate). The console test below is
+  what separates the two.
+- Change (working tree, NOT committed): (1) the old controller is captured at the effect root
+  (`set_temp_variable = { _pc_lost_old_ctrl_ = FROM }`) and every read goes through
+  `@var:_pc_lost_old_ctrl_` / `var:_pc_lost_old_ctrl_ = { }`; the permission OR runs in the old
+  controller's scope (`ROOT` = new controller never re-binds; reverse subject test is
+  `ROOT = { is_subject_of = PREV }`); the cancel runs in the old controller's country scope.
+  (2) `WA_AI_PC_end_project_by_id` (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`) removes the state-side
+  entry from `..._of_@PREV` instead of `..._of_@ROOT`: under this on_action ROOT is the NEW controller,
+  so `@ROOT` would strip the new controller's same-numbered slot and leave the loser's entry behind;
+  every other caller runs in the builder's scope where PREV == ROOT; the add site in
+  `WA_AI_PC_start_project` uses the same `@PREV` accessor so the pair cannot desync. `@var:` in a
+  `for_each_loop array =` / `check_variable ^num` is ASSUMED (proven in this repo for
+  set_temp_variable and clear_variable only); `@PREV` is proven (AIFC / LANDING flags).
+  (3) Resumed saves: state-side arrays already carry ids from the years the purge was dead (ITA on
+  Libya today), and slot ids are recycled, so a stale entry could cancel a live project elsewhere.
+  The purge therefore drops any entry whose slot `WA_AI_PC_target_state` is not this state and never
+  cancels through it (idempotent clean-up at the only read site; no load-time migration). Architecture
+  review CONFLICT (ROOT-keyed removal, silent regression, comment date) -> all three applied. Lessons
+  review CONFLICT (same ROOT defect; `WA_AI_PC_construction_permissions` has NO writer - noted at the
+  site, term kept; `PC CANCELLED` log printed `[Root.GetName]` = the conqueror -> now `[This.GetName]`;
+  `WA_AI_PC_cancel_projects` header now says THIS = builder) -> all applied.
+- Impact: callers of `WA_AI_PC_end_project_by_id` - core (6), this on_action (2), WA_TEST_railway (3)
+  - all in builder scope. Readers of `projects_in_state_of_`: `WA_AI_PC_has_same_type_project_here`,
+  the thair strategy, WA_TEST_railway 014. Tag-free, date-free: historical and ahistorical identical.
+  Regression risk, STATED: a purge that now actually fires cancels paid-for projects in a state lost
+  to an enemy - the intended behaviour since 2026-01-29, never exercised; the [rail-admission-churn]
+  keep-paid rule does not apply here (same as before). Civil-war splits (Veneto -> RIT) may never
+  reach this hook (ASSUMED engine) - out of scope, would need a periodic re-validation sweep.
+- Console run 1, MEASURED (`pc_purge_test.hoi4`, 1944.1.3, Tripoli 448 ITA -> GER): hook FIRED,
+  `@var:` array iteration and the `var:` effect scope WORK (the state-side entry `_of_ita^0 = 13` was
+  removed), but nothing was cancelled (`pc_lost_n = 0`, project 13 still queued). The first-cut stale
+  guard classified the live project as stale: it compared the state's `THIS.id` (engine-encoded) with
+  the stored plain `WA_AI_PC_target_state` inside a `var:` block used as a TRIGGER scope - two rivals,
+  one measurement, both removed: the classification now runs as EFFECTS in the old controller's scope
+  (a state flag `WA_AI_PC_lost_here` set/cleared on the lost state, read by a scope walk through
+  `var:WA_AI_PC_target_state^id`) and feeds two plain temps the `if` reads. That save's 448 bookkeeping
+  is desynced by the run (entry gone, project kept) - re-test from a fresh load of `1944.1_Jan.hoi4`.
+- Harness (contract v1, owner order "des effets pour pas que je fasse tout en console"):
+  `common/scripted_effects/WA_TEST_pc_lost_purge.txt` + `events/wa_test_pc_lost_purge.txt`. From
+  any tag on a FRESH load of `1944.1_Jan.hoi4`: `event wa_pclost.9 ITA` runs report, leg A (448
+  Tripoli -> ITA -> an enemy, expect cancel), leg B (450 Benghasi -> ITA -> a faction member, expect
+  nothing), leg C (160 Veneto -> ITA -> an enemy, expect cancel), report; each leg prints
+  `expect cancelled=N` beside the three measured deltas and a `VERDICT: PASS|FAIL`. The legs use
+  `set_state_controller`, so they also answer whether that effect reaches `on_state_control_changed`
+  (ASSUMED yes; the console `setcontroller` run above proved the hook fires for that path).
+- Harness run 1, MEASURED (2026-09-08 19:10, `1944.1_Jan.hoi4`, `event wa_pclost.9 ITA` from BHU):
+  scope line 1 1 1 1 0 on all five blocks; report correct (13 queued, 5 of them on ground ITA does
+  not control); legs A/C FAIL, B PASS - but every "after step 1" row still read the OLD controller
+  (Tripoli: United Kingdom), so the fixture never changed hands and the purge was never exercised.
+  Cause, MEASURED in the engine doc (`effects_documentation.md`): `set_state_controller` is the
+  COUNTRY-scope form taking a state; inside a state block the effect is `set_state_controller_to`.
+  Harness fixed (`set_state_controller_to = ROOT` / `= PREV` from the partner's scope, both vanilla
+  forms). Verdicts of run 1 are void for the purge.
+- Harness run 2, MEASURED (owner, 2026-09-08 19:26, cold-restarted game, fresh `1944.1_Jan.hoi4`,
+  `event wa_pclost.9 ITA` from BHU): scope `1 1 1 1 0` on all five blocks, and all three legs PASS.
+  Leg A (448 Tripoli -> ITA -> GER, enemy): queue 13->12, active_nonrail 5->4, pc_lost_n 0->1,
+  `projects_in_state_of_ITA^num` 1->0. Leg B (450 Benghasi -> ITA -> USA, faction member): queue
+  12->12, pc_lost_n 1->1, array stays 2 (nothing cancelled). Leg C (160 Veneto -> ITA -> GER):
+  queue 12->11, active_nonrail 4->3, pc_lost_n 1->2, array 1->0. So the purge fires, cancels only
+  the enemy-lost projects, counts them, cleans the builder's state array, and leaves a faction
+  transfer intact; `set_state_controller_to` reaches `on_state_control_changed` (the ASSUMED rung
+  6 boundary is now MEASURED closed for this path). The `@var:` array iteration and both `var:`
+  scopes work in-engine.
+- Runs 19:17 and 19:21 were VOID (`I-am-ROOT=0`, all country-valued triggers false while name
+  interpolation and `ROOT = { always = yes }` read true) - the console hot-reload poison. Discriminated
+  by the cold restart at 19:26 reading `1 1 1 1 0` from the byte-identical file: it is the reload, not
+  the harness. Durable rule -> [[hot-reload-poisons-country-triggers]] (lessons log).
+- NOT committed: the working-tree diff (on_action classification, `@PREV` add-site, harness files) is
+  not committed by me; the first-cut edits were swept into `054a4a87e4` (see [[concurrent-sessions-sweep-edits]]).
+  Commit the remainder as one change before closing.
+- Verification (campaign): `wa_tlm_pc_lost_n > 0` on at least one country that lost ground to an
+  enemy (positive control), and no `pc` row whose state is controlled by an enemy for more than one
+  save (`savegame.py pc TAG --limit 0` joined with `control`).
+- Closed when: the remainder is committed and one campaign shows the two verification lines.
+
+### research-rush — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: TESTED 2026-09-08 (owner console run pasted); the only item owed is the campaign probe - nothing to do in a session until a scored campaign is read.
+- **Owner console run 2026-09-08 18:13, save `1937.4_Apr.hoi4`, ENG** (game.log, pasted):
+  ```
+  Q7    : WA_rb_uses_cat_transport=0 ahead2=0   uses_industry=0   uses_cat_light_armor=0   uses_t_eng_fighter_multirole_ad_tech_1=0
+  GATE  : transport OR1=1 veto=1   hampden OR1=1 veto=1
+  wa_rb.2 granted WA_TEST_rb_bonus (cat_transport, 0.5, uses 1)
+  Q7    : WA_rb_uses_cat_transport=1 ahead2=0   uses_industry=0   uses_cat_light_armor=0   uses_t_eng_fighter_multirole_ad_tech_1=0
+  GATE  : transport OR1=0 veto=0   hampden OR1=1 veto=1
+  ```
+  Then the game ran to 1938.6.20 (`test_research_3.hoi4`): Bristol Bombay `level=1 date="1938.1.4.1"`
+  (normal completion, no slot entry), the test record a spent shell (no `uses`, no `claim`), and
+  `var ENG "^wa_rb_"` = only `wa_rb_uses_t_eng_destroyer_7=1` (ENG_the_admiralty granted 1937.5,
+  tech not yet researched) - `wa_rb_uses_cat_transport` consumed and cleared by the
+  `on_research_complete` chain. MEASURED. Boot 18:07: 0 parser errors on technologies / grant files
+  (the harness's own `clear_temp_variable` lines were the only errors, removed); 18:08-18:59: no
+  runtime error naming the ledger's constructs.
+- Verification (1) DONE above; (2) DONE (boot); (3) campaign probe pending.
+- Owner order 2026-09-08 ("tous les bonus, compteur d'usages, plancher 1 an ... 2 ans pour les ahead
+  of time de 2 ans"). Intended behaviour: an AI may start a tech one year before `start_year` while a
+  research bonus use is available for it (any of its categories, or the tech itself), two years when
+  that bonus carries `ahead_reduction >= 2`; without a bonus the generated date gate is unchanged.
+- Symptom (MEASURED, campaign `6fcbbe0d` + owner observe run): on build `b829393945` ENG started
+  four 1938 techs in August 1936 with no bonus on them - the `has_tech_bonus` exemption shipped that
+  day was inverted. Console harness `wa_rb.1` (6 runs, ENG/LUX, 1936.8/1937.4): `technology =` form
+  never depends on the tech; `category =` form stays true on spent records the engine never deletes
+  (20-save trace). No usable engine trigger -> script-side ledger.
+- Change (`documentation/WA_RESEARCH_RUSH.md`): `tools/gen/gen_research_bonus_tracking.py` writes
+  `WA_rb_uses_<key>` / `WA_rb_ahead2_<key>` counters after every `add_tech_bonus` (1 610 blocks, 83
+  files) and an `on_research_complete` consume chain in every tech (4 357); the 4 203 generated
+  `ai_will_do` date gates read the counters (`add_research_bonus_exemption.py` migrated them, the
+  ai_will_do generators emit the same shape). Residual, by construction: a tech of the category
+  already running at grant time completes first and decrements in the bonus's place - closes early,
+  never late (no research-START hook exists in the engine).
+- Verification: (1) owner console, save 1937.4 of `6fcbbe0d`: `tag ENG`, `event wa_rb.1` (Q7 counters
+  absent, GATE Bombay veto 1), `event wa_rb.2` (grants cat_transport: Q7 `uses_cat_transport = 1`,
+  GATE Bombay veto 0), then a NORMAL completion of a cat_transport tech brings the counter to 0
+  (`research all` does not fire on_research_complete the normal way - RUN 6). Paste here.
+  (2) Boot log: 0 parser errors on `common/technologies/*` and the 83 grant files (F9).
+  (3) Campaign: `savegame.py var ENG "^wa_rb_" <saves>` never monotone-growing; a major with a
+  2-year ahead focus (GER `GER_synthetic_breakthroughs`, ITA `ITA_mare_nostrum`) has the covered
+  `start_year+2` tech in progress within a year.
+- Closed when: (1) pasted with the counter returning to 0, (2) clean, (3) observed on one campaign.
+
+### ger-labour-law — OPEN (2026-09-09)
+- Owner order 2026-09-09 ("testons de garder l'allemagne 100% en mandatory army service").
+  Intended behaviour: the German AI holds `mandatory_army_service` in the `ministry_of_labour`
+  slot for the whole game and never swaps to `factory_conscription`.
+- Symptom: none - this is an owner-ordered experiment, not a measured defect.
+- Previous behaviour, MEASURED (`common/ideas/zzz_ministries.txt`, both `ai_will_do` blocks of the
+  slot): the two laws carried mirrored GER weights around a hard-coded `1942.2.1` - before it
+  mandatory x200 / factory x0, after it the reverse, with the pre-1942 weights restored whenever
+  GER took `surrender_progress` against SOV or reached `scraping_the_barrel`. So GER swapped to
+  factory conscription on 1942.2.1 and could swap back later.
+- Change: both GER modifier pairs replaced by one unconditional weight each - `factor = 200 / tag = GER`
+  in `mandatory_army_service`, `factor = 0 / tag = GER` in `factory_conscription`. The date literal,
+  the surrender/scraping clauses and the `NOT = { has_completed_focus = GER_prepare_the_opposition }`
+  term disappear with them. No other tag touched. DERIVED: the slot's two other laws already read 0
+  for GER (`offer_better_wages` `factor = 0`; `incentivise_employability_oppertunities` x0 on
+  `is_major = yes`), so mandatory is the only positive weight GER can see.
+- Regression risk, DERIVED: GER loses the +0.30 `industrial_capacity_factory` of factory conscription
+  from 1942.2 on and keeps +0.10 `conscription_factor` / -0.20 `training_time_factor` instead - a
+  deliberate trade, expected to show as lower late-war German equipment output and a larger manpower
+  pool. ASSUMED: the human player is unaffected (this is an `ai_will_do` weight, the law stays
+  selectable and its `available` block is untouched).
+- No harness owed: `ai_will_do` weights in an idea file, no `WA_AI_*` scripted effect, no on_action.
+- Verification (campaign): the report law-change table shows GER on `Mandatory Army Service` at every
+  monthly save from the first labour-law pick to the end of the run, and no `-> Factory Conscription`
+  row for GER; German military-factory output and manpower pool compared with `1ac7e4ea` to price the
+  trade.
+- Closed when: one campaign shows zero GER labour-law changes after its first pick, and the owner
+  rules on the output-versus-manpower trade the run measures.
+
+### repeatable-pp-decisions — OPEN (2026-09-08)
+- Owner order 2026-09-08 ("certaines pays IA ont des décisions répétables qui coutent des PP ... ces
+  décisions empêchent les IAs de faire les choses importantes"). Intended behaviour: an AI spends PP on
+  a REPEATABLE PP-cost decision only when PP piles up with nothing better to buy; one-off choices
+  (laws, advisors) get the PP first.
+- Symptom: the owner's playthrough observation; "repeatables win by repetition" is ASSUMED, not
+  measured from decision counters (the last ENG "buys nothing" case had a scripted-sink cause -
+  lessons log - so a campaign law/advisor timing read is the probe, below).
+- Inventory, MEASURED (`common/decisions/*.txt`, parser over every decision): 764 decisions are
+  repeatable (`days_re_enable`, `days_remove`, or `fire_only_once = no`) and cost PP; most carry
+  `ai_will_do factor = 1..800` with no PP term, so they re-enter the AI's daily decision pick every
+  cooldown. Engine arbitration between decisions, laws and advisors is a black box.
+- Change: `WA_AI_DECISIONS_has_spare_pp` (OBSERVATION, `common/scripted_triggers/WA_AI_DECISIONS_triggers.txt`)
+  = native `has_political_power > constant:wa_ai_decisions.pp.spare_floor` (= 350,
+  `common/script_constants/wa_ai_decisions.txt`), wrapped by the DECISION trigger
+  `WA_AI_DECISIONS_can_spend_on_repeatable` that every gate names. Loud side chosen (lessons review):
+  a `constant:` inside a native numeric trigger is ASSUMED to work (same family as the validated
+  `num_of_civilian_factories` / `surrender_progress` rows, NOT itself in the 2026-08-16 probe list);
+  if it does not resolve it reads 0, the trigger is always TRUE and the brake never trips = today's
+  behaviour - never "216 decisions blocked forever", which a `check_variable` on `political_power`
+  (never read as a variable anywhere in this repo) would have risked.
+  218 decisions in 34 files (the owner's 3 + 215 added by classification) get
+  `modifier = { factor = 0  NOT = { WA_AI_DECISIONS_can_spend_on_repeatable = yes } }` placed LAST
+  in `ai_will_do` (a later `add` would revive a 0); 20 of them had no `ai_will_do` and got
+  `factor = 1` + the gate (ASSUMED = engine default weight). Owner exclusion applied: decisions
+  blocked at a maximum threshold (74 CAPPED) are untouched. Also untouched, by classification: 349
+  CRITICAL (war-support / stability recovery, propaganda, reserves, wargoals and claims, prospecting,
+  civil-war and coup races, aid to and from exile governments incl. `weapons_for_the_resistance`,
+  economy-fatigue relief), 4 PP-generating buffs (`*_political_favours`, `*_special_orders`), 50
+  already carrying a PP term. Full table (764 rows, per-verdict): scratchpad
+  `repeatable_pp_decisions_classification.md` (session 2026-09-08). Lessons review CONFLICT ->
+  resolved (native trigger, exile decision ungated, this symptom line); architecture review CONCERNS
+  -> all applied (layer wrapper, comment form, counts).
+- Regression risk, DERIVED: a country that never reaches 350 PP (small AI at war, PP-negative ideas)
+  never takes a gated decision again - for the APPLY set that is the intended trade (buffs, flavour,
+  South-American investments); the CRITICAL set was kept out for exactly this reason.
+- Owed before commit (owner): a game boot with 0 errors on the 34 decision files + the two new files
+  (`error.log`), and one console read on a 350+ PP country - `WA_AI_DECISIONS_can_spend_on_repeatable`
+  TRUE there and FALSE on a country under 350 (the FALSE control is what proves the constant resolved).
+  No `WA_TEST_*` harness: one-line trigger, no on_action caller.
+- Verification (campaign): no AI takes an APPLY-listed decision (timed ideas / cooldown flags such as
+  `ENG_labour_inspire_the_workforce`, `SOV_Workers_*`, `SOUTH_AMERICA_investment_*`) at a save where
+  its `political_power` reads below 350; AI law/advisor timing on the report's law-change table is not
+  later than the reference campaign `1ac7e4ea`.
+- Closed when: one campaign shows zero APPLY-listed decision taken by an AI below the floor, and no
+  law/advisor delay versus `1ac7e4ea`.
+
+### sov-conscription-oscillation — SHIPPED-UNTESTED (2026-09-08)
+- Owner order 2026-09-08 ("corrige le", on the law-change table of the campaign HTML report).
+  Intended behaviour: the AI conscription ladder only climbs; `volunteer_only` is the step out of
+  `disarmed_nation`, never a peacetime demotion.
+- Symptom, MEASURED (saves `1936.2`-`1939.5` of the report campaign, SOV country block, one
+  `mobilization_laws` idea per save): `limited_conscription` 1936.3 -> `volunteer_only` 1936.4-5 ->
+  `limited` 1936.6-8 -> `volunteer` 1936.9 -> ... a ~2-month cycle at peace, all of 1936-1939.
+  The report reads the save correctly; the mod oscillates.
+- Cause, DERIVED: `WA_AI_upgrade_conscription_law` (`WA_AI_law_effects.txt:75`) gates on the
+  one-step-up `WA_AI_can_upgrade_manpower_law` but its if-chain tests `WA_AI_can_take_volunteer_only`
+  FIRST regardless of the current law. That trigger accepted `OR { disarmed_nation, has_war = no }` +
+  `has_manpower > 750000`, so at peace a country whose gate passed was demoted. Non-SOV: gate
+  (`can_take_extensive`, `has_manpower < 500000`) and demotion (`> 750000`) exclude each other on
+  the limited rung, so the demotion was dead code; SOV bypasses the band via `original_tag = SOV`
+  (`:988`, `:1114`), so it demoted and re-promoted every mobilisation cycle (`conscription_ratio >= 0.99`).
+- Change: `WA_AI_can_take_volunteer_only` (`WA_AI_LAW_triggers.txt`) requires `has_idea = disarmed_nation`;
+  the `has_war = no` branch is removed. 3 lines, no new tag/date/number. Lessons review CLEAR
+  (no lesson records the peacetime demotion as a regulator; the non-AI fallbacks to `volunteer_only`
+  - stability collapse `_stability_war_support.txt:457`, exiled government `100_wa_on_actions.txt:3336` -
+  are untouched). Architecture review CONCERNS all applied (comment rewritten to the protects /
+  assumes / how-to-tell form). Regression risk, DERIVED: non-SOV never reached the removed branch;
+  SOV's new steady state is `extensive_conscription` at peace (service_by_requirement needs war) -
+  ASSUMED acceptable. Pre-existing debt named, not fixed: tags in this non-CONFIG trigger file
+  (`original_tag = SOV` `:988/:1114`, `tag = SOV/FRA` `:1119`, USA/ENG `:896/:905`, HUN/IRE
+  `:962/:1135`). No harness: 4-line trigger change, no `WA_TEST_*` owed by the rule.
+- **Change 2 (2026-09-08, owner order on the HUN / SOV law tables: "l'ia devrait changer de loi si son
+  manpower restant est en dessous de soit 250k hommes, soit 10% des effectifs théoriques de l'armée";
+  ruling `max`).** Symptom, MEASURED (report campaign, law-change table + pool chart): HUN
+  `limited_conscription` 1938.7 with a ~100k pool, `extensive` 1940.5 at ~330k; SOV `extensive` 1939.10
+  with ~2M free. Cause, MEASURED (`WA_AI_LAW_triggers.txt`): every rung compared the free pool to an
+  ABSOLUTE number (500k / 750k / 1M / 300k) that never scaled with the army, so a small country was
+  always "short"; SOV skipped the pool test by `original_tag = SOV` on the limited and extensive rungs
+  and `NOT tag = SOV/FRA` on the 1M guard; the engine `ai_will_do` in `common/ideas/_manpower.txt`
+  carried the same absolute caps plus +1000 for SOV/FRA at war.
+  Change: one rule for both paths. `WA_AI_LAW_update_pool_floor` (`WA_AI_law_effects.txt`, first line
+  of the ~2-day conscription pulse) writes `WA_AI_LAW_pool_floor = max(constant floor_min 250000,
+  army_share 0.10 x deployed_army_manpower_k x 1000)` (`common/script_constants/wa_ai_law.txt`);
+  `WA_AI_LAW_is_pool_short` (new OBSERVATION trigger) reads `has_manpower < WA_AI_LAW_pool_floor`
+  and is 0 until the first pulse (safe side). The six `WA_AI_can_take_*` rungs name it in place of
+  their absolute numbers, the SOV/FRA exemptions and the `< 10 mil factories -> 300k` clauses;
+  `has_capitulated = no` now applies to every rung of extensive+. The five climbing `ai_will_do`
+  blocks get `factor = 0` unless the trigger reads true - placed LAST in each block, because
+  ai_will_do modifiers apply in order and an `add` after a 0 revives it (lessons review) - and lose
+  their `has_manpower > N` caps (which would have blocked a 12M army at 1.1M free); the
+  `volunteer_only` peacetime `add = 200` after 1943 is gated on `has_idea = disarmed_nation` so the
+  engine path cannot demote at peace (the Change-1 oscillation rebuilt on the second path); the
+  `volunteer_only` block carries the same last gate so rung 1 obeys one rule on both paths. Kept, pre-existing and outside this subject:
+  the war / ideology / date gates per rung, the ENG `has_manpower < 50000` clause on limited
+  (`:1078`, it now ANDs with the rule and keeps ENG at volunteer longer - owner to rule), the FRA
+  1940 focus clause, the engine `manpower_per_military_factory` weights.
+  MEASURED (install `dynamic_variables_documentation.md`): `has_manpower` and `deployed_army_manpower_k`
+  are listed dynamic variables; ASSUMED until the harness runs: they read on the LEFT of `check_variable`
+  (an unreadable left side reads 0 = ALWAYS short = climbs at every gate, the loud side - the harness
+  pool line beside three literal triggers is the probe);
+  `deployed_army_manpower_k` is the "theoretical army" the owner means (fielded divisions, not the
+  training queue). Regression risk, DERIVED: FRA at war in 1940 with a 2M army needs < 250k free
+  before extensive (it used to pass with any pool); disarmed nations leave `disarmed_nation` as
+  soon as ideas allow instead of waiting for a 750k pool that small nations never had.
+- Harness (contract v1, own file): `common/scripted_effects/WA_TEST_law.txt` + `events/wa_test_law.txt`
+  - `event wa_law.1 SOV` (one country) / `event wa_law.2` (every AI army). Independent floor and
+  short verdict beside the shipped ones; a `FAIL` line names a rung that climbs with the pool above
+  its floor or a floor mismatch. First run owed (owner), after a 0-error boot log on the two law
+  files (`check_variable` against `constant:` is the syntax the boot rule exists for). Lessons
+  review CONCERNS, both applied (gate order, engine demotion path); architecture review CONCERNS,
+  all four applied (no date at the code site, harness reads the constants with its own arithmetic
+  order, FAIL on shipped/indep disagreement, rung-1 symmetry).
+- Verification (campaign): SOV `conscription_law` monotone non-decreasing across the monthly saves
+  from 1936.2 to the first war (report law-change table shows no `-> Volunteer only` row for SOV);
+  for every AI law change in the table, the pool at the previous save reads under
+  max(250k, 10% of `deployed_army_manpower_k`) - the report's "Pool at that save" column; no AI
+  `-> Volunteer only` row at peace after 1943.1.1 (the engine demotion path stays closed).
+- Closed when: one campaign shows zero SOV demotions before its first war, SOV reaches
+  `extensive_conscription` only after its free pool drops under its floor, and no AI law change in
+  the table happens with the previous save's pool above the floor.
 
 ### ai-equipment-naming — PARKED (2026-09-05)
 - Parked 2026-09-05 on the owner's order ("parque ai-equipment-naming") to bring OPEN back under the
@@ -414,161 +1536,11 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the harness reading above is pasted here, then one Historical Normal/Hard campaign save
   after 1941.3 with all three GER tier-1 tracks at `rewards=2`.
 
-### sov-light-support-retire — PARKED (2026-09-04)
-- Parked 2026-09-04 on the owner's order ("parke ces deux là") to bring OPEN back under the WIP
-  limit; move it back to OPEN in one line when the harness is played. State at parking:
-  SHIPPED-UNTESTED 2026-09-04 (commit `7261d8b94`), owner console harness `wa_abg.1` not yet run, one campaign save after 1942.6 owed afterwards; nothing else changes.
-- Owner order 2026-09-04: "quand la mission greatest tank army est terminée ou qu'on est en 1942,
-  un event pour l'IA soviétique pour supprimer les divisions de light support" — sweep every
-  "Light Support Tank template A..Z", delete template + divisions. Supersedes the conversion
-  route of `light-support-conversion` for the AI Soviet park: the park is deleted, not converted.
-- Intended behaviour (owner correction 2026-09-04, "la suppression doit avoir lieu en janvier
-  42"): AI SOV fields no light-support division after 1942.1.1, and the light-support role never
-  re-arms afterwards. The mission's end is NOT a trigger any more - campaign `5b7c30c6` showed it
-  resolving 1938.11.4 and the first cut deleting the 4 park corps that month, 3 years early. The
-  mission flag writes in `SOV_factions.txt` are removed (no reader left).
-- Shipped 2026-09-04: event `sov_armor.981`
-  (`events/WA_AI_SOV.txt`, trigger = pursues-park archetype + `is_ai` +
-  `WA_AI_CONFIG_after_global_war_begins`, i.e. date > 1942.1.1); effect `WA_AI_TEMPLATES_retire_light_support_park`
-  (`WA_AI_TEMPLATES_effects.txt`: sets `WA_AI_TEMPLATES_light_support_park_retired`, clears the
-  temporary latch, 26 guarded `delete_unit_template_and_units ... disband = yes`, re-runs the
-  light-support calculator); the resolved flag `SOV_the_greatest_tank_army_resolved` written by
-  the mission's complete_effect and timeout_effect (`SOV_factions.txt`); retired-flag guard added
-  to `WA_AI_TEMPLATES_use_light_support_armor_templates` and
-  `WA_AI_PRODUCTION_should_continue_historical_tank_park`; harness `wa_abg.1` prints `retired=`.
-- Impact analysis. Readers of the two guarded triggers: `build_army_light_armor`,
-  `should_build/force/floor_tank_park`, the calculator latch (line 1351), the 15006 branch, the
-  startup pre-calc, `should_convert`, the harness. All read "run over" after retirement, which is
-  the state they already handle post-mission. **DERIVED** (calculator walk after the sweep): latch
-  cleared → 15006 off; `use_light_support` off by the guard (the generic pre-1942 branch would
-  otherwise re-arm 15000/15001 when the mission completes before 1942); `should_convert` off
-  (no template contains a support battalion) → `_template_value = 0` → target flag cleared →
-  every light-support target disabled and the role's `upgrade_prio` factor 0. Ahistorical /
-  competitive SOV: latch never set, mission still activates and times out ~1941.12.30 → same
-  sweep, catches any generic light-support template. Non-SOV countries: never carry the flag,
-  no change.
-- **ASSUMED** (engine): the AI names its template copies "<majority-unit name> template <letter>"
-  — DERIVED from two readings (`Medium Tank template H` in `light-support-conversion`, loc
-  `light_support_armor_battalion_line` = "Light Support Tank") and from the owner's own
-  in-game reading; every light-support shape in the file (12/6/4, 7/3/5, 6/6 tie on the old
-  corps) has support as majority or tie. **ASSUMED**: the letter series stops at Z.
-  **CORRECTED 2026-09-04 (same session)**: the earlier MEASURED "no OOB template holds a support
-  battalion" read `SOV_1936.txt`, which is NOT the AI order of battle — AI SOV with No Step Back
-  loads `history/units/SOV_1936_land_nsb_ai.txt` (`history/countries/SOV - Soviet union.txt`
-  `is_ai = yes` branch), where MEASURED `Tankovaya brigada` = 8 LS / 1 mot (21 divisions) and
-  `Mekhanizirovaniy Korpus` = 12 LS / 6 L / 4 mot (4 divisions), plus 1 LS battalion inside each
-  of 86 `Strelkovaya Diviziya`. Both armour names are now in the sweep; the rifle division is
-  left alone (its support battalion leaves when the infantry calculator upgrades it). **ASSUMED**: `has_template` and the delete effect run on the
-  training queue too (doc says "a template and its units", no queue caveat).
-- Verification (owner console, harness contract): on any SOV save from 1942.1 on, `event wa_abg.1 SOV` must read `retired=1  containing-LS=0  majority-LS=0
-  light-role-open=0  light-support=0` on the lsmix/park lines, and `logs/game.log` carries
-  `[sov-light-support-retire] Soviet Union retired the light-support park`. Control on a 1938
-  save: `retired=0`, sweep not run. `retired=1` with `containing-LS=1` = a name the sweep
-  missed — read it in `imgui show ai_templates` and add it.
-- Reviews 2026-09-04: architecture CONCERNS (applied: retired guard also on
-  `WA_AI_TEMPLATES_should_convert_light_support_to_medium_armor`, so a missed template cannot
-  reopen the role through a conversion rung); lessons CONCERNS, three points: (1) exit for a
-  missed name — proposed re-firing the event daily while `containing-LS=1`; NOT taken, mine
-  covers it because a name outside A..Z is missed by every re-run identically, so the repair is
-  a human reading the name, and the effect now logs a distinct `MISS:` line in game.log when the
-  containing test is still true after the sweep (the harness `retired=1 containing-LS=1` is the
-  second detector); (2) positive control owed, see Verification; (3) regression stated:
-  the 1942.1.1 leg fires mid-Barbarossa and deletes the whole fielded park — MEASURED 31-40 SOV
-  divisions on light-support shapes 1941-1945 on `5de66942` — `disband = yes` refunds equipment
-  and manpower, not front coverage; the superseded conversion route's rationale ("the fielded
-  park converts into the medium class instead of decommissioning", `WA_AI_TEMPLATES_triggers.txt`
-  header of `should_convert`) is set aside by the owner order, not refuted. **Owner acceptance of
-  that mid-war loss owed in one line here.** Also: a save from an older build whose mission
-  resolved before this shipped never carries the resolved flag — the sweep waits for 1942.1.1.
-- Verification, positive control (owner): on the `5de66942` family (park fielded), `imgui show
-  ai_templates` BEFORE the event — paste the name of the 6/3/6 tie-shape template (tid 1487); if
-  it is not "Light Support Tank template <letter>", add that name to the sweep. AFTER `event
-  sov_armor.981 SOV`: no "Light Support Tank" entry and no obsolete lettered copy left.
-- Closed when: the harness reading above is pasted here, then one campaign save after 1942.6 with
-  zero SOV divisions containing `light_support_armor_battalion_line` (savegame probe).
-
-### east-front-rail — PARKED (2026-09-04)
-- Parked 2026-09-04 by the agent to admit the owner's `sov-light-support-retire` order under the
-  WIP limit — move it back to OPEN in one line if that is the wrong pick. State at parking:
-  TESTED (owner harness PASS 2026-09-04), campaign probe owed; nothing else changes.
-- Console harness run by the owner 2026-09-04 (GER, `WA_AI_construction_logging`, pass of
-  1942.6.8 on the fixed build) — PASS. Digest of the pasted game.log: `RAILWAY LAND: STARTED
-  route_start=6521 (E. Berlin)`; 9 states ACCEPTED (Nikolaev, Zhytomyr, Cherkasy, Bobruysk, Minsk,
-  Vitebsk, Virumaa, Latgale, Smolensk); **`RAILWAY LAND: COMPLETED - 9 targets found`** (was 0 on
-  the unfixed build, same save family, 1942.8.17); overseas +1; `RAILWAY: processed 8/10 routes
-  (0 partial)`. Twelve `PC QUEUED: type=13 cost=800` on the Nikolaev route — Lwów ×4
-  (11479→491→11427→438→462), Khmelnytskyi ×2, Vinnytsia ×4, Odessa 3757→11409, Cherkasy
-  11409→434 — cache levels 2→target 3; then every later `PC START_PROJECT ENTRY` (Odessa
-  11703→11683, Zhytomyr ×4 at level 1, Mozyr 6319→6373 at level 0, Minsk, Wilejka, Vitebsk,
-  Latgale, Pskov, Tartu ×2, Virumaa ×2) has NO `PC QUEUED` line = the `rail`-tag admission cap
-  `routes.queue_full = 12` refusing silently, as designed ([pc-queue]).
-- Follow-up candidate, MEASURED by the same log, NOT admitted (own slug if the owner asks —
-  `east-front-rail-head`): the first route consumed the whole 12-slot budget on its REAR
-  segments (Lwów–Vinnytsia at level 2, target 3) and never reached its own hub (Nikolaev
-  11703→11683 at level 1 refused), while the level-0/1 head hops of the northern routes (Mozyr
-  0, Zhytomyr 1, Minsk 1, Vitebsk 1, Virumaa 0) got nothing this pass. Same shape the corridor
-  fixed with its two-phase connect-before-consolidate admission
-  (`WA_AI_PC_railway_corridor_run_one`, phase A level-0 first); the land-war family has no such
-  ordering. Bounded: each 8-week pass admits 12, the built segments leave the queue, and the walk
-  re-runs from the capital — so the head hops are reached after the rear is at target, i.e.
-  several passes late, not never.
-- Scope: owner intent 2026-09-04 — "l'Allemagne améliore les rails vers les hubs capturés pour
-  apporter suffisamment de logistique pour avancer". Intended behaviour: the land-war railway
-  family (`WA_AI_PC_railway_STRATEGY_land_war`) queues capital→frontline-hub routes on the
-  builder's own continent, so an advancing major upgrades the captured trunk behind its front.
-- Symptom, MEASURED (campaign `d1c51a6c`, 116 monthly saves 1936.2-1945.8, BHU observer, one
-  build): GER's PC queue holds ZERO `rail`-tag projects in every wartime save 1941.7→1943.1 while
-  GER/RBL hold 22 SOV-owned states with a supply hub and 5 GER-controlled hub states border SOV
-  (Chernigov 193, Nikolaev 197, Cherkasy 203, Pskov 209, Dnipropetrovsk 226). GER's 18 wartime
-  rail completions (`wa_tlm_pc_built_by_type^13` 13→31) equal `wa_tlm_r104_ally_fund_n = 18`:
-  all on ally soil (Libyan corridor). WA rail-cache diff (`global.WA_AI_PC_railway_connection_level_*`)
-  1942.6→1942.12→1943.1: 0 edges raised in any Eastern state, by any builder. Positive control:
-  the same family gave SOV 11 `rail` projects at 1941.9 (path 13394→6348→3263, NOT from Moscow's
-  VP 6380 — DERIVED: via the overseas-port fallback at :316, the one branch that still wrote
-  `route_start`). Owner console run 1942.8.17 (`WA_AI_construction_logging` on GER): 10 frontline
-  states `passed limit check` + `ACCEPTED`, then `RAILWAY LAND: COMPLETED - 0 targets found`, no
-  pathfind, no overseas-fallback line.
-- Cause, MEASURED (git): commit `bc90346af` (2026-08-21, "Fixes 120-135") deleted
-  `set_temp_variable = { route_start = default_route_start }` from the same-landmass branch of
-  `WA_AI_PC_railway_land_consider_frontline` while rewriting its comment; the `route_start > 0`
-  gate (`railway_strategies.txt:258`) then fails for every overland frontline. The overseas (:915)
-  and prewar (:1074) strategies and the debug copy (`zz_debug_effects.txt:1075`) kept the line.
-- Change: the one line restored under `# [east-front-rail]`
-  (`common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_railway_strategies.txt`, same-landmass
-  branch). No constant, no trigger, no telemetry touched.
-- Impact analysis. Callers: `WA_AI_PC_railway_STRATEGY_land_war` only (three populations: ROOT,
-  subject, dependent-ally states). Reach: every AI belligerent with a land border to an enemy —
-  historical and ahistorical identical (no tag, no date). Budgets unchanged: 4 routes/enemy, 8
-  routes/run, 12 `rail`-tag projects (scoped type_id; the corridor keeps its own). Regression risk,
-  STATED: the family now spends its `rail` budget again, at band `rail_war` (1000) — above theatre
-  air (350) — so on a builder with both a live corridor and an overland front the overland
-  segments compete for factories with the corridor at equal band; the corridor's admission budget
-  is untouched. Replay on `1943.1_Jan.hoi4` (scratchpad `landwar_admission.py`, WA's own cache,
-  rail-aware A*, demand sizing): 4 routes, cache levels 3-4 in the Reich and 2-3 on the captured
-  trunk, ~9-10 segments admitted per pass (Chernigov 5 at target 3, Nikolaev 4 at target 2,
-  Cherkasy 0-1, Pskov 0) — a bounded trickle, not a flood.
-- Open calibration question, NOT in this subject (owner decision): the sizer targets the
-  no-attrition floor (`wa_ai_railway.corridor.target_ratio = 0.4`, `supply_per_division = 2.5`,
-  land_war floor 2 / cap 4), so a captured Soviet trunk at level 2-3 reads "done" for most fronts.
-  "Enough to advance" would need a higher ratio or an offensive-posture term; separate slug if asked.
-- Verification, owed to the owner: (1) console — resume a 1942 GER save with `-debug`, fire
-  `WA_AI_debug_test_railway_system` as GER, advance to the weekly pulse; expect
-  `RAILWAY LAND: COMPLETED - N targets found` with N ≥ 1 and `PC QUEUED: type=13` lines whose
-  state is SOV-owned (Chernigov / Nikolaev / Cherkasy…), then `pc GER` on the resulting save
-  showing `rail`-tag projects on those states; (2) campaign probe (save-visible): on the next
-  cloud run, `pc GER <save> --match railway` shows `tag = rail` projects on enemy-owned states
-  during the GER-SOV war, and the WA rail-cache diff between consecutive saves raises ≥ 1 edge in
-  a GER/subject-held SOV-owned state; control: SOV's own `rail` projects persist. Tell-tale of
-  over-reach: `rail`-tag projects starving the theatre-air band for > 2 consecutive saves.
-- Campaign `d1c51a6c` (scored 2026-09-04): **NOT CHECKED** — the fix is in the working tree, not in
-  the build that ran (first save 04:15, commit unstaged); this campaign IS the symptom's source
-  (zero GER `rail` projects 1941.7→1943.1 above). Probe (2) waits for the next cloud run.
-- Closed when: (1) pasted here and passing, then (2) on one campaign.
-- Follow-up MEASURED again 2026-09-04 on the owner's 1943.06 console log and owner-admitted as its
-  own subject: `rail-admission-churn` (PARKED heading for the WIP limit) — stale validation runs
-  after admission and cancels paid segments; absorbs `east-front-rail-head`.
-
-### coal-prospect-loop — SHIPPED-UNTESTED (2026-09-04)
+### coal-prospect-loop — PARKED (2026-09-07)
+- Parked 2026-09-07 by the agent, not by an owner decision, to admit the owner's
+  `light-support-conversion` order under the WIP limit — move it back to OPEN in one line if that
+  is the wrong pick. State at parking: SHIPPED-UNTESTED since 2026-09-04, owner console harness
+  run owed; nothing else changes.
 - Scope: owner report 2026-09-04 (National-Projects tooltip: GER running 11 "Expand X Coal Basin"
   at once, 55 civs). Intended behaviour, two levers under one slug: (A) a coal state is prospected
   at most twice (excavation4 tier, then excavation5 tier) and never again; (B) a supplier prospects
@@ -660,7 +1632,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
   fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
 
-### posture-v3 — SHIPPED-UNTESTED (2026-09-04)
+### posture-v3 — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED since 2026-09-04 (UNTESTED-STALE); code committed, the owner console harness run is the only thing owed - paste it here and move to TESTED, no session work pending.
 - Owner order 2026-09-04 ("vas-y pour les points 1 à 5" on the posture-formula review). Intended
   behaviour: the weekly offensive-posture verdict counts the whole contact line without a cap,
   weighs armoured AND mechanised divisions, never sends a globally strong army balanced into local
@@ -835,7 +1808,8 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: harness output pasted (both the report and one weekly series), and probes
   (i)-(iv) pass on one scored campaign.
 
-### usa-pacific-hoard — SHIPPED-UNTESTED (2026-09-04)
+### usa-pacific-hoard — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED since 2026-09-04 (UNTESTED-STALE); code committed, the owner console harness run is the only thing owed - paste it here and move to TESTED, no session work pending.
 - Owner order 2026-09-04: "à aucun moment, tant que USA est en guerre en Europe et vs le Japon,
   l'armée US ne doit avoir plus de 50 % de son armée (quand au-dessus de 75 divisions) dans le
   Pacifique". Intended behaviour: a two-ocean US army above 75 divisions keeps at most half of
@@ -1082,6 +2056,10 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   ships under this slug, OR the owner accepts a written no-fix ruling.
 
 ### armor-prod-category — PARKED (2026-09-04)
+- 2026-09-09 `[air-budget]` phase 3 moves the arbitration this subject measures: the air category
+  factors are now ONE block per type at 100 (fighter was 25, the other bomber lines summed their
+  per-line 100s), so the air pull against `armor` 60 changes. The "tank share of military lines vs
+  4aeb8327" baseline is re-cut on the first campaign after that commit before any verdict here.
 - Parked 2026-09-04 (WIP limit, `modern-chassis-tier` re-enters). Code SHIPPED `eefd8b5ea`; its only
   exit is the campaign probe below (three post-fix runs read so far: `d8467fcf`, `5de66942`,
   `5d2a391c` — variants up on GER/SOV/JAP/ITA, run-to-run noise ±0.1-0.3, no verdict yet). Unpark
@@ -1550,163 +2528,349 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   PASS at a save between 1940.4 and the Italian declaration, and the owner confirms the
   Battle-of-France report symptoms gone (or re-reports with a new save).
 
-### dday-mulberry — PARKED (2026-08-31)
-- PARKED 2026-08-31 by the agent, not by an owner decision, only to admit
-  `bof-commonwealth-posture` under the WIP limit — move it back to OPEN in one line if that is
-  the wrong pick. State preserved below: TESTED 2026-08-31; remaining exit = the campaign probe
-  in its Closed-when line (and the one owed game.log grep line noted in the TESTED bullet).
-- TESTED 2026-08-31, owner console (save 1944.6.1, post-refactor build): `wa_mulb.1` header
-  `1 1 1 1 0`, all 8 provinces base-free; `wa_mulb.3` control PASSED —
-  `[01:07:37][1944.06.01.02] 2:00, 1 June, 1944 United States of America: WA_AI_invasions.101
-  fired with no Mulberry A target recorded - nothing placed`. The false branch is proven; the
-  placement branch and dismantle remain campaign-probe territory (below). error.log of the
-  failing pre-refactor session not read — the inline-meta_effect cause stays ASSUMED.
-- SHIPPED-UNTESTED: >40-line change to the `WA_AI_invasions` Mulberry events; new harness
-  `WA_TEST_mulberry.txt` + `events/wa_test_mulberry.txt` (contract v1). Owner ran wa_mulb.1 +
-  wa_mulb.3 on 2026-08-31 (save 1944.6.1, this build, variant 95 rolled, landing not yet
-  launched): header `1 1 1 1 0`; `variant=95`, targets/placed/flags all 0 (correct
-  pre-landing); all 8 candidate provinces read `base>0=0 base>4=0` — every Mulberry province
-  confirmed base-free in the live game, not only in history/states. wa_mulb.3 printed its
-  "zeroing" line; the paste stopped BEFORE the `.101` "no Mulberry A target recorded" log
-  (the fired event processes after the firing one). STILL OWED for TESTED: that one grep line
-  from the same game.log — present = control validated; absent = `.101` did not run, a real
-  defect.
-- Control run FAILED 2026-08-31 → repair shipped: after unpause the queued `.101` ran
-  (`101_flag=1` in the re-run report, MEASURED) but the no-target log NEVER printed — the
-  event executed its first if and dropped the rest. ASSUMED cause (error.log read owed):
-  `meta_effect` inline in an events/ file desyncs the event body at load; the repo had only
-  ever used meta_effect in common/scripted_effects. Repair: the three bodies moved to
-  `common/scripted_effects/WA_AI_MULBERRY_effects.txt` (`WA_AI_MULBERRY_run_a/_run_b/
-  _dismantle`), events are one-line callers, if/else replaced by complementary ifs, and
-  placement/give-up/dismantle each log a line. The post-restart re-run passed (see the TESTED
-  bullet at the top).
-- Scope: owner task 2026-08-31. Intended behaviour: every D-Day variant that lands gets its
-  artificial-harbour (Mulberry) logistics on its own coast; the harbour is dismantled ~120
-  days later; a real port is never overwritten or demolished by the script.
-- Symptom, MEASURED (campaign 5ee2d112, saves 1944.6/7/8): USA `wa_ai_dday_variant = 95`
-  (Aquitaine); lodgement 45/57 Biscay provinces at 1944.7, 11 at 1944.8; naval-base levels
-  byte-identical across the three saves — no base appeared anywhere; provinces 3579/13851
-  (Normandy Mulberry pair) carry no naval_base entry; USA/ENG hold no `.101_flag`/`.102_flag`.
-  Nuance for the collapse attribution: the lodgement DID hold captured Bordeaux (lvl 6) and La
-  Rochelle (lvl 5) at 1944.7 — "no port logistics" is precisely "no Mulberry fired", not "no
-  port provinces".
-- Cause, MEASURED (`events/WA_AI_invasions.txt`): the Mulberry pair `.101`/`.102` hardcoded
-  Normandy (state 15 prov 3579 / state 1016 prov 13851) and was scheduled live only by variant
-  88; variants 89/90/95 carried the calls commented out (a hardcoded-Normandy fire would have
-  placed the harbour on the wrong coast). The legacy `.2`/`.34` chains also call the pair but
-  have no live scheduler (their KDE calls are commented). Continuation of the 2026-08-16
-  "re-adding an event family means re-adding its call site" lesson: the re-add wired the pair
-  into two dead chains plus one variant of four.
-- Fix (`[dday-mulberry]`): `.101`/`.102` genericized — the scheduling variant records its coast
-  in `global.WA_AI_mulberry_a/b_state|prov` before firing; placement waits for state control as
-  before (retry 3d, give-up 45d), places naval_base level 5 via meta_effect (numbers-only
-  rendering, validated pattern), and latches the placed coordinates into separate
-  `global.WA_AI_mulberry_*_placed_*` variables; `.100` dismantles ONLY the latches (both, from
-  either scheduler) and zeroes them; the give-up path zeroes the un-placed target. All four
-  variants schedule live now (88: 15/3579 + 1016/13851 unchanged; 89: 14/6572 + 30/11616;
-  90: 7/68 + 6/6446; 95: 19/6621 + 23/11600). Every chosen province is base-free in
-  `history/states` (MEASURED) — 3552 Brest/9737 Bordeaux/6657 La Rochelle etc. all carry real
-  bases and are deliberately NOT used, so placement (level 5) and dismantle (level 0) can never
-  rewrite a real port that existed at start.
-- Dismantle walk at the real cadence: t0 landing — targets recorded, `.101` (USA) / `.102`
-  (ENG) fire. t1 state flips at L+k (k ≤ 45; else give-up at L+45 zeroes the target, no latch,
-  no `.100`) — harbour placed on the next 3-day tick, latch written, `.100` scheduled at
-  place+120. t2 place+120 — the FIRST `.100` to fire (either country) dismantles BOTH latched
-  harbours (B up to ~48 days early when placements were staggered — the old Normandy `.100`
-  had exactly this both-at-once behaviour) and zeroes the latches; the second `.100` is a
-  no-op. Dead-tag branch: one scheduler annexed inside the window → the other's `.100` still
-  clears both; BOTH dead → level-5 harbours persist — accepted residue, identical to the old
-  design's (its `.100` was also only scheduled by these two countries). Re-roll overwrite (the
-  reviewers' hazard): a later chain overwrites TARGETS, never LATCHES, so a pending `.100`
-  still dismantles the province it placed.
-- Review deviations, recorded: (a) province ids are literals at the scheduler sites, not reads
-  of `_invasion_state_provinces` — the arrays are rebuilt 3× per variant with different content
-  and the Mulberry pick is constrained (base-free), so an index read would silently break on
-  reorder; the literal sits 4 lines from its array with the constraint named (mine covers the
-  drift concern because the pair is adjacent and commented; index-coupling adds a silent
-  failure mode). (b) No new WA_TLM: the probe reads existing save-visible state — the
-  `global.WA_AI_mulberry_*` variables and the map's naval_base levels — and the TLM honesty
-  rule cuts the other way (these are gameplay state read by `.100`, so they must NOT be
-  telemetry). (c) `check_constants.py` still carries the 6 PRE-EXISTING `@advisor_*` errors
-  (ENG.txt/GER.txt characters) noted under `aifc-revived-tag-residue`; nothing new from this
-  subject (level 5 / 120 / 45 / 3 are single-file literals, province ids are payload).
-- Not cured by this fix (self-arming lesson): campaigns whose 1944 variant already rolled and
-  landed (5ee2d112 included) get no harbour retroactively — the scheduler fires at the landing,
-  which is in their past. Only campaigns reaching D-Day under this build are covered.
-- Probe (campaign, next run reaching 1944): read `wa_ai_dday_variant` on USA; at landing+2
-  monthly saves the variant's A province (88→3579, 89→6572, 90→68, 95→6621) reads naval_base
-  level 5 and `global.WA_AI_mulberry_a_placed_prov` matches it; by landing+6 months the
-  harbour reads level 0 again with both latches zeroed. Failed-beachhead campaigns instead
-  show targets zeroed and no latch ~45 days after the landing.
-- Closed when: one campaign whose D-Day variant is NOT 88 shows the variant's own-coast
-  harbour placed (level 5 at the recorded province) while the lodgement lives, and dismantled
-  after ~120 days — the 5ee2d112 signature (variant 95, zero naval-base delta on the whole
-  Biscay coast) absent.
-
-### aifc-revived-tag-residue — PARKED (2026-08-31)
-- PARKED 2026-09-02 to keep WORK.md inside the 4-subject WIP limit when `hq-role-capture`
-  opened (owner choice). State on parking: code SHIPPED, the owner console-harness run below
-  is still OWED and unchanged — unpark it when that run happens.
-- SHIPPED-UNTESTED: >40-line change to `WA_AI_AIFC_armor_reconcile`
-  (`common/scripted_effects/WA_AI_AIFC_helpers.txt`), a harnessed `WA_AI_*` effect on the weekly
-  on_action chain. Owed: owner fires `event wa_aifc.1 ITA` on any campaign save and pastes the
-  `armor :` lines here — books print and no pending line reads `target-exists=1`.
-- Scope: owner task 2026-08-31. Intended behaviour: a tag annexed while carrying AIFC
-  armour-steering entries and later revived never keeps a stale `front_armor_score` bias — every
-  emitted boost/suppress is eventually exactly negated.
-- Symptom, MEASURED (campaign 5ee2d112, BHU observer, saves 1942.12→1943.11, wa_tlm v34 build):
-  `aifc.py` CLOSURE MISMATCH on ITA — "ETH: ledger NET +250, book expects -150" — stable across 4
-  consecutive monthly saves. DERIVED arithmetic: stale +400 boost from the 1936-37 Italo-Ethiopian
-  war (ETH annexed → cancel skipped, book cleared anyway) + live -150 suppress installed when the
-  revived ETH re-entered the war. ITA armour steering permanently biased toward East Africa.
-- Cause, MEASURED (both retirement sites in `WA_AI_AIFC_armor_reconcile`): the negation is emitted
-  only under `exists = yes` while the tracking book is erased unconditionally — once the book
-  forgets a dead tag, no later reconcile can emit the owed cancel. The header's KNOWN GAP claimed
-  "rare and self-correcting"; false for a revived tag, header corrected.
-- Fix (`[aifc-revived-tag-residue]`, additive): two persistent debt books,
-  `WA_AI_AIFC_armor_pending_boost` / `_pending_supp` — ids copied VERBATIM from the live books
-  (same engine-encoded country refs, never re-derived). The two skip sites append instead of
-  dropping; a sweep at the head of every weekly reconcile (section 0b, rebuild idiom like section
-  2) emits the owed cancel for any id whose tag exists again and re-parks the rest. Sweep is
-  unconditional — the debt is independent of steering state, and a cancel toward a revived
-  non-enemy is behaviourally inert (its purpose is ledger arithmetic). Emissions route through the
-  existing emitters, so `WA_TLM_r67_aifc_arm_entries_n` counts them like any emission.
-- t0/t1/t2 at the real cadence (weekly reconcile, runs for every is_ai country incl. ineligible —
-  FIX 68 lifted it out of the capitulation gate): t0 = tag annexed, retirement tick parks the
-  debt. t1 = tag revives (gap unbounded, debt waits). t2 = first weekly reconcile ≤7 days after
-  revival: cancel emitted, NET returns to book expectation; a revived war enemy gets its fresh
-  -150 in the same tick (sweep runs before the install sections). Stale-bias window after
-  revival: ≤1 week (was: forever). Residue accepted, in writing: (a) a tag that never revives
-  parks its id forever — a handful of ids, save-visible, harness-checked; (b) residue accrued on
-  PRE-pending builds is UNRECOVERABLE — script cannot read the engine's persistent_strategy list,
-  so campaigns like 5ee2d112 keep their bias when resumed; only deaths occurring under this build
-  are tracked.
-- Reviews 2026-08-31: lessons CONCERNS + architecture CONCERNS, required repairs all applied —
-  pre-fix-residue disposition written (above + `aifc.py` mismatch wording distinguishes legacy
-  residue), verbatim-encoding rule and the ASSUMED emission-gate rationale (GetTag toward a dead
-  id unverified) stated in the header, campaign measurement dropped from the code comment (rule
-  7), registry groups `aifc_armor_boost_magnitude` / `aifc_armor_suppress_magnitude` tie the
-  ±400/±150 emitter literals to `aifc.py` BOOST/SUPPRESS (meta_effect runtime text cannot read
-  constants — validated-context exception).
-- Companion changes: `aifc.py` decodes the pending books, folds them into the closure expectation
-  (+400 / -150 per pending id), prints them, and alarms on PENDING+ACTIVE on the same tag
-  (impossible when the sweep works — section 0b drains before sections 1/3 install);
-  `WA_TEST_aifc.txt` section E dumps books + pending with per-id `target-exists` flags.
-- Checker note: `check_constants.py` carries 6 PRE-EXISTING errors (`@advisor_1/2/3` declared with
-  different values in `common/characters/ENG.txt` vs `GER.txt`) — not this subject's, left for an
-  owner-admitted fix; the two new aifc groups verify OK.
-- Probe (campaign): `aifc.py` closure OK on every live tag of every major; any annex→revive pair
-  (SCW, Ethiopia, Balkans) shows the dead tag parked in pending while dead and drained within one
-  save of revival; the PENDING+ACTIVE alarm never fires.
-- Closed when: a campaign begun on this build that contains an annex→revive pair shows closure OK
-  on the owning major with an empty or dead-only pending book — the 5ee2d112 ITA/ETH +250
-  signature absent.
-
-### light-support-conversion — PARKED (2026-09-04)
+### light-support-conversion — PARKED (2026-09-09)
+- Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED 2026-09-08; owner in-game report 2026-09-09 "les changements locaux marchent", harness output not yet pasted - paste it here and move to TESTED, no session work pending.
+- Owner in-game report 2026-09-09, cold boot, working tree without Change 14: "les changements
+  locaux marchent". Harness output not yet pasted, so the status stays. Owner live edit the same
+  day, in the tree and this commit: the "Tankovaya brigada" deletion is removed from BOTH mission
+  effects (complete_effect and timeout_effect) - the OOB brigades keep their units and template
+  and bridge through STARTER_MIX under 15009; only the two cavalry templates lose their divisions
+  (`delete_units`, templates kept). Change 13's "the deletion stays" ruling is superseded by this.
+- Unparked 2026-09-07 on the owner order below; slot freed by parking `coal-prospect-loop`.
+- **Change 14 (owner order 2026-09-08 "un event pour l'ia qui, une fois la mission accomplie, si la
+  date est avant 1942, supprime tous les chars, puis respawne 30 chars au template 30w, avec 1%
+  d'équipement") — delete + respawn replaces the designer-driven 44w -> 30w conversion.**
+  - **STASHED 2026-09-09 (owner order)**: taken out of the working tree, not committed, to test
+    whether the hot-reloaded build alone explains the missing 30w (lessons entry "A hot script
+    reload can also stall the AI's own template upgrades"). Patch = `E:/Projets/HOI4/WA/
+    stash-change14/change14-respawn.patch` (`git apply` from the repo root; `git apply --check`
+    passed on the reverted tree), full copies of the seven files under `stash-change14/full/`.
+    Kept in the tree: Changes 12-13, the mission's units-only deletes, the lessons entry.
+  - **DROPPED 2026-09-09 (owner cold-boot control: "les changements locaux marchent")**: with the
+    same files and a fresh executable the local changes behave; the missing 30w was the
+    hot-reloaded build, not the design (the XP-starvation reading stays MEASURED on the save but
+    is not the blocker the owner saw). The patch stays at the path above in case a campaign shows
+    the 44w park again; nothing of Change 14 is in the tree or the commit.
+  - Why (MEASURED, autosave 1941.2.1 of the owner's game + `imgui show ai_templates` 1940.4.27):
+    30 divisions still on "Light Support Tank template A" = the 44w corps (12 LS / 6 L / 4 mot) 27
+    months after the mission; no other light-support template; the arrow correctly on the MIX,
+    best match 0.28; `army_experience = 10.1`, `army_experience_daily_training = 0.015`; the
+    light-support role has 5.7 % of the design lottery (panel weights 71.9 vs infantry 733).
+    Engine rule (install `common/ai_templates/_documentation.md`): the AI never creates a
+    template, it copies the best match and edits it toward the target; A -> MIX needs >= 15
+    single edits at 5 XP each with ~0 XP income. The same reading explains the missing medium /
+    heavy rows: books `wa_ai_armor_budget_light=8 medium=8 heavy=4`, flags 6101 / 7105 set,
+    targets enabled, and SOV owns no template with a medium or heavy battalion (7 templates in
+    the save) - a role row needs an enabled target AND an owned template. Lowering
+    `target_min_match` (owner's live edit) changed nothing: the chain has no 30w-like template
+    to move divisions to.
+  - Shipped: `WA_AI_TEMPLATES_delete_light_support_park_templates` (the A..Z + OOB sweep, moved
+    out of the retire effect, plus the scripted name); `WA_AI_TEMPLATES_reset_light_support_park`
+    = sweep, `division_template` "Legkaya Tankovaya Diviziya" (exact MIX composition, x/y grid
+    with the 4 + 4 regimental supports on the four >= 3-battalion columns), `create_unit` x
+    `tank_park_hold_divisions` in `capital_scope` at `start_equipment_factor = 0.01` (manpower
+    engine default, ASSUMED full), flags `WA_AI_TEMPLATES_ls_park_reset` + `ls_bridge_done`,
+    immediate recalculation of the role target, game.log line; `sov_armor.982` (hidden,
+    triggered, once; AI + historical + park country + before 1942 + not retired) fired with
+    `days = 1` from the mission's `complete_effect` AI branch after its own sweep - the timeout
+    keeps the sweep alone (owner: "accomplie"); new constant
+    `wa_ai_production.army_composition.tank_park_hold_divisions = 30` owning both the respawn
+    count and the hold's `build_army value = 30` (regex mirror in `tools/constants_registry.json`
+    - `constant:` does not resolve in `ai_strategy value =`); harness `lsphase` prints `reset` and
+    `30w-template`; doc section rewritten.
+  - Interplay: the reset sets `WA_AI_TEMPLATES_ls_bridge_done` and recalculates the role target
+    at once, so the flag lands on STABLE 15010 (MIX alone) the day after completion; PONT is
+    skipped for the rebuilt park (it bridged a corps that no longer exists). CONVERT-1 on the
+    T-34 / KV-1 is unchanged: the rung matches the scripted template at ~1.0, and the FINAL needs a
+    medium-like template that the same XP starvation still withholds - NEXT GAP, not fixed here.
+    The hold keeps wanted at 30 so the share (8 % = 19) does not decommission the rebuilt park.
+    Supports: the six the 1936 Soviet tech set has are in the template; maintenance / field
+    hospital / signal are added by `add_units_to_division_template` under `has_tech`
+    (`tech_maintenance_company` / `tech_field_hospital` / `tech_signal_company`, MEASURED
+    `enable_subunits` join; the AST template uses the same guard).
+  - t0/t1/t2 (daily events, 7-day designer pass, monthly calculator; DERIVED):
+    | t | flag | enabled targets | park | expected |
+    | --- | --- | --- | --- | --- |
+    | t0 completion | 15006 | 44_TEMPORARY (44w) | corps + copies, brigades / cavalry deleted | +100 XP paid; a 7-day designer pass may land on this day, harmless: the park is still the 44w corps matching its own target at ~1.0 |
+    | t0 + 1 d reset | 15010 | MIX alone | 30 x scripted 30w at 1 % | best match 1.0 (< 1.0 only until the three support techs exist) - nothing for the designer to edit; the MISSION branch is closed by `ls_park_reset` whatever `has_active_mission` reads |
+    | t0 + 7 d .. monthly | 15010 | MIX alone | equipment filling from the refunded stock | calculator re-lands on 15010 every pulse (latch + bridge-done, mission inactive) |
+    | t T-34 / KV-1 | 15007 / 15013.. | rung + FINAL | rung match ~1.0 | FINAL needs the medium / heavy template - next gap |
+  - ASSUMED (i) `division_template` in an event `immediate` accepts `division_names_group`
+    (OOB syntax; the boot test tells); (ii) `create_unit` `count = <temp var>` in `capital_scope`
+    (form of `WA_AI_DIVISION_spawn_divisions`, meta_effect there); (iii) the disbanded corps
+    refunds the chassis the 1 %-equipped divisions then draw. (`days = 1` and the reset flag on
+    the calculator's MISSION branch are belt and braces: whatever `has_active_mission` reads on
+    the reset day, the value cannot return to 15006 once the park is rebuilt.)
+  - Drift risk, stated: the 30w composition is declared twice (ai_templates target and the
+    scripted template) and no checker joins them; the only join is the imgui best match 1.0 on
+    `30_MOT_LIGHT_MIX`, ASSUMED until the owner's console run prints it.
+  - Owner order (same day, after the reviews): the mission's six `delete_unit_template_and_units`
+    (complete_effect + timeout_effect: Kazachya / Kavaleriyskaya / Tankovaya brigada) become
+    `delete_units` with the same `has_template` guards and `disband = yes` - units go, templates
+    stay. Owner order 2026-09-09 "corrige l'event du lendemain": the reset now calls
+    `WA_AI_TEMPLATES_delete_light_support_park_units` (delete_units on the two OOB names and the
+    scripted rebuild, templates kept) + `WA_AI_TEMPLATES_delete_light_support_engine_copies`
+    (the A..Z copies go with their templates); the retire keeps the full template sweep
+    (`..._park_templates` = named templates + copies + MISS log).
+  - Reviews 2026-09-08: lessons CONFLICT (44w target left over the rebuilt park for <= 3 months
+    with 100 fresh XP; three unresearched supports; harness caveat) - all three applied
+    (STABLE at reset via bridge-done + recalculation and `days = 1`; guarded supports; caveat
+    in the harness comment); architecture CONCERNS (registry regex unbounded past the block;
+    drift risk to state) - both applied (the mirror pattern refuses to cross a top-level `}`
+    line, so a removed `value` line fails instead of capturing the next block; the line above).
+    Second round: lessons CONCERNS (MISSION-branch exit resting on `has_active_mission` timing;
+    t0 row wording) and architecture CONCERNS (`ls_park_reset` had no gameplay reader; calculator
+    caller list) - all applied: the MISSION branch now reads `NOT ls_park_reset` (its gameplay
+    reader), the caller list names the reset, the t0 row reworded.
+  - Verification - owner console: restart; load a save BEFORE the mission completes (it fires from
+    the completion, a post-mission save cannot replay it); run past completion without tagging
+    SOV; `game.log` "rebuilt the light-support park: 30 divisions", and NO
+    `add_units_to_division_template Not allowed` / `Trying to fill variant where none exist`
+    line (`error.log` too); `sov-tank-mission-active=0` on the flags line; `event wa_abg.3 SOV`:
+    `reset=1 30w-template=1 stable-15010=1 bridge-done=1`, park line `hold-30=1`; `imgui show
+    ai_templates`: arrow on `30_MOT_LIGHT_MIX`, best match "Legkaya Tankovaya Diviziya" at 1.0
+    (or the support-tech-bounded value below 1.0 before those techs); AI production panel:
+    `light_armor` current 30 / wanted 30. Controls: timeout path (no rebuild), competitive SOV (no rebuild),
+    1942 retire still deletes the scripted template (`retired=1 30w-template=0`).
+  - Verification - campaign: SOV division count at mission end = pre-mission - brigades -
+    cavalry - corps copies + 30; the 30 sit on the scripted template with rising equipment; the
+    medium / heavy rows still absent until the next gap is closed.
+- **Change 13 (owner order 2026-09-08, two panel screenshots 1938.11.1 / 1938.11.4) — the park
+  survives the mission's end; 30 light-support divisions held until the T-34 / KV-1.**
+  - Symptom, MEASURED (owner screenshots, build = working tree of Change 12): 1938.11.1 18:00
+    167 active divisions, `light_armor` current 67 / wanted 100; 1938.11.4 124 active (-43),
+    the `light_armor` row absent from the AI production panel, infantry current 86.6 -> 98.6.
+  - Cause (script lines): (1) `SOV_factions.txt` mission `complete_effect` / `timeout_effect`
+    delete "Tankovaya brigada" (21 OOB divisions) and "Kavaleriyskaya Diviziya" (30) with their
+    units (`3b865fa8f7`) — 43 <= 51, the rest had already field-upgraded off those names. Owner
+    ruling: the 18w brigade and the cavalry ARE dead weight; the deletion stays. (2)
+    `WA_AI_TEMPLATES_armored_light_support.txt` `_44_TEMPORARY` enable = 15006 AND mission
+    active; the calculator writes 15009 only at the next monthly pulse, so the role had ZERO
+    enabled targets for up to a month and vanished from the panel — the row was gone while the
+    light book still read 15 (the monthly reconcile precedes the 18:00 screenshot), so neither the
+    role_ratio share nor `build_army` can hold a role with no target. Change 12's slot is
+    complementary (it funds the FINAL divisions that stay in the light group), not the cure.
+  - DERIVED from the 1938.11.1 panel: `build_army id = light_armor value = 100` read as wanted
+    100 — the value is a wanted division count. The owner's `value = 30` proposal rests on that.
+    CONFOUNDED: that reading was taken with `force_build_armies 300` and the role_ratio slot both
+    live, so one data point cannot separate "absolute count" from "additive to the share"; the
+    console check below (wanted exactly 30) is the killing measurement and stays blocking.
+  - Shipped: `_44_TEMPORARY` enables on 15006 alone (values exclusive by construction since
+    Change 11); `WA_AI_PRODUCTION_should_hold_historical_tank_park` (historical, park country,
+    mission over, temporary latch, not retired, no major enemy, training allowed, SOV switch
+    closed = T-34 / KV-1 not researched and before 1942) gates
+    `WA_AI_PRODUCTION_DEFAULT_historical_tank_park_hold` = `build_army id = light_armor value = 30`,
+    no `force_build_armies`; harness `wa_abg.3` prints `hold-30` (a reading of the shipped gate,
+    not a retype) and `target-live` (set membership over the 17 declared values 15000-15016, not
+    an enable evaluation; the STARTER `has_template` terms are not retyped); doc section
+    rewritten. Deletion untouched. `tools/ai_layers_baseline.json` NUMBER-LEAK 338 -> 335 updated
+    in the same commit: MEASURED the drop is inherited from merge `e670dfd372` (`WA_triggers.txt`
+    10 -> 7, `WA_production_strategy_effects.txt` 2 -> 0, `WA_AI_PRODUCTION_air.txt` 0 -> 2), the
+    four files touched here count identically at HEAD and in the working tree.
+  - Reviews 2026-09-08: lessons CONCERNS (confounded wanted-100 reading; latch dependency;
+    `target-live` wording) and architecture CONCERNS (rule 7 comment phrasing; `hold-30` is a
+    reading; baseline provenance) - all applied. Latch dependency, stated: the hold needs
+    `WA_AI_TEMPLATES_sov_light_support_temporary_latched`, written only while the mission is live;
+    a save whose mission ended on a build predating the latch never arms it (no migration owed
+    unless such a save is scored).
+  - t0/t1/t2 (monthly calculator, 7-day engine selection, daily ai_strategy enable ASSUMED):
+    | t | flag | enabled targets | wanted | expected |
+    | --- | --- | --- | --- | --- |
+    | t0 mission end | 15006 | 44_TEMPORARY (44w, no chain) | 30 (hold arms) | brigades + cavalry deleted by the mission; corps + copies stay in the role; recruits <= 30 - current on the 44w shape |
+    | t1 next pulse | 15009 | CONVERT 44w (15) + MIX 30w (10) | 30 | arrow on the MIX; recruits still land on the 44w CONVERT (highest prio) |
+    | t2 = t1 + 2 pulses | 15010 | MIX alone | 30 | recruits on the 30w; 44w divisions upgrade to the MIX |
+    | t3 T-34 / KV-1 | 15007/15013... | rung + FINAL | share only (hold closes) | conversion window as Change 11 |
+    Residual: <= (30 - current) divisions queued on the 44w shape during <= 3 months (ASSUMED the
+    queue follows the template's field upgrade); how many of the 30 exist before the T-34 is
+    training-time-bound, not script-bound.
+  - Verification — owner console: restart the exe; post-mission pre-T-34 SOV save, no tag
+    switch; `event wa_abg.3 SOV`: scope `1 1 1 1 0`, `continues=0`, `force-500=0`, `hold-30=1`,
+    `light-role-open=1`, `target-live=1`, verdicts 1 1 1 1; the AI production panel must show
+    the `light_armor` row with wanted EXACTLY 30 - "30 + share" or a percent refutes the
+    wanted-count reading of `build_army` and the 30 is recomputed, not tuned. Controls:
+    mission-active save (`hold-30=0`, `force-500=1`), post-T-34 save (`hold-30=0`), competitive
+    SOV (`hold-30=0`).
+  - Verification — campaign: the SOV division count across the mission's end drops by the OOB
+    brigades + cavalry still on their names and by nothing else; `light_armor` current climbs
+    toward 30 before the T-34; FINAL shapes carry the park after it.
+- **Change 12 (owner order 2026-09-08) — keep the historical Soviet light budget open until 1942.**
+  - Owner report: light need falls to zero when the mission ends; two thirds of the LS divisions
+    disappear. ASSUMED causal link between budget withdrawal and those deletions; this change
+    implements the requested retention policy, not a demonstrated engine-level cure.
+  - MEASURED cause in script: `WA_AI_PRODUCTION_build_army_light_armor` vetoed historical SOV
+    when `should_continue_historical_tank_park` closed, and also required a live light-template
+    use trigger. Both gates could withdraw funding before the park finished conversion.
+  - Implemented: exclusive historical-difficulty + CONFIG park-country branch, with the existing
+    master gate, `before_global_war_begins` (`date < 1942.1.1`), a carried LS template flag and
+    no retired flag. No mission, cap, major-war, expansion or light-template-use condition in
+    that branch. No fallback to generic light after the boundary. Generic non-historical-SOV
+    behavior is logically unchanged (its old mission exception required historical SOV).
+  - Impact: only gameplay caller is `WA_AI_ARMOR_BUDGET_reconcile`; startup and monthly scheduling
+    remain unchanged, with template calculation before reconciliation. Harness is the other
+    reader. No change to mission continuation, its floor/force bonus, equipment policy, template
+    phases, conversion gates or retirement. No new constant, CONFIG declaration or telemetry.
+  - `WA_TEST_armor_budget.txt` independently retypes the new light gate. Its split expectation
+    also now includes the existing master/expansion gates and SOV medium-switch exclusion;
+    its floor expectation matches gameplay's either-cap-unmet condition and retired guard.
+    These are measurement corrections, not changes to medium/heavy or floor gameplay.
+  - Scenarios: historical SOV post-mission PONT/STABLE/CONVERT-1/CONVERT-2 keeps its ordinary
+    light share, including FINAL targets still in that role. Competitive SOV and non-SOV
+    countries use the previous generic path. Retired/missing-flag historical SOV closes;
+    historical SOV at/after 1942 closes even if its mission remains active. No-training still
+    zeros the budget independently of the open-role gate.
+  - Regression risk: reopening light redistributes the ordinary tank budget from other open
+    roles and permits recruitment in the park role. ASSUMED extra recruitment can compete
+    for conversion equipment; no bound or guarantee on division retention/conversion time.
+  - Final diff reviews: lessons CLEAR (carried-flag/retired guards, exclusive historical branch
+    and retained brakes); architecture OK.
+  - Validation (2026-09-08): constants and AI-layer checks exit 0; brace nesting and
+    `git diff --check` pass; template-checker selftest passes. Parsed light-gate truth table:
+    2 048 boolean combinations match the requested policy, including 1 536 generic cases
+    identical to HEAD (offline logic check, not an engine test). Global template check still
+    reports 4 HQ suffix errors / 48 warnings; all its inputs are unchanged. Worklist check
+    reports 3 existing errors (8 OPEN, two stale untested subjects), confirmed identical by
+    running its WORK checks against HEAD in memory. No unrelated tracker or HQ edit.
+  - Verification — owner console: restart the game; on the post-mission 1939 save, without
+    tag-switching, `event wa_abg.3 SOV` must show scope `1 1 1 1 0`, `continues=0`, `force-500=0`,
+    `light-role-open=1`, positive light book if training is allowed, and all four verdicts 1.
+    Repeat during conversion (including KV-1-only admission), and at/after 1942 (light book 0).
+    Controls: competitive SOV, non-SOV and mission-active one-cap-reached case. The calendar
+    gate changes immediately; normal applied books change on the next monthly reconciliation.
+  - Verification — campaign: follow the same historical Soviet divisions from mission end
+    through medium/heavy conversion; before 1942, a carried unretired park with training allowed
+    must retain a positive `WA_AI_ARMOR_BUDGET_light` after reconciliation. Record deployed
+    park counts/shapes to test the owner's retention hypothesis. Existing conversion criteria
+    remain; this change additionally closes only after these console and campaign checks pass.
+- **Change 11 (owner order 2026-09-07 "vas-y, implémente dans l'ordre C, B, A+D, D bis") — every
+  bridge of the temporary corps carries its own exit; medium and heavy open on the T-34 / KV-1.**
+  Owner intention (same day): mission over → the 44w corps goes to the 30w MIX and STAYS there;
+  medium opens when `sov_medium_tank_chassis_3` (T-34) is researched, heavy when
+  `sov_heavy_tank_chassis_2` (KV-1) is; the 30w park converts directly into whichever class is
+  open. The mission-end budget closure left by this change is superseded by Change 12 above.
+  - Symptom, MEASURED (campaign `a100b67c`, BHU observer, 132 monthly saves 1936.2-1947.1,
+    unbranched, build of 2026-09-06 evening; full timeline in scratchpad
+    `a100b67c_SOV_templates_timeline.md`): mission completed 1938.11 (1156 days early). Then the
+    whole park (37 divisions, pinned 1939.06-1941.10, armour budget 0/0/0/0 for 14 months) walked
+    6/3/4 → 7/3/4 → 8/3/4 → 9/3/4 as ONE pool (1939.12, 1940.01, 1940.02) — the 7/3/5 MIX was
+    never fielded in 132 saves; flag 15007 at 1940.2 on a T-28 medium role (T-34 researched
+    1940.6.27, KV-1 1940.6.23); 31 divisions on the 9 med/6 mot FINAL by 1941.02, then 18 of them
+    walked back onto light shapes 1941.05-1941.08 (tid 2438 = 3 LS/6 mot/2 art, tid 2488 = 4 LS/
+    5 L/5 mot) before landing on the medium role's own template 1941.08; 18 OOB brigades went to
+    "Motorized Infantry template A" in 1939.01; `sov_armor.981` fired 1942.1.4 on an
+    already-medium park; 12 707 support chassis byte-identical in stock 1942.6-1947.1.
+  - Cause (script lines): (C) `WA_AI_CONFIG_switch_from_light_to_medium_armor` — the SOV
+    `date > 1941.1.1` branch sat in an `OR` with the generic `date > 1940.1.1`, unreachable (blame
+    `1848f569a40`), and `admits_medium_armor` inherited it, so medium opened on the calendar with
+    the T-28 instead of on the T-34; (A) `_44_TEMPORARY_CONVERT` (base 15) and `30_MOT_LIGHT_MIX`
+    (base 10) both enabled under 15006 + mission inactive, forever — a `replace_with` bridge is a
+    one-shot with no memory, re-selected by priority every 7-day pass once the moved divisions no
+    longer match it at 0.9, and the designer walks them back toward it; (B) STARTER / STARTER_MIX
+    enabled on 15000 / 15001 only, so the brigades had no bridge under 15006; (D) the rung
+    (15007/15008) is the same one-shot one level down: once the last LS template died its chain
+    stopped firing, the rung stayed selected and pulled the FINAL's divisions back.
+  - Shipped (commit on this subject, 2026-09-07):
+    - `WA_AI_CONFIG.txt`: the SOV branch of the switch = T-34 or KV-1 or
+      `WA_AI_CONFIG_after_global_war_begins` (the no-gap fallback, which is also the retire date
+      — for the AI it only closes the role); the generic date branch excludes SOV;
+      `admits_medium_armor`'s fallback excludes SOV, SOV admits on the T-34 accelerator or the
+      global-war bound (KV-1 alone must not open a T-28 medium role).
+      `WA_AI_PRODUCTION_army_composition.txt`: `build_army_medium_armor` no longer opens the
+      medium budget slot on the switch for the park country (KV-1 before T-34 funded a slot
+      with no template).
+    - `WA_AI_TEMPLATES_effects.txt`, type-14 calculator: a five-phase machine for the temporary
+      corps — MISSION 15006 (mission active) → PONT 15009 (CONVERT + MIX + STARTER_MIX enabled,
+      `light_support_phase_pulses` = 2 monthly pulses, counter `WA_AI_TEMPLATES_ls_phase_pulses`,
+      exit flag `ls_bridge_done`) → STABLE 15010 (MIX alone, until the window) → CONVERT-1
+      15007/15008 medium or 15013/15014 heavy (rung + FINAL; class and MOT/MEC latched at entry
+      in `ls_conversion_heavy` / `ls_conversion_mec`, sticky `ls_conversion_started`; exit = no
+      template contains a support battalion any more, flag `ls_conversion_settled`) → CONVERT-2
+      15011/15012/15015/15016 (FINAL alone, until the retire event clears everything). Migration:
+      a save reloading on 15007/15008 sets bridge-done + started (+ mec) at its first pulse. The
+      second monthly call of the calculator for the park country is removed
+      (`WA_AI_TEMPLATES_calculate_all_templates`); the generic (pure/MIX) path is unchanged.
+    - `WA_AI_TEMPLATES_triggers.txt`: the window opens on medium OR heavy.
+      `wa_ai_production.txt`: `army_composition.light_support_phase_pulses = 2`.
+    - `WA_AI_TEMPLATES_armored_light_support.txt`: STARTER_MIX enable + 15009; CONVERT enable =
+      15009 only; MIX enable = 15001 / 15009 / 15010; rungs 15007/15008 retargeted 8/5/5 → 7/3/5
+      with the MIX's RS 4+4 and 9 supports (D bis); two heavy rungs 15013/15014 (same target) →
+      two heavy FINALs mirroring the heavy role's 7100 / 7105 shapes; MOT_FINAL + 15011,
+      MEC_FINAL + 15012.
+    - `WA_TEST_armor_budget.txt`: `flags` line re-typed (mission / pont / stable), new `lsphase`
+      line (K, pulses, bridge-done, conv-started/settled/heavy/mec), conv-value knows 15011-15016.
+    - `tools/check_templates.py`: the VALUE-NO-TEMPLATE join read `has_country_flag` only as a
+      direct child of `enable`; every value that lived only inside an `OR` (all FINALs, the MIX's
+      second and third values) was invisible to it. It now descends OR / AND (not NOT); fixture
+      entry 1001 moved under an OR so the clean fixture proves it; `--selftest` OK.
+  - t0/t1/t2 at the real cadences (monthly calculator, 7-day engine selection, monthly save;
+    division moves are equipment-gated and take months — the phases bound the ARROW, and rely on
+    the sole target keeping the divisions converging afterwards, see ASSUMED (i)):
+    | t | flag | enabled | expected |
+    | --- | --- | --- | --- |
+    | t0 mission end (`a100b67c` 1938.11→12) | 15009 | STARTER_MIX, CONVERT, MIX | corps template tid 700 = 12/6/4 byte-identical to the CONVERT target (MEASURED) → match 1.0 ≥ 0.9, arrow on the MIX ≤ 7 days (the owner's screenshot of 2026-09-07 saw exactly this fire); brigades via STARTER_MIX (base 15, declared first, selected while "Tankovaya brigada" exists) |
+    | t0 + 2 pulses | 15010 | MIX | arrow stays on the MIX; corps and brigade residuals keep moving (stock 12 977 LS + 5 669 L at 1938.11, MEASURED) |
+    | t_T-34 (1940.7 here; STABLE lasted 19 months) | 15007/15008 | rung 7/3/5 + FINAL | park on 7/3/5 → match ~1.0 ≥ 0.8 → arrow on the FINAL ≤ 7 days; divisions move as medium chassis arrive (113 in stock 1940.6 → 1 475 at 1941.1, MEASURED: months) |
+    | while any template contains a support battalion | same | same | the chain re-fires every pass against that template (MEASURED precedent: `6f52600d` 62 → 92, `a100b67c` 3 → 31 with the LS template alive) — no pull-back possible |
+    | first pulse with no LS template | 15011/15012 | FINAL | arrow on the FINAL, nothing left to pull; sticky until the retire |
+    | 1942.1.4 | absent | none | `sov_armor.981`: nothing to delete, role closed |
+    Bound: the pull-back window is at most ONE monthly pulse between the last LS template dying
+    and CONVERT-2 (on `a100b67c` the pull-back needed 2 months to show, 1941.03 → 1941.05).
+  - Change 9 replaced (rule g). Its objection: "the rung target is a fixed literal; the fielded
+    shape is emergent and changes per campaign, which is the coupling Change 8 was built to
+    remove." Mine covers it because STABLE makes the fielded shape non-emergent: the MIX is the
+    role's SOLE target from the end of PONT to the window (19 months on `a100b67c`), so the park
+    converges on 7/3/5 and the rung target equals it by construction; when STABLE is short (T-34
+    before the mission's end) the rung faces a 12/6/4 park and the symmetric pair scored 0.85 on
+    the owner's 1943.1 read (12/6/4 target vs 6/3/6 park) ≥ 0.8.
+  - ASSUMED, stated: (i) in STABLE and CONVERT-2 the divisions not yet moved keep converging on
+    the sole target by ordinary field upgrade with no chain armed — DERIVED from `a100b67c`
+    1939.12-1940.02 (the pool moved monthly while the CONVERT chain could not fire: no 12/6/4
+    template existed after 1939.11) and 1941.05 (Med G → tid 2438 with the rung selected and its
+    chain dead); if false, PONT residuals freeze on 12/6/4 until CONVERT-1, whose rung scores
+    ~0.85 against them ≥ 0.8. (ii) The heavy FINALs mirror 7100/7105 so the heavy role captures
+    them; the medium FINAL (9 M/6 mec) vs SOV's medium target 6111 (7 M/3 SPG/5 mec) residual —
+    a T-34 + KV-1 SOV may still land its converted divisions on a heavy template — is unchanged
+    and owner-accepted under Change 8. (iii) `WA_TEST_templates.txt:155` calls the calculator:
+    one owner harness run = one extra PONT pulse.
+  - Reviews 2026-09-07. Lessons **CONFLICT** (5 required): (1) "show the PONT bridge can fire" —
+    answered by the t0 row (tid 700 = 12/6/4, match 1.0); (2) MOT/MEC latched at window entry —
+    applied; (3) K bounds the arrow, not the divisions — CONVERT-1's exit is now the containing
+    test (the rung is armed exactly as long as its source template exists), K applies to PONT
+    alone and ASSUMED (i) carries the residuals; (4) migration for saves on 15007/15008 —
+    applied; (5) rule (g) sentence — above. Architecture **CONCERNS**: (1) tag vs archetype in
+    CONFIG — comment reworded, the tag is the intent (the tech ids are its own); (2) base-15 tie
+    STARTER_MIX / CONVERT under 15009 — sentence added at the CONVERT block, the arrow lands on
+    the MIX through either chain; (3) subject re-enters SHIPPED-UNTESTED — done; (4)
+    `check_ai_layers` NUMBER-LEAK 348 > baseline 347 is pre-existing at HEAD (MEASURED: recount
+    of the HEAD tree via `git show` = 348, the touched files count identically) — not bundled,
+    owner to bump or fix on its own commit.
+  - Checkers: `check_templates` 0 errors outside the 4 pre-existing HQ slot errors (`--selftest`
+    OK); `check_constants` exit 0; `check_worklist` exit 0; `check_ai_layers` exit 1 on the
+    pre-existing NUMBER-LEAK above. BOM-free, braces balanced on every touched file.
+  - **Boot 2026-09-07 14:18 (owner log) FAILED on `943011b142`**: `parser.cpp: unexpected token
+    near line 1410 (constant:...)` — the PONT exit was written `check_variable = { pulses >=
+    constant:... }`, and the parser does not take `>=` there (zero `>=` existed in the repo; the
+    `> constant:` form of the AIFC core parses). The trigger parser then desynced through the
+    rest of the file (`Invalid trigger set_country_flag`, and an error 130 lines later in the
+    retire effect). Fixed in the follow-up commit: K-1 computed into a temp and compared with
+    `>`; the retire effect's `clear_variable` rewritten as `set_variable = 0` (harmless either
+    way). No checker sees a parser error - only a boot does; lesson recorded.
+- Verification — owner console, Change 11. (a) Post-mission, pre-T-34 SOV save (`a100b67c`
+  1939.x): `event wa_abg.1 SOV` reads `pont-15009=1 bridge-done=0` for the first two pulses then
+  `stable-15010=1 bridge-done=1 conv-started=0 light-role-open=0`; `imgui show ai_templates`:
+  arrow on `30_MOT_LIGHT_MIX`, still there one month later. (b) Post-T-34 save (`a100b67c`
+  1940.7+): `conv-started=1 conv-settled=0 containing-LS=1 conv-value=15007|15008`, `handoff`
+  line `era-boundary=1 admits-medium=1`; arrow on `_44_TEMPORARY_TRANSITION_*` then on the FINAL
+  within 7 days. NOTE: `a100b67c` saves from 1940.2 on reload with flag 15007/15008 → the
+  migration path fires, expect `bridge-done=1 conv-started=1` on the first pulse. (c) Control on
+  a 1937 save: `sov-mission-15006=1 pont-15009=0 stable-15010=0 bridge-done=0`.
+- Verification — campaign probe, Change 11 (fresh campaign): no SOV division on an 8/3/4 or
+  9/3/4 shape after the mission; ≥ 90 % of the park on 7/3/5 within 12 months of the mission;
+  `WA_MEDIUM_ARMOR_TEMPLATE` first set the month after `sov_medium_tank_chassis_3` completes,
+  never before; zero light-shaped templates created after the first FINAL division; the
+  light-support flag never returns to a lower phase value.
 - Parked 2026-09-04 by the agent, not by an owner decision, to admit the owner's `posture-v3`
-  order under the WIP limit — move it back to OPEN in one line if that is the wrong pick. State at
-  parking: SHIPPED-UNTESTED since 2026-09-02 (Change 7 committed, WORK.md updated 2026-09-04 by
-  another session), owner console run owed; nothing else changes.
+  order under the WIP limit. State at that parking: SHIPPED-UNTESTED since 2026-09-02 (Change 7
+  committed, WORK.md updated 2026-09-04 by another session), owner console run owed.
 - **Change 10 — NOT SHIPPED. The proposed `upgrade_prio` retarget of the two SOV rungs is INERT;
   the arrow on the FINAL is the `replace_with` chain working, not a priority loss.** Owner brief
   2026-09-04: raise `upgrade_prio` of `..._44_TEMPORARY_TRANSITION_MOT` / `_MEC` above the FINALs'
@@ -2948,306 +4112,6 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the mod has the same problem. Owner call whether it becomes a subject.
 - Closed when: the owner pastes (a), (b), (c), the fix-3 / fix-4 readouts and the fix-5 title here.
 
-### can-transit-attrition — PARKED (2026-08-28)
-- PARKED 2026-08-28 (owner call) to make room for `swi-militia` under the WIP limit; state below
-  is intact, nothing was retracted.
-- Scope: owner admission 2026-08-27 (candidate validated the same day, owner mechanism
-  CONFIRMED against the first verdict). Intended behaviour: what Canada builds REACHES the
-  war - divisions survive the transatlantic crossing, and the build rate is worth the name.
-- Symptom (MEASURED, `1ac7e4ea`, 61 monthly saves, conveyor-reset series - the valid counter;
-  `post_mortem` is a freed-NAME pool, never a death ledger): CAN builds CONTINUOUSLY (queue
-  occupied 59/61 months, 16 divisions deployed 1941-46, ~3.1/year, ~5 months and ~18.5k
-  manpower each) and **~15 of the 16 leave the OOB (±5)**; standing army pinned 1-2 divisions
-  1942-45 on 37→113 arms factories. Not lent (0 `expeditionary_owner="CAN"`, positive
-  control works), essentially never in land combat (`last_combat_date` null 47/61 months, 3
-  episodes in 10 years); deaths cluster the month AFTER a high at-sea reading on
-  transatlantic runs (1943.8: 4/4 embarked, one sea province → 1943.9: 3 lost; destinations
-  Dorset/Sussex/Algiers/Gabès); `efficiency_due_to_lost_convoys` 0.875-0.93 on its routes.
-  DERIVED: sunk in transit (own at-sea losses never serialised; failed-invasion residual for
-  the minority under front orders). Second lever, MEASURED: the build rate is also LOW in
-  absolute - 1-2 conveyors, never a backlog, while 153k own rifles bank and CAN→SOV runs the
-  campaign's top lend-lease pair (206 656 IC).
-- Six-box diagnosis (2026-08-27, this session; three extraction subagents, labels relayed
-  unchanged):
-  1. Symptom: CAN builds continuously yet its standing army pins at 1-4 divisions with
-     near-zero land combat - what it builds leaves the OOB.
-  2. Measurement (MEASURED, 77 war saves 1939.9-1946.1, closure vs `army` byte-equal):
-     20 true transit losses (at sea -> gone next save), 17/20 North Atlantic; net growth
-     -10 (14->4); 1943.8 = 100% of the army at sea. Comparative (7 Allied tags, table in
-     session scratchpad `transit-comparative-1ac7e4ea.md`): CAN is the WORST case - 49% of
-     its disappearances are at-sea vs ENG 14% / RAJ 16%; USA loses more absolutely (71
-     at-sea losses, 1-4/month for 3.5 years) but grows +90; SAF loses 0. A coalition-wide
-     pathology with CAN as its extreme, not an isolated case.
-  3. Mod state (MEASURED, saves 1943.6/1943.8/1943.9/1944.6): Allied escort = 20 CAN +
-     82-122 ENG + 20-40 USA hulls on 3-5 eastern regions vs 100-126 GER raiders covering
-     30+ regions; the WESTERN half of the CAN->UK route (Newfoundland/Labrador waters)
-     carries ZERO escort missions in all 4 saves; 36-61% of Allied screens parked in
-     admiral-LESS fleets, share rising monotonically through 1944; CAN's main active force
-     (40 screens) patrols Hudson Bay (danger 0); GER->CAN 1146 convoys sunk 1941.8-1944.5.
-  4. Mod decision: the Atlantic escort plan IS armed for CAN (corridor-user includes CAN,
-     `WA_AI_CONFIG.txt:1198`; dominance 70-80 + pull -1000 + escort bar at 0), so H1's
-     strong form ("unescorted, no plan") is FALSE - the failure is coverage and response,
-     the R36 "escorts parked" shape. H2 (shuttle) REFUTED as dominant mode: 9/13 at-sea
-     losses died on their FIRST crossing, 4 were multi-crossing (real minority; lower
-     bound, monthly sampling). H3 CONFIRMED: a committed CAN keeps no home floor
-     (`CAN_FRONT.txt:103`), its only standing requests are fraction-of-army britain
-     buffers (`CAN_THEATRE.txt:44` ratio 0.25, `:143` ratio 0.75) - wanted-count ~0 on a
-     1-4 division army, and every fresh deployment must cross the Atlantic to reach its
-     buffer order.
-  5. Script lines: `WA_AI_NAVAL_FACTION_ALLIES.txt:290-327` (corridor dominance/pull the
-     engine answers with a Hudson Bay patrol - no WA line steers CAN's navy anywhere, and
-     the engine's patrol-near-owned score 500 is uncontested, per the Fix 53b note at
-     `05_defines.lua:1082`); `05_defines.lua:1090-1131` (escort score/danger terms, Fix
-     53b/86 - present and still insufficient in this campaign); `05_defines.lua:1135-1136`
-     (escort screen-share band 0.3-0.7 - unreachable while the screens sit in admiral-less
-     fleets); `CAN_THEATRE.txt:44`/`:143` + `CAN_FRONT.txt:103` (build-rate half).
-  6. Engine boundary (ASSUMED): whether an escort mission protects an ALLY's troop convoys
-     or only the escorter's own (Fix 86 established objectives are per-country
-     own-danger-driven); how `naval_dominance` converts into patrol placement; admiral
-     auto-assignment to parked fleets; the killer of an at-sea division is never
-     serialised, and whether strategic redeployment vs invasion transit die differently is
-     engine-internal. An owner-observed crossing with `imgui show ai-strategy` open is the
-     only direct view.
-- Rival explanations, counted apart (MEASURED): 6/19 losses 1941-46 were NOT at sea (3 last
-  seen on Europe/Africa land = ground-combat deaths; 3 in the Americas = disband/merge at
-  home); expeditionary transfer refuted campaign-wide (0 lost ids reappear under any of the
-  7 tags at N+1 or N+2).
-- Candidate levers (PROPOSED ONLY - nothing ships without an owner order; each requires its
-  own impact analysis + wa-architecture-reviewer/wa-lessons-reviewer pass): (L1) escort
-  response - western-corridor coverage, admiral supply for the parked screens, or escort
-  share floor - owns the majority (first-crossing) mode; (L2) shuttle damping is
-  `allied-division-stability` Step B, not this slug; (L3) build rate - a CAN standing-force
-  floor (front_unit_request or buffer minimum) - secondary, owner-ranked below losses.
-- State: L1 SHIPPED 2026-08-27 (owner order "il faut trouver une solution"; both reviewers
-  CONCERNS, no CONFLICT, all required amendments applied). Two changes, each with its own
-  probe: (C1) `05_defines.lua` `NAVY_PREFERED_MAX_SIZE` 80 -> 25 - vanilla 25 MEASURED at
-  install `00_defines.lua:2824` (1.19.2); executes the file's own pre-registered R36
-  candidate 3, whose re-measurement condition this campaign satisfies (parked screen share
-  36-61% and rising post-Fix-53b/86). "On its own" honoured: no other R36 escort-score
-  candidate is bundled - C2 is a different mechanism (fleet placement, not fleet sizing).
-  (C2) new `WA_AI_NAVAL_COUNTRY_CAN.txt`: `naval_avoid_region` +1000 on regions 166
-  (Hudson Bay) and 246 (Hudson Strait) - ids verified from the in-block `id =` of
-  `map/strategicregions/166-*.txt`/`246-*.txt`, not filenames; enable = at war + AI +
-  NOT `WA_AI_MILITARY_CAN_home_defense_required` (ahistorical escape: war with USA or a
-  threatened homeland re-opens Hudson), abort_when_not_enabled. Caveat carried from the
-  archive: a positive avoid is a DETERRENT weight, not a ban. F9 boot test OWED (defines +
-  new strategy file).
-- State add (C3, owner order + validation 2026-08-27 "je valide avec seuil, implémente";
-  both reviewers CONCERNS, no CONFLICT, amendments applied): 4 new files in
-  `common/ai_navy` give USA and CAN destroyer convoy-escort templates + matching fleets
-  (`<TAG>_ConvoyEscort_DD_1` min 4 / optimal 10 DD, factor 4 < generic frigate 5), active
-  only below 100 owned frigates. Owner follow-up 2026-08-27 applied: the threshold is a
-  single scripted trigger `WA_AI_NAVY_frigate_mass_reached`
-  (`common/scripted_triggers/WA_AI_NAVY_triggers.txt`, new system trigger file - CONFIG
-  stays classification-only) read by both country files; the interim registry group was
-  removed with the duplication. Root cause the
-  files fix: the generic escort template is frigate-only (DD variant commented out by
-  d3aaa5d0f on the recorded assumption "escort_fleet_6 covers it" - MEASURED false on
-  `1ac7e4ea` for DD-heavy navies: their screens cannot form escort task forces at all).
-  Population statement (lessons requirement): the affected class is frigate-poor DD-heavy
-  navies bleeding on convoy routes; MEASURED members are USA and CAN (91 at-sea division
-  losses between them); ENG is frigate-equipped (its frigates score ~90% of GER sub kills),
-  AST/NZL/RAJ/SAF lose 0-13 off-corridor; JAP/GER/ITA sit on the raider side and their
-  transit losses were never a measured symptom - if a later campaign shows one of them in
-  this class, it enters as its own file under a new admission. ASSUMED, both recorded in
-  the file comments: (i) whether ai_navy `allowed` re-evaluates in play AND resolves
-  scripted triggers (vanilla/EAI use only static tags there; owner console check with
-  `imgui show ai_navy` OWED, and F9 error.log catches an unknown-token failure - fallback
-  if static or unresolved: drop the threshold term, factor 4 < 5 remains as soft
-  handover); (ii)
-  `has_navy_size` counting of under-repair/reserve hulls is undocumented (oracle read,
-  install triggers_documentation.md section has_navy_size names type/archetype/unit but
-  not fleet-state scope) - near the 100 mark either reading is acceptable. Alternative
-  considered and deferred: an archetype gate ("DD-heavy AND frigate-poor" composition
-  trigger) instead of original_tag - deferred because trigger support in ai_navy `allowed`
-  beyond static tags is exactly the unattested question, and the owner specified USA/CAN.
-  Verification (mechanism probe g): escort task forces containing destroyers exist for
-  USA/CAN in a war save while their frigate count < 100 (read fleet composition + mission
-  from the save via `navy TAG --fleets`; template presence proves nothing - formation is
-  the claim), and after any save shows >= 100 frigates, no NEW DD escort task force
-  appears. F9 boot test OWED for the ai_navy files (replace_path folder, no Python checker
-  covers them - error.log is the only detector).
-- Verification (probes with this campaign's method): (a) survival - in the next campaign,
-  >= 10 of the divisions CAN deploys after 1941 are still in the OOB 6 months after
-  deployment (vs ~1 of 16 on `1ac7e4ea`); (b) standing army - CAN holds >= 8 deployed
-  divisions at any save from 1943 on (vs 1-2); (c) the at-sea death clustering signature is
-  gone (no month where every embarked division of the previous save has left the OOB);
-  (d) control: CAN→SOV lend-lease keeps flowing (the arsenal role must survive the fix).
-  Mechanism probes, one per shipped change (avoid weight is a deterrent, not a ban - probe
-  the outcome, never assume it): (e) C1 - the parked share falls: admiral-less/region-less
-  share of ENG+USA+CAN screens < 30% at two mid-war saves (vs 36-61% rising on `1ac7e4ea`),
-  and no single mission-none fleet > 40 ships (vs ENG Fleet 13 at 101); (f) C2 - CAN's
-  active fleets hold no strategic_region in {166, 246} at any war save with home safe, AND
-  >= 1 CAN or ENG escort/patrol mission operates a western-corridor region (Newfoundland
-  Sea 55 / Labrador Sea 50 / Labrador Basin 247) at 2 consecutive sampled saves - fleet
-  relocation alone does not create escort missions there (escort objectives are
-  own-danger-driven), so (f) measures missions, not just position.
-- **Campaign `0767987f` (first post-fix, 2026-08-27, 117 saves 1936.2-1945.10, build
-  fingerprint MEASURED: `USA/CAN_ConvoyEscort_DD_1` serialised in-save; closure 14/14 vs
-  `army`): coalition improves, CAN itself still fails.** Cross-campaign caveat: one run vs
-  one run, different seed, ends 1945.10 vs 1946.1 - directions, not significance.
-  - (a) FAIL: 7 post-1941 CAN deployments survive >= 6 months (bar 10); all 5 sub-6-month
-    deaths died AT SEA (2 in their deployment month).
-  - (b) FAIL, marginal: max 7 deployed from 1943 (bar 8); holds 5-7 through 1943-45 vs 1-2
-    baseline.
-  - (c) PARTIAL: 7 full-wipe months but ALL <= 1941.12; zero in 1942-45 (baseline had them
-    through 1943). As written FAIL, post-1942 clean.
-  - (d) PASS: CAN->SOV 195 853 IC cumulative at 1945.6, relief convoys still flowing.
-  - (e) FAIL: active fleets DID shrink to the 17-40 median band (mechanism took) but
-    admiral-less reserve fleets still grow - ENG Fleet 4 at 121-146 (bar: none > 40), CAN
-    79-83% screens idle late-war (bar < 30%). DERIVED: `NAVY_PREFERED_MAX_SIZE` governs
-    active-fleet merging, not the new-hull depot; the binding constraint has MOVED to
-    admiral assignment / reserve-fleet drainage.
-  - (f) PARTIAL: Hudson eliminated (no CAN fleet in 166/246 on any sampled save; CAN
-    escorted 243/43 in 1943) - but the western corridor (55/50/247) still carries zero
-    Allied escort/patrol while GER raids 247 all campaign.
-  - (g) PARTIAL: formation PROVEN - USA 9-13 DD-escort TFs (90-158 hulls, 1944.6 dip to 1),
-    CAN 1-2 TFs in 1943; `allowed` resolves the scripted trigger and the dynamic term in
-    play (TFs formed below 100 frigates). Threshold cutoff untested (USA peaks 79 frigates,
-    CAN 49). CAN stops escorting after 1943.9: its new hulls pool in admiral-less "Fleet 6"
-    (20->90 ships) - same mechanism as (e).
-  - Coalition deltas (baseline -> this run, DERIVED): total at-sea losses 129 -> 104; USA
-    71 -> 42 with net growth +90 -> +264; ENG 11 -> 5; CAN 20 -> 13 but net still -9 on 12
-    built; RAJ 13 -> 25 and AST 8 -> 12 (worse, off-corridor routes). Escort-vs-raider:
-    261-339 active Allied escort hulls (baseline 60-100) vs GER raid 50-117; GER monthly
-    kills collapse to 29-75 in 1945 (peak 468 in 1944.10); GER sub losses >= 388 (327 to
-    frigates, 80 to destroyers - the DD escorts kill).
-  - Next lever (PROPOSED ONLY, owner decision): the admiral-less reserve-fleet depot is
-    now the named binding constraint for (e)/(g)-CAN. Second: western-corridor escort
-    presence (f) is untouched by everything shipped so far - engine escort objectives
-    never reach 55/50/247.
-- **Depot six-box (2026-08-27, "why do new hulls stockpile in reserve", `0767987f`
-  saves 1943.6/1943.9/1944.6/1945.6, CAN/ENG/USA; details scratchpad
-  `depot-fleet-anatomy-0767987f.md`):**
-  1. Symptom: new hulls pool in leaderless, region-less fleets; escort capacity stops
-     growing (CAN stops escorting entirely after 1943.9).
-  2. Measurement (MEASURED): the depot is the engine's DEPLOYMENT ENTRY POINT - 115/116
-     newly produced ships across the 3 tags first appear in it. Drain out of it: ENG 1/131
-     ships over 9 months then 0/20 sampled, CAN 0, USA a trickle (21/120). TWO species of
-     leaderless fleet: the reserve DEPOT (single raw task force, mission 8, parked in a
-     port, never a named template) and ORPHAN POOLS (multi-TF, mission 0, named escort
-     compositions = dissolved former active fleets).
-  3. Mod state (MEASURED): NOT admiral supply - every tag holds >= 3 UNASSIGNED admirals
-     in every cell (incl. skill 6-7: Nimitz, Halsey, Cunningham idle) while depots sit
-     leaderless; assigned == led fleets 12/12 cells. NOT command power (CP 7-127 in all
-     but one cell). NOT fuel (USA 100% at its own escort collapse). Control: leaderless
-     fleets CAN hold missions (ENG escort fleets, 40 frigates, no admiral) - the depot
-     lacks mission+region, not a hard admiral prerequisite.
-  4. Mod decision: NONE EXISTS - no WA code writes fleets, missions or admiral assignment
-     (whole-repo check; the only WA touch is the benign `ai_admiral` XP trait,
-     `z_WA_ai_fixes.txt:438`). The mechanism is 100% engine.
-  5. Script line: none can exist for the core mechanism - MEASURED against the install's
-     effects_documentation.md: script has create_navy_leader / every_navy_leader /
-     transfer_navy and NO effect to create a fleet, assign a leader to a fleet, move
-     ships between fleets, or set a mission. The reachable mod levers are all INDIRECT:
-     defines that raise mission demand so the engine itself pulls from the depot.
-  6. Engine boundary (ASSUMED): why the engine leaves available admirals unassigned; what
-     triggered the 1943.9-1944.6 fleet-dissolution wave (CAN's two led escort fleets were
-     dissolved INTO Fleet 6 - that dissolution, not intake starvation, is what ended CAN
-     escorting; USA's orphan pool re-drained 98 ships into led escort fleets by 1945.6,
-     CAN's never did); mission id 9 (unknown to the mission map). An owner run with
-     `imgui show ai_navy` during the dissolution window is the only direct view.
-  - Rival named and killed: "admiral shortage" (H-A) and "fuel" (H-B) both dead by
-    measurement above; H-C (deployment sink with a near-closed engine drain valve) stands.
-- **Radar-lock six-box (2026-08-27, owner symptom "dominions stuck on Egret/Tribal
-  classes", `0767987f`):**
-  1. Symptom: the five UK dominions never field a frigate past Egret or a destroyer past
-     Tribal.
-  2. Measurement (MEASURED, saves 1943.6 + 1945.6): CAN/AST/NZL/SAF/RAJ all own ZERO radar
-     techs (radio_detection/decimetric/improved absent, none in progress, no alternate
-     name) and sit at exactly eng_frigate_5 / eng_destroyer_6 in BOTH saves - a static
-     ceiling, byte-identical across the five. Positive control: ENG owns the radar chain
-     (1936/1938/1939) and advances frigate 9->10, destroyer 10->12 over the same window.
-  3. Mod state: `eng_frigate_6`+ (Black Swan on) and `eng_destroyer_7`+ (J/K/N on) carry a
-     HARD `dependencies = { decimetric_radar = 1 }` (`naval_eng.txt:314-316`, `:1063-1065`)
-     - without the radar the AI cannot research them regardless of ai_will_do.
-  4. Mod decision - a DOUBLE lock, both deliberate-looking: (i) research path:
-     `WA_AI_RESEARCH_needs_radar` = major OR strategic-bombing airforce
-     (`WA_AI_RESEARCH_electronics.txt:22-27`; the airforce trigger is ENG/USA only,
-     `WA_AI_CONFIG.txt:161-166`) - a dominion fails both terms, so radio_detection and
-     decimetric_radar ai_will_do = 0 for it; (ii) gift path: ENG's radar
-     `on_research_complete` grants the tech to subjects but its limit EXCLUDES
-     `autonomy_dominion`/`autonomy_colony` (`electronic_mechanical_engineering.txt:169-189`)
-     - only integrated subjects (UKE) receive it.
-  5. Script lines: `WA_AI_RESEARCH_electronics.txt:22-27` (the gate that zeroes dominion
-     radar research) and `electronic_mechanical_engineering.txt:100-110/:172-181` (the
-     gift filter). Candidate levers, PROPOSED ONLY: (L-a) widen `needs_radar` with an
-     escort-capability term (`WA_AI_CONFIG_focus_on_escorts` or
-     `has_navy_size = { type = screen_ship size > 10 }`, the same shape `needs_asw` already
-     uses at `:49-59`); (L-b) extend the gift to dominions (the autonomy exclusion looks
-     deliberate - legacy-gate trace owed before touching); (L-c) drop the hard radar
-     dependency from hull techs (changes design intent, not recommended).
-  6. Engine boundary: none - the whole mechanism is mod script; nothing here is ASSUMED.
-  - Interaction with the shipped DD-escort fix: the lock caps hull QUALITY, not frigate
-    existence (Egret/frigate_5 stays buildable - CAN holds 49). The ASW-relevant classes
-    (Black Swan on) are exactly the locked ones.
-- State add (L-a, owner order 2026-08-27 "étends needs_radar à
-  WA_AI_CONFIG_focus_on_escorts"; architecture OK, lessons CONCERNS - all three required
-  items resolved): `WA_AI_RESEARCH_needs_radar` gains `WA_AI_CONFIG_focus_on_escorts`
-  as third OR term (`WA_AI_RESEARCH_electronics.txt:22`) - the six-box's "major OR
-  strategic-bombing" description above is the PRE-fix state. Resolved items, all
-  MEASURED: (1) design layer admits the dominions - `ENG_destroyers`/`ENG_escorts`
-  `available_for` AST/CAN/NZL/RAJ/SAF (`ENG_naval.txt:41-52`, `[commonwealth-handoff]`),
-  role variants enable on `has_tech = eng_frigate_6`+, so TECH+DESIGN+ROLE line up once
-  radar unlocks; (2) the gift's dominion exclusion is deliberate by its own commit
-  (`d69a92b94` "Integrated puppets get radar and AA tech from master") and stays
-  untouched - the fix widens the honest research path instead; (3) accepted explicitly:
-  the term also admits generic-tree Allied minors (BEL/GRE/NOR/...), for whom radar
-  enables no hull - a research-slot dilution taken knowingly (radar cost 2.5+1.25 on
-  factor 5). Residual, stated: an escort navy OUTSIDE the Allies stays radar-locked
-  (is_escort_navy is faction-gated) - no worse than pre-fix. Regeneration-safe: the
-  ai_will_do replacers re-emit the trigger NAME, never its definition. Verification
-  (probe h): next campaign, >= 3 of the 5 dominions own radio_detection AND
-  decimetric_radar by 1942.1, and >= 1 dominion's best eng_frigate tech > 5 or best
-  eng_destroyer tech > 6 by 1944.1 (vs frozen 5/6 on `0767987f`). F9 boot test owed
-  (trigger edit).
-- **Campaign `067ef4ac` (second post-fix, 2026-08-28, 115 saves 1936.2-1945.8, carries BOTH
-  fix waves - fingerprint MEASURED: dominions own 6 radar techs vs 0 on `0767987f`, and
-  `USA/CAN_ConvoyEscort_DD_1` task forces serialised; closure 14/14 vs `army`). The
-  subject's OWN probes (a)-(d) now all PASS; the residual failures are elsewhere.**
-  Caveat: run ends 1945.8 vs 1945.10/1946.1 - 2-5 months shorter than the comparators.
-  - (a) PASS: 17 post-1941 CAN deployments survive >= 6 months (bar 10; 1 then 7 before).
-  - (b) PASS: max 23 CAN divisions deployed from 1943 (bar 8; 1-2 then 7 before); CAN grows
-    monotonically 10->23 and ENDS ABOVE its 1939 strength - net +9 after -10 and -9.
-  - (c) PASS: 1 wipe month (1939.10, one division at sea) vs 7 before.
-  - (d) PASS: CAN->SOV 146 288 IC at 1945.6 and climbing (+78k in twelve months).
-  - (h) PASS with margin: 5/5 dominions own radio_detection AND decimetric_radar by 1938
-    (bar: 3/5 by 1942.1), centimetric by mid-1940; hulls unfreeze from frigate 5 /
-    destroyer 6 to frigate 10 / destroyer 12.
-  - (e) SPLIT - the depot pathology MOVED: CAN PASS (idle screens 22-39%, largest idle
-    fleet 17-31 hulls vs bar 40 - the 79/83% catastrophe is gone), ENG FAIL (idle fleets
-    87-118), USA FAIL HARD (200-292; at 1945.6 one admiral-less region-less fleet holds
-    292 hulls incl. 140 frigates + 100 destroyers while four all-destroyer escort TFs run).
-  - (f) PASS on Hudson (zero CAN fleets in 166/246 across all 32 monthly saves swept);
-    western corridor literal FAIL, but the bar itself is now suspect: at 1945.6 ENG danger
-    reads Western Approaches 13 160 / Icelandic Basin 8 596 vs **Labrador Basin 0 /
-    Newfoundland Sea 0**, no convoy sunk there since 1944.12 - the escorts sit where the
-    bleeding is. DERIVED: rewrite probe (f) around the danger map, not fixed region ids.
-  - (g) PASS for CAN: convoy_escort task forces present in 31 of 32 saves (2-5 TF, 20-70
-    hulls, composition `CAN_ConvoyEscort_DD_1` x2-3) - the wave-1 "CAN stops escorting
-    after 1943.9" failure is fixed. Threshold: USA crossed 100 frigates at 1944.5 (101)
-    and its DD-escort TF pool stayed flat at 11 while every escort TF added afterwards was
-    the generic frigate template (+2) - consistent with the cutoff, but ASSUMED not proven
-    (the pool was already flat for 16 months before the crossing). The two unattested
-    assumptions stand; owner `imgui show ai_navy` check still OWED.
-  - Coalition deltas (MEASURED, pre-fix -> wave 1 -> now): total at-sea losses
-    **129 -> 104 -> 62**; CAN 20 -> 13 -> **5** (last transit loss 1942.1, zero in the final
-    43 months); USA 71 -> 42 -> 21 (net +272); RAJ 25 -> 11; AST 12 -> 9; NZL 5 -> 4; SAF 0.
-    ENG is the exception and rose 5 -> 12, on far higher exposure (peak 35% of its army at
-    sea vs 19%). GER convoy kills over the comparable 24-month window fall to ~1/3 of the
-    baseline for every victim EXCEPT CAN (122 -> 146). GER sub losses >= 392, now 366 to
-    frigates / 47 to destroyers.
-  - New findings, each a candidate subject rather than this slug (admission rule - do NOT
-    fix on the way past): (1) the USA depot - 140 idle frigates in one fleet while its
-    escorts are all-destroyer; (2) the four other dominions got the TECH but no escort
-    BRIDGE - NZL and SAF ran zero convoy_escort task forces all campaign and RAJ lost its
-    only one, because the DD-escort template exists solely for CAN/USA and the generic is
-    frigate-only; (3) MEASURED anomaly, unexplained: CAN's frigate force collapses 41
-    (1945.2) -> 9 (1945.4) -> 6 during a GER raiding surge, and CAN's last escort TF is
-    gone at 1945.8 - ASSUMED combat loss, no warship-loss counter exists in a save.
-- Closed when: the shipped fix passes F9 plus (a)-(f) in a campaign, or the owner accepts
-  a written no-fix ruling on a named engine boundary.
-
 ### allied-division-stability — PARKED (2026-08-28)
 - PARKED 2026-08-28 only to make room for `modern-chassis-tier` under the WIP limit, by the agent,
   not by an owner decision — move it back to OPEN in one line if that is the wrong pick. Chosen
@@ -3812,214 +4676,389 @@ power capitulates.
 
 ## PARKED
 
+### resource-grade-downshift — PARKED (2026-09-12)
+- Parked heading only for the WIP limit (7 under OPEN for 4). **Owner boot 2026-09-12: OK, no
+  parse error; COMMITTED + PUSHED on owner order ("boot ok, commit et push").** The console run
+  below (DOWN / UP legs) is still OWED before this is anything but a hypothesis. Owner order 2026-09-12: "l'IA doit passer à weakened armor / réduire la
+  qualité des munitions en fonction des déficits de ressources (et une mécanique anti-hystérésis)".
+- Intended behaviour: an AI country whose net chromium (tungsten) balance sits below −1 for two
+  consecutive monthly pulses redesigns its tanks with `tank_weakened_armor` (the non-APCR shell:
+  `_ap_he` / `_hefit`), the production lines follow, and it redesigns BACK once the economy has
+  held equilibrium — without oscillating. Modules MEASURED (`01_generic_tank_modules.txt`):
+  strong armour = chromium 1/unit, APCR = tungsten 1..5/unit; the weak grades cost no resource
+  (weak armour: hardness −0.2, breakthrough −5 and ×−0.5, max_strength ×−0.8 — the −80 % is a
+  modder value, flagged; non-APCR shell: breakthrough ×−0.4, hard_attack ×−0.5).
+- Mechanism (the only one MEASURED to move a variant's modules, `sov-cutting-corners-module`):
+  enable-EXCLUSIVE design twins + the `equipment_variant` XP lever. `tools/gen/gen_grade_pairs.py`
+  writes, for each of the 541 base designs (39 `__cc` designs included), `NOT = { should_mount_* }`
+  terms and the twins `__wa`, `__la` (370 APCR designs only), `__wa_la` — 1281 twins, partition
+  asserted by the tool (exactly one enabled design per type per state), every twin's modules and
+  polarity verified against its base (1281/1281). Twins are a COPY of the base and carry no
+  `WA_EQUIPGEN` markers: regenerate after any evaluator apply (`--check` fails on drift).
+  `tools/equipment_evaluator/parse_ai_equipment.py` skips the twins (they squared its transition
+  table: 2924 twin rows in the first dry analysis); the tanks analysis runs clean (exit 0) after it.
+- Latch (`WA_AI_EQUIPMENT_update_shortage_latch_<r>`, `WA_AI_EQUIPMENT_effects.txt`, monthly):
+  ENTER = two consecutive pulses with `resource@<r> < −1` (45-day armed flag). EXIT = dwell
+  elapsed AND two consecutive pulses with no deficit (45-day recover flag). Dwell = 6 months,
+  doubled on every re-entry, capped at 24. Every transition opens a 120-day flag that arms
+  `land_xp_spend_priority id = equipment_variant value = 500` (new tag-free block
+  `WA_AI_PRODUCTION_DEFAULT_equipment_grade.txt`, which also absorbs SOV's cc lever — one writer
+  of that type+id, ORed gates, no stacking question). Triggers: `WA_AI_EQUIPMENT_has_<r>_deficit`
+  (Tier 1), `WA_AI_EQUIPMENT_should_mount_weak_armor` / `_low_ammo` / `_should_spend_xp_on_grade_redesign`
+  (Tier 2). Fail-safe: no pulse (human) = no flag = strong grade.
+- Reviews 2026-09-12: lessons CONFLICT → repaired: the first draft exited on
+  `can_absorb_<r>_shock_large` (net > 15), unreachable for an importer because the trade AI buys
+  to equilibrium and never past it (lessons-log "trade AI never builds a reserve"); exit is now
+  equilibrium-based, and the reachability line is written in the effect header (the flip removes
+  the draw, so both branches return to "no deficit"; a return the economy cannot carry re-trips
+  after two months and doubles the dwell). Architecture CONCERNS → repaired: tool moved to
+  `tools/gen/` with the ORDER rule in AGENTS.md, SOV lever folded, both file headers updated,
+  compound qualifiers in the naming vocabulary, `gdn_flip_n` writers documented (drivers bypass
+  it). Pre-existing on the clean tree, NOT this subject: `check_ai_layers` NAME-COLLISION
+  `is_strategic_chromium_exporter` (CONFIG vs WA_AI_ twin) — owner to name or rename.
+- Timeline at the real cadences (monthly pulse, weekly equipment pass, 120-day window), per
+  resource, worst case = the country cannot carry the strong grade at all:
+
+  - t=0 months: first deficit pulse, armed 45 d.
+  - t=1: second deficit pulse, LATCHED, months = 0, dwell = 6, XP window 120 d; twins enabled,
+    bases disabled.
+  - t=1 → 5: the weekly equipment pass redesigns each chassis holding a variant, 5 XP each, once
+    army XP ≥ 50 (cc: T-34 redesigned inside 2 months at natural XP — MEASURED; N chassis all
+    finished inside the 120 d window — ASSUMED).
+  - t=8: months = 7 > 6 and no deficit (the draw is gone): recover armed.
+  - t=9: EXIT, strong designs back, window 120 d, redesigns UP.
+  - t=11: if the strong grade re-opens the deficit, re-LATCH with dwell 12.
+  - t=25 → 27: exit, re-latch with dwell 24; later swings at t≈53, 81, 109.
+
+  Worst case over a 10-year campaign: 5 entries + 4 exits per resource = 18 transitions for both,
+  ≤ 5 XP × N live chassis each (N ≈ 10-30) → ≤ ~150 XP per transition, ≤ ~2700 XP over the
+  campaign against a template desire of 100/day. A healthy economy makes 0 transitions.
+- Objection kept on record (this file, `armor-grade-designs`, 2026-09-12 morning): "Measure it
+  with a two-way console probe before building anything adaptive." Mine covers it because the
+  harness `wa_gdn.2` / `wa_gdn.3` IS that probe, runnable on one country in one session before any
+  campaign, and `gen_grade_pairs.py --remove` returns the tree to the pre-subject state in one
+  command if the DOWN or UP leg fails — the 1281 twins cost nothing until a latch fires.
+- Verification (owner console, `events/wa_test_grade_downshift.txt` recipe): (0) positive control
+  — the fielded variant carries the strong modules (if not, the 27 modules no tech enables are the
+  blocker, see `armor-grade-designs`); (1) `event wa_gdn.2 SOV`, 2-3 months, save: a NEW variant of
+  a chassis in production with `tank_weakened_armor` + `_ap_he`, line pointing at it = DOWN PASS;
+  (2) `event wa_gdn.3 SOV`, 2-3 months, save: variant back on strong + `_apcr`, line following =
+  UP PASS. Paste the game.log "GRADE DOWNSHIFT" blocks here. Then a campaign: `tlm <TAG>` →
+  `gdn_chr_n` / `gdn_tun_n` rise only after ≥ 2 deficit months in the resource series, `gdn_flip_n`
+  ≤ 4 per resource.
+- Closed when: DOWN and UP both PASS in the console run, and one campaign shows a latch that
+  tripped on a real deficit with the redesigned variant in production and `gdn_flip_n ≤ 4`.
+
+### armor-grade-designs — PARKED (2026-09-12)
+- Parked for the WIP limit (7 under OPEN for 4). **Owner ruling 2026-09-12: the AI default steel
+  grade is `tank_strengthend_armor`.** Code APPLIED with that grade (541 designs, `--check`
+  clean); **owner boot 2026-09-12 OK, COMMITTED + PUSHED.** Campaign read of both slots owed. Sister of `ammo-slot-designs`, same pattern.
+- Symptom (MEASURED, `common/units/equipment/tank_chassis.txt` + `x_tank_chassis.txt` after
+  `6291e3b5b0`): `armor_type_slot` is now `required = yes` and accepts only the two steel grades
+  (`tank_armor_type`: `tank_strengthend_armor` = chromium +1, no stat change;
+  `tank_weakened_armor` = hardness −0.2, breakthrough −5 and ×−0.5, max_strength ×−0.8, no
+  resource). The armour PLATES moved to a new optional `extra_armor_slot` (`tank_extra_armor`).
+  Before that commit the plates WERE `tank_armor_type` and the slot was optional. Consequence on
+  the 541 AI designs of `common/ai_equipment/*_tank.txt` (every one sits on a chassis carrying
+  both slots): 231 say `armor_type_slot = tank_armor_plate_N` (a module the slot no longer
+  accepts), 106 say `armor_type_slot = empty` (on a required slot), 204 name nothing. 566 chassis
+  default the slot to `tank_strengthend_armor`; 27 chassis declare the slot with NO default
+  (`tank_sov_heavy_chassis_spg_2/3/7/8`, `tank_ger_light_chassis_td/assault/aa_1`, … — the
+  tool prints the list as `NO-DEFAULT`) and 20 designs sit on them.
+- Gap for the modders (MEASURED): `tank_strengthend_armor` appears in NO `enable_equipment_modules`
+  of any `common/technologies/armor_*.txt`; only `tank_weakened_armor` does, on each tree's first
+  chassis tech. Vanilla enables its own default `tank_riveted_armor` in `gwtank_chassis` (install
+  `common/technologies/NSB_armor.txt`). ASSUMED (engine): a module no tech enables cannot be
+  mounted, so today the chassis default grade is unreachable and only the weak grade is. Whether
+  the engine still creates the chassis default variant with an un-enabled module is ASSUMED.
+- Decided: `tank_strengthend_armor` (the chassis default, same reading as the ammo ruling). The
+  27 modules no technology enables (strong armour, every APCR shell, the plates, six suspensions —
+  MEASURED over `common/technologies/*.txt`; vanilla's own default `tank_riveted_armor` IS enabled
+  by `gwtank_chassis`, and vanilla's 13 never-enabled modules are the landcruiser `lc_*` set that
+  the chassis default_modules name) are a modder question: whether a chassis-default module needs
+  no unlock is ASSUMED, and the harness positive control of `resource-grade-downshift` settles it.
+- Implementation (ready): `python tools/migrations/armor_slot/fill_armor_slot.py
+  [--grade auto|tank_strengthend_armor|tank_weakened_armor] [--fallback G] --apply` — plates
+  → `extra_armor_slot`, `empty` → grade, missing → grade inserted after `ammo_type_slot`, grade
+  added to `allowed_modules`; `auto` = chassis default, `--fallback` covers the 27 defaultless
+  chassis. Idempotent, `--check` for CI, `--out DIR` writes to a scratch dir. Dry run 2026-09-12:
+  11 files, 231 moved, 106 replaced, 435 inserted, 541 `allowed_modules` lines; braces 0,
+  `WA_EQUIPGEN` marker counts unchanged, no BOM, CRLF preserved, second run changes nothing.
+- Not in scope: a shortage-driven flip to `tank_weakened_armor`. The mechanism such a flip needs
+  is already MEASURED by `sov-cutting-corners-module` (CLOSED 2026-09-09, campaign `4b032e23`):
+  enable-EXCLUSIVE design pairs on the same type (`<type>` / `<type>__cc`) sharing one scripted
+  trigger + `land_xp_spend_priority id = equipment_variant` → the AI redesigns on mismatch and
+  the production line follows the new variant (SOV medium line on the `_cc` T-34 at 45/45
+  factories). A higher-priority twin on a type that already holds a design is INVISIBLE (killed
+  in iteration 1) — so `priority.modifier` gates (the `88e516780` pattern) stay rejected. Still
+  ASSUMED: a REVERSIBLE flip (shortage on → weak, shortage off → strong) and its XP bill (5 XP
+  per redesign × ~30 chassis per swing); the cc latch was made monotone precisely to avoid that
+  churn. Measure it with a two-way console probe before building anything adaptive.
+- Verification: boot the mod, `error.log` clean on `ai_equipment`; in a campaign one AI variant
+  per tree carries the written grade in `armor_type_slot` AND its plate in `extra_armor_slot`
+  (a variant with the plate missing is the signature that the move broke the design match).
+- Closed when: applied with the owner's grade, boot clean, one campaign variant confirms both
+  slots on a plated design.
+
+### ammo-slot-designs — PARKED (2026-09-12)
+- Parked for the WIP limit (OPEN is over budget already); the code is APPLIED and needs only the
+  boot check below. Owner ruling 2026-09-12: **the AI default ammunition is `_ap_he_apcr`.**
+- Symptom (MEASURED): `ammo_type_slot` is `required = yes` on every tank chassis
+  (`common/units/equipment/tank_chassis.txt`), but not one of the 541 AI tank designs in
+  `common/ai_equipment/*_tank.txt` named it. Vanilla's own designs name every slot, down to
+  `special_type_slot_N = empty` (install `common/ai_equipment/GER_tank.txt`). Whether the engine
+  falls back to the chassis `default_modules` or fails to build the design is ASSUMED - the boot
+  check decides it.
+- Implementation: `python tools/migrations/ammo_slot/fill_ammo_slot.py --apply` writes each
+  chassis' own `default_modules` ammo entry into `target_variant.modules` and into
+  `allowed_modules`. That resolves to APCR in 360 of 541 designs and to the best legal fallback in
+  the other 181, because `forbid_equipment_type` bars APCR from artillery (SPG), flame, amphibious
+  and anti_air, and there is no tiny-calibre APCR at all. MEASURED over all 541: the chassis
+  default is legal everywhere and is already APCR everywhere APCR is legal, so the owner ruling and
+  the chassis defaults agree with no exception. The same pass deletes 189 commented
+  `#special_type_slot_N = ammo_*` lines - ammo does not live in a special slot (those accept
+  `tank_special_module` / `tank_radio_module` only), so uncommenting one would break the match.
+- Impact: behaviour-neutral IF the engine was already falling back to `default_modules`; a
+  correction IF it was not. Either way the slot becomes the explicit anchor that a later shortage
+  system flips. No priority, trigger or gate was touched, so no design ranking moves.
+- Not in scope, deliberately: switching ammunition down on a tungsten shortage. The
+  `WA_AI_EQUIPMENT_can_absorb_tungsten_shock_small/large` gates already exist
+  (`common/scripted_triggers/WA_AI_EQUIPMENT_triggers.txt`), but this same pattern shipped as
+  `88e516780` and failed all five probes on campaign `bec4d829` because `ai_equipment priority` is
+  the DESIGN layer, not the production-line layer. Whether the engine refits an existing line DOWN
+  a module is ASSUMED and unmeasured; measure it before writing that system. Same verdict for
+  `cutting_corners` and any future low-grade-alloy module, with one extra constraint: they are
+  `tank_special_module`, so they compete with the radio for `special_type_slot_1/2` - unlike
+  ammunition, which has its own dedicated slot.
+- Verification: boot the mod, confirm no `ai_equipment` parse error in `error.log`; then in a
+  campaign read one AI-designed variant per calibre family and confirm its ammunition module is the
+  one this pass wrote (APCR for a gun tank or TD, `ammo_*_ap_he` for an SPG or assault gun,
+  `ammo_*_aa_cannon` for an SPAA, `ammo_bullets` for a machine-gun light). A variant carrying no
+  ammunition module at all is the signature that the engine was NOT falling back to
+  `default_modules`, and makes this a real fix rather than hygiene.
+- Closed when: the boot check is clean and one campaign confirms the written module on a gun tank
+  and on an SPG.
+
+### axis-minor-home-buffer — PARKED (2026-09-10)
+- Parked because the four OPEN slots are occupied. The implementation is committed as
+  `SHIPPED-UNTESTED`; keep it parked until a slot frees up for the owner console run.
+- Owner request: non-major Axis faction members keep 25% of their army at home while at war.
+- Implementation: shared dynamic gate `WA_AI_MILITARY_should_axis_minor_keep_home_buffer_theatre`;
+  Country THEATRE writers for FIN, HUN, ROM, BUL, SLO and CRO target their own home states
+  with `put_unit_buffers`, order 9620, ratio 0.25, and both `subtract_*_from_need = no`.
+- Amendment 2026-09-11 (owner): the writers listed only the capital state, which parked the whole
+  reserve in one interior province. Each country now carries TWO blocks - a frontier tier (order
+  9620, ratio 0.15, `subtract_fronts_from_need = no`) over its border states and an interior tier
+  (order 9621, ratio 0.10, yielding) around the capital. They sum to the owner's 0.25. The split by
+  order id rather than one longer list follows Fix 110: MEASURED on campaign `07270b64`, a flat
+  nine-state Italian buffer put six divisions inland and none on the invasion shore.
+- Amendment residuals, all ASSUMED: that an unfriendly listed state is dropped while the rest of
+  the list arms (the engine documents only "if no state is friendly, strat is invalid"); that
+  "friendly" excludes an ally-held state (it probably does not - CRO 887/103 and ROM 76 may be
+  ally-held); how N listed states split into engine order instances, hence what `ratio` means per
+  state. FIN drops 146/972 from both tiers because its winter-war orders 2/3 already hold them; its
+  non-yielding sum is still 0.90 against the 0.75 E4c budget - pre-existing debt, reduced from 1.00
+  by this split, closable only by retuning the winter-war blocks (different subject).
+- Impact: this deliberately coexists with `WA_AI_MILITARY_total_commitment_active`; the existing
+  generic `garrison = -5000` release remains, while the explicit buffer preserves the requested
+  home reserve. The lessons review required explicit subtract flags and rejected a shared Faction
+  state list; the architecture review required Country-tier writers.
+- Verification: boot with no strategy parse errors; then campaign-check FIN/HUN/ROM/BUL/SLO/CRO in
+  a German-faction war, including a safe-war `total_commitment_active` window, for armed 9620 and
+  9621 buffers and approximately 25% of fielded divisions across the home states. The reading is
+  divisions PER LISTED STATE, not a total: at least one FRONTIER state garrisoned in every country
+  is the owner's actual request, and a flat total hides the Fix 110 failure. Also read the buffer
+  order states before and after the Second Vienna Award and the Dalmatian transfers (the
+  partial-ownership and friendly-versus-owned test), and FIN's total areadef share - at or above
+  70% is the `minors_home_first` failure signature. Confirm GER/ITA are
+  unchanged and a non-Axis minor has no 9620 entry.
+- Closed when: the boot check and the campaign checks pass without a regression in the existing
+  total-commitment release behavior.
+
+### war-start-suppression-template — PARKED (2026-09-10)
+- Parked at creation because the four OPEN slots are occupied. The implementation is applied in
+  the working tree and remains uncommitted; move it to SHIPPED-UNTESTED when a slot frees up.
+- Owner order 2026-09-10: on war start, give each AI a named `Suppression template` using a
+  50-width cavalry design with military police when `tech_military_police` is researched, and a
+  5-width fallback otherwise; do nothing when the named template already exists.
+- Change: `WA_AI_TEMPLATES_create_war_suppression_template` is called by the existing engine
+  `on_war` hook and guards both branches with `is_ai` plus `NOT has_template`.
+- Change addendum: before creation, the effect deletes every `Light Cavalry template A` through `Z`
+  with `disband = yes`, including when `Suppression template` already exists.
+- Harness: `event wa_test_tmpl.3 <AI_TAG>` logs the AI/MP/existing state and the A/Z purge boundaries
+  before and after two direct calls; the resulting regiment/support composition still requires the
+  owner’s manual template check.
+- Regression risk, DERIVED: only AI countries entering a war are affected; existing named templates
+  and the separate WA suppression `ai_template` role are untouched. The purge intentionally removes
+  any divisions using those lettered templates because it uses `disband = yes`. The fallback uses one
+  2-width cavalry battalion plus one 3-width artillery battalion because the active suppression units
+  in `common/units/land_cavalry.txt` and `common/units/land_artillery.txt` have those widths.
+- Verification (owner game): start a war with an AI that has and one that lacks `tech_military_police`;
+  inspect both countries' `Suppression template` designs, then fire another war entry after the
+  template exists and confirm it is not duplicated or replaced.
+- Closed when: the owner console confirms the 50-width + horse-MP branch, the exact 5-width fallback,
+  and the idempotent existing-template branch in-game.
+
+### campaign-html-report — PARKED (2026-09-07)
+- Owner request: an English graphical campaign overview, seven majors and time filters,
+  deterministic extraction, maintainable generator in the repository, ignored cache.
+- Delivered: `tools/campaign_report/`, six-tab HTML, JSON/CSV export code, content-addressed
+  cache, branch checks, English measurement contracts. No gameplay changes in this subject.
+- MEASURED (`tools/campaign_report/output/campaign.json`): 132 observations of `a100b67c`,
+  1936.2–1947.1. HTML 8.35 MB; cached selection/extraction 21.79 s (before final writing).
+- Validation: 17 standard tests pass, one optional parity test skipped in the standard run;
+  three-date real-save parity passed separately. Six tabs and shared filters checked in-browser.
+- State 2026-09-07 (parked; the digest ask below was done in the same session without an OPEN slot, WIP limit reached): generator delivered; semantic validation of daily armor output, net
+  shortage and training/variant needs remains open. These values are null, not guessed.
+  Direct file opening was blocked by browser policy; CSV download confirmation, JSON
+  download and mobile layout still need browser validation. No OPEN slot consumed.
+- Closed when: remaining metric contracts are verified or their explicit limits accepted,
+  and direct offline opening plus CSV/JSON downloads are verified in a desktop browser.
+- MEASURED 2026-09-07 rerun (owner ask: does it work on the cache): cold build 431.66 s,
+  cache 0/132 because the dependency digest covers `common/units` and 15 tank-gun commits
+  landed after the first cache (by design); warm rebuild 6.57 s, cache 132/132, HTML 8.4 MB.
+  31 unit tests pass (1 optional skipped). Six tabs, quick ranges and end-date filter checked
+  over `http://localhost` (`.claude/launch.json` `campaign-report`, `python -m http.server`);
+  `file://` still blocked in the in-app browser, CSV/JSON clicks raise no error but the
+  sandbox shows no download - desktop-browser check still owed.
+- 2026-09-07 owner ask: an `only` button on every row of the country filter (hover-revealed,
+  keeps the panel open, selects that single tag). `web/app.js` `renderCountries` +
+  `web/style.css` `.only-tag`; HTML re-rendered from the cached JSON via `render`.
+- Verification: commands, evidence and limitations in
+  `documentation/CAMPAIGN_HTML_REPORT_PROPOSAL.md` and `tools/campaign_report/README.md`.
+- Owner ask 2026-09-07: make the report consultable by the savegame-analysis skill so an agent
+  gets the high-level view cheaply. Delivered as `tools/campaign_report/digest.py` — `build` now
+  also writes `campaign_digest.md` (MEASURED 428 lines / 30 KB for 132 saves x 7 majors; cache
+  still 132/132 after the change, `digest.py` excluded from the key) and a `digest` subcommand
+  re-cuts it from the JSON (`--tags`, `--every`). `wa-savegame-analysis` gained a "Start from the
+  campaign digest" section, `wa-campaign-checklist` step 1 points to it. The HTML stays the
+  human view (served via `.claude/launch.json` `campaign-report`).
+- Owner report 2026-09-07 (screenshot): the Resource dropdown listed non-resources (delivered,
+  destination, efficiency, fuel_*, lended_cic, origin, request, required_cic). MEASURED cause
+  `extract.py`: the ledger keys were the union of EVERY depth-1 block of the save's `resources`
+  section, while `savegame.py` reads only the five ledger blocks. Fixed to the ledger blocks +
+  `to_use`; regression test `test_resource_rows_come_only_from_ledger_blocks`; extractor change =
+  cache key change, full re-extraction: MEASURED 146.53 s with `--workers 4` (vs 431.66 s on the
+  default 2), dropdown then lists exactly the nine `common/resources` entries, HTML 7.8 MB.
+- Owner report 2026-09-07: changing the Resource select at the bottom of Industry reset the view
+  to the top. Cause `web/app.js` `render()` empties and rebuilds the whole tab, so the browser
+  clamps the scroll. Fix: `render()` restores `scrollY` when the tab is unchanged (covers scope,
+  armor filter and heatmap cells too) and scrolls to top on a tab change; MEASURED in-browser
+  2290 -> 2290 on select, -> 0 on tab switch.
+- Owner report 2026-09-07 (USA 1942.9, no positive resource): the Resources heatmap showed the
+  `to_use[2]` unmet-demand column, <= 0 by construction. Data MEASURED correct (`savegame.py
+  resources USA 1942.9_Sep.hoi4` = JSON: aluminium net 684 / deficit -680 / effective +4, coal
+  effective +5700). Fix `web/app.js`: heatmap and Overview pressure table now show the EFFECTIVE
+  balance (net + deficit, what `resource@X` reads), signed, negative = shortage; headings say so.
+- Owner report 2026-09-07 (Armor tab, empty charts): `Training requirement` and `Daily production`
+  were always empty because `training_need` / `production_per_day` are null for every family
+  (`extract.py:338-360`); `armor_production.py` and `armor_training.py` exist with tests but are
+  NOT imported by the extractor. Removed the two charts and the always-empty `Units/day` column
+  from `web/app.js`; the armor notice now names the three uncomputed metrics. Wiring the two
+  modules in is criterion (c) - an owner decision, not done here.
+- Owner report 2026-09-07 (SOV medium tank destroyers: 360 in stock, 0 factories, deployed
+  spiking 2/0/1/2/0): data MEASURED correct - `stock.py SOV 1945.12_Dec.hoi4 --foreign` holds
+  238 `tank_ger_medium_chassis_td_3_3` built by GER (Germany collapsed 1945.11; stock jumps 5 ->
+  312 that month), the family is 100 % captured/received and the deployed spikes are 1-2
+  vehicles in one division. Presentation fix in `web/app.js`: a notice names the foreign-built
+  share of the selected family when it is >= 50 %, and small integer counts get integer
+  gridlines (the 2.2 tick read as fake data).
+- Owner question 2026-09-07 (variant names vs raw keys): MEASURED in `1947.1_Jan.hoi4` the
+  equipment registry names only DESIGNED variants (`name="M36 Jackson"`, `version=1`,
+  `parent_id`); the base chassis entry of the same key has no `name` (`obsolete=yes`) and the
+  game shows its localised key. `extract.py:419` fell back to the key. Fix in `render.py`:
+  `equipment_names()` reads `localisation/replace/*_l_english.yml` for the definitions present
+  (presentation metadata in `english_report`, no cache impact); `web/app.js` `variantName()`
+  uses it, raw key kept beneath. Test `test_equipment_names_resolve_bare_registry_keys`.
+- Owner ask 2026-09-07: sortable columns on every data table. `web/app.js` `makeSortable(table)`
+  wired into `tablePanel` (page panels), `showTable` (chart Data dialog) and the sources table:
+  click = ascending, again = descending, third = original order; numeric when the primary cell
+  text parses (thousands separators, signs), alphabetical otherwise, missing values last; the
+  key is the cell's first non-`<small>` child so a snapshot delta or a raw variant key does not
+  pollute it; rows are moved not rebuilt (heatmap cell handlers survive). MEASURED in-browser on
+  Overview snapshot, Armor variants, Wars table and a Data dialog.
+- Owner ask 2026-09-07, three features. (1) Convoy war: MEASURED in `1942.9_Sep.hoi4` USA the
+  country `convoys={equipment=...}` pool (2209), telemetry `wa_tlm_nav_convoys` (1841),
+  `convoys_destroyed` (9) and the top-level `sunk_convoys_history` ledger (301 records, 24-month
+  window, per month/killer/owner); `country_reports/equipment_production` REJECTED as a
+  production counter (armor frozen at 73 over four saves while USA built tanks). Shipped: metrics
+  convoys_pool/free/in_use/convoy_kills, snapshot `convoy_losses` + `convoy_window`, Wars tab
+  section (lost-last-month chart, kills, pool, losses-by-attacker and kills-by-victim share
+  tables over the selected period, latest covering save wins per month), digest section.
+  (2) Economy fatigue: MEASURED `variables/economic_fatigue` (USA 14 at 1942.9); metric +
+  Country status chart + digest column. (3) Factory/dockyard output, consumer goods, efficiency
+  growth/cap: NOT in the save - only the WA dynamic-modifier inputs are serialised
+  (`dynamic_modifier` list, `usa_kaiser_dockyard_output=0.25`...), the engine total is not;
+  needs a WA_TLM probe writing `modifier:<name>` monthly (owner decision, separate subject).
+  Extractor change = full re-extraction (MEASURED 137.8 s, 4 workers). Two follow-ups in the same
+  session: `convoys_in_use` is unknown when the telemetry exceeds the pool (GER 1947: pool 0,
+  frozen telemetry 2582 read as -2582), and `web/app.js` builds its catalog from the UNION of its
+  hard-coded keys and the JSON catalog (new metrics rendered as raw ids before).
+- Owner batch 2026-09-07 (seven items): legend clicks toggle series (hidden set keyed by chart
+  title + series, the axis rescales on the visible lines, last line cannot be hidden); text
+  columns of the convoy share tables left-aligned (`tablePanel` `left` option); `convoys_free`
+  unknown when above the pool (GER 1945.12+: pool 0, telemetry frozen 2582 - no negative
+  convoys nor negative use); everything English at the source (METRICS, warnings, CLI, errors)
+  and the render-time translation layer deleted (`presentation()` replaces `english_report`);
+  `Negative stock balances` chart replaced by per-country `Stock versus recorded demand`
+  panels with shortfall = max(0, requests - stock) DERIVED (digest armor lines say the same);
+  helpers `section()` / `countryPanels()` / `armorMeta()` dedupe the tab code. No LLM anywhere:
+  stdlib Python + static HTML/JS, no network import (grep). Catalog change = re-extraction.
+- Owner question 2026-09-07 (gaps in `Factories assigned to armor`): MEASURED `1943.10_Oct.hoi4`
+  USA, 2 of 36 `military_lines` carry no `active_factories=` (queued lines: `queued_factories=26
+  requested_factories=26`, engine omits the field at default 0); the extractor read them as
+  unknown, which nulled the family sum and cut the curve. Fixed to 0 in the aggregate (raw line
+  kept as recorded); regression test added; re-extraction.
+- Owner batch 2026-09-07 (four items): cumulative convoy losses derived at build time in
+  `convoys.py` (stitched ledger, unknown past the first uncovered month; excluded from the
+  cache key, MEASURED cache 132/132) with a last-month/cumulative toggle in the Wars tab;
+  remaining factory-chart gaps NOT reproducible - MEASURED 0 null family counts for the 7
+  majors and 1 SVG segment per curve in-browser, the screenshot was the stale cached page;
+  `Factories requested versus assigned` per-country panel (MEASURED `requested_factories` vs
+  `active_factories`, 1308 of 4056 lines differ) - bombing/sabotage attribution impossible,
+  the save carries no per-building damage (scan of `states` in 1944.7: only named flags);
+  `Import JSON data` button: `boot(text)` is re-entrant, the file replaces the embedded data
+  for the session, schema/snapshots/campaign id validated, nothing uploaded.
+- Owner batch 2026-09-07 (three items). Theme: `theme_assets.py` turns
+  `gfx/loadingscreens/mainmenu_bg.dds` (1960x1440 DXT, MEASURED) into `web/theme_bg.jpg` (136 kB)
+  embedded behind the sidebar; aged-paper page, brass accents, serif headings; tokens keep their
+  names so no rule changed. Factories: MEASURED `military_lines` carries `damaged_factories`
+  (GER 1944.7: 3 of 32 lines) - third curve added, extractor reads queued + damaged fields
+  (re-extraction). Dedupe assessment: `extract.py` (534 lines) already imports 11 readers from
+  the skill scripts and re-implements a block lexer, the equipment registry (also in `stock.py`),
+  the convoy ledger (also `convoywar.py`) and the division/units walk (also `savegame.py army`);
+  the skill scripts (6.1k lines, 12 files) each carry their own streaming parser. A shared
+  `hoi4save` library is the right target but is a cross-cutting refactor of calibrated analysis
+  tools = owner decision, not done here (see the session summary for the phased plan).
+- Owner report 2026-09-07 (manpower never falls): MEASURED `manpower.ratio` is the only shallow
+  manpower scalar (losses.py ASSUMED free pool) and it DOES fall, rarely - GER 2 decreases /
+  132 saves (1937.2-3), ENG 2 (1940.5-6, 400000 -> 350000), FRA 5 (1940.8-10), SOV 23, JAP/ITA
+  0 - consistent with the AI raising the law before the pool empties. Shipped: conscription law
+  per save (`politics/ideas` x `mobilization_laws` ladder from `common/ideas`, now in the cache
+  key), `conscription_rank` metric, Country status panel + law-change table, digest `law`
+  column, honest manpower note. In-game comparison of `ratio` still owed (owner). Theme
+  (owner dislike, colours distorted): fully reverted, `theme_assets.py` and the JPEG deleted.
+- Owner correction 2026-09-07: my 'pool that rarely dips' reading was WRONG (GER flat/rising
+  1943-45 under the top law while casualties 3.2M -> 9.5M). Owner: `manpower.ratio` = mobilised
+  share of the population. MEASURED confirmation: state `manpower_pool={available locked total}`,
+  Ruhr 1943.6 (total-locked)/total = 14.8 % = GER ratio 1481500/1e7. Shipped: `mobilised_share`
+  (%), `population`, `manpower_recruitable`, `manpower_free` summed over controlled states'
+  pools (the free pool the first question was about), law-rank chart removed (ids, not
+  numbers), law kept as a change table + digest line. Re-extraction.
+- Owner 2026-09-07: direct double-click opening of `campaign.html` CONFIRMED in a desktop
+  browser (criterion (b) half done; CSV/JSON downloads still unconfirmed). Layout: one
+  `Mobilisation` section with the mobilised share and the available pool side by side, population
+  chart and per-country recruitable panels removed, `manpower_recruitable` metric deleted.
+- Closed when: (a) an analysis session uses the digest first and records in WORK.md that it
+  chose the right saves/countries from it; (b) CSV/JSON downloads confirmed in a desktop
+  browser; (c) the null armor metrics are either verified or their limits accepted.
+- Verification: `python -m unittest tools.campaign_report.test_digest`; `python -m
+  tools.campaign_report build --campaign a100b67c` prints `cache : 132/132` and a `DIGEST :`
+  line; the digest's trend table for GER shows `—` divisions from 1946.01 with the
+  "No deployed-division record" line, never a 0.
+
 A real MEASURED symptom, no owner and no fix in flight. One line each; reopen by moving to
 OPEN with a session of its own.
-
-### rail-admission-churn — PARKED (2026-09-04)
-- Parked heading only for the WIP limit (5 OPEN at HEAD, pre-existing `WIP-LIMIT` error). Real
-  state: **SHIPPED-UNTESTED 2026-09-04** — owner-admitted ("c'est un sujet"), owner-ordered
-  "implémente A+B+C+D", code committed, console harness NOT yet run by the owner. Takes an OPEN
-  slot as soon as the owner names the swap. Sibling of `east-front-rail` (same family, same
-  harness); absorbs the `east-front-rail-head` follow-up candidate noted there.
-- Intended behaviour: the land-war railway family spends its 12-slot budget every pass on
-  segments that will survive to completion, and never discards IC it has already paid.
-- Symptom, MEASURED (owner console log, GER, Bhutan-observer campaign, weekly pulse 1943.06.07,
-  `WA_AI_construction_logging`): 309 civs, PC pool 185, every project at the 20-civ max, rail band
-  1000 at the head — capacity is NOT the bound. Routes: Pskov tgt 2 (met), Gomel tgt 4, Poltava
-  tgt 4, capital→Weser-Ems tgt 5 (met). Only 2 `PC QUEUED` (S. Brandenburg 9496→3473, Ostmark
-  3473→444, both 3→4 at the REAR of the trunk); ~55 later `PC START_PROJECT ENTRY` with no
-  `PC QUEUED` = `routes.queue_full = 12` refusing (10 old + 2 new = 12) — including the front-side
-  breaks Mozyr 6556→11477 (level 1), 11477→6593 (level 1), Vilnius 3320→6340 (level 2). Then, same
-  pulse, `PC VALIDATION: Cancelling 10 stale railway projects` — ids 11/12/13 at **prog=0** (fully
-  paid, waiting for next week's `PC CLEANUP` completion), 16 (593 IC paid), 17 (419), 21 (275),
-  22/23/24/25 (~85 each) on the previous pass's southern route (Vinnytsia 198 / Khmelnytskyi 199 /
-  Odessa 192 / Cherkasy 203 / Nikolaev 197). ≈ 4000 IC ≈ 5 segments discarded in one call.
-  Trunk Berlin→Minsk→Gomel reads level 3 (28 supply) everywhere = the "28 and no further" the
-  owner sees.
-- Cause, MEASURED (`common/scripted_effects/WA_AI_CONSTRUCTION_PRIORITY_railway_core.txt`):
-  (a) order of operations — `WA_AI_PC_railway_STRATEGIES` → per-route pathfind + queue (:126-197)
-  → `WA_AI_PC_railway_validate_queued_projects` (:210) — stale slots are freed AFTER admission, so
-  a pass whose routes changed admits only `12 − stale`; the freed slots wait `interval.war_weeks`
-  = 8 for the next pass. (b) `WA_AI_PC_validate_queued_provincial_projects`
-  (`WA_AI_CONSTRUCTION_PRIORITY_core.txt:1150`) tests only `type_id` + "province not in
-  `_valid_provinces`" — no progress term, so paid and prog-0 projects are cancelled like empty
-  ones; `WA_AI_PC_end_project_by_id` clears progress, the engine rail is placed ONLY at completion
-  (`WA_AI_PC_add_finished_building_by_id`, instant `build_railway`), so nothing is placed and the
-  IC is gone. (c) the route walk starts at the capital, so the 12 slots go to rear hops (3→4)
-  before front hops at 1 (`east-front-rail-head`, MEASURED again here).
-- Owner questions, answered 2026-09-04 from the code:
-  1. *"4 max = port bottleneck; a capital has huge supply, allow 5"* — MEASURED: in overland mode
-     (`_rsize_entry_mode_ = 2`, `WA_AI_PC_rail_size_route`) the port cap is NOT applied
-     (`rsize_inject_ = 0` → `_rz_capped_ = 0`); the ONLY thing pinning 4 is
-     `constant:wa_ai_railway.land_war.rail_level_cap`, declared as the irreversibility budget, not
-     a port fact. `CAPITAL_SUPPLY_BASE = 5` + 0.1/civ + 0.2/mil (`05_defines.lua:925`) — a major's
-     capital out-feeds any rail. Demand → level (DERIVED from the ladder 4+8L and 2.5×0.4):
-     hub state > 30 div → 35 supply → 5; 21-30 → 25 → 4; 16-20 → 3; ≤ 15 → 2. So cap 5 changes
-     only hubs holding > 30 divisions. Lever: raise `land_war.rail_level_cap` to 5 (one constant;
-     the three `_check_railway_level` readers in railway_strategies follow) or split it by entry
-     mode (overland 5 / overseas 4); the corridor keeps its own 4. Note the sizer reads ONE state
-     (the frontline hub), not the trunk several routes share.
-  2. *"A segment taking > 8 weeks is doomed to be cancelled?"* — MEASURED: no time term exists.
-     Two cancel paths only: stale validation (province off every route recomputed THIS pass,
-     whatever the progress) and the stall sweep (`alloc.stall_cancel_weeks = 30` weeks at 0
-     factories while others are funded, `core.txt:940`). A segment on a stable route is
-     re-requested each pass, reads `queued=1`, and is kept. Duration matters only as exposure: at
-     20 civs a segment takes exactly 8 weeks = one interval, so a route change at the next pass
-     catches it at ~100 % — the worst case, and the one measured.
-  3. *"If cancelled half-built, are the paid rails placed?"* — MEASURED: no (cause (b)); a partial
-     level cannot exist in the engine either (integer levels). PC never uses the engine's own
-     construction queue, which would have kept partial progress.
-- Owner rulings 2026-09-04: all four options taken ("ok, ça me va — implémente A+B+C+D"); B's
-  keep fraction 50 %; D as a SPLIT cap (overland 5, port-fed stays 4), because a single cap of 5
-  would also raise the overseas port-upgrade threshold (`overseas_max_railway_level_ < cap`) one
-  port level (10000 IC flat) on every port-fed route. Capture question answered from the code: a
-  kept project on an enemy-controlled state is frozen by the fill's controller test, holds no
-  budget slot (admission counter and skip gate both exclude hostile-state projects), and exits
-  by the 30-week stall sweep or resumes with progress intact on recapture.
-- Change (one commit, `# [rail-admission-churn]` at every site):
-  A. `railway_core.txt` `WA_AI_PC_railway`: the main pass is phase 0 (pathfind every route, cap
-     `routes.max_total`; collect segments into `_lseg_a_/_b_/_tgt_/_prio_/_state_/_lvl_` with the
-     RAW map level; every path province into `_valid_provinces`; frontier ports as before) →
-     `WA_AI_PC_railway_validate_queued_projects` → phase A → phase B. Validation is skipped when
-     routes were requested and every pathfind failed (the corridor pass's guard: an empty
-     `_valid_provinces` cancels 100 %). New log `RAILWAY ADMISSION: segments=N head=A rest=B`.
-  B. `core.txt` `WA_AI_PC_validate_queued_provincial_projects`: an off-path project is cancelled
-     only if `cost ≤ 0` or `remaining > cost × (1 − constant:wa_ai_pc.alloc.stale_keep_paid_fraction)`;
-     otherwise kept, `WA_TLM_pc_stale_kept_n += 1`, log `PC VALIDATION: KEPT off-path proj=`.
-     Constant declared in `wa_ai_pc.txt` (alloc, 0.5). TLM: init line, version 34→35, doc §5 row.
-  C. Phase A admits segments with map level < `land_war.rail_level_floor` (2) at target = floor;
-     phase B the rest at the sizing target. B always runs after A (the corridor runs B only when
-     A admitted nothing — A takes only what it needs of the 12 slots here, B fills the rest, and
-     the fill serves A's projects first: same band, earlier insertion).
-  D. `wa_ai_railway.txt` `land_war.rail_level_cap_overland = 5`; `WA_AI_PC_railway_land_size_this_route`
-     uses it when `_rsize_entry_mode_ = 2`; the land-war strategy's `_check_railway_level` reads
-     it (a capital-fed frontline at 4 stays a candidate); `WA_AI_PC_railway_land_consider_frontline`
-     gains an `else_if` for different-landmass frontlines already at `rail_level_cap` (4): `route_start`
-     zeroed → dropped by the existing `route_start > 0` gate, no pathfind, no route-budget slot;
-     `_check_railway_level` saved/restored around the test (the candidate trigger reads it next).
-- Impact analysis. Callers: `WA_AI_PC_railway` (weekly on_action, GER-class builders passing
-  `WA_AI_PC_country_can_build_own_logistics`); the validator is also called by the corridor pass
-  (`_strategy_id` = corridor tag — the keep rule applies there too, accepted: corridor nodes are
-  fixed, churn is rare) and by `WA_TEST_railway` test 014 (synthetic cost-less project → still
-  cancelled). Reach: every AI belligerent with a land or port route to an enemy, historical and
-  ahistorical alike (no tag, no date). NOT touched: `zz_debug_effects.txt` (debug mirror of the
-  old loop, `_check_railway_level = 5` hard-coded there), the overseas-war and prewar strategies'
-  own `_check_railway_level` (still `rail_level_cap`), the corridor's own floor/cap.
-  Regression risk, STATED: (i) B lets a ≥ 50 %-paid off-path segment finish on ground the
-  selector no longer routes through — a rail where no route goes (bounded: ≤ 4 weeks of one slot
-  at 20 civs, and the engine rail stays useful for any later route); (ii) C can spend the whole
-  budget on level-0/1 hops of a partial (dead-end) route at 70 % band before any trunk upgrade —
-  intended; (iii) D: a same-landmass frontline that is really port-fed (Italy→Libya, the
-  overseas FALLBACK inside the same-landmass branch) now passes the candidate filter at 4, is
-  sized at 4 by the port bottleneck, and consumes a pathfind + a route slot queuing nothing —
-  residual, bounded by `max_per_enemy = 4`; (iv) the `_lseg_*` arrays hold up to 8 routes × ~40
-  segments of temps for the duration of one pass — cleared on entry and exit.
-- Bounded, t-table at the real cadence (8-week pass, 8-week segment at 20 civs), same 1943.06
-  save: t0 (pass) validate first → 10 stale judged: 11/12/13 (prog 0) + 16 (593 paid) KEPT by B,
-  17 (419 = 52 %) KEPT, 21/22/23/24/25 (< 50 %) cancelled → 7 slots free; phase A admits the
-  level-1 hops Mozyr 6556→11477, 11477→6593 (the level-2 Vilnius hop is NOT a head: floor 2)
-  → 2 head + 5 rear admitted = 12; t0+1w the three prog-0 projects spawn (`PC CLEANUP`), 3 slots
-  free until t1; t1 (+8w) 16/17 and the 2 head hops done, Mozyr reads 2, up to 12 admitted;
-  t2 (+16w) trunk upgrades reach Warsaw; Gomel at 36 still ≈ 3 passes but the FRONT reads 20
-  supply (level 2) from t1 instead of ≈ t3. ASSUMED: route stability between passes.
-- Review repairs (lessons + architecture reviewers, same session): phase A carries its route's band
-  + (`prio.rail_connect` − `prio.rail_war`) = 1100 on a full route (no new band; partial routes
-  800) — without it a pass-N head hop sat behind pass N-1's still-valid rear upgrades by insertion
-  and the fill (pool/20 ≈ 9 funded of 12) starved exactly the head; `routes.max_total` 8 → 16 with
-  a WARNING log when the list overflows (routes past the cap are not pathfound, so their segments
-  are exposed to the stale test — candidate cause of the ASSUMED "southern route left the list");
-  the port-fed done-test at 4 also on the same-landmass overseas fallback (Italy→Libya class);
-  `_valid_provinces` cleared on the skipped-validation branch; dates/quotes/campaign numbers moved
-  out of the code comments; `WA_AI_RAILWAY_SYSTEM.md` pipeline section rewritten.
-- Proposed, NOT admitted (lessons reviewer): the corridor pass (`WA_AI_PC_railway_corridor_run_one`)
-  still validates AFTER admission — the same churn on a fixed node list (rare, because corridor
-  routes do not change between passes); own slug if a corridor `pc_stale_n` spike is measured.
-- Residual, STATED: a list longer than 16 routes still exposes the overflow's segments (the WARNING
-  log is the witness); `has_railway_level` is state-wide ("a railway at or above the level" anywhere
-  in the state, install `triggers_documentation.md`), so "done" can read true from a rail that is
-  not the hub's own connection — pre-existing, and moving the overland level 4 → 5 shrinks the
-  false-done set.
-- Bound of B for a kept project BELOW the head band (architecture review): the fill is
-  winner-takes-most by band, so a kept rail-prewar (500) or corridor project under a full rail-war
-  (1000) head gets 0 factories. t0 kept, holds 1 of its family's slots; t1 (+8w) still starved,
-  `stall_weeks` 8; t2 (+16w) 16; +30w the stall sweep (`alloc.stall_cancel_weeks`) cancels it —
-  worst case one slot for 30 weeks per such project, an exit that already exists. The war-band
-  case (the measured one) is funded first and finishes within ≤ 4 weeks at 20 civs. Not
-  mitigated by a "currently funded" term on purpose: `assigned_factories` of a prog-0 project
-  awaiting `PC CLEANUP` is not a reliable witness, and those are the projects B exists to keep.
-- Bounded today, t-table at the real cadence (8-week pass, 8-week segment at 20 civs): t0
-  1943.06.07 2 in flight / 10 slots idle; t1 ≈ 1943.08.02 both done, next pass admits ≤ 12 rear
-  hops; t2 ≈ 1943.09.27 those done; trunk Berlin→Gomel ≈ 33 hops at 3 → ≈ 3 passes → ≈ 1944.02
-  for 36 at Gomel, front breaks (Mozyr 1) later still — IF no further route change; every change
-  re-runs the loss. ASSUMED: why the southern route left the list (front moved, states at cap, or
-  `max_per_enemy = 4` ordering) — needs the save.
-- Verification, owed to the owner: (1) console — resume the same 1943.06 GER save on this build
-  with `-debug`, `WA_AI_construction_logging` on GER, advance to the railway pass; expect, in
-  this order: `RAILWAY: processed N/M routes` → `PC VALIDATION: KEPT off-path proj=` for the
-  paid ones and `Cancelling K stale` for the rest → the first `PC QUEUED` (never a `PC CANCELLED`
-  after a `PC QUEUED`) → `RAILWAY ADMISSION: segments=… head=H rest=R` with H ≥ 1 (Mozyr
-  6556→11477 at level 1) and H + R ≥ 7; a Gomel/Poltava route showing `target=5` if its hub
-  state holds > 30 divisions, else `target=4` unchanged. Known-false control: an overseas
-  frontline (e.g. a Libyan state for ITA) at level 4 logs `SKIPPED - overseas hub already at
-  the port-fed cap` and no route. Cut 2 expectation on the 1943.7.19 pass: the first `PC QUEUED`
-  lines are level-2 hops (Wołyn 6520→11543, Kursk 9542→580, Sumy 3520→501), and no 4→5 hop is
-  queued while a level-2 hop of any route was refused. (2) campaign probe (save-visible): `wa_tlm_pc_stale_kept_n`
-  GER > 0 during the GER-SOV war; `wa_tlm_pc_stale_n` ≤ 20 % of `wa_tlm_pc_built_by_type^13`
-  growth over the same saves (today 10 stale vs 2 built in one pulse); rail-cache diff between
-  consecutive saves raises ≥ 1 edge with level < 2 on the captured trunk before any 3→4 edge of
-  the same pass; a level-5 edge appears on a capital-fed trunk only where the hub state held
-  > 30 divisions. Tell-tale of over-reach: `pc_built_by_type^14` (ports) rising on GER's
-  overseas routes faster than before this commit (D's split failed), or the theatre-air band
-  starving > 2 consecutive saves (rail budget now fully spent every pass).
-- Console harness, owner run 2026-09-04 on `barb_supply test.hoi4` resumed (GER, pass of
-  1943.7.19, build with cut 1): `RAILWAY: processed 10/10 routes (0 partial)`; NO `PC VALIDATION`
-  line — the queue held 0 `rail`-tag projects, so A and B were NOT exercised (no stale project to
-  keep or cancel); `RAILWAY ADMISSION: segments=444 head=0 rest=12`; D **PASS** — Orel route
-  `target=5`, Kharkov/Rostov 4, Kursk 3, Pskov/Smolensk/Nevel/Bryansk/N. Donetsk 2. C
-  **INSUFFICIENT**: phase A's only sub-floor hop (Kaluga 352→3226 at level 0) was refused
-  without `PC QUEUED` — budget empty, so the state-scoped admission gate (DERIVED: GER-held
-  province inside a SOV-controlled state, the r103 case) — and phase B spent all 12 slots on the
-  Lublin→Polesie 3→5 / 4→5 upgrades of the FIRST route while the level-2 links Wołyn
-  6520→11543→3470→6593, Kursk 9542→580→3580 and Sumy 3520→501→11397 were refused: the sweep was
-  route-ordered, and every route starts at the capital.
-- Cut 2 (`61157d63e`, same session, owner-ordered C intent "trous d'abord"): phase B is now one
-  sweep per raw map level from the floor up to `rail_level_cap_overland − 1` — all level-2 hops
-  of all routes, then level-3, then level-4. Same call count (each segment offered once);
-  segments at 5 not offered. Expected on the same save: the 12 slots go to the level-2 hops of
-  Wołyn/Kursk/Sumy before any Lublin 4→5.
-- Console harness, owner run 2026-09-04 on the cut-2 build (`barb_supply test.hoi4` resumed,
-  pass of 1943.5.10, together with `rail-sizing-demand`): `RAILWAY: processed 10/10 routes`;
-  `RAILWAY ADMISSION: segments=504 head=0 rest=12`; the 12 `PC QUEUED` are ALL level-2 hops
-  (Grodno 3393→14173, Druskininkai, Vilnius ×3, Aukštaitija ×2, Zemgale, Latgale ×4 — the
-  Pskov route's level-2 run), every level-3 and level-4 hop refused, `PC SKIP DUPLICATE` on
-  the re-offers — C **PASS** (weakest links first). A and B still NOT exercised (no `rail`-tag
-  project in the queue before the pass → no `PC VALIDATION` line); they need the pass AFTER
-  this one (≈ 1943.7.5) on the same save, when the queue holds these 12 and the routes may
-  have moved. D confirmed again (all routes `target=5` under the widened demand).
-- Throughput, DERIVED from the same log and the 1943.5 save, for the owner: the binding
-  constraint is now FUNDING, not admission. `PC_ASSIGN: raw_avail=197 after_alloc_fraction=79`
-  → 79 civs ÷ 20 per project = **4 rail segments funded at a time**, 8 weeks each (100 IC/week
-  at 20 civs on an 800-IC segment) → 0.5 segment-level per week; with the rail override
-  (×0.6, 30-day flag re-armed by this pass) 118 civs → 0.74/week. The east routes on this log
-  hold ≈ 36 level-2 hops, ≈ 60 level-3, 6 level-4 → ≈ 234 segment-levels to reach target 5
-  everywhere = **≈ 6 years at 0.74/week**; the level-2 → 3 pass alone (36) ≈ 49 weeks. Target 5
-  everywhere is therefore a direction, not a reachable state; the weakest-link sweep is what
-  makes each pass useful. Levers, all owner decisions, none taken: PC allocation share for
-  rail (`alloc.fraction` 0.4 / the 0.6 override's 30-day life vs the 56-day pass interval),
-  `routes.queue_full` 12 (admission, only binding once funding rises), `max_civs_per_project`
-  20 (a PC ledger clamp, not an engine limit).
-- Campaign `916b90f6` (cloud BHU observer, 120 monthly saves 1936.2-1945.12, files 2026-09-04
-  20:51-22:18, build MEASURED `wa_tlm_version = 35` + `wa_tlm_pc_stale_kept_n` present from the
-  first save = cut 1 in; cut 2 and `rail-sizing-demand` committed 19:42 / 20:10, before launch —
-  ASSUMED in, not fingerprintable). Probe (2), MEASURED (`tlm GER`): `pc_stale_kept_n` 0 → 2
-  (1945.1) → 3 (1945.12), `pc_stale_n` 0 → 5 → 6 against `pc_built_by_type^13` 88 (1941.9) → 391
-  (1945.12): stale ≤ 2 % of growth — **PASS** on the churn reading, with the caveat that the
-  validator was only exercised from 1945.1 (queue held ≤ 12 `rail` projects the whole war; A
-  never had a stale slot to free). `pc_lost_n = 0` all campaign while states were lost —
-  observation, not this subject. Rail-cache probe (level < 2 edges first) void: no level-0/1
-  edge on any Berlin→hub route in this run. OVERWRITE WARNING: the run reused the
-  `YYYY.M_Mon.hoi4` names and destroyed campaign `5b7c30c6` — no before/after comparison exists.
-- Closed when: (1) pasted here and passing, then (2) on one campaign.
 
 ### rail-sizing-demand — PARKED (2026-09-04)
 - Parked heading only for the WIP limit (4 OPEN). Real state: **TESTED 2026-09-04** — console
@@ -4613,128 +5652,6 @@ OPEN with a session of its own.
   (`pc_built_by_type` 2/16 rising faster) — then retune those caps, not the speed.
 - Closed when: (1) pasted here and passing, then (2) on one campaign.
 
-### sov-cutting-corners-module — PARKED (2026-08-30)
-- Parked heading only for the WIP limit (4 OPEN slots held by the armour subjects) — the work is
-  DONE and **COMMITTED + PUSHED 2026-08-31** (owner order "garde tel quel, commit et push";
-  mechanism owner-live-tested through 3 rerun iterations, latch decision ratified). Remaining:
-  the campaign probe in the Verification line below.
-- Scope: owner request 2026-08-30 (Discord, Uncharted: "AI doesnt use this tank module, we
-  created a NS for them to represent it"; owner: "We can now make the AI build tanks with this
-  module"; Uncharted: "then lets do it"). Intended behaviour: SOV AI designs tanks WITH the
-  `cutting_corners` module once `SOV_pc_of_tank_industry` grants it, and the compensating spirit
-  `SOV_cheap_construction_ai` (soviet.txt:12530, −20% armor cost / −10% reliability map-wide) is
-  retired — no double bonus.
-- Symptom, MEASURED (campaign `5ee2d112`, 117 monthly saves, local run 2026-08-30): focus
-  completes 1942.6.11 (tech grant stamp `cutting_corners level=1 date="1942.6.11.1"`); spirit on
-  from 1942.7; `cutting_corners` as a module in ANY variant slot: **0 occurrences at 1942.7 and
-  still 0 at 1945.10** — unlocked 40 months, never mounted. Sound negative: variant module
-  loadouts ARE serialised (SOV `tank_sov_medium_chassis_3_3` carries its slots in the registry).
-- Why it never mounts, DERIVED: no `ai_equipment` design lists the module — the AI designer only
-  places modules its design blocks name (`common/ai_equipment/SOV_tank.txt` has no
-  `cutting_corners` anywhere). Engine gate for a clean fix, MEASURED (install
-  `common/ai_equipment/_documentation.md`): a design's `enable = { <triggers> }` must all be true
-  for the design to be usable → duplicate design gated `enable = { has_tech = cutting_corners }`.
-- **Rerun iteration 1 (2026-08-30, owner) — FAILED, twin-design pattern KILLED.** Harness was an
-  enable-gated `_cc` twin of the T-34 (42) design (priority 20 vs 10, match_value 3500 vs 3000).
-  MEASURED on the rerun autosave (1942.7→1942.11, same campaign id): module in a variant slot
-  still 0; army XP 820 (not binding); no parse error on the design (error.log clean, ai_equipment
-  DB reloaded in-run at 1942.9.2); and the AI DID create 3 new tank designs in the window (T-70,
-  T-34 (40), BT-7M) — all for chassis with NO existing variant. DERIVED: the designer backfills
-  variant-less types but does not create a second, better-matching variant for a type that
-  already has one; a higher-priority twin targeting the same type is invisible to it.
-- **Iteration 2 harness (working tree, current):** twin removed; `medium_tank_6` edited IN PLACE —
-  `special_type_slot_2 = cutting_corners` in its own target_variant (+ allowed_modules). The
-  fielded T-34 (42) variant no longer matches any enabled medium design. One variable: does the
-  AI redesign on mismatch? Slot validity MEASURED: chassis slot_2 accepts `tank_special_module`
-  (tank_chassis.txt:22405), `module_count_limit` allows 1.
-- Rerun protocol iteration 2 (owner, this working tree): load the rerun autosave (1942.11) or
-  `1942.7_Jul.hoi4`, observe, run ≥ 2 game months, save. Probe unchanged: SOV variant of
-  `tank_sov_medium_chassis_3_3` with `special_type_slot_2=cutting_corners` in `equipments={}`,
-  medium line pointing at it. Production is safe meanwhile — lines reference the existing
-  variant, not the design.
-- **Iteration 2 verdict (owner, 2026-08-30): redesign-on-mismatch WORKS — at ~1000 console XP.**
-  The AI created the module-carrying variant once XP was huge; at natural XP (56-820) it never
-  did. Cause chain: the XP-spend auction (MEASURED, install `00_defines.lua:2507` comment —
-  desires accumulate daily, XP goes to the highest accumulated desire, which then resets) is
-  rigged by WA's overrides `05_defines.lua:1549-1550`: `DESIRE_USE_XP_TO_UPDATE_LAND_TEMPLATE
-  = 100.0`/day vs `DESIRE_USE_XP_TO_UPGRADE_LAND_EQUIPMENT = 0.1`/day (vanilla 2.0 / 1.0; the
-  0.1 block is inherited byte-identical from Expert AI `EAI_defines.lua:113`). Variant creation
-  loses every auction by ~3 orders of magnitude; only a massive XP dump exhausts the rivals.
-  Amplifier: `SOV.txt` arms `land_xp_spend_priority id=division_template value=100` in two
-  windows. Cutoffs are NOT the blocker (`DEFAULT_MODULE_VARIANT_CREATION_XP_CUTOFF_LAND = 50`,
-  reserve 25). ASSUMED (engine): the exact additive/multiplicative scale of `value=` on desire.
-- **Iteration 3 (owner, 2026-08-30): PASS at natural XP** — with the desire lever armed
-  (`land_xp_spend_priority id=equipment_variant value=200`, token+id validated install
-  `_documentation.md:623-632`; peer evidence workshop mod 3572308827 uses it at 25), the AI
-  re-created the T-34 (42) variant WITH the module, no console XP. Mechanism proven end to end.
-- **Generalisation SHIPPED to working tree 2026-08-30** (uncommitted):
-  - `common/ai_equipment/SOV_tank.txt`: 39 wartime designs converted to enable-EXCLUSIVE pairs
-    (plain design gains `NOT = { has_tech = cutting_corners }`; generated `_cc` twin carries the
-    module in a chassis-validated free special slot, same priority/match_value, WA_EQUIPGEN
-    markers stripped from twins). Generated by scratchpad script with per-chassis slot oracle
-    (slot must accept `tank_special_module`; archetype fallback). 9 full-loadout designs have no
-    free slot and no twin (T-44, T-44-100, LTTB, PT-76, ZSU-37, SU-122-44, IS-7/8/8m). One
-    header comment documents the pattern (rule 7).
-  - `common/ai_strategy/SOV.txt`: the desire lever block ships as
-    `SOV_variant_creation_after_cutting_corners` — **owner-tuned config, the one iteration 3
-    actually ran: `value = 500` + `has_war = yes`** (my draft said 200/no-war; the tree is the
-    truth). ASSUMED (engine): the value's scale vs the 0.1/day define; measured working.
-    Peace window walked: tech implies the focus fired at war; if SOV later at peace the lever
-    disarms and REdesigns wait, but a newly unlocked chassis still creates its variant from the
-    only enabled (`_cc`) design — MEASURED that design creation happens under the starved
-    0.1/day regime (baseline campaign created 5 designs by 1943.6 with no lever).
-  - `common/national_focus/soviet.txt`: `add_ideas = SOV_cheap_construction_ai` removed from the
-    focus (module + spirit together would be the cheat the NS was created to avoid).
-  - `common/ideas/soviet.txt`: the spirit's cancel gains `has_tech = cutting_corners` — running
-    campaigns drop it on load (tech and idea were always granted by the same focus instant).
-  - Checks: braces 0 / no BOM on all four; `check_ai_layers` 0 ERROR; `check_worklist` 0 ERROR;
-    `check_constants` has 6 PRE-EXISTING `@advisor_*` errors in `common/characters/ENG|GER.txt`
-    (untouched by this subject, flagged to owner). Architecture + lessons reviewers dispatched
-    2026-08-30, verdicts pending.
-- Residuals, stated (reviews 2026-08-30: architecture CONCERNS + lessons CONCERNS, all required
-  repairs discharged in this entry):
-  - Post-focus at war, the equipment_variant desire (500) competes with template desire
-    (100/day) for SOV army XP — accepted; it also carries every future `_cc` design (T-34 85 on)
-    created WITH the module at type unlock.
-  - Redesign delay: fires on the engine's 7-day equipment pass once army XP ≥ 50 (both values
-    MEASURED live in `05_defines.lua:1502/:1561`, not vanilla inherits; module add cost 5 XP).
-    If SOV sits under 50 XP at focus completion the delay is OPEN-ENDED until XP accrues — it
-    degrades to "no module yet", never a stall: the production line kept producing the old
-    variant through every rerun window (MEASURED, 1942.11 autosave: 40-factory medium line
-    unchanged while no matching design existed).
-  - Twin coverage PROVEN on the generated file: 39 `NOT`-gates = 39 `_cc` twins = 39 `has_tech`
-    terms, and the 9 no-free-slot designs carry NO gate — no role is ever left design-less
-    behind the focus (the engine auto-designs an empty role outside every gate, the lessons
-    trap this rule exists for).
-  - Commit hygiene: the dirty `interface/*.gui` files in this tree belong to another subject —
-    commit separately, never under this slug.
-- **Trigger refactor (owner order 2026-08-31: "les blocs enable doivent avoir un trigger séparé
-  identique"):** the three gates now read ONE scripted trigger,
-  `WA_AI_EQUIPMENT_should_mount_cutting_corners` (`WA_AI_EQUIPMENT_triggers.txt`, tag-free:
-  `has_tech = cutting_corners` + `has_war = yes`) — 39 plain designs `NOT`, 39 `_cc` twins
-  positive, the SOV.txt desire lever positive; verified 79+1+1 uses, braces 0, layers/worklist
-  0 ERROR. ASSUMED (engine): a scripted trigger resolves inside an ai_equipment `enable`
-  block — WA precedent exists in `priority.modifier` (`GER_naval.txt:1980`), none yet in
-  `enable`; the campaign probe catches the silent-failure case (design never enabled → no
-  redesign ever → probe FAILS visibly).
-- **Peace-churn closed with a PERMANENT latch (owner order 2026-08-31: no reverse redesigns of
-  ~30 old chassis at 5 XP each when peace comes).** The shared trigger now reads only
-  `has_country_flag = WA_AI_EQUIPMENT_cc_latched`; the flag is set once by the monthly
-  `WA_AI_EQUIPMENT_update_context_flags` (small additive block, the file's own positive-latch
-  discipline) when the tech first meets a war — monotone by construction, so a later peace
-  never re-enables the plain designs. Costs one month of lag between focus completion and the
-  gates flipping (monthly cadence; the focus fires mid-war, the war lasts years). Running
-  campaigns latch on their first monthly pulse. Side effect stated: the desire lever also stays
-  armed at peace post-latch — harmless, the desire only has something to buy when a new chassis
-  needs its (`_cc`) design, which is wanted; ASSUMED the engine does not burn XP on a no-op
-  spend. Fail-safe direction preserved: no pulse (human player) → flag absent → plain designs
-  stay enabled = status quo.
-- Verification owed (campaign probe): post-focus save shows a SOV `tank_sov_*` variant with
-  `special_type_slot_N=cutting_corners` in `equipments={}` AND `SOV_cheap_construction_ai`
-  absent from SOV ideas. Then move to SHIPPED-UNTESTED/TESTED per process.
-- Closed when: a campaign save post-focus shows SOV tank variants carrying `cutting_corners` in
-  production AND the spirit absent from SOV's ideas.
-
 ### dmz-build-loss — PARKED (2026-08-30)
 - Parked at creation: WIP limit (4 OPEN slots held by the armour subjects). **Fix is APPLIED in
   the working tree, uncommitted** — move to SHIPPED-UNTESTED when a slot frees or at commit.
@@ -5021,126 +5938,6 @@ OPEN with a session of its own.
   this line.
 - Closed when: probes (i)-(iii) pass on one scored campaign.
 
-### usa-military-refactor — PARKED (2026-08-27)
-- Parked 2026-08-27 (WIP limit, owner choice; templates-admission enters). State at parking:
-  SHIPPED-UNTESTED debt fully discharged (F9 boot PASSED twice), awaiting campaign probes
-  (a)-(e) only. Reopen when the next scored campaign lands.
-- Scope: owner request 2026-08-27 ("refactorise les fichiers WA_AI_MILITARY_COUNTRY_USA_* —
-  noms avec conventions, triggers dynamiques ouverts à l'ahistorique, éviter les dates en dur,
-  standardiser constantes/ratios; garde l'anti-shuffling à l'esprit; supprime les stratégies
-  situationnelles type hold_okinawa").
-- Shipped, all four COUNTRY_USA files rewritten + control panel + one CONFIG fix:
-  (1) every block renamed `WA_AI_MILITARY_COUNTRY_USA_<DOMAIN>_<descriptor>` (doc §5 rule 4)
-  with purpose/range/policy/domain headers; the two genuine always-ons carry `# always-on:`
-  (abandon_turkey, ignore_south_america — the latter was `date > 1936.1.1` in disguise).
-  (2) All 12 hard dates removed: new control-panel triggers
-  `WA_AI_MILITARY_USA_pacific_offensive_ready` (phase flip; europe_first/pacific_offensive and
-  dont_invade_japan_yet/pacific_offensive are exact NOT-mirrors) and
-  `WA_AI_MILITARY_has_minimum_expeditionary_army` (num_divisions > 29 + home safe — owns the
-  29/30 band, 6 sites; deathtrap brake is its NOT-mirror). Torch-done gate = metropolitan
-  foothold, invade-Japan-execute = pacific_ready + (JAP surrender_progress > 0.02 OR Philippine
-  foothold). ASSUMED, stated in the trigger header: the arms cross once and stay; if a campaign
-  shows flapping, latch on a country flag (the flap surface is a JAP-only-war USA near 50 div).
-  (3) Dedup with the halvings ACCEPTED IN WRITING (lessons CONFLICT items 1-2, resolved by git
-  archaeology 79d64f6ff): bad_torpedos_suck was born `date < 1943.9` (torpedo era, calendar-only
-  reason) and SUMMED with europe_first while both armed — twin deleted, one suppression at the
-  economy band, rationale at each survivor's header; torch preparation/landing pairs (byte-
-  identical payloads, both armed from 1942.11) merged — post-landing doubling deliberately
-  halved; the FRONT merge LOSES the 2-month careful-prepare-only window (stated; engine
-  invasion-prep timer is the remaining staging delay).
-  (4) Anti-shuffling: buffer_pacific shares resized per state (was an aggregate demanding ~107
-  of a 56-division army), and ONE order_id PER ENTRY (9105-9119) — the engine doc gives same-id
-  entries one SHARED ratio, so the old ten-ratios-on-9101 was undefined; order_id never
-  serialises, split = ASSUMED hygiene (REGION_ITALY rule). Britain buffer variants stay a
-  single logical buffer on id 1.
-  (5) `hold_okinawa` DELETED (owner order — a JAP-war block suppressing the RIT front was a
-  situational tag-payload hack; the theatre-distributor damping owns the anti-pull intent).
-  Remaining tag payloads are target enumerations (invade books, balkan minors), not hacks.
-  (6) The 8-tag Allies suicide-invasion brake re-homed to FACTION_ALLIES_INVASION on the
-  `is_western_invasion_pool` archetype, membership term dropped (audience preserved). Fixed the
-  archetype's pre-existing typo `AUS` (landlocked Austria) → `AST` (Australia): 8 reader blocks
-  had EXCLUDED Australia from the Allied invasion pool — audience change to verify next
-  campaign (AST gains, Austria loses).
-- Reviews 2026-08-27: architecture CONCERNS (5 — bar promoted to named trigger; buffer comments
-  rewritten to the share-one-ratio model + per-entry ids; torch header states the careful-window
-  loss; audience narrowing dropped; faction-block name kept on the FILE's own convention
-  (ALLIES_<desc>_INVASION, its siblings' style) against the reviewer's variant) + lessons
-  CONFLICT (all required items applied: archaeology done, halvings folded-or-justified, per-
-  sector buffer rationale, war-facing term added to both bars, F9 obligation recorded).
-- **NAVAL leg shipped 2026-08-27 (owner order "fais pareil sur WA_AI_NAVAL_COUNTRY_USA.txt").**
-  Same pattern: legacy_USA_ noise stripped (18 blocks renamed, all cross-references updated —
-  PHASE5 mirror comment, FACTION_ALLIES incl. one stale "known residual" corrected to RESOLVED,
-  ENG file, system doc); 8 hard dates → the two triggers + state gates (threat > 0.50 for the
-  pre-war Pacific posture; strike bases on peacetime-or-JAP-war; death-trap walls released by
-  the phase trigger, held-while-weak ruled INTENDED caution with the enemy-state arms as the
-  state-side release, stated at the site); bad_torpedos naval twin (strict SUBSET, 19 shared
-  regions summing 4000) deleted — same accepted-halving ruling; torch pair merged into
-  `torch_corridor` with the [atlantic-naval] Biscay audit RE-WALKED for the new state-keyed
-  windows (−2000 still outvoted wherever the GER-war walls co-fire; the ITA-only-war no-wall
-  corner is pre-existing and unchanged). **Phase flip now LATCHED one-way** (lessons item):
-  `WA_AI_MILITARY_update_usa_phase_latch` on the monthly pulse sets
-  `WA_AI_USA_pacific_offensive_latched` once the live conditions hold at a tick; the public
-  trigger reads flag-OR-live — worst residual flap = one flip-back inside the first month.
-  Reviews (NAVAL round): architecture OK (2 wording notes applied: the shared-regions list is
-  SW-Pacific too, not just Indian-Ocean — ASSUMED the old 1943.6-1944.8 wall gap was date
-  residue, campaign probe = USN presence in regions 84/88 during a Solomons-type war; the
-  Europe-only-war strike-base handoff goes to the Faction western anchorage) + lessons
-  CONCERNS (all 4 required applied: enemy-state release stated, latch implemented, audit
-  re-walked, PHASE5-mirrored enable diff-verified byte-untouched).
-- **F9 boot PASSED (owner, 2026-08-27) on the refactor build** — discharged the land+naval
-  CTD-class debt, the comp-gauge v33 change and the AIFC merge-bar effect edit.
-- **Factorisation batch SHIPPED 2026-08-27 (owner order "tout" on the promotion survey;
-  survey table delivered as a file the same day).** Five commits: (1) RETIRED 7
-  faction-duplicated USA blocks — the Adriatic was summing +8000 and Biscay +6000 on USA's
-  own duplicate walls; strategic-bombing china/asia self-doubling folded into the japan twin;
-  double RIT entry trimmed. NOT retired, stated at site: north_africa_focus (faction twin
-  carries a hard date + ITA/ITL controller list — the Case-Anton corner would be uncovered),
-  no_balkan_hops (faction twin is minors-only), unit_clumping_fix (state-vs-region precision
-  unverified). (2) Phase trigger GENERALIZED (`WA_AI_MILITARY_pacific_offensive_ready`, USA_
-  prefix dropped; latch widened to anglo majors). (3) PROMOTED with same-commit country-copy
-  deletion: NAVAL aegean_hostile_coast + western_pacific_trap (25 regions — replaces the USA
-  pair AND trims 25 entries of ENG's 68-region war-GER blanket; ENG is now phase-released
-  where it was walled all war) + the uninvaded-ally-waters courtesy trio + St. Lawrence →
-  DEFAULT; THEATRE britain_invaded_priority (ENG_all_in's britain pair trimmed); FRONT
-  liberate_britain; INVASION britain_first_no_side_shows + pacific_side_shows_wait (ENG twin
-  trimmed of the 5 shared targets). (4) INS ownership USA arm made conditional (sfhb
-  pattern) so the faction deathtrap guard re-arms after the phase flip. (5) **Biscay
-  correction**: the dedup turned the historically-inert Torch −2000 on region 42 LIVE
-  (net 0 = the Bay would have opened, a design change nobody decided) — removed to preserve
-  observed behaviour; **Biscay DECIDED 2026-08-27 (owner): the wall
-  stays - Torch does not open the Bay; settled at the site**. Deferred with reasons (survey file): defend_britain
-  DIPLOMACY (coupled to commonwealth-handoff's CAN guard), commit_to_europe partial,
-  reinforce_normandy Balkan split, pacific_islands, ignore_south_america→archetype, the
-  full ENG-blanket retirement and the two coalition-reaching COUNTRY_ENG blocks (the
-  ENG-refactor chantier), sicily sign conflict (design accounts for it via the bridge +50).
-- Reviews on the batch 2026-08-27: architecture CONCERNS (2 — provenance stripped from the 10
-  new headers per rule 7; the pre-rename latch flag is now MIGRATED in the latch effect, so a
-  resumed save keeps its latch) + lessons CONCERNS (3 — (i) archaeology done: at the authoring
-  commit 79d64f6ff region 168 was already written 3× and 42 5× across independently-named
-  blocks with no comment claiming a stacked total — the sums were ACCRETION, not calibration,
-  so the single faction wall at the type's band is the honest form; (ii) the new F9 line below
-  is that item; (iii) the courtesy trio's tag-anchored gates now carry their ASSUMED-FACT
-  sentences at the site — UKO holds Malaya, ENG/NZL hold 636/726, CHI/PRC are the two Chinas).
-  Latch flap bound restated at real cadences (engine-eval flips possible only inside the first
-  month, zero after the latch). Pre-registered campaign probe for the halvings: `navy --fleets`
-  region lists — anglo fleets do NOT newly operate in 168 Adriatic / 42 Biscay / 202 Aegean
-  while those walls' conditions hold (a fleet parked there post-change = the halving was
-  load-bearing, re-raise the wall).
-- **F9 boot PASSED on the promotion batch too (owner, 2026-08-27)** — discharges the second
-  CTD-class debt (USA+ENG deletions, 5 new FACTION blocks, 1 DEFAULT block, the latch
-  migration). The build is campaign-ready; owner is weighing the two-state merge-bar
-  alternative and the remaining deferred promotions.
-- Verification: F9 boot passes with no new error.log ai_strategy entries. Campaign probes:
-  (a) Torch arc fires on state conditions (north_africa priority armed when the Maghreb is
-  enemy-held and USA ≥ 30 div — probe via control + plans.py, no date to check); (b) the
-  Pacific flip happens (europe_first suppressions absent in a save where USA > 99 div or GER
-  dead, invade-JAP book flipped); (c) r-flap watch: the phase pairs do not oscillate across
-  consecutive monthly saves (same discriminator as the (i) transit probe); (d) AST appears in
-  Allied invasion-pool behaviours (norway/D-Day staging blocks reachable); (e) USA buffer order
-  instances stable per ocean (shared probe with allied-division-stability).
-- Closed when: F9 passes AND probes (a)-(c) pass in the next campaign, or a regression traces
-  to a specific removed date/merge and is fixed under this slug.
-
 
 > **Campaign `1ac7e4ea` PARKED-probe results (2026-08-27, all MEASURED unless noted):**
 > `rk-no-divisions` **PASSED again** (7 RK tags with no `units` section at 1943.6+1945.6, ALB flat
@@ -5212,13 +6009,13 @@ OPEN with a session of its own.
 
 | Date | Subject | Note |
 | --- | --- | --- |
+| 2026-09-09 | `train-variant-choice` | AI train lines run on the cheap trains; the Armored Train only above 10000 in reserve. Campaign leg PASSED on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): over GER/SOV/ENG/ITA/JAP/USA at ten dates 1940.1-1945.1, ZERO lines on `train_equipment_4` and zero on `_1` after 1941; GER `_2` 52/52 factories from 1942.1 then `_3` 62/71 at 1943.6, ITA `_3` 12/17, SOV `_3` 10/10 at 1945.1. Creation path proved, not just upgrade: no major holds a train line before 1942.1 and GER's first line APPEARS on `_2`. Whole-world control at 1945.1, all 409 countries: 5 train lines, all `_2` or `_3`, zero `_4` anywhere. Armoured branch correctly vacuous - free stock peaks at 7999 (GER 1945.1), never crosses 10000. The `e57efdea` regression (every line frozen on `_1`) is gone. CLOSED BY OWNER ORDER 2026-09-09 with the F9 boot test NEVER RUN - accepted, not discharged; the campaign answers its question empirically (an unresolved trigger inside `can_be_produced` would read TRUE and give armoured trains everywhere, and there are none). |
+| 2026-09-09 | `sov-light-support-retire` | The SOV light-support park is retired once it is obsolete. Campaign leg PASSED on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): `plans.py SOV --templates` shows ZERO deployed divisions carrying `light_support_armor` at 1942.6, 1943.6 and 1945.7; country flag `WA_AI_TEMPLATES_light_support_park_retired = 1` set 1942.1.4.1 and `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` present at 1941.12, absent from 1942.6 on - the sweep ran. CLOSED BY OWNER ORDER 2026-09-09 with the console harness `wa_abg.1 SOV` NEVER RUN and, more important, the reviewers' stated regression NEVER EXERCISED: the 1942.1.1 leg was to delete a fielded park mid-Barbarossa (31-40 divisions on `5de66942`) and here it found nothing to delete (`army SOV` 321 / 322 / 323 across 1941.12-1942.2, no drop) because `light-support-conversion` Ch.11 had already converted the park off every light-support shape by 1940.12. Both residuals accepted, not discharged. |
+| 2026-09-09 | `can-transit-attrition` | CAN builds an army and stops losing it in transit. Own probes (a)-(d), (g), (h) PASSED on `067ef4ac` (2026-08-28) and (a), (b), (h) PASSED AGAIN on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): 14 of 17 post-1941 CAN deployments still in the OOB at +6 months with ZERO disappearing inside 6 months (bar 10, was about 1 of 16); 11-23 divisions deployed on every save 1943.1-1945.7 (bar 8, was 1-2); all 5 dominions own radio_detection AND decimetric_radar by 1942.1 (bar 3 of 5) and sit at eng_frigate 9 / eng_destroyer 11 by 1944.1 (bar frigate above 5 or destroyer above 6). CLOSED BY OWNER ORDER 2026-09-09 with (e) FAILING for ENG and USA (idle admiral-less fleets 87-118 and 200-292 hulls; CAN itself passes at 17-31) and (f) failing literally - and the (f) bar is itself suspect, the escorts sit where the bleeding is (ENG danger at 1945.6: Western Approaches 13160 / Icelandic Basin 8596 vs Labrador 0 / Newfoundland 0). Residuals accepted, not discharged; F9 boot never run. Recorded as candidates, NOT admitted: the USA escort depot (140 idle frigates in one fleet while its escort TFs are all-destroyer), the missing escort BRIDGE for NZL/SAF/RAJ (the DD-escort template exists only for CAN/USA, the generic is frigate-only), and CAN's unexplained frigate collapse 41 (1945.2) to 6. |
+| 2026-09-09 | `rail-admission-churn` | The railway family spends its 12-slot budget on segments that survive, and never discards paid IC. Console leg PASSED for C and D (owner, 2026-09-04, cut-2 build on `barb_supply test.hoi4`: all twelve `PC QUEUED` are level-2 hops, every level-3 and level-4 hop refused - weakest links first; all routes `target=5`). Campaign leg PASSED twice - `916b90f6` (stale under 2 percent of growth) and now campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime), on far stronger evidence: `wa_tlm_pc_stale_kept_n` GER 5 (1941.6) to 46 (1945.7) and `pc_stale_n` 21 against `pc_built_by_type^13` +487 over the war = 4.3 percent (bar 20), with 67 stale judgements of which 69 percent were KEPT. CLOSED BY OWNER ORDER 2026-09-09 with console legs A and B NEVER EXERCISED (both owner runs had an empty `rail`-tag queue, so no `PC VALIDATION` line ever printed) - accepted, not discharged; the campaign exercises A and B from 1941.6 onward, which the console never could. |
+| 2026-09-09 | `east-front-rail` | GER builds railway on enemy-owned ground it controls. Leg (1) owner console 2026-09-04 PASSED (`RAILWAY LAND: COMPLETED - 9 targets found`, twelve `PC QUEUED: type=13` on SOV-owned states). Leg (2) PASSED on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): 4-27 `rail` PC projects on SOV-owned / GER-controlled states 1941.7-1942.12 (Chernigov, Nikolaev, Cherkasy, Pskov class); rail-cache diff raises 61 / 102 / 56 edges with an endpoint in those states per interval; control SOV's own `rail` projects persist 7 to 18; no theatre-air starvation. Recorded, NOT this slug: GER holds ZERO railway projects 1943.3 to 1944.3 and `wa_tlm_pc_built_by_type^13` freezes at 473 for twelve months - a candidate, not admitted. |
+| 2026-09-09 | `dday-mulberry` | Mulberry harbours follow the chosen D-Day variant. Criterion MET on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): variant 89 (Brittany 6572 / Loire 11616), byte-identical 1944.5 to 1944.12. Province 6572 carries no naval_base at 1944.5-6, level 5 at 1944.7-9; latches `a_placed_prov = 6572` / `a_placed_state = 14` equal the target, B mirrors it. At 1944.11 both provinces read naval_base 0 with all four `_placed_` latches zeroed while the target variables stand - placement 1944.6-7, dismantle 1944.10-11, about 120 days as designed. No pre-existing port overwritten; the 5ee2d112 zero-delta signature absent. |
+| 2026-09-09 | `aifc-revived-tag-residue` | AIFC book drains a revived tag's parked boost. Criterion MET on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): `aifc.py` over all 114 saves returns zero CLOSURE MISMATCH, zero residuals, zero REF MISMATCH and zero PENDING+ACTIVE alarms on about 25 tags carrying AIFC state. Annex-to-revive pair ITA-ETH: ITA `pending boost(-400 owed)=ETH` from 1936.11 through 1941.4 (54 consecutive saves) while ETH controls 0 states; ETH holds 3 states / 36 provinces at 1941.5 and ITA's pending book reads empty in that SAME save, closure OK both sides. The 5ee2d112 ITA/ETH +250 signature absent. Residual accepted: the console run `event wa_aifc.1 ITA` (target-exists flags) was never performed - it is not part of the Closed-when line. |
+| 2026-09-09 | `sov-cutting-corners-module` | SOV AI designs tanks with the Cutting Corners module. Criterion MET on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime): tech `cutting_corners` 1943.1.7, latch `WA_AI_EQUIPMENT_cc_latched` set 1943.2.1 (one monthly pulse). 2 CC variants at 1943.6, 9 at 1944.6 and 1945.1 (T-70, T-34 (42), T-80, SU 122 x4, T-34 (85), SU-76M). IN PRODUCTION, not just designed: the SOV medium line runs variant 6001 T-34 (42) at 45/45 factories (1943.6), then 6347 T-34 (85) at 52/52 and 6478 SU-76M at 15/15 (1944.6). `SOV_cheap_construction_ai` absent from SOV's ideas at 1943.6, 1944.6 and 1945.7. |
+| 2026-09-09 | `usa-military-refactor` | USA military files refactored to dynamic triggers. F9 boot PASSED twice (owner, recorded before parking); probes (a)-(c) PASSED on campaign `4b032e23` (114 monthly BHU saves 1936.2-1945.7, build MEASURED in (2026-09-08 19:29, 20:24] by `wa_tlm_pc_lost_n = 4` + first-save mtime). (a) Torch fires on state conditions, not a date - USA at 30+ divisions from 1942.1, Maghreb held by FRM/FRN/FRT, FRN declares on USA 1942.10.2 and the first USA Maghreb divisions land 1942.12. (b) `WA_AI_pacific_offensive_latched` sets 1943.10.1.1, the exact month USA crossed the 99-division bar (98 at 1943.9, 106 at 1943.10). (c) zero flip-backs in 114 saves; the inputs cross once and never return. Residuals ACCEPTED, not discharged: (d) FAILS - AST never stages in Britain or Norway (16-22 divisions stay in Australia/Papua/Solomons, one division reaches Upper Normandy at 1945.5, eleven months after the landing); (e) FAILS with `allied-division-stability`, which keeps it. Pre-registered navy wall probe PASSED - zero anglo entries in 168 Adriatic and 202 Aegean ever, and 42 Biscay only from 1944.7 with heavy = 0, the month after D-Day landed on that coast. |
 | 2026-08-29 | `recruit-loop` | Scripted leader recruitment. Console harness PASSED twice (owner, 2026-08-28: `wa_test_rl2.1 ARG` scope 1 1 1 1 0, 2nd ship verified by a full quit + relaunch + reload). CLOSED BY OWNER ORDER 2026-08-29 with the campaign probes (i)-(iii) and (vi) never run on a scored campaign - that residual is accepted, not discharged. |
-| 2026-08-29 | `armor-role-budget` | Constant per-role armour share + one open role at a time. Owner console 2026-08-28: harness run 1 PASSED (i), (vii) and (ii) partially (two open roles, not three); probe (vi) PASSED via `imgui show ai_division_production` on SOV 1943.11. CLOSED BY OWNER ORDER 2026-08-29 with (iii), (iv), (v), (viii), (ix), (x) NEVER RUN, including the re-read that was to confirm the template-flag join reads medium 17 / heavy 8. |
-| 2026-08-29 | `rail-corridors` | Strategic corridor railways (free AI pathfinding cheat, level-5 rail so redeployment stays off the sea). Corridors 1-8: owner-tested and functional in-game 2026-08-27. Corridor 9 San Francisco-Washington (41 provinces, 40 edges, 16 gate states) SHIPPED 2026-08-27 and CLOSED BY OWNER ORDER 2026-08-29 WITHOUT its console run - `event wa_test_rail.19` and the supply-mapmode check were never performed. Campaign probe stays folded into the F-checks: `WA_rail_corridor_*_built` flags + level-5 track. **Regression fixed 2026-09-04 by owner order** (commit `70f33ae1d` had wrapped the OVERLORD term in an `if` with no else; a trigger-context `if` whose limit fails is TRUE, so every non-subject controller read friendly): campaign `5d2a391c` MEASURED corridor 7 built 1942.11.1 over ENG 12 / ITA 7 / FRM 4 / FRN 4 / FRT 2 / SPR 2 / VIC 1, corridors 4 and 5 built 1936.2.1 over neutral PER / IRQ. Fix = terminal `else = { always = no }`. Owner console 2026-09-04, `WA_TEST_trigger_if` on 1944.6 GER: scope 1 1 1 1 0, A = `1 1 0 1 | 1 0 0 1` (A2=1 claim measured, A6/A7=0 fix shape measured). Owed: B2 rerun on the shipped trigger after the fix (expect 0). |
-| 2026-08-27 | `lend-lease-observability` | `lendlease.py` + WA_TLM v32 recipient matrix. Campaign `1ac7e4ea` (first v32): matrix populated (739 pairs, 65 donors), donor↔recipient closure exact on send-counts and to 2 units in 1.31M on amounts. Console harness waived by owner closure order 2026-08-27. Known limits recorded in git history of this file. |
-| 2026-08-27 | `silo-breadth` | Breadth-first silo walk. Harness owner-PASSED 2026-08-24; campaign `1ac7e4ea`: GER 28 / ENG 19 / JAP 13 / USA 13 / SOV 12 built levels vs per-state cap 6 → ≥ 2 states each, SOV grew 7→12 (no first-state stall) against scripted need 17. |
-| 2026-08-27 | `rk-no-divisions` | RK training brake. PASSED on `24933fb9` AND `1ac7e4ea` (7 RK tags with no `units` section, ALB flat at its 3 scripted starters); boot discharged by the F9 campaign entries; error.log id check waived by owner closure order. |
-| 2026-08-27 | `uk-truck-supply` | ENG truck stock PASSED twice (`24933fb9` 8-19.6k, `1ac7e4ea` 9.4-12.6k own-built motorized vs bar 1500). Africa hub-motorization leg not save-visible (needs a WA_TLM gauge at the hub site) — residual accepted by owner closure order. |
-| 2026-08-27 | `raj-trucks` | CAMPAIGN-OK since `8f9b5653` (all three positive legs + control). SAF tier residual accepted in writing by owner closure order 2026-08-27. |
-| 2026-08-23 | `na-corridor` | NA corridor logistics (rail/depots/ports/theatre air bases, Fix 95–135). Human validation: tested and functional. Absorbed R9, R13, R52, R60, R68, R69, R71, R77, R78, R81, R91, R96, QUEUE 0q/0r/0m/0i. |
-| 2026-08-23 | `med-axis-posture` | Axis Mediterranean posture (Afrika Korps, Tunis, Italy, Ethiopia, Med fleet, convoy interdiction; Fix 96–137). Human validation: tested and functional. Absorbed R17, R61, R63, R64, R74–R76, R80, R82, R83, R92, R94, R97, QUEUE 0t/0h/0f/0g/0. |
