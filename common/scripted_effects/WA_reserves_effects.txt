@@ -172,7 +172,7 @@ WA_reserves_create_motorized_support_template = {
 # Main entry point for spawning reserve divisions
 # Input variables:
 #   _reserves_count: number of divisions to spawn (default 10)
-#   _reserves_equipment_factor: equipment factor 0.0-1.0 (default 0.3)
+# Starting equipment comes from ROOT.reserves_equipment (see WA_reserves_create_units).
 WA_reserves_spawn_divisions = {
 	# Ensure template exists
 	WA_reserves_create_template = yes
@@ -183,12 +183,6 @@ WA_reserves_spawn_divisions = {
 			NOT = { check_variable = { _reserves_count > 0 } }
 		}
 		set_temp_variable = { _reserves_count = 10 }
-	}
-	if = {
-		limit = {
-			NOT = { check_variable = { _reserves_equipment_factor > 0 } }
-		}
-		set_temp_variable = { _reserves_equipment_factor = 0.3 }
 	}
 
 	# Soviet has special front-line aware spawning
@@ -232,6 +226,25 @@ WA_reserves_grant_and_deploy_batch = {
 	set_country_flag = reserves_deployment_complete_flag
 }
 
+# [reserve-equipment-factor] STATE scope, ROOT = the deploying country. Spawns
+# _reserves_spawn_count reserve divisions at ROOT.reserves_equipment (focus/decision
+# bonuses write it; on_action default 0.1), clamped to [0.01, 1]. A hardcoded factor here
+# silently voids every writer of that variable; grep reserves_equipment before changing it.
+WA_reserves_create_units = {
+	set_temp_variable = { _reserves_spawn_equipment = ROOT.reserves_equipment }
+	clamp_temp_variable = { var = _reserves_spawn_equipment min = 0.01 max = 1 }
+	meta_effect = {
+		text = {
+			create_unit = {
+				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=[EQUIPMENT_FACTOR]"
+				owner = ROOT
+				count = _reserves_spawn_count
+			}
+		}
+		EQUIPMENT_FACTOR = "[?_reserves_spawn_equipment|.2]"
+	}
+}
+
 # Generic spawning - spawns in capital or random controlled state
 WA_reserves_spawn_generic = {
 	# Try to spawn in capital first
@@ -242,11 +255,8 @@ WA_reserves_spawn_generic = {
 			}
 		}
 		capital_scope = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 10
-			}
+			set_temp_variable = { _reserves_spawn_count = 10 }
+			WA_reserves_create_units = yes
 		}
 	}
 	# Fallback to random controlled state
@@ -261,11 +271,8 @@ WA_reserves_spawn_generic = {
 					}
 				}
 			}
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 10
-			}
+			set_temp_variable = { _reserves_spawn_count = 10 }
+			WA_reserves_create_units = yes
 		}
 	}
 }
@@ -294,11 +301,8 @@ WA_reserves_spawn_soviet_western_chain = {
 			has_full_control_of_state = 252
 		}
 		252 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else_if = {
@@ -307,11 +311,8 @@ WA_reserves_spawn_soviet_western_chain = {
 			has_full_control_of_state = 249
 		}
 		249 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else_if = {
@@ -320,11 +321,8 @@ WA_reserves_spawn_soviet_western_chain = {
 			has_full_control_of_state = 572
 		}
 		572 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else = {
@@ -336,11 +334,8 @@ WA_reserves_spawn_soviet_western_chain = {
 				is_controlled_by = ROOT
 				all_neighbor_state = { is_controlled_by = ROOT }
 			}
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 }
@@ -353,11 +348,8 @@ WA_reserves_spawn_soviet_siberian_chain = {
 			has_full_control_of_state = 217
 		}
 		217 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else_if = {
@@ -366,11 +358,8 @@ WA_reserves_spawn_soviet_siberian_chain = {
 			has_full_control_of_state = 251
 		}
 		251 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else_if = {
@@ -379,11 +368,8 @@ WA_reserves_spawn_soviet_siberian_chain = {
 			has_full_control_of_state = 876
 		}
 		876 = {
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 	else = {
@@ -395,11 +381,8 @@ WA_reserves_spawn_soviet_siberian_chain = {
 				is_controlled_by = ROOT
 				all_neighbor_state = { is_controlled_by = ROOT }
 			}
-			create_unit = {
-				division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=0.3"
-				owner = ROOT
-				count = 5
-			}
+			set_temp_variable = { _reserves_spawn_count = 5 }
+			WA_reserves_create_units = yes
 		}
 	}
 }
