@@ -173,6 +173,45 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### home-war-first — PARKED (2026-09-16)
+- State: code ships with this subject update; **not verified in a campaign**. Parked, not `OPEN`,
+  only because the live slots were already full (`armoured-waves` precedent, 2026-09-10).
+- Owner order 2026-09-16: "tant que l'IA française est en guerre contre un voisin qui a plus
+  d'usines qu'elle, elle ne doit pas envoyer de divisions en Norvège ou Pologne."
+- Intended behaviour: while FRA is at war with a BORDERING country holding more
+  `num_of_factories` than FRA, the Norwegian (strategic regions 11 / 297 / 191) and Polish
+  (region 296) fronts draw no French divisions, and FRA stages no Scandinavian landing.
+- Change: `[home-war-first]` adds the observation trigger
+  `WA_AI_MILITARY_is_at_war_with_stronger_neighbour` (`WA_AI_MILITARY_triggers.txt`), the gates
+  `WA_AI_MILITARY_should_fra_home_war_first_front` / `_invasion`, and two Country-layer blocks:
+  four `WA_AI_MILITARY_FRA_home_war_first_<region>_FRONT` blocks (`front_unit_request` -100, one
+  strategic region each) and four `_INVASION` twins (`invasion_unit_request` -200). The INVASION
+  half is the one that stops the INITIAL commitment: `front_unit_request` sizes an EXISTING front,
+  and a French expedition to Norway is a landing, so no front is there to size down.
+- Scope note: the gate is tag-free and setup-agnostic (neighbour + factory count, no date, no
+  event flag); only the `allowed = { original_tag = FRA }` addressing is French, per the owner's
+  wording. Promoting the same gate to a Region or Faction layer is an open design question.
+- **ASSUMED** until a campaign says otherwise: `front_unit_request` -100 is enough to zero the
+  demand of an overseas allied front. The engine's request base is undocumented
+  (`WA_AI_MILITARY_SYSTEM.md` §type table: "No base is stated").
+- Verification (campaign probe): in a save taken while FRA is at war with GER (or any stronger
+  land neighbour) and not capitulated, count French divisions located in Norway (states of
+  regions 11 / 297 / 191) and Poland (region 296). Expected: **0**. Closed when two consecutive
+  campaigns read 0 there while FRA still holds a manned metropolitan front.
+- Residual, **DERIVED**: the block is a SUPPRESSION, not an evacuation. Divisions already ordered
+  into Norway stay until the engine re-plans those orders; only new requests are refused.
+- Lever choice, per `WA_AI_MILITARY_SYSTEM.md` ("The suppression lever is `invasion_unit_request`"):
+  `invade` was rejected - it is keyed per target country, i.e. an enumeration (RNO/SCA/NOR) that
+  goes stale in an ahistorical Norway, and -2000 would flatten a scripted Faction-layer beach.
+  -200 leaves a +1000 scripted landing at +800.
+- **OWED before trusting the gate**: a cold boot with 0 errors in `error.log`, plus a console read
+  of `WA_AI_MILITARY_is_at_war_with_stronger_neighbour` for FRA in 1940 with GER at war. If
+  `num_of_factories` is not readable inside `check_variable`, both sides read 0 and the gate is
+  permanently FALSE - silently, with no error. The repo holds no other `check_variable` on that
+  key; the two halves are each proven separately (`WA_AI_CONSTRUCTION_triggers.txt:350` bare,
+  `events/wa_events_debug.txt:265` `ROOT.*`), the combination is not.
+- Closed when: the probe above reads 0 in two consecutive analysed campaigns.
+
 ### medium-ladder-rocket-inf-support — SHIPPED-UNTESTED (2026-09-14)
 - Origin: uncharted85's push of 2026-09-13 (`0c9e83c979` `1f2a8eda4b` `b591be489b` `300d12ab82`,
   Discord: "new templates pushed for the ai, mainly for the soviets to use rocket mech, germans to
