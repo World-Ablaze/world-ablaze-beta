@@ -102,10 +102,17 @@ satisfied by tank-destroyer production while the towed park stayed empty. The ar
 granularity that maps to a park, which is why the peer uses it 115 times out of 116.
 
 **Also floored elsewhere, and floors on one id SUM** (**MEASURED** additive on the air carrier
-floors): `minor_unit_production` floors the `armor` type at 1 for POL/HUN/SWE, the CZE historical
-plan at 2, and `WA_AI_PRODUCTION_lend_lease.txt` floors the `anti_tank` (8/3), `anti_air` (3/4) and
+floors): `WA_AI_PRODUCTION_lend_lease.txt` floors the `anti_tank` (8/3), `anti_air` (3/4) and
 `artillery` (10) types on donors. Those countries maintain deeper. Bounded, intended, printed by the
 harness.
+
+**Corrected 2026-09-16, `[minor-gun-floor]`.** The `armor` TYPE floors this paragraph used to name
+are gone or were never there. POL/HUN/SWE's floor of 1 went out with `minor_unit_production`; the
+"CZE historical plan at 2" never existed in this tree - `CZE_unit_production` and
+`CZE_highered_armored_production` both carry **zero** `ai_strategy` entries (MEASURED, whole-file
+scan), as did `minor_highered_armored_production`. **No `equipment_production_min_factories` on
+`id = armor` exists anywhere in `common/ai_strategy/` any more**, which makes
+`[armor-prod-category]`'s "tank chassis carry NO floor" universally true for the first time.
 
 ---
 
@@ -189,7 +196,7 @@ cannot make them disagree with the shipped floor.
 | 5 | A park sitting on the bar toggles every evaluation | The Schmitt pair, 0.10 / 0.25. The harness asserts the bars have not crossed (`schmitt-disjoint`) |
 | 6 | The floor runs for ever | It cannot: producing raises the numerator, the ratio crosses 0.25, the block aborts. The shortage is self-extinguishing — this is what replaced revision 3's absolute stock ceiling |
 | 7 | Floors starve the factory pool | 10 keys x at most 5 = 25 factories worst case, and only on a country short of all ten at once above 49 mils. The harness prints the running total |
-| 8 | Two floors on one id | §3: the `armor`, `anti_tank`, `anti_air` and `artillery` TYPES carry floors elsewhere and sum with these. Bounded, printed |
+| 8 | Two floors on one id | §3: the `armor`, `anti_tank`, `anti_air` and `artillery` TYPES carry floors elsewhere and sum with these. Bounded, printed. **[minor-gun-floor], 2026-09-16**: `WA_AI_PRODUCTION_DEFAULT_ground.txt` now carries a BASELINE archetype floor of 1 on `anti_tank_equipment` under these, so the anti-tank totals are **2 while short, 4 deep** (`deepen` implies `maintain`, so 1+2 fire together). Printed by harness section B2 |
 | 9 | Puppets and subjects | All reads are ROOT-scoped country variables; re-check the puppet-scope trap in `wa-lessons-learned` before the first commit |
 | 10 | A floor buys volume, not modernisation | The AI walks the `parent` chain to the deepest producible variant. **ASSUMED** — §7 |
 
@@ -204,6 +211,12 @@ panel). Neither is decidable from script.
 | --- | --- | --- |
 | **F1** | Does `equipment_production_min_factories_archetype` force allocation on an archetype whose perceived need is ~0? The engine doc says it "forces" but also that it ignores how many factories are available — that sentence is about the *pool*, not about *need* | The whole system has no lever. Gone when a country the harness reads as maintained shows 0 factories on that archetype |
 | **F2** | Do those factories land on the **newest** producible variant? | The floor produces but does not modernise, which is the entire point. Gone when a maintained park keeps receiving its oldest variant |
+
+**F1 now also carries the `[minor-gun-floor]` baseline floors** of
+`common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt` (`artillery_equipment` for non-majors,
+`anti_tank_equipment` for everyone, both at >= 10 military factories with a non-zero
+establishment). If F1 is false those two are inert as well. Harness section B2 of
+`WA_TEST_maintenance.txt` prints their verdicts next to the establishment they read.
 
 The probe `WA_TLM_r115_maint_at_ratio` is the campaign-scale version of the same question: free
 anti-tank spares over requirement must **rise** on a country reading `ground_n > 0`. If it does not,

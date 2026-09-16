@@ -212,6 +212,152 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `events/wa_events_debug.txt:265` `ROOT.*`), the combination is not.
 - Closed when: the probe above reads 0 in two consecutive analysed campaigns.
 
+### minor-gun-floor — SHIPPED-UNTESTED (2026-09-16)
+- Origin: owner playthrough report 2026-09-16 — "des pays, comme la pologne, débloque du matériel
+  comme les canons antichars, et décide de le produire, donc une ligne est ouverte, et les usines
+  pas assignées pendant longtemps, car en bas de la liste. j'ai vu que l'artillerie a une usine au
+  minimum d'assignée, mais pas les canons antichars". Intended behaviour: a country whose TEMPLATES
+  field a gun keeps at least one factory on that gun, whatever the engine's perceived need says.
+- MEASURED before the fix: `anti_tank_equipment` has NO `min_factories` anywhere in the DEFAULT
+  tier — `WA_AI_PRODUCTION_DEFAULT_ground.txt:78` carries only
+  `equipment_variant_production_factor value = 15`, and a factor multiplies a need that sits near 0.
+  The only generic AT floor is `WA_AI_PRODUCTION_DEFAULT_maintenance.txt:96` (1/2) and it is
+  CONDITIONAL on a shortage reading; artillery's floor for POL/HUN/SWE was UNCONDITIONAL, from the
+  LEGACY tag file `common/ai_strategy/POL_HUN_SWE.txt` (`minor_unit_production`, type
+  `artillery` = 1). That asymmetry — unconditional gun floor vs shortage-only AT floor — is the
+  owner's symptom. The generic `artillery_equipment` floor at `DEFAULT_ground.txt:67` is gated on
+  `WA_AI_CONFIG_is_major_country`, i.e. the 7 majors only, so no non-major had a generic gun floor.
+  CORRECTION to this session's first reading: POL starts at **22** military factories, not 19
+  (summed over `history/states/` by owner tag; the first count dropped the two states whose
+  filenames contain a space). POL is therefore ABOVE `wartime_min_mils` = 20 and the maintenance AT
+  floor IS reachable for it — the 20-MIL bar is NOT what blocks Poland, so the establishment gate
+  below is the critical unknown. The industry bar matters for the 10-20 band instead: HUN 14,
+  SWE 12, ROM 19, YUG 11, RAJ 12, HOL 12, AST 10, BEL 10, TUR 10 had no generic gun floor at all.
+- Change (2026-09-16), 13 files touched + 1 deleted:
+  - `common/script_constants/wa_ai_production.txt`: new `industry.tier_small_mils = 9`, read as
+    `> tier_small_mils` (>= 10 MIL). Owner requirement: the floor must not reach a micro-state
+    ("on veut pas que ça impacte le Bhoutan"; BHU/LUX/PAN sit at 0-2 MIL). Same tiering the
+    `[raj-trucks]` floor already uses for the same reason.
+  - `common/scripted_triggers/WA_AI_PRODUCTION_ground.txt`: `WA_AI_PRODUCTION_has_artillery_demand`
+    / `has_anti_tank_demand` (layer 2, `num_target_equipment_in_armies_k@<archetype> >
+    constant:wa_ai_production.maintenance.target_min_k` — the establishment reading the maintenance
+    floors already use), and `WA_AI_PRODUCTION_should_floor_artillery_minor` /
+    `should_floor_anti_tank` (layer 3).
+  - `common/ai_strategy/POL_HUN_SWE.txt` DELETED, `common/ai_strategy/wa_default.txt`,
+    `common/ai_strategy/HUN.txt`, `common/ai_strategy/GER.txt`: the whole POL/HUN/SWE production
+    exception folded into the generic tier, its two diplomacy blocks moved to their own country
+    files (see below).
+  - `common/scripted_triggers/WA_AI_PRODUCTION_maintenance_triggers.txt`,
+    `common/script_constants/wa_ai_production.txt`,
+    `documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md`: the anti-tank floor totals restated as
+    2 short / 4 deep, and F1 extended to cover the two new baseline floors.
+  - `tools/constants_registry.json`: new advisory group `production_ground_floor_base` pairing
+    `wa_ai_production.maintenance.ground_floor_base` with the `ai_strategy value =` literals that
+    cannot resolve `constant:`. Registry markdown regenerated.
+  - `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt`: two blocks,
+    `equipment_production_min_factories_archetype value = 1` on `artillery_equipment` (non-majors
+    only — mutually exclusive with the major block, they never sum) and on `anti_tank_equipment`
+    (everyone above the bar; there was no block to double with).
+- Forced-floor table, per band, non-major (both reviewers required it). `deepen` implies
+  `maintain` (`maintenance_triggers.txt:306`), so the two maintenance blocks fire TOGETHER and sum.
+
+  | mils | `artillery_equipment` | `anti_tank_equipment` | added here | share of band low edge |
+  | --- | --- | --- | --- | --- |
+  | 10-20 | 1 (new) | 1 (new) | 2 | 2/10 = **20 %** |
+  | 21-49 | 1 (new) | 1 new + 1 maintenance = 2 | 2 | 2/21 = 9.5 % |
+  | >= 50 | 1 (new) | 1 new + 1 + 2 maintenance = 4 | 2 | 2/50 = 4 % |
+
+  20 % at the 10-MIL low edge is AT the repo's ~20 %-of-low-edge standard, not over it, and only
+  because the legacy POL/HUN/SWE artillery floor went out in this same commit: keeping it would
+  have made SWE 3/12 = 25 %.
+- Regression risk, stated: the forced-floor set for a minor is ALREADY over-subscribed and this
+  adds 2 to it. Whole-arsenal worst case for a 10-20 MIL minor at war with empty stockpiles,
+  MEASURED by summing the blocks that can all be enabled at once (`DEFAULT_ground.txt:41-42` says
+  the infantry tiers stack on purpose): infantry 1 + 5 + 12 = 18, support 2 + 5 = 7, motorized 3,
+  artillery 1 (new), anti-tank 1 (new) = **30 forced factories on <= 20**. 28 of those 30 are
+  pre-existing. What the engine does when floors exceed the arsenal is **ASSUMED** — the 1.19.2
+  doc only says `equipment_production_min_factories` "doesn't take into account how many factories
+  are actually available", it does not say how the excess is resolved, and a save cannot show it.
+- Rests on **F1** of `documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md` §7, still open: does
+  `equipment_production_min_factories_archetype` actually force allocation on an archetype whose
+  perceived need is ~0? If F1 is false these two floors are inert, exactly like the maintenance
+  ones. Same named test: `event wa_maint.3 <TAG>`, then read the production panel.
+- ASSUMED and owed a console reading: that `num_target_equipment_in_armies_k@artillery_equipment`
+  and `@anti_tank_equipment` are non-zero for a country whose templates carry those battalions
+  (AT battalions and regimental AT companies ARE in `WA_AI_TEMPLATES_infantry.txt`, MEASURED, 12
+  sites). If the variable reads 0 there, both new floors are inert and the fix does nothing.
+- Harness: section **B2** added to `common/scripted_effects/WA_TEST_maintenance.txt` (it already
+  read both establishments). Run it as **HUN or SWE**, not POL - POL (22 mils) is the only one of
+  the three above `wartime_min_mils` = 20, so a POL-only PASS never exercises the 10-20 band where
+  the new floor is the SOLE floor. PASS = the `gun floors:` line shows `mils` >= 10,
+  `anti_tank require` > 0.10k and `floor=1`, and the production panel then shows >= 1 factory on
+  the AT line. A second run as POL after its AT tech covers the original symptom.
+- **Falsification line, three countries specifically**: if
+  `num_target_equipment_in_armies_k@artillery_equipment` reads 0 for POL/HUN/SWE, they are
+  STRICTLY WORSE OFF than before this commit - their deleted floor was unconditional, the new one
+  is not. That single reading decides whether this commit is an improvement or a regression for
+  them, which is why the harness runs on HUN/SWE first.
+- Verification (campaign): in a 1938+ save, every country with >= 10 military factories and a
+  non-zero AT establishment has >= 1 factory on `anti_tank_equipment`; no country under 10 MIL has
+  a forced AT line.
+- Closed when: the harness output above is pasted here, then one analysed campaign shows a minor
+  (POL/HUN/SWE/ROM/CZE class) producing AT guns within a year of researching them.
+- Legacy removal done HERE. Owner ruling 2026-09-16, after the reviewers made the artillery half
+  blocking and the scan showed the rest had no generic counterpart: "si le systeme generique n'a
+  pas de valeurs pour les pays actuels, alors il faut aligner POL HUN et SWE dessus et supprimer
+  leur exception". `minor_unit_production` and `minor_highered_armored_production` are therefore
+  DELETED whole, not migrated:
+
+  | What it carried | Where it goes |
+  | --- | --- |
+  | `min_factories id = artillery value = 1` | `WA_AI_PRODUCTION_floor_artillery_minor` (generic) |
+  | `min_factories id = armor value = 1` | DELETED. `[armor-prod-category]` forbids a need-blind floor under the `armor = 100` category push. **MEASURED after this commit: no `equipment_production_min_factories` on `id = armor` exists anywhere in `common/ai_strategy/`**, so that rule is universally true for the first time |
+  | `equipment_production_factor` infantry 40 / artillery 25 / armor 20 | DELETED, not migrated. The generic tier owns no ground CATEGORY push at all, so three countries do not get to keep one |
+  | naval `unit_ratio` capital 20 / sub 10 / screen 30 | POL/HUN/SWE removed from the exclusion list of `wa_default.txt` `default_unit_production`, which they were in ONLY because this block existed. They now take the generic 20 / 10 / **40** |
+  | `HUN_central_powers` / `GER_central_powers` (diplomacy, nothing to do with production) | moved to `common/ai_strategy/HUN.txt` and `common/ai_strategy/GER.txt`. `POL_HUN_SWE.txt` is then empty and is DELETED |
+  | `minor_highered_armored_production` | DELETED - it had zero `ai_strategy`, it was inert |
+
+  Regression risk, stated, and it moves in TWO OPPOSITE directions - the first draft of this line
+  said "fewer guns and tanks" and was wrong about the tanks (caught by the architecture review):
+  - **Guns: down.** They lose the `infantry 40` / `artillery 25` category push no other country
+    has. The `infantry` CATEGORY holds every towed gun archetype (MEASURED, `type = { X infantry }`
+    in `common/units/equipment/`), so all of them lose relative weight at once.
+  - **Armour: they lose their only guaranteed allocation, and the generic push does NOT replace
+    it.** Caught by the lessons review; my first write-up claimed "they already had `armor = 100`"
+    and that is false. **MEASURED gate chain**: `WA_AI_PRODUCTION_armor_category_push` requires
+    `WA_AI_TEMPLATES_use_armor_templates` (`WA_AI_TEMPLATES_triggers.txt:188`), which for a
+    non-CONFIG-listed country requires `num_of_military_factories > 150` OR
+    `has_tech = mobile_warfare_drive_tech`; `WA_AI_CONFIG_DIVISIONS_use_armored_divisions`
+    (`WA_AI_CONFIG.txt:462`) lists only ENG/FRA/USA/GER/SOV, plus JAP/ITA on historical. POL 22 /
+    HUN 14 / SWE 12 reach it ONLY by researching mobile warfare.
+    What they actually have left, by band:
+      - POL (22 mils): the per-chassis maintenance floors stay available - they are gated
+        `NOT = { WA_AI_PRODUCTION_armor_category_push }`, so a push that never fires does not
+        suppress them - but they need > 20 mils AND an already-fielded tank park
+        (`num_target_equipment_in_armies_k@<chassis>`). POL clears the mils bar.
+      - HUN (14) / SWE (12): below `wartime_min_mils` = 20, so no maintenance floor of any kind.
+        **After this commit they have zero forced armour allocation, where they had a guaranteed 1.**
+    **OWNER DECISION 2026-09-16, closed**: "un petit pays sans doctrine blindee ne fabrique pas de
+    chars, c'est normal". No bootstrap lever. A country that does not pass
+    `WA_AI_TEMPLATES_use_armor_templates` builds no tanks, by design - HUN and SWE at zero forced
+    armour allocation is the intended outcome, not a regression to fix later. Recorded durably at
+    the owning site (`[armor-prod-category]`, `WA_AI_PRODUCTION_DEFAULT_tanks.txt`) so the next
+    reader does not re-add a floor to "fix" it, and in memory so it is not re-reported as a bug.
+  - **Naval: screens weighted 40 instead of 30**, the other two ratios unchanged.
+  That shape is the intended outcome, not a side effect: it is the shape every other minor has.
+- Doc drift corrected while here (**MEASURED**, whole-file scans): the "ALSO FLOORED ELSEWHERE"
+  paragraph of `WA_AI_PRODUCTION_maintenance_triggers.txt` and §3 of
+  `documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md` both named a "CZE historical plan" floor of
+  2 on the `armor` type. It never existed in this tree: `CZE_unit_production` and
+  `CZE_highered_armored_production` carry **zero** `ai_strategy` entries, like the POL/HUN/SWE
+  twin. Both texts rewritten.
+- Still NOT in this commit: `equipment_production_min_factories id = infantry` at
+  `common/ai_strategy/SOV.txt:2822`, the two inert CZE blocks, and the rest of the 2026-09-16
+  overlap inventory (`default.txt:35` stockpile ratio, `SOV.txt:1028`/`:2599` land XP, the
+  hand-written `production_upgrade_desire_offset` of CHI/FRA/SOV/PRC). Full overlap inventory produced 2026-09-16 (also lists
+  `default.txt:35` stockpile ratio, `SOV.txt:1028`/`:2599` land XP, the naval `unit_ratio` layer,
+  and the hand-written `production_upgrade_desire_offset` in CHI/FRA/SOV/PRC).
+
 ### medium-ladder-rocket-inf-support — SHIPPED-UNTESTED (2026-09-14)
 - Origin: uncharted85's push of 2026-09-13 (`0c9e83c979` `1f2a8eda4b` `b591be489b` `300d12ab82`,
   Discord: "new templates pushed for the ai, mainly for the soviets to use rocket mech, germans to
