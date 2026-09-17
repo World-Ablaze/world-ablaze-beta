@@ -19,7 +19,8 @@
 #	Section G measures the third line state (MAINTAINED: park at its cap, floor kept, no weight)
 #	and proves it stays disjoint from OPEN.
 #
-#	READ THE VERDICT LINE AT THE BOTTOM. All five values must read 1.
+#	READ THE VERDICT LINE AT THE BOTTOM. All six values must read 1 (bob-latch-agrees only after
+#	wa_airb.3 / .4, which run the latch - wa_airb.1 can legitimately read 0 there for up to a week).
 ############################################################################################################
 
 WA_TEST_AIRB_report = {
@@ -158,8 +159,10 @@ WA_TEST_AIRB_report = {
 	if = { limit = { check_variable = { _airb_mils > constant:wa_ai_production.industry.tier_medium_mils } } set_temp_variable = { _airb_b29 = 1 } }
 	set_temp_variable = { _airb_b49 = 0 }
 	if = { limit = { check_variable = { _airb_mils > constant:wa_ai_production.industry.tier_large_mils } } set_temp_variable = { _airb_b49 = 1 } }
+	# the lines read the LATCHED programme (the flag), not the live want: the two differ for up to a
+	# week (a month in performance mode) - wa_airb.3 / .4 run the latch first, so there they agree
 	set_temp_variable = { _airb_nobob = 1 }
-	subtract_from_temp_variable = { _airb_nobob = _airb_w_bob }
+	subtract_from_temp_variable = { _airb_nobob = _airb_bobflag }
 
 	# fighter trio - exclusive by construction
 	set_temp_variable = { _airb_c_fm = _airb_w_f }
@@ -200,8 +203,9 @@ WA_TEST_AIRB_report = {
 	set_temp_variable = { _airb_nojetf = 1 }
 	subtract_from_temp_variable = { _airb_nojetf = _airb_jetf }
 	multiply_temp_variable = { _airb_c_att = _airb_nojetf }
+	multiply_temp_variable = { _airb_c_att = _airb_nobob }
 
-	# medium bombers - fast and strike yield to a jet tactical tree, tactical to the BoB programme
+	# medium bombers - fast and strike yield to a jet tactical tree, strike and tactical to the BoB programme
 	set_temp_variable = { _airb_nojett = 1 }
 	subtract_from_temp_variable = { _airb_nojett = _airb_jett }
 	set_temp_variable = { _airb_c_fast = _airb_w_fast }
@@ -210,6 +214,7 @@ WA_TEST_AIRB_report = {
 	set_temp_variable = { _airb_c_strike = _airb_w_strike }
 	multiply_temp_variable = { _airb_c_strike = _airb_b49 }
 	multiply_temp_variable = { _airb_c_strike = _airb_nojett }
+	multiply_temp_variable = { _airb_c_strike = _airb_nobob }
 	set_temp_variable = { _airb_c_tac = _airb_w_tac }
 	multiply_temp_variable = { _airb_c_tac = _airb_b49 }
 	multiply_temp_variable = { _airb_c_tac = _airb_nobob }
@@ -698,7 +703,11 @@ WA_TEST_AIRB_report = {
 	if = { limit = { has_country_flag = AI_purge_cv_small_fighter_production } add_to_temp_variable = { _airb_purges = 1 } }
 	if = { limit = { has_country_flag = AI_purge_transport_production } add_to_temp_variable = { _airb_purges = 1 } }
 
-	log = "  VERDICT [Root.GetName]: lines-match-walk=[?_airb_v1|.0] (mismatches [?_airb_mism|.0])  books-match-walk=[?_airb_v2|.0] (mismatches [?_airb_bk_mism|.0])  budget-match-walk=[?_airb_v3|.0] (mismatches [?_airb_bg_mism|.0])  cv-budget-match-walk=[?_airb_v4|.0] (mismatches [?_airb_cv_mism|.0])  maintenance-disjoint=[?_airb_v5|.0] (violations [?_airb_mt_mism|.0])  purges-armed=[?_airb_purges|.0]"
+	# the latched programme equals the live want it was latched from
+	set_temp_variable = { _airb_v6 = 0 }
+	if = { limit = { check_variable = { _airb_w_bob = _airb_bobflag } } set_temp_variable = { _airb_v6 = 1 } }
+
+	log = "  VERDICT [Root.GetName]: lines-match-walk=[?_airb_v1|.0] (mismatches [?_airb_mism|.0])  books-match-walk=[?_airb_v2|.0] (mismatches [?_airb_bk_mism|.0])  budget-match-walk=[?_airb_v3|.0] (mismatches [?_airb_bg_mism|.0])  cv-budget-match-walk=[?_airb_v4|.0] (mismatches [?_airb_cv_mism|.0])  maintenance-disjoint=[?_airb_v5|.0] (violations [?_airb_mt_mism|.0])  bob-latch-agrees=[?_airb_v6|.0] (want [?_airb_w_bob|.0] flag [?_airb_bobflag|.0])  purges-armed=[?_airb_purges|.0]"
 	log = "=== END AIR LINES TEST === [Root.GetName]"
 }
 

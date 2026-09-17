@@ -1,9 +1,26 @@
+############################################################################################################
+#	[air-budget] BATTLE OF BRITAIN LATCH. ROOT = country. Weekly; monthly (lag up to ~30 d) under the
+#	WA_AI_performance_mode global flag, which no mod script sets (console only). Sole writer of
+#	WA_bob_production_flag. Readers: WA_AI_PRODUCTION_should_run_bob_programme (the closed lines),
+#	WA_AI_PRODUCTION_has_lost_its_bomber_bases (every needs_british_bases country reads ENG's flag),
+#	can_be_produced of cv_small_fighter_airframe in plane_airframes.txt / x_plane_airframes.txt.
+############################################################################################################
+
+WA_AI_PRODUCTION_update_bob_programme = {
+	if = {
+		limit = { WA_AI_PRODUCTION_should_build_bob_fighters = yes }
+		set_country_flag = WA_bob_production_flag
+	}
+	else_if = {
+		limit = { has_country_flag = WA_bob_production_flag }
+		clr_country_flag = WA_bob_production_flag
+	}
+}
 
 ############################################################################################################
 #	[air-budget] AIR PRODUCTION PULSE. ROOT = country, ~2-day event (events/WA_AI_misc.txt). Writes the
-#	land fighter park, the Battle-of-Britain flag the equipment files read, and one purge BOOK per
-#	archetype (flag WA_AI_PRODUCTION_AIR_open_<archetype>): on the open->closed edge of the lines that
-#	fund it - WA_AI_PRODUCTION_should_open_<line>_line, the triggers the ai_strategy blocks enable on -
+#	land fighter park and one purge BOOK per archetype (flag WA_AI_PRODUCTION_AIR_open_<archetype>): on
+#	the open->closed edge of the lines that fund it - WA_AI_PRODUCTION_should_open_<line>_line, the triggers the ai_strategy blocks enable on -
 #	the AI_purge_* flag fires once (1 day; can_be_produced in plane_airframes.txt cancels the lines).
 #	[air-budget] The BOOK still tracks should_open_* - it is the "was open" side of every park
 #	Schmitt pair and must keep flipping at the cap. The PURGE inside it fires only when no line that
@@ -21,17 +38,6 @@ WA_aircraft_production_strategies = {
 	# non-interceptor fighter force (common/units/equipment/plane_airframes.txt).
 	set_variable = { WA_AI_PRODUCTION_land_fighter_park = num_deployed_planes_with_type@small_fighter_airframe }
 	add_to_variable = { WA_AI_PRODUCTION_land_fighter_park = num_deployed_planes_with_type@small_fighter_multirole_airframe }
-
-	# Battle of Britain: the flag stays because plane_airframes.txt / x_plane_airframes.txt read
-	# it in can_be_produced (no carrier fighters while the programme runs).
-	if = {
-		limit = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
-		set_country_flag = WA_bob_production_flag
-	}
-	else_if = {
-		limit = { has_country_flag = WA_bob_production_flag }
-		clr_country_flag = WA_bob_production_flag
-	}
 
 	# ---- purge books, one per archetype ---------------------------------------------------
 
