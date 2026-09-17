@@ -5125,6 +5125,20 @@ power capitulates.
   template exists and confirm it is not duplicated or replaced.
 - Closed when: the owner console confirms the 50-width + horse-MP branch, the exact 5-width fallback,
   and the idempotent existing-template branch in-game.
+- **Addendum [war-cavalry-disband] (owner order 2026-09-17)**: on the same `on_war` hook, before the
+  suppression creator, an AI with >= 100k army manpower disbands (`delete_units`, `disband = yes`)
+  its fielded cavalry, templates kept, once per campaign (flag `WA_AI_TEMPLATES_war_cavalry_disbanded`).
+  By NAME (owner choice over a unit-type loop): 59 starting OOB templates whose regiments are mostly
+  cavalry/camelry (`history/units`, extracted 2026-09-17; police and garrison names included, owner 2026-09-17:
+  units go, templates stay) + `Light Cavalry` / `Cavalry` / `Light Camelry` / `Camelry` `template A..Z`.
+  Threshold = file-scoped `@WA_CAVALRY_DISBAND_MIN_ARMY_MANPOWER` (`WA_AI_TEMPLATES_triggers.txt`).
+  - ASSUMED: the three lettered prefixes other than `Light Cavalry` follow the
+    unit localisation (`afo_unit_l_english.yml`); on_war ROOT is the country entering the war.
+  - Harness: `event wa_test_tmpl.4 <AI_TAG>` - gate inputs, cavalry division count (by unit type,
+    independent of the name list) before / after / re-run, one OOB template kept.
+  - Verification (owner console): on an AI major at peace with cavalry, `event wa_test_tmpl.4 TAG`
+    reads gate=1, cavalry lower after, oob_cav_template unchanged,
+    re-run equal to post; on a minor under 100k, gate=0 and cavalry unchanged.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,

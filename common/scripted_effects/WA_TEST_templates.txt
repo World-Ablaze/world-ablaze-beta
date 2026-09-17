@@ -290,3 +290,70 @@ WA_TEST_TMPL_war_suppression = {
 	if = { limit = { has_template = "Suppression template" } set_temp_variable = { _tm_ws_second = 1 } }
 	log = "  re-run: exists=[?_tm_ws_second|.0] (an existing named template must remain present)"
 }
+
+# [war-cavalry-disband] Direct probe of the war-entry cavalry disband. Run on an AI country with
+# `event wa_test_tmpl.4 TAG`. It counts majority-cavalry divisions (by unit, independent of the
+# name list), calls the disband twice and re-counts: gate=1 must drop the count, the re-run must
+# change nothing. Templates must survive: the OOB cavalry template column reads the same.
+WA_TEST_TMPL_war_cavalry_disband = {
+	log = "=== WAR CAVALRY DISBAND [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _tm_e1_ = 0 }
+	set_temp_variable = { _tm_e2_ = 0 }
+	set_temp_variable = { _tm_e3_ = 0 }
+	set_temp_variable = { _tm_e4_ = 0 }
+	set_temp_variable = { _tm_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _tm_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _tm_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _tm_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _tm_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _tm_e5_ = 1 } }
+	log = "  scope : always=[?_tm_e1_|.0]  I-am-ROOT=[?_tm_e2_|.0]  I-am-THIS=[?_tm_e3_|.0]  ROOT-scope-usable=[?_tm_e4_|.0]  control-false=[?_tm_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement.)"
+
+	set_temp_variable = { _tm_cd_ai = 0 }
+	set_temp_variable = { _tm_cd_flag = 0 }
+	set_temp_variable = { _tm_cd_gate = 0 }
+	set_temp_variable = { _tm_cd_all = 0 }
+	set_temp_variable = { _tm_cd_pre = 0 }
+	set_temp_variable = { _tm_cd_post = 0 }
+	set_temp_variable = { _tm_cd_rerun = 0 }
+	set_temp_variable = { _tm_cd_tpl_pre = 0 }
+	set_temp_variable = { _tm_cd_tpl_post = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _tm_cd_ai = 1 } }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_war_cavalry_disbanded } set_temp_variable = { _tm_cd_flag = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_should_disband_cavalry_on_war = yes } set_temp_variable = { _tm_cd_gate = 1 } }
+	if = { limit = { OR = { has_template = "Kavaleriyskaya Diviziya" has_template = "Cavalry Division" has_template = "Division de Cavalerie" has_template = "Kavallerie Brigade" } } set_temp_variable = { _tm_cd_tpl_pre = 1 } }
+	every_country_division = { ROOT = { add_to_temp_variable = { _tm_cd_all = 1 } } }
+	WA_TEST_TMPL_count_cavalry_divisions = yes
+	set_temp_variable = { _tm_cd_pre = _tm_cd_n }
+	log = "  pre   : ai=[?_tm_cd_ai|.0] flag=[?_tm_cd_flag|.0] gate=[?_tm_cd_gate|.0] divisions=[?_tm_cd_all|.0] cavalry=[?_tm_cd_pre|.0] oob_cav_template=[?_tm_cd_tpl_pre|.0]"
+	log = "            (gate must equal ai AND NOT flag AND army manpower on the army screen >= the @ threshold in WA_AI_TEMPLATES_triggers.txt; divisions=0 on a fielded army means the count itself is broken - STOP)"
+	WA_AI_TEMPLATES_disband_cavalry_divisions_on_war = yes
+	WA_TEST_TMPL_count_cavalry_divisions = yes
+	set_temp_variable = { _tm_cd_post = _tm_cd_n }
+	if = { limit = { OR = { has_template = "Kavaleriyskaya Diviziya" has_template = "Cavalry Division" has_template = "Division de Cavalerie" has_template = "Kavallerie Brigade" } } set_temp_variable = { _tm_cd_tpl_post = 1 } }
+	log = "  post  : cavalry=[?_tm_cd_post|.0] oob_cav_template=[?_tm_cd_tpl_post|.0]"
+	log = "            (gate=1: cavalry lower, oob_cav_template unchanged; a residual = garrison/police/mixed names left out on purpose. gate=0: cavalry unchanged)"
+	WA_AI_TEMPLATES_disband_cavalry_divisions_on_war = yes
+	WA_TEST_TMPL_count_cavalry_divisions = yes
+	set_temp_variable = { _tm_cd_rerun = _tm_cd_n }
+	log = "  re-run: cavalry=[?_tm_cd_rerun|.0] (must equal post: once per campaign)"
+}
+
+# Country scope; writes _tm_cd_n = majority-cavalry/camelry divisions of ROOT.
+WA_TEST_TMPL_count_cavalry_divisions = {
+	set_temp_variable = { _tm_cd_n = 0 }
+	every_country_division = {
+		limit = {
+			OR = {
+				division_has_majority_template = light_cavalry_horse_battalion_line
+				division_has_majority_template = heavy_cavalry_horse_battalion_line
+				division_has_majority_template = light_camelry_horse_battalion_line
+				division_has_majority_template = heavy_camelry_horse_battalion_line
+			}
+		}
+		ROOT = { add_to_temp_variable = { _tm_cd_n = 1 } }
+	}
+}
