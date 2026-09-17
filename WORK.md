@@ -800,7 +800,49 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `--check` runs plus a boot with no parse error in `logs/error.log` — three new/rewritten trigger
   files load or the armour template system goes silent.
 
-### air-budget — SHIPPED-UNTESTED (2026-09-09)
+### air-budget — SHIPPED-UNTESTED (2026-09-17)
+- **Battle of Britain closures + latch cadence SHIPPED 2026-09-17 (owner order: "do both").**
+  (1) The programme now also closes the attacker (`medium_fighter_multirole_airframe`) and strike
+  bomber (`medium_bomber_airframe`) lines, open AND maintained. MEASURED before: neither carried the
+  term, and `should_open_attacker_line` only required the heavy-fighter line closed - so the
+  programme, by closing heavy fighters, OPENED the attacker line. The same two were open in the
+  pre-budget flag ladder (MEASURED `git show 3859a96302^`), so this is a change, not a restore.
+  Still unclosed and unreachable for ENG: plain CAS (`cas_is_weak`), fast bomber
+  (`produces_fast_bombers` = GER/JAP), carrier CAS (empty config). (2) The flag moved out of the
+  2-day pulse into `WA_AI_PRODUCTION_update_bob_programme` (sole writer), on_weekly under `is_ai`,
+  on_monthly instead under `WA_AI_performance_mode`; `should_run_bob_programme` reads the FLAG, so
+  the lines flip at the latch cadence, not whenever the live want flips. MEASURED: no mod script
+  sets `WA_AI_performance_mode` (console only) - the monthly branch is the owner's ruling, kept.
+- Impact (P3(a)/(b)/(e)): readers of the flag = the line gates, `can_be_produced` of
+  `cv_small_fighter_airframe` (both airframe files), and `has_lost_its_bomber_bases`, which every
+  `needs_british_bases` country (USA) evaluates on ENG's flag - its strategic-bomber and
+  heavy-fighter closure (only with the SOV gone) now flips weekly instead of ~2-daily. Intended: it
+  is the same programme. Regression risk: on entry ENG's running attacker and strike lines are
+  CANCELLED (purge books, next pulse); a human ENG with a stale flag keeps carrier fighters banned
+  (pre-existing, latch still `is_ai`-gated as the pulse was).
+- Cadence table (P3(f)), DERIVED from the call sites. Normal: t0 the pulse writes a park across
+  the bar (the pulse itself lags the real park by MTTH 2 d) → t1 next on_weekly, ≤ 7 d: flag flips,
+  line blocks flip same day (ASSUMED daily enable) → t2 next pulse, MTTH 2 d: book edge, purge
+  fires → t3 next on_monthly, ≤ 31 d: weights. Worst t0→t2 = 7 d + one pulse. Performance mode:
+  pulse = 7 d lockout + MTTH 2 d; t1 on_monthly ≤ 31 d, the reconcile runs right after the latch in
+  the same on_monthly, so weights move at t1 BEFORE the book at t2 (harmless: the book drives only
+  the purge, the enable already closed the lines). Worst t0→t2 = 31 d + one pulse.
+- Schmitt reachability per variant under the lag (lessons "setpoint overlap"): engage under 4500
+  (7200 SOV gone), release at 5000 (8000). From ON, release stays reachable - the programme closes
+  every other air line, so factories only add fighters. The lag lets the park OVERSHOOT the release
+  bar by up to a week (a month) of fighter output, which WIDENS the gap back to the engage bar: the
+  pair can flap less often than before, never more. Each flip pair costs at most one attacker +
+  one strike purge; a latch pass is weekly, so ≤ ~4 flip pairs a month is the hard bound, and the
+  500 / 800 re-engage drop needs real attrition to cross.
+- Reviews: `wa-lessons-reviewer` CONCERNS (cadence table, bomber-bases reader, harness run) and
+  `wa-architecture-reviewer` CONCERNS (performance-mode branch unset by any script - kept as owner
+  ruling and stated in the header; bomber-bases reader in the header; latch agreement term in the
+  harness verdict; doc §3/§5/§6), all applied. Checkers: `check_ai_layers` 1 ERROR pre-existing
+  (NAME-COLLISION `is_strategic_chromium_exporter`, same on stash), ratchet unchanged;
+  `check_constants` 0.
+- Verification (BoB): `event wa_airb.3 ENG` on a 1940.7-1940.11 save after France falls: `bob=1`,
+  `bob_flag=1`, `bob-latch-agrees=1`, walk `att=0 strike=0` with every other non-fighter line 0,
+  verdict all 1. Control: same event on GER -> `bob=0 bob_flag=0`, attacker/strike follow their wants.
 - **Maintenance floor SHIPPED 2026-09-09 (owner order: "je veux un filet d'usines minimum en
   permanence, pour continuer a un peu moderniser le parc"; N = 2 / 5, every type).** A line closed
   by its park CAP is no longer treated like one closed by a want: it enters a third state,
@@ -5083,6 +5125,20 @@ power capitulates.
   template exists and confirm it is not duplicated or replaced.
 - Closed when: the owner console confirms the 50-width + horse-MP branch, the exact 5-width fallback,
   and the idempotent existing-template branch in-game.
+- **Addendum [war-cavalry-disband] (owner order 2026-09-17)**: on the same `on_war` hook, before the
+  suppression creator, an AI with >= 100k army manpower disbands (`delete_units`, `disband = yes`)
+  its fielded cavalry, templates kept, once per campaign (flag `WA_AI_TEMPLATES_war_cavalry_disbanded`).
+  By NAME (owner choice over a unit-type loop): 59 starting OOB templates whose regiments are mostly
+  cavalry/camelry (`history/units`, extracted 2026-09-17; police and garrison names included, owner 2026-09-17:
+  units go, templates stay) + `Light Cavalry` / `Cavalry` / `Light Camelry` / `Camelry` `template A..Z`.
+  Threshold = file-scoped `@WA_CAVALRY_DISBAND_MIN_ARMY_MANPOWER` (`WA_AI_TEMPLATES_triggers.txt`).
+  - ASSUMED: the three lettered prefixes other than `Light Cavalry` follow the
+    unit localisation (`afo_unit_l_english.yml`); on_war ROOT is the country entering the war.
+  - Harness: `event wa_test_tmpl.4 <AI_TAG>` - gate inputs, cavalry division count (by unit type,
+    independent of the name list) before / after / re-run, one OOB template kept.
+  - Verification (owner console): on an AI major at peace with cavalry, `event wa_test_tmpl.4 TAG`
+    reads gate=1, cavalry lower after, oob_cav_template unchanged,
+    re-run equal to post; on a minor under 100k, gate=0 and cavalry unchanged.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,
