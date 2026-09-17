@@ -532,7 +532,7 @@ WA_AI_PRODUCTION_should_build_bob_fighters = {
 	has_variable = WA_AI_PRODUCTION_land_fighter_park
 	# Schmitt pair the other way round (the programme CLOSES lines): engaged while the park is
 	# under the cap once running, engages only under the reopen bar when not - read through the
-	# flag the pulse sets from this very trigger
+	# flag WA_AI_PRODUCTION_update_bob_programme sets from this very trigger
 	if = {
 		limit = { has_country_flag = WA_bob_production_flag }
 		OR = {
@@ -564,10 +564,15 @@ WA_AI_PRODUCTION_should_build_bob_fighters = {
 # events/WA_AI_misc.txt) - a distribution, not a bound - and an enable is evaluated at the engine's
 # own cadence (not measured). The fighter trio is exclusive by construction (each later line denies the earlier),
 # the attacker line yields to the heavy-fighter line, and the Battle of Britain programme closes
-# every bomber and carrier line while it runs - all as the flag ladder did.
+# every non-fighter line the defender can reach (plain CAS and fast bombers are barred by archetype,
+# carrier CAS by an empty config) while it runs.
 
+# [air-budget] The programme is the LATCH, not the live want: WA_AI_PRODUCTION_update_bob_programme
+# (weekly, monthly in performance mode) sets the flag from should_build_bob_fighters, so every line
+# below flips at that cadence and never between two latch passes. Assumes that effect is the flag's
+# only writer.
 WA_AI_PRODUCTION_should_run_bob_programme = {
-	WA_AI_PRODUCTION_should_build_bob_fighters = yes
+	has_country_flag = WA_bob_production_flag
 }
 
 WA_AI_PRODUCTION_should_open_interceptor_line = {
@@ -618,7 +623,9 @@ WA_AI_PRODUCTION_should_open_heavy_fighter_line = {
 	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 }
 
+# Closed by the programme on its own term: closing the heavy-fighter line above is what OPENS this one.
 WA_AI_PRODUCTION_should_open_attacker_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 	NOT = { WA_AI_PRODUCTION_has_jet_fighter_tech = yes }
 	NOT = { WA_AI_PRODUCTION_should_open_heavy_fighter_line = yes }
 	WA_AI_PRODUCTION_should_build_attackers = yes
@@ -632,6 +639,7 @@ WA_AI_PRODUCTION_should_open_fast_bomber_line = {
 }
 
 WA_AI_PRODUCTION_should_open_strike_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 	NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
 	WA_AI_PRODUCTION_should_build_strike_bombers = yes
 	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
@@ -862,6 +870,7 @@ WA_AI_PRODUCTION_should_maintain_heavy_fighter_line = {
 }
 
 WA_AI_PRODUCTION_should_maintain_attacker_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 	NOT = { WA_AI_PRODUCTION_has_jet_fighter_tech = yes }
 	WA_AI_PRODUCTION_wants_attackers = yes
 	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
@@ -879,6 +888,7 @@ WA_AI_PRODUCTION_should_maintain_fast_bomber_line = {
 }
 
 WA_AI_PRODUCTION_should_maintain_strike_bomber_line = {
+	NOT = { WA_AI_PRODUCTION_should_run_bob_programme = yes }
 	NOT = { WA_AI_PRODUCTION_has_jet_tactical_bomber_tech = yes }
 	WA_AI_PRODUCTION_wants_strike_bombers = yes
 	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils

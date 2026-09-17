@@ -9,22 +9,23 @@
 #
 #		event wa_airb.1 GER     one country's air-line report (swap the tag at will)
 #		event wa_airb.2         the same report for every AI major
-#		event wa_airb.3 GER     run the SHIPPED 2-day pulse once, then report - use this on a LOADED
+#		event wa_airb.3 GER     run the SHIPPED 2-day pulse and the weekly BoB latch once, then report - use this on a LOADED
 #		                        save: the purge books are written by the pulse only, so a fresh load
 #		                        reads every book 0 until the next pulse. Expected, not a failure.
-#		event wa_airb.4 GER     run the pulse AND the monthly air-budget reconcile, then report - the
+#		event wa_airb.4 GER     run the pulse, the BoB latch AND the monthly air-budget reconcile, then report - the
 #		                        budget books are monthly, so this is the one to fire on a loaded save
 #		                        when the `budget: books` line reads 0.
 #		event wa_airb.5 SOV     cap probe: does `has_deployed_air_force_size size < constant:` read the
 #		                        bar - fire on a country whose naval-bomber park is far above 2000.
 #
 #	Output: logs/game.log under "AIR LINES TEST". Read the `scope :` line FIRST - anything but
-#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line: all four values must read 1.
+#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line: all six values must read 1.
 #
 #	WHAT TO FIRE IT ON
 #	------------------
 #		GER 1939-1941      fighter+multirole, cas, attacker, fast/strike/tactical, naval open together
-#		ENG 1940.7-1940.11 the Battle of Britain programme: bomber and carrier lines must read 0
+#		ENG 1940.7-1940.11 the Battle of Britain programme (wa_airb.3): bob=1 and bob_flag=1, every
+#		                   non-fighter line reads 0 - attacker and strike included
 #		USA after 1942     cv_fighter open, cv_cas 0 (no carrier strike power is named), land cas 0
 #		any minor          own_air_arm=0 -> every patron-gated line 0 (the control)
 #
@@ -83,6 +84,9 @@ country_event = {
 
 	immediate = {
 		WA_aircraft_production_strategies = yes
+		# the latch reads the park the pulse just wrote; the second pulse writes the books from the new latch
+		WA_AI_PRODUCTION_update_bob_programme = yes
+		WA_aircraft_production_strategies = yes
 		WA_TEST_AIRB_report = yes
 	}
 
@@ -100,6 +104,9 @@ country_event = {
 	fire_only_once = no
 
 	immediate = {
+		WA_aircraft_production_strategies = yes
+		# the latch reads the park the pulse just wrote; the second pulse writes the books from the new latch
+		WA_AI_PRODUCTION_update_bob_programme = yes
 		WA_aircraft_production_strategies = yes
 		WA_AI_AIR_BUDGET_reconcile = yes
 		WA_TEST_AIRB_report = yes
