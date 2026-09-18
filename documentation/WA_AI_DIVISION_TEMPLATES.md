@@ -64,8 +64,10 @@ The garrison family (`9000-9999`, type code `8`) was removed on 2026-08-19 toget
 `role = garrison` entry, its `role_ratio` share and its flag. Both range and code are free.
 See the header of `common/ai_templates/WA_AI_TEMPLATES_garrison.txt` before reusing either.
 
-Light-armor conversion values ([armor-class-handoff]): `5109-5122` are the light→medium
-transition rungs, and `5213-5222` (= `51xx + 100`) their MIS twins, selected by the light
+Light-armor conversion values ([armor-class-handoff]): inside the `51xx` band, `5109-5116` and
+`5121-5122` are the light→medium transition rungs; `5117-5120` ([light-td-coverage]) and
+`5123-5124` ([light-spaa-coverage]) are PURE-LIGHT reduced-variant rungs that carry no
+conversion and own no MIS twin. `5213-5222` (= `51xx + 100`) are the transition MIS twins, selected by the light
 calculator when `WA_AI_TEMPLATES_is_medium_mis_family` holds — i.e. the medium role targets the
 6/3/6 inf-support family (`6105-6110`). A twin's `replace_with` points at
 `..._LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS` (composition = medium `6105`) instead of the pure 9+6
