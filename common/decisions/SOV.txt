@@ -1,4 +1,7 @@
 ####### NO STEP BACK! #######
+@SOV_RELOCATION_SYNTHETIC_CAP = 6	#relocation destinations: the refineries' state_max in common/buildings/00_buildings.txt
+@SOV_RELOCATION_STEEL_CAP = 15
+@SOV_RELOCATION_ALUMINIUM_CAP = 15
 @DAYS_DETERMINED = 180 #Used for propaganda campaign SOV_heroes_forward -> Value should be the same as SOV_default_propaganda_campaign_duration
 
 FIN_winter_war_category = {
@@ -10266,17 +10269,13 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 271
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_moscow_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 271
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -10302,13 +10301,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 271
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						synthetic_refinery > 0
-						industrial_complex > 3
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -10320,11 +10313,13 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV	#only states the USSR holds: a core owned by another country (Tannu Tuva) would receive the factory
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP	#the refinery's state_max from 00_buildings.txt (free_building_slots ignores it; the source building is already removed). Checks built levels only: a level already queued in the destination can still reach the cap first
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10362,6 +10357,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -10405,12 +10401,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 570 40 403 653 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10448,12 +10446,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10491,6 +10491,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -10530,13 +10531,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 271
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						synthetic_refinery > 0
-						industrial_complex > 3
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -10548,12 +10543,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10591,6 +10588,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -10634,12 +10632,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 570 40 403 653 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10677,12 +10677,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10720,6 +10722,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -10759,13 +10762,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 271
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						synthetic_refinery > 0
-						industrial_complex > 3
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -10777,12 +10774,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10820,6 +10819,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -10863,12 +10863,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 570 40 403 653 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10906,12 +10908,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -10949,6 +10953,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -10988,13 +10993,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 271
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						synthetic_refinery > 0
-						industrial_complex > 3
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -11006,12 +11005,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11049,6 +11050,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 405 586 40 570 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -11092,12 +11094,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 570 40 403 653 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11135,12 +11139,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11178,6 +11184,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 570 40 403 405 571 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -11282,17 +11289,13 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 132
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_leningrad_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 132
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -11319,13 +11322,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 132
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -11337,12 +11334,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11380,6 +11379,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -11423,12 +11423,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11466,12 +11468,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11509,6 +11513,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -11548,13 +11553,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 132
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -11566,12 +11565,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11609,6 +11610,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -11652,12 +11654,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11695,12 +11699,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11738,6 +11744,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -11841,17 +11848,13 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 272
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_voronezh_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 272
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -11877,13 +11880,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 272
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -11895,12 +11892,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -11938,6 +11937,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -11981,12 +11981,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12024,12 +12026,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12067,6 +12071,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -12105,13 +12110,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 272
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -12123,12 +12122,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12166,6 +12167,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -12209,12 +12211,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12252,12 +12256,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12295,6 +12301,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 403 653 573 876 398 651 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -12397,17 +12404,14 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 257
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_stalingrad_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 257
+						NOT = { is_on_continent = asia }	#Astrakhan: also a destination of this mission, skipped here as the original did, so a building delivered there cannot keep the mission running
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -12433,13 +12437,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 257
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -12451,12 +12449,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12494,6 +12494,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -12537,12 +12538,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12580,12 +12583,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12623,6 +12628,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -12662,13 +12668,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 257
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -12680,12 +12680,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12723,6 +12725,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -12766,12 +12769,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12809,12 +12814,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12852,6 +12859,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -12891,13 +12899,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 257
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -12909,12 +12911,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -12952,6 +12956,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -12995,12 +13000,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13038,12 +13045,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13081,6 +13090,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 40 570 405 572 876 653 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -13185,20 +13195,16 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					OR = {
-						region = 270
-						region = 30
-					}
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_kharkov_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						OR = {
+							region = 270
+							region = 30
+						}
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -13228,13 +13234,7 @@ SOV_industry_relocation = {
 					}
 
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -13246,12 +13246,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13289,6 +13291,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -13332,12 +13335,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13375,12 +13380,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13418,6 +13425,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -13460,13 +13468,7 @@ SOV_industry_relocation = {
 						region = 30
 					}
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -13478,12 +13480,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13521,6 +13525,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -13564,12 +13569,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13607,12 +13614,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13650,6 +13659,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -13692,13 +13702,7 @@ SOV_industry_relocation = {
 						region = 30
 					}
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -13710,12 +13714,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13753,6 +13759,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -13796,12 +13803,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13839,12 +13848,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13882,6 +13893,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -13924,13 +13936,7 @@ SOV_industry_relocation = {
 						region = 30
 					}
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -13942,12 +13948,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -13985,6 +13993,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -14028,12 +14037,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14071,12 +14082,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14114,6 +14127,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -14156,13 +14170,7 @@ SOV_industry_relocation = {
 						region = 30
 					}
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -14174,12 +14182,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14217,6 +14227,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 408 564 563 561 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -14260,12 +14271,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14303,12 +14316,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14346,6 +14361,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -14450,17 +14466,13 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 130
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_kiev_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 130
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -14486,13 +14498,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 130
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -14504,12 +14510,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14547,6 +14555,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -14590,12 +14599,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14633,12 +14644,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14676,6 +14689,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -14715,13 +14729,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 130
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -14733,12 +14741,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14776,6 +14786,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -14819,12 +14830,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14862,12 +14875,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -14905,6 +14920,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -14944,13 +14960,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 130
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -14962,12 +14972,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15005,6 +15017,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -15048,12 +15061,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15091,12 +15106,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15134,6 +15151,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -15173,13 +15191,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 130
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#Mils
 					limit = { arms_factory > 3 }
@@ -15191,6 +15203,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -15234,12 +15247,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15277,12 +15292,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15320,12 +15337,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 252 400 399 250 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15363,6 +15382,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -15465,17 +15485,13 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					region = 131
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_minsk_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						region = 131
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -15501,13 +15517,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 131
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -15519,12 +15529,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15562,6 +15574,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -15605,12 +15618,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15648,12 +15663,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15691,6 +15708,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -15730,13 +15748,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 131
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -15748,12 +15760,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15791,6 +15805,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -15834,12 +15849,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15877,12 +15894,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -15920,6 +15939,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -15959,13 +15979,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 131
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -15977,12 +15991,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16020,6 +16036,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -16063,12 +16080,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16106,12 +16125,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16149,6 +16170,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -16188,13 +16210,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 131
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -16206,12 +16222,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = synthetic_refinery
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16249,6 +16267,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = arms_factory
@@ -16292,12 +16311,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = steel_refinery
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16335,12 +16356,14 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 398 651 250 876 586 405 653 572 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = aluminium_refinery
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								arms_factory < 21
 								industrial_complex < 11
 								infrastructure > 2
@@ -16378,6 +16401,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								is_on_continent = asia
 								free_building_slots = {
 									building = industrial_complex
@@ -16566,22 +16590,18 @@ SOV_industry_relocation = {
 			}
 		}
 		available = {
-			#Finish once this mission can no longer move anything in its own search scope.
-			NOT = {
-				any_owned_state = {
-					is_controlled_by = SOV
-					OR = {
-						region = 133
-						region = 275
-						region = 40
-						region = 137
-					}
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
+			custom_trigger_tooltip = {
+				tooltip = SOV_relocating_industry_from_ural_area_done_tt
+				NOT = {
+					any_owned_state = {
+						is_controlled_by = SOV
+						OR = {
+							region = 133
+							region = 275
+							region = 40
+							region = 137
+						}
+						SOV_relocation_state_has_movable_industry = yes
 					}
 				}
 			}
@@ -16606,13 +16626,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 133
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -16623,6 +16637,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -16634,6 +16649,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -16668,6 +16684,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -16713,6 +16730,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -16725,6 +16743,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -16759,6 +16778,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -16771,6 +16791,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -16806,6 +16827,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -16848,13 +16870,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 275
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -16865,6 +16881,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -16876,6 +16893,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -16910,6 +16928,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -16955,6 +16974,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -16967,6 +16987,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17001,6 +17022,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17013,6 +17035,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17048,6 +17071,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17090,13 +17114,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 40
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -17107,6 +17125,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -17118,6 +17137,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17152,6 +17172,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -17197,6 +17218,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17209,6 +17231,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17243,6 +17266,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17255,6 +17279,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17290,6 +17315,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17332,13 +17358,7 @@ SOV_industry_relocation = {
 				limit = {
 					region = 137
 					is_controlled_by = SOV
-					OR = {
-						arms_factory > 3
-						steel_refinery > 0
-						aluminium_refinery > 0
-						industrial_complex > 3
-						synthetic_refinery > 0
-					}
+					SOV_relocation_state_has_movable_industry = yes
 				}
 				if = {	#synth
 					limit = { synthetic_refinery > 0 }
@@ -17349,6 +17369,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -17360,6 +17381,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								synthetic_refinery < @SOV_RELOCATION_SYNTHETIC_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17394,6 +17416,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 14
 									region = 136
@@ -17439,6 +17462,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17451,6 +17475,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								steel_refinery < @SOV_RELOCATION_STEEL_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17485,6 +17510,7 @@ SOV_industry_relocation = {
 					PREV = {
 						random_core_state = {
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
@@ -17497,6 +17523,7 @@ SOV_industry_relocation = {
 									size > 0
 									include_locked = yes
 								}
+								aluminium_refinery < @SOV_RELOCATION_ALUMINIUM_CAP
 								infrastructure > 1
 								all_neighbor_state = {
 									OR = {
@@ -17532,6 +17559,7 @@ SOV_industry_relocation = {
 						random_core_state = {
 							prioritize = { 653 572 876 405 586 40 }
 							limit = {
+								is_owned_and_controlled_by = SOV
 								OR = {
 									region = 284
 									region = 136
