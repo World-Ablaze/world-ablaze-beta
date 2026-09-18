@@ -83,7 +83,7 @@ WA_reserves_create_heavy_infantry_template = {
 		if = {
 			limit = {
 				WA_AI_CONFIG_DIVISIONS_can_motorize_support = yes
-				WA_AI_TECHTREE_has_all_support_companies = yes
+				WA_reserves_has_all_support_companies = yes
 				WA_AI_TECHTREE_has_at = yes
 				WA_AI_TECHTREE_has_aa = yes
 			}
@@ -91,7 +91,7 @@ WA_reserves_create_heavy_infantry_template = {
 		}
 		else_if = {
 			limit = {
-				WA_AI_TECHTREE_has_all_support_companies = yes
+				WA_reserves_has_all_support_companies = yes
 				WA_AI_TECHTREE_has_at = yes
 				WA_AI_TECHTREE_has_aa = yes
 			}
@@ -456,7 +456,7 @@ WA_reserves_create_units = {
 	}
 	else_if = {
 		limit = {
-			CONTROLLER = { WA_AI_TECHTREE_has_pol_infantry_folder = yes }
+			CONTROLLER = { WA_reserves_uses_pol_equipment = yes }
 		}
 		meta_effect = {
 			text = {
@@ -471,7 +471,7 @@ WA_reserves_create_units = {
 	}
 	else_if = {
 		limit = {
-			CONTROLLER = { WA_AI_TECHTREE_has_hun_infantry_folder = yes }
+			CONTROLLER = { WA_reserves_uses_hun_equipment = yes }
 		}
 		meta_effect = {
 			text = {
@@ -486,7 +486,7 @@ WA_reserves_create_units = {
 	}
 	else_if = {
 		limit = {
-			CONTROLLER = { WA_AI_TECHTREE_has_swe_infantry_folder = yes }
+			CONTROLLER = { WA_reserves_uses_swe_equipment = yes }
 		}
 		meta_effect = {
 			text = {
@@ -499,18 +499,36 @@ WA_reserves_create_units = {
 			EQUIPMENT_FACTOR = "[?_reserves_spawn_equipment|.2]"
 		}
 	}
+	# [reserve-equipment-family] FIN has its own small arms but no national artillery or AT line,
+	# so the tubes stay generic; every other branch here forces a full national set.
+	else_if = {
+		limit = {
+			CONTROLLER = { WA_reserves_uses_fin_equipment = yes }
+		}
+		meta_effect = {
+			text = {
+				create_unit = {
+					division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=[EQUIPMENT_FACTOR] force_equipment_variants={fin_inf_1={owner=\"[TAG]\"}fin_hv_inf_1={owner=\"[TAG]\"}generic_art_1={owner=\"[TAG]\"}generic_at_1={owner=\"[TAG]\"}}"
+					owner = ROOT
+					count = _reserves_spawn_count
+				}
+			}
+			TAG = "[ROOT.GetTag]"
+			EQUIPMENT_FACTOR = "[?_reserves_spawn_equipment|.2]"
+		}
+	}
 	else = {
-        meta_effect = {
-            text = {
-                create_unit = {
-                    division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=[EQUIPMENT_FACTOR] force_equipment_variants={gen_inf_0={owner=\"[TAG]\"}gen_hv_inf_1={owner=\"[TAG]\"}generic_art_1={owner=\"[TAG]\"}generic_at_1={owner=\"[TAG]\"}}"
-                    owner = ROOT
-                    count = _reserves_spawn_count
-                }
-            }
-            TAG = "[ROOT.GetTag]"
-            EQUIPMENT_FACTOR = "[?_reserves_spawn_equipment|.2]"
-        }
+		meta_effect = {
+			text = {
+				create_unit = {
+					division = "division_template=\"Reserve Divisíon\" start_experience_factor=0.3 start_equipment_factor=[EQUIPMENT_FACTOR] force_equipment_variants={gen_inf_0={owner=\"[TAG]\"}gen_hv_inf_1={owner=\"[TAG]\"}generic_art_1={owner=\"[TAG]\"}generic_at_1={owner=\"[TAG]\"}}"
+					owner = ROOT
+					count = _reserves_spawn_count
+				}
+			}
+			TAG = "[ROOT.GetTag]"
+			EQUIPMENT_FACTOR = "[?_reserves_spawn_equipment|.2]"
+		}
 	}
 }
 
