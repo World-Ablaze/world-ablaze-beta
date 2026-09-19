@@ -91,6 +91,10 @@ def main(argv=None):
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--apply", action="store_true")
     mode.add_argument("--explain", metavar="FIXTURE")
+    mode.add_argument("--doctrine-patch", action="store_true",
+                      help="apply the Armoured Waves width prerequisite (A9/A14) to "
+                           "common/doctrines/subdoctrines/land/armor_subdoctrines.txt; run it in "
+                           "the SAME commit as --apply, never before")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args(argv)
 
@@ -103,6 +107,9 @@ def main(argv=None):
 
     if args.explain:
         return explain(registry, game, Path(args.explain))
+
+    if args.doctrine_patch:
+        return doctrine_patch(registry, game)
 
     try:
         per_family, planes_by_family, groups, stats, errors = compile_all(registry, game)
@@ -161,6 +168,63 @@ def main(argv=None):
         return 0
 
     return 2 if errors_n else 0
+
+
+DOCTRINE_FILE = "common/doctrines/subdoctrines/land/armor_subdoctrines.txt"
+
+
+def doctrine_patch(registry, game):
+    """Set the Armoured Waves per-battalion width modifier, the prerequisite of --apply.
+
+    Deliberately NOT part of --apply and deliberately not shipped on its own: with the new value
+    and the OLD templates still live, a country holding the doctrine fields a 45-width wave
+    division. The value and the templates land in one commit or neither does.
+    """
+    want = registry.composition["waves"]["width_modifier"]
+    extra = [registry.mobile_infantry[form]["unit"] for form in ("mechanized", "motorized")]
+    path = REPO / DOCTRINE_FILE
+    raw = path.read_bytes()
+    if raw.startswith(b"\xef\xbb\xbf"):
+        print("REFUSING: %s carries a UTF-8 BOM" % DOCTRINE_FILE)
+        return 2
+    text = raw.decode("utf-8")
+    start = text.index("armoured_waves = {")
+    depth, end = 0, len(text)
+    for i in range(text.index("{", start), len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+    block = text[start:end]
+    import re as _re
+    patched, changed = _re.subn(r"combat_width\s*=\s*-?[\d.]+",
+                                "combat_width = %s" % ("%g" % want), block)
+    added = []
+    for unit in extra:
+        if _re.search(r"\n\s*%s\s*=\s*\{" % unit, patched):
+            continue
+        anchor = patched.index("_battalion_line = {")
+        anchor = patched.rindex("\n", 0, anchor) + 1
+        indent = "\t\t"
+        patched = (patched[:anchor]
+                   + "%s# [armor-template-generator] A14: the wave transform drops mobile-infantry\n"
+                     "%s# battalions, so they carry the same modifier as the armour lines.\n"
+                     "%s%s = {\n%s\tcombat_width = %g\n%s}\n"
+                     % (indent, indent, indent, unit, indent, want, indent)
+                   + patched[anchor:])
+        added.append(unit)
+    out = text[:start] + patched + text[end:]
+    if out == text:
+        print("doctrine already at %+g with %d lines covered" % (want, changed))
+        return 0
+    path.write_bytes(out.encode("utf-8"))
+    print("patched %s: %d combat_width values set to %+g, added %s"
+          % (DOCTRINE_FILE, changed, want, ", ".join(added) or "nothing"))
+    print("This is the PREREQUISITE of --apply. Commit it with the generated templates.")
+    return 0
 
 
 def explain(registry, game, fixture: Path):

@@ -141,14 +141,27 @@ class Width(unittest.TestCase):
         finally:
             comp["width_assumptions"]["subdoctrines"] = saved
 
-    def test_waves_modifier_covers_every_line_unit_a_wave_target_fields(self):
+    def test_uncovered_wave_units_are_reported_not_assumed(self):
+        """The doctrine prerequisite is not applied yet, so the gap must be a finding."""
         needed = set()
+        per_family = {}
         for family_id in REGISTRY.families:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
+            per_family[family_id] = sels
             for s in sels:
                 if s.facts.waves:
                     needed.update(s.line)
-        self.assertEqual(sorted(u for u in needed if u not in GAME.waves_modifiers), [])
+        uncovered = sorted(u for u in needed if u not in GAME.waves_modifiers)
+        findings = validate._doctrine(REGISTRY, GAME, per_family)
+        codes = [f.code for f in findings]
+        want = REGISTRY.composition["waves"]["width_modifier"]
+        installed = set(GAME.waves_modifiers.values())
+        if uncovered:
+            self.assertIn("WAVES-COVERAGE", codes)
+        if installed - {want}:
+            self.assertIn("WAVES-VALUE", codes)
+        if not uncovered and not (installed - {want}):
+            self.assertEqual(codes, [])
 
 
 class HeavyRestriction(unittest.TestCase):

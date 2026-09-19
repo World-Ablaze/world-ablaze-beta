@@ -156,7 +156,8 @@ def _doctrine(registry, game, per_family_selections):
     if wrong:
         out.append(Finding(ERROR, "WAVES-VALUE",
                            "armoured_waves declares %s, the registry requires %+0.1f (A9) - "
-                           "patch the doctrine before publishing any width"
+                           "run --doctrine-patch in the same commit as --apply; the templates "
+                           "cannot ship before it and it cannot ship before them"
                            % (", ".join("%+0.1f" % v for v in wrong), want)))
     needed = set()
     for sels in per_family_selections.values():
@@ -166,8 +167,9 @@ def _doctrine(registry, game, per_family_selections):
     uncovered = sorted(u for u in needed if u not in installed)
     if uncovered:
         out.append(Finding(ERROR, "WAVES-COVERAGE",
-                           "the sub-doctrine does not modify %s, so a wave target that fields it "
-                           "is wider than its base target" % ", ".join(uncovered)))
+                           "the sub-doctrine does not modify %s, so a wave target that fields "
+                           "it misses the target width (A14) - run --doctrine-patch"
+                           % ", ".join(uncovered)))
 
     target = registry.composition["target_width"]
     mode = registry.composition.get("variant_block_mode")
