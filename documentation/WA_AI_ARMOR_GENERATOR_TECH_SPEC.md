@@ -1,7 +1,7 @@
 # AI Armor Template Generator — Technical Implementation Specification
 
 Date: 2026-09-18. Subject: `armor-template-generator`.
-Status: implementation design; no generator or gameplay change has been implemented by this document. Aligned with owner feedback round 2 (2026-09-18).
+Status: steps 1-4 of section 11 are IMPLEMENTED and run; step 5 (integration into the live files) is NOT applied. `python tools/gen/gen_ai_armor_templates.py --dry-run` renders every output and reports its findings; `--apply` refuses while any ERROR stands. Aligned with owner feedback round 2 (2026-09-18).
 Functional authority: [WA_AI_ARMOR_GENERATOR_SPEC.md](WA_AI_ARMOR_GENERATOR_SPEC.md), including the latest owner decisions A1-A12.
 
 This document specifies proposed interfaces and algorithms. Paths marked **new** do not exist yet. Statements about existing code are labeled; requirements and proposed designs describe what must be implemented, not measured engine behavior.
@@ -41,19 +41,19 @@ Before applying gameplay output, produce an impact inventory listing every defin
 
 | Path | Ownership and purpose |
 |---|---|
-| `tools/armor_templates_registry.json` **new** | Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles, exceptions, and transition profiles. No country-tag lists or copied technology lists. |
-| `tools/gen/gen_ai_armor_templates.py` **new** | CLI entry point. Resolve repository root from the script location. Standard library only. |
-| `tools/gen/armor_templates/` **new** | Small implementation package: `model.py`, `inputs.py`, `resolve.py`, `transitions.py`, `emit.py`, `validate.py`. Avoid a framework with one class per template. |
+| `tools/armor_templates_registry.json` | EXISTS. Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles, exceptions and transition profiles. No country-tag lists or copied technology lists. |
+| `tools/gen/gen_ai_armor_templates.py` | EXISTS. CLI entry point, standard library only, resolves the repository root from its own location. |
+| `tools/gen/armor_templates/` | EXISTS: `model.py` (registry schema), `inputs.py` (read-only adapters over `common/units`, the scripted triggers, the sub-doctrine and the defines), `resolve.py` (pure resolver + enumeration), `emit.py`, `validate.py`, `transitions.py`. |
 | `common/ai_templates/WA_AI_TEMPLATES_armored_{light,light_support,medium,medium_modern,heavy}.txt` | Fully generated. Preserve appropriate role metadata, front-role override, reinforcement priority, icons, and naming groups from explicit registry profiles. |
-| `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt` **new** | Generated generic selection effects. Contains no duplicate definitions of public wrappers. |
-| `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` **new** | Generated decision predicates for candidate winners, template activation, semantic code sets, and direct-transfer/fallback admission and completion conditions. |
+| `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt` **not yet written** | Generated selection ladders, one effect per template flag. Rendered at 20.7 KiB. |
+| `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` **not yet written** | Generated decision predicates: the chain winners, the two industrial cuts and the semantic code sets. Rendered at 13.6 KiB. |
 | `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` | Retains scheduling-facing wrappers, flag writer, admission/spirit handling, existing progression updates, and Soviet mission/retirement orchestration. Replace generic armor calculation bodies with generated implementations, and deliberately retire conversion-only phases/codes/readers after an impact inventory. |
 | `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_transition.txt` and matching `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_transition.txt` **new** | Handwritten direct-transfer/fallback controller and gates, reviewed separately from generated output; see §7. |
 | `common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt` | Retains shared equipment/capability policy. Make A7's obsolescence change in reviewed component predicates; do not duplicate stock/resource tests in generated template blocks. |
 | `common/script_constants/wa_ai_armor_templates.txt` **new** | Authoritative shared numeric tuning: base counts, factory thresholds, variant count, Armoured Waves count deltas, and any empirically justified transition thresholds. The doctrine file owns its Armoured Waves width modifier; register any validation mirror instead of duplicating a tunable doctrine value. Read by Python as input; do not maintain a second numeric copy in JSON. Reuse the existing readiness threshold in `wa_ai_production.txt`. |
-| `tools/generated/armor_templates_manifest.json` **new** | Generated signatures, codes, group ownership, conditions, full slot compositions, actual equipment demand, direct role-transfer records, fallback state contracts, exemptions, and input digests. No timestamps in deterministic artifacts. |
+| `tools/generated/armor_templates_manifest.json` **not yet written** | One row per code: name, categorical facts, full composition, width. The ladder computes the code arithmetically, so no per-target trigger conjunction is carried. Rendered at 2.1 MiB. |
 | `tools/constants_registry.json` | Reviewed integration edit: register new rendered numeric mirrors and retire the old modern-tier offset group only when its source and mirror are both removed. Not an unrestricted generator rewrite target. |
-| `tools/tests/test_armor_templates.py` **new** | Hand-authored fixtures and semantic/compiler/CLI tests using `unittest`. |
+| `tools/tests/test_armor_templates.py` | EXISTS. 34 hand-authored `unittest` cases over the owner decisions, the code assignment and the rendering. |
 | `documentation/WA_AI_DIVISION_TEMPLATES.md` | Update maintenance instructions and code/role model when the implementation ships. |
 
 Retire the old mirror generator as a writer in the same change that transfers ownership. Either remove it after updating every caller, or retain a deprecated forwarding CLI that invokes the new pipeline and cannot emit its old mirror independently.
@@ -187,15 +187,23 @@ A normalized composition signature contains family, main chassis, motorization, 
 
 Enumerate categorical choices after priority resolution, not all combinations of arbitrary country booleans. Prune only combinations proved illegal by declared constraints; do not prune based on historical country assumptions. Record conservative reachability when external predicates are opaque. Deduplicate identical composition payloads internally. Do not emit duplicate destination payloads in source groups merely to build role-conversion ladders.
 
-Assign deterministic positive dense integer codes per flag from sorted selection identities. Zero remains disabled; no generic +50/+100/+500 arithmetic. Inventory Soviet phase-code readers and retire conversion-only codes together with their effects, triggers, template entries, reports and telemetry readers. Reserve only values still needed by retained mission/retirement behavior; 15000–15016 are not an obligatory compatibility island. No save migration is required.
+Assign deterministic positive dense integer codes per flag. The code is COMPUTED, not looked up: each declared axis is one digit of a mixed-radix value, dense inside the family's declared range, with one rectangular plane per mobile-infantry form (the motorized plane carries no Armoured Waves digit). Zero remains disabled; no generic +50/+100/+500 arithmetic survives - the modern family owns `8000-8999` instead of medium+500. Inventory Soviet phase-code readers and retire conversion-only codes together with their effects, triggers, template entries, reports and telemetry readers. No save migration is required.
 
-Keep generated code magnitudes within the already-used 15016 envelope for the first implementation: fail on exhaustion rather than widen silently. Emit counts before writing: signatures per family, targets per group, direct-transfer profiles, output bytes, and largest code. This is a conservative encoding limit, not a claim about the engine's maximum supported integer.
+Keep generated code magnitudes within the already-used 15016 envelope: the largest code rendered today is 8863. Fail on exhaustion rather than widen silently - `--dry-run` prints the per-family plane bases and sizes and the code-budget warning at 80 % of a range.
 
 The manifest maps `(flag, code)` to one deterministic destination selection and, if applicable, a direct-transfer request. Produce semantic code-set predicates from the manifest for waves, modern chassis, medium infantry support, heavy support, and transfer operation states. Replace handwritten numeric bands in tests/readers with these definitions where applicable. Flag presence alone remains distinct from component choice.
 
 ### Runtime code selection
 
 Compile the resolver into a nested decision tree over reusable predicates and selected categorical values. Each leaf writes a literal `_template_value`, with a disabled default. Avoid a flat repeated conjunction for every target; share prefixes and component tests. Initialize every `_wa_ag_*` temporary at entry and clear owned scratch at exit; public `_template_type_code` and `_template_value` follow the existing writer contract.
+
+**MEASURED (2026-09-19, `--dry-run`)** — 2016 targets: heavy 144 (7000-7143), light 144
+(5000-5143), medium 864 (6000-6863), modern 864 (8000-8863). Rendered output is 7 files:
+1.9 MiB of `ai_templates`, 20.7 KiB of ladders, 13.6 KiB of predicates, 2.1 MiB of manifest. The
+arithmetic encoding is what keeps the ladder at 20.7 KiB: a flat first-claim ladder of the same
+2016 targets rendered at 1.4 MiB and would cost one full conjunction per target per country per
+monthly pulse.
+
 
 Use mutually exclusive branches or explicit first-claim guards. Generated input predicates and the Python resolver must be tested against the rendered script tree, so tests do not merely compare two calls to the same function. Avoid unsupported dynamic identifiers and arbitrary runtime string construction.
 
