@@ -372,6 +372,32 @@ class ShippedLadder(unittest.TestCase):
             self.assertNotEqual(derived, original)
 
 
+class EmittedVocabulary(unittest.TestCase):
+    """Every name the generated script uses must exist. `clear_temp_variable` did not, and only
+    the boot log said so - four "Unknown effect-type" errors from a file that had passed every
+    offline check."""
+
+    def _rendered(self):
+        import gen_ai_armor_templates as cli
+        pf, planes, decl, groups, stats, _errs = cli.compile_all(REGISTRY, GAME)
+        return cli.render(REGISTRY, GAME, pf, planes, decl, groups, stats)
+
+    def test_no_invented_name_in_the_emitted_script(self):
+        self.assertEqual(validate.rendered_scripts(self._rendered(), GAME), [])
+
+    def test_the_gate_catches_the_effect_that_shipped_broken(self):
+        body = "\n".join(["X = {", "\tclear_temp_variable = _wa_ag_digit", "}", ""])
+        fake = {"common/scripted_effects/FAKE.txt": body}
+        codes = [f.code for f in validate.rendered_scripts(fake, GAME)]
+        self.assertIn("UNKNOWN-NAME", codes)
+
+    def test_the_generated_files_no_longer_use_it(self):
+        for path in ("common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt",
+                     "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt"):
+            self.assertNotIn("clear_temp_variable",
+                             (REPO / path).read_text(encoding="utf-8"))
+
+
 class RegimentalGeometry(unittest.TestCase):
     """The regimental block must fit the columns the battalion count can form.
 

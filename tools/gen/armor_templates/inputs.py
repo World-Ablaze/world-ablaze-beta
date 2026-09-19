@@ -72,6 +72,7 @@ class GameFiles:
         self.pdx = _import_pdx(self.root)
         self.units = {}
         self.triggers = {}
+        self.effects = {}
         self.waves_modifiers = {}
         self.subdoctrine_widths = {}
         self.subdoctrine_source = {}
@@ -115,10 +116,12 @@ class GameFiles:
     # --------------------------------------------------------------- triggers
     def _load_triggers(self):
         pattern = re.compile(r"^([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", re.M)
-        for path in sorted((self.root / "common" / "scripted_triggers").glob("*.txt")):
-            text = path.read_text(encoding="utf-8-sig", errors="replace")
-            for m in pattern.finditer(text):
-                self.triggers.setdefault(m.group(1), str(path.relative_to(self.root)))
+        for folder, into in (("scripted_triggers", self.triggers),
+                             ("scripted_effects", self.effects)):
+            for path in sorted((self.root / "common" / folder).glob("*.txt")):
+                text = path.read_text(encoding="utf-8-sig", errors="replace")
+                for m in pattern.finditer(text):
+                    into.setdefault(m.group(1), str(path.relative_to(self.root)))
 
     # ----------------------------------------------------------- sub-doctrines
     def _load_waves(self):

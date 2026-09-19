@@ -293,6 +293,20 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (12 support tanks + 6 light + 4 motorised, MEASURED 44 width) and 18 for the starter park.
   They are the Country-layer exception of principle 2, not a shortcut: they reproduce a real
   formation, and `WA_AI_CONFIG_pursues_historical_tank_park` still decides who gets them.
+- BOOT LOG 2026-09-19, owner: 4 errors, all the same one. `clear_temp_variable` is NOT an engine
+  effect - "Unknown effect-type" on lines 139 and 518 of
+  `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt`. The repo already knew: a comment
+  in `common/scripted_effects/WA_TEST_research_bonus.txt:80` records the same finding from the
+  2026-09-08 boot log. I grepped the token, found that comment, and read a note saying the effect
+  does NOT exist as evidence that it does.
+  - Fixed: the line is gone. A temp variable dies with the effect, and the scratch digit is re-set
+    to 0 before every use, which is what the "an unset temp does not read as 0" rule asks for.
+  - MECHANISM, not a comment: `validate.rendered_scripts` now checks every statement name in the
+    rendered script against a declared engine vocabulary plus the 2884 triggers and 1639 effects
+    defined in the repo, and `--apply` refuses on an unknown one. Three tests pin it, one of them
+    feeding it the exact line that shipped broken.
+  - The engine vocabulary was verified against the install's own documentation
+    (`effects_documentation.md`, `triggers_documentation.md`, 1.19.2), not against a grep.
 - Reviewer-required, both returned before the commit. wa-architecture-reviewer: CONCERNS, both
   items applied (the registry header no longer claims "no country tag" now that the six
   COUNTRY_SOV_* ids are in it, and `tools/check_templates.py` is in the AGENTS.md validation

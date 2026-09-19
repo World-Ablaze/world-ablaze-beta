@@ -7,6 +7,8 @@ registry (A9), and names the structural cause when a target misses the target wi
 
 from __future__ import annotations
 
+import re
+
 ERROR, WARN, INFO = "ERROR", "WARN", "INFO"
 
 HEAVY_PREFIXES = ("heavy_tank_chassis", "heavy_tank_destroyer_chassis",
@@ -28,6 +30,42 @@ class Finding(tuple):
 
     def __str__(self):
         return "%-5s %-22s %s" % (self[0], self[1], self[2])
+
+
+# The engine keywords the generated script is allowed to use. Every one of these was checked
+# against the install's own documentation (effects_documentation.md / triggers_documentation.md,
+# 1.19.2) or, for `else` and `else_if`, against a boot log that accepted them. A name that is
+# NOT in this set and NOT defined in common/scripted_effects or common/scripted_triggers is an
+# invented effect: `clear_temp_variable` shipped that way and cost four boot errors.
+ENGINE_VOCABULARY = {
+    # control flow
+    "if", "else", "else_if", "limit", "NOT", "OR", "AND",
+    # variables
+    "set_temp_variable", "add_to_temp_variable", "multiply_temp_variable", "check_variable",
+    # triggers the generated files read
+    "has_country_flag", "num_of_military_factories", "has_template", "always",
+}
+
+
+def rendered_scripts(files, game):
+    """Every statement name in the generated .txt files must resolve to something real."""
+    out = []
+    for path, text in sorted(files.items()):
+        if "/scripted_effects/" not in path and "/scripted_triggers/" not in path:
+            continue
+        names = set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", text))
+        names |= set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*yes", text))
+        names |= set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*[A-Za-z_]", text))
+        top = set(re.findall(r"^([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", text, re.M))
+        for name in sorted(names - top):
+            if name in ENGINE_VOCABULARY:
+                continue
+            if name in game.triggers or name in game.effects:
+                continue
+            out.append(Finding(ERROR, "UNKNOWN-NAME",
+                               "%s uses `%s`, which is neither a declared engine keyword nor a "
+                               "scripted effect or trigger defined in this repo" % (path, name)))
+    return out
 
 
 def run(registry, game, per_family_selections, stats, declared_by_family=None):

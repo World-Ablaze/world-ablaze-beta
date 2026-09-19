@@ -157,6 +157,9 @@ def main(argv=None):
 
     files = render(registry, game, per_family, planes_by_family, declared_by_family,
                    groups, stats)
+    # The rendered script is checked before anything is written: an invented effect name only
+    # shows up in a boot log otherwise, and the file it breaks fails silently in between.
+    findings += validate.rendered_scripts(files, game)
     total = sum(len(t) for t in files.values())
     print("output : %d files, %.1f KiB" % (len(files), total / 1024.0))
     for path in sorted(files):
