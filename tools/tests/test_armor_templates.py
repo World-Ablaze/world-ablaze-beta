@@ -10,6 +10,7 @@ need the real unit definitions read them once; tests of the pure resolver do not
 from __future__ import annotations
 
 import sys
+import io
 import unittest
 from pathlib import Path
 
@@ -606,6 +607,43 @@ class Inputs(unittest.TestCase):
         self.assertEqual(GAME.unit("medium_armor_battalion_line").combat_width, 2.0)
         self.assertEqual(GAME.unit("infantry_heavy_mechanized_battalion_line").combat_width, 2.0)
         self.assertEqual(GAME.unit("medium_self_propelled_gun_battalion_line").combat_width, 3.0)
+
+
+class ReinforcePriority(unittest.TestCase):
+    """Armour reinforces first. The engine default is 1 - the MIDDLE of the range - so an
+    armoured target that declares nothing is not neutral, it is deprioritised against itself."""
+
+    def test_the_registry_declares_the_top_of_the_observed_range(self):
+        self.assertEqual(REGISTRY.composition["reinforce_prio"], 2)
+
+    def test_every_emitted_armour_target_carries_it(self):
+        import gen_ai_armor_templates as cli
+        pf, planes, decl, groups, stats, _errs = cli.compile_all(REGISTRY, GAME)
+        rendered = cli.render(REGISTRY, GAME, pf, planes, decl, groups, stats)
+        seen = 0
+        for path, body in rendered.items():
+            if "ai_templates" not in path:
+                continue
+            for line in body.split("\n"):
+                if "reinforce_prio" in line:
+                    seen += 1
+                    self.assertEqual(line.split("=")[1].strip(), "2", path)
+        self.assertEqual(seen, 1637)
+
+    def test_the_declared_families_no_longer_pin_their_own(self):
+        # light and light_support mirrored a per-profile 1 from the hand-written files. Left in
+        # place it would override the family default and silently exempt 51 targets.
+        for fam in REGISTRY.families.values():
+            for profile in fam.get("profiles", []):
+                self.assertNotIn("reinforce_prio", profile, profile["id"])
+
+    def test_the_shipped_files_agree(self):
+        import glob
+        for path in glob.glob(str(REPO / "common/ai_templates/WA_AI_TEMPLATES_armored_*.txt")):
+            with io.open(path, encoding="utf-8") as fh:
+                text = fh.read()
+            self.assertNotIn("reinforce_prio = 1", text, path)
+            self.assertNotIn("reinforce_prio = 0", text, path)
 
 
 def _product(values):

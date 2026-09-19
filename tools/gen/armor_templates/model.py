@@ -32,7 +32,7 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
                  "mirror_of", "emit", "front_role_override", "artillery_fallback",
-                 "mode", "profiles", "_comment"}
+                 "mode", "profiles", "reinforce_prio", "_comment"}
 
 # A family is either ENUMERATED (its targets are the product of declared axes) or DECLARED (its
 # targets are written out one by one, because they are a conversion state machine and not a

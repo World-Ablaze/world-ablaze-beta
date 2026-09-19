@@ -149,7 +149,13 @@ def _target_block(registry, fam, sel, codes=None, profile=None):
     extra_terms = list(profile.get("enable_extra") or []) or None
     lines.extend(_enable_block(fam, codes, extra_terms, 2,
                                raw=profile.get("enable_raw")))
-    lines.append("%sreinforce_prio = %d\n" % (TAB * 2, profile.get("reinforce_prio", 1)))
+    # Declared once for the whole registry, overridable per family then per profile. The
+    # engine default is 1, so a missing key is not "no opinion" - it is the middle of the
+    # range, which is what every armoured target silently sat at before.
+    prio = profile.get("reinforce_prio",
+                       fam.get("reinforce_prio",
+                               registry.composition.get("reinforce_prio", 1)))
+    lines.append("%sreinforce_prio = %d\n" % (TAB * 2, prio))
     lines.append("%scustom_icon = %d\n"
                  % (TAB * 2, profile.get("custom_icon", fam.get("custom_icon", 140))))
     lines.append("%scan_upgrade_in_field = { always = yes }\n" % (TAB * 2))

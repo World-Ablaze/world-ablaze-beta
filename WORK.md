@@ -293,6 +293,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (12 support tanks + 6 light + 4 motorised, MEASURED 44 width) and 18 for the starter park.
   They are the Country-layer exception of principle 2, not a shortcut: they reproduce a real
   formation, and `WA_AI_CONFIG_pursues_historical_tank_park` still decides who gets them.
+- Armoured templates reinforce at the TOP of the range now (owner, 2026-09-19, A20). Every one
+  of them wrote `reinforce_prio = 1`, which is the engine default and the MIDDLE of the range -
+  armour reinforced no faster than line infantry. MEASURED: the install writes 2 on SOV heavy
+  armour and USA paratroopers, 0 on garrison/suppression; Expert AI 5.0 writes 2 on armor and
+  marines. Nobody writes 3, so 2 is the maximum anything shows the engine accepting.
+  Declared once in `composition.reinforce_prio`, overridable per family then per profile. The 51
+  per-profile 1s in light/light_support - mirrored from the hand-written files - were removed in
+  the same change: an override restating the old default is how 51 targets quietly stay behind.
+  1637 targets now at 2, 0 at 1. Verification: the AI's armoured divisions refill before its
+  infantry when both are understrength; until a campaign shows it, ASSUMED.
 - The quota and heavy-company axes are ONE industrial axis now (owner, 2026-09-19). They never
   cross - the company exists only at the top band - so a 3 x 2 rectangle spent a third of its
   points on states the ladder can never write. MEASURED: medium 2040 -> 1368 codes, modern 594 ->
