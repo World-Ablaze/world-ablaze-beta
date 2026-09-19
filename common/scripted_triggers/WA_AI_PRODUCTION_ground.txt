@@ -72,6 +72,26 @@ WA_AI_PRODUCTION_build_artillery_major = {
 	WA_AI_CONFIG_is_major_country = yes
 }
 
+# [minor-gun-floor] OBSERVATION - my armies REQUIRE guns, as an establishment (engine variable,
+# thousands). Same demand reading the maintenance floors use, and the reason this floor cannot
+# reserve a factory for a country whose templates carry no gun. Gone when a country whose
+# templates clearly field artillery reads a target of 0 in the console harness.
+WA_AI_PRODUCTION_has_artillery_demand = {
+	check_variable = { num_target_equipment_in_armies_k@artillery_equipment > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# [minor-gun-floor] DECISION - a non-major with a real industry keeps one factory on guns. Exclusive
+# with the majors' floor above by construction, and it is the ONLY floor on this gun since the
+# POL/HUN/SWE type-`artillery` one was removed with it. Rests on F1 of
+# documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md (does a need-blind floor actually take
+# factories) - ASSUMED, discharged by `event wa_maint.3 <TAG>` then the production panel.
+WA_AI_PRODUCTION_should_floor_artillery_minor = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	NOT = { WA_AI_CONFIG_is_major_country = yes }
+	num_of_military_factories > constant:wa_ai_production.industry.tier_small_mils
+	WA_AI_PRODUCTION_has_artillery_demand = yes
+}
+
 # ============================================================================
 # ANTI-TANK TRIGGERS
 # ============================================================================
@@ -83,6 +103,25 @@ WA_AI_PRODUCTION_build_anti_tank = {
 WA_AI_PRODUCTION_build_heavy_anti_tank = {
 	WA_AI_PRODUCTION_ground_is_enabled = yes
 	WA_AI_TEMPLATES_has_heavy_at_unlocked = yes
+}
+
+# [minor-gun-floor] OBSERVATION - my armies REQUIRE anti-tank guns. Same establishment reading as
+# the artillery twin above.
+WA_AI_PRODUCTION_has_anti_tank_demand = {
+	check_variable = { num_target_equipment_in_armies_k@anti_tank_equipment > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# [minor-gun-floor] DECISION - anti-tank had NO floor in this tier, only a +15 production factor,
+# and a factor multiplies a perceived need that sits near zero for a towed gun: the line opens and
+# waits at the bottom of the queue. Majors are included - they had no floor here either.
+# SUMS with WA_AI_PRODUCTION_DEFAULT_maintenance.txt on purpose, and the arithmetic is: 1 here,
+# +1 while short (> 20 mils), +2 more when deep (> 49) since `deepen` implies `maintain` -> 2 while
+# short, 4 deep. Same relation the infantry stockpile tiers already have. Rests on F1 of
+# documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md, ASSUMED, see the artillery twin above.
+WA_AI_PRODUCTION_should_floor_anti_tank = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	num_of_military_factories > constant:wa_ai_production.industry.tier_small_mils
+	WA_AI_PRODUCTION_has_anti_tank_demand = yes
 }
 
 # ============================================================================

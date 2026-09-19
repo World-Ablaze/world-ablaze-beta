@@ -259,6 +259,21 @@ WA_TEST_MAINT_report = {
 	log = "  totals: [?_mnt_n|.0] of 10 archetypes maintained, [?_mnt_sum|.0] factories requested in all"
 
 	############################################################
+	# B2. [minor-gun-floor] the BASELINE gun floors of WA_AI_PRODUCTION_DEFAULT_ground.txt. A
+	#     different question from the shortage floors above - "does this country field the gun at
+	#     all, and is its industry big enough to reserve a factory" - and the two SUM on purpose.
+	#     require=0 with battalions in the template is the fact that kills both floors.
+	############################################################
+
+	set_temp_variable = { _mnt_g_mil = num_of_military_factories }
+	set_temp_variable = { _mnt_art_t = num_target_equipment_in_armies_k@artillery_equipment }
+	set_temp_variable = { _mnt_g_art = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_artillery_minor = yes } set_temp_variable = { _mnt_g_art = 1 } }
+	set_temp_variable = { _mnt_g_at = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_anti_tank = yes } set_temp_variable = { _mnt_g_at = 1 } }
+	log = "  gun floors: mils=[?_mnt_g_mil|.0]   artillery require=[?_mnt_art_t|.2]k -> minor-floor=[?_mnt_g_art|.0]   anti_tank require=[?_mnt_at_t|.2]k -> floor=[?_mnt_g_at|.0]"
+
+	############################################################
 	# C. Independent re-derivation of one key (contract rule 4).
 	#    Re-runs the anti-tank verdict from the numbers section B read, never calling the shipped
 	#    trigger. When B and C disagree the fault is in one of the two, not hidden between them.

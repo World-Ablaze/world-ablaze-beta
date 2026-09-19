@@ -111,6 +111,8 @@ Un gate de couche 3 s'écrit `WA_AI_<SYS>_should_[<tag>_][not_]<intention>[_N]` 
   échelle est un nom à finir d'écrire.
 - Suffixe `_allowed` : la moitié `allowed` d'un bloc converti dont l'`enable` a son propre gate.
 
+- `WA_AI_TEMPLATES_ARMOR_<famille>_wins_<chaîne>_<candidat>` (GENERATED, `tools/gen/gen_ai_armor_templates.py`) : OBSERVATION de couche 2, un verbe de plus que `is_`/`has_`/`holds_`. Le nom répond « quel candidat remporte cette chaîne de priorité » — exactement un candidat par chaîne est vrai, y compris `_none`, ce que `is_`/`has_` ne dit pas. Le corps ne lit que les triggers d'éligibilité déjà écrits à la main et les nie dans l'ordre du registre ; il ne décide rien. Verbe réservé à ce générateur : ne pas l'étendre à du code écrit à la main sans repasser par cette section.
+
 - `has_branch_<cap>` est une OBSERVATION de couche 2, pas une décision : le nom dit `has_`, et
   c'est délibéré. La première écriture s'appelait `can_ever_<cap>` — `_can_` est le verbe de
   couche 3 (`DECISION_VERB` dans `tools/check_ai_layers.py`), donc un futur

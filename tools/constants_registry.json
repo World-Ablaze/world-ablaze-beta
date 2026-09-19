@@ -1395,22 +1395,6 @@
    ]
   },
   {
-   "id": "templates_modern_tier_offset",
-   "governs": "flag-value offset between a medium armour template value and its modern-chassis twin; the calculator's +500 and the generator's TIER_OFFSET must be equal or a country holds a flag value no ai_template answers (armor-ladder-integrity's silent failure)",
-   "owner": {
-    "file": "common/scripted_effects/WA_AI_TEMPLATES_effects.txt",
-    "kind": "regex",
-    "pattern": "set_temp_variable = \\{ _tier_offset = ([1-9]\\d*) \\}"
-   },
-   "mirrors": [
-    {
-     "file": "tools/gen/gen_ai_medium_modern_mirror.py",
-     "kind": "regex",
-     "pattern": "^TIER_OFFSET = (\\d+)"
-    }
-   ]
-  },
-  {
    "id": "aifc_armor_boost_magnitude",
    "governs": "[aifc-revived-tag-residue] magnitude of the AIFC front_armor_score boost. Add and cancel emitters must negate each other EXACTLY (there is no remove effect - retirement IS the negation), and aifc.py's closure test must expect the same number, or every reconcile leaves drift the analysis then misreads. Literals because meta_effect runtime text cannot read constants (validated-context exception).",
    "owner": {
@@ -1449,6 +1433,76 @@
      "file": ".claude/skills/wa-savegame-analysis/scripts/aifc.py",
      "kind": "regex",
      "pattern": "(?m)^BOOST, SUPPRESS = \\d+, -(\\d+)"
+    }
+   ]
+  },
+  {
+   "id": "production_ground_floor_base",
+   "policy": "advisory",
+   "governs": "the one-factory BASELINE floor for a towed support gun. `ai_strategy value =` cannot resolve `constant:` (validated contexts, wa-constants-registry), so every floor literal is a hand-kept copy of this constant. Sites: the two [minor-gun-floor] blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt (artillery_equipment non-major, anti_tank_equipment) and the six base blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt (anti_tank / anti_air / heavy_anti_air / heavy_artillery / pack_artillery / amphibious_mechanized). The maintenance file is named here but NOT regex-mirrored: its `_large` twins carry ground_floor_deep_add = 2 on the same ids, so no single pattern can pin the base sites without matching them too - advisory for that reason. Floors on one id SUM, so anti_tank totals 2 while short and 4 deep",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.maintenance.ground_floor_base",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype\\s+id = artillery_equipment\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype\\s+id = anti_tank_equipment\\s+value = (\\d+)"
+    }
+   ]
+  },
+  {
+   "id": "templates_medium_support_cuts",
+   "governs": "the two industrial cuts of the medium-support quota (6 battalions below the first cut, 3 below the second, 0 above). Declared once in tools/armor_templates_registry.json; the generated trigger renders them as literals because constant: is not validated in num_of_military_factories. If the two drift, the AI keeps a support quota its factories no longer justify",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"below_military_factories\": (300)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "num_of_military_factories < (300)"
+    }
+   ]
+  },
+  {
+   "id": "templates_medium_support_second_cut",
+   "governs": "the two industrial cuts of the medium-support quota (6 battalions below the first cut, 3 below the second, 0 above). Declared once in tools/armor_templates_registry.json; the generated trigger renders them as literals because constant: is not validated in num_of_military_factories. If the two drift, the AI keeps a support quota its factories no longer justify",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"below_military_factories\": (500)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "num_of_military_factories < (500)"
+    }
+   ]
+  },
+  {
+   "id": "templates_heavy_company_cut",
+   "governs": "the military-factory count at which the A6 heavy tank company opens in divisional support (A19). Declared once in tools/armor_templates_registry.json; the generated trigger renders it as a literal because constant: is not validated in num_of_military_factories. Equal to the medium-support second cut today and deliberately NOT the same group: they are two decisions that happen to share a number",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"min_military_factories\": (500)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "is_below_heavy_company_cut = \\{\\s*num_of_military_factories < (500)"
     }
    ]
   }

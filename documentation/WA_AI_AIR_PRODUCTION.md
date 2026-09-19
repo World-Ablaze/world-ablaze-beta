@@ -38,7 +38,8 @@ when the table alone would put fighters under 40 % of the pool.
 | DECISION | `common/scripted_triggers/WA_AI_PRODUCTION_air.txt` | `wants_<x>` (want without the cap), `should_build_<x>` (= wants + cap), `should_open_<line>_line` (want + industry band + exclusions), `should_maintain_<line>_line` (want + band, cap closed, no line of the role open), `should_keep_<line>_line` (their union) |
 | CONSUMPTION | `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_air.txt` | one block per line: archetype factor at parity (100), category factor at parity (100), `min_factories 1`; CANCEL blocks (-1000) as complements; the maintenance floors, one pair per role. **No land `unit_ratio` here.** |
 | CONSUMPTION | `common/scripted_effects/WA_AI_PRODUCTION_air_budget.txt` | `WA_AI_AIR_BUDGET_reconcile`: open types → weights → diff vs books → `add_ai_strategy unit_ratio ±delta` (meta_effect). Monthly + on_startup. |
-| CONSUMPTION | `common/scripted_effects/WA_production_strategy_effects.txt` | the ~2-day pulse: land fighter park variable, BoB flag, purge books |
+| CONSUMPTION | `common/scripted_effects/WA_production_strategy_effects.txt` | the ~2-day pulse: land fighter park variable, purge books |
+| CONSUMPTION | `common/scripted_effects/WA_production_strategy_effects.txt` `WA_AI_PRODUCTION_update_bob_programme` | the Battle of Britain latch (`WA_bob_production_flag`), weekly - monthly under `WA_AI_performance_mode`; the programme's line closures read the flag, not the live want |
 | Legacy | `common/ai_strategy/World_Ablaze_production_air_strategies.txt` | `air_factory_balance` per tag + date — the AIR SHARE of the industry, subject `air-share-windows`, out of this model |
 
 ## 4. Weights (owner ruling 2026-09-09)
@@ -83,7 +84,8 @@ air_attack per IC 1.91 (attacker) vs 1.90 (heavy fighter) vs 1.14 (CAS).
 
 ## 5. Closing a line
 
-Two closures. **Hard** (archetype not allowed, tech not worthwhile, Battle of Britain programme,
+Two closures. **Hard** (archetype not allowed, tech not worthwhile, Battle of Britain programme -
+every non-fighter line the defender can reach, attacker and strike bomber included -
 bomber bases lost, own-air-arm test): the purge book bans a new line, and the archetype's `_CANCEL`
 block is what actually ends the running one (see the Purge book row in §2 for the measurement). **Cap** (park at its
 cap): the line is not closed at all, it is MAINTAINED. It loses its `unit_ratio` weight and its
@@ -121,12 +123,19 @@ is that the ladder now survives a cap closure (`should_keep_cv_*_type`).
 | t1 | next pulse (MTTH 2 d; 7 d in performance mode) | — | edge: purge fires once | — |
 | t2 | next monthly pulse | — | — | weight emitted / retired |
 
+The Battle of Britain programme has one more step in front: the park (written by the pulse) crosses
+its bar at t0, the latch flips at the next on_weekly (≤ 7 d; on_monthly ≤ 31 d in performance mode)
+and only then do the lines flip; purge at the next pulse after that, weights at the next monthly
+reconcile (in performance mode the same on_monthly, right after the latch). DERIVED worst case
+t0→purge: 7 d + one pulse (MTTH 2 d); performance mode 31 d + one pulse (7 d lockout + MTTH 2 d).
+
 Worst case: a line cancelled up to one pulse late, never early; a new type weighs 0 for up to one
 month (its `min_factories 1` keeps it alive).
 
 **Entry accumulation.** One `unit_ratio` entry per type per change, at most one change per type
 per monthly pulse: DERIVED hard bound 6 entries / month / country, 648 over a 108-month campaign
-if every type flipped every month; the armour budget runs the same profile. The 17 park caps and
+if every type flipped every month; the armour budget runs the same profile. A Battle of Britain flip
+retires or re-emits every non-fighter weight at once, attacker and strike included. The 17 park caps and
 the Battle of Britain bar are Schmitt pairs (close at the cap, reopen at 90 %), so a park sitting
 at its cap cannot re-emit. Three inputs are NOT paired and can oscillate — each is a decision, not
 a park, so the pair would hide a real change:

@@ -51,7 +51,7 @@ focus_tree = {
         y = 1
         relative_position_id = ENG_reinforce_the_empire
 
-        cost = 6
+        cost = 3
 
 		ai_will_do = {
             factor = 1
@@ -163,39 +163,12 @@ focus_tree = {
         }
     }
 	focus = {
-		id = ENG_britannia_rules_the_waves
-		icon = GFX_goal_generic_navy_doctrines_tactics
+		id = ENG_new_naval_projections
+		icon = GFX_goal_generic_ships_battleships
 		prerequisite = { focus = ENG_the_admiralty }
 		x = 0
 		y = 1
 		relative_position_id = ENG_the_admiralty
-
-		cost = 3
-
-		ai_will_do = {
-			factor = 1
-		}
-
-		available = {
-		}
-
-		cancel_if_invalid = no
-		continue_if_invalid = yes
-
-
-		completion_reward = {
-			WA_add_mastery_capital_ship_50 = yes
-			WA_add_mastery_carrier_50 = yes
-            WA_add_navy_mastery_gain_bonus = yes
-		}
-	}
-	focus = {
-		id = ENG_new_naval_projections
-		icon = GFX_goal_generic_ships_battleships
-		prerequisite = { focus = ENG_britannia_rules_the_waves }
-		x = -1
-		y = 1
-		relative_position_id = ENG_britannia_rules_the_waves
 
 		cost = 3
 
@@ -304,10 +277,10 @@ focus_tree = {
 	focus = {
 		id = ENG_hidden_blockaders
 		icon = GFX_goal_generic_navy_anti_submarine
-		prerequisite = { focus = ENG_britannia_rules_the_waves }
-		x = 1
+		prerequisite = { focus = ENG_new_naval_projections }
+		x = -1
 		y = 1
-		relative_position_id = ENG_britannia_rules_the_waves
+		relative_position_id = ENG_new_naval_projections
 
 		cost = 3
 
@@ -338,17 +311,44 @@ focus_tree = {
 			# WA_RB_GRANT end
 		}
 	}
+	focus = {
+		id = ENG_britannia_rules_the_waves
+		icon = GFX_goal_generic_navy_doctrines_tactics
+		prerequisite = { focus = ENG_new_naval_projections }
+		x = 1
+		y = 1
+		relative_position_id = ENG_new_naval_projections
+
+		cost = 5
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		available = {
+		}
+
+		cancel_if_invalid = no
+		continue_if_invalid = yes
+
+
+		completion_reward = {
+			WA_add_mastery_capital_ship_50 = yes
+			WA_add_mastery_carrier_50 = yes
+            WA_add_navy_mastery_gain_bonus = yes
+		}
+	}
 
 	focus = {
 		id = ENG_advancments_in_convoy_defense
 		icon = GFX_goal_generic_fleet_escorts
 		prerequisite = { focus = ENG_hidden_blockaders }
-		prerequisite = { focus = ENG_new_naval_projections }
+		prerequisite = { focus = ENG_britannia_rules_the_waves }
 		x = 0
 		y = 2
-		relative_position_id = ENG_britannia_rules_the_waves
+		relative_position_id = ENG_new_naval_projections
 
-		cost = 3
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -672,12 +672,13 @@ focus_tree = {
 		y = 1
 		relative_position_id = ENG_bomber_command
 
-		cost = 3
+		cost = 5
 
 		ai_will_do = {
 			factor = 3
 		}
 		available = {
+            NOT = { has_idea = civilian_economy }
 		}
 
 		bypass = {
@@ -698,6 +699,28 @@ focus_tree = {
 		continue_if_invalid = yes
 
 		completion_reward = {
+			if = {
+				limit = { has_aat = yes }
+				hidden_effect = {
+					every_military_industrial_organization = {
+						limit = {
+                            OR = {
+                                is_military_industrial_organization = ENG_supermarine_organization
+                                is_military_industrial_organization = ENG_supermarine_organization
+                                is_military_industrial_organization = ENG_de_havilland_organization
+                                is_military_industrial_organization = ENG_bristol_organization
+                                is_military_industrial_organization = ENG_blackburn_organization
+                                is_military_industrial_organization = ENG_fairey_aviation_organization
+                                is_military_industrial_organization = ENG_short_brothers_organization
+                                is_military_industrial_organization = ENG_avro_organization
+                                is_military_industrial_organization = ENG_handley_page_organization
+                            }
+						}
+						complete_mio_trait = ENG_air_ministry
+					}
+				}
+				custom_effect_tooltip = ENG_bomber_defence_planning_tt
+			}
 			random_owned_controlled_state = {
 				prioritize = { 128 }
 				limit = {
@@ -924,7 +947,7 @@ focus_tree = {
 		y = 1
 		relative_position_id = ENG_modernize_the_royal_army
 
-		cost = 3
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -1073,7 +1096,7 @@ focus_tree = {
 		y = 2
 		relative_position_id = ENG_modernize_the_royal_army
 
-		cost = 3
+		cost = 5
 
 		ai_will_do = {
 			factor = 1
@@ -2944,7 +2967,7 @@ focus_tree = {
 
         continue_if_invalid = yes
 
-        cost = 6
+        cost = 3
 
 		ai_will_do = {
             factor = 1
@@ -3281,7 +3304,7 @@ focus_tree = {
 			CHI = { exists = no }
 		}
 
-		cost = 4
+		cost = 2
 
 		ai_will_do = {
 			factor = 1
@@ -4782,11 +4805,18 @@ focus_tree = {
 			}
             if = {
                 limit = {
-                    GER = { has_government = fascism }
-                    is_historical_focus_on = yes
                     is_ai = yes
                 }
-                date > 1939.6.1
+                OR = {
+                    threat > 0.39
+                    any_country = {
+                        any_owned_state = {
+                            is_capital = yes
+                            is_on_continent = europe
+                        }
+                        has_added_tension_amount > 20
+                    }
+                }
             }
         }
 
@@ -4908,6 +4938,12 @@ focus_tree = {
 
         available = {
             threat > 0.2
+            if = {
+                limit = {
+                    is_ai = yes
+                }
+                threat > 0.34
+            }
         }
 
         cancel_if_invalid = no
@@ -4994,9 +5030,6 @@ focus_tree = {
                 }
                 OR = {
                     has_global_flag = fall_of_france
-                    FRA = {
-                        has_capitulated = yes
-                    }
                     FRA = { surrender_progress > 0.1 }
                     HOL = { surrender_progress > 0.1 }
                     BEL = { surrender_progress > 0.1 }
@@ -5093,6 +5126,20 @@ focus_tree = {
         available = {
             date > 1937.7.1
             parliament_medium_support_trigger = yes
+            if = {
+                limit = {
+                    is_ai = yes
+                }
+                OR = {
+                    has_global_flag = fall_of_france
+                    FRA = { surrender_progress > 0.1 }
+                    HOL = { surrender_progress > 0.1 }
+                    BEL = { surrender_progress > 0.1 }
+                    LUX = { surrender_progress > 0.1 }
+                    surrender_progress > 0.1
+                    threat > 0.8
+                }
+            }
         }
         bypass = {
             has_country_leader = {
@@ -6249,7 +6296,7 @@ focus_tree = {
 
         continue_if_invalid = yes
 
-        cost = 3
+        cost = 4
 
 		ai_will_do = {
             factor = 1
@@ -6485,7 +6532,7 @@ focus_tree = {
             }
         }
 
-        cost = 3
+        cost = 4
 
 		ai_will_do = {
             factor = 1
@@ -8077,7 +8124,7 @@ focus_tree = {
             }
         }
 
-        cost = 4
+        cost = 3
 
         completion_reward = {
             economy_fatigue_level_up_1 = yes
@@ -8172,7 +8219,7 @@ focus_tree = {
             }
         }
 
-        cost = 4
+        cost = 3
 
         completion_reward = {
             economy_fatigue_level_up_1 = yes
@@ -8281,7 +8328,7 @@ focus_tree = {
             }
         }
 
-        cost = 4
+        cost = 3
 
         completion_reward = {
             economy_fatigue_level_up_1 = yes
@@ -8410,7 +8457,7 @@ focus_tree = {
             }
         }
 
-        cost = 4
+        cost = 3
 
         completion_reward = {
             economy_fatigue_level_up_1 = yes
@@ -8554,7 +8601,7 @@ focus_tree = {
             }
         }
 
-        cost = 4
+        cost = 3
 
         completion_reward = {
             NZL = {
