@@ -293,6 +293,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (12 support tanks + 6 light + 4 motorised, MEASURED 44 width) and 18 for the starter park.
   They are the Country-layer exception of principle 2, not a shortcut: they reproduce a real
   formation, and `WA_AI_CONFIG_pursues_historical_tank_park` still decides who gets them.
+- A19, owner optimisation 2026-09-19: the A6 heavy tank company mounts only from 500 military
+  factories and only on a MECHANIZED composition. Two locks, deliberately: the ladder digit carries
+  both terms so no company code is ever written below the threshold, and the resolver resolves such
+  a point to the composition WITHOUT the company so it deduplicates onto that block instead of
+  leaving a target nothing can select. The motorized plane no longer carries the axis at all.
+  MEASURED: medium 2064 -> 2040 codes, modern 612 -> 594, six tests pin the four cases.
+  The 500 is registered in `tools/constants_registry.json` as its own group
+  (`templates_heavy_company_cut`) with its own trigger - equal to the medium-support second cut
+  today, and not the same decision. `check_ai_layers` NUMBER-LEAK baseline 335 -> 336 for that one
+  rendered literal.
 - BOOT LOG 2026-09-19, owner: 4 errors, all the same one. `clear_temp_variable` is NOT an engine
   effect - "Unknown effect-type" on lines 139 and 518 of
   `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt`. The repo already knew: a comment

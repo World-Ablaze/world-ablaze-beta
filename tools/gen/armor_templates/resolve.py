@@ -135,6 +135,17 @@ def resolve(family_id, facts, registry, game=None):
                                % (chain_id, cid, family_id))
     if facts.heavy_company and not fam.get("heavy_divisional_company"):
         raise ResolveError("family %s does not admit the A6 heavy divisional company" % family_id)
+    # A19: the company needs the declared factory count and a mechanized composition. Below
+    # either, the point of the rectangle resolves to the composition WITHOUT the company, so it
+    # deduplicates onto that block instead of emitting a target nothing can select.
+    gate = comp.get("heavy_company", {})
+    mounts_company = facts.heavy_company
+    if mounts_company and gate.get("mechanized_only") and facts.mobile_infantry != "mechanized":
+        mounts_company = False
+    if mounts_company and gate.get("min_military_factories") is not None:
+        bands = [q["count"] for q in comp["medium_support_quota"]]
+        if fam.get("medium_support_unit") and facts.quota != bands[-1]:
+            mounts_company = False
 
     # 2/3. line allocation (A11): the variant block replaces medium support first, then tanks.
     budget = comp["line_budget"]
@@ -215,7 +226,7 @@ def resolve(family_id, facts, registry, game=None):
         unit = None
         if "unit" in entry:
             unit = entry["unit"]
-            if entry.get("replaced_by_heavy_company") and facts.heavy_company:
+            if entry.get("replaced_by_heavy_company") and mounts_company:
                 unit = registry.unit_of("heavy_divisional_company", "divisional")
         elif "chassis_map" in entry:
             unit = entry["chassis_map"].get(fam["chassis"])
@@ -313,6 +324,7 @@ def compose_name(registry, family_id, facts, game=None):
 def conditions(registry, family_id, facts):
     """The exact trigger terms the generated ladder tests for this composition."""
     fam = registry.families[family_id]
+    comp = registry.composition
     out = [("yes", fam["admission"])]
     if fam.get("extra_admission"):
         out.append(("yes", fam["extra_admission"]))
@@ -339,8 +351,13 @@ def conditions(registry, family_id, facts):
         out.extend(quota_conditions(registry, facts.quota))
 
     if fam.get("heavy_divisional_company"):
+        gate = comp.get("heavy_company", {})
         company = registry.candidate("heavy_divisional_company")["eligibility"]
         out.append(("yes" if facts.heavy_company else "no", company))
+        # A19: and only from the declared factory count. The digit stays 0 below it, so the
+        # codes above that carry the company are simply never written.
+        if gate.get("trigger"):
+            out.append(("no" if facts.heavy_company else "yes", gate["trigger"]))
 
     waves = "WA_AI_TEMPLATES_use_armoured_waves_templates"
     out.append(("yes" if facts.waves else "no", waves))
@@ -432,7 +449,13 @@ def axis_values(registry, family_id, axis, form):
             return [0]
         return [q["count"] for q in comp["medium_support_quota"]]
     if axis == "company":
-        return [False, True] if fam.get("heavy_divisional_company") else [False]
+        # A19: the heavy company is mechanized-only, so the motorized plane does not carry the
+        # axis at all - that is half the codes this family would otherwise spend on it.
+        if not fam.get("heavy_divisional_company"):
+            return [False]
+        if comp.get("heavy_company", {}).get("mechanized_only") and form != "mechanized":
+            return [False]
+        return [False, True]
     if axis == "waves":
         if not fam.get("waves"):
             return [False]

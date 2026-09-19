@@ -372,6 +372,46 @@ class ShippedLadder(unittest.TestCase):
             self.assertNotEqual(derived, original)
 
 
+class HeavyCompanyGate(unittest.TestCase):
+    """A19: the heavy tank company in divisional support opens at 500 military factories and
+    only on a mechanized composition. It costs 12 heavy chassis per division on top of the line,
+    so it is an optimisation a rich mechanized army buys, not a default."""
+
+    UNIT = "heavy_armor_company_divisional"
+
+    def test_mounted_at_the_top_industrial_band_on_mechanized(self):
+        self.assertIn(self.UNIT, sel("medium", quota=0, heavy_company=True).support)
+
+    def test_not_mounted_below_the_threshold(self):
+        for quota in (6, 3):
+            s = sel("medium", quota=quota, heavy_company=True)
+            self.assertNotIn(self.UNIT, s.support, "quota %d" % quota)
+            self.assertIn("heavy_artillery_mot_company_divisional", s.support)
+
+    def test_not_mounted_on_a_motorized_composition(self):
+        s = sel("medium", quota=0, heavy_company=True, mobile_infantry="motorized")
+        self.assertNotIn(self.UNIT, s.support)
+
+    def test_the_motorized_plane_does_not_carry_the_axis(self):
+        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "company", "motorized"), [False])
+        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "company", "mechanized"),
+                         [False, True])
+
+    def test_the_ladder_digit_carries_both_terms(self):
+        text = (REPO / "common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt").read_text(
+            encoding="utf-8")
+        self.assertIn("NOT = { WA_AI_TEMPLATES_is_below_heavy_company_cut = yes }", text)
+
+    def test_the_threshold_has_its_own_trigger(self):
+        """Equal to the medium-support second cut today, and not the same decision."""
+        text = (REPO / "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt").read_text(
+            encoding="utf-8")
+        self.assertIn("WA_AI_TEMPLATES_is_below_heavy_company_cut = {", text)
+        gate = REGISTRY.composition["heavy_company"]
+        self.assertEqual(gate["min_military_factories"], 500)
+        self.assertTrue(gate["mechanized_only"])
+
+
 class EmittedVocabulary(unittest.TestCase):
     """Every name the generated script uses must exist. `clear_temp_variable` did not, and only
     the boot log said so - four "Unknown effect-type" errors from a file that had passed every

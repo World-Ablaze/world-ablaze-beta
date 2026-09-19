@@ -296,7 +296,14 @@ def _axis_terms(registry, family_id, axis, value):
         fam = registry.families[family_id]
         return [("yes", registry.eligibility_of(fam["artillery_fallback"][0]))]
     if axis == "company":
-        return [("yes", registry.candidate("heavy_divisional_company")["eligibility"])]
+        # A19: the latch opens the path, the factory cut decides when. Both terms are on the
+        # digit, so the ladder itself never writes a company code below the threshold - the
+        # resolver's matching guard is the second lock, not the only one.
+        terms = [("yes", registry.candidate("heavy_divisional_company")["eligibility"])]
+        gate = registry.composition.get("heavy_company", {})
+        if gate.get("trigger"):
+            terms.append(("no", gate["trigger"]))
+        return terms
     if axis == "waves":
         return [("yes", "WA_AI_TEMPLATES_use_armoured_waves_templates")]
     raise ValueError("unknown axis %s" % axis)
@@ -317,6 +324,16 @@ def triggers_file(registry, per_family_selections, max_or_terms=64):
     for key, cut in (("6", cuts[0]), ("3", cuts[1])):
         out.append("%s = {\n%snum_of_military_factories < %d\n}\n"
                    % (trig[key], TAB, cut["below_military_factories"]))
+
+    gate = quota.get("heavy_company", {})
+    if gate.get("trigger") and gate.get("min_military_factories") is not None:
+        out.append("\n# [armor-template-generator] A19: the heavy tank company in divisional "
+                   "support opens at\n# %d military factories and only on a mechanized "
+                   "composition. Its own threshold, not the\n# medium-support cut: the two "
+                   "numbers are equal today and are not the same decision.\n"
+                   % gate["min_military_factories"])
+        out.append("%s = {\n%snum_of_military_factories < %d\n}\n"
+                   % (gate["trigger"], TAB, gate["min_military_factories"]))
 
     for family_id in sorted(per_family_selections):
         fam = registry.families[family_id]
