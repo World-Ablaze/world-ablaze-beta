@@ -4957,8 +4957,8 @@ power capitulates.
   parse error; COMMITTED + PUSHED on owner order ("boot ok, commit et push").** The console run
   below (DOWN / UP legs) is still OWED before this is anything but a hypothesis. Owner order 2026-09-12: "l'IA doit passer à weakened armor / réduire la
   qualité des munitions en fonction des déficits de ressources (et une mécanique anti-hystérésis)".
-- Intended behaviour: an AI country whose net chromium (tungsten) balance sits below −1 for two
-  consecutive monthly pulses redesigns its tanks with `tank_weakened_armor` (the non-APCR shell:
+- Intended behaviour: an AI country whose net chromium (tungsten) balance sits below −1 for
+  three consecutive monthly pulses redesigns its tanks with `tank_weakened_armor` (the non-APCR shell:
   `_ap_he` / `_hefit`), the production lines follow, and it redesigns BACK once the economy has
   held equilibrium — without oscillating. Modules MEASURED (`01_generic_tank_modules.txt`):
   strong armour = chromium 1/unit, APCR = tungsten 1..5/unit; the weak grades cost no resource
@@ -4974,8 +4974,9 @@ power capitulates.
   `tools/equipment_evaluator/parse_ai_equipment.py` skips the twins (they squared its transition
   table: 2924 twin rows in the first dry analysis); the tanks analysis runs clean (exit 0) after it.
 - Latch (`WA_AI_EQUIPMENT_update_shortage_latch_<r>`, `WA_AI_EQUIPMENT_effects.txt`, monthly):
-  ENTER = two consecutive pulses with `resource@<r> < −1` (45-day armed flag). EXIT = dwell
-  elapsed AND two consecutive pulses with no deficit (45-day recover flag). Dwell = 6 months,
+  ENTER = three consecutive pulses with `resource@<r> < −1` (two 45-day armed stages; owner
+  call 2026-09-19, raised from two on both resources). EXIT = dwell elapsed AND two consecutive
+  pulses with no deficit (45-day recover flag). Dwell = 6 months,
   doubled on every re-entry, capped at 24. Every transition opens a 120-day flag that arms
   `land_xp_spend_priority id = equipment_variant value = 500` (new tag-free block
   `WA_AI_PRODUCTION_DEFAULT_equipment_grade.txt`, which also absorbs SOV's cc lever — one writer
@@ -4995,16 +4996,17 @@ power capitulates.
 - Timeline at the real cadences (monthly pulse, weekly equipment pass, 120-day window), per
   resource, worst case = the country cannot carry the strong grade at all:
 
-  - t=0 months: first deficit pulse, armed 45 d.
-  - t=1: second deficit pulse, LATCHED, months = 0, dwell = 6, XP window 120 d; twins enabled,
+  - t=0 months: first deficit pulse, stage 1 armed 45 d.
+  - t=1: second deficit pulse, stage 2 armed 45 d (stage 1 left to expire).
+  - t=2: third deficit pulse, LATCHED, months = 0, dwell = 6, XP window 120 d; twins enabled,
     bases disabled.
-  - t=1 → 5: the weekly equipment pass redesigns each chassis holding a variant, 5 XP each, once
+  - t=2 → 6: the weekly equipment pass redesigns each chassis holding a variant, 5 XP each, once
     army XP ≥ 50 (cc: T-34 redesigned inside 2 months at natural XP — MEASURED; N chassis all
     finished inside the 120 d window — ASSUMED).
-  - t=8: months = 7 > 6 and no deficit (the draw is gone): recover armed.
-  - t=9: EXIT, strong designs back, window 120 d, redesigns UP.
-  - t=11: if the strong grade re-opens the deficit, re-LATCH with dwell 12.
-  - t=25 → 27: exit, re-latch with dwell 24; later swings at t≈53, 81, 109.
+  - t=9: months = 7 > 6 and no deficit (the draw is gone): recover armed.
+  - t=10: EXIT, strong designs back, window 120 d, redesigns UP.
+  - t=13: if the strong grade re-opens the deficit, re-LATCH with dwell 12 (three pulses again).
+  - t=27 → 30: exit, re-latch with dwell 24; later swings at t≈54, 82, 110.
 
   Worst case over a 10-year campaign: 5 entries + 4 exits per resource = 18 transitions for both,
   ≤ 5 XP × N live chassis each (N ≈ 10-30) → ≤ ~150 XP per transition, ≤ ~2700 XP over the
@@ -5020,8 +5022,8 @@ power capitulates.
   a chassis in production with `tank_weakened_armor` + `_ap_he`, line pointing at it = DOWN PASS;
   (2) `event wa_gdn.3 SOV`, 2-3 months, save: variant back on strong + `_apcr`, line following =
   UP PASS. Paste the game.log "GRADE DOWNSHIFT" blocks here. Then a campaign: `tlm <TAG>` →
-  `gdn_chr_n` / `gdn_tun_n` rise only after ≥ 2 deficit months in the resource series, `gdn_flip_n`
-  ≤ 4 per resource.
+  `gdn_chr_n` / `gdn_tun_n` rise only after ≥ 3 deficit months in the resource series,
+  `gdn_flip_n` ≤ 4 per resource.
 - Closed when: DOWN and UP both PASS in the console run, and one campaign shows a latch that
   tripped on a real deficit with the redesigned variant in production and `gdn_flip_n ≤ 4`.
 

@@ -752,7 +752,7 @@ variant desire), not the latch. Second signal: the country's `resource@chromium`
 same saves must show the deficit the latch claims.
 
 **Probe**: `tlm <TAG> <saves>` → `gdn_chr_n`, `gdn_tun_n`, `gdn_flip_n`, `gdn_last_t`. Pass =
-on a country that shows ≥ 2 consecutive deficit months in its resource series, `gdn_*_n` rises
+on a country that shows ≥ 3 consecutive deficit months in its resource series, `gdn_*_n` rises
 from the following save on, and `gdn_flip_n ≤ 4` per resource over the campaign.
 
 ## 7. Adding a metric — checklist for authors
