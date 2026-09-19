@@ -108,6 +108,40 @@ WA_AI_TEMPLATES_delete_light_tank_lettered_templates = {
 	if = { limit = { has_template = "Light Tank template Z" } delete_unit_template_and_units = { division_template = "Light Tank template Z" disband = yes } }
 }
 
+# [light-medium-conversion] Trade ONE light-majority tank division for a fresh medium one.
+# CREATE FIRST, destroy only once the division count proves the spawn landed: a name miss must
+# cost nothing, and destroy_unit is the only division-scope removal the engine has - it refunds
+# neither men nor equipment. Rate, cost table and the rejected replace_with route: WORK.md, slug.
+# Country scope, AI only. Gate: WA_AI_TEMPLATES_should_convert_light_armor_division.
+WA_AI_TEMPLATES_convert_one_light_armor_division = {
+	set_temp_variable = { _wa_lmc_before = num_divisions }
+	# The division carries NO `name =`: an unnamed create_unit takes the engine's automatic name
+	# from the country's division-names group (common/units/names_divisions/<TAG>_*), the way an
+	# AI-deployed division does. Naming it after the template printed "Medium Tank template C".
+	meta_effect = {
+		text = {
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"[MEDIUM_TEMPLATE]\" start_experience_factor = 0.5 start_equipment_factor = 0.1 start_manpower_factor = 1"
+					owner = PREV
+				}
+			}
+		}
+		MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	}
+	set_temp_variable = { _wa_lmc_after = num_divisions }
+	if = {
+		limit = { check_variable = { _wa_lmc_after > _wa_lmc_before } }
+		random_country_division = {
+			limit = {
+				division_has_majority_template = light_armor_battalion_line
+			}
+			destroy_unit = yes
+		}
+		WA_TLM_note_light_medium_conversion = yes
+	}
+}
+
 # [war-start-suppression-template] The engine can leave its lettered cavalry templates competing
 # with the named suppression template. Remove that A..Z ladder before creating or retaining the
 # named template. Country scope: THIS/ROOT = the country entering the war.

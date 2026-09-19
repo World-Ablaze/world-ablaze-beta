@@ -362,6 +362,39 @@ WA_AI_TEMPLATES_should_preserve_light_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [light-medium-conversion] May this AI scrap one fielded LIGHT-MAJORITY tank division this month
+# and raise a medium one in its place? Assumes the light role is legacy here: the two NOT terms
+# below are the whole safety - a country that still wants light divisions is never touched.
+# The capital term protects the spawn, which lands in capital_scope.
+# Country scope, AI only. Rationale and the rejected replace_with route: WORK.md, slug.
+WA_AI_TEMPLATES_should_convert_light_armor_division = {
+	is_ai = yes
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
+	NOT = { WA_AI_TEMPLATES_use_light_armor_templates = yes }
+	NOT = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes }
+	WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window = yes
+	capital_scope = { is_controlled_by = PREV }
+	# MAJORITY, never "contains one light battalion": 30 history/units OOB templates carry a single
+	# light_armor_battalion_line inside an infantry formation, and those are not tank divisions.
+	any_country_division = {
+		division_has_majority_template = light_armor_battalion_line
+	}
+	# Two independent proofs that a spawn target exists, because a meta_trigger with an unparsable
+	# token has been measured reading TRUE (lessons-log): the literal term cannot be spliced, and
+	# the effect verifies the spawn by division count before it destroys anything.
+	OR = {
+		has_template_containing_unit = medium_armor_battalion_line
+		has_template_containing_unit = modern_armor_battalion_line
+	}
+	meta_trigger = {
+		text = {
+			has_template = "[MEDIUM_TEMPLATE]"
+		}
+		MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	}
+}
+
 # [armor-class-handoff] Does the medium role TARGET an infantry-support composition? Read by the
 # the retained selector compatibility logic; it no longer transfers ordinary light divisions.
 # Reads the generated chain verdict, not a list of template codes: the code is now a mixed-radix

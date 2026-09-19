@@ -173,6 +173,105 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### light-medium-conversion — SHIPPED-UNTESTED (2026-09-19)
+- Owner order 2026-09-19 ("crée un effet monthly qui, si un pays a des divisions de chars léger et
+  focus sur medium et qu'on est soit en 1942, soit si le focus national prepare barbarossa est fait
+  pour GER, on disband une division de chars léger au hasard, et on spawne une division de chars
+  moyens à 10% d'équipement (bien entrainée)"). Intended behaviour: an AI that has left the light
+  armour class stops carrying its legacy light park - one LIGHT-MAJORITY tank division per month is
+  scrapped and a medium one raised in its place, so the armour actually changes ROLE.
+- Change:
+  - CONFIG `WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window` (`date > 1941.12.31` OR GER +
+    `has_completed_focus = GER_prepare_barbarossa`). Recorded as the one sanctioned exception to the
+    "no second light/medium-era date" rule in `documentation/WA_AI_DIVISION_TEMPLATES.md`: its only
+    reader also requires `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`, so it is a DELAY after
+    the era boundary, never a rival to it.
+  - `WA_AI_TEMPLATES_should_convert_light_armor_division` (DECISION layer): AI, medium role open,
+    light era over, neither `use_light_armor_templates` nor `use_light_support_armor_templates`,
+    capital controlled, a division with a light-armour MAJORITY, and two independent proofs that a
+    spawn target exists (`has_template_containing_unit` on the literal token + the meta_trigger).
+  - `WA_AI_TEMPLATES_GetMediumTankTemplateName` (scripted loc): "Modern Tank template Z".."A" while
+    `modern_chassis_owns_medium_role`, else "Medium Tank template Z".."A", then the bare names, then
+    a string that is neither a template nor a loc key.
+  - `WA_AI_TEMPLATES_convert_one_light_armor_division`: `create_unit` in `capital_scope` FIRST
+    (0.1 equipment / 1.0 manpower / 0.5 experience), then `destroy_unit` on a random light-majority
+    division ONLY if `num_divisions` rose. Wired in `on_monthly` after `calculate_templates`.
+    The `create_unit` carries NO `name =` (owner report 2026-09-19: the converted divisions read
+    "Medium Tank template C" in the army list). MEASURED: 686 vanilla `create_unit` calls omit the
+    field (e.g. `common/decisions/BUL.txt:4704`), so it is optional and the engine falls back to the
+    country's division-names group. ASSUMED: that fallback is the same automatic naming an
+    AI-deployed division gets - the engine doc does not state it, and the harness cannot see a
+    division's name, so the owner checks the army list on the console run.
+  - Telemetry `WA_TLM_lmc_conv_n` / `_last_t` (v40, verified effect - counted on the branch where
+    the spawn is proven). Harness line `role :` added to `WA_TEST_templates`.
+- Why a script lever at all — the objection, and the refutation (AGENTS.md P3 (g)). The
+  `wa-lessons-reviewer` objected, verbatim: *"an era-conversion chain for fielded divisions is built
+  the vanilla shape: every replace_with resolves to a template declared in the SAME role group,
+  ending at a FINAL whose composition equals the destination role's target; the destination role
+  then captures the division by best match"* — i.e. the shipped light-support route (`d898e2105`,
+  `e5c497d2f`) should carry the plain light park too. **Mine covers it because that route needs a
+  hand-frozen destination shape, and the plain light family has no single one to freeze.** Two
+  owner objections, both MEASURED:
+  - *A `replace_with` arrow is STATIC, not situational.* The install's own
+    `common/ai_templates/_documentation.md` ("How do AI templates work?" and the replace-with chain
+    comment) says `replace_with` names ONE other target key written in the file, and the AI picks
+    among targets by `prio` / `enable`. Nothing in the chain is computed from the situation: the
+    situation only decides which frozen arrow is ENABLED. So "any template may need to evolve into
+    any other" is exactly what `replace_with` cannot express — it would need one authored arrow per
+    (source, destination) pair.
+  - *There is no single medium target to aim at.* MEASURED: 1080 target keys in
+    `WA_AI_TEMPLATES_armored_medium.txt` + 330 in `_armored_medium_modern.txt` = **1410 medium-role
+    targets**, chosen per country by the `WA_MEDIUM_ARMOR_TEMPLATE` value the generated ladder
+    computes, against **30** light and **18** light-support targets. And `replace_with` cannot cross
+    role groups, so the chain cannot name any of the 1410 anyway: the light-support route instead
+    ends at a FINAL declared INSIDE `role = light_armor` whose composition is a hand-written medium
+    SHAPE (`WA_AI_TEMPLATES_armored_light_support.txt:444-480`: 5 mot + 10 `medium_armor` + 5 AT +
+    5 pack art). MEASURED: that shape is not any current medium target's composition (those are
+    5 mech + 4 `medium_armor` + 6 `medium_support_armor`), and the medium family is GENERATED
+    (`tools/gen/gen_ai_armor_templates.py`, changed at HEAD `18ee3bf5ff`), so a frozen FINAL drifts
+    on every regeneration. Two frozen FINALs are affordable for a finite historical SOV park; the
+    plain light family spans every country and every medium code, so the same trick would freeze an
+    arbitrary medium shape for all of them.
+  - What SURVIVES of the objection: the GER-1943 reading is still equally explained by an
+    unreachable FINAL (`target_min_match` / `UPGRADES_DEFICIT_LIMIT_DAYS`), and nobody re-ran that
+    diagnosis. It does not affect this lever (which does not use the chain), but it is the open
+    question for the seven divisions this subject deliberately does not touch, below.
+- Cost, at the real cadences (AGENTS.md P3 (f)); **DERIVED** from the code path, not measured:
+
+  | t | GER-shaped example: 7 light-majority divisions, window opens 1941.6 | light divs | medium divs | men lost (cum.) |
+  | --- | --- | ---: | ---: | ---: |
+  | t0 (pulse 1) | create lands, one light division destroyed | 6 | +1 | ~10-20k |
+  | t+1..t+6 | one trade per monthly pulse, same shape | 0 | +7 | ~70-140k |
+  | t+7 (pulse 8) | `any_country_division` majority term reads false, gate closes | 0 | +7 | unchanged |
+  | t+36 | gate stays closed unless a new light-majority division appears | 0 | - | unchanged |
+
+  So the loss is bounded by the SIZE OF THE LEGACY PARK, not by the campaign length: one division
+  per country per month, and the gate self-closes when the park is empty. `destroy_unit` refunds
+  neither men nor equipment (it is the only division-scope removal the engine offers), and the
+  replacement draws its 10 % from the stockpile, so each trade costs roughly one division's manpower
+  plus 10 % of a medium division's equipment. The spawn happens FIRST, so a failed spawn costs zero.
+- Regression risk, **DERIVED**: the majority term (not "contains a light battalion") keeps the 30
+  `history/units/` OOB templates that carry one light-armour battalion inside an infantry formation
+  out of the pool. **ASSUMED**: the Z->A scan picks the CURRENT medium design; letters are reused, so
+  a wrong pick still spawns a medium division, only on an older design. **ASSUMED**: the resolver
+  hardcodes ENGLISH engine names, so a non-English client resolves nothing and the gate reads false -
+  the same limitation as the `WA_AI_TEMPLATES_delete_*_lettered_templates` sweeps, and now visible
+  (`conv_gate=1` with `lmc_conv_n` flat).
+- **NOT this subject**: GER's seven 1936 panzer divisions (campaign `40995eb2`,
+  `documentation/GER_ARMOR_HISTORY_40995eb2_2026-09-19.md` §3) are 6 medium + 3 medium-support +
+  1 light + 5 mech - they are NOT light-majority, so this effect never touches them, by design.
+  Their role label is the replace_with/best-match question above.
+- Harness owed: owner runs `WA_TEST_templates` as a 1942 GER/ENG that still fields light-majority
+  tank divisions. PASS = the `role :` line shows `conv_gate=1 light_divs=1 medium_template=1` with a
+  plausible `resolved=` name, and `conversions=` rises by 1 per month. FAIL shapes: `conv_gate=1`
+  with `conversions` flat (spawn never lands); `light_divs=1 medium_template=1 conv_gate=0` inside
+  the window (a NOT term still wants light divisions).
+- Verification (campaign): in a post-1942 save, a country that passes the gate shows `lmc_conv_n`
+  rising ~1/month, its light-majority division count falling to zero within the park's size in
+  months, and its total division count unchanged across each of those months.
+- Closed when: the harness output above is pasted here, then one campaign shows `lmc_conv_n > 0`
+  and a legacy light park emptied within its own size in months of the window opening.
+
 ### armor-template-generator — SHIPPED-UNTESTED (2026-09-19)
 - Owner order 2026-09-18/19 (screenshot item 12 + two feedback rounds, then "lance l'étape 5").
   Intended behaviour: the medium / modern / heavy armour compositions, their eligibility and their
