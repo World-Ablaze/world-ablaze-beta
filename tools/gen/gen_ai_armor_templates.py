@@ -44,6 +44,11 @@ def compile_all(registry, game):
 
     groups, by_flag = [], {}
     for family_id, fam in registry.families.items():
+        # A family with emit=false is modelled and published in the manifest, but neither its
+        # file nor its ladder is written: its hand-written ladder still owns behaviour this
+        # generator does not model yet.
+        if fam.get("emit") is False:
+            continue
         by_flag.setdefault((fam["flag"], fam["type_code"]), []).append(family_id)
     for (flag, _code), families in sorted(by_flag.items()):
         families = sorted(families, key=lambda f: registry.families[f]["code_range"][0])
@@ -51,6 +56,8 @@ def compile_all(registry, game):
         groups.append((name, families))
 
     stats = {
+        "emitted": sorted(f for f, fam in registry.families.items()
+                          if fam.get("emit") is not False),
         "per_family": dict((f, len(s)) for f, s in sorted(per_family.items())),
         "targets": sum(len(s) for s in per_family.values()),
         "ladder_groups": len(groups),
@@ -63,14 +70,16 @@ def compile_all(registry, game):
 
 def render(registry, game, per_family, planes_by_family, groups, stats):
     files = {}
-    for family_id, sels in per_family.items():
+    emitted = dict((f, s) for f, s in per_family.items()
+                   if registry.families[f].get("emit") is not False)
+    for family_id, sels in emitted.items():
         files[registry.families[family_id]["file"]] = emit.family_file(
             registry, family_id, sels, game)
     files[EFFECTS_OUT] = emit.effects_file(registry, groups, planes_by_family)
-    files[TRIGGERS_OUT] = emit.triggers_file(registry, per_family)
-    manifest = json.loads(emit.manifest(registry, per_family, stats))
-    manifest["transitions_resolved"] = transitions.build(registry, per_family)
-    files[MANIFEST_OUT] = json.dumps(manifest, indent=1) + "\n"
+    files[TRIGGERS_OUT] = emit.triggers_file(registry, emitted)
+    files[MANIFEST_OUT] = emit.manifest(
+        registry, per_family, stats,
+        extra={"transitions_resolved": transitions.build(registry, per_family)})
     return files
 
 
@@ -124,6 +133,7 @@ def main(argv=None):
 
     print("targets: %d  (%s)" % (stats["targets"], ", ".join(
         "%s %d" % kv for kv in stats["per_family"].items())))
+    print("emitted: %s (others modelled only)" % ", ".join(stats["emitted"]))
     print("ladders: %d" % stats["ladder_groups"])
     for family_id, planes in sorted(stats["planes"].items()):
         print("         %-8s %s" % (family_id, "  ".join(

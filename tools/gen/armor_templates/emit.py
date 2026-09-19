@@ -34,8 +34,13 @@ def family_file(registry, family_id, selections, game=None):
     out = [_header("Composition targets for the %s armour family." % family_id)]
     out.append("\n%s = {\n" % fam["role_group"])
     out.append("%srole = %s\n" % (TAB, fam["role"]))
-    if fam["role"] != "heavy_armor":
-        out.append("%sfront_role_override = offence\n" % TAB)
+    override = fam.get("front_role_override")
+    if override:
+        # The engine keys front assignment on `role = armor` or this override (defines
+        # ASSIGN_TANKS_TO_WAR_FRONT). WA uses granular role tokens, so a role group without the
+        # line has every front_armor_score entry go inert and its divisions distributed like
+        # infantry. Declared per family in the registry, never inferred from the role name.
+        out.append("%sfront_role_override = %s\n" % (TAB, override))
     out.append("%supgrade_prio = {\n" % TAB)
     out.append("%sbase = 100\n" % (TAB * 2))
     out.append("%s# [dead-role-entry] A role entry whose targets are all disabled still wins the\n"
@@ -280,7 +285,7 @@ def _manifest_row(sel):
     }
 
 
-def manifest(registry, per_family_selections, stats):
+def manifest(registry, per_family_selections, stats, extra=None):
     data = {
         "marker": MARKER,
         "schema_version": registry.raw["schema_version"],
@@ -288,9 +293,13 @@ def manifest(registry, per_family_selections, stats):
         "stats": stats,
         "transitions": registry.transitions,
     }
+    data.update(extra or {})
     for family_id, sels in sorted(per_family_selections.items()):
         fam = registry.families[family_id]
         data["families"][family_id] = {
+            # emitted=false: modelled and code-assigned, but its ai_template file and ladder are
+            # NOT written, so its codes are not reachable in game. Readers must filter on this.
+            "emitted": fam.get("emit") is not False,
             "flag": fam["flag"],
             "type_code": fam["type_code"],
             "role": fam["role"],
@@ -302,4 +311,15 @@ def manifest(registry, per_family_selections, stats):
             # conjunction is not part of the contract and is not carried here.
             "targets": [_manifest_row(s) for s in sels],
         }
-    return json.dumps(data, indent=1, sort_keys=False) + "\n"
+    # One target per LINE. The manifest is committed and check_templates.py reads it, so an
+    # indented dump of 2016 targets would put 75k lines of diff noise in every axis change.
+    rows = {}
+    for family_id, family in data["families"].items():
+        rows[family_id] = family["targets"]
+        family["targets"] = "@@%s@@" % family_id
+    text = json.dumps(data, indent=1, sort_keys=False)
+    for family_id, targets in rows.items():
+        body = ",\n  ".join(json.dumps(row, sort_keys=True) for row in targets)
+        text = text.replace('"@@%s@@"' % family_id,
+                            "[\n  %s\n ]" % body if targets else "[]")
+    return text + "\n"

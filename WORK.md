@@ -173,6 +173,89 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### armor-template-generator — SHIPPED-UNTESTED (2026-09-19)
+- Owner order 2026-09-18/19 (screenshot item 12 + two feedback rounds, then "lance l'étape 5").
+  Intended behaviour: the medium / modern / heavy armour compositions, their eligibility and their
+  template codes come from ONE definition instead of three hand-maintained ladders, and every
+  target is 30 combat width under the reworked Armoured Waves doctrine.
+- Symptom, MEASURED (mod files, 2026-09-19): the merged Armoured Wave rework sets
+  `combat_width = 0.5` on 33 land units, while all 74 live `*_ARMOURED_WAVES` blocks still carried
+  18 battalions. A country holding the doctrine fielded 37.5-width base divisions and 45-width wave
+  divisions against a 30-width target.
+- Change: `tools/armor_templates_registry.json` + `tools/gen/gen_ai_armor_templates.py` +
+  `tools/gen/armor_templates/` now own
+  `common/ai_templates/WA_AI_TEMPLATES_armored_medium.txt`, `_medium_modern.txt`, `_heavy.txt`,
+  `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt`,
+  `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` and
+  `tools/generated/armor_templates_manifest.json`. 1872 emitted targets, all 30 wide.
+  `WA_AI_TEMPLATES_calculate_{medium,heavy}_armor_template` are thin wrappers;
+  `apply_armoured_waves_mirror` and `apply_heavy_support_mirror` are deleted (their only callers
+  were the replaced ladders); `gen_ai_medium_modern_mirror.py` and the constants group
+  `templates_modern_tier_offset` are retired with the +500 offset; modern owns codes 8000-8863.
+- The value is now COMPUTED: one mixed-radix digit per declared axis (variant / TD / SPAA /
+  rockets / industrial cut / heavy company / waves), one plane per mobile-infantry form.
+- Light and light_support are NOT generated (`"emit": false` in the registry): their hand-written
+  ladders still own the `[armor-class-handoff]` MIS redirect, the light->medium transition rungs,
+  the historical tank park and the Soviet phases, and A5's direct role transfer that replaces them
+  is not built. `WA_AI_TEMPLATES_is_medium_mis_family` was re-pointed from a 12-value code list to
+  the generated chain verdict so the redirect survives.
+- Regression risk, DERIVED and NOT yet measured in game:
+  - three existing subjects' verification criteria are now dead numbers: `heavy-in-support`
+    (+50 bands 6050-6279), `armoured-waves` (+100 mirror bands 6200-6216 / 7200-7213) and
+    `medium-ladder-rocket-inf-support` (named 61xx rungs). The BEHAVIOUR they encode is preserved
+    as axes of the generator, but their pasted PASS criteria must be rewritten before they can be
+    re-run.
+  - `WA_TEST_templates.txt` and `WA_TEST_armor_budget.txt` decode the OLD code values, so their
+    medium/heavy readouts now print 0. They must be re-pointed at the manifest before any
+    harness run means anything. OWED, blocking the test below.
+  - heavy divisions lose `medium_support_armor_battalion_line` from the line (8 old blocks): A4
+    forbids a non-heavy chassis in a heavy line.
+- Reviewer-required (AGENTS.md principle 3(g)), the parked proposal this resembles: owner ruling
+  2026-09-04 parked `tools/gen_ai_armor_conversion_finals.py` with "a massive complexity increase,
+  against the dynamic principles; decision owed to the owners" (~9 000 generated lines on branch
+  `parked/armor-conversion-finals`). Mine covers it because that proposal generated the CONVERSION
+  rungs and FINALs - one rung per medium value, on top of the hand-written ladders - while this one
+  generates the COMPOSITION targets and DELETES the three hand-written ladders it replaces, and
+  because the owner ordered it directly (screenshot item 12, 2026-09-18, then "lance l'etape 5"
+  2026-09-19). The conversion chain is untouched and still hand-written.
+- `[armor-class-handoff]` residual CLOSED, not accepted: the two heavy FINALs in
+  `WA_AI_TEMPLATES_armored_light_support.txt` mirrored the OLD heavy 30-width target (9 heavy + 6
+  mobile infantry). The new heavy base target is 10 + 5, so they were re-pointed to 10 + 5 in this
+  change; a FINAL whose composition is not the destination role's CURRENT target is how a
+  converting division lands on a class nobody chose.
+- `is_medium_mis_family` divergence window, the t0/t1/t2 the reviewer asked for. Cadence
+  MEASURED: `WA_AI_TEMPLATES_calculate_all_templates` runs at startup and monthly
+  (`common/on_actions/WA_AI_misc_on_actions.txt:263`) and calls medium BEFORE light, while an
+  ai_template `enable` is evaluated by the engine continuously.
+
+  | | event | what the gate says | what the flag holds |
+  | --- | --- | --- | --- |
+  | t0 | the country finishes its medium infantry-support tech, mid-month | opens the same tick | still the previous variant's code |
+  | t1 | next monthly pass | unchanged | the medium ladder writes the infantry-support code |
+  | t2 | steady | agree | agree |
+
+  So the FINAL_MIS can open up to one monthly pass EARLY; before this change, reading the written
+  value made it open one pass LATE. Same window, opposite sign, self-healing at t1 either way, and
+  both ends of it are 30-width medium compositions - the divergence is which variant battalion the
+  converting division is pointed at, never whether it has a destination.
+- The three light / light-support FINALs mirrored the OLD medium and heavy targets and were
+  re-pointed in this change: pure light->medium 9+6 to 10+5, inf-support 6+3+6 to 7+3+5, heavy
+  9+6 to 10+5. A FINAL whose composition is not the destination role's CURRENT target is how a
+  converting division lands on a class nobody chose.
+- The join key is checked INDEPENDENTLY of the generator: `tools/check_templates.py`
+  `derive_generated_values` walks the mixed-radix arithmetic out of the shipped
+  `WA_AI_TEMPLATES_ARMOR_generated.txt` and diffs it against the manifest (1728 medium/modern +
+  144 heavy codes agree). A manifest-only check would be the generator vouching for itself.
+- Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): re-point
+  `WA_TEST_templates` / `WA_TEST_armor_budget` at the generated codes, then the owner runs them as
+  a medium-armour major. PASS = the printed medium value sits inside 6000-6863 (or 8000-8863 with
+  the modern latch), and the fielded division has 15 battalions, or 12 with the doctrine.
+- Verification (campaign): one save where a doctrine-holding AI fields a 12-battalion armour
+  division at 30 width, and a non-doctrine AI fields 15 at 30.
+- Closed when: `python tools/gen/gen_ai_armor_templates.py --check` exit 0,
+  `python tools/check_templates.py` exit 0 (done: 4 pre-existing hq SLOT-SUFFIX only), the
+  re-pointed harness output is pasted here, then one campaign shows the widths above.
+
 ### home-war-first — PARKED (2026-09-16)
 - State: code ships with this subject update; **not verified in a campaign**. Parked, not `OPEN`,
   only because the live slots were already full (`armoured-waves` precedent, 2026-09-10).

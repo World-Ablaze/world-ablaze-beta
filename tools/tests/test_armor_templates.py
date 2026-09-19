@@ -298,12 +298,66 @@ class Rendering(unittest.TestCase):
                      emit.triggers_file(REGISTRY, {"heavy": sels})):
             self.assertEqual(text.count("{"), text.count("}"))
 
+    def test_every_role_group_keeps_its_front_role_override(self):
+        """Without it the engine distributes armour like infantry and every
+        front_armor_score entry in the mod goes inert."""
+        for family_id, fam in REGISTRY.families.items():
+            sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
+            text = emit.family_file(REGISTRY, family_id, sels, GAME)
+            self.assertIn("front_role_override = %s" % fam["front_role_override"], text,
+                          family_id)
+
     def test_every_emitted_unit_exists(self):
         for family_id in REGISTRY.families:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
             for s in sels:
                 for unit in s.units():
                     self.assertIsNotNone(GAME.unit(unit), unit)
+
+
+class ShippedLadder(unittest.TestCase):
+    """The join key between the ladder and the templates, re-derived from the SHIPPED script.
+
+    A checker that only reads the generator's own manifest vouches for the generator with the
+    generator; this reads the arithmetic out of the emitted effect instead.
+    """
+
+    def setUp(self):
+        sys.path.insert(0, str(REPO / "tools"))
+        import check_templates
+        self.ct = check_templates
+
+    def test_derivation_matches_the_manifest(self):
+        import json
+        derived, complaints = self.ct.derive_generated_values(REPO)
+        self.assertEqual(complaints, [])
+        manifest = json.loads((REPO / "tools" / "generated"
+                               / "armor_templates_manifest.json").read_text(encoding="utf-8"))
+        declared = {}
+        for family in manifest["families"].values():
+            if not family.get("emitted", True):
+                continue
+            declared.setdefault(family["flag"], set()).update(
+                x["code"] for x in family["targets"])
+        self.assertEqual({k: sorted(v) for k, v in sorted(derived.items())},
+                         {k: sorted(v) for k, v in sorted(declared.items())})
+
+    def test_derivation_reads_the_script_and_not_the_manifest(self):
+        """Mutating one stride in a copy of the ladder must change the derived set."""
+        import re, shutil, tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "common" / "scripted_effects").mkdir(parents=True)
+            src = REPO.joinpath(*self.ct.GENERATED_EFFECTS)
+            text = src.read_text(encoding="utf-8")
+            mutated = re.sub(r"multiply_temp_variable = \{ _wa_ag_digit = 24 \}",
+                             "multiply_temp_variable = { _wa_ag_digit = 25 }", text, count=1)
+            self.assertNotEqual(mutated, text, "fixture found no stride to mutate")
+            (root.joinpath(*self.ct.GENERATED_EFFECTS)).write_text(mutated, encoding="utf-8")
+            derived, _ = self.ct.derive_generated_values(root)
+            original, _ = self.ct.derive_generated_values(REPO)
+            self.assertNotEqual(derived, original)
 
 
 class Inputs(unittest.TestCase):

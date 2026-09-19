@@ -364,32 +364,18 @@ WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
-# [armor-class-handoff] The medium role's SELECTED template sits in the inf-support family
-# (armour / medium-inf-support / mechanized on the line). Read by the light ladder's MIS redirect
-# and the MIS FINAL enable, so the light->medium conversion ends on the composition the medium
-# role actually targets. Reads the FLAG, i.e. calculator intent, not the armed role.
-# [armoured-waves] 6205-6210 are the same family one band up: same three line types, more armour
-# battalions. Without them the doctrine silently switched the redirect off and conversion fell
-# back to the pure 9+6 this trigger exists to avoid.
-# The MODERN bands 6605-6610 / 6705-6710 stay out on purpose: the FINAL this gate enables is
-# built from medium_armor / medium_infantry_support battalions, so a modern-chassis role would be
-# pointed at a composition it never claims. Adding a modern band here means authoring a modern
-# FINAL first.
+# [armor-class-handoff] Does the medium role TARGET an infantry-support composition? Read by the
+# light ladder's MIS redirect and the MIS FINAL enable, so a light->medium conversion ends on the
+# composition the medium role actually claims.
+# Reads the generated chain verdict, not a list of template codes: the code is now a mixed-radix
+# value computed per country (tools/armor_templates_registry.json), so a hand-written value list
+# would go stale the first time an axis changes. The modern chassis stays out on purpose - the
+# FINAL this gate enables is built from medium_armor / medium_infantry_support battalions.
 WA_AI_TEMPLATES_is_medium_mis_family = {
-	OR = {
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6105 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6106 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6107 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6108 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6109 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6110 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6205 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6206 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6207 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6208 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6209 }
-		has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6210 }
-	}
+	has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+	WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_inf_support = yes
 }
 
 # [armor-class-handoff] Gate of the transition rungs in the light ladder: open pre-boundary
