@@ -22,6 +22,14 @@ REGISTRY = model.load(REPO)
 GAME = inputs.GameFiles(REPO)
 E = resolve.EMPTY
 
+# A declared family (light, light_support) has no axes to enumerate: its targets are written out
+# one by one because it is a conversion state machine, and its phase codes are written by the
+# hand-written calculator that owns that machine.
+ENUMERATED = [f for f, fam in REGISTRY.families.items()
+              if fam.get("mode", "enumerated") != "declared"]
+DECLARED = [f for f, fam in REGISTRY.families.items()
+            if fam.get("mode", "enumerated") == "declared"]
+
 
 def facts(family, **kw):
     base = dict(mobile_infantry="mechanized", variant=E, td=E, spaa=E, rockets=False,
@@ -126,7 +134,7 @@ class Width(unittest.TestCase):
         self.assertAlmostEqual(spg.width, 30.0)
 
     def test_every_target_is_thirty_wide(self):
-        for family_id in REGISTRY.families:
+        for family_id in ENUMERATED:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
             for s in sels:
                 self.assertAlmostEqual(s.width, 30.0, msg=s.name)
@@ -145,7 +153,7 @@ class Width(unittest.TestCase):
         """The doctrine prerequisite is not applied yet, so the gap must be a finding."""
         needed = set()
         per_family = {}
-        for family_id in REGISTRY.families:
+        for family_id in ENUMERATED:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
             per_family[family_id] = sels
             for s in sels:
@@ -247,7 +255,8 @@ class DivisionalSupport(unittest.TestCase):
 class Codes(unittest.TestCase):
     def test_codes_are_dense_and_unique_inside_the_declared_range(self):
         seen = set()
-        for family_id, fam in REGISTRY.families.items():
+        for family_id in ENUMERATED:
+            fam = REGISTRY.families[family_id]
             sels, errors, planes = resolve.enumerate_family(family_id, REGISTRY, GAME)
             self.assertEqual(errors, [], family_id)
             codes = [s.code for s in sels]
@@ -260,7 +269,7 @@ class Codes(unittest.TestCase):
             seen |= set(codes)
 
     def test_plane_arithmetic_matches_the_enumerated_code(self):
-        for family_id in REGISTRY.families:
+        for family_id in ENUMERATED:
             planes = resolve.build_planes(REGISTRY, family_id)
             base = planes[0].base
             self.assertEqual(base, REGISTRY.families[family_id]["code_range"][0])
@@ -270,7 +279,7 @@ class Codes(unittest.TestCase):
 
     def test_every_target_name_is_unique(self):
         names = set()
-        for family_id in REGISTRY.families:
+        for family_id in ENUMERATED:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
             for s in sels:
                 self.assertNotIn(s.name, names)
@@ -302,13 +311,16 @@ class Rendering(unittest.TestCase):
         """Without it the engine distributes armour like infantry and every
         front_armor_score entry in the mod goes inert."""
         for family_id, fam in REGISTRY.families.items():
-            sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
-            text = emit.family_file(REGISTRY, family_id, sels, GAME)
+            sels = (resolve.enumerate_family(family_id, REGISTRY, GAME)[0]
+                    if family_id in ENUMERATED else [])
+            text = emit.family_file(REGISTRY, family_id, sels, GAME,
+                                    declared=resolve.declared_profiles(
+                                        REGISTRY, family_id, GAME))
             self.assertIn("front_role_override = %s" % fam["front_role_override"], text,
                           family_id)
 
     def test_every_emitted_unit_exists(self):
-        for family_id in REGISTRY.families:
+        for family_id in ENUMERATED:
             sels, _e, _p = resolve.enumerate_family(family_id, REGISTRY, GAME)
             for s in sels:
                 for unit in s.units():
@@ -335,7 +347,7 @@ class ShippedLadder(unittest.TestCase):
                                / "armor_templates_manifest.json").read_text(encoding="utf-8"))
         declared = {}
         for family in manifest["families"].values():
-            if not family.get("emitted", True):
+            if not family.get("emitted", True) or family.get("mode") == "declared":
                 continue
             declared.setdefault(family["flag"], set()).update(
                 x["code"] for x in family["targets"])
@@ -358,6 +370,98 @@ class ShippedLadder(unittest.TestCase):
             derived, _ = self.ct.derive_generated_values(root)
             original, _ = self.ct.derive_generated_values(REPO)
             self.assertNotEqual(derived, original)
+
+
+class RegimentalGeometry(unittest.TestCase):
+    """The regimental block must fit the columns the battalion count can form.
+
+    MEASURED (common/defines/05_defines.lua): 5 columns, 2 rows, 3 battalions required per row,
+    and AI_BATTALION_BUILD_ORDER fills a column three deep before opening the next. So N
+    battalions open floor(N/3) columns and carry 2 companies each. A wider block has companies
+    the division designer can never place.
+    """
+
+    def test_fifteen_battalions_carry_five_plus_five(self):
+        s = sel("medium", quota=0)
+        self.assertEqual(sum(s.line.values()), 15)
+        self.assertEqual(sorted(s.regimental.values()), [5, 5])
+
+    def test_twelve_battalions_carry_four_plus_four(self):
+        s = sel("medium", quota=0, waves=True)
+        self.assertEqual(sum(s.line.values()), 12)
+        self.assertEqual(sorted(s.regimental.values()), [4, 4])
+
+    def test_the_rocket_cap_still_holds_in_a_four_slot_block(self):
+        s = sel("medium", quota=0, waves=True, rockets=True, variant="medium_spg")
+        rockets = s.regimental["mechanized_sp_rocket_artillery_company_regimental"]
+        self.assertEqual(rockets, 2)
+        self.assertEqual(sum(s.regimental.values()), 8)
+
+    def test_no_emitted_target_asks_for_more_than_it_can_place(self):
+        for family_id in ENUMERATED:
+            for s in resolve.enumerate_family(family_id, REGISTRY, GAME)[0]:
+                per_row = resolve.regimental_columns(sum(s.line.values()), GAME, REGISTRY)
+                self.assertEqual(sum(s.regimental.values()), per_row * 2, s.name)
+
+
+class DeclaredFamilies(unittest.TestCase):
+    """light and light_support: a conversion state machine, declared target by target."""
+
+    def test_both_families_are_declared(self):
+        self.assertEqual(sorted(DECLARED), ["light", "light_support"])
+
+    def test_every_declared_profile_resolves(self):
+        for family_id in DECLARED:
+            sels = resolve.declared_profiles(REGISTRY, family_id, GAME)
+            self.assertEqual(len(sels), len(REGISTRY.families[family_id]["profiles"]))
+            for s in sels:
+                for unit in s.units():
+                    self.assertIsNotNone(GAME.unit(unit), "%s: %s" % (s.name, unit))
+
+    def test_the_soviet_park_survives_regeneration(self):
+        """The COUNTRY_SOV_* profiles reproduce a real 1941 corps; they are the one place in this
+        generator where a country tag is the point, and they must come through verbatim."""
+        sels = {s.name: s for s in resolve.declared_profiles(REGISTRY, "light_support", GAME)}
+        corps = sels["WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY"]
+        self.assertEqual(corps.line, {"light_support_armor_battalion_line": 12,
+                                      "light_armor_battalion_line": 6,
+                                      "infantry_heavy_motorized_battalion_line": 4})
+        self.assertAlmostEqual(corps.width, 44.0)
+        self.assertIn("44", corps.profile["width_exception"])
+        self.assertEqual(len([n for n in sels if "COUNTRY_SOV" in n]), 6)
+
+    def test_declared_width_exceptions_are_named(self):
+        for family_id in DECLARED:
+            for s in resolve.declared_profiles(REGISTRY, family_id, GAME):
+                if abs(s.width - 30.0) > 1e-6:
+                    self.assertTrue((s.profile or {}).get("width_exception"),
+                                    "%s is %g wide and declares no exception" % (s.name, s.width))
+
+    def test_the_finals_mirror_the_medium_role_current_target(self):
+        """A FINAL whose composition is not the destination role's CURRENT target makes the
+        converting division land on a class nobody chose."""
+        base = sel("medium", quota=0)
+        for family_id in DECLARED:
+            for s in resolve.declared_profiles(REGISTRY, family_id, GAME):
+                if s.name.endswith(("TRANSITION_MOT_FINAL", "TRANSITION_MEC_FINAL")):
+                    self.assertEqual(s.line["medium_armor_battalion_line"],
+                                     base.line["medium_armor_battalion_line"], s.name)
+
+    def test_every_replace_with_resolves_inside_its_own_group(self):
+        """A cross-group replace_with pointer is the stall the owner measured live."""
+        for family_id in DECLARED:
+            ids = set(p["id"] for p in REGISTRY.families[family_id]["profiles"])
+            for prof in REGISTRY.families[family_id]["profiles"]:
+                if prof.get("replace_with"):
+                    self.assertIn(prof["replace_with"], ids, prof["id"])
+
+    def test_declared_families_emit_no_ladder(self):
+        """Their phase codes are written by the hand-written calculator that owns the machine."""
+        import gen_ai_armor_templates as cli
+        _pf, _pl, _decl, groups, _stats, _errs = cli.compile_all(REGISTRY, GAME)
+        for _name, families in groups:
+            for family_id in families:
+                self.assertNotIn(family_id, DECLARED)
 
 
 class Inputs(unittest.TestCase):

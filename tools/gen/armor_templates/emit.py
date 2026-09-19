@@ -29,7 +29,7 @@ def _header(source_note):
 
 # --------------------------------------------------------------------- templates
 
-def family_file(registry, family_id, selections, game=None):
+def family_file(registry, family_id, selections, game=None, declared=()):
     fam = registry.families[family_id]
     out = [_header("Composition targets for the %s armour family." % family_id)]
     out.append("\n%s = {\n" % fam["role_group"])
@@ -62,29 +62,115 @@ def family_file(registry, family_id, selections, game=None):
                            % (TAB * 2, TAB * 3, TAB * 3, other["extra_admission"], TAB * 2))
     out.append("%s}\n" % TAB)
 
+    # One block per distinct COMPOSITION, not per code. The code space stays a rectangle so the
+    # ladder can compute it with one multiply per axis; two points of that rectangle can still
+    # resolve to the same battalions - MEASURED, every such pair differs only in the industrial
+    # quota, because `S = max(0, quota - variant_block)` flattens the two upper cuts once a
+    # variant occupies the block. Those share one block and enable on either value.
+    groups, index = [], {}
     for sel in selections:
-        out.append(_target_block(registry, fam, sel))
+        if sel.signature in index:
+            groups[index[sel.signature]][1].append(sel)
+            continue
+        index[sel.signature] = len(groups)
+        groups.append((sel, [sel]))
+    for first, members in groups:
+        out.append(_target_block(registry, fam, first, [m.code for m in members]))
+    # Declared profiles keep their own codes, their own order and their replace_with links: they
+    # are a conversion state machine, and the order a role group declares its targets in is what
+    # breaks a tie between two targets at equal upgrade_prio.
+    for sel in declared:
+        out.append(_target_block(registry, fam, sel, sel.codes, profile=sel.profile))
     out.append("}\n")
     return "".join(out)
 
 
-def _target_block(registry, fam, sel):
-    lines = ["\n%s%s = {\n" % (TAB, sel.name)]
-    lines.append("%senable = { has_country_flag = { flag = %s value = %d } }\n"
-                 % (TAB * 2, fam["flag"], sel.code))
-    lines.append("%sreinforce_prio = 1\n" % (TAB * 2))
-    lines.append("%scustom_icon = %d\n" % (TAB * 2, fam.get("custom_icon", 140)))
+def _enable_block(fam, codes, extra, depth, raw=None):
+    """`enable` for one target: one value, or an OR of the values that share it.
+
+    A target with NO value enables on its trigger terms alone - that is how the conversion
+    FINALs are reached, by the destination role capturing a division on composition match
+    rather than by a flag the calculator wrote.
+
+    `extra` holds trigger NAMES, rendered `name = yes`; `raw` holds complete terms, rendered
+    exactly as declared - a has_template on a named starter, for instance. Dropping one
+    silently opens a target the engine was meant to gate.
+    """
+    terms = ['%s = yes' % name for name in (extra or [])] + list(raw or [])
+    lines = []
+    if not codes:
+        if not terms:
+            return ['%senable = { always = yes }\n' % (TAB * depth)]
+        lines.append('%senable = {\n' % (TAB * depth))
+        for term in terms:
+            lines.append('%s%s\n' % (TAB * (depth + 1), term))
+        lines.append('%s}\n' % (TAB * depth))
+        return lines
+    if not terms:
+        if len(codes) == 1:
+            return ['%senable = { has_country_flag = { flag = %s value = %d } }\n'
+                    % (TAB * depth, fam['flag'], codes[0])]
+        lines.append('%senable = {\n%sOR = {\n' % (TAB * depth, TAB * (depth + 1)))
+        for code in sorted(codes):
+            lines.append('%shas_country_flag = { flag = %s value = %d }\n'
+                         % (TAB * (depth + 2), fam['flag'], code))
+        lines.append('%s}\n%s}\n' % (TAB * (depth + 1), TAB * depth))
+        return lines
+    lines.append('%senable = {\n' % (TAB * depth))
+    if len(codes) == 1:
+        lines.append('%shas_country_flag = { flag = %s value = %d }\n'
+                     % (TAB * (depth + 1), fam['flag'], codes[0]))
+    else:
+        lines.append('%sOR = {\n' % (TAB * (depth + 1)))
+        for code in sorted(codes):
+            lines.append('%shas_country_flag = { flag = %s value = %d }\n'
+                         % (TAB * (depth + 2), fam['flag'], code))
+        lines.append('%s}\n' % (TAB * (depth + 1)))
+    for term in terms:
+        lines.append('%s%s\n' % (TAB * (depth + 1), term))
+    lines.append('%s}\n' % (TAB * depth))
+    return lines
+
+
+def _target_block(registry, fam, sel, codes=None, profile=None):
+    profile = profile or {}
+    # An empty list is not "no codes given": it means this target answers no flag VALUE at all.
+    codes = list(codes) if codes is not None else [sel.code]
+    lines = []
+    if profile.get("_comment"):
+        lines.append("\n")
+        for line in profile["_comment"].split("\n"):
+            lines.append("%s# %s\n" % (TAB, line))
+        lines.append("%s%s = {\n" % (TAB, sel.name))
+    else:
+        lines.append("\n%s%s = {\n" % (TAB, sel.name))
+    # `enable_raw` carries terms that are not `name = yes` - a has_template on a named starter,
+    # for instance. Dropping one silently opens a target the engine was meant to gate.
+    extra_terms = list(profile.get("enable_extra") or []) or None
+    lines.extend(_enable_block(fam, codes, extra_terms, 2,
+                               raw=profile.get("enable_raw")))
+    lines.append("%sreinforce_prio = %d\n" % (TAB * 2, profile.get("reinforce_prio", 1)))
+    lines.append("%scustom_icon = %d\n"
+                 % (TAB * 2, profile.get("custom_icon", fam.get("custom_icon", 140))))
     lines.append("%scan_upgrade_in_field = { always = yes }\n" % (TAB * 2))
-    lines.append("%supgrade_prio = { base = 10 }\n" % (TAB * 2))
+    lines.append("%supgrade_prio = { base = %d }\n"
+                 % (TAB * 2, profile.get("upgrade_prio_base", 10)))
     lines.append("%starget_template = {\n" % (TAB * 2))
     for section, mapping in (("regiments", sel.line),
                              ("regimental_support", sel.regimental),
                              ("support", sel.support)):
+        # A declared profile that fields nothing in a slot omits it, the way the hand-written
+        # target did. An enumerated target always fills all three.
+        if not mapping and profile:
+            continue
         lines.append("%s%s = {\n" % (TAB * 3, section))
         for unit, count in sorted(mapping.items()):
             lines.append("%s%s = %d\n" % (TAB * 4, unit, count))
         lines.append("%s}\n" % (TAB * 3))
     lines.append("%s}\n" % (TAB * 2))
+    for key in ("replace_at_match", "replace_with", "target_min_match"):
+        if profile.get(key) is not None:
+            lines.append("%s%s = %s\n" % (TAB * 2, key, profile[key]))
     lines.append("%s}\n" % TAB)
     return "".join(lines)
 
@@ -230,6 +316,8 @@ def triggers_file(registry, per_family_selections, max_or_terms=64):
 
     for family_id in sorted(per_family_selections):
         fam = registry.families[family_id]
+        if "enumerate" not in fam:
+            continue      # a declared family has no chains to resolve winners for
         tiered = R._tiered(registry, family_id)
         out.append("\n########## %s\n" % family_id)
         for chain_id, allowed in sorted(fam["enumerate"].items()):
@@ -288,7 +376,7 @@ def _manifest_row(sel):
     }
 
 
-def manifest(registry, per_family_selections, stats, extra=None):
+def manifest(registry, per_family_selections, stats, extra=None, declared=None):
     data = {
         "marker": MARKER,
         "schema_version": registry.raw["schema_version"],
@@ -307,12 +395,17 @@ def manifest(registry, per_family_selections, stats, extra=None):
             "type_code": fam["type_code"],
             "role": fam["role"],
             "file": fam["file"],
-            "code_range": fam["code_range"],
+            "code_range": fam.get("code_range"),
+            "mode": fam.get("mode", "enumerated"),
             "codes_used": [min(s.code for s in sels), max(s.code for s in sels)] if sels else [],
             # One row per code: what the engine will field, and which categorical point produced
             # it. The ladder computes the code arithmetically, so the per-target trigger
             # conjunction is not part of the contract and is not carried here.
             "targets": [_manifest_row(s) for s in sels],
+            # Declared targets carry their own pinned codes; they are listed apart so a reader
+            # can tell an enumerated composition from a conversion phase at a glance.
+            "declared_targets": [_manifest_row(s)
+                                 for s in (declared or {}).get(family_id, [])],
         }
     # One target per LINE. The manifest is committed and check_templates.py reads it, so an
     # indented dump of 2016 targets would put 75k lines of diff noise in every axis change.

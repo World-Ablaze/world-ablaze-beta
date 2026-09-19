@@ -2,10 +2,13 @@
   "schema_version": 1,
   "_comment": [
     "[armor-template-generator] Human-maintained definition of the AI armour compositions.",
-    "Read by tools/gen/gen_ai_armor_templates.py. Contains NO country tag and NO copied",
-    "technology list: country classification stays in WA_AI_CONFIG, eligibility stays in the",
-    "WA_AI_TEMPLATES_* scripted triggers named here by reference.",
-    "Functional authority: documentation/WA_AI_ARMOR_GENERATOR_SPEC.md (decisions A1-A12)."
+    "Read by tools/gen/gen_ai_armor_templates.py. No country tag is ever a GATING term here:",
+    "classification stays in WA_AI_CONFIG and eligibility in the WA_AI_TEMPLATES_* scripted",
+    "triggers named by reference. Tags appear only inside the six COUNTRY_SOV_* target IDS of the",
+    "light_support family - the historical tank park, admitted by",
+    "WA_AI_CONFIG_pursues_historical_tank_park, which is the Country-layer exception of",
+    "principle 2. No technology list is copied either.",
+    "Functional authority: documentation/WA_AI_ARMOR_GENERATOR_SPEC.md (decisions A1-A18)."
   ],
   "composition": {
     "line_budget": 10,
@@ -423,30 +426,814 @@
       "file": "common/ai_templates/WA_AI_TEMPLATES_armored_light.txt",
       "name_token": "LIGHT_ARMOR",
       "custom_icon": 140,
-      "code_range": [
-        29000,
-        29999
-      ],
       "waves": true,
       "heavy_divisional_company": false,
-      "enumerate": {
-        "line_variant": [
-          "light_assault",
-          "light_inf_support",
-          "light_spg"
-        ],
-        "tank_destroyer": [
-          "mechanized_td",
-          "light_td"
-        ],
-        "spaa": [
-          "light_spaa"
-        ],
-        "rockets": true
-      },
-      "emit": false,
-      "_comment": "emit=false: the light family is MODELLED (its compositions, codes and transition destination are resolved and published in the manifest) but its file and ladder are NOT generated yet. The hand-written light ladder still owns the [armor-class-handoff] MIS redirect and the light->medium transition rungs, and A5's direct role transfer that replaces them is not built. Generating light before that controller exists would delete working conversion behaviour. Same reason the light_support family is not modelled here at all.",
-      "front_role_override": "offence"
+      "emit": true,
+      "_comment": "mode=declared: the light family is a CONVERSION machine as much as a composition. Its composition targets are resolved from `facts`, so the 10-line / 5-mobile / 30-width rules own them, but they keep the codes the hand-written ladder writes (WA_AI_TEMPLATES_calculate_light_armor_template). Its transition rungs and FINALs are verbatim: they are deliberate medium/light blends that walk a fielded division into the medium role, and resolving them would rewrite the state machine.",
+      "front_role_override": "offence",
+      "mode": "declared",
+      "profiles": [
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MOT",
+          "codes": [
+            5100
+          ],
+          "facts": {
+            "mobile_infantry": "motorized"
+          },
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-template-generator] A3 removed the 20-width terrain exception: the marsh/mountain branch that wrote 5000 is deleted from WA_AI_TEMPLATES_calculate_light_armor_template in the same change, so such a country falls through to this 30-width target."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC",
+          "codes": [
+            5101
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized"
+          },
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-template-generator] A3 removed the 20-width terrain exception: the marsh/mountain branch that wrote 5001 is deleted from WA_AI_TEMPLATES_calculate_light_armor_template in the same change, so such a country falls through to this 30-width target."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_ASSAULT",
+          "codes": [
+            5102
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_assault"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_INF_SUPPORT",
+          "codes": [
+            5103
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_inf_support"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_ASSAULT_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5104
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_assault",
+            "td": "light_td",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_INF_SUPPORT_LIGHT_TD",
+          "codes": [
+            5105
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_inf_support",
+            "td": "light_td"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "The SPAA-less twin of 5107, the shape the medium ladder already uses (6105 bare, 6106 +light\nSPAA, 6107 +medium SPAA). Without it a light-only country holding TDs and infantry-support\ntanks but no SPAA falls all the way to 5103 and fields neither its TD battalion nor its TD\ncompany. Keep the regimental pair at one artillery-type + one anti-tank-type company: that\nshape holds across all 74 armour templates, and this block was the only one that broke it."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_SPG_LIGHT_SPAA",
+          "codes": [
+            5106
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_spg",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_INF_SUPPORT_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5107
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_inf_support",
+            "td": "light_td",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_TD",
+          "codes": [
+            5117
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "td": "light_td"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[light-td-coverage] The four cells where a country holding light tank destroyers fielded\nnone: the TD-bearing variants above all require light SPAA, so without these a TD country\nwith no SPAA fell to 5101/5102 and lost both its TD battalion and its TD company. Strictly\nadditive - each sits BELOW the variant it is the reduced form of, so no existing cell moves.\nShape rules they follow, invariant across the armour templates: one artillery-type plus one\nanti-tank-type regimental company, and exactly one AA company (heavy_anti_air_mot without\nlight SPAA, light_self_propelled_anti_air with it)."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5118
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "td": "light_td",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_SPG_LIGHT_TD",
+          "codes": [
+            5119
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_spg",
+            "td": "light_td"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_ASSAULT_LIGHT_TD",
+          "codes": [
+            5120
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_assault",
+            "td": "light_td"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_ASSAULT_LIGHT_SPAA",
+          "codes": [
+            5123
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_assault",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[light-spaa-coverage] the SPAA forms that carry NO tank destroyer. Every other light rung\nholding light SPAA also demands a TD (5104, 5107, 5108, 5118) or an SPG (5106), so a country\nwhose SPAA chassis unlocks before its TD one fielded no SPAA at all. Assumes the component\ngate behaves like its siblings 5102 / 5103 / 5117: reversible until the stock term latches it.\nOne AA company only - light_self_propelled_anti_air REPLACES heavy_anti_air_mot, never adds."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_SPAA",
+          "codes": [
+            5124
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_ARMOR_30_MEC_LIGHT_SPG_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5108
+          ],
+          "facts": {
+            "mobile_infantry": "mechanized",
+            "variant": "light_spg",
+            "td": "light_td",
+            "spaa": "light_spaa"
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_LIGHT_TD",
+          "codes": [
+            5109
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "First Transition to Medium"
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_LIGHT_ASSAULT_LIGHT_TD",
+          "codes": [
+            5110
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "light_assault_gun_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_LIGHT_ASSAULT_MEDIUM_INF_SUPPORT_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5111
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 3,
+            "medium_infantry_support_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_LIGHT_SPG_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5112
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_self_propelled_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "light_self_propelled_gun_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_TD",
+          "codes": [
+            5113
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_ASSAULT_LIGHT_TD",
+          "codes": [
+            5114
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "light_assault_gun_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_ASSAULT_MEDIUM_INF_SUPPORT_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5115
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 3,
+            "medium_infantry_support_armor_battalion_line": 3,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_SPG_LIGHT_TD_LIGHT_SPAA",
+          "codes": [
+            5116
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_self_propelled_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "light_self_propelled_gun_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT",
+          "codes": [
+            5121
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-class-handoff] TD-less transition rungs, the post-boundary conversion path for a\ncountry holding no light tank destroyer. Shape rules kept: one artillery-type plus one\nanti-tank-type regimental company, exactly one AA company, medium share 4 of 10 line tank\nbattalions, replace_with onto the same-role FINAL step like every transition rung."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC",
+          "codes": [
+            5122
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_TD_MIS",
+          "codes": [
+            5213
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-class-handoff] MIS twins of the five MEC rungs (52xx = 51xx + 100): identical\ncompositions, replace_with aimed at the inf-support FINAL instead of the pure one. The\nlight calculator picks a twin when WA_MEDIUM_ARMOR_TEMPLATE sits in the 6105-6110 family,\nso the conversion ends on the composition the medium role targets \u2014 a pure 9+6 FINAL is\nnever captured by a role targeting 6/3/6 and the country keeps two competing templates."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_ASSAULT_LIGHT_TD_MIS",
+          "codes": [
+            5214
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "light_assault_gun_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_ASSAULT_MEDIUM_INF_SUPPORT_LIGHT_TD_LIGHT_SPAA_MIS",
+          "codes": [
+            5215
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 3,
+            "medium_infantry_support_armor_battalion_line": 3,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_assault_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_LIGHT_SPG_LIGHT_TD_LIGHT_SPAA_MIS",
+          "codes": [
+            5216
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 4,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "light_self_propelled_gun_company_regimental": 4,
+            "light_tank_destroyer_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "light_self_propelled_gun_company_divisional": 1,
+            "light_self_propelled_anti_air_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_MIS",
+          "codes": [
+            5222
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 3,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_mechanized_battalion_line": 6
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MOT_FINAL",
+          "codes": [],
+          "regiments": {
+            "medium_armor_battalion_line": 10,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_mot_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "enable_extra": [
+            "WA_AI_TEMPLATES_can_use_light_transition_templates",
+            "WA_AI_TEMPLATES_use_medium_armor_templates"
+          ],
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-class-handoff] The FINAL step of the conversion chain: the pure-medium composition\ndeclared IN the light role, because a replace_with must resolve inside its own role group\n(vanilla chains its eras inside ONE role). Enabled by trigger, not flag - no calculator\nwrites these. Exit = engine best-match capture by the medium role at full composition.\nKeep LAST in the group so the flag-selected transition stays targeted first."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL",
+          "codes": [],
+          "regiments": {
+            "medium_armor_battalion_line": 10,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_med_tank_battalion_divisional": 1,
+            "maintenance_med_tank_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "enable_extra": [
+            "WA_AI_TEMPLATES_can_use_light_transition_templates",
+            "WA_AI_TEMPLATES_use_medium_armor_templates"
+          ],
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "target_min_match": 0.4,
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_MEDIUM_ARMOR_30_MEC_FINAL_MIS",
+          "codes": [],
+          "regiments": {
+            "medium_armor_battalion_line": 7,
+            "medium_infantry_support_armor_battalion_line": 3,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_med_tank_battalion_divisional": 1,
+            "maintenance_med_tank_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1
+          },
+          "enable_extra": [
+            "WA_AI_TEMPLATES_can_use_light_transition_templates",
+            "WA_AI_TEMPLATES_use_medium_armor_templates",
+            "WA_AI_TEMPLATES_is_medium_mis_family"
+          ],
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-class-handoff] The inf-support FINAL: the line shape the GENERATED medium role\ntargets when the infantry-support variant wins its chain and the industrial cut leaves no\nsupport battalion (7 armour + 3 infantry-support + 5 mechanized), so the medium role's\nbest-match capture sees its own target instead of a shape it never claims. Reached from\nthe MIS rungs directly, or from the pure MEC FINAL's era-chain hop."
+        }
+      ]
     },
     "medium": {
       "chassis": "medium",
@@ -563,6 +1350,507 @@
       "front_role_override": "offence",
       "artillery_fallback": [
         "medium_spg"
+      ]
+    },
+    "light_support": {
+      "mode": "declared",
+      "chassis": "light",
+      "main_tank": "light_support_armor_battalion_line",
+      "medium_support_unit": null,
+      "role": "light_armor",
+      "role_group": "WA_light_support_armor_role",
+      "flag": "WA_LIGHT_SUPPORT_ARMOR_TEMPLATE",
+      "type_code": 14,
+      "admission": "WA_AI_TEMPLATES_use_light_support_armor_templates",
+      "file": "common/ai_templates/WA_AI_TEMPLATES_armored_light_support.txt",
+      "name_token": "LIGHT_SUPPORT_ARMOR",
+      "custom_icon": 138,
+      "front_role_override": "offence",
+      "emit": true,
+      "_comment": "mode=declared, every target verbatim. This family is a STATE MACHINE, not a composition set: a 1936 starting park replaced at match 0.9, the Soviet 44-battalion mechanised corps and its convert twin, the transition rungs and the FINALs they hand a division to. The COUNTRY_SOV_* profiles are the historical tank park (WA_AI_CONFIG_pursues_historical_tank_park) and are deliberately country-specific: they reproduce a real 1941 corps, not an archetype. Phase codes 15000-15016 are written by the hand-written WA_AI_TEMPLATES_calculate_light_support_armor_template, which owns the phase logic; this registry owns only what each phase FIELDS.",
+      "profiles": [
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_20_STARTER",
+          "codes": [
+            15000
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 8,
+            "infantry_heavy_motorized_battalion_line": 1
+          },
+          "support": {
+            "recon_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.9,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_30_MOT",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 15,
+          "width_exception": "18: the 1936 starting park, replaced at match 0.9 by the 30-width target",
+          "_comment": "[light-support-field-upgrade] Bridge: engine field-upgrade only moves a deployed division to a\ntarget's `replace_with`, so without this step the 1936 8-battalion \"Tankovaya brigada\" never\nreaches the 30_MOT below (vanilla ENG starter pattern). `has_template` retires it \u2014 the gate\nand the 1.0 best-match are the same template object, so while it exists the role target flips\nstraight to 30_MOT. The second `value = 15000` read is deliberate: one flag, two targets.",
+          "enable_raw": [
+            "has_template = \"Tankovaya brigada\""
+          ]
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_20_STARTER_MIX",
+          "codes": [
+            15001
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 8,
+            "infantry_heavy_motorized_battalion_line": 1
+          },
+          "support": {
+            "recon_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.9,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_30_MOT_LIGHT_MIX",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 15,
+          "width_exception": "18: the 1936 starting park, replaced at match 0.9 by the 30-width mix target",
+          "_comment": "[historical-tank-park] Same bridge as the STARTER above, for the MIXED path \u2014 `replace_with`\nis a static token, so each destination needs its own starter. The flag VALUE (15000 pure /\n15001 mixed, latched once in the type-14 calculator) keeps exactly one pair alive; enables\nnever read the live mixed trigger. Composition and prio are deliberately identical.",
+          "enable_raw": [
+            "has_template = \"Tankovaya brigada\""
+          ]
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY",
+          "codes": [
+            15006
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 12,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 4
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 1
+          },
+          "support": {
+            "logistics_mot_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 15,
+          "width_exception": "44: the Soviet mechanised corps of 1941, deliberately oversized",
+          "_comment": "[historical-tank-park] Exact AI-only 1936 Soviet OOB bridge. It lives in this role group,\nrather than the country file, because replace_with cannot resolve across role groups.\n[light-support-conversion] The VALUE alone keys this target, never the mission: the calculator\nmoves the park to 15009 only at the pulse after the mission ends, so a mission term here leaves\nthe role with no enabled target until then. Assumes 15006 is written only while the mission\ncounts the park; a 15006 read with no mission and no 15009 pulse pending means that changed."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_CONVERT",
+          "codes": [
+            15009
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 12,
+            "light_armor_battalion_line": 6,
+            "infantry_heavy_motorized_battalion_line": 4
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 1
+          },
+          "support": {
+            "logistics_mot_company_divisional": 1,
+            "medium_infantry_support_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.9,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_30_MOT_LIGHT_MIX",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 15,
+          "width_exception": "44: the same corps once the conversion window opens",
+          "_comment": "[historical-tank-park] The active-mission target intentionally has no replacement chain. This\npost-mission copy alone owns the conversion pointer, so the Soviet starting corps cannot advance\nbefore the mission closes.\n[light-support-conversion] PONT phase only (15009, K pulses after the mission): an armed\nbridge re-selects itself by priority (15 over the MIX's 10) once the divisions it moved no\nlonger match it at 0.9, and walks them back toward 12/6/4 - so the calculator drops this\nvalue after K pulses and the MIX alone holds the role (15010). While the 1936 brigades\nexist, STARTER_MIX (same base 15, declared first) is the selected target and it is ITS\nchain that puts the arrow on the MIX; this one is selected once the brigade is gone. Either\nway the arrow lands on the MIX, and STABLE keeps it there for whatever has not moved yet."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_30_MOT",
+          "codes": [
+            15000
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 9,
+            "infantry_heavy_motorized_battalion_line": 6
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_30_MOT_LIGHT_MIX",
+          "codes": [
+            15001,
+            15009,
+            15010
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "anti_tank_mot_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[historical-tank-park] The MIXED composition: one target consuming BOTH chassis (one target\nper role is an engine constraint), so the historical park fields its plain lights inside the\nsame divisions \u2014 90 lights + 175 supports each. 7 support / 5 mot, not 6/6: at 150 supports\nper division the 10k fielded bar needs ~68 divisions, past what the run window can train;\n175 crosses at ~59. Enable = the latched 15001, exclusive with pure 30_MOT by flag value.\n4+4 regimental supports, not 5+5: three battalion types shrink the reachable grid and 10 RS\non 15 battalions has zero slack (designer-deadlock rule).\n[light-support-conversion] For the temporary corps: destination of the PONT bridge (15009),\nthen the SOLE target of the STABLE phase (15010) until the T-34 / KV-1 opens the window."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT",
+          "codes": [
+            15002
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 9,
+            "infantry_heavy_motorized_battalion_line": 6
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[historical-tank-park] Conversion rungs (values 15002-15005, emitted by the calculator when\nthe run is over and the park still fielded): each targets the park's own shape so fielded\ndivisions match at ~1.0, and its replace_with is the same-group FINAL below (a cross-group\npointer at the medium templates stalls the switch - the [armor-class-handoff] stall). This\nis the light-support twin of that conversion window; without it the park decommissions in 1942."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC",
+          "codes": [
+            15003
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 9,
+            "infantry_heavy_motorized_battalion_line": 6
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MIX_MOT",
+          "codes": [
+            15004
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MIX_MEC",
+          "codes": [
+            15005
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_MOT",
+          "codes": [
+            15007
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "anti_tank_mot_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[light-support-conversion] Conversion rungs of the temporary corps: 15007 MOT / 15008 MEC into\nthe medium FINALs, 15013 MOT / 15014 MEC into the heavy FINALs (destination class latched by\nthe calculator at window entry: medium on the T-34, heavy only while medium is still shut).\nTarget = the 30w MIX shape the STABLE phase fields, so the park matches at ~1.0 and the\ndesigner has nothing to drift toward while the switch waits; a residual 44w division rides\nthe same switch (the 0.8 bar is a template-level score, not a per-division one). Armed while\nany template still contains a support battalion - the chain re-fires every pass against that\ntemplate - then the calculator moves to the FINAL-only value and this rung goes dark."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_MEC",
+          "codes": [
+            15008
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "anti_tank_mot_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_HVY_MOT",
+          "codes": [
+            15013
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "anti_tank_mot_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MOT_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_COUNTRY_SOV_LIGHT_SUPPORT_ARMOR_44_TEMPORARY_TRANSITION_HVY_MEC",
+          "codes": [
+            15014
+          ],
+          "regiments": {
+            "light_support_armor_battalion_line": 7,
+            "light_armor_battalion_line": 3,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 4,
+            "anti_tank_mot_company_regimental": 4
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "replace_at_match": 0.8,
+          "replace_with": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MEC_FINAL",
+          "target_min_match": 0.3,
+          "custom_icon": 138,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT_FINAL",
+          "codes": [
+            15002,
+            15004,
+            15007,
+            15011
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 10,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mot_battalion_divisional": 1,
+            "maintenance_mot_company_divisional": 1,
+            "recon_mot_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[historical-tank-park] The FINAL step, same shape as the [armor-class-handoff] pair in\nWA_light_armor_role: a replace_with must resolve inside its own role group (the cross-group\npointer at the medium templates is the stall the owner measured live at match 0.8125).\nExit = engine best-match capture by the destination role at full composition. Keep the\nFINALs LAST in group: a rung and its FINAL tie at base 10, and the first declared wins.\n[light-support-conversion] Enabled under the rung values (CONVERT-1) AND under the\nFINAL-only values 15011 / 15012 / 15015 / 15016 (CONVERT-2): once the rung goes dark the\nFINAL is the role's only target, so nothing can walk the moved divisions back.\n[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL",
+          "codes": [
+            15003,
+            15005,
+            15008,
+            15012
+          ],
+          "regiments": {
+            "medium_armor_battalion_line": 10,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_med_tank_battalion_divisional": 1,
+            "maintenance_med_tank_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MOT_FINAL",
+          "codes": [
+            15013,
+            15015
+          ],
+          "regiments": {
+            "heavy_armor_battalion_line": 10,
+            "infantry_heavy_motorized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_med_tank_battalion_divisional": 1,
+            "maintenance_med_tank_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "heavy_anti_air_mot_company_divisional": 1
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10,
+          "_comment": "[light-support-conversion] Heavy FINALs, mirrors of the heavy role's 30_MOT (7100) and\n30_MEC_MECHANIZED_SPAA (7105) targets so the heavy role captures them at full composition.\nReached only when the park converts while the medium class is still shut (KV-1 before T-34)."
+        },
+        {
+          "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MEC_FINAL",
+          "codes": [
+            15014,
+            15016
+          ],
+          "regiments": {
+            "heavy_armor_battalion_line": 10,
+            "infantry_heavy_mechanized_battalion_line": 5
+          },
+          "regimental_support": {
+            "pack_artillery_mot_company_regimental": 5,
+            "anti_tank_mot_company_regimental": 5
+          },
+          "support": {
+            "engineer_mod_tank_battalion_divisional": 1,
+            "maintenance_mod_tank_company_divisional": 1,
+            "recon_light_tank_company_divisional": 1,
+            "field_hospital_mot_company_divisional": 1,
+            "signal_mot_company_divisional": 1,
+            "logistics_mot_company_divisional": 1,
+            "heavy_artillery_mot_company_divisional": 1,
+            "military_police_mot_company_divisional": 1,
+            "mechanized_anti_air_company_divisional": 1
+          },
+          "custom_icon": 140,
+          "reinforce_prio": 1,
+          "upgrade_prio_base": 10
+        }
       ]
     }
   },

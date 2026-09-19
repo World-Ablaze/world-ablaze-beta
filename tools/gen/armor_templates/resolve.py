@@ -50,7 +50,7 @@ class Facts:
 
 class Selection:
     __slots__ = ("family", "facts", "line", "regimental", "support", "width", "name",
-                 "signature", "conditions", "notes", "code")
+                 "signature", "conditions", "notes", "code", "codes", "profile")
 
     def __init__(self, family, facts):
         self.family = family
@@ -64,6 +64,8 @@ class Selection:
         self.conditions = []
         self.notes = []
         self.code = None
+        self.codes = None      # a declared profile may answer several values
+        self.profile = None    # the declared profile that produced it, if any
 
     def units(self):
         out = set(self.line) | set(self.regimental) | set(self.support)
@@ -169,16 +171,18 @@ def resolve(family_id, facts, registry, game=None):
         add(sel.line, unit, variant_count)
     add(sel.line, registry.mobile_infantry[facts.mobile_infantry]["unit"], infantry)
 
-    # 5. regimental support: one tank-destroyer block, one artillery block.
+    # 5. regimental support: one tank-destroyer block, one artillery block, each sized by the
+    #    columns the line can actually form.
+    slots_per_row = regimental_columns(sum(sel.line.values()), game, registry)
     td_chain = registry.chains["tank_destroyer"]
     td_unit = (registry.unit_of(facts.td, "regimental") if facts.td != EMPTY
                else registry.unit_of(td_chain["empty"], "regimental"))
     if td_unit is None:
         raise ResolveError("tank destroyer %s has no regimental unit" % facts.td)
-    add(sel.regimental, td_unit, td_chain["block_size"])
+    add(sel.regimental, td_unit, slots_per_row)
 
     arty = registry.chains["regimental_artillery"]
-    slots = arty["block_size"]
+    slots = slots_per_row
     # The variant owns the artillery block whenever it HAS a regimental company - assault guns
     # do, infantry support does not (screenshot item v.3). Only when it has none does the
     # family's declared fallback, then the rockets, then the towed artillery apply.
@@ -481,3 +485,67 @@ def enumerate_family(family_id, registry, game=None):
             selections.append(sel)
     selections.sort(key=lambda s: s.code)
     return selections, errors, planes
+
+
+
+def regimental_columns(line_battalions, game, registry):
+    """How many regimental-support companies fit per row, from the engine's own geometry.
+
+    MEASURED (common/defines/05_defines.lua): MAX_REGIMENTAL_SUPPORT_WIDTH = 5 columns,
+    MAX_REGIMENTAL_SUPPORT_HEIGHT = 2 rows, and REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = {3, 3} -
+    "for each regimental support row, how many battalions are required in the REGIMENT to place a
+    support in that row". AI_BATTALION_BUILD_ORDER fills a column three deep before opening the
+    next, so N battalions open floor(N / 3) columns, capped at 5. A block wider than that has
+    companies the designer can never place: 15 battalions carry 5 + 5, 12 carry only 4 + 4.
+    """
+    required = 3
+    width = 5
+    if game is not None:
+        required = (game.defines.get("REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS") or [3])[0]
+        width = game.defines.get("REGIMENTAL_SUPPORT_WIDTH", 5)
+    declared = registry.composition["regimental_slots"]
+    return max(0, min(declared, width, line_battalions // max(1, required)))
+
+
+# ------------------------------------------------------------------ declared profiles
+
+def resolve_profile(registry, family_id, profile, game=None):
+    """One declared target: either resolved from `facts` like any other, or taken verbatim.
+
+    Verbatim is for the shapes that are NOT a composition - a conversion blend, a mission corps,
+    a starter park. Running them through the resolver would silently rewrite the state machine
+    the conversion chain depends on.
+    """
+    if "facts" in profile:
+        f = profile["facts"]
+        facts = Facts(family_id, f.get("mobile_infantry", "mechanized"), f.get("variant", EMPTY),
+                      f.get("td", EMPTY), f.get("spaa", EMPTY), bool(f.get("rockets")),
+                      int(f.get("quota", 0)), bool(f.get("waves")), bool(f.get("heavy_company")),
+                      arty_fallback=bool(f.get("arty_fallback")))
+        sel = resolve(family_id, facts, registry, game)
+    else:
+        facts = Facts(family_id, "motorized", EMPTY, EMPTY, EMPTY, False, 0, False, False)
+        sel = Selection(family_id, facts)
+        sel.line = dict(profile.get("regiments", {}))
+        sel.regimental = dict(profile.get("regimental_support", {}))
+        sel.support = dict(profile.get("support", {}))
+        per = registry.composition["battalion_width"]
+        assumed = registry.composition.get("width_assumptions", {}).get("subdoctrines", [])
+        total = 0.0
+        for unit, count in sel.line.items():
+            base = per
+            if game is not None and game.unit(unit) is not None:
+                base = game.unit(unit).combat_width
+            total += count * (base + (game.assumed_width_delta(unit, assumed) if game else 0.0))
+        sel.width = total
+        sel.signature = signature(sel)
+    sel.name = profile["id"]
+    sel.codes = list(profile.get("codes", []))
+    sel.code = sel.codes[0] if sel.codes else None
+    sel.profile = profile
+    return sel
+
+
+def declared_profiles(registry, family_id, game=None):
+    fam = registry.families[family_id]
+    return [resolve_profile(registry, family_id, p, game) for p in fam.get("profiles", [])]

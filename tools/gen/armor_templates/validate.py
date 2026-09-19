@@ -30,11 +30,13 @@ class Finding(tuple):
         return "%-5s %-22s %s" % (self[0], self[1], self[2])
 
 
-def run(registry, game, per_family_selections, stats):
+def run(registry, game, per_family_selections, stats, declared_by_family=None):
     findings = []
     findings += _inputs(registry, game)
     for family_id, sels in sorted(per_family_selections.items()):
         findings += _family(registry, game, family_id, sels)
+    for family_id, sels in sorted((declared_by_family or {}).items()):
+        findings += _declared(registry, game, family_id, sels)
     findings += _codes(per_family_selections)
     findings += _doctrine(registry, game, per_family_selections)
     findings += _growth(registry, stats)
@@ -118,11 +120,17 @@ def _family(registry, game, family_id, sels):
         rocket_unit = registry.unit_of(arty["rocket_candidate"], "regimental")
         if sel.regimental.get(rocket_unit, 0) > arty["block_size"]:
             out.append(Finding(ERROR, "ROCKET-CAP", sel.name))
-        if sum(sel.regimental.values()) != comp["regimental_slots"] * 2:
+        # The block is as wide as the columns the line can form, never wider: a company the
+        # designer cannot place is a company the division never gets.
+        from . import resolve as _R
+        mobile = sum(v for k, v in sel.line.items() if k in mobile_units)
+        per_row = _R.regimental_columns(sum(sel.line.values()), game, registry)
+        if sum(sel.regimental.values()) != per_row * 2:
             out.append(Finding(ERROR, "REGIMENTAL-BLOCK",
-                               "%s fills %d regimental slots, expected %d"
-                               % (sel.name, sum(sel.regimental.values()),
-                                  comp["regimental_slots"] * 2)))
+                               "%s fills %d regimental slots; %d battalions open %d columns, so "
+                               "%d fit" % (sel.name, sum(sel.regimental.values()),
+                                           sum(sel.line.values()), per_row, per_row * 2)))
+        del mobile
         if sum(sel.support.values()) > game.divisional_capacity(comp["divisional_slots"]):
             out.append(Finding(ERROR, "DIVISIONAL-OVERFLOW", sel.name))
         if sum(sel.regimental.values()) > game.regimental_capacity(comp["regimental_slots"] * 2):
@@ -131,6 +139,40 @@ def _family(registry, game, family_id, sels):
         if sel.notes and not gap_reported:
             out.append(Finding(INFO, "CAPABILITY-GAP", "%s: %s" % (sel.name, "; ".join(sel.notes))))
             gap_reported = True
+    return out
+
+
+def _declared(registry, game, family_id, sels):
+    """A declared profile is not a composition, so only the structural rules apply to it:
+    the units exist, they sit in the slot their definition allows, the slots do not overflow,
+    and its width is either the target or a declared exception."""
+    out = []
+    comp = registry.composition
+    target = comp["target_width"]
+    for sel in sels:
+        for section, expected in (("line", "line"), ("regimental", "regimental"),
+                                  ("support", "divisional")):
+            for unit in getattr(sel, section):
+                u = game.unit(unit)
+                if u is None:
+                    out.append(Finding(ERROR, "UNIT-MISSING",
+                                       "%s uses undefined %s" % (sel.name, unit)))
+                elif u.slot != expected:
+                    out.append(Finding(ERROR, "SLOT-ILLEGAL",
+                                       "%s puts %s (%s) in %s"
+                                       % (sel.name, unit, u.slot, section)))
+        if sum(sel.support.values()) > game.divisional_capacity(comp["divisional_slots"]):
+            out.append(Finding(ERROR, "DIVISIONAL-OVERFLOW", sel.name))
+        if sum(sel.regimental.values()) > game.regimental_capacity(comp["regimental_slots"] * 2):
+            out.append(Finding(ERROR, "REGIMENTAL-OVERFLOW", sel.name))
+        exception = (sel.profile or {}).get("width_exception")
+        if abs(sel.width - target) > 1e-6 and not exception:
+            out.append(Finding(ERROR, "WIDTH",
+                               "%s is %g wide instead of %s and declares no width_exception"
+                               % (sel.name, round(sel.width, 2), target)))
+        elif exception:
+            out.append(Finding(INFO, "WIDTH-EXCEPTION",
+                               "%s: %g wide - %s" % (sel.name, round(sel.width, 2), exception)))
     return out
 
 
@@ -196,7 +238,9 @@ def _doctrine(registry, game, per_family_selections):
 def _growth(registry, stats):
     out = []
     for family_id, fam in sorted(registry.families.items()):
-        used = stats["per_family"].get(family_id, 0)
+        if "code_range" not in fam:
+            continue      # a declared family pins its own codes; there is no range to exhaust
+        used = stats["per_family"].get(family_id, 0) - stats.get("declared", {}).get(family_id, 0)
         lo, hi = fam["code_range"]
         room = hi - lo + 1
         if used > room:

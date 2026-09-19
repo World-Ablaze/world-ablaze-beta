@@ -32,7 +32,19 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
                  "mirror_of", "emit", "front_role_override", "artillery_fallback",
-                 "_comment"}
+                 "mode", "profiles", "_comment"}
+
+# A family is either ENUMERATED (its targets are the product of declared axes) or DECLARED (its
+# targets are written out one by one, because they are a conversion state machine and not a
+# composition), or both. A declared profile either names `facts` - and the resolver builds its
+# composition from the same rules as every other target - or spells its sections out verbatim,
+# which is how a deliberate blend or a mission corps survives regeneration.
+PROFILE_FIELDS = {"id", "codes", "facts", "regiments", "regimental_support", "support",
+                  "replace_with", "replace_at_match", "target_min_match", "custom_icon",
+                  "reinforce_prio", "upgrade_prio_base", "enable_extra", "enable_raw",
+                  "width_exception",
+                  "_comment"}
+MODES = {"enumerated", "declared", "both"}
 
 CLASSES = {"none", "light", "medium", "modern", "heavy", "mechanized"}
 
@@ -97,9 +109,19 @@ class Registry:
         for fid, fam in self.families.items():
             extra = set(fam) - FAMILY_FIELDS
             _require(not extra, "family %s: unknown fields %s" % (fid, sorted(extra)))
-            for key in ("chassis", "main_tank", "role", "role_group", "flag", "admission",
-                        "file", "name_token", "code_range", "enumerate"):
+            mode = fam.get("mode", "enumerated")
+            _require(mode in MODES, "family %s: mode %r not in %s" % (fid, mode, sorted(MODES)))
+            required = ["chassis", "main_tank", "role", "role_group", "flag", "admission",
+                        "file", "name_token"]
+            if mode in ("enumerated", "both"):
+                required += ["code_range", "enumerate"]
+            for key in required:
                 _require(key in fam, "family %s: missing %s" % (fid, key))
+            if mode in ("declared", "both"):
+                _require(fam.get("profiles"), "family %s: mode %s needs profiles" % (fid, mode))
+                self._validate_profiles(fid, fam)
+            if "code_range" not in fam:
+                continue
             lo, hi = fam["code_range"]
             _require(isinstance(lo, int) and isinstance(hi, int) and lo < hi,
                      "family %s: bad code_range" % fid)
@@ -133,6 +155,29 @@ class Registry:
         quotas = self.composition["medium_support_quota"]
         _require(all(isinstance(q["count"], int) for q in quotas),
                  "medium_support_quota counts must be integers")
+
+    def _validate_profiles(self, fid, fam):
+        seen_ids, seen_codes = set(), set()
+        known = set(p["id"] for p in fam["profiles"])
+        for prof in fam["profiles"]:
+            extra = set(prof) - PROFILE_FIELDS
+            _require(not extra, "%s/%s: unknown profile fields %s"
+                     % (fid, prof.get("id"), sorted(extra)))
+            pid = prof.get("id")
+            _require(pid and pid not in seen_ids, "%s: duplicate profile id %r" % (fid, pid))
+            seen_ids.add(pid)
+            for code in prof.get("codes", []):
+                _require(isinstance(code, int), "%s/%s: non-integer code" % (fid, pid))
+                seen_codes.add(code)
+            has_facts = "facts" in prof
+            has_sections = any(k in prof for k in
+                               ("regiments", "regimental_support", "support"))
+            _require(has_facts != has_sections,
+                     "%s/%s: exactly one of `facts` or explicit sections" % (fid, pid))
+            if prof.get("replace_with"):
+                _require(prof["replace_with"] in known,
+                         "%s/%s: replace_with %s is not a profile of this family - a cross-group "
+                         "pointer does not resolve" % (fid, pid, prof["replace_with"]))
 
     # ---------------------------------------------------------------- helpers
     def candidate(self, cid):

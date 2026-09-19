@@ -266,6 +266,58 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   would also be unsound twice over - `WA_AI_TECHTREE_has_<cap>` deliberately carries no membership
   term because ~40 sites grant a foreign tree's rung, and the chain winner additionally depends on
   stock and on the chromium shortage (A1), which no static analysis bounds.
+- CORRECTION to the 2026-09-19 entry above: the deduplication lever was recorded as implemented
+  when it was not - the patch never landed in `emit.py`, and the shipped medium file carried one
+  block per code (2064), not one per composition (1488). It is implemented now and MEASURED:
+  medium 2064 codes over 1488 blocks, 1615 KiB instead of 2168.
+- light and light_support are GENERATED too (owner order 2026-09-19 "fais le light et
+  light_support aussi"). A family is now ENUMERATED or DECLARED:
+  - DECLARED = one profile per target, codes pinned to what the HAND-WRITTEN calculators already
+    write, and NO generated ladder. `WA_AI_TEMPLATES_calculate_light_armor_template` and
+    `..._light_support_armor_template` are untouched: they own the phase logic, the MIS redirect,
+    the historical tank park and the Soviet phases, and this change does not touch one line of it.
+  - A declared profile names either `facts` - and the resolver builds it from the same
+    10-line / 5-mobile / 30-width rules - or its sections verbatim, for the shapes that are a
+    state machine and not a composition.
+- What changed in those two files, MEASURED by diffing the render against the shipped file:
+  - light: all 33 composition targets re-resolved. 9 + 6 becomes 10 + 5; the tank destroyer moves
+    from a 1-battalion LINE entry to its 5-slot regimental block; the assault / infantry-support /
+    SPG variants take the 3-battalion line block and their regimental company.
+  - light: A3 merges the two 20-width codes into the 30-width targets - one profile answers both
+    values, so a marsh or mountain country whose ladder still writes 5000 now gets 30 width.
+  - light_support: everything verbatim EXCEPT the two generic FINALs, which still mirrored the
+    medium role's OLD 9 + 6 target and are now 10 + 5.
+  - no target added, none removed, every code still answered (check_templates at its 4 HQ errors).
+- The Soviet park is IN the spec now (A18) and in the registry: six `COUNTRY_SOV_*` profiles,
+  copied verbatim, carrying the declared width exceptions - 44 for the 1941 mechanised corps
+  (12 support tanks + 6 light + 4 motorised, MEASURED 44 width) and 18 for the starter park.
+  They are the Country-layer exception of principle 2, not a shortcut: they reproduce a real
+  formation, and `WA_AI_CONFIG_pursues_historical_tank_park` still decides who gets them.
+- Reviewer-required, both returned before the commit. wa-architecture-reviewer: CONCERNS, both
+  items applied (the registry header no longer claims "no country tag" now that the six
+  COUNTRY_SOV_* ids are in it, and `tools/check_templates.py` is in the AGENTS.md validation
+  matrix - it is the one mechanism that binds a generated file to the hand-written ladder that
+  writes its codes). wa-lessons-reviewer: CONFLICT, resolved:
+  - **Column geometry, a real defect it caught.** MEASURED (`common/defines/05_defines.lua`):
+    5 regimental columns, 2 rows, `REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3 }`, and
+    `AI_BATTALION_BUILD_ORDER` fills a column three deep before opening the next. So N battalions
+    open floor(N/3) columns and carry 2 companies each: 15 battalions carry 5 + 5, 12 carry only
+    4 + 4. Every Armoured Waves target shipped in the previous commit asked for 5 + 5 on 12
+    battalions - two companies the division designer can never place. The block is now sized from
+    the geometry, with four tests pinning it.
+  - **A3 half-removal.** The two 20-width branches of
+    `WA_AI_TEMPLATES_calculate_light_armor_template` still wrote 5000 / 5001 under a comment
+    saying "20 width, for a country whose expected terrain is marsh or mountain", while the
+    targets behind them had become 30 wide. Branches and codes are retired together in this
+    change; such a country now falls through to the normal 30-width target.
+  - The two light_support FINALs: nothing reads their composition as a switch CONDITION - the
+    rungs' `replace_at_match 0.8` and `target_min_match 0.3` are measured against the RUNG's own
+    target, which is unchanged. What the edit changes is what the division converges to, and it
+    now matches the medium role's live target exactly (15 of 15 battalions, against 14 of 15
+    before).
+  - The declared families are NOT manifest-unchecked: `check_templates.py` derives their reachable
+    values from the hand-written calculators it parses, the enumerated families' from the
+    manifest, and diffs both against the emitted templates.
 - Harnesses RE-POINTED 2026-09-19, owner run still owed. A computed value cannot be read back -
   a flag value does not load into a variable, so decoding it would take one comparison per code
   (2064 for medium). Both harnesses therefore print the AXES the ladder reads instead of the

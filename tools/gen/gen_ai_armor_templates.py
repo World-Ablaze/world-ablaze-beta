@@ -35,19 +35,31 @@ MANIFEST_OUT = "tools/generated/armor_templates_manifest.json"
 
 def compile_all(registry, game):
     """Registry + game files -> per-family selections, code planes, ladder groups, stats."""
-    per_family, planes_by_family, errors = {}, {}, []
-    for family_id in registry.families:
-        sels, errs, planes = resolve.enumerate_family(family_id, registry, game)
+    per_family, planes_by_family, declared_by_family, errors = {}, {}, {}, []
+    for family_id, fam in registry.families.items():
+        mode = fam.get("mode", "enumerated")
+        if mode in ("enumerated", "both"):
+            sels, errs, planes = resolve.enumerate_family(family_id, registry, game)
+            errors.extend((family_id,) + e for e in errs)
+        else:
+            sels, planes = [], []
         per_family[family_id] = sels
         planes_by_family[family_id] = planes
-        errors.extend((family_id,) + e for e in errs)
+        try:
+            declared_by_family[family_id] = resolve.declared_profiles(
+                registry, family_id, game)
+        except resolve.ResolveError as exc:
+            errors.append((family_id, "declared", str(exc)))
+            declared_by_family[family_id] = []
 
     groups, by_flag = [], {}
     for family_id, fam in registry.families.items():
         # A family with emit=false is modelled and published in the manifest, but neither its
         # file nor its ladder is written: its hand-written ladder still owns behaviour this
         # generator does not model yet.
-        if fam.get("emit") is False:
+        if fam.get("emit") is False or fam.get("mode", "enumerated") == "declared":
+            # A declared family has no arithmetic to emit: its phase codes are written by the
+            # hand-written calculator that owns the conversion state machine.
             continue
         by_flag.setdefault((fam["flag"], fam["type_code"]), []).append(family_id)
     for (flag, _code), families in sorted(by_flag.items()):
@@ -58,27 +70,30 @@ def compile_all(registry, game):
     stats = {
         "emitted": sorted(f for f, fam in registry.families.items()
                           if fam.get("emit") is not False),
-        "per_family": dict((f, len(s)) for f, s in sorted(per_family.items())),
-        "targets": sum(len(s) for s in per_family.values()),
+        "per_family": dict((f, len(s) + len(declared_by_family.get(f, [])))
+                           for f, s in sorted(per_family.items())),
+        "declared": dict((f, len(d)) for f, d in sorted(declared_by_family.items()) if d),
+        "targets": sum(len(s) for s in per_family.values())
+                   + sum(len(d) for d in declared_by_family.values()),
         "ladder_groups": len(groups),
         "resolve_errors": len(errors),
         "planes": dict((f, [(p.form, p.base, p.size) for p in ps])
                        for f, ps in sorted(planes_by_family.items())),
     }
-    return per_family, planes_by_family, groups, stats, errors
+    return per_family, planes_by_family, declared_by_family, groups, stats, errors
 
 
-def render(registry, game, per_family, planes_by_family, groups, stats):
+def render(registry, game, per_family, planes_by_family, declared_by_family, groups, stats):
     files = {}
     emitted = dict((f, s) for f, s in per_family.items()
                    if registry.families[f].get("emit") is not False)
     for family_id, sels in emitted.items():
         files[registry.families[family_id]["file"]] = emit.family_file(
-            registry, family_id, sels, game)
+            registry, family_id, sels, game, declared=declared_by_family.get(family_id, ()))
     files[EFFECTS_OUT] = emit.effects_file(registry, groups, planes_by_family)
     files[TRIGGERS_OUT] = emit.triggers_file(registry, emitted)
     files[MANIFEST_OUT] = emit.manifest(
-        registry, per_family, stats,
+        registry, per_family, stats, declared=declared_by_family,
         extra={"transitions_resolved": transitions.build(registry, per_family)})
     return files
 
@@ -121,12 +136,13 @@ def main(argv=None):
         return doctrine_patch(registry, game)
 
     try:
-        per_family, planes_by_family, groups, stats, errors = compile_all(registry, game)
+        (per_family, planes_by_family, declared_by_family, groups, stats,
+         errors) = compile_all(registry, game)
     except resolve.ResolveError as exc:
         print("COMPILE: %s" % exc)
         return 2
 
-    findings = validate.run(registry, game, per_family, stats)
+    findings = validate.run(registry, game, per_family, stats, declared_by_family)
     for item in errors:
         findings.append(validate.Finding(validate.ERROR, "RESOLVE",
                                          "%s %s: %s" % (item[0], item[1], item[2])))
@@ -139,7 +155,8 @@ def main(argv=None):
         print("         %-8s %s" % (family_id, "  ".join(
             "%s %d..%d" % (form, base, base + size - 1) for form, base, size in planes)))
 
-    files = render(registry, game, per_family, planes_by_family, groups, stats)
+    files = render(registry, game, per_family, planes_by_family, declared_by_family,
+                   groups, stats)
     total = sum(len(t) for t in files.values())
     print("output : %d files, %.1f KiB" % (len(files), total / 1024.0))
     for path in sorted(files):
