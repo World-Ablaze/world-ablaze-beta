@@ -202,6 +202,9 @@ def _axis_terms(registry, family_id, axis, value):
         return [("yes", registry.candidate("mechanized_rockets")["eligibility"])]
     if axis == "quota":
         return R.quota_conditions(registry, value)
+    if axis == "arty_fallback":
+        fam = registry.families[family_id]
+        return [("yes", registry.eligibility_of(fam["artillery_fallback"][0]))]
     if axis == "company":
         return [("yes", registry.candidate("heavy_divisional_company")["eligibility"])]
     if axis == "waves":

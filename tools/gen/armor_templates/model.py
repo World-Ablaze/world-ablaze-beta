@@ -31,7 +31,7 @@ CHAIN_FIELDS = {"slot", "block_size", "order", "empty", "rocket_candidate", "roc
 FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_group", "flag",
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
-                 "mirror_of", "emit", "front_role_override",
+                 "mirror_of", "emit", "front_role_override", "artillery_fallback",
                  "_comment"}
 
 CLASSES = {"none", "light", "medium", "modern", "heavy", "mechanized"}

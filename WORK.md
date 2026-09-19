@@ -246,6 +246,26 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `derive_generated_values` walks the mixed-radix arithmetic out of the shipped
   `WA_AI_TEMPLATES_ARMOR_generated.txt` and diffs it against the manifest (1728 medium/modern +
   144 heavy codes agree). A manifest-only check would be the generator vouching for itself.
+- Coverage review against the OLD ladder and the screenshot (2026-09-19), six gaps found, five
+  fixed. MEASURED per gap: light SPAA unreachable in a medium division (52 old targets, 13 of the
+  32 old rungs), the assault variant's regimental company never used (20 medium + 4 heavy), the
+  medium-SPG regimental fallback gone from heavy (10), the light line variants unreachable (4-12),
+  the light TD unreachable. Fixed by A15 (own tier plus the one below). NOT fixed: the heavy
+  engineer at the modern tier (16 old targets) - no spec or screenshot source, dropped as an
+  artefact of the old ladder; and the Mech SPG artillery rung (A16).
+- Volume, MEASURED: 4328 codes over 3152 emitted blocks, 4.4 MiB of ai_templates. The full chains
+  would be 11664 codes and 12 MiB; the shipped subset is A15. Two reductions, both without any
+  coverage loss for the mechanized plane: one block per distinct composition with an OR of its
+  codes (864 medium pairs collide, always on the quota axis, because `S = max(0, quota - 3)`
+  flattens the two upper cuts once a variant occupies the block), and a motorized plane carrying
+  only the base composition plus the regimental axes (the old ladder gave motorized 6 of its 124
+  medium targets).
+- Tech-tree pruning was considered and REJECTED, MEASURED: every capability the generator
+  enumerates is carried by 2 to 10 technology folders (`WA_AI_TECHTREE_has_branch_*`) and every
+  cross-chain pair has a non-empty intersection, so membership analysis would remove nothing. It
+  would also be unsound twice over - `WA_AI_TECHTREE_has_<cap>` deliberately carries no membership
+  term because ~40 sites grant a foreign tree's rung, and the chain winner additionally depends on
+  stock and on the chromium shortage (A1), which no static analysis bounds.
 - Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): re-point
   `WA_TEST_templates` / `WA_TEST_armor_budget` at the generated codes, then the owner runs them as
   a medium-armour major. PASS = the printed medium value sits inside 6000-6863 (or 8000-8863 with

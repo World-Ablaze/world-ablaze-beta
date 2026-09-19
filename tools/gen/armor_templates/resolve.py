@@ -21,10 +21,10 @@ class Facts:
     """One categorical point of the enumeration: who won each chain, plus the state axes."""
 
     __slots__ = ("family", "mobile_infantry", "variant", "td", "spaa", "rockets", "quota",
-                 "quota_states", "waves", "heavy_company")
+                 "quota_states", "waves", "heavy_company", "arty_fallback")
 
     def __init__(self, family, mobile_infantry, variant, td, spaa, rockets, quota, waves,
-                 heavy_company, quota_states=None):
+                 heavy_company, quota_states=None, arty_fallback=False):
         self.family = family
         self.mobile_infantry = mobile_infantry
         self.variant = variant
@@ -37,10 +37,12 @@ class Facts:
         self.quota_states = tuple(quota_states) if quota_states else (quota,)
         self.waves = waves
         self.heavy_company = heavy_company
+        self.arty_fallback = arty_fallback
 
     def key(self):
         return (self.family, self.mobile_infantry, self.variant, self.td, self.spaa,
-                int(self.rockets), self.quota, int(self.waves), int(self.heavy_company))
+                int(self.rockets), self.quota, int(self.waves), int(self.heavy_company),
+                int(self.arty_fallback))
 
     def __repr__(self):
         return "Facts%r" % (self.key(),)
@@ -177,11 +179,21 @@ def resolve(family_id, facts, registry, game=None):
 
     arty = registry.chains["regimental_artillery"]
     slots = arty["block_size"]
+    # The variant owns the artillery block whenever it HAS a regimental company - assault guns
+    # do, infantry support does not (screenshot item v.3). Only when it has none does the
+    # family's declared fallback, then the rockets, then the towed artillery apply.
     spg_unit = None
-    if _is_spg(facts.variant):
+    if facts.variant != EMPTY:
         spg_unit = registry.unit_of(facts.variant, "regimental")
         if spg_unit is None:
-            sel.notes.append("no regimental SPG unit for %s; artillery fell back" % facts.variant)
+            sel.notes.append("%s has no regimental company; artillery fell back" % facts.variant)
+    if spg_unit is None and facts.arty_fallback:
+        for cid in fam.get("artillery_fallback", []):
+            unit = registry.unit_of(cid, "regimental")
+            if unit is not None:
+                spg_unit = unit
+                sel.notes.append("artillery fallback %s (no heavy regimental equivalent)" % cid)
+                break
     rocket_unit = registry.unit_of(arty["rocket_candidate"], "regimental")
     if spg_unit and facts.rockets:
         cap = arty["rocket_cap"]
@@ -285,6 +297,8 @@ def compose_name(registry, family_id, facts, game=None):
             parts.append(SHORT[cid])
     if facts.rockets:
         parts.append("ROC")
+    if facts.arty_fallback:
+        parts.append("AFB")
     if facts.heavy_company:
         parts.append("HSUP")
     if facts.waves:
@@ -313,6 +327,9 @@ def conditions(registry, family_id, facts):
 
     rockets = registry.candidate("mechanized_rockets")["eligibility"]
     out.append(("yes" if facts.rockets else "no", rockets))
+
+    for cid in fam.get("artillery_fallback", [])[:1]:
+        out.append(("yes" if facts.arty_fallback else "no", registry.eligibility_of(cid)))
 
     if fam.get("medium_support_unit"):
         out.extend(quota_conditions(registry, facts.quota))
@@ -344,7 +361,8 @@ def wins_trigger_name(family_id, chain_id, candidate_id):
 
 # --------------------------------------------------------------------- enumeration
 
-AXIS_ORDER = ("variant", "td", "spaa", "rockets", "quota", "company", "waves")
+AXIS_ORDER = ("variant", "td", "spaa", "rockets", "arty_fallback", "quota",
+              "company", "waves")
 
 
 def variant_block_count(registry, variant_id, game, default):
@@ -390,6 +408,9 @@ def axis_values(registry, family_id, axis, form):
     fam = registry.families[family_id]
     enum = fam["enumerate"]
     comp = registry.composition
+    # The motorized plane carries a declared subset of the axes: see composition.motorized_plane.
+    if form != "mechanized" and axis in comp.get("motorized_plane", {}).get("drop_axes", []):
+        return [EMPTY] if axis in ("variant", "td", "spaa") else [False]
     if axis == "variant":
         return [EMPTY] + list(enum.get("line_variant", []))
     if axis == "td":
@@ -398,6 +419,10 @@ def axis_values(registry, family_id, axis, form):
         return [EMPTY] + list(enum.get("spaa", []))
     if axis == "rockets":
         return [False, True] if enum.get("rockets") else [False]
+    if axis == "arty_fallback":
+        # A4: a heavy division keeps an explicit non-heavy artillery company where no heavy
+        # regimental equivalent exists. Only a family that declares one carries the axis.
+        return [False, True] if fam.get("artillery_fallback") else [False]
     if axis == "quota":
         if not fam.get("medium_support_unit"):
             return [0]
@@ -445,7 +470,8 @@ def enumerate_family(family_id, registry, game=None):
             chosen = dict((name, plane.axes[i][1][combo[i]]) for i, name in enumerate(names))
             facts = Facts(family_id, plane.form, chosen["variant"], chosen["td"],
                           chosen["spaa"], chosen["rockets"], chosen["quota"],
-                          chosen["waves"], chosen["company"])
+                          chosen["waves"], chosen["company"],
+                          arty_fallback=chosen["arty_fallback"])
             try:
                 sel = resolve(family_id, facts, registry, game)
             except ResolveError as exc:

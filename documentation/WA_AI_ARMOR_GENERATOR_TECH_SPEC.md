@@ -197,12 +197,7 @@ The manifest maps `(flag, code)` to one deterministic destination selection and,
 
 Compile the resolver into a nested decision tree over reusable predicates and selected categorical values. Each leaf writes a literal `_template_value`, with a disabled default. Avoid a flat repeated conjunction for every target; share prefixes and component tests. Initialize every `_wa_ag_*` temporary at entry and clear owned scratch at exit; public `_template_type_code` and `_template_value` follow the existing writer contract.
 
-**MEASURED (2026-09-19, `--dry-run`)** — 2016 targets: heavy 144 (7000-7143), light 144
-(5000-5143), medium 864 (6000-6863), modern 864 (8000-8863). Rendered output is 7 files:
-1.9 MiB of `ai_templates`, 20.7 KiB of ladders, 13.6 KiB of predicates, 2.1 MiB of manifest. The
-arithmetic encoding is what keeps the ladder at 20.7 KiB: a flat first-claim ladder of the same
-2016 targets rendered at 1.4 MiB and would cost one full conjunction per target per country per
-monthly pulse.
+**MEASURED (2026-09-19, `--apply`)** — 4328 codes over 3152 emitted blocks: medium 2064 codes / 1488 blocks (20000-23023), modern 2064 / 1488 (24000-27023), heavy 200 / 176 (28000-28199); light is modelled only (29000-29101). Two reductions keep that from being 6336 blocks: one block per distinct COMPOSITION with an `OR` of its codes (the code space stays a rectangle so the ladder keeps one multiply per axis, but two quota points resolve to the same battalions once a variant occupies the block — 864 pairs in medium), and a motorized plane carrying only the base composition and the regimental axes. Rendered output: 4.4 MiB of `ai_templates`, 15.9 KiB of ladders, 9.2 KiB of predicates, 3.9 MiB of manifest. The arithmetic encoding is what keeps the ladder at 16 KiB: a flat first-claim ladder of the same targets rendered at 1.4 MiB and would cost one full conjunction per target per country per monthly pulse.
 
 
 Use mutually exclusive branches or explicit first-claim guards. Generated input predicates and the Python resolver must be tested against the rendered script tree, so tests do not merely compare two calls to the same function. Avoid unsupported dynamic identifiers and arbitrary runtime string construction.
