@@ -1,0 +1,36 @@
+############################################################################################################
+# WA AI Production - COUNTRY_GER
+############################################################################################################
+# Country layer, hand-written. The GENERATED per-design production-line strategies live in
+# WA_AI_PRODUCTION_COUNTRY_GER_TANKS.txt / _AIR.txt / _VEHICLES.txt / _ARTILLERY.txt - never edit those
+# by hand. Anything hand-authored for GER production belongs here.
+############################################################################################################
+
+# [armor-prod-category] GER armour demand top-up: +60 on the `armor` CATEGORY on top of the +100 that
+# WA_AI_PRODUCTION_DEFAULT_armor_category_push gives every armour country, i.e. 160 for GER alone.
+# It exists because GER never reaches its wanted armoured-division count: the engine's perceived need
+# for tank equipment does not track the wanted-vs-fielded division gap, and the category factor is the
+# only demand lever left after the per-chassis floors were dropped (WORK.md `armor-prod-category`).
+# Same gate as the DEFAULT push by construction - it reads the very same decision trigger, so the
+# top-up can never be armed while the base push is not.
+# Literal 60, not `constant:` - `ai_strategy value =` does not resolve constant references.
+# ASSUMES two entries of the same type+id from two blocks SUM (160), the way role_ratio entries do.
+# HOW TO TELL THAT FACT IS GONE: a save where GER's armour lines request no more factories than on a
+# build without this file - then the entries do not sum, one wins, and this lever is inert.
+WA_AI_PRODUCTION_COUNTRY_GER_armor_category_top_up = {
+
+	allowed = {
+		original_tag = GER
+	}
+	enable = {
+		WA_AI_PRODUCTION_armor_category_push = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_production_factor
+		id = armor
+		value = 60
+	}
+}

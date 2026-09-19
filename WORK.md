@@ -2283,6 +2283,55 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   ships under this slug, OR the owner accepts a written no-fix ruling.
 
 ### armor-prod-category — PARKED (2026-09-04)
+- **2026-09-19 — GER armour category top-up shipped, owner order ("ajoute un factor de 60 pour les
+  armor en plus de `WA_AI_PRODUCTION_DEFAULT_armor_category_push` pour GER"). Code ships under a
+  PARKED subject (`armoured-waves` precedent 2026-09-10): the OPEN list is already at 9 against a
+  limit of 4, so no slot could be freed for it. The behaviour is UNVERIFIED.**
+  - Owner symptom, their reading: GER never reaches its wanted armoured-division count because too
+    few factories sit on tanks.
+  - New file `common/ai_strategy/WA_AI_PRODUCTION_COUNTRY_GER.txt` — the hand-written Country-layer
+    home that `WA_AI_PRODUCTION_COUNTRY_GER_TANKS.txt`'s GENERATED header already pointed at and
+    that did not exist yet. One block, `WA_AI_PRODUCTION_COUNTRY_GER_armor_category_top_up`:
+    `allowed = { original_tag = GER }` (Country-file addressing, legal), `enable =
+    { WA_AI_PRODUCTION_armor_category_push = yes }` — the SAME decision trigger the DEFAULT push
+    reads, so the top-up can never be armed while the base push is not — and
+    `ai_strategy = { type = equipment_production_factor id = armor value = 60 }`.
+  - **ASSUMED, and it is the whole load-bearing assumption**: two entries of the same `type` + `id`
+    from two different strategy blocks SUM, giving GER 160 against every other armour country's
+    100. Additivity per id is MEASURED only for `role_ratio`
+    (`WA_AI_PRODUCTION_armor_budget.txt` header); no engine doc states it for
+    `equipment_production_factor`. Killing read: a save where GER's armour lines request no more
+    factories than on a build without this file — then the entries do not sum, one wins, and the
+    lever is inert.
+  - **DERIVED, stated because it bounds what this can achieve**: the last reading (`5d2a391c`,
+    2026-09-04) had GER's tank lines at `active == requested` (151/152 at 1941.7). A factor raises
+    `requested`; it cannot raise `active` past the free factory pool. If the pool is already
+    saturated, this converts into rank in the engine's list order and nothing more — the
+    `air_factory_balance` 70 of 1939.2-1941.6
+    (`World_Ablaze_production_air_strategies.txt`) is then the next lever, not a bigger factor.
+  - Scale, **MEASURED** (mod files, this session): `medium_armor_battalion_line` needs 25
+    `medium_tank_chassis` (`common/units/armor_tanks.txt:121`); the medium ladder runs 6/7/8/9/10/12
+    such battalions, i.e. **150-300 chassis per division**. `max_military_factories = 75` is per
+    production LINE, not per archetype (install `common/units/equipment/_documentation.md`), so it
+    is not a ceiling on the category — the AI runs several chassis lines in parallel.
+  - Ratchet, justified widening: `check_ai_layers --update-baseline` raised LAYER4-NON-DECISION
+    **338 → 339**. The one new occurrence is this block reading
+    `WA_AI_PRODUCTION_armor_category_push`, a trigger whose name carries no `_should_`/`_can_` verb
+    and whose existing reference from `WA_AI_PRODUCTION_DEFAULT_armor_category_push` is already
+    frozen debt. Copying the shape of the frozen block beside it is the same trade this subject
+    took on 2026-09-01. The debt-RETIRING alternative — renaming the trigger to
+    `WA_AI_PRODUCTION_should_push_armor_category` across its 11 sites (definition, DEFAULT block,
+    8 negations in `WA_AI_PRODUCTION_maintenance_triggers.txt`, `WA_TEST_maintenance.txt`) — was
+    not taken: it is a rename of a shared gate well outside the owner's ask, and it is offered as
+    its own follow-up.
+  - Checker state, reported as found: `check_constants.py` exit 0. `check_ai_layers.py` and
+    `check_worklist.py` both exit 1 on **pre-existing** errors that this change neither caused nor
+    touches — NAME-COLLISION `is_strategic_chromium_exporter` (present in HEAD,
+    `WA_AI_RESOURCE_NEEDS_triggers.txt` vs `WA_AI_CONFIG.txt`), the 9-subject WIP overflow, and
+    three stale `SHIPPED-UNTESTED` subjects.
+  - Verification OWED: **boot test** — a new `ai_strategy` block parses only at game launch.
+    Then, on a GER save at war, the armour lines' `requested` totals against a build without this
+    file; and the reading this subject actually wants, wanted-vs-fielded armoured divisions.
 - 2026-09-09 `[air-budget]` phase 3 moves the arbitration this subject measures: the air category
   factors are now ONE block per type at 100 (fighter was 25, the other bomber lines summed their
   per-line 100s), so the air pull against `armor` 60 changes. The "tank share of military lines vs
