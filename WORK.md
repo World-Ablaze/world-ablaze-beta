@@ -377,6 +377,17 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   the shipped ladder and diffs them against the emitted templates.
   PASS for the owner run = `doc=1` with `med_set=1`, the axes line matching what
   `imgui show ai_templates` shows the country fielding, and 15 battalions (12 with the doctrine).
+- Owner revision 2026-09-19, `[ger-armor-preparation]`: GER's ordinary light→medium recruitment
+  boundary is 1939.1.1 (ENG shares it; generic fallback remains 1940.1.1). Ordinary generated
+  light targets behind the retained 51xx/52xx selectors are light-only and carry no
+  `replace_with`; the three old FINAL profiles are `emit=false`. The Soviet light-support
+  conversion is unchanged. The existing generic land-maintenance system now guarantees 5 MIC on
+  each main chassis class required by fielded divisions, even when captured stock suppresses
+  organic demand; overlap is 5/10/15/20 MIC for 1/2/3/4 active classes. Regression risk: a country
+  fielding several chassis classes reserves their summed floors, and the engine still decides
+  which producible variant receives each archetype floor. Owner console owed: in a post-CZE 1939
+  AI GER, light target is light-only, medium target is active, and the production panel shows at
+  least 5 factories on `light_tank_chassis`; `event wa_maint.3 GER` must report light floor 5.
 - Verification (campaign): one save where a doctrine-holding AI fields a 12-battalion armour
   division at 30 width, and a non-doctrine AI fields 15 at 30.
 - Closed when: `python tools/gen/gen_ai_armor_templates.py --check` exit 0,

@@ -56,7 +56,8 @@
 #	v32 llr_recv_*                   llr pair matrix on the recipient (donor-id / sends / units)
 #	v34 armor_*                      armour-template coverage ([armor-class-handoff])
 #	v37 r115_maint_*                 land maintenance floor, probe ([maintenance-floor])
-@WA_TLM_VERSION = 38
+#	v39 r115_maint_armor_var_n       the 32 variant chassis floors ([armor-variant-maintenance])
+@WA_TLM_VERSION = 39
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -463,42 +464,205 @@ WA_TLM_monthly_sample = {
 ############################################################################################################
 #	[maintenance-floor] Land maintenance-floor sample (PROBE r115). Scope: country, is_ai gated by
 #	the caller. Design: documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md.
-#	armor_n / ground_n are the DECISIONS (how many archetypes are maintained); floor is the factory
-#	count WA REQUESTED, never what the engine allocated and never the country total on those ids.
+#	armor_n / armor_var_n / ground_n are the DECISIONS (how many archetypes are maintained); floor is
+#	the factory count WA REQUESTED, never what the engine allocated and never the country total on
+#	those ids. armor_n stays the FOUR main gun classes so older readings remain comparable;
+#	[armor-variant-maintenance] armor_var_n is the 32 variant chassis, counted apart because that is
+#	the number that tells a 5-factory total from a 40-factory one.
 #	at_ratio is the verified EFFECT and the reading that falsifies the whole system: free anti-tank
 #	spares over what the armies require, the shortage the floors exist to relieve.
-#	All five are written unconditionally so a country that stops being maintained reads 0 rather
+#	All six are written unconditionally so a country that stops being maintained reads 0 rather
 #	than a stale value, and so the _last_t stamp keeps the absence contract for every AI country.
 ############################################################################################################
 WA_TLM_sample_maintenance = {
-	# tlm: r115_maint_armor_n / r115_maint_ground_n / r115_maint_floor - gauges, the DECISION and
-	# the REQUEST - consumer probe r115
+	# tlm: r115_maint_armor_n / r115_maint_armor_var_n / r115_maint_ground_n / r115_maint_floor -
+	# gauges, the DECISION and the REQUEST - consumer probe r115
 	set_variable = { WA_TLM_r115_maint_armor_n = 0 }
+	set_variable = { WA_TLM_r115_maint_armor_var_n = 0 }
 	set_variable = { WA_TLM_r115_maint_ground_n = 0 }
 	set_variable = { WA_TLM_r115_maint_floor = 0 }
 	if = {
 		limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes }
 		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
 		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
-		if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
 	}
 	if = {
 		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes }
 		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
 		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
-		if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
 	}
 	if = {
 		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes }
 		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
 		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
-		if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
 	}
 	if = {
 		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes }
 		add_to_variable = { WA_TLM_r115_maint_armor_n = 1 }
 		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
-		if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes } add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_deep_add } }
+	}
+
+	# tlm: [armor-variant-maintenance] the 32 variant chassis. Same floor each, counted in
+	# armor_var_n and summed into maint_floor, so the request total stays true at 36 archetypes.
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_support = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_scout_car = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
+	}
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_combat_car = yes }
+		add_to_variable = { WA_TLM_r115_maint_armor_var_n = 1 }
+		add_to_variable = { WA_TLM_r115_maint_floor = constant:wa_ai_production.maintenance.floor_base }
 	}
 	if = {
 		limit = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes }

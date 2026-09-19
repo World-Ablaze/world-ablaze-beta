@@ -1,25 +1,25 @@
 # AI Armor Template Generator — Technical Implementation Specification
 
 Date: 2026-09-18. Subject: `armor-template-generator`.
-Status: steps 1-5 of section 11 are IMPLEMENTED and applied for the medium / modern / heavy families; light and light_support stay hand-written (`"emit": false`). Step 6 (in-game validation) is owed. `python tools/gen/gen_ai_armor_templates.py --dry-run` renders every output and reports its findings; `--apply` refuses while any ERROR stands. Aligned with owner feedback round 2 (2026-09-18).
+Status: all five families are generated. Owner revision 2026-09-19 supersedes the ordinary-light transfer design: post-boundary light targets remain light-only and carry no `replace_with`; only the Soviet light-support family retains its historical conversion graph. Step 6 (in-game validation) is owed.
 Functional authority: [WA_AI_ARMOR_GENERATOR_SPEC.md](WA_AI_ARMOR_GENERATOR_SPEC.md), including the latest owner decisions A1-A12.
 
 This document specifies proposed interfaces and algorithms. Paths marked **new** do not exist yet. Statements about existing code are labeled; requirements and proposed designs describe what must be implemented, not measured engine behavior.
 
 ## 1. Scope and Non-negotiable Behavior
 
-Implement one Python generator that owns the five armor template files, their generic selection logic, generated selection predicates, and a machine-readable manifest connecting every selection code to its targets and conversion path.
+Implement one Python generator that owns the five armor template files, their generic selection logic, generated selection predicates, and a machine-readable manifest connecting every selection code to its target.
 
 The implementation must preserve:
 
-- Existing startup/monthly scheduling, admission rules and explicit non-conversion progression memories. Preserve Soviet mission and intentional retirement policy while replacing obsolete conversion-phase machinery with direct role transfer.
+- Existing startup/monthly scheduling and admission rules. Preserve the ordinary light park as light-only and preserve the Soviet mission, conversion and intentional retirement policy.
 - Existing role identities: light and light support share `light_armor`; medium and modern share `medium_armor`; heavy uses `heavy_armor`.
-- A1 readiness and A2 reevaluation, plus the revised A5 direct medium-first/heavy-fallback role transfer. `heavy_armor_company_divisional` is the sole exception to the ban on heavy components outside heavy divisions; it is admitted in the medium and modern families only, and never in heavy, light or light-support divisions.
+- A1 readiness and A2 reevaluation. `heavy_armor_company_divisional` is the sole exception to the ban on heavy components outside heavy divisions; it is admitted in the medium and modern families only, and never in heavy, light or light-support divisions.
 - The approved 10-slot line allocation and independent component progression; no universal upgrade of all variants when the main chassis changes.
 - Armoured Waves `combat_width = +0.5`, a flat per-battalion addition, with the exact screenshot adjustments -1 main tank / -2 mechanized; together they hold the wave target at 30. Validate corrected doctrine inputs; do not silently use the installed -0.4 value.
 - Heavy priority after all non-heavy candidates, filtered by family and slot before selection, support companies included. Retain explicit non-heavy support fallbacks in heavy divisions; remove the obsolete heavy-TD/medium-equipment waiver.
 
-Countries configured for 20-width divisions still receive 30-width armor targets. The Armoured Waves doctrine correction is an explicit prerequisite of `--apply`, applied by `python tools/gen/gen_ai_armor_templates.py --doctrine-patch` **in the same commit as the generated templates**. **MEASURED (2026-09-19)** - shipping the +0.5 alone makes the CURRENT live templates 37.5 wide (base) and 45 wide (wave twin, 18 battalions) for any country holding the doctrine, so the value and the templates land together or neither does. The generator neither edits doctrine during `--apply` nor substitutes its value silently. No other doctrine redesign is included. No save migration is required. New campaigns must still convert their starting and subsequently created divisions. Do not rewrite other infantry templates, change unit equipment definitions, redesign doctrine effects, or add a new recruitment role for modern armor.
+Countries configured for 20-width divisions still receive 30-width armor targets. The Armoured Waves doctrine correction is an explicit prerequisite of `--apply`, applied by `python tools/gen/gen_ai_armor_templates.py --doctrine-patch` **in the same commit as the generated templates**. **MEASURED (2026-09-19)** - shipping the +0.5 alone makes the CURRENT live templates 37.5 wide (base) and 45 wide (wave twin, 18 battalions) for any country holding the doctrine, so the value and the templates land together or neither does. The generator neither edits doctrine during `--apply` nor substitutes its value silently. No other doctrine redesign is included. No save migration is required. Do not rewrite other infantry templates, change unit equipment definitions, redesign doctrine effects, or add a new recruitment role for modern armor.
 
 ## 2. Existing Interfaces and Impact Surface
 
@@ -41,16 +41,15 @@ Before applying gameplay output, produce an impact inventory listing every defin
 
 | Path | Ownership and purpose |
 |---|---|
-| `tools/armor_templates_registry.json` | EXISTS. Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles, exceptions and transition profiles. No country-tag lists or copied technology lists. |
+| `tools/armor_templates_registry.json` | EXISTS. Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles and exceptions. Ordinary light declares no transition; Soviet light-support conversion remains in its declared profiles and handwritten calculator. No copied technology lists. |
 | `tools/gen/gen_ai_armor_templates.py` | EXISTS. CLI entry point, standard library only, resolves the repository root from its own location. |
 | `tools/gen/armor_templates/` | EXISTS: `model.py` (registry schema), `inputs.py` (read-only adapters over `common/units`, the scripted triggers, the sub-doctrine and the defines), `resolve.py` (pure resolver + enumeration), `emit.py`, `validate.py`, `transitions.py`. |
 | `common/ai_templates/WA_AI_TEMPLATES_armored_{light,light_support,medium,medium_modern,heavy}.txt` | Fully generated. Preserve appropriate role metadata, front-role override, reinforcement priority, icons, and naming groups from explicit registry profiles. |
 | `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt` | WRITTEN. Generated selection ladders, one effect per template flag. Rendered at 20.7 KiB. |
 | `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` | WRITTEN. Generated decision predicates: the chain winners, the two industrial cuts and the semantic code sets. Rendered at 13.6 KiB. |
 | `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` | Retains scheduling-facing wrappers, flag writer, admission/spirit handling, existing progression updates, and Soviet mission/retirement orchestration. Replace generic armor calculation bodies with generated implementations, and deliberately retire conversion-only phases/codes/readers after an impact inventory. |
-| `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_transition.txt` and matching `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_transition.txt` **new** | Handwritten direct-transfer/fallback controller and gates, reviewed separately from generated output; see §7. |
 | `common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt` | Retains shared equipment/capability policy. Make A7's obsolescence change in reviewed component predicates; do not duplicate stock/resource tests in generated template blocks. |
-| `common/script_constants/wa_ai_armor_templates.txt` **new** | Authoritative shared numeric tuning: base counts, factory thresholds, variant count, Armoured Waves count deltas, and any empirically justified transition thresholds. The doctrine file owns its Armoured Waves width modifier; register any validation mirror instead of duplicating a tunable doctrine value. Read by Python as input; do not maintain a second numeric copy in JSON. Reuse the existing readiness threshold in `wa_ai_production.txt`. |
+| `common/script_constants/wa_ai_armor_templates.txt` **new** | Authoritative shared numeric tuning: base counts, factory thresholds, variant count and Armoured Waves count deltas. The doctrine file owns its Armoured Waves width modifier; register any validation mirror instead of duplicating a tunable doctrine value. Read by Python as input; do not maintain a second numeric copy in JSON. Reuse the existing readiness threshold in `wa_ai_production.txt`. |
 | `tools/generated/armor_templates_manifest.json` | WRITTEN. One row per code: name, categorical facts, full composition, width. The ladder computes the code arithmetically, so no per-target trigger conjunction is carried. Rendered at 2.1 MiB. |
 | `tools/constants_registry.json` | Reviewed integration edit: register new rendered numeric mirrors and retire the old modern-tier offset group only when its source and mirror are both removed. Not an unrestricted generator rewrite target. |
 | `tools/tests/test_armor_templates.py` | EXISTS. 34 hand-authored `unittest` cases over the owner decisions, the code assignment and the rendering. |
@@ -85,7 +84,7 @@ Use JSON with `schema_version = 1`; reject unknown fields, duplicate IDs, missin
 | Chain | ID, slot, ordered candidate IDs, empty/default candidate, optional capped-tail rule. Numeric order is explicit; JSON object ordering is not semantic. |
 | Profile | ID, family restrictions, mobile-infantry type, support policy, base-count constant references, applied modifiers, metadata, optional preserved mission profile. |
 | Profile (DECLARED family) | ID, the codes it answers, then EITHER `facts` - resolved by the same composition rules as any enumerated target - OR explicit `regiments` / `regimental_support` / `support` sections kept verbatim. Optional `replace_with` (must name a profile of the SAME family: a cross-group pointer does not resolve), `replace_at_match`, `target_min_match`, `enable_extra` trigger terms, `custom_icon`, `reinforce_prio`, `upgrade_prio_base`, and `width_exception` naming why this target is not 30 wide. Declaration ORDER is preserved: it is what breaks a tie between two targets at equal upgrade_prio. |
-| Transition | ID, source role/profile set, medium-first destination resolver, heavy fallback, direct mechanism, eligibility/source checks, observed completion, fallback trigger and operation-state contract. No generated CONVERT phase graph. |
+| Transition | Empty for ordinary light. Country-specific light-support conversion remains expressed by declared profiles and handwritten phase logic. |
 | Exception | Exact ID, eligible families/slots/unit IDs, reason, owner decision, actual equipment mapping, permitted diagnostic. No wildcard “ignore heavy checks.” |
 
 Keep four different concepts in the model, never aliased: `medium_support` (the 6/3/0 line substitute), `medium_infantry_support` (a candidate in the three-battalion chain), `heavy_divisional_support` (the A6 exception, unit `heavy_armor_company_divisional`, medium and modern only), and `heavy_support_battalion` (unit `heavy_support_armor_battalion_divisional`, used by no template today, scope open under A12).
@@ -126,7 +125,7 @@ Implement a pure function:
 resolve(family_id: str, facts: CountryFacts, policy: Registry) -> Selection
 ```
 
-`CountryFacts` is a test/compile-time representation of booleans and categories, not a Python connection to the running game. Runtime evaluates corresponding scripted predicates. `Selection` is either disabled with a reason, or contains a semantic signature, composition, selected candidates, exceptions, and transition context.
+`CountryFacts` is a test/compile-time representation of booleans and categories, not a Python connection to the running game. Runtime evaluates corresponding scripted predicates. `Selection` is either disabled with a reason, or contains a semantic signature, composition, selected candidates, exceptions and admission context.
 
 ### 5.1 Evaluation order
 
@@ -184,7 +183,7 @@ Divisional engineer/maintenance/recon/AA use explicit real-unit fallback tables.
 
 Build a typed intermediate representation before rendering any file. It must contain both composition and selection behavior; neither the calculator nor template emitter independently reconstructs the rules.
 
-A normalized composition signature contains family, main chassis, motorization, sorted units/counts in all three slot maps, metadata, and owner exceptions. A selection identity additionally contains role group, mission context, admission context, and transition destination. Two identical compositions with different conversion semantics must not be merged as one target.
+A normalized composition signature contains family, main chassis, motorization, sorted units/counts in all three slot maps, metadata, and owner exceptions. A selection identity additionally contains role group, mission context and admission context.
 
 Enumerate categorical choices after priority resolution, not all combinations of arbitrary country booleans. Prune only combinations proved illegal by declared constraints; do not prune based on historical country assumptions. Record conservative reachability when external predicates are opaque. Deduplicate identical composition payloads internally. Do not emit duplicate destination payloads in source groups merely to build role-conversion ladders.
 
@@ -192,59 +191,30 @@ Assign deterministic positive dense integer codes per flag. The code is COMPUTED
 
 Keep generated code magnitudes within the already-used 15016 envelope: the largest code rendered today is 8863. Fail on exhaustion rather than widen silently - `--dry-run` prints the per-family plane bases and sizes and the code-budget warning at 80 % of a range.
 
-The manifest maps `(flag, code)` to one deterministic destination selection and, if applicable, a direct-transfer request. Produce semantic code-set predicates from the manifest for waves, modern chassis, medium infantry support, heavy support, and transfer operation states. Replace handwritten numeric bands in tests/readers with these definitions where applicable. Flag presence alone remains distinct from component choice.
+The manifest maps `(flag, code)` to one deterministic target selection. Produce semantic code-set predicates from the manifest for waves, modern chassis, medium infantry support and heavy support. Replace handwritten numeric bands in tests/readers with these definitions where applicable. Flag presence alone remains distinct from component choice.
 
 ### Runtime code selection
 
 Compile the resolver into a nested decision tree over reusable predicates and selected categorical values. Each leaf writes a literal `_template_value`, with a disabled default. Avoid a flat repeated conjunction for every target; share prefixes and component tests. Initialize every `_wa_ag_*` temporary at entry and clear owned scratch at exit; public `_template_type_code` and `_template_value` follow the existing writer contract.
 
-**MEASURED (2026-09-19, `--apply`)** — all five families are generated, in two modes. ENUMERATED: medium 1368 codes / 1080 blocks (20000-21367), modern 402 / 330 (24000-24401), heavy 200 / 176 (28000-28199). DECLARED (one profile per target, codes pinned, no generated ladder): light 33 on the existing 5100-5222 values, light_support 18 on 15000-15016. Rendered output: 1.7 MiB of `ai_templates`, 14.5 KiB of ladders, 7.8 KiB of predicates, 1.8 MiB of manifest. Three reductions keep the enumerated side down: one block per distinct COMPOSITION with an `OR` of its codes; a motorized plane carrying only the base composition and the regimental axes; and ONE industrial axis instead of a quota x company rectangle — the heavy company exists only at the top band (A19), so 3 x 2 spent a third of its points on states the ladder can never write. The arithmetic encoding is what keeps the ladder at 14.5 KiB: a flat first-claim ladder of the same targets rendered at 1.4 MiB and would cost one full conjunction per target per country per monthly pulse.
+**MEASURED (2026-09-19, `--apply`)** — all five families are generated, in two modes. ENUMERATED: medium 1368, modern 402 and heavy 200 targets. DECLARED: light 30 targets on retained 5100-5222 selector values and light_support 18 on 15000-15016. Current output totals 2018 targets; the manifest declares no ordinary-light transition. The arithmetic encoding keeps the runtime ladder compact by sharing prefixes instead of emitting one full conjunction per target.
 
 
 Use mutually exclusive branches or explicit first-claim guards. Generated input predicates and the Python resolver must be tested against the rendered script tree, so tests do not merely compare two calls to the same function. Avoid unsupported dynamic identifiers and arbitrary runtime string construction.
 
 Every generated target has exactly one `upgrade_prio` block. Template `enable` calls a generated decision predicate. Preserve group-level zero upgrade weight when no target in that group is selectable; preserve medium-versus-modern and light-versus-light-support ownership gates.
 
-Compute group activity from legal selectable targets. Medium/modern ownership remains mutually exclusive for the intended recruitment selection; light/light-support sharing a role must not produce ambiguous entries. The conversion controller identifies existing source units separately from recruitment selection. Opening a destination group or writing a code never proves deployed units changed role.
+Compute group activity from legal selectable targets. Medium/modern ownership remains mutually exclusive for recruitment selection; light/light-support sharing a role must not produce ambiguous entries. Opening the medium group changes new recruitment and does not transfer ordinary light divisions.
 
-## 7. Direct Role Transfer and Empty-Spawn Fallback
+## 7. Ordinary light preservation and Soviet conversion
 
-### 7.1 Primary path
+The medium boundary changes new recruitment only. Historical 51xx/52xx selector values remain for
+compatibility, but every emitted ordinary-light target uses light chassis exclusively and emits no
+`replace_with` or FINAL. The manifest therefore declares no ordinary light transition.
 
-Resolve the normal medium-role destination first, including modern compositions when selected. If it is unavailable, resolve heavy. If neither is eligible, leave the light source intact. Apply this to both light and light-support divisions through configuration/capability checks rather than country-tag shortcuts.
-
-Attempt the smallest supported direct transfer to the normal destination template. `replace_with` is optional, not the architecture: use it only where source/destination resolution and actual role transfer are verified. Do not assume a cross-group link works, and do not replicate the destination inside many source CONVERT groups to avoid answering the role-transfer question. Same-role medium → modern and later variant changes use normal target selection first.
-
-Before choosing the implementation primitive, inspect the current installation documentation and test it with a deployed light division and a live recruitment queue. Record actual destination template/role, best existing match and match thresholds where relevant. A successful code join, target selection or composition match alone is insufficient.
-
-**ASSUMED** — Reliable direct transfer across recruitment roles is an implementation hypothesis until observed in a cold-start game test. If it fails, use the separately tested fallback below; do not respond by generating a web of intermediate CONVERT templates.
-
-The earlier approach proposed “generate explicit local replace_with graphs.” The revised design covers its requirement to handle fielded sources through explicit source/destination checks and observed direct transfer, with a one-for-one fallback when that mechanism fails. Source coverage remains mandatory, but no Cartesian product of old/new template phases is generated.
-
-### 7.2 Fallback controller to implement
-
-Add a reviewed, handwritten controller in `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_transition.txt` and corresponding decisions in `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_transition.txt` (both **new**). It consumes the generated destination manifest/selection interface; it never reconstructs composition priorities. Wiring uses the existing cadence, with a batch limit declared in script constants and a CONFIG switch disabled by default until primitives and failure handling pass validation. Enable fallback only after direct-transfer failure is reproducible and classified: unsupported role transfer, inadmissible target, temporary equipment deficit, or missing compatible existing template. A temporary deficit alone does not authorize deletion. Record the identified cause in the test evidence. No arbitrary timeout is evidence of failure or completion.
-
-The operation contract is `preflight → source removed → empty successor created → verified`. This is script state for retry safety, not intermediate division templates.
-
-| Stage | Contract |
-|---|---|
-| Preflight | Identify one owned AI light-role division, exact eligible destination template/role and legal spawn location. Resolve supported engine primitives for precise unit deletion, empty spawning and unit identity first. If any required capability is missing, abort before mutation and report a blocker. |
-| Snapshot | Store only data the primitive can actually observe: operation identity, source identity, destination identity and selected spawn location. Define what happens to name, experience, orders, location, manpower and equipment. Do not assume state can be copied or refunded. |
-| Remove | Remove only the identified source. Do not use template-wide deletion when other divisions or recruitment entries share it. Record successful removal before the controller can select another source. |
-| Spawn | Create exactly one division from the selected medium/heavy template, initially with zero manpower and zero equipment. It must reinforce through normal mechanics; never grant free strength. Revalidate the destination/location before removal and define recovery if they change after removal. |
-| Retry | Resume the same operation after interruption; never repeat a confirmed deletion or create another successor after a confirmed spawn. Do not promise atomic engine execution. Keep recoverable failure visible and block new work for that operation until resolved. |
-| Verify | Observe the actual successor and role, then close the operation. A flag written immediately after issuing spawn is not proof of its outcome. Measure resource accounting before/after removal and creation; reject duplicate resources or silent lost divisions. |
-
-**MEASURED** — The lessons log documents AI template renaming (`.claude/skills/wa-lessons-learned/references/lessons-log.md:126`). Resolve and verify the actual existing template identity immediately before creation; a generated or snapshotted name alone is insufficient. If controlled template creation is required, prove that it creates no accumulating duplicate/decommissioned templates. Successor identification after spawning must also survive retry/save-reload; otherwise the fallback remains disabled.
-
-Empty-spawn syntax, per-division deletion support, identity persistence across save/reload, legal spawn locations, and refund behavior are implementation feasibility gates. Their behavior must be sourced and tested; this specification invents no engine effect signature. If the engine cannot satisfy the contract, report the exact blocker for arbitration.
-
-### 7.3 Soviet integration and consumers
-
-Preserve mission admission, starting-force purpose and intentional retirement intent. Inventory every existing CONVERT-phase reader and replace its conversion-specific behavior with the new controller. Keep mission progression once per scheduled pass; reports must not advance it. Arbitrate retirement and replacement on the same source: one operation owns it, so retirement cannot delete the new successor or race a pending transfer.
-
-Update selection, production/role budgets, retirement handlers, tests and telemetry readers together when removing phase codes. Do not retain old codes merely because they exist: this is a development refactor with no save migration. Explicitly test a Soviet mission transfer and retirement boundary, plus a non-Soviet/foreign-tree transfer.
+The Soviet light-support conversion remains a separate system. Preserve its mission admission,
+starting-force purpose, phase progression and intentional retirement. Test that path independently
+from ordinary light preservation.
 
 ## 8. CLI and Safe Publication of Output
 
@@ -272,14 +242,14 @@ Render and validate all outputs in memory/staging before writes. Capture input/o
 | Width | Calculate effective width for each declared modifier scenario using the flat per-battalion values. Both the base and the Armoured Waves target must satisfy 30 with no implicit tolerance; existing source profiles are the only declared exception. Require the corrected `+0.5` doctrine covering every battalion line the composition fields, mobile infantry included; an uncovered line or an installed -0.4 is a validation error, never an assumed result. 20-width-country armor targets are still 30. Unsupported modifier semantics produce an unresolved-calculation error, never an assumed 30. Do not alter approved counts to hide a conflict. |
 | Selection | Zero on genuine closed admission; otherwise a deterministic selectable path; no uncovered code, ambiguous equal-priority entry, or first-branch starvation. |
 | Generated behavior | Evaluate an independently parsed subset of rendered selector conditions against hand-authored facts and compare expected selection. Unsupported script syntax fails validation instead of being assumed true. |
-| Conversion | Medium-first/heavy-fallback routing; no intermediate CONVERT template graph; exact normal destination payload; when no destination exists, the source remains intact. Fallback operates on one source and creates one empty successor, is retry-safe, and exposes interruption failures. |
+| Light behavior | Ordinary light has no transition contract and no `replace_with`; Soviet light-support retains its declared, country-specific conversion graph. |
 | Stability | Repeated identical input produces byte-identical output; registry object reordering does not change semantic output; check mode never writes. |
 | Consumers | No generic dependency on retired code offsets; checker follows generated effect definitions; semantic test/telemetry readers agree with manifest code sets. |
 | Performance | Report emitted targets, edges, bytes, and maximum predicate-tree depth; inspect growth when adding one candidate. Do not disguise multiplicative expansion with a successful syntax check. |
 
-Minimum fixtures: quota boundaries 299/300/499/500; zero/100/101 stock; 60 stock+60 deployed; zero stock with economic admission; modern chassis without modern variants; modern TD before modern SPG and reverse; heavy without heavy SPG; corrected heavy TD requiring heavy; rejection of heavy TD/SPG in medium/modern; the `heavy_armor_company_divisional` exception accepted in medium and in modern and rejected in heavy, light and light support; technology granted outside original tree; no relevant tech branch; heavy support on/off; waves on/off with motorized/mechanized; all rocket stages; A7 researched-but-ineligible successor; resource deterioration under A2; light-support mission/retirement boundaries; direct role transfer; forced fallback; interruption after deletion; interruption after creation before confirmation; destination inadmissible after deletion; spawn location lost; Soviet retirement during an operation; zero manpower/equipment at spawn; destination lost; repeat pulse/save-reload; countries configured for 20-width divisions; no destination class; delayed light conversion at modern era.
+Minimum fixtures: quota boundaries 299/300/499/500; zero/100/101 stock; 60 stock+60 deployed; zero stock with economic admission; modern chassis without modern variants; modern TD before modern SPG and reverse; heavy without heavy SPG; corrected heavy TD requiring heavy; rejection of heavy TD/SPG in medium/modern; the `heavy_armor_company_divisional` exception accepted in medium and in modern and rejected in heavy, light and light support; technology granted outside original tree; no relevant tech branch; heavy support on/off; waves on/off with motorized/mechanized; all rocket stages; A7 researched-but-ineligible successor; resource deterioration under A2; ordinary light preservation across the medium boundary; light-support mission/conversion/retirement boundaries; countries configured for 20-width divisions.
 
-Negative tests must include unknown unit, fabricated heavy SPG, invalid slot, code collision, unsupported cross-group mechanism, disabled destination, stale conversion-phase reader, deletion broader than one source, staffed fallback spawn, duplicate successor, missing consumer mapping, repeated modifier application, and zero-code transformed into a valid code by an offset.
+Negative tests must include unknown unit, fabricated heavy SPG, invalid slot, code collision, an ordinary-light transition entry, ordinary-light `replace_with`, stale conversion-phase reader, missing consumer mapping, repeated modifier application, and zero-code transformed into a valid code by an offset.
 
 Expected existing-check commands after implementation:
 
@@ -309,7 +279,7 @@ Require a full game restart after generated definitions/constants change. Inspec
 
 Include a live recruitment queue in conversion checks, record engine upgrade/design progress after the restart, and inspect intermediate column layout. Do not interpret an observation made after hot reload as validation of the new designer behavior.
 
-Owner-run scenarios must include a historical major, a country using an adopted/foreign technology path, a minor with no medium unlock, and the Soviet mission/retirement sequence. Test new recruitment separately from already-deployed divisions. Observe the source, actual role transfer or fallback successor, and later reevaluation; do not infer completion from a single flag or a monthly elapsed-time count.
+Owner-run scenarios must include a historical major, a country using an adopted/foreign technology path, a minor with no medium unlock, and the Soviet mission/retirement sequence. Test new recruitment separately from already-deployed divisions. Observe that ordinary light stays light-only while new recruitment moves to medium; test the Soviet conversion separately.
 
 Use existing WA_TLM probes when sufficient. Any new save-visible probe follows `documentation/WA_TLM_TELEMETRY_SYSTEM.md`: write-only, initialized, registered, and explicit about whether it measures selection intent or actual unit composition. No gameplay decisions may read telemetry. Do not add a conversion-complete counter based solely on a transition request or spawn command.
 
@@ -321,11 +291,11 @@ The implementation subject remains `SHIPPED-UNTESTED` after a qualifying script 
 |---|---|
 | 1. Inventory | Source/consumer report, unit/slot map, Soviet mission/retirement dependencies and conversion-only readers, measured generator/checker baseline. Every unit named by the functional chains maps to a real definition or explicit fallback. |
 | 2. Model and resolver | Registry, constant input adapter, pure resolver, hand-authored fixtures for all owner decisions. No game output applied. |
-| 3. Code compiler and transfer prototype | Deterministic manifest, selector tree, semantic predicates. Prototype direct role transfer and precise empty-spawn fallback before choosing engine primitives. No CONVERT graph. |
+| 3. Code compiler | Deterministic manifest, selector tree and semantic predicates. Ordinary light has no transition entry. |
 | 4. Dry-run rendering | All five files and generated scripts produced consistently; exact destination-payload matching; one owner per output; no duplicate public effect. |
-| 5. Integration | Public wrappers delegate, old mirror writer retired, checker and all code readers adapted, production/readiness consumers reviewed, conversion-only phase readers retired, fallback controller integrated, docs synchronized. |
-| 6. Validation | Static checks reported honestly; owner cold-start harness and field-conversion results recorded; expected A5 retirement distinguished from unintended unit loss. |
+| 5. Integration | Public wrappers delegate, old mirror writer retired, checker and all code readers adapted, production/readiness consumers reviewed, docs synchronized. |
+| 6. Validation | Static checks reported honestly; owner cold-start harness records ordinary light preservation, medium recruitment and the separate Soviet light-support conversion. |
 
-Completion means the generator reproduces its committed outputs, every selected code resolves, approved cases are covered by independent tests, and the owner-run checks demonstrate recruitment and conversion behavior. No claim of bounded conversion duration is part of this design.
+Completion means the generator reproduces its committed outputs, every selected code resolves, approved cases are covered by independent tests, and the owner-run checks demonstrate medium recruitment, ordinary light preservation and the separate Soviet conversion behavior.
 
-Primary regression risks: shared eligibility changes unintentionally closing research/production, explosion of generated combinations, destination payload mismatch, repeated transfers, duplicate fallback successors, lost source resources, empty role entries still receiving upgrade priority, Soviet phase counters advanced twice, and a caller continuing to interpret old code ranges. The implementation review must examine both historical and ahistorical paths and verify the explicit owner exceptions rather than “cleaning them up.”
+Primary regression risks: shared eligibility changes unintentionally closing research/production, explosion of generated combinations, ordinary light targets acquiring medium components, Soviet phase counters advancing twice, and a caller continuing to interpret old code ranges. The implementation review must examine both historical and ahistorical paths and verify the explicit owner exceptions.

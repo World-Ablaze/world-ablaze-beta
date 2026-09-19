@@ -351,12 +351,10 @@ WA_AI_TEMPLATES_should_disband_cavalry_on_war = {
 	NOT = { has_army_manpower = { size < @WA_CAVALRY_DISBAND_MIN_ARMY_MANPOWER } }
 }
 
-# [armor-class-handoff] The DIVISION half of the handoff: the boundary closes the light class,
-# but the fielded light divisions still need a path INTO the medium class. This window keeps the
-# LIGHT_MEDIUM transition templates selectable after the switch (their replace_with flips each
-# division onto the medium template at 0.8 match), so conversion replaces abandonment. Assumes
-# the engine still upgrades a role whose role_ratio want is 0; false = divisions freeze as before.
-WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
+# [armor-class-handoff] The boundary redirects NEW armoured divisions to the medium role. Existing
+# light divisions keep a light-only target after it, so they continue receiving modern light
+# chassis instead of replacing their battalions with mediums.
+WA_AI_TEMPLATES_should_preserve_light_armor = {
 	WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
 	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -365,12 +363,11 @@ WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
 }
 
 # [armor-class-handoff] Does the medium role TARGET an infantry-support composition? Read by the
-# light ladder's MIS redirect and the MIS FINAL enable, so a light->medium conversion ends on the
-# composition the medium role actually claims.
+# the retained selector compatibility logic; it no longer transfers ordinary light divisions.
 # Reads the generated chain verdict, not a list of template codes: the code is now a mixed-radix
 # value computed per country (tools/armor_templates_registry.json), so a hand-written value list
 # would go stale the first time an axis changes. The modern chassis stays out on purpose - the
-# FINAL this gate enables is built from medium_armor / medium_infantry_support battalions.
+# Ordinary light targets never consume this result as a medium-component gate.
 WA_AI_TEMPLATES_is_medium_mis_family = {
 	has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -378,12 +375,12 @@ WA_AI_TEMPLATES_is_medium_mis_family = {
 	WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_inf_support = yes
 }
 
-# [armor-class-handoff] Gate of the transition rungs in the light ladder: open pre-boundary
-# (light and medium classes both live) and post-boundary through the conversion window above.
+# [armor-class-handoff] Gate of the retained 51xx/52xx light targets: open pre-boundary and after
+# the boundary while the old light park remains in service. These targets carry no replace_with.
 WA_AI_TEMPLATES_can_use_light_transition_templates = {
 	OR = {
 		WA_AI_TEMPLATES_use_light_armor_templates = yes
-		WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+		WA_AI_TEMPLATES_should_preserve_light_armor = yes
 	}
 }
 

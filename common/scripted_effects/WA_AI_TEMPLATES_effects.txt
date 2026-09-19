@@ -948,11 +948,9 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	set_temp_variable = { _template_type_code = 4 }
 	set_temp_variable = { _template_value = 0 }
 	set_temp_variable = { _template_claimed = 0 }
-	# [armor-class-handoff] _mis_family: each MEC transition rung yields to its MIS twin
-	# (52xx = 51xx + 100 — unrelated to the +100 motorized-hospital mirror of the infantry
-	# ladder; replace_with -> the inf-support FINAL), so conversion ends on the medium role's
-	# own composition instead of a pure 9+6 no enabled medium target matches. Reads the
-	# WA_MEDIUM_ARMOR_TEMPLATE flag, hence medium-before-light in calculate_all_templates.
+	# [armor-class-handoff] _mis_family preserves the historical 52xx selector codes. Their
+	# generated targets are now light-only and carry no replace_with; medium-before-light remains
+	# required because this selector reads the medium chain verdict.
 	set_temp_variable = { _mis_family = 0 }
 	if = {
 		limit = { WA_AI_TEMPLATES_is_medium_mis_family = yes }
@@ -1105,15 +1103,13 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 		set_temp_variable = { _template_value = 5109 }
 		set_temp_variable = { _template_claimed = 1 }
 	}
-	# [armor-class-handoff] Post-boundary conversion rungs for a country WITHOUT light tank
-	# destroyers - every transition rung above requires one, so without these a TD-less army
-	# stayed stranded on its light templates after the switch. Conversion window only: the
-	# pre-boundary ladder is unchanged.
+	# [armor-class-handoff] Post-boundary light maintenance targets for a country WITHOUT light tank
+	# destroyers. New divisions use the medium role; the existing light park remains light-only.
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
 			check_variable = { _mis_family = 1 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
 		}
 		set_temp_variable = { _template_value = 5222 }
@@ -1122,7 +1118,7 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
 		}
 		set_temp_variable = { _template_value = 5122 }
@@ -1131,7 +1127,7 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 		}
 		set_temp_variable = { _template_value = 5121 }
 		set_temp_variable = { _template_claimed = 1 }

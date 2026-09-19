@@ -247,3 +247,36 @@ WA_AI_PRODUCTION_trains_no_divisions = {
 		}
 	}
 }
+
+# ============================================================================
+# MEDIUM-ARMOUR PARK
+# ============================================================================
+
+# [medium-armor-park] OBSERVATION - the country already fields more armoured divisions than the
+# park target. This is the RELEASE bar of the park block, and it is the whole reason the block is
+# not permanent: build_army pins an ABSOLUTE want, so a want left armed after the target is met
+# holds the medium role at the target forever AND drives the sibling armour roles negative
+# (MEASURED 2026-09-19, GER AI view: medium_armor 25.0/25 while light_armor wanted -11).
+# `has_army_size size >` is a validated constant: context (wa-constants-registry); `<` is not, so
+# the bar is strictly-greater and the block stays armed at exactly the target.
+# ASSUMES has_army_size `type` is a sub-unit TYPE token (common/units/armor_tanks.txt:
+# medium_armor_battalion_line carries `type = { armor }`), so this counts light and heavy
+# divisions too - no trigger counts divisions of a role_ratio ROLE.
+# HOW TO TELL THAT FACT IS GONE: an AI-view read where medium_armor sits far below the target
+# while this trigger is already true.
+WA_AI_PRODUCTION_has_medium_armor_park_target = {
+	has_army_size = {
+		size > constant:wa_ai_production.army_composition.medium_armor_park_target
+		type = armor
+	}
+}
+
+# [medium-armor-park] DECISION - gate of WA_AI_PRODUCTION_DEFAULT_medium_armor_park.
+# WHO is the CONFIG archetype, WHEN is the medium role being open, UNTIL is the release above.
+# The role trigger already requires the medium unlock and excludes the early-game expansion
+# override, so this can never force a park a country cannot design.
+WA_AI_PRODUCTION_should_force_medium_armor_park = {
+	WA_AI_CONFIG_pursues_medium_armor_park = yes
+	WA_AI_PRODUCTION_build_army_medium_armor = yes
+	NOT = { WA_AI_PRODUCTION_has_medium_armor_park_target = yes }
+}

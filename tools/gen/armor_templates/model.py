@@ -42,7 +42,7 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
 PROFILE_FIELDS = {"id", "codes", "facts", "regiments", "regimental_support", "support",
                   "replace_with", "replace_at_match", "target_min_match", "custom_icon",
                   "reinforce_prio", "upgrade_prio_base", "enable_extra", "enable_raw",
-                  "width_exception",
+                  "width_exception", "emit",
                   "_comment"}
 MODES = {"enumerated", "declared", "both"}
 
