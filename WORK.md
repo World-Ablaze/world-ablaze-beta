@@ -299,8 +299,12 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   in `common/scripted_effects/WA_TEST_research_bonus.txt:80` records the same finding from the
   2026-09-08 boot log. I grepped the token, found that comment, and read a note saying the effect
   does NOT exist as evidence that it does.
-  - Fixed: the line is gone. A temp variable dies with the effect, and the scratch digit is re-set
-    to 0 before every use, which is what the "an unset temp does not read as 0" rule asks for.
+  - Fixed: the effect is `clear_variable`, owner correction the same day. MEASURED - the install's
+    effects_documentation.md lists it as "Supported Scopes: any", and the repo already clears
+    temps with it (`clear_variable = _exn_e1_`, WA_TEST_explain_naval.txt:93, a file that boots).
+    ASSUMED, not measured: that it zeroes a TEMP as opposed to only a persistent variable - the
+    doc says "Clears a variable" without distinguishing. The scratch digit is re-set to 0 before
+    every use either way, so nothing depends on the answer.
   - MECHANISM, not a comment: `validate.rendered_scripts` now checks every statement name in the
     rendered script against a declared engine vocabulary plus the 2884 triggers and 1639 effects
     defined in the repo, and `--apply` refuses on an unknown one. Three tests pin it, one of them

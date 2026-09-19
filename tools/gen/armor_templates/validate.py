@@ -41,7 +41,8 @@ ENGINE_VOCABULARY = {
     # control flow
     "if", "else", "else_if", "limit", "NOT", "OR", "AND",
     # variables
-    "set_temp_variable", "add_to_temp_variable", "multiply_temp_variable", "check_variable",
+    "set_temp_variable", "add_to_temp_variable", "multiply_temp_variable",
+    "check_variable", "clear_variable",
     # triggers the generated files read
     "has_country_flag", "num_of_military_factories", "has_template", "always",
 }

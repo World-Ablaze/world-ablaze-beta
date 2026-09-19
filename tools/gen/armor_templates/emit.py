@@ -200,11 +200,11 @@ def effects_file(registry, groups, planes_by_family):
         out.append("%sset_temp_variable = { %s = 0 }\n" % (TAB, SCRATCH))
         for family_id in families:
             out.append(_family_branch(registry, family_id, planes_by_family[family_id]))
-        # No clear on the scratch digit: a temp variable dies with the effect, and
-        # `clear_temp_variable` is NOT an engine effect - MEASURED in the boot log twice
-        # (2026-09-08, then 2026-09-19: four "Unknown effect-type: clear_temp_variable" errors
-        # from this very file). The digit is re-set to 0 before every use instead, which is what
-        # the "an unset temp does not read as 0" rule actually asks for.
+        # `clear_variable`, not `clear_temp_variable`: the second one is NOT an engine effect and
+        # cost four boot errors from this file (2026-09-19, and the same finding sits in
+        # WA_TEST_research_bonus.txt from 2026-09-08). `clear_variable` is documented "Supported
+        # Scopes: any" and the repo already clears temps with it (WA_TEST_explain_naval.txt:93).
+        out.append("%sclear_variable = %s\n" % (TAB, SCRATCH))
         out.append("%sWA_AI_TEMPLATES_update_target_template = yes\n" % TAB)
         out.append("}\n")
     return "".join(out)
