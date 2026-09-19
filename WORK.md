@@ -293,6 +293,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   (12 support tanks + 6 light + 4 motorised, MEASURED 44 width) and 18 for the starter park.
   They are the Country-layer exception of principle 2, not a shortcut: they reproduce a real
   formation, and `WA_AI_CONFIG_pursues_historical_tank_park` still decides who gets them.
+- The quota and heavy-company axes are ONE industrial axis now (owner, 2026-09-19). They never
+  cross - the company exists only at the top band - so a 3 x 2 rectangle spent a third of its
+  points on states the ladder can never write. MEASURED: medium 2040 -> 1368 codes, modern 594 ->
+  402, manifest 2.6 -> 1.8 MiB, `armored_medium.txt` 1615 -> 1156 KiB (shorter OR lists, same
+  1080 blocks). Every emitted code is reachable again; what remains deduplicated is 288 genuine
+  quota pairs whose battalions happen to match.
+  The four states are set by four independent `if` blocks, so the LAST match wins and the company
+  state overrides the plain top band. A test walks the emitted digit for five country states,
+  including "latch on, below the threshold", which must resolve to the middle band and not the
+  company.
 - A19, owner optimisation 2026-09-19: the A6 heavy tank company mounts only from 500 military
   factories and only on a MECHANIZED composition. Two locks, deliberately: the ladder digit carries
   both terms so no company code is ever written below the threshold, and the resolver resolves such

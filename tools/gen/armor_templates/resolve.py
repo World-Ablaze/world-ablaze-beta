@@ -347,20 +347,30 @@ def conditions(registry, family_id, facts):
     for cid in fam.get("artillery_fallback", [])[:1]:
         out.append(("yes" if facts.arty_fallback else "no", registry.eligibility_of(cid)))
 
-    if fam.get("medium_support_unit"):
-        out.extend(quota_conditions(registry, facts.quota))
-
-    if fam.get("heavy_divisional_company"):
-        gate = comp.get("heavy_company", {})
-        company = registry.candidate("heavy_divisional_company")["eligibility"]
-        out.append(("yes" if facts.heavy_company else "no", company))
-        # A19: and only from the declared factory count. The digit stays 0 below it, so the
-        # codes above that carry the company are simply never written.
-        if gate.get("trigger"):
-            out.append(("no" if facts.heavy_company else "yes", gate["trigger"]))
+    out.extend(industrial_conditions(registry, family_id, facts.quota, facts.heavy_company))
 
     waves = "WA_AI_TEMPLATES_use_armoured_waves_templates"
     out.append(("yes" if facts.waves else "no", waves))
+    return out
+
+
+def industrial_conditions(registry, family_id, quota, company):
+    """The terms of one value of the merged industrial axis.
+
+    The three bands are ordered, so the two cut triggers name each one; the company sits on the
+    top band alone and adds its own latch and its own factory cut.
+    """
+    fam = registry.families[family_id]
+    out = []
+    if fam.get("medium_support_unit"):
+        out.extend(quota_conditions(registry, quota))
+    if not fam.get("heavy_divisional_company"):
+        return out
+    gate = registry.composition.get("heavy_company", {})
+    latch = registry.candidate("heavy_divisional_company")["eligibility"]
+    out.append(("yes" if company else "no", latch))
+    if gate.get("trigger"):
+        out.append(("no" if company else "yes", gate["trigger"]))
     return out
 
 
@@ -382,8 +392,7 @@ def wins_trigger_name(family_id, chain_id, candidate_id):
 
 # --------------------------------------------------------------------- enumeration
 
-AXIS_ORDER = ("variant", "td", "spaa", "rockets", "arty_fallback", "quota",
-              "company", "waves")
+AXIS_ORDER = ("variant", "td", "spaa", "rockets", "arty_fallback", "industrial", "waves")
 
 
 def variant_block_count(registry, variant_id, game, default):
@@ -444,18 +453,19 @@ def axis_values(registry, family_id, axis, form):
         # A4: a heavy division keeps an explicit non-heavy artillery company where no heavy
         # regimental equivalent exists. Only a family that declares one carries the axis.
         return [False, True] if fam.get("artillery_fallback") else [False]
-    if axis == "quota":
-        if not fam.get("medium_support_unit"):
-            return [0]
-        return [q["count"] for q in comp["medium_support_quota"]]
-    if axis == "company":
-        # A19: the heavy company is mechanized-only, so the motorized plane does not carry the
-        # axis at all - that is half the codes this family would otherwise spend on it.
-        if not fam.get("heavy_divisional_company"):
-            return [False]
-        if comp.get("heavy_company", {}).get("mechanized_only") and form != "mechanized":
-            return [False]
-        return [False, True]
+    if axis == "industrial":
+        # ONE axis for the industrial state, because the two halves never cross: the heavy
+        # company exists only at the top band (A19). A 3 x 2 rectangle would spend a third of
+        # its points on combinations the ladder can never write. Each value is a (support
+        # quota, mounts the company) pair.
+        bands = ([q["count"] for q in comp["medium_support_quota"]]
+                 if fam.get("medium_support_unit") else [0])
+        values = [(band, False) for band in bands]
+        gate = comp.get("heavy_company", {})
+        if (fam.get("heavy_divisional_company")
+                and not (gate.get("mechanized_only") and form != "mechanized")):
+            values.append((bands[-1], True))
+        return values
     if axis == "waves":
         if not fam.get("waves"):
             return [False]
@@ -495,9 +505,10 @@ def enumerate_family(family_id, registry, game=None):
         for combo in itertools.product(*[range(len(a[1])) for a in plane.axes]):
             digits = dict(zip(names, combo))
             chosen = dict((name, plane.axes[i][1][combo[i]]) for i, name in enumerate(names))
+            quota, company = chosen["industrial"]
             facts = Facts(family_id, plane.form, chosen["variant"], chosen["td"],
-                          chosen["spaa"], chosen["rockets"], chosen["quota"],
-                          chosen["waves"], chosen["company"],
+                          chosen["spaa"], chosen["rockets"], quota,
+                          chosen["waves"], company,
                           arty_fallback=chosen["arty_fallback"])
             try:
                 sel = resolve(family_id, facts, registry, game)

@@ -290,20 +290,21 @@ def _axis_terms(registry, family_id, axis, value):
         return [("yes", R.wins_trigger_name(family_id, chain, value))]
     if axis == "rockets":
         return [("yes", registry.candidate("mechanized_rockets")["eligibility"])]
-    if axis == "quota":
-        return R.quota_conditions(registry, value)
+    if axis == "industrial":
+        quota, company = value
+        terms = []
+        fam = registry.families[family_id]
+        if fam.get("medium_support_unit"):
+            terms.extend(R.quota_conditions(registry, quota))
+        if company:
+            gate = registry.composition.get("heavy_company", {})
+            terms.append(("yes", registry.candidate("heavy_divisional_company")["eligibility"]))
+            if gate.get("trigger"):
+                terms.append(("no", gate["trigger"]))
+        return terms
     if axis == "arty_fallback":
         fam = registry.families[family_id]
         return [("yes", registry.eligibility_of(fam["artillery_fallback"][0]))]
-    if axis == "company":
-        # A19: the latch opens the path, the factory cut decides when. Both terms are on the
-        # digit, so the ladder itself never writes a company code below the threshold - the
-        # resolver's matching guard is the second lock, not the only one.
-        terms = [("yes", registry.candidate("heavy_divisional_company")["eligibility"])]
-        gate = registry.composition.get("heavy_company", {})
-        if gate.get("trigger"):
-            terms.append(("no", gate["trigger"]))
-        return terms
     if axis == "waves":
         return [("yes", "WA_AI_TEMPLATES_use_armoured_waves_templates")]
     raise ValueError("unknown axis %s" % axis)

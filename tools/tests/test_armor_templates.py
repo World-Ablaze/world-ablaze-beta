@@ -372,6 +372,68 @@ class ShippedLadder(unittest.TestCase):
             self.assertNotEqual(derived, original)
 
 
+class IndustrialAxis(unittest.TestCase):
+    """One axis for the industrial state. The quota and the heavy company never cross - the
+    company exists only at the top band - so a 3 x 2 rectangle would spend a third of its points
+    on combinations the ladder can never write."""
+
+    def test_four_states_on_the_mechanized_plane(self):
+        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "industrial", "mechanized"),
+                         [(6, False), (3, False), (0, False), (0, True)])
+
+    def test_three_on_the_motorized_plane(self):
+        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "industrial", "motorized"),
+                         [(6, False), (3, False), (0, False)])
+
+    def test_one_for_a_family_without_quota_or_company(self):
+        self.assertEqual(resolve.axis_values(REGISTRY, "heavy", "industrial", "mechanized"),
+                         [(0, False)])
+
+    def test_the_company_state_is_the_only_one_that_mounts_it(self):
+        for quota, company in resolve.axis_values(REGISTRY, "medium", "industrial", "mechanized"):
+            s = sel("medium", quota=quota, heavy_company=company)
+            self.assertEqual("heavy_armor_company_divisional" in s.support, company,
+                             "(%s, %s)" % (quota, company))
+
+    def test_the_emitted_digit_resolves_every_country_state_to_its_index(self):
+        """The four `if` blocks are independent, so the LAST match wins. A reorder would break
+        the override silently, which is what this walks."""
+        import re
+        text = (REPO / "common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt").read_text(
+            encoding="utf-8")
+        start = text.index("# industrial")
+        block = text[start:text.index("# waves", start)]
+        cases = re.findall(
+            r"limit = \{(.*?)\}\s*set_temp_variable = \{ _wa_ag_digit = (\d+) \}",
+            block, re.S)
+        FIRST = "WA_AI_TEMPLATES_is_below_medium_support_first_cut"
+        SECOND = "WA_AI_TEMPLATES_is_below_medium_support_second_cut"
+        LATCH = "WA_AI_TEMPLATES_use_heavy_armor_support_templates"
+        CUT = "WA_AI_TEMPLATES_is_below_heavy_company_cut"
+
+        def digit(state):
+            out = 0
+            for body, index in cases:
+                ok = True
+                for line in (l.strip() for l in body.splitlines() if l.strip()):
+                    negated = line.startswith("NOT = {")
+                    name = re.search(r"([A-Za-z_][A-Za-z_0-9]*) = yes", line).group(1)
+                    if state[name] == negated:
+                        ok = False
+                        break
+                if ok:
+                    out = int(index)
+            return out
+
+        # 200 factories, 400 factories, 600 without the latch, 600 with it
+        self.assertEqual(digit({FIRST: True, SECOND: True, LATCH: False, CUT: True}), 0)
+        self.assertEqual(digit({FIRST: False, SECOND: True, LATCH: False, CUT: True}), 1)
+        self.assertEqual(digit({FIRST: False, SECOND: False, LATCH: False, CUT: False}), 2)
+        self.assertEqual(digit({FIRST: False, SECOND: False, LATCH: True, CUT: False}), 3)
+        # the latch alone, below the threshold, must NOT reach the company state
+        self.assertEqual(digit({FIRST: False, SECOND: True, LATCH: True, CUT: True}), 1)
+
+
 class HeavyCompanyGate(unittest.TestCase):
     """A19: the heavy tank company in divisional support opens at 500 military factories and
     only on a mechanized composition. It costs 12 heavy chassis per division on top of the line,
@@ -392,10 +454,11 @@ class HeavyCompanyGate(unittest.TestCase):
         s = sel("medium", quota=0, heavy_company=True, mobile_infantry="motorized")
         self.assertNotIn(self.UNIT, s.support)
 
-    def test_the_motorized_plane_does_not_carry_the_axis(self):
-        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "company", "motorized"), [False])
-        self.assertEqual(resolve.axis_values(REGISTRY, "medium", "company", "mechanized"),
-                         [False, True])
+    def test_the_motorized_plane_does_not_carry_the_company_state(self):
+        mot = resolve.axis_values(REGISTRY, "medium", "industrial", "motorized")
+        mec = resolve.axis_values(REGISTRY, "medium", "industrial", "mechanized")
+        self.assertFalse(any(company for _quota, company in mot))
+        self.assertTrue(any(company for _quota, company in mec))
 
     def test_the_ladder_digit_carries_both_terms(self):
         text = (REPO / "common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt").read_text(
