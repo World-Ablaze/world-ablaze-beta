@@ -173,6 +173,90 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### impassable-rail-guard — SHIPPED-UNTESTED (2026-09-19)
+- Owner order 2026-09-19 (game log pasted: `[1941.04.14] memfile:2: build_railway: invalid or
+  non-land province 12099`, "investigate this error", then "resolve 6 + implement after").
+  Intended behaviour: the AI never queues, funds or records a railway on a province the engine
+  refuses to build on.
+- Symptom, MEASURED: province 12099 is in state 552 Western Desert (`impassable = yes`). WA had no
+  representation of impassability anywhere - `tools/gen/map_generators/province_terrain.py` maps
+  every `*_impassable` terrain name to code 8, which already means `mountain` - so
+  `WA_AI_PATHFIND_PROV_get_neighbors` (control filter only) routed the land-war rail pass through
+  it and the type-13 executor emitted the refused call. The route entered from state 456 Upper
+  Egypt; the NA corridor nodes are in 452/447, so this was the land-war pass, not the corridor.
+- The damage was not the log line, MEASURED: the same `meta_effect` wrote
+  `WA_AI_PC_railway_connections` and `WA_AI_PC_railway_connection_level_` unconditionally, and
+  **nothing anywhere decrements that mirror** - no purge, no sweep, the peace cancel clears queued
+  projects only. DERIVED residual per hop, at war cadence 6w / target level 5 / 800 CP per
+  hop-level: t0 L1, +6w L2, +12w L3, +18w L4, +24w L5 = ~4000 CP spent, nothing built, five
+  type-13 queue slots consumed; and the rail g-cost divides by `level + 1`
+  (`WA_AI_pathfinding_effects.txt`), so from t0+24w the phantom hop is the cheapest class of step
+  on the map and attracts every later route. Not bounded, not self-healing.
+- Scope, MEASURED: 25 impassable states, 227 provinces (UK/Egypt, ITA/FRA Sahara, SOV Siberia,
+  CHI/JAP Gobi, BRA Amazon, AST, SAU, DEN Greenland). The state flag and the terrain name disagree
+  on 63 provinces - 52 impassable-state provinces carry a normal terrain name, 11 `*_impassable`
+  provinces sit in a passable state - so the set is keyed on the STATE trigger `impassable`
+  (engine, STATE scope, 1.19.2 triggers doc), never on the name.
+- Prior art, and why this is not a rival fix: `wa-lessons-learned` already prescribed it on
+  2026-08-27 - "(ii) build multi-hop rail EDGE BY EDGE with `can_build_railway` guarding each
+  edge". My first design tested impassability at the emission site; the engine own words here are
+  "invalid or **non-land** province", one refusal reason among several, so that test would have
+  left every other reason producing a phantom record. **Their rule is used verbatim.** What this
+  subject adds is the entry own open item ("Wider caveat, unaudited: WA script-side pathfinding
+  runs on the same graph ... whether any consumer cares is not established") - it does, and the
+  runtime PC railway pass is the consumer. Caveat closed in the log.
+- Change:
+  - `WA_AI_MAP_set_province_impassable` (`WA_AI_MAP_effects.txt`): `every_state = { limit = {
+    impassable = yes } }` x the existing `WA_AI_MAP_state_province_ids@THIS` arrays gives
+    `global.WA_AI_MAP_province_impassable^<prov> = 1`. Wired into BOTH `WA_AI_MAP_startup` and
+    `WA_AI_MAP_reload_all_data`. Runtime, not generated: the engine trigger IS the rule, so there
+    is no file that can drift from `history/states/`. Header names
+    `tools/gen/gen_rail_corridors.py parse_impassable_states` as the offline twin.
+  - `WA_AI_PATHFIND_PROV_get_neighbors` (`WA_AI_pathfinding_effects.txt`): an impassable neighbour
+    fails the filter. Unconditional across `_pathfind_prov_type` - land units cannot enter these
+    states either. MEASURED: every live caller sets type 2 (rail), so today blast radius is
+    railway only; types 0/1 have no caller.
+  - `WA_AI_PC_start_railway_project` (`railway_helpers.txt`): `_rail_impassable_` read straight
+    after the `_railway_family_` latch is zeroed and ANDed into the admission gate, so the segment
+    is never queued, the family temp cannot leak, and `WA_TLM_r103_corridor_blocked_n` (a
+    CONTROLLER-refusal counter) is not retargeted by a geography refusal.
+  - `WA_AI_PC_add_finished_building_by_id` (`CONSTRUCTION_PRIORITY_core.txt`): `can_build_railway
+    = { path = { x y } }` asked ONCE at the top of the effect into `_pc_rail_refused_`; it gates
+    both the `pc_built_n` / `pc_built_by_type` counters and the type-13 branch. The PC railway
+    mirror is stamped only on the success branch. Idiom copied from `WA_AI_RAIL_CORRIDOR_build_1`.
+  - Telemetry: a refused hop books `WA_TLM_pc_refused_n` (the ledger failure half) instead of
+    counting as built. `documentation/WA_TLM_TELEMETRY_SYSTEM.md` updated - the `pc_built_n` row
+    also had a stale "1..16" against a code gate of `< 18`.
+  - `tools/check_ai_layers.py`: `is_strategic_chromium_exporter` added to
+    `NAME_COLLISION_EXCEPTIONS`. Pure omission - oil/rubber/tungsten were listed 2026-08-29 with
+    the identical "capability composes identity; readers generated" rationale, chromium arrived
+    2026-09-10 (`a28bced1d9`) and nobody extended the list. Its 14 readers are in the same
+    generated `common/decisions/_resource_prospecting.txt`. Unblocks the commit gate.
+- No save migration, owner ruling 2026-09-19 ("we are on a dev branch, we don't care about past
+  games"). Consequence, stated so nobody re-derives it: `WA_AI_MAP_startup` self-skips on
+  `WA_AI_MAP_initialized` and `on_startup` does not re-fire on load, so on a save started before
+  this commit the impassable set is empty and the pathfinder filter is asleep - only the
+  `can_build_railway` guard (which needs no data) protects it, and the phantom levels already in
+  that save are never cleared. Start a new campaign to test.
+- Not touched, deliberately: the generated adjacency still CONTAINS impassable provinces - it is
+  the input of the offline landmass flood fill (`tools/gen/map_generators/landmass.py`, MEASURED
+  to parse that file), and pruning it could split a landmass. The AIFC terrain score still reads a
+  `desert_impassable` province as `mountain` (-50) rather than its base terrain; separate subject
+  if it ever matters.
+- Regression risk: LOW on route availability - MEASURED zero of the 1184 lines in
+  `map/railways.txt` and zero of the 4219 rail-bearing provinces in the generated
+  railway-connection data touch an impassable province, so no existing railway is reachable only
+  through one; and all 15 pathfinder call sites already branch on `pathfind_prov_success_`, so an
+  empty path lands on an exercised branch. DECLARED: `pc_built_n` falls and `pc_refused_n` rises
+  across this commit, both toward the truth - do not score the drop as a regression.
+- Verification (console, FRESH exe - a `reloadfile` poisons country triggers and measures
+  nothing): (1) new game, `logs/game.log` contains `WA_AI_MAP: impassable provinces marked = 227`;
+  (2) run to the first railway passes with an AI that rails near a desert (UK, ITA, SOV) -
+  `game.log` contains ZERO `build_railway: invalid or non-land province` lines; (3) any
+  `Railway REFUSED by can_build_railway` line is the guard working, not a failure.
+- Closed when: the owner pastes a game.log showing the 227 line and no
+  `invalid or non-land province` line over at least one railway pass.
+
 ### light-medium-conversion — SHIPPED-UNTESTED (2026-09-19)
 - Owner order 2026-09-19 ("crée un effet monthly qui, si un pays a des divisions de chars léger et
   focus sur medium et qu'on est soit en 1942, soit si le focus national prepare barbarossa est fait

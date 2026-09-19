@@ -43,6 +43,9 @@ WA_AI_MAP_startup = {
 		# Initialize state province mappings
 		WA_AI_MAP_set_state_province_ids = yes
 
+		# Initialize the impassable-province set (reads the state arrays set just above)
+		WA_AI_MAP_set_province_impassable = yes
+
 		# Initialize railway connections
 		WA_AI_MAP_set_province_railway_connections = yes
 
@@ -59,6 +62,26 @@ WA_AI_MAP_startup = {
 }
 
 ###
+
+# [impassable-rail-guard] Provinces the engine refuses to build railways on because their STATE
+# carries impassable = yes. Protects: the rail A* from pathing through them (WA_AI_PATHFIND_PROV_get_neighbors).
+# Assumes: state impassability is static history/states data and never changes at runtime.
+# Fact is gone when: any script toggles a state's impassable flag, or this global reads 0 for a
+# province of state 552 (Western Desert). Offline twin: tools/gen/gen_rail_corridors.py
+# parse_impassable_states derives the same set for the corridor generator - the two must agree.
+# The terrain dataset cannot answer this: *_impassable terrain names and the state flag disagree
+# on 63 provinces, and code 8 already means mountain.
+WA_AI_MAP_set_province_impassable = {
+	set_temp_variable = { _imp_count_ = 0 }
+	every_state = {
+		limit = { impassable = yes }
+		for_each_loop = { array = global.WA_AI_MAP_state_province_ids@THIS value = _imp_prov_
+			set_variable = { global.WA_AI_MAP_province_impassable^_imp_prov_ = 1 }
+			add_to_temp_variable = { _imp_count_ = 1 }
+		}
+	}
+	log = "WA_AI_MAP: impassable provinces marked = [?_imp_count_] (expected 227 on the shipped map)"
+}
 
 WA_AI_MAP_get_province_neighbors = { # _get_province_id_neighbors, _get_province_neighbors_TERRAIN_TYPES = LAND, province_neighbors_
 
@@ -160,6 +183,9 @@ WA_AI_MAP_reload_all_data = {
 
 	log = "WA_AI_MAP: Loading state province mappings..."
 	WA_AI_MAP_set_state_province_ids = yes
+
+	log = "WA_AI_MAP: Loading impassable provinces..."
+	WA_AI_MAP_set_province_impassable = yes
 
 	log = "WA_AI_MAP: Loading railway connections..."
 	WA_AI_MAP_set_province_railway_connections = yes
