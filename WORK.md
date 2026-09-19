@@ -266,10 +266,17 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   would also be unsound twice over - `WA_AI_TECHTREE_has_<cap>` deliberately carries no membership
   term because ~40 sites grant a foreign tree's rung, and the chain winner additionally depends on
   stock and on the chromium shortage (A1), which no static analysis bounds.
-- Harness owed (rule: `WA_AI_*` scripted effect + a `WA_TEST_*` harness exists): re-point
-  `WA_TEST_templates` / `WA_TEST_armor_budget` at the generated codes, then the owner runs them as
-  a medium-armour major. PASS = the printed medium value sits inside 6000-6863 (or 8000-8863 with
-  the modern latch), and the fielded division has 15 battalions, or 12 with the doctrine.
+- Harnesses RE-POINTED 2026-09-19, owner run still owed. A computed value cannot be read back -
+  a flag value does not load into a variable, so decoding it would take one comparison per code
+  (2064 for medium). Both harnesses therefore print the AXES the ladder reads instead of the
+  number: `WA_TEST_TMPL_armoured_waves` reports doctrine / modern latch / mechanized plane / heavy
+  company plus the five medium chain winners, and `WA_TEST_ABG_report`'s band line reports the
+  ladder's chassis decision. Both still read only `use_*` and generated `_wins_` triggers, never a
+  calculator temp - the independent walk of harness-contract v1 holds. The "a value no template
+  answers" check moved to `tools/check_templates.py`, which re-derives the reachable values from
+  the shipped ladder and diffs them against the emitted templates.
+  PASS for the owner run = `doc=1` with `med_set=1`, the axes line matching what
+  `imgui show ai_templates` shows the country fielding, and 15 battalions (12 with the doctrine).
 - Verification (campaign): one save where a doctrine-holding AI fields a 12-battalion armour
   division at 30 width, and a non-doctrine AI fields 15 at 30.
 - Closed when: `python tools/gen/gen_ai_armor_templates.py --check` exit 0,
