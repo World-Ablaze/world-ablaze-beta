@@ -37,13 +37,21 @@ scripted_gui = {
 
 		effects = {
 			force_refresh_button_click = {
+				# [refineries] player_context resolves to the selected country, so this button is
+				# reachable on an AI one under `observe`. recalculate_* only writes panel variables
+				# and is safe anywhere. manage_* is the PLAYER refinery controller and its
+				# lack-of-resources loop trips on resource@iron < 0 whatever the target holds, so one
+				# click would mass-close an AI's mills against its own controller. Keep the gate.
 				recalculate_steel_mills = yes
 				recalculate_alu_mills = yes
 				recalculate_synth = yes
-				manage_steel_mills = yes
-				manage_alu_mills = yes
-				manage_synth = yes
-				calculate_resource_deficite = yes
+				if = {
+					limit = { is_ai = no }
+					manage_steel_mills = yes
+					manage_alu_mills = yes
+					manage_synth = yes
+					calculate_resource_deficite = yes
+				}
 			}
 		}
 	}
@@ -60,6 +68,13 @@ scripted_gui = {
 		}
 
 
+		triggers = {
+			# [refineries] The target is a PLAYER setpoint; an AI stores none (its refineries move
+			# through _economy_fatigue.txt on resource@ thresholds, and recalculate_* mirrors the
+			# column onto reality every week). Greying the buttons out under `observe` says so.
+			factories_add_1x_click_enabled = { is_ai = no }
+			factories_sub_1x_click_enabled = { is_ai = no }
+		}
 		effects = {
 			factories_sub_1x_click = {
 				subtract_from_variable = {
@@ -130,6 +145,13 @@ scripted_gui = {
 		}
 
 
+		triggers = {
+			# [refineries] The target is a PLAYER setpoint; an AI stores none (its refineries move
+			# through _economy_fatigue.txt on resource@ thresholds, and recalculate_* mirrors the
+			# column onto reality every week). Greying the buttons out under `observe` says so.
+			factories_add_1x_click_enabled = { is_ai = no }
+			factories_sub_1x_click_enabled = { is_ai = no }
+		}
 		effects = {
 			factories_sub_1x_click = {
 				subtract_from_variable = {
@@ -196,6 +218,11 @@ scripted_gui = {
 		window_name = "synthetic_count_container"
 		parent_window_name = refinery_window_containerin
 		triggers = {
+			# [refineries] The target is a PLAYER setpoint; an AI stores none (its refineries move
+			# through _economy_fatigue.txt on resource@ thresholds, and recalculate_* mirrors the
+			# column onto reality every week). Greying the buttons out under `observe` says so.
+			factories_add_1x_click_enabled = { is_ai = no }
+			factories_sub_1x_click_enabled = { is_ai = no }
 		}
 
 

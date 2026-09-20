@@ -3371,15 +3371,27 @@ on_actions = {
 	}
 
 	on_weekly = {
+		# [refineries] Split on purpose. The DISPLAY refresh runs for every country so the panel
+		# reads true for an AI one under `observe`. The CONTROLLER stays is_ai = no: manage_* closes
+		# mills at resource@iron < 0 and the AI's own controller (_economy_fatigue.txt *_shortage_ai)
+		# at < -26, so both armed on one country oscillate. This gate is obsolete only if those
+		# missions stop owning AI refineries - until then, never merge the two blocks.
+		effect = {
+			if = {
+				limit = {
+					exists = yes
+				}
+				recalculate_steel_mills = yes
+				recalculate_alu_mills = yes
+				recalculate_synth = yes
+			}
+		}
 		#player resource managment
 		effect = {
 			if = {
 				limit = {
 					is_ai = no
 				}
-				recalculate_steel_mills = yes
-				recalculate_alu_mills = yes
-				recalculate_synth = yes
 				manage_steel_mills = yes
 				manage_alu_mills = yes
 				manage_synth = yes
