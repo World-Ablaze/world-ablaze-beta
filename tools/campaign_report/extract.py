@@ -715,17 +715,28 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
     if "resources" in raw:
         flat, uses = sg._parse_resources(raw["resources"])
         available = uses[0] if uses else {}
-        deficit = uses[2] if len(uses) > 2 else None
+        # to_use[2] is what the INDUSTRY ASKS FOR, stored negative - not demand left unserved. The
+        # unserved part is `effective` when it is negative; `effective` positive is the green surplus
+        # the game shows. Measured 1942.9.1 as USA: to_use[2] steel -1204 while the top bar reads a
+        # green +1522, and -to_use[2] correlates 0.89-0.99 with factory count across the seven majors
+        # against ~0.00 with the shortfall. If a chart ever labels this "unmet demand" again, that is
+        # the mistake coming back.
+        demand = uses[2] if len(uses) > 2 else None
         # Only the ledger blocks name resources; sibling depth-1 blocks (fuel, lend-lease, convoy
         # counters) carry scalars that are not resources and must not become ledger rows.
         ledger = ("produced", "transfer_overlord_subject", "imported", "to_export", "exported")
-        keys = set().union(*(set(flat.get(block, {})) for block in ledger), set(available), set(deficit or {}))
+        keys = set().union(*(set(flat.get(block, {})) for block in ledger), set(available), set(demand or {}))
+        # A ledger block the save does not write means the country has none of that flow, exactly as
+        # a resource missing INSIDE a written block does: both read 0.0. Reading the absent block as
+        # unknown broke the Imports and Exports lines into fragments (SOV exported: 123 of 155 saves)
+        # and silenced `residual`, the parse check, on 45% of observations. If those lines fragment
+        # again for a country that simply trades nothing, this rule has been reverted.
         for resource in sorted(keys):
-            row = {key: flat.get(block, {}).get(resource, 0) if block in flat else None
+            row = {key: flat.get(block, {}).get(resource, 0.0)
                    for key, block in (("produced", "produced"), ("transfer", "transfer_overlord_subject"), ("imported", "imported"), ("to_export", "to_export"), ("exported", "exported"))}
             row.update(available=available.get(resource, 0) if uses else None,
-                       deficit=deficit.get(resource, 0) if deficit is not None else None)
-            row["effective"] = row["available"] + row["deficit"] if row["available"] is not None and row["deficit"] is not None else None
+                       demand=demand.get(resource, 0) if demand is not None else None)
+            row["effective"] = row["available"] + row["demand"] if row["available"] is not None and row["demand"] is not None else None
             parts = [row[k] for k in ("produced", "transfer", "imported", "available", "to_export")]
             row["residual"] = parts[0] + parts[1] + parts[2] - parts[3] - parts[4] if all(v is not None for v in parts) else None
             result["resources"][resource] = row

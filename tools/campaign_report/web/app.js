@@ -52,7 +52,12 @@ async function boot(text) {
   const dateText = value => dateFormatter.format(new Date(typeof value === "number" ? value : time(value)));
   const shortDate = value => monthFormatter.format(new Date(value));
   const fmt = (n, digits = 0) => {if(!finite(n))return "—";if(!numberFormatters.has(digits))numberFormatters.set(digits,new Intl.NumberFormat("en-GB",{maximumFractionDigits:digits}));return numberFormatters.get(digits).format(n);};
-  function compact(n) { if (!finite(n)) return "—"; const a = Math.abs(n); return a >= 1e6 ? `${fmt(n/1e6,1)} M` : a >= 1e3 ? `${fmt(n/1e3,1)} k` : fmt(n,Math.abs(n)<10 ? 1 : 0); }
+  // A magnitude that rounds away entirely keeps no sign: an axis tick of -1e-13 read "-0".
+  function compact(n) { if (!finite(n)) return "—"; const a = Math.abs(n); const out = a >= 1e6 ? `${fmt(n/1e6,1)} M` : a >= 1e3 ? `${fmt(n/1e3,1)} k` : fmt(n,a<10 ? 1 : 0); return /^-0([.,]0+)?( [Mk])?$/.test(out) ? out.slice(1) : out; }
+  // Smallest 1 / 2 / 2.5 / 5 x 10^n at or above `raw`: an axis step a reader can add up in their head.
+  // The tolerance is relative: an absolute one swamps the comparison on a range made of float noise
+  // (a residual series spanning 4e-13 picked a step ten times too small and drew 40 gridlines).
+  function niceStep(raw) { if (!(raw > 0)) return 1; const mag = Math.pow(10,Math.floor(Math.log10(raw))); return (([1,2,2.5,5,10].find(m => raw <= m*mag*(1+1e-9)) || 10)) * mag; }
   const S = {tags:new Set(D.default_tags.filter(t => allTags.includes(t))),from:0,to:snapshots.length-1,at:snapshots.length-1,tab:"overview",force:"land",scope:"controlled",resource:"steel",equipment:"tanks",families:new Set(),unitTypes:new Set(),percent:false,indexed:false,hidden:new Set(),convoy:"month"};
   const tabs = {overview:["Overview","Compare capabilities, follow their evolution, and identify pressures to investigate."],forces:["Forces","Compare force sizes and inspect the composition behind the totals."],industry:["Industry & resources","Track installed industry and the balance of resources."],equipment:["Equipment","Stockpiles, deployed equipment, recorded requests and assigned factories — army, tanks and air."],wars:["Wars & casualties","Follow casualties in the context of the wars included in each observation."],country:["Country status","Stability, war support, command power, and available experience."]};
   const tags = () => allTags.filter(t => S.tags.has(t));
@@ -111,14 +116,32 @@ async function boot(text) {
     const values=shown.flatMap(s=>s.points.map(p=>p.value)).filter(finite);
     if(!values.length) {card.insertAdjacentHTML("beforeend",`<div class="chart-empty">${indexWarnings.length?"Cannot rebase: initial value is zero or missing.":"No verified data for this selection."}</div>`);if(options.note)card.insertAdjacentHTML("beforeend",`<div class="chart-note">${esc(options.note)}</div>`);return card;}
     const w=720,h=252,pad={l:57,r:15,t:17,b:36},plotW=w-pad.l-pad.r,plotH=h-pad.t-pad.b;
-    let min=Math.min(0,...values),max=options.max ?? Math.max(...values);
-    if(max===min)max=min+1;else if(!options.max)max+=Math.abs(max-min)*.08;
-    // Small integer counts (a handful of vehicles) get integer gridlines, never a 2.2 tick.
-    if(!S.indexed&&values.every(Number.isInteger)&&max-min<=12){min=Math.floor(min);max=min+Math.ceil((max-min)/4)*4;}
+    // Zero stays on the axis, and headroom is added only on the side the data actually reaches: a
+    // series that never crosses zero must never get an axis bound of the opposite sign. Padding the
+    // top with 8% of the whole range gave the all-negative industry-demand charts a +259 maximum no
+    // point could reach; if a chart shows a positive bound again, this asymmetry has come back.
+    const dataMin=Math.min(...values),dataMax=Math.max(...values);
+    let min=Math.min(0,dataMin),max=options.max ?? Math.max(0,dataMax);
+    if(max===min)max=min+1;
+    else if(!options.max){const headroom=Math.abs(max-min)*.08;if(dataMax>0)max+=headroom;if(dataMin<0)min-=headroom;}
+    // Small integer counts (a handful of vehicles) get integer gridlines, never a 2.2 tick. The
+    // span is rounded up to a multiple of 4 away from zero, so this branch cannot reintroduce the
+    // opposite-sign bound either (a deficit series of 0 and -1 scaled to -2..+2 before).
+    const smallIntegers=!S.indexed&&values.every(Number.isInteger)&&max-min<=12;
+    if(smallIntegers&&dataMax<=0&&dataMin<0){max=0;min=-Math.ceil((max-min)/4)*4;}
+    else if(smallIntegers){min=Math.floor(min);max=min+Math.ceil((max-min)/4)*4;}
     const start=times[S.from],end=times[S.to],span=end-start || 86400000;
     const x=v=>pad.l+(end===start?.5:(v-start)/span)*plotW,y=v=>pad.t+plotH-(v-min)/(max-min)*plotH;
     let svg=`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(title)} : ${esc(unit)}"><title>${esc(title)}</title>`;
-    for(let i=0;i<=4;i++){const v=min+(max-min)*i/4;svg+=`<line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(v)}" y2="${y(v)}"/><text text-anchor="end" x="${pad.l-10}" y="${y(v)+3}">${esc(compact(v))}</text>`;}
+    // Gridlines land on round multiples INSIDE the range; the range is never snapped outwards, so
+    // the plot stays as tight as before and the top and bottom edges simply carry no label.
+    const step=smallIntegers?(max-min)/4:niceStep((max-min)/5),ticks=[];
+    // `|| 0` folds the negative zero Math.ceil returns just below the origin: Intl prints it "-0".
+    // The count is capped so no degenerate range can fill the card with gridlines; under two, or
+    // over the cap, the axis falls back to the plain four-interval split.
+    for(let k=Math.ceil(min/step-1e-9);k*step<=max+Math.abs(step)*1e-9&&ticks.length<=10;k++)ticks.push(k*step || 0);
+    if(ticks.length<2||ticks.length>10){ticks.length=0;for(let i=0;i<=4;i++)ticks.push(min+(max-min)*i/4);}
+    for(const v of ticks){svg+=`<line class="grid-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(v)}" y2="${y(v)}"/><text text-anchor="end" x="${pad.l-10}" y="${y(v)+3}">${esc(compact(v))}</text>`;}
     if(min<0)svg+=`<line class="zero-line" x1="${pad.l}" x2="${w-pad.r}" y1="${y(0)}" y2="${y(0)}"/>`;
     const tickCount=end===start?1:4;
     for(let i=0;i<tickCount;i++){const t=start+(end-start)*(tickCount===1?.5:i/(tickCount-1));svg+=`<text text-anchor="${i===0?"start":i===tickCount-1?"end":"middle"}" x="${x(t)}" y="${h-9}">${esc(shortDate(t))}</text>`;}
@@ -184,7 +207,7 @@ async function boot(text) {
     })])));
     el.append(heading("Trends at a glance","One measure per chart · click a point to move the inspection date"));
     const charts=grid();appendMetric(charts,"divisions");appendMetric(charts,"ships");appendMetric(charts,"aircraft");
-    el.append(heading("Resource balance","Effective balance at the inspection date · net + unmet demand, what resource@X reads · negative = shortage"));resourceHeatmap(el);
+    el.append(heading("Resource balance","Available supply minus industry demand at the inspection date · what resource@X reads · negative = shortfall, positive = the surplus shown in green"));resourceHeatmap(el);
   }
   function controlBar() {const el=document.createElement("div");el.className="inline-controls";$("content").append(el);return el;}
   function segment(bar,choices,currentValue,change){const el=document.createElement("div");el.className="segmented";choices.forEach(([value,label])=>{const b=document.createElement("button");b.textContent=label;b.className=value===currentValue?"selected":"";b.onclick=()=>{change(value);render();};el.append(b);});bar.append(el);}
@@ -218,7 +241,7 @@ async function boot(text) {
   }
   function resourceKeys(){return [...new Set(tags().flatMap(t=>Object.keys(current(t)?.resources || {})))].sort((a,b)=>(resourceNames[a]||a).localeCompare(resourceNames[b]||b,"en"));}
   function resourceHeatmap(parent){const keys=resourceKeys();if(!keys.length){parent.append(notice("No resource ledger at this date."));return;}
-    const panel=tablePanel(["Country",...keys.map(k=>resourceNames[k]||k)],tags().map(tag=>[countryCell(tag),...keys.map(key=>{const v=current(tag)?.resources?.[key]?.effective;const cls=!finite(v)?"heat-missing":v<0?"heat-issue":"heat-clear";return `<button data-resource="${esc(key)}" class="heat-cell ${cls}" ${v<0?`style="background:rgba(186,98,74,${Math.min(.5,.09+Math.log10(1+Math.abs(v))*.07)})"`:""} title="${esc(resourceNames[key]||key)} · shortfall · ${fmt(v,1)}">${fmt(v,1)}</button>`;})]));
+    const panel=tablePanel(["Country",...keys.map(k=>resourceNames[k]||k)],tags().map(tag=>[countryCell(tag),...keys.map(key=>{const v=current(tag)?.resources?.[key]?.effective;const cls=!finite(v)?"heat-missing":v<0?"heat-issue":"heat-clear";return `<button data-resource="${esc(key)}" class="heat-cell ${cls}" ${v<0?`style="background:rgba(186,98,74,${Math.min(.5,.09+Math.log10(1+Math.abs(v))*.07)})"`:""} title="${esc(resourceNames[key]||key)} · ${!finite(v)?"not recorded":v<0?"shortfall":"surplus"} · ${fmt(v,1)}">${fmt(v,1)}</button>`;})]));
     panel.querySelectorAll("[data-resource]").forEach(b=>b.onclick=()=>{S.resource=b.dataset.resource;S.tab="industry";render();});parent.append(panel);
   }
   function refineryBuildings(c){return finite(c?.metrics?.civilian_factories)?c?.buildings?.[S.scope]:null;}
@@ -232,13 +255,16 @@ async function boot(text) {
     const refineryMeta={unit:"levels",evidence:"DERIVED",source:"states/*/buildings/*refinery*/level",note:"Five building definitions, with active and inactive levels counted separately."};
     charts.append(chart("Inactive refineries",countriesSeries(c=>{const b=refineryBuildings(c);return b?Object.entries(b).filter(([k])=>k.includes("refinery")&&k.endsWith("_inactive")).reduce((s,[,v])=>s+v,0):null;},refineryMeta),"levels"));
     el.append(heading("Refineries: active / inactive",dateText(times[S.at])));const refs=grid();tags().forEach(t=>refineryCard(refs,t));
-    el.append(heading("Resources","Effective balance (net + unmet demand) · negative = shortage · click a cell to select a resource"));resourceHeatmap(el);
+    el.append(heading("Resources","Available supply minus industry demand · negative = shortfall, positive = surplus · click a cell to select a resource"));resourceHeatmap(el);
     const keys=resourceKeys();if(!keys.length)return;
     if(!keys.includes(S.resource))S.resource=keys[0];
     const controls=controlBar(),label=document.createElement("label");label.innerHTML=`Resource <select aria-label="Resource">${keys.map(k=>`<option value="${esc(k)}" ${S.resource===k?"selected":""}>${esc(resourceNames[k]||k)}</option>`).join("")}</select>`;label.querySelector("select").onchange=e=>{S.resource=e.target.value;render();};controls.append(label);
-    const rg=grid();for(const [key,title] of [["produced","Domestic production"],["effective","Effective balance"],["deficit","Unmet demand"],["imported","Imports"],["exported","Actual exports"],["available","Available"]]){
-      const source=key==="effective"?"resources/to_use[0] + resources/to_use[2]":`resources/${key==="deficit"?"to_use[2]":key==="available"?"to_use[0]":key}`;
-      rg.append(chart(`${resourceNames[S.resource]||S.resource} · ${title}`,countriesSeries(c=>c?.resources?.[S.resource]?.[key] ?? null,{unit:"units",evidence:key==="effective"?"DERIVED":"MEASURED",source}),"units"));
+    // `demand` is what the industry asks for, stored negative by the save; it is plotted negated so
+    // the line rises as the war economy grows. It is NOT demand left unserved - that is `effective`
+    // when negative, and a positive `effective` is the green surplus the game's top bar shows.
+    const rg=grid();for(const [key,title,note] of [["produced","Domestic production"],["effective","Balance",'Supply minus industry demand: positive is the surplus the game shows in green, negative is the shortfall it shows in red. This is what `resource@X` reads in script.'],["demand","Industry demand","What the factories ask for, which grows with the industry whether or not it is served."],["imported","Imports"],["exported","Actual exports"],["available","Available supply","Produced minus what is offered for export, plus imports."]]){
+      const source=key==="effective"?"resources/to_use[0] + resources/to_use[2]":`resources/${key==="demand"?"to_use[2], negated":key==="available"?"to_use[0]":key}`;
+      rg.append(chart(`${resourceNames[S.resource]||S.resource} · ${title}`,countriesSeries(c=>{const v=c?.resources?.[S.resource]?.[key];return finite(v)?(key==="demand"?-v:v):null;},{unit:"units",evidence:key==="effective"?"DERIVED":"MEASURED",source,note}),"units",{note}));
     }
   }
   // Registry entries without a `name` are the base chassis; the game displays their localised key.
