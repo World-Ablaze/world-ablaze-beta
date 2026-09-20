@@ -21,10 +21,10 @@ class Facts:
     """One categorical point of the enumeration: who won each chain, plus the state axes."""
 
     __slots__ = ("family", "mobile_infantry", "variant", "td", "spaa", "rockets", "quota",
-                 "quota_states", "waves", "heavy_company", "arty_fallback")
+                 "quota_states", "waves", "heavy_company", "arty")
 
     def __init__(self, family, mobile_infantry, variant, td, spaa, rockets, quota, waves,
-                 heavy_company, quota_states=None, arty_fallback=False):
+                 heavy_company, quota_states=None, arty=EMPTY):
         self.family = family
         self.mobile_infantry = mobile_infantry
         self.variant = variant
@@ -37,12 +37,13 @@ class Facts:
         self.quota_states = tuple(quota_states) if quota_states else (quota,)
         self.waves = waves
         self.heavy_company = heavy_company
-        self.arty_fallback = arty_fallback
+        # A21: the regimental-artillery chain winner, resolved independently of `variant`.
+        self.arty = arty
 
     def key(self):
         return (self.family, self.mobile_infantry, self.variant, self.td, self.spaa,
                 int(self.rockets), self.quota, int(self.waves), int(self.heavy_company),
-                int(self.arty_fallback))
+                self.arty)
 
     def __repr__(self):
         return "Facts%r" % (self.key(),)
@@ -126,7 +127,7 @@ def resolve(family_id, facts, registry, game=None):
     # 1. family restriction: no heavy component outside the heavy family, with the single
     #    A6 exception handled separately below.
     for chain_id, cid in (("line_variant", facts.variant), ("tank_destroyer", facts.td),
-                          ("spaa", facts.spaa)):
+                          ("spaa", facts.spaa), ("regimental_artillery", facts.arty)):
         if cid == EMPTY:
             continue
         klass = registry.candidate(cid)["class"]
@@ -194,21 +195,20 @@ def resolve(family_id, facts, registry, game=None):
 
     arty = registry.chains["regimental_artillery"]
     slots = slots_per_row
-    # The variant owns the artillery block whenever it HAS a regimental company - assault guns
-    # do, infantry support does not (screenshot item v.3). Only when it has none does the
-    # family's declared fallback, then the rockets, then the towed artillery apply.
+    # A8/A21: the artillery block is the REGIMENTAL chain's own winner, never a by-product of
+    # the line winner. The two chains share a candidate set and a rank order, so whenever the
+    # line winner owns a regimental company it also wins here - but a line winner that owns
+    # none (infantry support, heavy SPG) no longer takes the block away from the assault gun
+    # below it. enumerate_family only ever builds pairs that one eligibility set can produce.
     spg_unit = None
-    if facts.variant != EMPTY:
-        spg_unit = registry.unit_of(facts.variant, "regimental")
+    if facts.arty != EMPTY:
+        spg_unit = registry.unit_of(facts.arty, "regimental")
         if spg_unit is None:
-            sel.notes.append("%s has no regimental company; artillery fell back" % facts.variant)
-    if spg_unit is None and facts.arty_fallback:
-        for cid in fam.get("artillery_fallback", []):
-            unit = registry.unit_of(cid, "regimental")
-            if unit is not None:
-                spg_unit = unit
-                sel.notes.append("artillery fallback %s (no heavy regimental equivalent)" % cid)
-                break
+            raise ResolveError("artillery winner %s has no regimental unit" % facts.arty)
+        if facts.arty != facts.variant:
+            sel.notes.append(
+                "regimental artillery %s resolved apart from the line variant %s"
+                % (facts.arty, facts.variant))
     rocket_unit = registry.unit_of(arty["rocket_candidate"], "regimental")
     if spg_unit and facts.rockets:
         cap = arty["rocket_cap"]
@@ -310,10 +310,10 @@ def compose_name(registry, family_id, facts, game=None):
     for cid in (facts.variant, facts.td, facts.spaa):
         if cid != EMPTY:
             parts.append(SHORT[cid])
+    if facts.arty != EMPTY and facts.arty != facts.variant:
+        parts.append("R" + SHORT[facts.arty])
     if facts.rockets:
         parts.append("ROC")
-    if facts.arty_fallback:
-        parts.append("AFB")
     if facts.heavy_company:
         parts.append("HSUP")
     if facts.waves:
@@ -337,15 +337,15 @@ def conditions(registry, family_id, facts):
     mech = registry.mobile_infantry["mechanized"]["eligibility"]
     out.append(("yes" if facts.mobile_infantry == "mechanized" else "no", mech))
 
-    for chain_id, cid in (("line_variant", facts.variant), ("tank_destroyer", facts.td),
-                          ("spaa", facts.spaa)):
+    chains_named = [("line_variant", facts.variant), ("tank_destroyer", facts.td),
+                    ("spaa", facts.spaa)]
+    if "regimental_artillery" in fam.get("enumerate", {}):
+        chains_named.append(("regimental_artillery", facts.arty))
+    for chain_id, cid in chains_named:
         out.append(("yes", wins_trigger_name(family_id, chain_id, cid)))
 
     rockets = registry.candidate("mechanized_rockets")["eligibility"]
     out.append(("yes" if facts.rockets else "no", rockets))
-
-    for cid in fam.get("artillery_fallback", [])[:1]:
-        out.append(("yes" if facts.arty_fallback else "no", registry.eligibility_of(cid)))
 
     out.extend(industrial_conditions(registry, family_id, facts.quota, facts.heavy_company))
 
@@ -392,7 +392,41 @@ def wins_trigger_name(family_id, chain_id, candidate_id):
 
 # --------------------------------------------------------------------- enumeration
 
-AXIS_ORDER = ("variant", "td", "spaa", "rockets", "arty_fallback", "industrial", "waves")
+AXIS_ORDER = ("variant_arty", "td", "spaa", "rockets", "industrial", "waves")
+
+
+def variant_arty_pairs(registry, family_id, form):
+    """The (line winner, artillery winner) pairs ONE eligibility set can actually produce.
+
+    A21: the two chains are resolved independently but read the same candidates under the same
+    rank order, so most combinations are arithmetically impossible - a candidate that outranks
+    the line winner cannot be eligible, or it would have won the line. Enumerating the pairs
+    instead of a rectangle is what keeps the code count at 11 values for medium rather than 35,
+    and it is why the joint axis exists at all. A pair is reachable when the minimal eligibility
+    set {v, a} reproduces both winners.
+    """
+    enum = registry.families[family_id]["enumerate"]
+    line = list(enum.get("line_variant", []))
+    arty = list(enum.get("regimental_artillery", []))
+    drop = registry.composition.get("motorized_plane", {}).get("drop_axes", [])
+    rank = lambda cid: registry.candidate(cid).get("chain_rank", 0)   # noqa: E731
+
+    def top(members, pool):
+        chosen = [c for c in members if c in pool]
+        return max(chosen, key=rank) if chosen else EMPTY
+
+    if form != "mechanized" and "variant" in drop:
+        # The motorized plane drops the LINE variant only: the registry keeps its regimental
+        # axes, and the artillery block is one of them. No coupling to reproduce.
+        return [(EMPTY, a) for a in [EMPTY] + arty]
+
+    pairs = []
+    for v in [EMPTY] + line:
+        for a in [EMPTY] + arty:
+            members = [c for c in (v, a) if c != EMPTY]
+            if top(members, line) == v and top(members, arty) == a:
+                pairs.append((v, a))
+    return pairs
 
 
 def variant_block_count(registry, variant_id, game, default):
@@ -439,20 +473,17 @@ def axis_values(registry, family_id, axis, form):
     enum = fam["enumerate"]
     comp = registry.composition
     # The motorized plane carries a declared subset of the axes: see composition.motorized_plane.
-    if form != "mechanized" and axis in comp.get("motorized_plane", {}).get("drop_axes", []):
+    if (form != "mechanized" and axis != "variant_arty"
+            and axis in comp.get("motorized_plane", {}).get("drop_axes", [])):
         return [EMPTY] if axis in ("variant", "td", "spaa") else [False]
-    if axis == "variant":
-        return [EMPTY] + list(enum.get("line_variant", []))
+    if axis == "variant_arty":
+        return variant_arty_pairs(registry, family_id, form)
     if axis == "td":
         return [EMPTY] + list(enum.get("tank_destroyer", []))
     if axis == "spaa":
         return [EMPTY] + list(enum.get("spaa", []))
     if axis == "rockets":
         return [False, True] if enum.get("rockets") else [False]
-    if axis == "arty_fallback":
-        # A4: a heavy division keeps an explicit non-heavy artillery company where no heavy
-        # regimental equivalent exists. Only a family that declares one carries the axis.
-        return [False, True] if fam.get("artillery_fallback") else [False]
     if axis == "industrial":
         # ONE axis for the industrial state, because the two halves never cross: the heavy
         # company exists only at the top band (A19). A 3 x 2 rectangle would spend a third of
@@ -506,10 +537,10 @@ def enumerate_family(family_id, registry, game=None):
             digits = dict(zip(names, combo))
             chosen = dict((name, plane.axes[i][1][combo[i]]) for i, name in enumerate(names))
             quota, company = chosen["industrial"]
-            facts = Facts(family_id, plane.form, chosen["variant"], chosen["td"],
+            variant, arty = chosen["variant_arty"]
+            facts = Facts(family_id, plane.form, variant, chosen["td"],
                           chosen["spaa"], chosen["rockets"], quota,
-                          chosen["waves"], company,
-                          arty_fallback=chosen["arty_fallback"])
+                          chosen["waves"], company, arty=arty)
             try:
                 sel = resolve(family_id, facts, registry, game)
             except ResolveError as exc:
@@ -552,13 +583,20 @@ def resolve_profile(registry, family_id, profile, game=None):
     """
     if "facts" in profile:
         f = profile["facts"]
-        facts = Facts(family_id, f.get("mobile_infantry", "mechanized"), f.get("variant", EMPTY),
+        variant = f.get("variant", EMPTY)
+        # A declared profile states its artillery winner only when it differs from the line
+        # winner. The default is the pre-A21 derivation, so every hand-declared target keeps
+        # the composition it had.
+        default_arty = (variant if variant != EMPTY
+                        and registry.unit_of(variant, "regimental") else EMPTY)
+        facts = Facts(family_id, f.get("mobile_infantry", "mechanized"), variant,
                       f.get("td", EMPTY), f.get("spaa", EMPTY), bool(f.get("rockets")),
                       int(f.get("quota", 0)), bool(f.get("waves")), bool(f.get("heavy_company")),
-                      arty_fallback=bool(f.get("arty_fallback")))
+                      arty=f.get("arty", default_arty))
         sel = resolve(family_id, facts, registry, game)
     else:
-        facts = Facts(family_id, "motorized", EMPTY, EMPTY, EMPTY, False, 0, False, False)
+        facts = Facts(family_id, "motorized", EMPTY, EMPTY, EMPTY, False, 0, False, False,
+                      arty=EMPTY)
         sel = Selection(family_id, facts)
         sel.line = dict(profile.get("regiments", {}))
         sel.regimental = dict(profile.get("regimental_support", {}))

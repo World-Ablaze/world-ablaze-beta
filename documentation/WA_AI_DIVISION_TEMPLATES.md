@@ -45,6 +45,16 @@ Do not skip the research or production layers. A template that selects equipment
 
 Keep numeric values inside the existing family ranges. The value is stored on the country flag and matched by `enable` blocks in `common/ai_templates/`.
 
+The three armour ranges above are GENERATED, not chosen here: they are `families.<f>.code_range` in
+`tools/armor_templates_registry.json`, and `python tools/check_constants.py` holds this table equal
+to it (group `templates_armor_code_ranges`). Two facts the old table got wrong and that a reader
+re-pointing a harness must not inherit: **modern armour has no flag of its own** - it writes into
+`WA_MEDIUM_ARMOR_TEMPLATE` under type code 5, because it is the same ROLE with a different hull, and
+`WA_MODERN_ARMOR_TEMPLATE` occurs in no file in this mod - and a value inside a range is only
+meaningful against the manifest (`tools/generated/armor_templates_manifest.json`), never by
+arithmetic on the range, because the code is a mixed-radix digit string that changes shape whenever
+an axis is added.
+
 | Family | Value Range | Flag | Type Code |
 | --- | ---: | --- | ---: |
 | Infantry | `1000-1999` | `WA_INFANTRY_TEMPLATE` | `1` |
@@ -52,9 +62,10 @@ Keep numeric values inside the existing family ranges. The value is stored on th
 | Motorized | `3000-3999` | `WA_MOTORIZED_TEMPLATE` | `2` |
 | Mechanized | `4000-4999` | `WA_MECHANIZED_TEMPLATE` | `3` |
 | Light Armor | `5000-5999` | `WA_LIGHT_ARMOR_TEMPLATE` | `4` |
-| Medium Armor | `6000-6999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
-| Heavy Armor | `7000-7999` | `WA_HEAVY_ARMOR_TEMPLATE` | `6` |
-| Modern Armor | `8000-8999` | `WA_MODERN_ARMOR_TEMPLATE` | `7` |
+| Medium Armor | `20000-23999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
+| Modern Armor | `24000-27999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
+| Heavy Armor | `28000-28999` | `WA_HEAVY_ARMOR_TEMPLATE` | `6` |
+| Light Support Armor | `15000-15999` | `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` | `14` |
 | Marines | `10000-10999` | `WA_MARINES_TEMPLATE` | `9` |
 | Airborne | `11000-11999` | `WA_AIRBORNE_TEMPLATE` | `10` |
 | Rangers | `13000-13999` | `WA_RANGERS_TEMPLATE` | `12` |
