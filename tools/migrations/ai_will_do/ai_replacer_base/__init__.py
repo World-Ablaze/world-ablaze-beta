@@ -21,6 +21,8 @@ from .text_utils import (
     extract_dependencies,
     extract_leads_to_techs,
     extract_enable_equipments,
+    extract_base_factor,
+    extract_research_triggers,
 )
 
 __all__ = [
@@ -48,4 +50,6 @@ __all__ = [
     'extract_dependencies',
     'extract_leads_to_techs',
     'extract_enable_equipments',
+    'extract_base_factor',
+    'extract_research_triggers',
 ]
