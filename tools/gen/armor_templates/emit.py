@@ -158,7 +158,15 @@ def _target_block(registry, fam, sel, codes=None, profile=None):
     lines.append("%sreinforce_prio = %d\n" % (TAB * 2, prio))
     lines.append("%scustom_icon = %d\n"
                  % (TAB * 2, profile.get("custom_icon", fam.get("custom_icon", 140))))
-    lines.append("%scan_upgrade_in_field = { always = yes }\n" % (TAB * 2))
+    # [modern-switch-amorce] Same three-level override as reinforce_prio above. The engine
+    # consults this when deciding whether to re-cut ALREADY FIELDED divisions toward this
+    # target (install common/ai_templates/_documentation.md), so a family that must not
+    # retarget its park the day it opens declares a trigger here. Default keeps "always = yes".
+    cuif = profile.get("can_upgrade_in_field",
+                       fam.get("can_upgrade_in_field",
+                               registry.composition.get("can_upgrade_in_field",
+                                                        "always = yes")))
+    lines.append("%scan_upgrade_in_field = { %s }\n" % (TAB * 2, cuif))
     lines.append("%supgrade_prio = { base = %d }\n"
                  % (TAB * 2, profile.get("upgrade_prio_base", 10)))
     lines.append("%starget_template = {\n" % (TAB * 2))

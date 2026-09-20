@@ -1,8 +1,9 @@
 ####################################################################################################
 #	World Ablaze AI - army-composition production constants.
-#	Read with `constant:wa_ai_production.<group>.<key>` (HOI4 1.18 script constants) from
-#	WA_AI_PRODUCTION_armor_budget.txt (the runtime role_ratio emitter). Full restart, not `reload`,
-#	when tuning: the emitter reconciles against a stored book, it does not re-derive from the file.
+#	Read with `constant:wa_ai_production.<group>.<key>` (HOI4 1.18 script constants) from the
+#	production systems: the role_ratio emitter WA_AI_PRODUCTION_armor_budget.txt, the maintenance
+#	and tank triggers, and the armour-template latches. Full restart, not `reload`, when tuning the
+#	emitter: it reconciles against a stored book, it does not re-derive from the file.
 ####################################################################################################
 
 wa_ai_production = {
@@ -312,5 +313,71 @@ wa_ai_production = {
 		floor_base            = 5	# EVERY armour chassis archetype fielded by the army, variants included
 		ground_floor_base     = 1	# support equipment
 		ground_floor_deep_add = 2	# -> 3 here; + the [minor-gun-floor] baseline of 1 = 4 on anti-tank
+	}
+
+	# [modern-switch-amorce] The medium role fields the MODERN chassis on a one-way latch
+	# (WA_AI_TEMPLATES_update_modern_chassis_latch). The switch swaps 4 medium_armor_battalion_line
+	# for 4 modern ones and a battalion needs 25 chassis (MEASURED, common/units/armor_tanks.txt),
+	# so the latch used to retarget the whole medium park onto a stockpile of 0.
+	#
+	# THE BAR IS A COVERAGE RATIO, NOT AN ABSOLUTE STOCK. An absolute seed cannot work: set it low
+	# and a big park still goes hollow, set it high and a small country never reaches it at its
+	# minimum factories. The two failure modes trade against each other and no single number wins.
+	# The park itself is the scale - and it is MEASURABLE: before the switch those 4 slots demand
+	# medium_tank_chassis, after it they demand modern, so `num_target_equipment_in_armies@
+	# medium_tank_chassis` IS the demand the switch hands to the modern chassis.
+	#   cover_ratio  = (modern held, spares + in armies) / (that demand), required before the switch
+	#   min_park     = demand below which the switch can hollow nothing and is allowed outright
+	# It is a cover VERIFICATION, not a capability test (the capability test is the band below):
+	# captured and lend-leased chassis count, so a country can arm the latch with no line of its own.
+	#
+	# catchup_fill_* are the SCHMITT PAIR of the post-switch catch-up floor - fill = chassis in the
+	# armies over what those armies require. Never equal: a park sitting on one bar would toggle the
+	# block every evaluation. The catch-up floor SUMS with the flat maintenance floor, on purpose -
+	# a park-wide retarget is not a loss-replacement problem.
+	#
+	# The prime_* rows are the PRIMING line that fills it - see WA_AI_PRODUCTION_DEFAULT_tanks.txt.
+	# band_*_min are the industrial cut (read as `> constant:`, so the bands are disjoint by
+	# construction); floor_* are the factory counts, and the ai_strategy payloads mirror them by
+	# hand because ai_strategy does not resolve constant: (registry group
+	# production_armor_priming_floor_*).
+	#
+	# NO month figure is asserted for the priming, and none can be derived here. MEASURED
+	# (common/defines/05_defines.lua): WA rewrites the whole production ramp - an UNPOWERED mil
+	# factory produces nothing (BASE_FACTORY_SPEED_MIL 0.0, vanilla 3.5), a powered one 2.5 (vanilla
+	# 4.5), a new line starts at 1 % (vanilla 10) and the base efficiency CAP is 10 % (vanilla 50),
+	# lifted only by the production_factory_max_efficiency_factor the country actually holds. The
+	# rate therefore depends on that country's modifier set, and how the modifier composes with the
+	# base is documented nowhere - ASSUMED. Read the line's output off the production screen in game
+	# before retuning these; the fact that a band is too small is a campaign where a country sits
+	# inside the window for years and the harness `amorce:` row shows the stock barely moving.
+	armor = {
+		modern_switch_min_park       = 100	# a park below this cannot be hollowed; also the fill guard
+		modern_prime_band_medium_min = 249
+		modern_prime_band_large_min  = 399
+		modern_prime_floor_small     = 6
+		modern_prime_floor_medium    = 15
+		modern_prime_floor_large     = 30
+		modern_catchup_fill_enable   = 0.60	# arm the catch-up under 60 % filled
+		modern_catchup_fill_abort    = 0.85	# release at 85 % - hysteresis, never equal
+		modern_catchup_floor_small   = 12
+		modern_catchup_floor_medium  = 30
+		modern_catchup_floor_large   = 60
+
+		# [modern-switch-amorce] equipment_variant_production_factor applied to the MEDIUM main gun
+		# while the country is priming its modern line. NEGATIVE on purpose: MEASURED in game
+		# 1943.5 (GER, saves test_bascule / bascule2), the 30-factory priming floor was REQUESTED
+		# and 0 factories were assigned, because medium carried +150 and outbid it. A need-blind
+		# floor does not preempt a saturated pool - the competition has to come down. Replacements
+		# survive on the demand-driven maintenance floor, which a factor cannot touch.
+		modern_prime_medium_factor   = -50
+
+		# Free modern spares needed before already-fielded divisions are re-cut to the modern
+		# shape (WA_AI_TEMPLATES_can_convert_park_to_modern -> the modern family's
+		# can_upgrade_in_field). One division's worth, so conversions throttle themselves: they
+		# drain the spares, the gate closes, the lines refill it. Deliberately a SEPARATE number
+		# from modern_switch_min_park even though both read 100 - one is free stock, the other a
+		# demand, and tying them would drift the day either is retuned.
+		modern_convert_spares_min    = 100
 	}
 }

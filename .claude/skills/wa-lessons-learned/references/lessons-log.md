@@ -2566,7 +2566,8 @@ process caveats (stale process, and the absence of a load-time hook).
   queue also needs the deficit valve (`UPGRADES_DEFICIT_LIMIT_DAYS`) sized for it.
 - **Detection:** live, in `imgui show ai_templates`: a best-match score >= `replace_at_match` with
   the arrow still on the same target is condition (2) or (3) blocking; a correct chain moves the
-  arrow to the replace_with target within one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass.
+  arrow to the replace_with target within one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` pass (7 days when
+  this was measured; 14 in WA since 2026-09-20, so wait a fortnight before concluding).
   Positive control from the same session: the first hop (old composition -> transition) fires even
   on a role whose role_ratio want is NEGATIVE - want does not gate field upgrades.
 - **Evidence:** WORK.md `armor-class-handoff` (conversion half); commits `e75346fea` (valves),
@@ -2757,7 +2758,7 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Rule:** any reading of the AI template designer (`imgui show ai_templates`,
   `ai_division_production`, a lettered template appearing or not, a field upgrade firing or not)
   taken in a session that hot-reloaded scripts is void. Restart the executable, reload the save,
-  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass, then read. Before concluding "the AI
+  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` pass (14 days in WA since 2026-09-20), then read. Before concluding "the AI
   never designs X", ask how the session was started - and only then look for a script cause.
 - **Detection:** the session history (a `reload` in the console log); a `WA_TEST_*` harness whose
   contract-v1 scope line is not `1 1 1 1 0` in the same session; the designer resuming after a

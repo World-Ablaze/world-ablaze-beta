@@ -285,7 +285,61 @@ WA_TEST_ABG_report = {
 		set_temp_variable = { _abt_bandmod = 1 }
 	}
 
+	# [modern-switch-amorce] The amorce: the latch may only read 1 once the stock bar is cleared,
+	# and the priming floor must be 0 once it has. Both are printed so a campaign can falsify either.
+	set_temp_variable = { _abt_modwin = 0 }
+	if = { limit = { WA_AI_TEMPLATES_modern_line_open = yes } set_temp_variable = { _abt_modwin = 1 } }
+	set_temp_variable = { _abt_modstock = num_equipment@modern_tank_chassis }
+	set_temp_variable = { _abt_modfield = num_equipment_in_armies@modern_tank_chassis }
+	set_temp_variable = { _abt_modpark = num_target_equipment_in_armies@medium_tank_chassis }
+	set_temp_variable = { _abt_modcov = 0 }
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies@medium_tank_chassis > constant:wa_ai_production.armor.modern_switch_min_park } }
+		set_temp_variable = { _abt_modcov = num_equipment@modern_tank_chassis }
+		add_to_temp_variable = { _abt_modcov = num_equipment_in_armies@modern_tank_chassis }
+		divide_temp_variable = { _abt_modcov = num_target_equipment_in_armies@medium_tank_chassis }
+	}
+	set_temp_variable = { _abt_modcatch = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_small = yes } set_temp_variable = { _abt_modcatch = constant:wa_ai_production.armor.modern_catchup_floor_small } }
+	if = { limit = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_medium = yes } set_temp_variable = { _abt_modcatch = constant:wa_ai_production.armor.modern_catchup_floor_medium } }
+	if = { limit = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_large = yes } set_temp_variable = { _abt_modcatch = constant:wa_ai_production.armor.modern_catchup_floor_large } }
+	# [modern-switch-amorce] The medium weight the modern line competes against. A priming floor
+	# above 0 with medium-damp 0 and nothing assigned to modern is the 1943.5 deadlock: medium at
+	# full class weight starves a need-blind floor.
+	set_temp_variable = { _abt_moddamp = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_damp_medium_main_for_priming = yes } set_temp_variable = { _abt_moddamp = constant:wa_ai_production.armor.modern_prime_medium_factor } }
+	set_temp_variable = { _abt_modfloor = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_prime_modern_chassis_small = yes } set_temp_variable = { _abt_modfloor = constant:wa_ai_production.armor.modern_prime_floor_small } }
+	if = { limit = { WA_AI_PRODUCTION_should_prime_modern_chassis_medium = yes } set_temp_variable = { _abt_modfloor = constant:wa_ai_production.armor.modern_prime_floor_medium } }
+	if = { limit = { WA_AI_PRODUCTION_should_prime_modern_chassis_large = yes } set_temp_variable = { _abt_modfloor = constant:wa_ai_production.armor.modern_prime_floor_large } }
+
 	log = "  tier  : modern-chassis-tech=[?_abt_modtech|.0]  mechanized=[?_abt_modmech|.0]  medium-role-open=[?_abt_tm|.0]  ->  latch=[?_abt_modlatch|.0]  owns-medium-role=[?_abt_modowns|.0]  modern-production-line=[?_abt_modline|.0]"
+
+	# [modern-switch-amorce] CONVERSION of the fielded park. Read this row BEFORE any fill number.
+	# What it can PROVE: whether conversion is happening at all - medium demand falling while modern
+	# demand rises. What it CANNOT do is name the cause when it is not: the engine ignoring
+	# can_upgrade_in_field on a target with no replace_with, a park frozen on the template
+	# decommissioned at the switch, no army XP, or divisions in combat all look the same here.
+	# The division counts do not separate a frozen park from the PERMANENT medium residue either
+	# (light-support family + 1936 OOB divisions hold medium battalions forever) - the two DEMANDS
+	# do, because the residue's demand is small and flat.
+	set_temp_variable = { _abt_modconv = 0 }
+	if = { limit = { WA_AI_TEMPLATES_can_convert_park_to_modern = yes } set_temp_variable = { _abt_modconv = 1 } }
+	set_temp_variable = { _abt_tgtmod = num_target_equipment_in_armies@modern_tank_chassis }
+	set_temp_variable = { _abt_medivs = 0 }
+	set_temp_variable = { _abt_moddivs = 0 }
+	every_country_division = {
+		limit = { division_has_majority_template = medium_armor_battalion_line }
+		add_to_temp_variable = { _abt_medivs = 1 }
+	}
+	every_country_division = {
+		limit = { division_has_majority_template = modern_armor_battalion_line }
+		add_to_temp_variable = { _abt_moddivs = 1 }
+	}
+	log = "  amorce: window=[?_abt_modwin|.0]  held=[?_abt_modstock|.0]+[?_abt_modfield|.0]  medium-park-demand=[?_abt_modpark|.0]  cover=[?_abt_modcov|.2]  priming-floor=[?_abt_modfloor|.0]  catchup-floor=[?_abt_modcatch|.0]  medium-damp=[?_abt_moddamp|.0]  (latch=1 with cover under the bar and a park over min IS the defect; so is priming-floor > 0 with latch=1, or both floors > 0 at once)"
+	log = "  convert: latch=[?_abt_modlatch|.0]  gate=[?_abt_modconv|.0]  divisions medium=[?_abt_medivs|.0] modern=[?_abt_moddivs|.0]  demand medium=[?_abt_modpark|.0] modern=[?_abt_tgtmod|.0]"
+	log = "           latch=1 + gate=1 across runs with medium demand FLAT = no conversion is happening, cause not distinguished (engine ignoring can_upgrade_in_field / frozen decommissioned template / no XP / in combat)"
+	log = "           latch=1 + gate=0 while medium demand STILL FALLS = the gate is not read on a target without replace_with - the bet is lost and the field is inert, which costs nothing"
 	log = "  band  : medium-chassis=[?_abt_bandmed|.0]  modern-chassis=[?_abt_bandmod|.0]  (exactly one must be 1 once the medium role is open; this is the ladder INTENT, not the carried value - see the comment above)"
 
 	############################################################

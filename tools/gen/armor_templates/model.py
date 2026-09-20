@@ -32,7 +32,7 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
                  "mirror_of", "emit", "front_role_override", "artillery_fallback",
-                 "mode", "profiles", "reinforce_prio", "_comment"}
+                 "mode", "profiles", "reinforce_prio", "can_upgrade_in_field", "_comment"}
 
 # A family is either ENUMERATED (its targets are the product of declared axes) or DECLARED (its
 # targets are written out one by one, because they are a conversion state machine and not a
@@ -41,7 +41,8 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
 # which is how a deliberate blend or a mission corps survives regeneration.
 PROFILE_FIELDS = {"id", "codes", "facts", "regiments", "regimental_support", "support",
                   "replace_with", "replace_at_match", "target_min_match", "custom_icon",
-                  "reinforce_prio", "upgrade_prio_base", "enable_extra", "enable_raw",
+                  "reinforce_prio", "upgrade_prio_base", "can_upgrade_in_field",
+                  "enable_extra", "enable_raw",
                   "width_exception", "emit",
                   "_comment"}
 MODES = {"enumerated", "declared", "both"}

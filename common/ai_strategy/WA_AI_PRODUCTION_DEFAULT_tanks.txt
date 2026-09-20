@@ -17,6 +17,15 @@
 # proportional to the template (150 medium chassis against 12 SPAA per division); a smaller factor
 # on a variant distorts that ratio a second time. Assumes the factor scales the engine's perceived
 # need (documentation.info); ASSUMED a variant no template needs multiplies zero and costs nothing.
+#
+# [modern-switch-amorce] NAMED EXCEPTION to the class column above, and the rule of record for it:
+# the MAIN GUN weight follows the chassis the PARK FIELDS, not the class name. medium main sits at
+# 150 until the modern window opens, goes NEGATIVE while the country primes its modern line, and
+# sits at the legacy 45 once the switch is taken; modern main is
+# 150 from the latch. Modern VARIANTS stay at 90 on purpose - only the 4 line battalions change
+# chassis, the same target still wants 6 medium_support_armor_battalion_line, so the variants are
+# complements of a medium division, not of a modern one. Do NOT restore modern main to 90 in a
+# parity audit: the 150 is the medium class weight following its own role.
 # ============================================================================
 
 # ============================================================================
@@ -97,6 +106,32 @@ WA_AI_PRODUCTION_build_medium_armor = {
 	# a post-change save shows the variant lines still under their requested factories while the
 	# chassis is served - then the bound is allocation and this lever is spent.
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 150 }
+}
+
+# [modern-switch-amorce] The same chassis AFTER the role has stepped up to modern: still wanted
+# by the light-support family and by the 1936 OOB divisions, no longer the main battle tank, so
+# it drops to the legacy weight light armour carries. Without this it kept 150 against modern's
+# 90 and outbid the chassis the role was migrating to.
+WA_AI_PRODUCTION_DEFAULT_medium_main_legacy = {
+	enable = { WA_AI_PRODUCTION_should_build_medium_main_as_legacy = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 45 }
+}
+
+# [modern-switch-amorce] The PRIMING state, between the two above. MEASURED in game 1943.5 (GER,
+# saves test_bascule / bascule2): the 30-factory priming floor on modern_tank_chassis was
+# REQUESTED and ZERO factories were assigned, because medium still carried +150 here. A need-blind
+# min_factories floor does not preempt a saturated pool - the competitor has to come down. Owner
+# ruling 2026-09-20: reduce medium so the line can move to modern. Negative, not merely smaller:
+# the park is already equipped at this point and only owes replacements, which ride the
+# demand-driven maintenance floor that no factor can touch.
+# Literal mirrors wa_ai_production.armor.modern_prime_medium_factor (check_constants).
+WA_AI_PRODUCTION_DEFAULT_modern_priming_medium_damp = {
+	enable = { WA_AI_PRODUCTION_should_damp_medium_main_for_priming = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = -50 }
 }
 
 WA_AI_PRODUCTION_build_medium_armor_td = {
@@ -192,7 +227,10 @@ WA_AI_PRODUCTION_build_modern_armor = {
 	enable = { WA_AI_PRODUCTION_build_modern_armor = yes }
 	abort_when_not_enabled = yes
 
-	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_chassis value = 90 }
+	# [modern-switch-amorce] 150, the MEDIUM class weight, not modern's 90: this gate is the latch,
+	# so by the time it arms the modern chassis IS the medium role's main battle tank. The 90 stays
+	# on every modern VARIANT below, which are complements and not the main gun.
+	ai_strategy = { type = equipment_variant_production_factor id = modern_tank_chassis value = 150 }
 }
 
 WA_AI_PRODUCTION_build_modern_armor_td = {
@@ -283,12 +321,24 @@ WA_AI_PRODUCTION_focus_on_medium_armor = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_variant_production_factor id = light_tank_chassis value = -35 }
-	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 75 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_destroyer_chassis value = 75 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_assault_tank_chassis value = 75 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_infantry_support_tank_chassis value = 75 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_artillery_chassis value = 75 }
 	ai_strategy = { type = equipment_variant_production_factor id = medium_spaa_tank_chassis value = 75 }
+}
+
+# [modern-switch-amorce] The MAIN GUN half of the medium focus, in its own block so the priming
+# damp is not cancelled. Same +75, same gate, one extra term: not while the country is buying its
+# modern stock. This DOES re-open the chassis-over-variant gap the header above forbids - for the
+# duration of the priming window only, and on purpose, because during that window the chassis the
+# class is growing is the modern one. The fact is gone when a save inside the window shows medium
+# main-gun lines still served ahead of the modern line.
+WA_AI_PRODUCTION_focus_on_medium_armor_main_gun = {
+	enable = { WA_AI_PRODUCTION_should_focus_medium_main_gun = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_variant_production_factor id = medium_tank_chassis value = 75 }
 }
 
 WA_AI_PRODUCTION_focus_on_heavy_armor = {
@@ -354,4 +404,76 @@ WA_AI_PRODUCTION_DEFAULT_mech_floor_large = {
 	abort_when_not_enabled = yes
 
 	ai_strategy = { type = equipment_production_min_factories_archetype id = mechanized_equipment value = 15 }
+}
+
+# ============================================================================
+# PRIMING LINE - MODERN CHASSIS
+# ============================================================================
+# [modern-switch-amorce] A HEAD START, no longer a precondition. The latch carried a cover ratio
+# until 2026-09-20; it was removed because a major at war has no free factories and the bar could
+# never clear (MEASURED on bascule3: 662 of 716 factories committed, ten lines requesting and
+# unserved). So the switch no longer waits on these floors - they only buy a head start when the
+# economy has slack, and the park is protected on the way out by can_upgrade_in_field instead.
+# They remain a floor and not a factor because the chassis floor of
+# WA_AI_PRODUCTION_DEFAULT_maintenance.txt reads a
+# demand that is 0 until a template mounts the battalion, and a production FACTOR multiplies
+# that same absent need - only a need-blind min_factories floor can lead. The bands retire at
+# the switch (the NOT term in their triggers), so these never sum with the maintenance floor.
+# Literals on purpose, like the mech floors above: ai_strategy does not resolve constant:. Held
+# equal to wa_ai_production.armor.modern_prime_floor_* by tools/check_constants.py.
+# The 6/15/30 are an owner ruling, NOT a computed rate: WA's production ramp (05_defines.lua -
+# unpowered mil factories at 0.0, powered at 2.5, lines starting at 1 % against a base efficiency
+# cap of 10 %) makes chassis-per-month a function of each country's modifier set, not of these
+# numbers. The relative statement is all that holds: the large band primes five times faster than
+# the small one. Retune from the harness `amorce:` row, never from arithmetic.
+
+WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_small = {
+	enable = { WA_AI_PRODUCTION_should_prime_modern_chassis_small = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 6 }
+}
+
+WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_medium = {
+	enable = { WA_AI_PRODUCTION_should_prime_modern_chassis_medium = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 15 }
+}
+
+WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_large = {
+	enable = { WA_AI_PRODUCTION_should_prime_modern_chassis_large = yes }
+	abort_when_not_enabled = yes
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 30 }
+}
+
+# ============================================================================
+# CATCH-UP LINE - MODERN CHASSIS
+# ============================================================================
+# [modern-switch-amorce] The priming line closes at the switch; this one opens there. It is armed
+# on the park's FILL (in-armies against required) and released on a higher bar, so it is a
+# hysteresis on factories - the cheap place to put one. Enable/abort are a Schmitt pair and must
+# never be equal. These SUM with the flat maintenance floor of 5 on the same id, intended.
+# Literals mirror wa_ai_production.armor.modern_catchup_floor_* (check_constants).
+
+WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_small = {
+	enable = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_small = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_small = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 12 }
+}
+
+WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_medium = {
+	enable = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_medium = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_medium = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 30 }
+}
+
+WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_large = {
+	enable = { WA_AI_PRODUCTION_should_catch_up_modern_chassis_large = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_large = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis value = 60 }
 }

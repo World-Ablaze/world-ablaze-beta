@@ -115,9 +115,49 @@ WA_AI_PRODUCTION_build_light_armor_spaa = {
 # MEDIUM ARMOR TRIGGERS
 # ============================================================================
 
+# [modern-switch-amorce] THREE disjoint states for the medium MAIN GUN weight, and the class
+# weight follows the chassis the country is GROWING - never the one it currently fields.
+#   1. window shut          -> full class weight, medium is the main battle tank
+#   2. priming (this one)   -> NEGATIVE: the country is buying a modern stock, and medium is what
+#                              was stopping it. MEASURED 1943.5 (GER, test_bascule / bascule2):
+#                              the 30-factory priming floor was REQUESTED and 0 assigned, because
+#                              medium held +150. A need-blind min_factories floor does NOT preempt
+#                              a saturated pool - the competitor has to come down, which is the
+#                              owner ruling of 2026-09-20.
+#   3. switched             -> the legacy weight of a chassis that is no longer the main gun
+# The park is not starved in state 2: its demand is unchanged and its demand-driven maintenance
+# floor (WA_AI_PRODUCTION_should_maintain_medium_tank) is need-blind and untouched by a factor.
+# The fact is gone when a save inside the window shows the modern line still at 0 assigned.
+WA_AI_PRODUCTION_should_damp_medium_main_for_priming = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	WA_AI_TEMPLATES_modern_line_open = yes
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+}
+
+# [modern-switch-amorce] The class weight belongs to whichever chassis the park FIELDS - not to
+# the one the role targets. Before the switch, and all through the conversion, that is
+# medium_tank_chassis; once most of the park's main-gun demand is modern, medium is a LEGACY
+# line - still wanted (light-support family, 1936 OOB divisions) but no longer the main battle
+# tank. Leaving the full class weight on it is what kept the AI's factories on medium after the
+# switch; dropping it AT the switch would instead starve a park that has not converted yet.
+# Both chassis carry 150 during the conversion window, on purpose: un-converted divisions need
+# medium and converted ones need modern, both at once.
+# ONLY the main gun chassis moves: the same target keeps 6 medium_support_armor_battalion_line,
+# i.e. 150 medium_tank_support_chassis per division, so every VARIANT factor is left alone and
+# the [armor-prod-category] parity rule holds for them. The fact is gone when a post-switch save
+# shows medium_tank_chassis lines outbidding modern ones while the park is already modern.
 WA_AI_PRODUCTION_build_medium_armor = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	NOT = { WA_AI_TEMPLATES_modern_line_open = yes }
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+}
+
+WA_AI_PRODUCTION_should_build_medium_main_as_legacy = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
 }
 
 WA_AI_PRODUCTION_build_medium_armor_td = {
@@ -260,6 +300,18 @@ WA_AI_PRODUCTION_focus_on_medium_armor = {
 	WA_AI_CONFIG_DIVISIONS_focus_on_medium_armor = yes
 }
 
+# [modern-switch-amorce] The doctrine focus's MAIN GUN half, held back while the country primes.
+# MEASURED 1943.5 then again on the rerun (GER, bascule3): the class-weight damp alone did not move
+# the allocation because this focus was adding +75 to the same id from another block and factors on
+# one id stack - the damp netted positive. It travels with the FULL class weight, so it is off
+# through priming AND after the switch, where it would otherwise lift the legacy 45 back to 120
+# against modern's 150. The five VARIANT lines keep their +75: they are complements of a medium
+# division and the country still fields one.
+WA_AI_PRODUCTION_should_focus_medium_main_gun = {
+	WA_AI_PRODUCTION_focus_on_medium_armor = yes
+	WA_AI_PRODUCTION_build_medium_armor = yes
+}
+
 WA_AI_PRODUCTION_focus_on_heavy_armor = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
 	WA_AI_CONFIG_DIVISIONS_focus_on_heavy_armor = yes
@@ -280,8 +332,10 @@ WA_AI_PRODUCTION_armor_category_push = {
 }
 
 # ============================================================================
-# FACTORY FLOOR BANDS - MECHANIZED ONLY. The tank chassis bands are owned by
-# WA_AI_PRODUCTION_maintenance_triggers.txt; these bands prepare mechanized equipment.
+# FACTORY FLOOR BANDS - mechanized equipment, and the modern-chassis PRIMING line below it.
+# The per-chassis MAINTENANCE bands - a fielded park replacing its losses - stay owned by
+# WA_AI_PRODUCTION_maintenance_triggers.txt. The priming line here is the opposite case: a
+# chassis no division fields yet, so no maintenance floor can ever arm for it.
 # ============================================================================
 
 WA_AI_PRODUCTION_mech_min_factories_small = {
@@ -301,4 +355,110 @@ WA_AI_PRODUCTION_mech_min_factories_large = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
 	WA_AI_TEMPLATES_mechanization_line_open = yes
 	num_of_military_factories > 399
+}
+
+# [modern-switch-amorce] PRIMING line for the modern chassis. The maintenance floor
+# (WA_AI_PRODUCTION_should_maintain_modern_tank) reads a demand that only exists once a template
+# mounts the battalion, so it cannot arm before the switch and the switch landed on a stockpile
+# of 0. A min_factories floor and not a production factor: a factor multiplies a NEED, and no
+# template demands the chassis yet. The three bands are DISJOINT by construction (same constant
+# read with `>` and `NOT >`), which matters because floors on one id SUM. The NOT term retires
+# the line at the switch, where the need-driven factor and the maintenance floor take over; it
+# assumes the latch is one-way, and the fact is gone when the wa_armor_budget harness shows a
+# country carrying a priming floor while its latch reads 1.
+WA_AI_PRODUCTION_should_prime_modern_chassis_small = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_line_open = yes
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min }
+}
+
+WA_AI_PRODUCTION_should_prime_modern_chassis_medium = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_line_open = yes
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min }
+}
+
+WA_AI_PRODUCTION_should_prime_modern_chassis_large = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_line_open = yes
+	NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes }
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min
+}
+
+# [modern-switch-amorce] CATCH-UP line: the switch retargets the whole medium park in one
+# month, so the month after it the park is short by design. This is the ON/OFF half of the
+# subject - it reads the DEFICIT (chassis in the armies against what those armies require),
+# not a stockpile, arms a large floor while the park is hollow and releases when it is not.
+# Hysteresis lives HERE and not on the template gate: a template gate that toggles
+# decommissions whatever template holds the role (MEASURED, wa-lessons-learned), a factory
+# floor that toggles costs nothing. It SUMS with the flat maintenance floor on the same id,
+# intended - replacing losses and re-equipping a retargeted park are different problems.
+# Assumes the engine's own need-driven allocation is not enough on its own; the fact is gone
+# when a post-switch save shows modern lines already served above these counts.
+WA_AI_PRODUCTION_is_modern_chassis_underfilled = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies@modern_tank_chassis > constant:wa_ai_production.armor.modern_switch_min_park } }
+		set_temp_variable = { _mod_fill = num_equipment_in_armies@modern_tank_chassis }
+		divide_temp_variable = { _mod_fill = num_target_equipment_in_armies@modern_tank_chassis }
+		check_variable = { _mod_fill < constant:wa_ai_production.armor.modern_catchup_fill_enable }
+	}
+	else = { always = no }
+}
+
+WA_AI_PRODUCTION_is_modern_chassis_under_release_bar = {
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies@modern_tank_chassis > constant:wa_ai_production.armor.modern_switch_min_park } }
+		set_temp_variable = { _mod_fill = num_equipment_in_armies@modern_tank_chassis }
+		divide_temp_variable = { _mod_fill = num_target_equipment_in_armies@modern_tank_chassis }
+		check_variable = { _mod_fill < constant:wa_ai_production.armor.modern_catchup_fill_abort }
+	}
+	else = { always = no }
+}
+
+WA_AI_PRODUCTION_should_catch_up_modern_chassis_small = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_underfilled = yes
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min }
+}
+
+WA_AI_PRODUCTION_should_catch_up_modern_chassis_medium = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_underfilled = yes
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min }
+}
+
+WA_AI_PRODUCTION_should_catch_up_modern_chassis_large = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_underfilled = yes
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min
+}
+
+# DECISION - hold. Same bands, the release bar instead of the arm bar (Schmitt pair).
+WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_small = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_under_release_bar = yes
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min }
+}
+
+WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_medium = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_under_release_bar = yes
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_medium_min
+	NOT = { num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min }
+}
+
+WA_AI_PRODUCTION_should_hold_catch_up_modern_chassis_large = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_PRODUCTION_is_modern_chassis_under_release_bar = yes
+	num_of_military_factories > constant:wa_ai_production.armor.modern_prime_band_large_min
 }

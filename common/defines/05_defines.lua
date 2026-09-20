@@ -1453,12 +1453,18 @@ NDefines.NAI.UPGRADE_DIVISION_RELUCTANCE = 14										-- How often to consider 
 -- [armor-class-handoff] The two field-upgrade valves for era conversions (light->medium,
 -- medium->modern via replace_with transitions). Too tight and a training queue that consumes tank
 -- production blocks every field conversion; too loose and the AI converts half its armour at once
--- into a deficit of thousands of tanks that pulls factories for a year. 0.3 = share of the army
--- eligible per pass; 120 = longest re-equip time the AI accepts. Sign of too tight: fielded
+-- into a deficit of thousands of tanks that pulls factories for a year. 0.2 = share of the army
+-- eligible per pass; 90 = longest re-equip time the AI accepts. Sign of too tight: fielded
 -- divisions frozen on a transition template in imgui ai_templates with the match threshold met.
+-- [modern-switch-amorce] Owner ruling 2026-09-20 took the limit from 120 to 90, the third step of
+-- the same tightening (365 -> 120 -> 90). KNOWN TENSION, recorded so nobody quietly reverts it:
+-- wa-lessons-learned (2026-08-29) names 90 as the value at which an AI whose tank production is
+-- consumed by training never converts its fielded ones - and the modern switch now feeds exactly
+-- such a queue through its priming and catch-up factory floors. Owner accepts that; the
+-- WA_TEST_armor_budget convert: row is what would show it biting.
 NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.2										-- How big part of the army that should be considered for upgrading
 
-NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 120	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
+NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 90 	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
 
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_WARTIME = 0.4					-- deployment will try to buffer a ratio of manpower (for reinforcements) during war time
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_PEACETIME = 0.01				-- deployment will try to buffer a ratio of manpower (for reinforcements) during peace time
@@ -1562,7 +1568,11 @@ NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 10   -- How quickly is desire
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 10     -- How quickly is desire to unlock air spirits accumulated?
 
 NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_DOCTRINE = 7       -- Recalculate desired best doctrine to unlock with this many days inbetween.
-NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7       -- Recalculate desired best template to upgrade with this many days inbetween.
+-- [modern-switch-amorce] Owner ruling 2026-09-20: 14, not the vanilla 7. Halves how often the AI
+-- re-picks the best template for a role, so a template about to change (an era conversion, the
+-- modern chassis switch) is re-decided twice a month instead of four times. Mod-wide, not
+-- armour-only. UPGRADE_DIVISION_RELUCTANCE above is already 14, so the two cadences now agree.
+NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 14      -- Recalculate desired best template to upgrade with this many days inbetween.
 NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_EQUIPMENT = 7      -- Recalculate desired best equipment to upgrade with this many days inbetween.
 
 NDefines.NAI.GARRISON_TEMPLATE_SCORE_IC_FACTOR = 1.0 -- ai uses these defines while calculating garrison template score of a template.

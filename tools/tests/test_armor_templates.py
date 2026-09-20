@@ -637,7 +637,10 @@ class ReinforcePriority(unittest.TestCase):
                 if "reinforce_prio" in line:
                     seen += 1
                     self.assertEqual(line.split("=")[1].strip(), "2", path)
-        self.assertEqual(seen, 1634)
+        # Count follows the emitted target set, so it moves whenever a family's axes move.
+        # 1634 -> 1502 when the modern family dropped its medium_support quota (registry
+        # `medium_support_unit: null`), which removed 132 modern targets with the industrial axis.
+        self.assertEqual(seen, 1502)
 
     def test_the_declared_families_no_longer_pin_their_own(self):
         # light and light_support mirrored a per-profile 1 from the hand-written files. Left in
