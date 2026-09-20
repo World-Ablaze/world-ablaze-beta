@@ -173,6 +173,55 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
+- Owner order 2026-09-20 ("pendant la drôle de guerre, l'aviation alliée ne devrait pas bombarder
+  l'Allemagne"). Intended behaviour: while the western Allies face Germany with no bomber arm, no
+  Allied air force ranks German air space above its own — the RAF, the USAAF *and* the Armée de
+  l'Air.
+- Symptom, MEASURED (repo + git): the Reich bombing ladder
+  (`common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt`) gated all five blocks on
+  `WA_AI_CONFIG_MILITARY_is_western_allies_major` = ENG/USA/CAN. The legacy block it replaced,
+  `ENG_FRA_allies_avoid_bombing_GER` (`git show f70e86f192^:common/ai_strategy/ENG.txt:855-905`),
+  was `allowed = ENG/FRA/CAN/RAJ/AST` with `date < 1941.10.1` and -500,000 on 6/7/8/22/294/38.
+  Phase 7c therefore dropped FRA, RAJ and AST: France's net on both rings has been exactly **0**.
+  No fallback covered it — `_home_only_reich` (-300,000) needs <= 399 deployed aircraft and
+  MEASURED on campaign `b28209dd` FRA fields 757 (1939.10) -> 1 165 (1940.6).
+- Second MEASURED fact from the same ten saves: FRA, ENG and USA field **zero** strategic bombers
+  for the whole window (no `strat_bomber`/`heavy_strat_bomber` wing, no such equipment in stock).
+  The Allied bombers of the Phoney War are tactical/strike (ENG tac 69->179, strike 0->200; FRA
+  strike 100->300, tac 0->200), which the medium airframe permits on the strategic-bombing mission
+  (`common/units/equipment/plane_airframes.txt`, `forbid_mission_type` list excludes it). The
+  ladder's thresholds count strategic bombers only, so they stay at their floor all window — which
+  is correct, and is exactly why the missing actor mattered.
+- Change: new DECISION trigger `WA_AI_MILITARY_AIR_should_avoid_reich` =
+  `WA_AI_CONFIG_MILITARY_is_western_allied_power` (ENG/USA/CAN/FRA/RAJ/SAF/AST/NZL), named by the
+  `allowed` of the three SUPPRESSION rungs (`_reich_blackout`, `_reich_raid_too_costly`,
+  `_reich_deep_out_of_reach`). The two raid PULLS keep the narrow major set on purpose: a released
+  rung already nets 0, so a non-major falls back to the engine's own terms rather than being pushed
+  onto the Reich. No value changed, no date added, no new tag list.
+- Not fixed, stated (architecture review item 5): `WA_AI_MILITARY_AIR_theatre_contested_germany`
+  still aborts all three rungs for the WHOLE coalition as soon as any co-belligerent controls one
+  listed German state — a Saar offensive would lift the blackout for ENG and USA too. MEASURED on
+  `b28209dd` it never fired (GER holds 24/24 states, 198/198 provinces in all ten Phoney-War
+  saves), so it is a latent hazard, not this campaign's cause. Needs its own subject if seen.
+- Regression risk, DERIVED: RAJ/SAF/AST/NZL now also collect -20k/-40k/-20k on 6/7/8/296/294/38.
+  Where `_home_only_reich` is armed they stack to -360,000; nothing positive writes on those
+  regions below the raid-force bar, so the stack is inert either way. ASSUMED: that -60,000 is
+  enough to keep a tactical-bomber force off German regions when the only competing regions score
+  0 — `strategic_air_importance` ranks, it never forbids a mission.
+- Gates run: `check_ai_layers.py` 0 ERROR after `--update-baseline` (LAYER4-READS-CONFIG 146->143,
+  a debt DROP). `check_constants.py` exit 0, its 2 ERRORs pre-existing and unrelated
+  (`[production_armor_maintenance_floor]`). Brace balance and BOM verified on both edited scripts.
+- No harness owed: `ai_strategy` gate blocks and one scripted trigger, no `WA_AI_*` effect, no
+  on_action.
+- Verification (owner, console): `tag FRA` then `imgui show ai-strategy` in a save between the
+  German declaration and the fall of France — `WA_AI_MILITARY_ALLIES_AIR_reich_blackout` and
+  `_reich_raid_too_costly` must appear in Active strategies. Today they do not.
+- Verification (campaign): in the Phoney-War saves, no German state of regions 6/7/8 carries a
+  `last_strategic_bombing` stamp or growing building damage.
+- Closed when: one campaign shows both, i.e. the ladder armed for FRA and no Allied bombing damage
+  on German soil before the fall of France.
+
 ### truck-floor-ladder — SHIPPED-UNTESTED (2026-09-20)
 - Owner order 2026-09-20 ("on a un système d'usines minimum sur les camions, comme on a pour les
   mécanisés ?", then "rends le palier camions monotone comme le mécanisé. Base toi sur l'Allemagne
