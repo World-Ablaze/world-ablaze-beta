@@ -2769,3 +2769,51 @@ process caveats (stale process, and the absence of a load-time hook).
   entry stays class C; the cold-restart pair of the previous entry
   (`WA_TEST_pc_lost_purge.txt`, WORK.md `pc-lost-state-purge` runs 1-2) for the trigger-poisoning
   half; engine doc `common/ai_templates/_documentation.md` for what the designer evaluates.
+
+### A min_factories floor does not preempt a saturated factory pool
+
+- **Date:** 2026-09-20
+- **Symptom:** the AI's modern-tank line sat at 30 factories REQUESTED and 0 assigned for months, while a 30-factory `equipment_production_min_factories_archetype` floor was correctly armed for it.
+- **Cause:** the floor is a REQUEST that takes rank, not a requisition. MEASURED on GER 1943.5 (`bascule3`): 662 of 716 factories already committed across 39 `military_lines`, and TEN lines requesting with zero assigned - the modern one was simply last. The engine's own wording, *"Forces the AI to allocate this many factories ... Use with caution since it doesn't take into account how many factories are actually available"* (install `common/ai_strategy/_documentation.md`), reads stronger than it behaves. Companion fact: a line's `requested_factories` can BE the floor - that line had zero template demand behind it.
+- **Rule:** in a saturated war economy you cannot make the AI build something by adding a floor; the only lever that frees capacity is lowering the COMPETING requests. A production FACTOR cannot lead either - `equipment_variant_production_factor` multiplies a NEED, and the need is 0 until a template mounts the battalion - so there is no way to pre-build a stock of equipment no division wants. Design around that instead of around the floor.
+- **Evidence:** subject `modern-switch-amorce` in `WORK.md`; saves `bascule3` (1943.5) and `bascule4` (1943.11); header of `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt`.
+
+### Production factor entries on one id STACK across blocks
+
+- **Date:** 2026-09-20
+- **Symptom:** a deliberate -50 damp on `medium_tank_chassis` changed nothing in game; the medium lines kept every factory and the modern line kept starving.
+- **Cause:** a SECOND block was adding +75 to the same id from another part of the same file - `WA_AI_PRODUCTION_focus_on_medium_armor`, the doctrine focus - and the two entries sum. The damp netted +25. Before the session medium sat at 150 + 75 = 225, which is why nothing else could ever outbid it.
+- **Rule:** before tuning any `ai_strategy` value, grep EVERY block writing that `id` across `common/ai_strategy/` (the country layer included) and state the NET. One block's number is never the weight the engine sees. The same holds for `min_factories` floors on one id, which the constants registry already records as summing.
+- **Evidence:** `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt`, blocks `WA_AI_PRODUCTION_build_medium_armor`, `WA_AI_PRODUCTION_focus_on_medium_armor_main_gun`, `WA_AI_PRODUCTION_DEFAULT_modern_priming_medium_damp`; commit `6f04283f85`.
+
+### WA rewrites the whole production ramp - never estimate a build time from the defines
+
+- **Date:** 2026-09-20
+- **Symptom:** a confident table of "months to build N chassis" was produced from `POWERED_FACTORY_SPEED_MIL` and an assumed efficiency of 0.8. The owner rejected it; it was wrong by an unknown but large factor, and optimistic.
+- **Cause:** `common/defines/05_defines.lua` overrides the entire ramp against vanilla - an UNPOWERED military factory produces NOTHING (`BASE_FACTORY_SPEED_MIL` 0.0 against 3.5), a powered one 2.5 (4.5), a new line starts at 1 % (10 %), the base efficiency CAP is 10 % (50 %), and the ramp itself is halved (`BASE_FACTORY_EFFICIENCY_GAIN` 0.5 against 1). An efficiency of 0.8 is not a number this mod hands out by default at all: the reachable cap is `10 % x whatever production_factory_max_efficiency_factor that country holds`, and how that modifier composes with the base is documented in NO file.
+- **Rule:** state the MEASURED defines, say the rate is not derivable from script, and name the in-game read that settles it (the production screen shows the line's cap and daily output). Relative claims survive ("30 factories prime five times faster than 6"); absolute month counts do not. Also: `build_cost_ic` on an ARCHETYPE is a floor - a real design with modules costs more.
+- **Evidence:** the NProduction block of `common/defines/05_defines.lua` against the install's `common/defines/00_defines.lua`; the withdrawn-claim bullet of subject `modern-switch-amorce` in `WORK.md`.
+
+### can_upgrade_in_field is NOT inert without replace_with, and four engine valves pace field upgrades
+
+- **Date:** 2026-09-20
+- **Symptom:** `can_upgrade_in_field` was written off as dead in WA because the armour families carry no `replace_with`, so the field-upgrade brake was believed unavailable without a generator rewrite.
+- **Cause:** vanilla itself uses the field with a meaningful condition and NO outgoing edge - `panzergrenadier_early_GER` in the install's `common/ai_templates/templates_GER.txt`, comment *"this is a stop-gap towards medium tanks, if deployed dont upgrade to medium tanks until we burn out our light tanks"*, gate `has_equipment = { light_tank_chassis < 600 }`; two more sites do the same. The engine doc only spells out the `replace_with` case, so behaviour on a target with no outgoing edge is DERIVED from vanilla usage - and the two vanilla sites support OPPOSITE readings of *"divisions matching this target template"* (the old shape versus the currently targeted one). That ambiguity is still open.
+- **Rule:** do not call the field inert. Treat it as a fail-safe brake worth trying - inert if the reading is wrong, costly only in a probe. And remember the conversion is paced by FOUR `NDefines.NAI` valves regardless: `UPGRADES_DEFICIT_LIMIT_DAYS` (WA 90, vanilla 60 - refuses an upgrade whose equipment need takes longer than that to fill), `UPGRADE_PERCENTAGE_OF_FORCES` (0.2 - share of the army considered per pass), `UPGRADE_DIVISION_RELUCTANCE` (WA 14, vanilla 7) and `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (WA 14, vanilla 7). A training queue consuming the same stockpile keeps the deficit estimate above any limit, so new-division training and field conversion compete - which is why 90 is the value the 2026-08-29 entry names as blocking every conversion.
+- **Evidence:** install `common/ai_templates/templates_GER.txt` and `common/ai_templates/_documentation.md`; `tools/gen/armor_templates/emit.py`; `common/defines/05_defines.lua`; subject `modern-switch-amorce`.
+
+### A reconcile that writes its book unconditionally can never notice a desync
+
+- **Date:** 2026-09-20
+- **Symptom:** the AI View reported GER `medium_armor` Current 21.0 and **Wanted 0**, while the scripted book `wa_ai_armor_budget_medium` read 25. The owner's `imgui show ai-strategy` showed no `role_ratio medium_armor` entry armed at all.
+- **Cause:** `role_ratio` entries are additive per id and can only be retired by adding their exact negation, so the emitter keeps books of what it believes is applied. But the book is written OUTSIDE the emit branch - `set_variable = { WA_AI_ARMOR_BUDGET_medium = _abg_t_medium }` runs whether or not the `add_ai_strategy` fired. An emission that does nothing is therefore recorded as applied, the next pulse sees "slot unchanged" and emits nothing, and the desync is permanent and invisible to the system that caused it. (What broke the emission in the first place is not settled; a hot script reload is one candidate the owner has seen before.)
+- **Rule:** a book-keeping reconcile must never write its book on a path where the write it records can silently fail. Either verify the effect landed, or re-assert on a slow cadence, or drop `add_ai_strategy` for static `ai_strategy` blocks gated by triggers - the shape Expert AI uses to work around literal-only values, and the one WA's own mechanized floors already use. The same hazard applies to every `add_ai_strategy` ledger in this repo.
+- **Evidence:** `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt` (the per-role reconcile blocks); save `bug_ratio` (1944.6.8).
+
+### A JSON round-trip reformats a whole registry - edit it textually
+
+- **Date:** 2026-09-20
+- **Symptom:** a two-line change to `tools/armor_templates_registry.json` came out as a 3427-line diff.
+- **Cause:** the edit was made with `json.load` / `json.dumps`, which re-serialises the entire file with its own spacing. The file's layout is not what `json.dumps` produces by default, and matching it by trial is not worth the attempt.
+- **Rule:** edit a large hand-maintained JSON registry as TEXT, anchored on a unique substring, and re-parse afterwards only to verify it still loads. Related, from the same session: a hardcoded total in a generator test (`self.assertEqual(seen, 1634)`) is not an invariant - it follows the emitted target set and breaks the moment a family's axes move, so update it with the generator rather than reading the failure as a regression.
+- **Evidence:** `tools/armor_templates_registry.json`; `tools/tests/test_armor_templates.py`, `ReinforcePriority.test_every_emitted_armour_target_carries_it`; commit `6f04283f85`.
