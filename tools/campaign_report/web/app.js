@@ -359,7 +359,7 @@ async function boot(text) {
   }
   function country(){const el=$("content");
     const mg=section(el,"Mobilisation","Share of the population the conscription law makes recruitable, beside the free manpower pool");appendMetric(mg,"mobilised_share",{indexable:false});appendMetric(mg,"manpower_free");
-    const changes=tags().flatMap(tag=>{let previous;return snapshots.slice(S.from,S.to+1).flatMap(s=>{const law=s.countries[tag]?.conscription_law;if(!law||law===previous){if(law)previous=law;return [];}const row=[countryCell(tag),dateText(s.date),esc(labelType(previous||"—")),esc(labelType(law)),fmt(s.countries[tag]?.metrics?.manpower)];previous=law;return [row];});});
+    const changes=tags().flatMap(tag=>{let previous;return snapshots.slice(S.from,S.to+1).flatMap(s=>{const law=s.countries[tag]?.conscription_law;if(!law||law===previous){if(law)previous=law;return [];}const row=[countryCell(tag),dateText(s.date),esc(labelType(previous||"—")),esc(labelType(law)),fmt(s.countries[tag]?.metrics?.manpower_free)];previous=law;return [row];});});
     if(changes.length)el.append(tablePanel(["Country","First save with the law","From","To","Pool at that save"],changes,{left:[2,3]}));
     countryPanels(section(el,"Stability and war support","Displayed values rebuilt from the stored base plus spirits, advisors, dynamic modifiers, party popularity, war posture and penalties (DERIVED; see the metric definitions)"),["stability","war_support"],"%",{max:100,indexable:false});
     countryPanels(section(el,"Available experience","Army, navy, and air experience in points"),["army_xp","navy_xp","air_xp"],"points",{indexable:false});

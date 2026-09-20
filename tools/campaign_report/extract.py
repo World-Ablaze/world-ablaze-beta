@@ -5,8 +5,8 @@ Only one country's selected sections and one equipment definition are held at on
 Existing save readers own navy counts, resource ledgers, building ownership, division
 template classification and the air-wing census. No stdout is parsed and no LLM runs.
 
-Limits: manpower.ratio's free-pool meaning remains ASSUMED; casualty direction is
-DERIVED. Production speed/produced fields have no validated daily unit. Armor stock
+Limits: manpower.ratio's free-pool meaning remains ASSUMED. Casualty direction is
+verified (the overrun side carries the bigger counter), the combat scope is not. Production speed/produced fields have no validated daily unit. Armor stock
 is signed; it is never subtracted from reinforcement requests to invent a deficit.
 Training requirements and variant-specific requirements remain null. Definitions
 come from the supplied checkout, not necessarily the historical campaign revision.
@@ -49,7 +49,7 @@ METRICS = {
     "civilian_factories": _metric("Civilian factories", "count", "DERIVED", "states/buildings/industrial_complex/level", "Installed levels in controlled states, not usable factories after damage and occupation."),
     "military_factories": _metric("Military factories", "count", "DERIVED", "states/buildings/arms_factory/level", "Installed levels in controlled states."),
     "dockyards": _metric("Dockyards", "count", "DERIVED", "states/buildings/dockyard/level", "Installed levels in controlled states."),
-    "losses": _metric("Ongoing-war casualties", "men", "DERIVED", "diplomacy/active_relations/*/war_relation/first_casualties,second_casualties", "Counter direction is inferred; peace can remove a counter. The combat/attrition scope is not verified."),
+    "losses": _metric("Ongoing-war casualties", "men", "DERIVED", "diplomacy/active_relations/*/war_relation/first_casualties,second_casualties", "Casualties the country itself suffered: verified on lopsided wars (1940.6 GER 2,015 vs HOL 43,139, BEL 35,302; JAP 898k vs CHI 2.74M - the overrun side carries the bigger counter). Peace can remove a counter. The combat/attrition scope is not verified."),
     "stability": _metric("Stability", "percent", "DERIVED", "countries/TAG/stability + stability_factor of held ideas, appointed advisors' and ruling leader's traits and enabled dynamic modifiers + party popularity + coastal protection + at-war term + war-support term, clamped to 0..1", "The in-game value is not stored; it is rebuilt from the stored base and the checkout's definitions. Every line of the ENG, ITA and JAP stability tooltips (August 1941) is reproduced: ruling party popularity x (0.15 + party_popularity_stability_factor); the stored coastal_protection_ratio as is; 'at war' = -0.2 + offensive_war_stability_factor while waging an offensive war + defensive_war_stability_factor while fighting a defensive one; the war_support_during_war static modifier (-0.3) x (1 - war support). A faction manifest's scale modifiers (e.g. the Axis +0.15 offensive factor) multiply a progress ratio rebuilt from the save's state owners/controllers and the checkout's initial cores and continents (in-game core changes are not stored: ASSUMED rare); a manifest whose collections are not reproduced falls back to both bounds and the value is reported only when they agree after clamping (bounds in countries/TAG/politics/manifest_bounds). Per-term breakdown in countries/TAG/politics."),
     "war_support": _metric("War support", "percent", "DERIVED", "countries/TAG/war_support + war_support_factor of held ideas, appointed advisors' and ruling leader's traits, enabled dynamic modifiers and an intact pride of the fleet - 0.2 per offensive war posture + 0.2 per defensive war posture + stored bombing and hero-casualty penalties, clamped to 0..1", "Rebuilt from the stored base; every term matches the in-game tooltip read on ENG, August 1941 (MEASURED: base, offensive -20 and defensive +20 both listed, enemy bombing, spirits, leader, appointed advisor, pride of the fleet). Advisors count when listed in characters/appointed_advisors; the leader in office counts through the leader traits only. World tension counts for 0 in WA (05_defines.lua). A faction manifest's war-support scale modifier (China's +0.1) multiplies a progress ratio rebuilt from state controllers, initial cores and ruling parties (countries/TAG/politics/manifest_ratio). Per-term breakdown in countries/TAG/politics."),
     "stability_base": _metric("Stability (stored base)", "percent", "MEASURED", "countries/TAG/stability", "The base the engine stores; add_stability and weekly modifiers move this number, national spirits do not."),
@@ -658,7 +658,12 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
     scalars = parse("".join(raw.get("scalars", [])))
     metrics["command_power"] = numeric(scalars, "command_power")
     metrics["political_power"] = numeric(nodes["politics"], "political_power") if "politics" in nodes else None
-    metrics["convoy_kills"] = numeric(scalars, "convoys_destroyed")
+    # A cumulative counter the engine omits until it is non-zero: absent means nothing sunk yet, not
+    # unknown. Read as unknown it blanked the "Convoys sunk" line for 346 of 784 country-saves (USA
+    # 71 of 112 - the entire pre-1942 stretch). `stability` is never absent, so a populated scalars
+    # block is the proof the country block was read at all.
+    kills = numeric(scalars, "convoys_destroyed")
+    metrics["convoy_kills"] = kills if kills is not None else (0.0 if raw.get("scalars") else None)
     # The stored stability / war support are bases; the displayed values are rebuilt in
     # _finalize_politics once the wars (offensive or defensive) are attached to the country.
     metrics["stability_base"], metrics["war_support_base"] = numeric(scalars, "stability"), numeric(scalars, "war_support")
@@ -709,8 +714,12 @@ def _country(tag, raw, definitions, catalog, templates, battalions, politics=Non
             metrics["convoys_in_use"] = metrics["convoys_pool"] - metrics["convoys_free"]
     ratio = numeric(nodes.get("manpower", Node()), "ratio")
     metrics["mobilised_share"] = ratio / 1e7 if ratio is not None else None
+    # The engine omits an axis's experience while it is 0 - no country carries air_experience in
+    # 1936 - so a present experience_status with a missing key reads 0, not unknown. As unknown it
+    # punched a hole in the opening years of every Air XP line (123 of 784 country-saves).
     for axis in ("army", "navy", "air"):
-        metrics[axis + "_xp"] = numeric(nodes.get("experience_status", Node()), axis + "_experience")
+        earned = numeric(nodes.get("experience_status", Node()), axis + "_experience")
+        metrics[axis + "_xp"] = earned if earned is not None else (0.0 if "experience_status" in nodes else None)
 
     if "resources" in raw:
         flat, uses = sg._parse_resources(raw["resources"])
