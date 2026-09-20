@@ -101,6 +101,7 @@ NAME_COLLISION_EXCEPTIONS = {
     # capability-composes-identity pairs (config-vs-system pattern): the WA_AI_ trigger reads
     # the WA_AI_CONFIG_ identity and adds live conditions. Renaming the capability half is
     # deferred - its readers live in GENERATED prospecting decisions (needs_aware_generator).
+    "is_strategic_chromium_exporter": "capability composes identity; readers generated",
     "is_strategic_oil_exporter": "capability composes identity; readers generated",
     "is_strategic_rubber_exporter": "capability composes identity; readers generated",
     "is_strategic_tungsten_exporter": "capability composes identity; readers generated",

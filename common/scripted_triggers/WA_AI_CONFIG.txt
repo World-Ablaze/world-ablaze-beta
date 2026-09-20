@@ -683,7 +683,10 @@ WA_AI_CONFIG_TEMPLATES_admits_medium_armor = {
 		original_tag = USA
 		has_tech = ita_medium_tank_chassis_3
 		has_tech = jap_medium_tank_chassis_4
-		has_tech = ger_medium_tank_chassis_2_4
+		# [ger-armor-preparation] The Panzer III E, not the Panzer III L: this row is the
+		# ACCELERATOR that admits medium BEFORE the 1939.1.1 boundary below, so naming a 1942
+		# tech made it unreachable. Assumes _2_2 stays GER's first real medium tank.
+		has_tech = ger_medium_tank_chassis_2_2
 		has_tech = sov_medium_tank_chassis_3
 		# [light-support-conversion] The Soviet Union admits medium on its T-34 (the accelerator
 		# above) or at the global-war bound, never on the era boundary alone: that boundary also
@@ -705,6 +708,8 @@ WA_AI_CONFIG_TEMPLATES_admits_medium_armor = {
 # (which closes light) and, as its fallback term, by WA_AI_CONFIG_TEMPLATES_admits_medium_armor
 # (which opens medium), so the two sides of the handoff cannot drift apart. Do not add a second
 # light-era or medium-era date anywhere: that is what opened the 1940 gap.
+# [ger-armor-preparation] GER and ENG enter the medium era on 1939.1.1; every other non-Soviet
+# country keeps the generic 1940.1.1 fallback.
 # [light-support-conversion] The Soviet light era ends with its own tank generation, not with the
 # calendar: the T-34 (medium) or the KV-1 (heavy) closes it, and the global-war bound is the
 # no-gap fallback (the same day the AI park is retired, so for the AI it only closes the role).
@@ -720,12 +725,38 @@ WA_AI_CONFIG_switch_from_light_to_medium_armor = {
 			}
 		}
 		AND = {
-			original_tag = ENG
+			OR = {
+				original_tag = ENG
+				original_tag = GER
+			}
 			date > 1939.1.1
 		}
 		AND = {
-			NOT = { original_tag = SOV }
+			NOT = {
+				OR = {
+					original_tag = ENG
+					original_tag = GER
+					original_tag = SOV
+				}
+			}
 			date > 1940.1.1
+		}
+	}
+}
+
+# [light-medium-conversion] WHEN the AI is allowed to trade an already-fielded light tank division
+# for a fresh medium one. This is NOT a second light/medium era boundary - the era boundary is
+# WA_AI_CONFIG_switch_from_light_to_medium_armor above, and the conversion gate requires it on top
+# of this window. It is a DELAY after that boundary, so a country first stops building lights and
+# only later scraps the ones it has. Generic path = 1942; GER opens early on its Barbarossa
+# preparation focus so the panzer park is medium before the invasion it was switched for.
+# Setup-agnostic: the date carries every country, including a GER that never takes the focus.
+WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window = {
+	OR = {
+		date > 1941.12.31
+		AND = {
+			original_tag = GER
+			has_completed_focus = GER_prepare_barbarossa
 		}
 	}
 }

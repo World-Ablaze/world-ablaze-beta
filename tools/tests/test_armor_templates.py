@@ -543,7 +543,9 @@ class DeclaredFamilies(unittest.TestCase):
     def test_every_declared_profile_resolves(self):
         for family_id in DECLARED:
             sels = resolve.declared_profiles(REGISTRY, family_id, GAME)
-            self.assertEqual(len(sels), len(REGISTRY.families[family_id]["profiles"]))
+            expected = [p for p in REGISTRY.families[family_id]["profiles"]
+                        if p.get("emit", True)]
+            self.assertEqual(len(sels), len(expected))
             for s in sels:
                 for unit in s.units():
                     self.assertIsNotNone(GAME.unit(unit), "%s: %s" % (s.name, unit))
@@ -593,6 +595,13 @@ class DeclaredFamilies(unittest.TestCase):
             for family_id in families:
                 self.assertNotIn(family_id, DECLARED)
 
+    def test_retired_ordinary_light_finals_do_not_emit(self):
+        sels = {s.name for s in resolve.declared_profiles(REGISTRY, "light", GAME)}
+        retired = {p["id"] for p in REGISTRY.families["light"]["profiles"]
+                   if not p.get("emit", True)}
+        self.assertEqual(len(retired), 3)
+        self.assertTrue(retired.isdisjoint(sels))
+
 
 class Inputs(unittest.TestCase):
     def test_registry_references_resolve(self):
@@ -628,7 +637,10 @@ class ReinforcePriority(unittest.TestCase):
                 if "reinforce_prio" in line:
                     seen += 1
                     self.assertEqual(line.split("=")[1].strip(), "2", path)
-        self.assertEqual(seen, 1637)
+        # Count follows the emitted target set, so it moves whenever a family's axes move.
+        # 1634 -> 1502 when the modern family dropped its medium_support quota (registry
+        # `medium_support_unit: null`), which removed 132 modern targets with the industrial axis.
+        self.assertEqual(seen, 1502)
 
     def test_the_declared_families_no_longer_pin_their_own(self):
         # light and light_support mirrored a per-profile 1 from the hand-written files. Left in

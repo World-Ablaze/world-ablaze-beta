@@ -1284,13 +1284,40 @@ WA_AI_PC_validate_queued_provincial_projects = {
 WA_AI_PC_add_finished_building_by_id = {
 	set_temp_variable = { _build_type = ROOT.WA_AI_PC_building_type^_project_id }
 
+	# [impassable-rail-guard] A type-13 hop is the ONE branch below whose effect the engine can
+	# refuse outright: build_railway rejects a province of an impassable state (and any other
+	# non-land end) silently, with no error the script can see. Ask can_build_railway FIRST, here,
+	# so the answer gates BOTH the pc_built_n counter below and the branch itself. The whole-path
+	# form is deliberately not used anywhere: it is all-or-nothing and fails without a log
+	# (MEASURED 2026-08-27 owner test, 30-province path built zero track). Idiom copied from
+	# WA_AI_RAIL_CORRIDOR_build_1. Fact is gone when: a refused edge still raises pc_built_n.
+	set_temp_variable = { _pc_rail_refused_ = 0 }
+	if = {
+		limit = { check_variable = { _build_type = 13 } }
+		set_temp_variable = { _prov_from = ROOT.WA_AI_PC_target_province^_project_id }
+		set_temp_variable = { _prov_to = ROOT.WA_AI_PC_connect_province^_project_id }
+		set_temp_variable = { _pc_rail_refused_ = 1 }
+		meta_effect = {
+			text = {
+				if = { limit = { can_build_railway = { path = { [x] [y] } } }
+					set_temp_variable = { _pc_rail_refused_ = 0 }
+				}
+			}
+			x = "[?_prov_from]"
+			y = "[?_prov_to]"
+		}
+	}
+
 	# tlm: pc_built_n / pc_built_by_type - counters, one per building this system actually
 	# spawns. THIS = state, ROOT = builder, so both are written on the builder country.
 	# The 1..17 guard is not a formality: it is exactly the range the ladder below covers, so the
 	# counter increments if and only if one of its add_building_construction / build_railway
 	# branches fires. An out-of-range _build_type falls through the whole ladder silently and must
 	# not be counted as a build (honesty rule 1 - verified effect, never code-path entry); widen the
-	# guard whenever a branch is added. pc_built_by_type is INDEXED by the building type code, so
+	# guard whenever a branch is added. [impassable-rail-guard] the _pc_rail_refused_ term is the
+	# same rule for the one branch the ENGINE can refuse: a type-13 hop whose can_build_railway is
+	# no spawns nothing, so it is a refusal (pc_refused_n below), not a build.
+	# pc_built_by_type is INDEXED by the building type code, so
 	# "did the air bases ever actually finish" is one read. Absence of an index means this country
 	# never completed that type - unambiguous, because the zero-initialised pc_built_n beside it is
 	# the family's presence witness.
@@ -1299,6 +1326,7 @@ WA_AI_PC_add_finished_building_by_id = {
 		limit = {
 			check_variable = { _build_type > 0 }
 			check_variable = { _build_type < 18 }
+			check_variable = { _pc_rail_refused_ = 0 }
 		}
 		ROOT = {
 			add_to_variable = { WA_TLM_pc_built_n = 1 }
@@ -1351,27 +1379,43 @@ WA_AI_PC_add_finished_building_by_id = {
 		add_building_construction = { type = aluminium_refinery level = 1 instant_build = yes }
 	}
 	else_if = { limit = { check_variable = { _build_type = 13 } }
-		# Railway construction using stored province data
-		set_temp_variable = { _prov_from = ROOT.WA_AI_PC_target_province^_project_id }
-		set_temp_variable = { _prov_to = ROOT.WA_AI_PC_connect_province^_project_id }
-
-		meta_effect = {
-			text = {
-				build_railway = {
-					level = 1
-					path = { [x] [y] }
+		# Railway construction using stored province data. _prov_from / _prov_to and
+		# _pc_rail_refused_ were set at the top of this effect, before the counter.
+		# [impassable-rail-guard] The PC railway mirror (readers: railway_core, railway_helpers,
+		# railway_strategies, WA_AI_pathfinding_effects) is stamped ONLY on the success branch.
+		# Stamping it unconditionally recorded track the engine never laid, and the rail g-cost
+		# divides by level+1, so the phantom hop then became the cheapest step on the map and
+		# attracted every later route into it.
+		if = {
+			limit = { check_variable = { _pc_rail_refused_ = 0 } }
+			meta_effect = {
+				text = {
+					build_railway = {
+						level = 1
+						path = { [x] [y] }
+					}
+					set_variable = { global.WA_AI_PC_railway_connections^[x] = 1 }
+					add_to_variable = { global.WA_AI_PC_railway_connection_level_[x]^[y] = 1 }
+					set_variable = { global.WA_AI_PC_railway_connections^[y] = 1 }
+					add_to_variable = { global.WA_AI_PC_railway_connection_level_[y]^[x] = 1 }
 				}
-				set_variable = { global.WA_AI_PC_railway_connections^[x] = 1 }
-				add_to_variable = { global.WA_AI_PC_railway_connection_level_[x]^[y] = 1 }
-				set_variable = { global.WA_AI_PC_railway_connections^[y] = 1 }
-				add_to_variable = { global.WA_AI_PC_railway_connection_level_[y]^[x] = 1 }
+				x = "[?_prov_from]"
+				y = "[?_prov_to]"
 			}
-			x = "[?_prov_from]"
-			y = "[?_prov_to]"
-		}
 
-		if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
-			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway built [?_prov_from] -> [?_prov_to]" }
+			if = { limit = { ROOT = { has_country_flag = WA_AI_construction_logging } }
+				ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway built [?_prov_from] -> [?_prov_to]" }
+			}
+		}
+		# tlm: pc_refused_n - the same failure half the completion site books when a project is
+		# fully paid for and then denied its building (WA_AI_PC_complete_project_by_id). Booked
+		# here instead because this refusal is the ENGINE's, one level deeper than the two
+		# controller/slot tests that else-branch covers. Not booked to pc_refused_ctrl_n: the
+		# cause is geography, not control. Always logged, not only under the logging flag - a
+		# refused rail is the fingerprint this whole guard exists to expose.
+		else = {
+			ROOT = { add_to_variable = { WA_TLM_pc_refused_n = 1 } }
+			ROOT = { log = "[GetYear] [GetMonth] | AI | [Root.GetName] | CONSTRUCTION: Railway REFUSED by can_build_railway [?_prov_from] -> [?_prov_to]" }
 		}
 	}
 	else_if = { limit = { check_variable = { _build_type = 14 } }

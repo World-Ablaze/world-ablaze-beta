@@ -1,0 +1,92 @@
+############################################################################################################
+#	World Ablaze - TRUCK FLOOR LADDER harness events. harness-contract: v1 (wa-testing SKILL rule 1:
+#	own event file, own namespace - NEVER homed in events/wa_events_test.txt).
+############################################################################################################
+#	RECIPE
+#	------
+#	Do NOT tag into the country under test - tag-switching makes it human and is_ai reads no.
+#	From any tag (observer included):
+#
+#		event wa_truck.1 GER    one country report: bands, the nine gates, factories owed, verdict
+#		event wa_truck.2        the same report for every AI country running default ground production
+#		event wa_truck.3 GER    the FIELD PROBE: prints the state, then tells you what to read in the
+#		                        production panel to settle whether the two floor tiers SUM
+#
+#	Output: logs/game.log under "TRUCK FLOOR TEST". Read the `scope :` line FIRST - anything but
+#	1 1 1 1 0 means STOP (see the effect header). Then the VERDICT line: all five values must read 1.
+#
+#	HOW TO READ IT. `band` says which of the six industry bands claims the country; exactly one may.
+#	`gates` says whether the band floor and the emergency tier are armed and how many factories they
+#	owe together. A country with plenty of trucks owes NOTHING, and that is the normal state - the
+#	floor is a safety net, not a target.
+#
+#	WHAT TO FIRE IT ON
+#	------------------
+#		a major with a full truck reserve    every gate reads 0, owed 0. This is the control: the
+#		                                     ladder is invisible on a healthy economy
+#		a major whose reserve you drained    `add_equipment` the stock down under the arm bar first,
+#		                                     then fire: the band floor arms at its band value
+#		a minor under 30 factories           the small band, floor 3, no emergency tier
+#		a country between arm and hold       fire, raise the stock over the arm bar, fire again: the
+#		                                     floor must still be armed until the hold bar
+#
+#	Effects: common/scripted_effects/WA_TEST_trucks.txt. Marker: [truck-floor-ladder].
+############################################################################################################
+
+add_namespace = wa_truck
+
+# Report on ROOT - fire WITH a target country.
+country_event = {
+	id = wa_truck.1
+	title = wa_truck.1.t
+	desc = wa_truck.1.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_TRUCK_report = yes
+	}
+
+	option = { name = wa_truck.1.a }
+}
+
+# Fan-out: one report per AI country on default ground production (contract rule 5 - per-country
+# firing). Gated so the log is not eighty countries with no truck system at all.
+country_event = {
+	id = wa_truck.2
+	title = wa_truck.2.t
+	desc = wa_truck.2.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_ai = yes
+				WA_AI_PRODUCTION_ground_is_enabled = yes
+				num_of_military_factories > 4
+			}
+			country_event = { id = wa_truck.1 }
+		}
+	}
+
+	option = { name = wa_truck.2.a }
+}
+
+# Field probe on ROOT - the engine fact script cannot decide.
+country_event = {
+	id = wa_truck.3
+	title = wa_truck.3.t
+	desc = wa_truck.3.d
+	hidden = yes
+	is_triggered_only = yes
+	fire_only_once = no
+
+	immediate = {
+		WA_TEST_TRUCK_probe_field = yes
+	}
+
+	option = { name = wa_truck.3.a }
+}

@@ -108,6 +108,40 @@ WA_AI_TEMPLATES_delete_light_tank_lettered_templates = {
 	if = { limit = { has_template = "Light Tank template Z" } delete_unit_template_and_units = { division_template = "Light Tank template Z" disband = yes } }
 }
 
+# [light-medium-conversion] Trade ONE light-majority tank division for a fresh medium one.
+# CREATE FIRST, destroy only once the division count proves the spawn landed: a name miss must
+# cost nothing, and destroy_unit is the only division-scope removal the engine has - it refunds
+# neither men nor equipment. Rate, cost table and the rejected replace_with route: WORK.md, slug.
+# Country scope, AI only. Gate: WA_AI_TEMPLATES_should_convert_light_armor_division.
+WA_AI_TEMPLATES_convert_one_light_armor_division = {
+	set_temp_variable = { _wa_lmc_before = num_divisions }
+	# The division carries NO `name =`: an unnamed create_unit takes the engine's automatic name
+	# from the country's division-names group (common/units/names_divisions/<TAG>_*), the way an
+	# AI-deployed division does. Naming it after the template printed "Medium Tank template C".
+	meta_effect = {
+		text = {
+			capital_scope = {
+				create_unit = {
+					division = "division_template = \"[MEDIUM_TEMPLATE]\" start_experience_factor = 0.5 start_equipment_factor = 0.1 start_manpower_factor = 1"
+					owner = PREV
+				}
+			}
+		}
+		MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	}
+	set_temp_variable = { _wa_lmc_after = num_divisions }
+	if = {
+		limit = { check_variable = { _wa_lmc_after > _wa_lmc_before } }
+		random_country_division = {
+			limit = {
+				division_has_majority_template = light_armor_battalion_line
+			}
+			destroy_unit = yes
+		}
+		WA_TLM_note_light_medium_conversion = yes
+	}
+}
+
 # [war-start-suppression-template] The engine can leave its lettered cavalry templates competing
 # with the named suppression template. Remove that A..Z ladder before creating or retaining the
 # named template. Country scope: THIS/ROOT = the country entering the war.
@@ -437,19 +471,19 @@ WA_AI_TEMPLATES_update_design_deadline_latch = {
 }
 
 # [modern-chassis-tier] One-way latch: once the medium role fields the modern chassis it never
-# goes back. Same reason as the two latches above - the flag decides WHICH ai_template is enabled,
-# and a gate that flickers re-runs the engine's template decommission pass. Two of the three terms
-# are NOT monotone: use_mechanized_templates falls back under 100 military factories, and
-# use_medium_armor_templates falls under the early-expansion override.
-# The mechanized term is deliberate: the modern-chassis mirror is mechanized-only, so a
-# focus-medium country with no mechanized never switches (owner ruling).
+# goes back - the flag decides WHICH ai_template is enabled, and a gate that flickers re-runs the
+# engine's template decommission pass. Its non-monotone terms and the owner ruling on them now
+# live in WA_AI_TEMPLATES_modern_line_open, which the priming factory floors read too.
+# [modern-switch-amorce] There is deliberately NO stock precondition. A cover ratio was tried and
+# REMOVED (owner ruling 2026-09-20, MEASURED on bascule3): a major at war has no free factories, so
+# no pre-switch modern stock can ever be bought and the bar never cleared. The park is protected on
+# the way OUT instead - the modern family's can_upgrade_in_field re-cuts fielded divisions only
+# while free modern spares exist.
 WA_AI_TEMPLATES_update_modern_chassis_latch = {
 	if = {
 		limit = {
 			NOT = { has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }
-			WA_AI_TEMPLATES_use_medium_armor_templates = yes
-			WA_AI_TEMPLATES_has_modern_armor_unlocked = yes
-			WA_AI_TEMPLATES_use_mechanized_templates = yes
+			WA_AI_TEMPLATES_modern_line_open = yes
 		}
 		set_country_flag = WA_AI_TEMPLATES_modern_chassis_earned
 	}
@@ -948,11 +982,9 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	set_temp_variable = { _template_type_code = 4 }
 	set_temp_variable = { _template_value = 0 }
 	set_temp_variable = { _template_claimed = 0 }
-	# [armor-class-handoff] _mis_family: each MEC transition rung yields to its MIS twin
-	# (52xx = 51xx + 100 — unrelated to the +100 motorized-hospital mirror of the infantry
-	# ladder; replace_with -> the inf-support FINAL), so conversion ends on the medium role's
-	# own composition instead of a pure 9+6 no enabled medium target matches. Reads the
-	# WA_MEDIUM_ARMOR_TEMPLATE flag, hence medium-before-light in calculate_all_templates.
+	# [armor-class-handoff] _mis_family preserves the historical 52xx selector codes. Their
+	# generated targets are now light-only and carry no replace_with; medium-before-light remains
+	# required because this selector reads the medium chain verdict.
 	set_temp_variable = { _mis_family = 0 }
 	if = {
 		limit = { WA_AI_TEMPLATES_is_medium_mis_family = yes }
@@ -1105,15 +1137,13 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 		set_temp_variable = { _template_value = 5109 }
 		set_temp_variable = { _template_claimed = 1 }
 	}
-	# [armor-class-handoff] Post-boundary conversion rungs for a country WITHOUT light tank
-	# destroyers - every transition rung above requires one, so without these a TD-less army
-	# stayed stranded on its light templates after the switch. Conversion window only: the
-	# pre-boundary ladder is unchanged.
+	# [armor-class-handoff] Post-boundary light maintenance targets for a country WITHOUT light tank
+	# destroyers. New divisions use the medium role; the existing light park remains light-only.
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
 			check_variable = { _mis_family = 1 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
 		}
 		set_temp_variable = { _template_value = 5222 }
@@ -1122,7 +1152,7 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 			WA_AI_TEMPLATES_use_mechanized_templates = yes
 		}
 		set_temp_variable = { _template_value = 5122 }
@@ -1131,7 +1161,7 @@ WA_AI_TEMPLATES_calculate_light_armor_template = {
 	if = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
-			WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+			WA_AI_TEMPLATES_should_preserve_light_armor = yes
 		}
 		set_temp_variable = { _template_value = 5121 }
 		set_temp_variable = { _template_claimed = 1 }

@@ -582,4 +582,5 @@ def resolve_profile(registry, family_id, profile, game=None):
 
 def declared_profiles(registry, family_id, game=None):
     fam = registry.families[family_id]
-    return [resolve_profile(registry, family_id, p, game) for p in fam.get("profiles", [])]
+    return [resolve_profile(registry, family_id, p, game)
+            for p in fam.get("profiles", []) if p.get("emit", True)]

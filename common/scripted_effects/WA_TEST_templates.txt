@@ -106,12 +106,12 @@ WA_TEST_TMPL_role_armour = {
 	set_temp_variable = { _tm_u5 = 0 }
 	if = { limit = { WA_AI_TEMPLATES_use_heavy_armor_support_templates = yes } set_temp_variable = { _tm_u5 = 1 } }
 	log = "  armour: light used=[?_tm_u1|.0] set=[?_tm_s1|.0] | medium used=[?_tm_u2|.0] set=[?_tm_s2|.0] | heavy used=[?_tm_u3|.0] set=[?_tm_s3|.0] | hvy_sup used=[?_tm_u5|.0] | light_support used=[?_tm_u4|.0] set=[?_tm_s4|.0]"
-	# [armor-class-handoff] The conversion window. `light used=0 set=1 window=1 trans=5xxx` is
-	# HEALTHY: the light class is closed and the flag holds a LIGHT_MEDIUM transition template
-	# that walks the fielded divisions into the medium role. `window=1 trans=0` is the defect.
+	# [armor-class-handoff] The preservation window. `light used=0 set=1 window=1 trans=5xxx` is
+	# HEALTHY: new recruitment uses medium while the flag keeps a light-only target for the old park.
+	# `window=1 trans=0` means that maintenance target was not selected.
 	set_temp_variable = { _tm_w = 0 }
 	set_temp_variable = { _tm_tv = 0 }
-	if = { limit = { WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes } set_temp_variable = { _tm_w = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_should_preserve_light_armor = yes } set_temp_variable = { _tm_w = 1 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5109 } } set_temp_variable = { _tm_tv = 5109 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5110 } } set_temp_variable = { _tm_tv = 5110 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5111 } } set_temp_variable = { _tm_tv = 5111 } }
@@ -128,6 +128,28 @@ WA_TEST_TMPL_role_armour = {
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5216 } } set_temp_variable = { _tm_tv = 5216 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5222 } } set_temp_variable = { _tm_tv = 5222 } }
 	log = "  conv  : window=[?_tm_w|.0] trans=[?_tm_tv|.0] (window=1 trans=0 is the defect: the light class closed and no transition template answers)"
+	# [light-medium-conversion] Is the monthly light->medium ROLE conversion armed, and does it have
+	# both ends? Independent walk: the two halves are read on their own, not through the gate.
+	# light_divs=1 medium_template=1 conv_gate=0 inside the window = one of the two NOT terms still
+	# wants light divisions. conv_gate=1 with conversions flat over months = the spawn never lands
+	# (bad name, non-English client) - the case the resolver cannot report on its own.
+	set_temp_variable = { _tm_cg = 0 }
+	set_temp_variable = { _tm_cl = 0 }
+	set_temp_variable = { _tm_cm = 0 }
+	if = { limit = { WA_AI_TEMPLATES_should_convert_light_armor_division = yes } set_temp_variable = { _tm_cg = 1 } }
+	if = { limit = { any_country_division = { division_has_majority_template = light_armor_battalion_line } } set_temp_variable = { _tm_cl = 1 } }
+	if = {
+		limit = {
+			meta_trigger = {
+				text = {
+					has_template = "[MEDIUM_TEMPLATE]"
+				}
+				MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+			}
+		}
+		set_temp_variable = { _tm_cm = 1 }
+	}
+	log = "  role  : conv_gate=[?_tm_cg|.0] light_divs=[?_tm_cl|.0] medium_template=[?_tm_cm|.0] conversions=[?WA_TLM_lmc_conv_n|.0] resolved=[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
 }
 
 WA_TEST_TMPL_role_other = {

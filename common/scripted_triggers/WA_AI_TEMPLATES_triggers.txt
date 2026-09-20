@@ -308,6 +308,47 @@ WA_AI_TEMPLATES_use_armoured_waves_templates = {
 	has_doctrine = armoured_waves
 }
 
+# [modern-switch-amorce] "This country will field the modern chassis one day" - the latch's own
+# terms, WITHOUT its stock bar. Read by the three WA_AI_PRODUCTION_should_prime_modern_chassis_*
+# floors, so a few factories build a modern stock BEFORE the switch and the stock the latch
+# demands is a stock this trigger builds. Weight late, floor early - the shape of
+# WA_AI_TEMPLATES_mechanization_line_open above. Deliberately carries NO industrial bar: that
+# would bar a small country from modern armour for the whole campaign, and the bands own the
+# industrial question. The mechanized term is the owner ruling kept from the latch - the
+# modern-chassis mirror is mechanized-only, so a focus-medium country with no mechanized never
+# switches. Terms are non-monotone; the latch that reads it is one-way, which is what holds it.
+WA_AI_TEMPLATES_modern_line_open = {
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	WA_AI_TEMPLATES_has_modern_armor_unlocked = yes
+	WA_AI_TEMPLATES_use_mechanized_templates = yes
+}
+
+# [modern-switch-amorce] Does this country hold enough modern chassis to cover the park the
+# switch is about to retarget? The denominator is what the MEDIUM chassis is currently required
+# to fill: the switch swaps the same 4 battalion slots, so that demand is exactly the demand the
+# modern chassis inherits. Scaling the bar to the park is the whole point - an absolute stock bar
+# is either too low for a large park or unreachable for a small one.
+# Below min_park there is nothing to hollow and the switch is free. Country scope, AI pulse only.
+# The temp-variable-inside-a-trigger form is the one WA_AI_PRODUCTION_maintenance_triggers.txt
+# already uses for its shortage ratios.
+# [modern-switch-amorce] May already-fielded divisions be re-cut to the modern shape THIS
+# pass? Read by the modern family's can_upgrade_in_field (GENERATED from
+# tools/armor_templates_registry.json). Free spares only: a conversion draws from the stockpile.
+# Safe to flip often - this is not an `enable`, so no template loses its role and no decommission
+# pass runs. Two ASSUMED, both falsified by the wa_armor_budget `convert:` row and by nothing in
+# script: (i) that the engine consults this field on a target with no replace_with (vanilla's
+# panzergrenadier_early_GER is the only evidence); (ii) that the drain/refill settles rather than
+# starving - the cadences are MEASURED (the engine re-picks the best template every
+# NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 14 days, and a conversion costs 100 chassis of
+# free stock) but the REFILL rate is not derivable from script at all, so no self-healing claim
+# is made here. A SECOND engine valve stacks on top and is not this gate:
+# NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 90 in WA against vanilla's 60 - the AI refuses a
+# field upgrade whose equipment need takes longer than that to fill, and the training queue the
+# priming and catch-up floors feed competes for the same stockpile.
+WA_AI_TEMPLATES_can_convert_park_to_modern = {
+	check_variable = { num_equipment@modern_tank_chassis > constant:wa_ai_production.armor.modern_convert_spares_min }
+}
+
 # [modern-chassis-tier] Modern armour is the last CHASSIS GENERATION of the medium weight class,
 # not a class of division: there is no `role = modern_armor` any more. This answers "does
 # the medium role field the modern chassis", and the selector adds +500 to the medium template
@@ -351,12 +392,10 @@ WA_AI_TEMPLATES_should_disband_cavalry_on_war = {
 	NOT = { has_army_manpower = { size < @WA_CAVALRY_DISBAND_MIN_ARMY_MANPOWER } }
 }
 
-# [armor-class-handoff] The DIVISION half of the handoff: the boundary closes the light class,
-# but the fielded light divisions still need a path INTO the medium class. This window keeps the
-# LIGHT_MEDIUM transition templates selectable after the switch (their replace_with flips each
-# division onto the medium template at 0.8 match), so conversion replaces abandonment. Assumes
-# the engine still upgrades a role whose role_ratio want is 0; false = divisions freeze as before.
-WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
+# [armor-class-handoff] The boundary redirects NEW armoured divisions to the medium role. Existing
+# light divisions keep a light-only target after it, so they continue receiving modern light
+# chassis instead of replacing their battalions with mediums.
+WA_AI_TEMPLATES_should_preserve_light_armor = {
 	WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
 	WA_AI_TEMPLATES_has_light_armor_unlocked = yes
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -364,13 +403,45 @@ WA_AI_TEMPLATES_should_convert_light_to_medium_armor = {
 	NOT = { WA_AI_CONFIG_early_game_army_expansion_override = yes }
 }
 
+# [light-medium-conversion] May this AI scrap one fielded LIGHT-MAJORITY tank division this month
+# and raise a medium one in its place? Assumes the light role is legacy here: the two NOT terms
+# below are the whole safety - a country that still wants light divisions is never touched.
+# The capital term protects the spawn, which lands in capital_scope.
+# Country scope, AI only. Rationale and the rejected replace_with route: WORK.md, slug.
+WA_AI_TEMPLATES_should_convert_light_armor_division = {
+	is_ai = yes
+	WA_AI_TEMPLATES_use_medium_armor_templates = yes
+	WA_AI_TEMPLATES_switch_from_light_to_medium_armor = yes
+	NOT = { WA_AI_TEMPLATES_use_light_armor_templates = yes }
+	NOT = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes }
+	WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window = yes
+	capital_scope = { is_controlled_by = PREV }
+	# MAJORITY, never "contains one light battalion": 30 history/units OOB templates carry a single
+	# light_armor_battalion_line inside an infantry formation, and those are not tank divisions.
+	any_country_division = {
+		division_has_majority_template = light_armor_battalion_line
+	}
+	# Two independent proofs that a spawn target exists, because a meta_trigger with an unparsable
+	# token has been measured reading TRUE (lessons-log): the literal term cannot be spliced, and
+	# the effect verifies the spawn by division count before it destroys anything.
+	OR = {
+		has_template_containing_unit = medium_armor_battalion_line
+		has_template_containing_unit = modern_armor_battalion_line
+	}
+	meta_trigger = {
+		text = {
+			has_template = "[MEDIUM_TEMPLATE]"
+		}
+		MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	}
+}
+
 # [armor-class-handoff] Does the medium role TARGET an infantry-support composition? Read by the
-# light ladder's MIS redirect and the MIS FINAL enable, so a light->medium conversion ends on the
-# composition the medium role actually claims.
+# the retained selector compatibility logic; it no longer transfers ordinary light divisions.
 # Reads the generated chain verdict, not a list of template codes: the code is now a mixed-radix
 # value computed per country (tools/armor_templates_registry.json), so a hand-written value list
 # would go stale the first time an axis changes. The modern chassis stays out on purpose - the
-# FINAL this gate enables is built from medium_armor / medium_infantry_support battalions.
+# Ordinary light targets never consume this result as a medium-component gate.
 WA_AI_TEMPLATES_is_medium_mis_family = {
 	has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE
 	WA_AI_TEMPLATES_use_medium_armor_templates = yes
@@ -378,12 +449,12 @@ WA_AI_TEMPLATES_is_medium_mis_family = {
 	WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_inf_support = yes
 }
 
-# [armor-class-handoff] Gate of the transition rungs in the light ladder: open pre-boundary
-# (light and medium classes both live) and post-boundary through the conversion window above.
+# [armor-class-handoff] Gate of the retained 51xx/52xx light targets: open pre-boundary and after
+# the boundary while the old light park remains in service. These targets carry no replace_with.
 WA_AI_TEMPLATES_can_use_light_transition_templates = {
 	OR = {
 		WA_AI_TEMPLATES_use_light_armor_templates = yes
-		WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes
+		WA_AI_TEMPLATES_should_preserve_light_armor = yes
 	}
 }
 

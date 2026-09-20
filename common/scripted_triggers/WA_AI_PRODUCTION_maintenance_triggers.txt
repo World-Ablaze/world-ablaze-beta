@@ -7,30 +7,31 @@
 # Design and measurements: documentation/WA_AI_MAINTENANCE_FLOOR_PROPOSAL.md.
 #
 # TWO REASONS A PARK GOES UNSUPPLIED, and they need different gates:
-#   ARMOUR   WA itself closes the lines (the class ladder, the era boundary, a fielded cap). The
-#            four chassis keys below therefore carry the negation of their own build decision.
+#   ARMOUR   surplus can collapse engine demand even while the class remains fielded. Every tank
+#            archetype - the four main gun classes AND every variant chassis - therefore keeps a
+#            flat five-factory floor while armies require it.
 #   GROUND   nothing closes anything - anti-tank, AA, heavy AA, heavy and pack artillery have no
 #            line to close and, before this file, no factory floor anywhere in the DEFAULT tier,
 #            so the engine's need heuristic alone decided whether they were built. Their gate is
 #            the shortage and nothing else. Amtrac is the exception: its line DOES close (peace),
-#            so it carries a closure term like the armour keys.
+#            so it carries a closure term in addition to the shortage gate.
 #
-# THE SHORTAGE IS A RATIO, never an absolute stock: free spares over what the armies REQUIRE
+# THE SUPPORT-EQUIPMENT SHORTAGE IS A RATIO, never an absolute stock: free spares over what the armies REQUIRE
 # (`num_target_equipment_in_armies_k@<archetype>`, engine variable, documented in the 1.19.2
 # install). It scales itself with army size, so no per-archetype stock bar has to be guessed. The
 # `if / else = { always = no }` wrapper is the division-by-zero guard and is the shape Expert AI 5.0
 # uses for the same computation (EAI_PROD_EQUIP_REDUCE_infantry_equipment).
 #
-# `_short` ARMS the floor, `_supplied` RELEASES it, at two different bars - a Schmitt pair read by
+# For support equipment, `_short` ARMS the floor and `_supplied` RELEASES it, at two different bars - a Schmitt pair read by
 # the `enable` and `abort` blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt.
 # `abort` is NOT the negation of `enable`: it must also fire when a closure term comes back, or a
 # reopened line would keep its floor. That is why every `_should_hold_*` repeats the closure terms.
 #
-# WHY THE CATEGORY PUSH IS NEGATED ON THE ARMOUR KEYS. `WA_AI_PRODUCTION_armor_category_push`
-# raises the engine's perceived NEED for armour; a floor FORCES allocation regardless of need. The
-# two together double-count, which is why the per-chassis floors were dropped once before
-# (`[armor-prod-category]`, WA_AI_PRODUCTION_DEFAULT_tanks.txt). Negating it makes them mutually
-# exclusive by construction: this floor can only run while that lever has nothing to multiply.
+# [armor-maintenance] Owner ruling 2026-09-19 supersedes the old category-push exclusion: the
+# factor raises demand, while this floor guarantees a minimum after captured or inherited stocks
+# suppress that demand. Mine covers the old double-count objection because a minimum does not add
+# five factories above an allocation already at five or more; these blocks are the only chassis
+# floors in the DEFAULT tier.
 #
 # ALSO FLOORED ELSEWHERE, and floors on one id SUM. WA_AI_PRODUCTION_lend_lease.txt floors the
 # `anti_tank`, `anti_air` and `artillery` types on donors: those countries maintain deeper, and the
@@ -41,228 +42,601 @@
 # category-push-only, per [armor-prod-category].
 # ============================================================================
 
+##################### ARMOUR CHASSIS - PRODUCTION PERMISSION #####################
+
+# OBSERVATION - the engine will actually open a tank line for me.
+# [armor-maintenance] `can_be_produced` on every chassis archetype of
+# common/units/equipment/tank_chassis.txt bans the line outright under either treaty idea
+# (MEASURED: 35 of the 36 archetypes carry the term). A floor is need-blind and cannot override a
+# production ban, so without this term a treaty-bound country reserves factories for a line that
+# never opens. The fact is gone when the treaty ideas stop appearing in those `can_be_produced`
+# blocks - regrep before trusting this trigger.
+WA_AI_PRODUCTION_can_produce_armour_chassis = {
+	NOT = { has_idea = BUL_treaty_of_neuilly_sur_seine }
+	NOT = { has_idea = HUN_treaty_of_trianon }
+}
+
 ##################### light_tank (light_tank_chassis) #####################
-
-# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
-WA_AI_PRODUCTION_is_light_tank_short = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@light_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_light_tank = num_equipment@light_tank_chassis }
-		divide_temp_variable = { _mnt_r_light_tank = 1000 }
-		divide_temp_variable = { _mnt_r_light_tank = num_target_equipment_in_armies_k@light_tank_chassis }
-		check_variable = { _mnt_r_light_tank < constant:wa_ai_production.maintenance.shortage_enable }
-	}
-	else = { always = no }
-}
-
-# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
-WA_AI_PRODUCTION_is_light_tank_supplied = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@light_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_light_tank = num_equipment@light_tank_chassis }
-		divide_temp_variable = { _mnt_r_light_tank = 1000 }
-		divide_temp_variable = { _mnt_r_light_tank = num_target_equipment_in_armies_k@light_tank_chassis }
-		check_variable = { _mnt_r_light_tank > constant:wa_ai_production.maintenance.shortage_abort }
-	}
-	else = { always = no }
-}
 
 # DECISION - arm the floor.
 WA_AI_PRODUCTION_should_maintain_light_tank = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_light_armor = yes }
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_tank_chassis_production }
 	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	WA_AI_PRODUCTION_is_light_tank_short = yes
+	check_variable = { num_target_equipment_in_armies_k@light_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
 }
 
-# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
-# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
 WA_AI_PRODUCTION_should_hold_maintain_light_tank = {
-	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_light_armor = yes }
-	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	NOT = { WA_AI_PRODUCTION_is_light_tank_supplied = yes }
-}
-
-# DECISION - the deep half of the pair, above the large industry band.
-WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = {
 	WA_AI_PRODUCTION_should_maintain_light_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-}
-
-WA_AI_PRODUCTION_should_hold_deepen_light_tank_maintenance = {
-	WA_AI_PRODUCTION_should_hold_maintain_light_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 }
 
 ##################### medium_tank (medium_tank_chassis) #####################
 
-# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
-WA_AI_PRODUCTION_is_medium_tank_short = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@medium_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_medium_tank = num_equipment@medium_tank_chassis }
-		divide_temp_variable = { _mnt_r_medium_tank = 1000 }
-		divide_temp_variable = { _mnt_r_medium_tank = num_target_equipment_in_armies_k@medium_tank_chassis }
-		check_variable = { _mnt_r_medium_tank < constant:wa_ai_production.maintenance.shortage_enable }
-	}
-	else = { always = no }
-}
-
-# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
-WA_AI_PRODUCTION_is_medium_tank_supplied = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@medium_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_medium_tank = num_equipment@medium_tank_chassis }
-		divide_temp_variable = { _mnt_r_medium_tank = 1000 }
-		divide_temp_variable = { _mnt_r_medium_tank = num_target_equipment_in_armies_k@medium_tank_chassis }
-		check_variable = { _mnt_r_medium_tank > constant:wa_ai_production.maintenance.shortage_abort }
-	}
-	else = { always = no }
-}
-
 # DECISION - arm the floor.
 WA_AI_PRODUCTION_should_maintain_medium_tank = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_medium_armor = yes }
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_tank_chassis_production }
 	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	WA_AI_PRODUCTION_is_medium_tank_short = yes
+	check_variable = { num_target_equipment_in_armies_k@medium_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
 }
 
-# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
-# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
 WA_AI_PRODUCTION_should_hold_maintain_medium_tank = {
-	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_medium_armor = yes }
-	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	NOT = { WA_AI_PRODUCTION_is_medium_tank_supplied = yes }
-}
-
-# DECISION - the deep half of the pair, above the large industry band.
-WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = {
 	WA_AI_PRODUCTION_should_maintain_medium_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-}
-
-WA_AI_PRODUCTION_should_hold_deepen_medium_tank_maintenance = {
-	WA_AI_PRODUCTION_should_hold_maintain_medium_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 }
 
 ##################### heavy_tank (heavy_tank_chassis) #####################
 
-# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
-WA_AI_PRODUCTION_is_heavy_tank_short = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_heavy_tank = num_equipment@heavy_tank_chassis }
-		divide_temp_variable = { _mnt_r_heavy_tank = 1000 }
-		divide_temp_variable = { _mnt_r_heavy_tank = num_target_equipment_in_armies_k@heavy_tank_chassis }
-		check_variable = { _mnt_r_heavy_tank < constant:wa_ai_production.maintenance.shortage_enable }
-	}
-	else = { always = no }
-}
-
-# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
-WA_AI_PRODUCTION_is_heavy_tank_supplied = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_heavy_tank = num_equipment@heavy_tank_chassis }
-		divide_temp_variable = { _mnt_r_heavy_tank = 1000 }
-		divide_temp_variable = { _mnt_r_heavy_tank = num_target_equipment_in_armies_k@heavy_tank_chassis }
-		check_variable = { _mnt_r_heavy_tank > constant:wa_ai_production.maintenance.shortage_abort }
-	}
-	else = { always = no }
-}
-
 # DECISION - arm the floor.
 WA_AI_PRODUCTION_should_maintain_heavy_tank = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_heavy_armor = yes }
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_tank_chassis_production }
 	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	WA_AI_PRODUCTION_is_heavy_tank_short = yes
+	check_variable = { num_target_equipment_in_armies_k@heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
 }
 
-# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
-# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
 WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = {
-	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_heavy_armor = yes }
-	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	NOT = { WA_AI_PRODUCTION_is_heavy_tank_supplied = yes }
-}
-
-# DECISION - the deep half of the pair, above the large industry band.
-WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = {
 	WA_AI_PRODUCTION_should_maintain_heavy_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-}
-
-WA_AI_PRODUCTION_should_hold_deepen_heavy_tank_maintenance = {
-	WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 }
 
 ##################### modern_tank (modern_tank_chassis) #####################
 
-# OBSERVATION - free spares under the ARM bar, as a share of what the armies require.
-WA_AI_PRODUCTION_is_modern_tank_short = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@modern_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_modern_tank = num_equipment@modern_tank_chassis }
-		divide_temp_variable = { _mnt_r_modern_tank = 1000 }
-		divide_temp_variable = { _mnt_r_modern_tank = num_target_equipment_in_armies_k@modern_tank_chassis }
-		check_variable = { _mnt_r_modern_tank < constant:wa_ai_production.maintenance.shortage_enable }
-	}
-	else = { always = no }
-}
-
-# OBSERVATION - spares back above the RELEASE bar. The other half of the Schmitt pair.
-WA_AI_PRODUCTION_is_modern_tank_supplied = {
-	if = {
-		limit = { check_variable = { num_target_equipment_in_armies_k@modern_tank_chassis > constant:wa_ai_production.maintenance.target_min_k } }
-		set_temp_variable = { _mnt_r_modern_tank = num_equipment@modern_tank_chassis }
-		divide_temp_variable = { _mnt_r_modern_tank = 1000 }
-		divide_temp_variable = { _mnt_r_modern_tank = num_target_equipment_in_armies_k@modern_tank_chassis }
-		check_variable = { _mnt_r_modern_tank > constant:wa_ai_production.maintenance.shortage_abort }
-	}
-	else = { always = no }
-}
-
 # DECISION - arm the floor.
 WA_AI_PRODUCTION_should_maintain_modern_tank = {
 	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_modern_armor = yes }
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_tank_chassis_production }
 	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	WA_AI_PRODUCTION_is_modern_tank_short = yes
+	check_variable = { num_target_equipment_in_armies_k@modern_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
 }
 
-# DECISION - hold it. Read NEGATED by the ai_strategy `abort` block, so it repeats every term of
-# the enable: a closure term coming back must retire the floor, not only a refilled stockpile.
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
 WA_AI_PRODUCTION_should_hold_maintain_modern_tank = {
-	WA_AI_PRODUCTION_tanks_is_enabled = yes
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }
-	NOT = { WA_AI_PRODUCTION_build_modern_armor = yes }
-	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	NOT = { WA_AI_PRODUCTION_is_modern_tank_supplied = yes }
-}
-
-# DECISION - the deep half of the pair, above the large industry band.
-WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = {
 	WA_AI_PRODUCTION_should_maintain_modern_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
 }
 
-WA_AI_PRODUCTION_should_hold_deepen_modern_tank_maintenance = {
-	WA_AI_PRODUCTION_should_hold_maintain_modern_tank = yes
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+##################### ARMOUR VARIANT CHASSIS #####################
+# [armor-variant-maintenance] Same gate as the four main classes, one pair per VARIANT chassis
+# archetype: tank destroyer, SP artillery, SP rocket, assault gun, SPAA, infantry-support and
+# support tank, plus the super-heavy family, the amphibious tank and the two armoured cars.
+# A Flakpanzer is not a light tank to the engine - `light_spaa_tank_chassis` is its own archetype,
+# so the light_tank_chassis floor above never reached it and the line ran on perceived need alone.
+# Each gate is self-limiting: `num_target_equipment_in_armies_k@<arch>` is 0 for a country whose
+# templates never ask for that chassis, so no floor is owed and none arms. The fact is gone when a
+# country whose divisions clearly carry the variant reads require=0 in the console harness.
+##################### ############################ #####################
+
+##################### light_tank_destroyer (light_tank_destroyer_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_tank_destroyer_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_tank_destroyer_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_tank_destroyer = {
+	WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes
+}
+
+##################### light_tank_artillery (light_tank_artillery_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_tank_artillery = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_tank_artillery_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_tank_artillery_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_tank_artillery = {
+	WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes
+}
+
+##################### light_assault_tank (light_assault_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_assault_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_assault_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_assault_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_assault_tank = {
+	WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes
+}
+
+##################### light_spaa_tank (light_spaa_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_spaa_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_spaa_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_spaa_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_spaa_tank = {
+	WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes
+}
+
+##################### light_infantry_support_tank (light_infantry_support_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_infantry_support_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_infantry_support_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_infantry_support_tank = {
+	WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes
+}
+
+##################### light_tank_support (light_tank_support_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_light_tank_support = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_light_tank_support_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@light_tank_support_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_light_tank_support = {
+	WA_AI_PRODUCTION_should_maintain_light_tank_support = yes
+}
+
+##################### medium_tank_destroyer (medium_tank_destroyer_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_tank_destroyer_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_tank_destroyer_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_tank_destroyer = {
+	WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes
+}
+
+##################### medium_tank_artillery (medium_tank_artillery_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_tank_artillery_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_tank_artillery_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_tank_artillery = {
+	WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes
+}
+
+##################### medium_tank_rocket (medium_tank_rocket_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_tank_rocket_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_tank_rocket_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_tank_rocket = {
+	WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes
+}
+
+##################### medium_assault_tank (medium_assault_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_assault_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_assault_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_assault_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_assault_tank = {
+	WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes
+}
+
+##################### medium_spaa_tank (medium_spaa_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_spaa_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_spaa_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_spaa_tank = {
+	WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes
+}
+
+##################### medium_infantry_support_tank (medium_infantry_support_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_infantry_support_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_infantry_support_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_infantry_support_tank = {
+	WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes
+}
+
+##################### medium_tank_support (medium_tank_support_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_medium_tank_support = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_medium_tank_support_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@medium_tank_support_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_medium_tank_support = {
+	WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes
+}
+
+##################### heavy_tank_destroyer (heavy_tank_destroyer_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_tank_destroyer_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_tank_destroyer_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_destroyer = {
+	WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes
+}
+
+##################### heavy_tank_artillery (heavy_tank_artillery_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_tank_artillery_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_tank_artillery_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_artillery = {
+	WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes
+}
+
+##################### heavy_assault_tank (heavy_assault_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_assault_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_assault_tank = {
+	WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes
+}
+
+##################### heavy_spaa_tank (heavy_spaa_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_spaa_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_spaa_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_spaa_tank = {
+	WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes
+}
+
+##################### heavy_infantry_support_tank (heavy_infantry_support_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_infantry_support_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_infantry_support_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_infantry_support_tank = {
+	WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes
+}
+
+##################### heavy_tank_support (heavy_tank_support_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_heavy_tank_support = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_heavy_tank_support_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@heavy_tank_support_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_support = {
+	WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes
+}
+
+##################### modern_tank_destroyer (modern_tank_destroyer_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_tank_destroyer_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@modern_tank_destroyer_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_modern_tank_destroyer = {
+	WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes
+}
+
+##################### modern_tank_artillery (modern_tank_artillery_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_tank_artillery_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@modern_tank_artillery_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_modern_tank_artillery = {
+	WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes
+}
+
+##################### modern_assault_tank (modern_assault_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_assault_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_assault_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@modern_assault_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_modern_assault_tank = {
+	WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes
+}
+
+##################### modern_spaa_tank (modern_spaa_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_spaa_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@modern_spaa_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_modern_spaa_tank = {
+	WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes
+}
+
+##################### modern_infantry_support_tank (modern_infantry_support_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_modern_infantry_support_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@modern_infantry_support_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_modern_infantry_support_tank = {
+	WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes
+}
+
+##################### super_heavy_tank (super_heavy_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_super_heavy_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_super_heavy_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@super_heavy_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank = {
+	WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes
+}
+
+##################### super_heavy_tank_destroyer (super_heavy_tank_destroyer_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@super_heavy_tank_destroyer_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank_destroyer = {
+	WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes
+}
+
+##################### super_heavy_tank_artillery (super_heavy_tank_artillery_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_super_heavy_tank_artillery_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@super_heavy_tank_artillery_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank_artillery = {
+	WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes
+}
+
+##################### super_heavy_spaa_tank (super_heavy_spaa_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_super_heavy_spaa_tank_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@super_heavy_spaa_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_super_heavy_spaa_tank = {
+	WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes
+}
+
+##################### landkruiser_tank (landkruiser_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_landkruiser_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@landkruiser_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_landkruiser_tank = {
+	WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes
+}
+
+##################### amphibious_tank (amphibious_tank_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_amphibious_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@amphibious_tank_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_amphibious_tank = {
+	WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes
+}
+
+##################### scout_car (scout_car_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_scout_car = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_scout_car_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@scout_car_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_scout_car = {
+	WA_AI_PRODUCTION_should_maintain_scout_car = yes
+}
+
+##################### combat_car (combat_car_chassis) #####################
+
+# DECISION - arm the floor.
+WA_AI_PRODUCTION_should_maintain_combat_car = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
+	WA_AI_PRODUCTION_can_produce_armour_chassis = yes
+	NOT = { has_country_flag = AI_purge_combat_car_chassis_production }
+	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
+	check_variable = { num_target_equipment_in_armies_k@combat_car_chassis > constant:wa_ai_production.maintenance.target_min_k }
+}
+
+# DECISION - hold. Same fielded-demand gate, so the floor retires the moment the armies stop asking.
+WA_AI_PRODUCTION_should_hold_maintain_combat_car = {
+	WA_AI_PRODUCTION_should_maintain_combat_car = yes
 }
 
 ##################### anti_tank (anti_tank_equipment) #####################

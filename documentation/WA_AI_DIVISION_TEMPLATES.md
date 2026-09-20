@@ -247,6 +247,12 @@ country's doctrine pushes. The TEMPLATE layer asks a different question and has 
   the handoff derive from it: `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` closes light,
   `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` opens medium. Do not add a second light-era or
   medium-era date anywhere.
+- `WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window` — the ONE sanctioned exception to the
+  rule above (`[light-medium-conversion]`, owner order 2026-09-19). It is not an era boundary: its
+  only reader, `WA_AI_TEMPLATES_should_convert_light_armor_division`, also requires
+  `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`, so the window is a DELAY after the boundary
+  and can never re-open the 1940 gap. It decides when already-FIELDED light divisions are scrapped,
+  not when the light class closes. Generic path 1942.1.1; GER opens on `GER_prepare_barbarossa`.
 
 There is no `WA_AI_CONFIG_TEMPLATES_focus_on_light_armor`: it was deleted with
 `[armor-class-handoff]` because the switch closes the light class a year before that trigger's
@@ -317,7 +323,7 @@ Ground production triggers:
 - Artillery: `WA_AI_PRODUCTION_build_artillery`, `WA_AI_PRODUCTION_build_artillery_major`.
 - Anti-tank: `WA_AI_PRODUCTION_build_anti_tank`, `WA_AI_PRODUCTION_build_heavy_anti_tank`.
 - Anti-air: `WA_AI_PRODUCTION_build_anti_air`, `WA_AI_PRODUCTION_build_heavy_anti_air`.
-- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, `WA_AI_PRODUCTION_build_trucks_stockpile_low`, `WA_AI_PRODUCTION_build_trucks_stockpile_very_low`, `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
+- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, the six band gates `WA_AI_PRODUCTION_should_floor_trucks_<band>` and their `should_hold_floor_trucks_<band>` partners, the three `should_floor_trucks_deep_<band>` gates ([truck-floor-ladder]), `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
 
 Tank and mechanized production triggers:
 

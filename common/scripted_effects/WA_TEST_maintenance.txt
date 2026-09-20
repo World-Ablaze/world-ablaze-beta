@@ -2,16 +2,17 @@
 #	World Ablaze - MAINTENANCE FLOOR console harness. harness-contract: v1 (wa-testing SKILL).
 ############################################################################################################
 #	[maintenance-floor] Instrument for the land maintenance floors: which equipment archetypes are
-#	MAINTAINED (free spares short against what the armies require), at what floor, and whether the
-#	shipped decisions agree with a walk that re-derives the ratio from its own terms. Nothing in a
+#	MAINTAINED, at what floor, and whether the shipped decisions agree with independent walks.
+#	Armour maintenance follows fielded demand; support equipment follows its reserve ratio. Nothing in a
 #	savegame names an ai_strategy block, so the only way to see the gate is to print it.
 #
 #	Recipe: events/wa_test_maintenance.txt header. Fire `event wa_maint.1 GER` from ANY tag - do NOT
 #	tag into the country under test (tag-switching makes it human and is_ai reads no).
 #	Output: logs/game.log, "MAINTENANCE TEST".
 #
-#	Section B prints one row per archetype: what the armies REQUIRE, the free spares, the ratio
-#	between them, and the floor that follows. Section C re-derives the ratio independently for one
+#	Section B prints one row per main archetype: what the armies REQUIRE, the free spares, the ratio
+#	between them, and the floor that follows. Section B1 does the same for the 32 VARIANT chassis,
+#	printing only those whose floor arms. Section C re-derives the ratio independently for one
 #	key (contract rule 4). Section D is the verdict.
 #
 #	READ THE VERDICT LINE AT THE BOTTOM. All five values must read 1.
@@ -47,13 +48,12 @@ WA_TEST_MAINT_report = {
 	set_temp_variable = { _mnt_ab = constant:wa_ai_production.maintenance.shortage_abort }
 	set_temp_variable = { _mnt_tm = constant:wa_ai_production.maintenance.target_min_k }
 	set_temp_variable = { _mnt_fb = constant:wa_ai_production.maintenance.floor_base }
-	set_temp_variable = { _mnt_fd = constant:wa_ai_production.maintenance.floor_deep_add }
 	set_temp_variable = { _mnt_gb = constant:wa_ai_production.maintenance.ground_floor_base }
 	set_temp_variable = { _mnt_gd = constant:wa_ai_production.maintenance.ground_floor_deep_add }
 	set_temp_variable = { _mnt_push = 0 }
 	if = { limit = { WA_AI_PRODUCTION_armor_category_push = yes } set_temp_variable = { _mnt_push = 1 } }
 	log = "  inputs: is_ai=[?_mnt_ai|.0]  mils=[?_mnt_mils|.0]  armor_category_push=[?_mnt_push|.0]"
-	log = "  bars  : arm<[?_mnt_en|.2]  release>[?_mnt_ab|.2]  target_min_k=[?_mnt_tm|.2]  floor armour [?_mnt_fb|.0]+[?_mnt_fd|.0]  ground [?_mnt_gb|.0]+[?_mnt_gd|.0]"
+	log = "  bars  : arm<[?_mnt_en|.2]  release>[?_mnt_ab|.2]  target_min_k=[?_mnt_tm|.2]  floor armour [?_mnt_fb|.0]  ground [?_mnt_gb|.0]+[?_mnt_gd|.0]"
 
 	############################################################
 	# B. One row per archetype. ratio = free spares / what the armies require.
@@ -63,7 +63,7 @@ WA_TEST_MAINT_report = {
 	set_temp_variable = { _mnt_n = 0 }
 	set_temp_variable = { _mnt_sum = 0 }
 	set_temp_variable = { _mnt_ok_schmitt = 1 }
-	set_temp_variable = { _mnt_ok_excl = 1 }
+	set_temp_variable = { _mnt_ok_armor = 1 }
 	set_temp_variable = { _mnt_ok_use = 1 }
 	set_temp_variable = { _mnt_ok_deep = 1 }
 
@@ -78,13 +78,10 @@ WA_TEST_MAINT_report = {
 	}
 	set_temp_variable = { _mnt_lt_f = 0 }
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } set_temp_variable = { _mnt_lt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes } add_to_temp_variable = { _mnt_lt_f = _mnt_fd } }
 	add_to_temp_variable = { _mnt_sum = _mnt_lt_f }
-	# Schmitt: short and supplied are two different bars, so they may never both hold.
-	if = { limit = { WA_AI_PRODUCTION_is_light_tank_short = yes WA_AI_PRODUCTION_is_light_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes WA_AI_PRODUCTION_build_light_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	# The armour floor follows fielded demand, even while category demand is raised or stock is abundant.
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes NOT = { check_variable = { _mnt_lt_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_lt_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
 	log = "  light_tank      : require=[?_mnt_lt_t|.2]k  spares=[?_mnt_lt_s|.0]  ratio=[?_mnt_lt_r|.2]  -> floor=[?_mnt_lt_f|.0]"
 
 	set_temp_variable = { _mnt_mt_t = num_target_equipment_in_armies_k@medium_tank_chassis }
@@ -98,13 +95,9 @@ WA_TEST_MAINT_report = {
 	}
 	set_temp_variable = { _mnt_mt_f = 0 }
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } set_temp_variable = { _mnt_mt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes } add_to_temp_variable = { _mnt_mt_f = _mnt_fd } }
 	add_to_temp_variable = { _mnt_sum = _mnt_mt_f }
-	# Schmitt: short and supplied are two different bars, so they may never both hold.
-	if = { limit = { WA_AI_PRODUCTION_is_medium_tank_short = yes WA_AI_PRODUCTION_is_medium_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes WA_AI_PRODUCTION_build_medium_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes NOT = { check_variable = { _mnt_mt_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_mt_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
 	log = "  medium_tank     : require=[?_mnt_mt_t|.2]k  spares=[?_mnt_mt_s|.0]  ratio=[?_mnt_mt_r|.2]  -> floor=[?_mnt_mt_f|.0]"
 
 	set_temp_variable = { _mnt_ht_t = num_target_equipment_in_armies_k@heavy_tank_chassis }
@@ -118,13 +111,9 @@ WA_TEST_MAINT_report = {
 	}
 	set_temp_variable = { _mnt_ht_f = 0 }
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes } set_temp_variable = { _mnt_ht_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes } add_to_temp_variable = { _mnt_ht_f = _mnt_fd } }
 	add_to_temp_variable = { _mnt_sum = _mnt_ht_f }
-	# Schmitt: short and supplied are two different bars, so they may never both hold.
-	if = { limit = { WA_AI_PRODUCTION_is_heavy_tank_short = yes WA_AI_PRODUCTION_is_heavy_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes WA_AI_PRODUCTION_build_heavy_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes NOT = { check_variable = { _mnt_ht_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_ht_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
 	log = "  heavy_tank      : require=[?_mnt_ht_t|.2]k  spares=[?_mnt_ht_s|.0]  ratio=[?_mnt_ht_r|.2]  -> floor=[?_mnt_ht_f|.0]"
 
 	set_temp_variable = { _mnt_xt_t = num_target_equipment_in_armies_k@modern_tank_chassis }
@@ -138,14 +127,406 @@ WA_TEST_MAINT_report = {
 	}
 	set_temp_variable = { _mnt_xt_f = 0 }
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes } set_temp_variable = { _mnt_xt_f = _mnt_fb } add_to_temp_variable = { _mnt_n = 1 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes } add_to_temp_variable = { _mnt_xt_f = _mnt_fd } }
 	add_to_temp_variable = { _mnt_sum = _mnt_xt_f }
-	# Schmitt: short and supplied are two different bars, so they may never both hold.
-	if = { limit = { WA_AI_PRODUCTION_is_modern_tank_short = yes WA_AI_PRODUCTION_is_modern_tank_supplied = yes } set_temp_variable = { _mnt_ok_schmitt = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes NOT = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes } } set_temp_variable = { _mnt_ok_deep = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes check_variable = { _mnt_push = 1 } } set_temp_variable = { _mnt_ok_excl = 0 } }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes WA_AI_PRODUCTION_build_modern_armor = yes } set_temp_variable = { _mnt_ok_use = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes NOT = { check_variable = { _mnt_xt_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_xt_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
 	log = "  modern_tank     : require=[?_mnt_xt_t|.2]k  spares=[?_mnt_xt_s|.0]  ratio=[?_mnt_xt_r|.2]  -> floor=[?_mnt_xt_f|.0]"
+
+	############################################################
+	# B1. [armor-variant-maintenance] The variant chassis archetypes. One line each, printed ONLY
+	#     where the floor actually arms - 32 unconditional rows would bury the verdict. A variant
+	#     this country never fields reads require=0 and is silently absent, which is correct.
+	#     _mnt_vn / _mnt_vsum are the disproportion measurement: variant floors SUM with the four
+	#     main-class ones, so read _mnt_sum against mils before calling the total sane.
+	############################################################
+
+	set_temp_variable = { _mnt_vn = 0 }
+	set_temp_variable = { _mnt_vsum = 0 }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_tank_destroyer_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_tank_destroyer_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_tank_destroyer              : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_tank_artillery_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_tank_artillery_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_tank_artillery              : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_assault_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_assault_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_assault_tank                : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_spaa_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_spaa_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_spaa_tank                   : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_infantry_support_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_infantry_support_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_infantry_support_tank       : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@light_tank_support_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@light_tank_support_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_light_tank_support = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var light_tank_support                : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank_support = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_light_tank_support = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_tank_destroyer_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_tank_destroyer_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_tank_destroyer             : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_tank_artillery_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_tank_artillery_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_tank_artillery             : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_tank_rocket_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_tank_rocket_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_tank_rocket                : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_assault_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_assault_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_assault_tank               : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_spaa_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_spaa_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_spaa_tank                  : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_infantry_support_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_infantry_support_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_infantry_support_tank      : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@medium_tank_support_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@medium_tank_support_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var medium_tank_support               : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_tank_destroyer_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_tank_destroyer_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_tank_destroyer              : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_tank_artillery_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_tank_artillery_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_tank_artillery              : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_assault_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_assault_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_assault_tank                : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_spaa_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_spaa_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_spaa_tank                   : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_infantry_support_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_infantry_support_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_infantry_support_tank       : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@heavy_tank_support_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@heavy_tank_support_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var heavy_tank_support                : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@modern_tank_destroyer_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@modern_tank_destroyer_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var modern_tank_destroyer             : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@modern_tank_artillery_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@modern_tank_artillery_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var modern_tank_artillery             : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@modern_assault_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@modern_assault_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var modern_assault_tank               : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@modern_spaa_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@modern_spaa_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var modern_spaa_tank                  : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@modern_infantry_support_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@modern_infantry_support_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var modern_infantry_support_tank      : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@super_heavy_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@super_heavy_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var super_heavy_tank                  : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@super_heavy_tank_destroyer_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@super_heavy_tank_destroyer_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var super_heavy_tank_destroyer        : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@super_heavy_tank_artillery_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@super_heavy_tank_artillery_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var super_heavy_tank_artillery        : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@super_heavy_spaa_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@super_heavy_spaa_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var super_heavy_spaa_tank             : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@landkruiser_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@landkruiser_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var landkruiser_tank                  : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@amphibious_tank_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@amphibious_tank_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var amphibious_tank                   : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@scout_car_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@scout_car_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_scout_car = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var scout_car                         : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_scout_car = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_scout_car = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	set_temp_variable = { _mnt_v_t = num_target_equipment_in_armies_k@combat_car_chassis }
+	set_temp_variable = { _mnt_v_s = num_equipment@combat_car_chassis }
+	if = {
+		limit = { WA_AI_PRODUCTION_should_maintain_combat_car = yes }
+		add_to_temp_variable = { _mnt_vn = 1 }
+		add_to_temp_variable = { _mnt_vsum = _mnt_fb }
+		add_to_temp_variable = { _mnt_n = 1 }
+		add_to_temp_variable = { _mnt_sum = _mnt_fb }
+		log = "  var combat_car                        : require=[?_mnt_v_t|.2]k  spares=[?_mnt_v_s|.0]  -> floor=[?_mnt_fb|.0]"
+	}
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_combat_car = yes NOT = { check_variable = { _mnt_v_t > _mnt_tm } } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	if = { limit = { WA_AI_PRODUCTION_tanks_is_enabled = yes num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils check_variable = { _mnt_v_t > _mnt_tm } NOT = { WA_AI_PRODUCTION_should_maintain_combat_car = yes } } set_temp_variable = { _mnt_ok_armor = 0 } }
+	log = "  variants: [?_mnt_vn|.0] of 32 variant archetypes maintained, [?_mnt_vsum|.0] factories"
 
 	set_temp_variable = { _mnt_at_t = num_target_equipment_in_armies_k@anti_tank_equipment }
 	set_temp_variable = { _mnt_at_s = num_equipment@anti_tank_equipment }
@@ -256,7 +637,7 @@ WA_TEST_MAINT_report = {
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_amtrac = yes WA_AI_PRODUCTION_build_amphibious_mech = yes } set_temp_variable = { _mnt_ok_use = 0 } }
 	log = "  amtrac          : require=[?_mnt_am_t|.2]k  spares=[?_mnt_am_s|.0]  ratio=[?_mnt_am_r|.2]  -> floor=[?_mnt_am_f|.0]"
 
-	log = "  totals: [?_mnt_n|.0] of 10 archetypes maintained, [?_mnt_sum|.0] factories requested in all"
+	log = "  totals: [?_mnt_n|.0] of 42 archetypes maintained, [?_mnt_sum|.0] factories requested in all   (compare with mils=[?_mnt_mils|.0])"
 
 	############################################################
 	# B2. [minor-gun-floor] the BASELINE gun floors of WA_AI_PRODUCTION_DEFAULT_ground.txt. A
@@ -294,13 +675,12 @@ WA_TEST_MAINT_report = {
 	# D. Verdict
 	#    agree      B and C ask the same question of anti-tank and get the same answer
 	#    schmitt    no key is both short and supplied - the two bars have not crossed
-	#    exclusive  no ARMOUR key is maintained while the armour category push is armed
-	#               (a need-blind floor under a raised demand double-counts)
-	#    useful     no key is maintained while its own build decision still holds
+#    armor      each armour gate agrees with the fielded-demand rule
+#    useful     the remaining ratio-based floor does not overlap its own build decision
 	#    deep       the deep half never arms without the base half
 	############################################################
 
-	log = "  VERDICT: shipped-vs-walk=[?_mnt_ok_agree|.0]  schmitt-disjoint=[?_mnt_ok_schmitt|.0]  exclusive-with-category-push=[?_mnt_ok_excl|.0]  floor-is-useful=[?_mnt_ok_use|.0]  deep-implies-base=[?_mnt_ok_deep|.0]   (all five must read 1)"
+	log = "  VERDICT: shipped-vs-walk=[?_mnt_ok_agree|.0]  schmitt-disjoint=[?_mnt_ok_schmitt|.0]  armor-fielded-gates=[?_mnt_ok_armor|.0]  support-floor-is-useful=[?_mnt_ok_use|.0]  deep-implies-base=[?_mnt_ok_deep|.0]   (all five must read 1)"
 	log = "=== END MAINTENANCE TEST ==="
 }
 
@@ -316,13 +696,13 @@ WA_TEST_MAINT_report = {
 WA_TEST_MAINT_probe_field = {
 	log = "=== MAINTENANCE FIELD PROBE === [Root.GetName] [GetDateText]"
 	set_temp_variable = { _mnt_q1 = 0 }
-	if = { limit = { WA_AI_PRODUCTION_should_maintain_anti_tank = yes } set_temp_variable = { _mnt_q1 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_maintain_light_tank = yes } set_temp_variable = { _mnt_q1 = 1 } }
 	set_temp_variable = { _mnt_q2 = 0 }
 	if = { limit = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes } set_temp_variable = { _mnt_q2 = 1 } }
-	set_temp_variable = { _mnt_q3 = num_equipment@anti_tank_equipment }
+	set_temp_variable = { _mnt_q3 = num_equipment@light_tank_chassis }
 	set_temp_variable = { _mnt_q4 = num_equipment@medium_tank_chassis }
-	log = "  gate  : anti_tank maintained=[?_mnt_q1|.0]  medium_tank maintained=[?_mnt_q2|.0]"
-	log = "  stock : anti_tank=[?_mnt_q3|.0]  medium_tank_chassis=[?_mnt_q4|.0]   (must GROW over the next month where the gate reads 1)"
-	log = "  NOW READ THE PRODUCTION PANEL: how many factories on each archetype, and which variant."
+	log = "  gate  : light_tank maintained=[?_mnt_q1|.0]  medium_tank maintained=[?_mnt_q2|.0]"
+	log = "  stock : light_tank_chassis=[?_mnt_q3|.0]  medium_tank_chassis=[?_mnt_q4|.0]   (must GROW over the next month where the gate reads 1)"
+	log = "  NOW READ THE PRODUCTION PANEL: each armour gate at 1 must have at least 5 factories, on the newest producible variant."
 	log = "=== END MAINTENANCE FIELD PROBE ==="
 }

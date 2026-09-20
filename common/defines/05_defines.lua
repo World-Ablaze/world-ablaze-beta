@@ -353,7 +353,7 @@ NDefines.NMilitary.MAX_HQ_SUPPORT_WIDTH = 1											-- Max width of support in
 NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
 NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
-NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3 }  				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
+NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 2, 2 }  				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
 NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = {	1,  4,  7,  10, 13,                 -- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
 												2,  5,  8,  11, 14,
 												3,  6,  9,  12, 15,
@@ -1356,8 +1356,8 @@ NDefines.NAI.WANTED_MAX_FUEL_BUFFER_IN_DAYS_FOR_NAVY_MAX_CONSUMPTION = 60 	 		--
 NDefines.NAI.MIN_WANTED_MAX_FUEL = 5									   			-- minimum value for wanted fuel buffers for AI (in thousands)
 
 -- [division-target-scaling] WA's overall balance makes vanilla division targets unattainable; stale if AI countries stop reaching their sustainable deployment ceiling.
-NDefines.NAI.WANTED_UNITS_WEIGHT_FRONTS_WANT = 0.09									-- Weight of front needs when computing final nr wanted units
-NDefines.NAI.WANTED_UNITS_WEIGHT_FACTORIES = 0.10									-- Weight of military factories when computing final nr wanted units
+NDefines.NAI.WANTED_UNITS_WEIGHT_FRONTS_WANT = 0.08									-- Weight of front needs when computing final nr wanted units
+NDefines.NAI.WANTED_UNITS_WEIGHT_FACTORIES = 0.09									-- Weight of military factories when computing final nr wanted units
 NDefines.NAI.WANTED_UNITS_WEIGHT_MANPOWER = 0.07									-- Weight of manpower availability when computing final nr wanted units
 NDefines.NAI.WANTED_UNITS_MANPOWER_DIVISOR  = 17250 								-- Normalizing divisor for AI manpower. (for each x max available manpower, they want one division). This has been adjusted to WA division manpower.
 -- NDefines.NAI.WANTED_UNITS_MIN_DEFENCE_FACTOR = 0.5                        			-- Factor on units required for min defence
@@ -1449,16 +1449,22 @@ NDefines.NAI.DEPLOY_MIN_EQUIPMENT_PEACE_FACTOR = 0.95								-- Required percent
 NDefines.NAI.DEPLOY_MIN_TRAINING_WAR_FACTOR = 1.0									-- Required percentage of training (1.0 = 100%) for AI to deploy unit in wartime
 NDefines.NAI.DEPLOY_MIN_EQUIPMENT_WAR_FACTOR = 0.9									-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime
 
-NDefines.NAI.UPGRADE_DIVISION_RELUCTANCE = 7										-- How often to consider upgrading to new templates for units in the field
+NDefines.NAI.UPGRADE_DIVISION_RELUCTANCE = 14										-- How often to consider upgrading to new templates for units in the field
 -- [armor-class-handoff] The two field-upgrade valves for era conversions (light->medium,
 -- medium->modern via replace_with transitions). Too tight and a training queue that consumes tank
 -- production blocks every field conversion; too loose and the AI converts half its armour at once
--- into a deficit of thousands of tanks that pulls factories for a year. 0.3 = share of the army
--- eligible per pass; 120 = longest re-equip time the AI accepts. Sign of too tight: fielded
+-- into a deficit of thousands of tanks that pulls factories for a year. 0.2 = share of the army
+-- eligible per pass; 90 = longest re-equip time the AI accepts. Sign of too tight: fielded
 -- divisions frozen on a transition template in imgui ai_templates with the match threshold met.
-NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.3										-- How big part of the army that should be considered for upgrading
+-- [modern-switch-amorce] Owner ruling 2026-09-20 took the limit from 120 to 90, the third step of
+-- the same tightening (365 -> 120 -> 90). KNOWN TENSION, recorded so nobody quietly reverts it:
+-- wa-lessons-learned (2026-08-29) names 90 as the value at which an AI whose tank production is
+-- consumed by training never converts its fielded ones - and the modern switch now feeds exactly
+-- such a queue through its priming and catch-up factory floors. Owner accepts that; the
+-- WA_TEST_armor_budget convert: row is what would show it biting.
+NDefines.NAI.UPGRADE_PERCENTAGE_OF_FORCES = 0.2										-- How big part of the army that should be considered for upgrading
 
-NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 120	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
+NDefines.NAI.UPGRADES_DEFICIT_LIMIT_DAYS = 90 	                    				-- Ai will avoid upgrading units in the field to new templates if it takes longer than this to fullfill their equipment need
 
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_WARTIME = 0.4					-- deployment will try to buffer a ratio of manpower (for reinforcements) during war time
 NDefines.NAI.MAX_AVAILABLE_MANPOWER_RATIO_TO_BUFFER_PEACETIME = 0.01				-- deployment will try to buffer a ratio of manpower (for reinforcements) during peace time
@@ -1562,7 +1568,11 @@ NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_NAVY_SPIRIT = 10   -- How quickly is desire
 NDefines.NAI.DESIRE_USE_XP_TO_UNLOCK_AIR_SPIRIT = 10     -- How quickly is desire to unlock air spirits accumulated?
 
 NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_DOCTRINE = 7       -- Recalculate desired best doctrine to unlock with this many days inbetween.
-NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 7       -- Recalculate desired best template to upgrade with this many days inbetween.
+-- [modern-switch-amorce] Owner ruling 2026-09-20: 14, not the vanilla 7. Halves how often the AI
+-- re-picks the best template for a role, so a template about to change (an era conversion, the
+-- modern chassis switch) is re-decided twice a month instead of four times. Mod-wide, not
+-- armour-only. UPGRADE_DIVISION_RELUCTANCE above is already 14, so the two cadences now agree.
+NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_TEMPLATE = 14      -- Recalculate desired best template to upgrade with this many days inbetween.
 NDefines.NAI.DAYS_BETWEEN_CHECK_BEST_EQUIPMENT = 7      -- Recalculate desired best equipment to upgrade with this many days inbetween.
 
 NDefines.NAI.GARRISON_TEMPLATE_SCORE_IC_FACTOR = 1.0 -- ai uses these defines while calculating garrison template score of a template.

@@ -17,7 +17,14 @@ couche 4 qui appellent des triggers de couche 3.
 | 1 | **DÉCLARATION** | « Quelle est la valeur ? » | `common/script_constants/wa_ai_*.txt` + `common/scripted_triggers/WA_AI_CONFIG*.txt` + `common/scripted_triggers/WA_AI_TECHTREE_membership.txt` (GÉNÉRÉ, cf. §5) | rien |
 | 2 | **OBSERVATION** | « Qu'est-ce qui est vrai, maintenant ? » | `WA_AI_<SYS>_is_*` / `_has_*` / `_holds_*` dans `common/scripted_triggers/WA_AI_<SYS>_*.txt` | couche 1 |
 | 3 | **DÉCISION** | « Faut-il agir ? » | `WA_AI_<SYS>_should_*` / `_can_*`, mêmes fichiers | couches 1 + 2 |
-| 4 | **CONSOMMATION** | — | `common/ai_strategy/`, `common/scripted_effects/`, `events/`, `common/decisions/` | couche 3 (plus l'adressage Country `allowed = { tag = X }`) |
+| 4 | **CONSOMMATION** | — | `common/ai_strategy/`, `common/scripted_effects/`, `events/`, `common/decisions/`, `common/ai_templates/` | couche 3 (plus l'adressage Country `allowed = { tag = X }`) |
+
+`common/ai_templates/` est une surface de consommation comme les autres — un `enable`,
+un `can_upgrade_in_field` ou un `upgrade_prio` nomme un trigger de couche 3 — mais
+`tools/check_ai_layers.py` **ne balaie pas ce dossier** : ses fichiers sont GÉNÉRÉS
+(`tools/gen/gen_ai_armor_templates.py`), donc la règle se tient dans le registre source
+et non par grep. Ajouter un terme de couche 2 dans un champ de template est une dette que
+le cliquet ne verra pas ; c'est la revue du registre qui l'attrape.
 
 La couche est **portée par le nom** (préfixe + verbe) : c'est ce qui rend le modèle vérifiable
 par grep. Les triggers existants antérieurs au modèle ne sont **pas** renommés en masse

@@ -152,31 +152,163 @@ WA_AI_PRODUCTION_build_trucks = {
 # [uk-truck-supply] the stock bar is 1500 = wa_ai_lend_lease.motorized.starve (registry-linked):
 # the floor must not switch off while the country still counts as truck-starving. The old 1000
 # cutoff bought two motorized hubs and died, which is the ENG "supply fulfillment < 50% in Africa"
-# symptom. Three industry tiers: <30 factories = 3, 30-49 = 6, >49 = 10 (ENG starts at 36 and sat
-# on the 3-factory tier).
-WA_AI_PRODUCTION_build_trucks_stockpile_low = {
-	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+# symptom.
+# [truck-floor-ladder] The industry bands of the truck floor, factored out so the arm trigger and
+# its hold partner cannot drift apart. `_top` is the deep tier's last band (supermajor AND
+# superpower together); every other band is exclusive of its neighbours by construction.
+WA_AI_PRODUCTION_trucks_industry_small = {
+	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_medium_mils }
 }
 
-WA_AI_PRODUCTION_build_trucks_stockpile_very_low = {
-	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < 750 }
-	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
-}
-
-WA_AI_PRODUCTION_build_trucks_stockpile_low_medium = {
-	WA_AI_PRODUCTION_ground_is_enabled = yes
-	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+WA_AI_PRODUCTION_trucks_industry_medium = {
 	num_of_military_factories > constant:wa_ai_production.industry.tier_medium_mils
 	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils }
 }
 
-WA_AI_PRODUCTION_build_trucks_stockpile_low_small = {
+WA_AI_PRODUCTION_trucks_industry_large = {
+	num_of_military_factories > constant:wa_ai_production.industry.tier_large_mils
+	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_major_mils }
+}
+
+WA_AI_PRODUCTION_trucks_industry_major = {
+	num_of_military_factories > constant:wa_ai_production.industry.tier_major_mils
+	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_supermajor_mils }
+}
+
+WA_AI_PRODUCTION_trucks_industry_supermajor = {
+	num_of_military_factories > constant:wa_ai_production.industry.tier_supermajor_mils
+	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_superpower_mils }
+}
+
+WA_AI_PRODUCTION_trucks_industry_superpower = {
+	num_of_military_factories > constant:wa_ai_production.industry.tier_superpower_mils
+}
+
+WA_AI_PRODUCTION_trucks_industry_top = {
+	num_of_military_factories > constant:wa_ai_production.industry.tier_supermajor_mils
+}
+
+# [truck-floor-ladder] SIX EXCLUSIVE industry bands, monotone the way the mechanized floors are:
+# what a truck-starving economy owes scales with the industry that has to refill the starve bar,
+# because a hub costs 500 trucks whatever the country's size. A value that stopped growing above
+# the large tier made a 700-factory major owe exactly what a 50-factory one owes.
+# arm / hold are a SCHMITT PAIR and must never read the same bar: arm at
+# wa_ai_lend_lease.motorized.starve, hold until wa_ai_production.trucks.release_stock. The blocks
+# use `abort = { NOT = { hold } }`, never `abort_when_not_enabled`, or the pair does nothing.
+# Assumes the archetype's max_military_factories (75, common/units/equipment/motorized.txt) stays
+# above the deepest band+deep total (45); the fact is gone the day that cap drops.
+WA_AI_PRODUCTION_should_floor_trucks_small = {
 	WA_AI_PRODUCTION_ground_is_enabled = yes
 	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
-	NOT = { num_of_military_factories > constant:wa_ai_production.industry.tier_medium_mils }
+	WA_AI_PRODUCTION_trucks_industry_small = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_small = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_small = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_medium = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+	WA_AI_PRODUCTION_trucks_industry_medium = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_medium = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_medium = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_large = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+	WA_AI_PRODUCTION_trucks_industry_large = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_large = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_large = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_major = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+	WA_AI_PRODUCTION_trucks_industry_major = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_major = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_major = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_supermajor = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+	WA_AI_PRODUCTION_trucks_industry_supermajor = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_supermajor = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_supermajor = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_superpower = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve } # direct read - was a registry mirror
+	WA_AI_PRODUCTION_trucks_industry_superpower = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_superpower = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.release_stock }
+	WA_AI_PRODUCTION_trucks_industry_superpower = yes
+}
+
+# [truck-floor-ladder] The DEEP tier, three bands. It STACKS on the band floor above (same type
+# and id from two enabled blocks sum), so these are the ADD, not the total: a reserve under half
+# the starve bar is an emergency, not a preference. It starts at the large tier because below it
+# the band floor is already most of the arsenal. Its own Schmitt pair is one rung tighter - arm at
+# trucks.deep_starve_stock, hold until the shallow tier's arm bar, so the deep tier releases
+# exactly when the shallow floor becomes the only thing still holding.
+WA_AI_PRODUCTION_should_floor_trucks_deep_large = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.deep_starve_stock }
+	WA_AI_PRODUCTION_trucks_industry_large = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_deep_large = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve }
+	WA_AI_PRODUCTION_trucks_industry_large = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_deep_major = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.deep_starve_stock }
+	WA_AI_PRODUCTION_trucks_industry_major = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_deep_major = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve }
+	WA_AI_PRODUCTION_trucks_industry_major = yes
+}
+
+WA_AI_PRODUCTION_should_floor_trucks_deep_top = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_production.trucks.deep_starve_stock }
+	WA_AI_PRODUCTION_trucks_industry_top = yes
+}
+
+WA_AI_PRODUCTION_should_hold_floor_trucks_deep_top = {
+	WA_AI_PRODUCTION_ground_is_enabled = yes
+	has_equipment = { motorized_equipment < constant:wa_ai_lend_lease.motorized.starve }
+	WA_AI_PRODUCTION_trucks_industry_top = yes
 }
 
 # [uk-truck-supply] the engine-side buffer floor: min_wanted_supply_trucks feeds the AI's own

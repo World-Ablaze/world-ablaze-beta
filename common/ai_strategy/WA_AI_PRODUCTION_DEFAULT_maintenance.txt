@@ -3,7 +3,7 @@
 # ============================================================================
 # The factory floor that keeps a fielded park supplied, and therefore modernising, when nothing
 # else does. One pair of blocks per equipment ARCHETYPE; the gates, the two reasons a park goes
-# unsupplied and the Schmitt pair are all in
+# unsupplied and the support-equipment Schmitt pair are all in
 # common/scripted_triggers/WA_AI_PRODUCTION_maintenance_triggers.txt.
 #
 # `_archetype`, never the TYPE. An engine type is shared: `armor` is all 36 tank chassis, so a
@@ -14,11 +14,20 @@
 # conclusion in a larger sample: 115 of its 116 floors are `_archetype`, one is a type (`train`).
 #
 # `enable` / `abort` rather than `abort_when_not_enabled`: the two blocks read DIFFERENT bars, so
-# the floor arms on a real shortage and is held until the stock genuinely recovers. Same form as
-# Expert AI's EAI_PROD_EQUIP_REDUCE_infantry_equipment.
+# the support floors arm on a real shortage and are held until stock genuinely recovers. The armour
+# floors instead remain active while their chassis class is fielded.
+#
+# [armor-variant-maintenance] EVERY tank archetype carries the floor, not only the four main gun
+# classes: a Flakpanzer is `light_spaa_tank_chassis` and a Sturmpanzer `light_assault_tank_chassis`,
+# so the light_tank_chassis floor never reached either and those lines ran on perceived need alone.
+# Each floor is self-limiting - its gate reads `num_target_equipment_in_armies_k@<arch>`, which is 0
+# for a chassis this country's templates never ask for, so an unfielded archetype costs nothing.
+# WHAT THIS COSTS: the floors SUM across archetypes. A country fielding six armour archetypes has
+# 30 factories reserved before any other production is weighed, against a `wartime_min_mils` gate of
+# only 20. Gone wrong when the harness totals line reads a factory sum near the country's mils.
 #
 # The values are the one place `constant:` cannot be used (`ai_strategy value =` takes a literal).
-# Source of truth: wa_ai_production.maintenance.floor_base / .floor_deep_add for the chassis,
+# Source of truth: wa_ai_production.maintenance.floor_base for every chassis and
 # .ground_floor_base / .ground_floor_deep_add for the support guns - keep these literals equal.
 #
 # WHAT THESE FLOORS ASSUME, and how to tell each fact is gone.
@@ -37,56 +46,252 @@ WA_AI_PRODUCTION_maintenance_floor_light_tank = {
 	enable = { WA_AI_PRODUCTION_should_maintain_light_tank = yes }
 	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_tank = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_chassis		value = 2 }
-}
-
-WA_AI_PRODUCTION_maintenance_floor_light_tank_large = {
-	enable = { WA_AI_PRODUCTION_should_deepen_light_tank_maintenance = yes }
-	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_light_tank_maintenance = yes } }
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_chassis		value = 3 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_chassis		value = 5 }
 }
 
 WA_AI_PRODUCTION_maintenance_floor_medium_tank = {
 	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank = yes }
 	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis		value = 2 }
-}
-
-WA_AI_PRODUCTION_maintenance_floor_medium_tank_large = {
-	enable = { WA_AI_PRODUCTION_should_deepen_medium_tank_maintenance = yes }
-	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_medium_tank_maintenance = yes } }
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis		value = 3 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_chassis		value = 5 }
 }
 
 WA_AI_PRODUCTION_maintenance_floor_heavy_tank = {
 	enable = { WA_AI_PRODUCTION_should_maintain_heavy_tank = yes }
 	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_tank = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_chassis		value = 2 }
-}
-
-WA_AI_PRODUCTION_maintenance_floor_heavy_tank_large = {
-	enable = { WA_AI_PRODUCTION_should_deepen_heavy_tank_maintenance = yes }
-	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_heavy_tank_maintenance = yes } }
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_chassis		value = 3 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_chassis		value = 5 }
 }
 
 WA_AI_PRODUCTION_maintenance_floor_modern_tank = {
 	enable = { WA_AI_PRODUCTION_should_maintain_modern_tank = yes }
 	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_tank = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis		value = 2 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis		value = 5 }
 }
 
-WA_AI_PRODUCTION_maintenance_floor_modern_tank_large = {
-	enable = { WA_AI_PRODUCTION_should_deepen_modern_tank_maintenance = yes }
-	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_deepen_modern_tank_maintenance = yes } }
+WA_AI_PRODUCTION_maintenance_floor_light_tank_destroyer = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_tank_destroyer = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_tank_destroyer = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_chassis		value = 3 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_destroyer_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_tank_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_tank_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_tank_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_artillery_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_assault_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_assault_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_assault_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_assault_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_spaa_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_spaa_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_spaa_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_spaa_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_infantry_support_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_infantry_support_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_infantry_support_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_infantry_support_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_light_tank_support = {
+	enable = { WA_AI_PRODUCTION_should_maintain_light_tank_support = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_light_tank_support = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = light_tank_support_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank_destroyer = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank_destroyer = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank_destroyer = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_destroyer_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_artillery_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank_rocket = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank_rocket = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank_rocket = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_rocket_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_assault_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_assault_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_assault_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_assault_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_spaa_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_spaa_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_spaa_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_spaa_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_infantry_support_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_infantry_support_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_infantry_support_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_infantry_support_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_medium_tank_support = {
+	enable = { WA_AI_PRODUCTION_should_maintain_medium_tank_support = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_medium_tank_support = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = medium_tank_support_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_tank_destroyer = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_tank_destroyer = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_destroyer = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_destroyer_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_tank_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_tank_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_artillery_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_assault_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_assault_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_assault_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_assault_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_spaa_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_spaa_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_spaa_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_spaa_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_infantry_support_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_infantry_support_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_infantry_support_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_infantry_support_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_heavy_tank_support = {
+	enable = { WA_AI_PRODUCTION_should_maintain_heavy_tank_support = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_heavy_tank_support = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = heavy_tank_support_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_tank_destroyer = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_tank_destroyer = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_tank_destroyer = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_destroyer_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_tank_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_tank_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_tank_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_tank_artillery_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_assault_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_assault_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_assault_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_assault_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_spaa_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_spaa_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_spaa_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_spaa_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_modern_infantry_support_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_modern_infantry_support_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_modern_infantry_support_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = modern_infantry_support_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_super_heavy_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = super_heavy_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_super_heavy_tank_destroyer = {
+	enable = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_destroyer = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank_destroyer = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = super_heavy_tank_destroyer_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_super_heavy_tank_artillery = {
+	enable = { WA_AI_PRODUCTION_should_maintain_super_heavy_tank_artillery = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_super_heavy_tank_artillery = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = super_heavy_tank_artillery_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_super_heavy_spaa_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_super_heavy_spaa_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_super_heavy_spaa_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = super_heavy_spaa_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_landkruiser_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_landkruiser_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_landkruiser_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = landkruiser_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_amphibious_tank = {
+	enable = { WA_AI_PRODUCTION_should_maintain_amphibious_tank = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_amphibious_tank = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = amphibious_tank_chassis		value = 5 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_scout_car = {
+	enable = { WA_AI_PRODUCTION_should_maintain_scout_car = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_scout_car = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = scout_car_chassis		value = 2 }
+}
+
+WA_AI_PRODUCTION_maintenance_floor_combat_car = {
+	enable = { WA_AI_PRODUCTION_should_maintain_combat_car = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_maintain_combat_car = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = combat_car_chassis		value = 2 }
 }
 
 WA_AI_PRODUCTION_maintenance_floor_anti_tank = {
