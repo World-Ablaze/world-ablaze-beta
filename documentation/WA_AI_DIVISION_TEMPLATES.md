@@ -323,7 +323,7 @@ Ground production triggers:
 - Artillery: `WA_AI_PRODUCTION_build_artillery`, `WA_AI_PRODUCTION_build_artillery_major`.
 - Anti-tank: `WA_AI_PRODUCTION_build_anti_tank`, `WA_AI_PRODUCTION_build_heavy_anti_tank`.
 - Anti-air: `WA_AI_PRODUCTION_build_anti_air`, `WA_AI_PRODUCTION_build_heavy_anti_air`.
-- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, `WA_AI_PRODUCTION_build_trucks_stockpile_low`, `WA_AI_PRODUCTION_build_trucks_stockpile_very_low`, `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
+- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, the six band gates `WA_AI_PRODUCTION_should_floor_trucks_<band>` and their `should_hold_floor_trucks_<band>` partners, the three `should_floor_trucks_deep_<band>` gates ([truck-floor-ladder]), `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
 
 Tank and mechanized production triggers:
 

@@ -173,6 +173,83 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### truck-floor-ladder — SHIPPED-UNTESTED (2026-09-20)
+- Owner order 2026-09-20 ("on a un système d'usines minimum sur les camions, comme on a pour les
+  mécanisés ?", then "rends le palier camions monotone comme le mécanisé. Base toi sur l'Allemagne
+  dans la game de test sur le disque pour juger du nombre nécessaire"). Intended behaviour: the
+  motorized_equipment factory floor grows with the industry that has to refill the truck reserve,
+  the way the mechanized floors already do.
+- Defect, MEASURED (`common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt` before this change):
+  the floor was tiered 3 / 6 / 10 over `<30 / 30-49 / >49` military factories and then FLAT — a
+  50-factory minor and a 700-factory Reich both owed 10, and the deep tier (stock < 750) added a
+  flat 10 on the same id for both. Floors on one id SUM (lessons log 2026-08-14, campaign
+  `f9321934`), so the whole ladder above 49 factories was 10 or 20, whatever the economy.
+- Sizing evidence, campaign `1b8f853e` (132 monthly saves 1936.2-1947.1, SWE observer, unbranched,
+  GER as AI; GER's last LIVE save is 1945.5 — annihilated from 1945.6, so later rows are a frozen
+  dead-tag block). All MEASURED:
+
+  | date | MIL ctrl | free trucks | factories the ENGINE put on trucks | full-establishment truck demand |
+  | --- | ---: | ---: | ---: | ---: |
+  | 1937.1 | 129 | 2 733 | 11 | — |
+  | 1939.1 | 242 | 4 110 | 12 | 1 918 |
+  | 1941.1 | 516 | 19 341 | 0 | 13 069 |
+  | 1942.1 | 589 | 10 725 | 64 | 16 906 |
+  | 1943.1 | 698 | 16 328 | 40 | 19 847 |
+  | 1944.1 | 744 | 18 781 | 27 | 19 411 |
+  | 1945.5 | 189 | 10 082 | 10 | 10 200 |
+
+  **The floor never armed once in that campaign** — GER's free reserve bottoms at 2 448 (1938),
+  always over the 1 500 arm bar. So this change is not expected to move `1b8f853e` at all; it
+  changes what a LARGE economy owes when it IS starving, which that run never was.
+- DERIVED rate and the sizing target: GER-built truck stock rose +6 102 over 1942 on ~50 assigned
+  factories = **~10 trucks per factory per month net** (the 100 %-efficiency ceiling is 25:
+  `POWERED_FACTORY_SPEED_MIL` 2.5 ÷ `build_cost_ic` 3). One motorized supply hub costs 500 trucks
+  (`SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST`, a WA override of vanilla 60), so the 1 500 arm bar is
+  3 hubs. At the old flat 10 a starving major needed **~15 months** to refill it; at 30 it needs
+  ~5, at the deep 45 ~3.3. **The target is one campaign season, and that is where 30 / 45 comes
+  from.** Upper guard: the engine itself chose 64 truck factories at 589 MIL and 40 at 698, so the
+  ladder stays under what a healthy economy allocates voluntarily, and under the archetype's
+  `max_military_factories = 75`.
+- Change: `common/scripted_triggers/WA_AI_PRODUCTION_ground.txt` — six EXCLUSIVE band gates
+  `WA_AI_PRODUCTION_should_floor_trucks_<small|medium|large|major|supermajor|superpower>` over the
+  shared `wa_ai_production.industry.tier_*` constants, three deep gates
+  `should_floor_trucks_deep_<large|major|top>`, and a `should_hold_floor_trucks_*` partner for each.
+  `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt` — band floors 3 / 6 / 10 / 16 / 22 / 30,
+  deep adds +5 / +8 / +15 (totals 15 / 24 / 37 / 45). `common/script_constants/wa_ai_production.txt`
+  — new `trucks` group holding the three bars and the nine ladder values; the raw 750 literal is
+  retired. Nine strict `production_trucks_floor_*` rows added to `tools/constants_registry.json`.
+- Schmitt pair, added after the `wa-lessons-reviewer` CONCERNS verdict: the blocks use
+  `abort = { NOT = { hold } }`, never `abort_when_not_enabled`. Arm < 1 500, hold until < 3 000 for
+  the band tier; arm < 750, hold until < 1 500 for the deep tier. **t0/t1/t2 at the superpower band,
+  ~300 trucks/month at 30 factories**: t0 stock 1 499, band floor arms (30, or 45 with the deep
+  tier); t1 ≈ +2.5 months, stock crosses 1 500 → deep tier releases, band floor holds; t2 ≈ +5
+  months, stock crosses 3 000 → band floor releases. Re-arming then costs a real 1 500-truck drain,
+  not a one-month wobble. Without the hold bar the floor would drop 30-45 factories the month it
+  crossed 1 500 and re-arm immediately — that is the flap the reviewer caught.
+- Bars stay ABSOLUTE, not the `num_target_equipment_in_armies_k` ratio the `[maintenance-floor]`
+  doctrine makes the rule, and the reason is written at the constant: supply-hub motorization costs
+  500 trucks per hub and NO division establishment counts it, so a ratio against what the armies
+  require would delete the hub demand. Do not "correct" it into a ratio without a second hub term.
+- Coexistence, DERIVED at each band's low edge: 50 MIL → 15 (30 % of the arsenal), 100 → 24 (24 %),
+  200 → 37 (18 %), 300 → 45 (15 %). Worst stacked case, 50 MIL at war, deep-starved and
+  infantry-critical: 15 + 12 + 5 = 32 of 50 (64 %) — over the ~35 % clause, but BELOW the 37 of 50
+  (74 %) the old flat 10 + 10 already gave there. What the engine does when floors exceed the
+  arsenal is ASSUMED in this repo; the ladder is sized to the band edge, never to the 75 cap.
+- Ratchet: `check_ai_layers --update-baseline` in the same commit. LAYER4-NON-DECISION **339 → 335**
+  (the nine gates took decision-layer names, retiring four units of pre-existing debt).
+  NUMBER-LEAK **336 → 340**: the +5 is the new harness's independent-walk literals (29/49/99/199/299
+  and the engine-side 75). Deliberate — harness contract rule 4 says a walk that reads the same
+  constants as the thing it checks measures nothing, so those literals ARE the control.
+- Harness: `common/scripted_effects/WA_TEST_trucks.txt` + `events/wa_test_trucks.txt`
+  (`event wa_truck.1 <TAG>` / `.2` fan-out / `.3` field probe), contract v1.
+- Verification (owner console run owed): `event wa_truck.1 GER` on a save where GER holds its normal
+  reserve — every gate 0, owed 0, and the five VERDICT values all 1. Then drain the stock under
+  1 500 and re-fire: the band matching GER's factory count arms at its band value. Then `wa_truck.3`
+  and read the production panel: the motorized line must hold FACTORIES OWED, not just the band
+  floor — that settles the one ASSUMED fact (do the two tiers SUM).
+- Closed when: the console run above is pasted here with all five verdict values at 1, and one
+  scored campaign shows no AI country pinned at a truck floor while its reserve is over the hold bar.
+
 ### impassable-rail-guard — SHIPPED-UNTESTED (2026-09-19)
 - Owner order 2026-09-19 (game log pasted: `[1941.04.14] memfile:2: build_railway: invalid or
   non-land province 12099`, "investigate this error", then "resolve 6 + implement after").

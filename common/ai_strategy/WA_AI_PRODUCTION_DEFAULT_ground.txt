@@ -134,32 +134,80 @@ WA_AI_PRODUCTION_build_trucks = {
 	ai_strategy = { type = equipment_variant_production_factor id = motorized_equipment value = 10 }
 }
 
-WA_AI_PRODUCTION_build_trucks_stockpile_low = {
-	enable = { WA_AI_PRODUCTION_build_trucks_stockpile_low = yes }
-	abort_when_not_enabled = yes
+# [truck-floor-ladder] The band floors, monotone over the industry tiers (3 / 6 / 10 / 16 / 22 /
+# 30). Exactly one arms at a time - the bands are exclusive in WA_AI_PRODUCTION_ground.txt - and
+# the deep tier below adds on top. `abort` reads the HOLD trigger, never abort_when_not_enabled:
+# the arm bar and the release bar are a Schmitt pair and dropping the floor at the arm bar is what
+# makes a 30-factory floor flap. Values are literals because `ai_strategy value =` cannot read a
+# `constant:` (wa-constants-registry); the band BOUNDS are the shared industry constants.
+# Worst arsenal share is at each band's low edge: 50 MIL -> 15 (30 %), 100 -> 24 (24 %),
+# 200 -> 37 (18 %), 300 -> 45 (15 %). What the engine does when the floors together exceed the
+# arsenal is ASSUMED in this repo, so the ladder is sized to stay under the band edge, not to the
+# cap.
+WA_AI_PRODUCTION_floor_trucks_small = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_small = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_small = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 10 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 3 }
 }
 
-WA_AI_PRODUCTION_build_trucks_stockpile_very_low = {
-	enable = { WA_AI_PRODUCTION_build_trucks_stockpile_very_low = yes }
-	abort_when_not_enabled = yes
-
-	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 10 }
-}
-
-WA_AI_PRODUCTION_build_trucks_stockpile_low_medium = {
-	enable = { WA_AI_PRODUCTION_build_trucks_stockpile_low_medium = yes }
-	abort_when_not_enabled = yes
+WA_AI_PRODUCTION_floor_trucks_medium = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_medium = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_medium = yes } }
 
 	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 6 }
 }
 
-WA_AI_PRODUCTION_build_trucks_stockpile_low_small = {
-	enable = { WA_AI_PRODUCTION_build_trucks_stockpile_low_small = yes }
-	abort_when_not_enabled = yes
+WA_AI_PRODUCTION_floor_trucks_large = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_large = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_large = yes } }
 
-	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 3 }
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 10 }
+}
+
+WA_AI_PRODUCTION_floor_trucks_major = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_major = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_major = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 16 }
+}
+
+WA_AI_PRODUCTION_floor_trucks_supermajor = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_supermajor = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_supermajor = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 22 }
+}
+
+WA_AI_PRODUCTION_floor_trucks_superpower = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_superpower = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_superpower = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 30 }
+}
+
+# [truck-floor-ladder] The deep tier, stacked on the band floor (same type and id sum): totals are
+# 15 / 24 / 37 / 45 across the large, major, supermajor and superpower bands. The deepest total
+# stays under the archetype's max_military_factories (75).
+WA_AI_PRODUCTION_floor_trucks_deep_large = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_deep_large = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_deep_large = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 5 }
+}
+
+WA_AI_PRODUCTION_floor_trucks_deep_major = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_deep_major = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_deep_major = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 8 }
+}
+
+WA_AI_PRODUCTION_floor_trucks_deep_top = {
+	enable = { WA_AI_PRODUCTION_should_floor_trucks_deep_top = yes }
+	abort  = { NOT = { WA_AI_PRODUCTION_should_hold_floor_trucks_deep_top = yes } }
+
+	ai_strategy = { type = equipment_production_min_factories_archetype id = motorized_equipment value = 15 }
 }
 
 # [uk-truck-supply] engine-side truck buffer floor (vanilla precedent: SIA.txt min_wanted_supply_trucks
