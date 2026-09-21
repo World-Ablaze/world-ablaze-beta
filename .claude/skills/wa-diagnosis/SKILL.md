@@ -89,6 +89,36 @@ counts per *target*, not per decision, and is not a firing count at all).
 
 A conclusion with no named rival is a conclusion that was never tested.
 
+### Watching an AI country - `observe`, never `tag`
+
+The owner watches an AI country with the console command `observe` (observer mode: no country is
+controlled, every country's tabs are browsable). **Not `tag <TAG>`.** Never write a repro, a
+technique or a "to reproduce, switch to GER" instruction around tagging in.
+
+The two are not equivalent, because `tag` makes that country `is_ai = no` for the rest of the
+session. Everything gated on `is_ai` flips with it:
+
+| | under `observe` | after `tag GER` |
+| --- | --- | --- |
+| `is_ai` for the watched country | `yes` - unchanged | `no` |
+| Player-only maintenance (`limit = { is_ai = no }` on_weekly branches) | stays off | **arms on that country and can change its state** |
+| AI-only decisions (`hidden_trigger = { is_ai = yes }`) | keep firing | stop firing |
+
+So a reading taken after a `tag` is a reading of a country the mod no longer treats as AI. Two
+consequences that have both already bitten:
+
+- **A UI panel that "shows wrong numbers for the AI" is usually not a UI bug.** It is a value whose
+  only writer sits behind `is_ai = no`, so it was seeded at `on_startup` and never refreshed. The
+  refinery panel is the worked example: `common/on_actions/100_wa_on_actions.txt` seeds five
+  variables per resource for `every_country` in `on_startup`, refreshes them weekly only under
+  `limit = { is_ai = no }`, while the AI's real refineries move through the `*_shortage_ai` /
+  `reactivate_*_ai` decisions of `common/decisions/_economy_fatigue.txt`, which write none of them.
+- **`tag` can be destructive, not just inert.** When a player-only branch reconciles reality to a
+  stored target, tagging in hands it a target frozen at 1936 and it enforces it.
+
+`tag` remains legitimate where the owner accepts becoming that country - the two `imgui` windows
+below are written that way. Whether they also work under `observe` is **ASSUMED**, unverified.
+
 ### The live AI-strategy window - ask the running game which blocks are armed
 
 Rung 4 ("which block armed?") has no answer in a savegame: the save serialises `ai_strategy`
@@ -244,6 +274,7 @@ that two subagents disagreed about rung 3.
 | You need | Go to |
 | --- | --- |
 | To measure rungs 2–3 out of a savegame | skill `wa-savegame-analysis` |
+| To watch an AI country live | ask the owner for `observe` - never `tag`; see the `observe`/`tag` section |
 | To learn which `ai_strategy` blocks are armed / what values the engine holds | ask the owner for `imgui show ai-strategy` (technique 5) |
 | To learn whether the engine is actually launching an AIFC push, on which front, with what mass | ask the owner for `imgui show ai_force_concentration`; the save-side half is `aifc.py`'s `active push` line |
 | To know which WA system owns rung 4–5 | skill `wa-ai-systems`, then `AGENTS.md` |

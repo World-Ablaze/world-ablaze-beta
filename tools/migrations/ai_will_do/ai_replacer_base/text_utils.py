@@ -173,3 +173,32 @@ def extract_folder_info(tech_block: str) -> Optional[dict]:
         'x': int(x_match.group(1)) if x_match else None,
         'y': int(y_match.group(1)) if y_match else None,
     }
+
+
+def extract_base_factor(ai_will_do_block: str) -> Optional[float]:
+    """
+    Extract the base `factor = X` of an ai_will_do block (the one outside any modifier).
+
+    The base factor is the tech's research weight; every `factor` inside a `modifier = {}`
+    is a multiplier and must not be matched. The generated shape puts the base factor on the
+    line right after `ai_will_do = {`, so the first `factor =` in the block is the base one.
+
+    Returns:
+        The base factor as a float, or None when the block has no factor line.
+    """
+    match = re.search(r'factor\s*=\s*([\d.]+)', ai_will_do_block)
+    return float(match.group(1)) if match else None
+
+
+def extract_research_triggers(ai_will_do_block: str) -> set[str]:
+    """
+    Extract the `WA_AI_RESEARCH_*` trigger names an ai_will_do block gates on.
+
+    A generated block names its triggers only in the gate modifier, so the set this returns
+    is what the block currently answers to - compare it against the resolved triggers to
+    detect a block that is the right SHAPE but the wrong GATE.
+
+    Returns:
+        Set of trigger names, empty when the block gates on none.
+    """
+    return set(re.findall(r'WA_AI_RESEARCH_\w+', ai_will_do_block))

@@ -11,7 +11,8 @@ from typing import Optional
 import re
 
 from .block_finder import find_ai_will_do_block, find_matching_brace
-from .text_utils import extract_start_year, extract_categories, extract_dependencies
+from .text_utils import (extract_start_year, extract_categories, extract_dependencies,
+                         extract_base_factor, extract_research_triggers)
 from .generator import generate_ai_will_do_block
 
 
@@ -144,6 +145,16 @@ class BaseFileProcessor(ABC):
                 return category_map[cat]
 
         return None
+
+    def get_priority_factor(self, tech_name: str, categories: list[str]) -> float:
+        """
+        Research weight of this tech relative to its siblings (the base `factor` of ai_will_do).
+
+        Default 1 = the flat weight every domain used before. A subclass raises it for the
+        families the AI must reach first; keying on `categories` keeps the decision on the
+        tech file's own declaration instead of on a hand-kept tech-name list.
+        """
+        return 1
 
     def is_old_pattern(self, ai_will_do_block: str) -> bool:
         """
@@ -306,14 +317,21 @@ class BaseFileProcessor(ABC):
 
             block_start, block_end, block_content = ai_result
 
-            # Check if needs update
-            if not self.needs_update(block_content, tech_name, tech_block):
+            # Get the categories, the research weight they earn this tech, and the gate
+            categories = extract_categories(tech_block)
+            want_factor = self.get_priority_factor(tech_name, categories)
+            trigger = self.resolve_trigger(tech_name, [], categories, tech_block)
+            want_triggers = set([trigger] if isinstance(trigger, str) else (trigger or []))
+
+            # A block can be the right SHAPE and still be stale: a base factor or a gate
+            # trigger that no longer matches what the generator resolves is a reason to rewrite
+            stale = (self.needs_update(block_content, tech_name, tech_block)
+                     or extract_base_factor(block_content) != want_factor
+                     or (want_triggers
+                         and extract_research_triggers(block_content) != want_triggers))
+            if not stale:
                 stats.skipped += 1
                 continue
-
-            # Get categories and determine trigger
-            categories = extract_categories(tech_block)
-            trigger = self.resolve_trigger(tech_name, [], categories, tech_block)
 
             if trigger is None:
                 stats.unknown += 1
@@ -329,7 +347,9 @@ class BaseFileProcessor(ABC):
 
             # Generate new block
             triggers = [trigger] if isinstance(trigger, str) else trigger
-            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name, categories=categories)
+            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t",
+                                                  factor=want_factor, tech_name=tech_name,
+                                                  categories=categories)
 
             # Only replace if the block actually changed
             old_block = content[block_start:block_end]

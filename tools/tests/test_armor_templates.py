@@ -36,9 +36,14 @@ def facts(family, **kw):
     base = dict(mobile_infantry="mechanized", variant=E, td=E, spaa=E, rockets=False,
                 quota=0, waves=False, heavy_company=False)
     base.update(kw)
-    return resolve.Facts(family, base["mobile_infantry"], base["variant"], base["td"],
+    # A21: `arty` is its own chain winner. Left unstated it takes the pre-A21 derivation - the
+    # line winner when that owns a regimental company - so a test that says nothing about the
+    # artillery block still describes the composition it always described.
+    variant = base["variant"]
+    default_arty = (variant if variant != E and REGISTRY.unit_of(variant, "regimental") else E)
+    return resolve.Facts(family, base["mobile_infantry"], variant, base["td"],
                          base["spaa"], base["rockets"], base["quota"], base["waves"],
-                         base["heavy_company"])
+                         base["heavy_company"], arty=base.get("arty", default_arty))
 
 
 def sel(family, **kw):
@@ -224,10 +229,26 @@ class RegimentalSupport(unittest.TestCase):
         self.assertEqual(s.regimental["mechanized_sp_rocket_artillery_company_regimental"], 2)
         self.assertEqual(s.regimental["medium_self_propelled_gun_company_regimental"], 3)
 
-    def test_heavy_spg_has_no_regimental_unit_and_says_so(self):
+    def test_heavy_spg_owns_no_regimental_company_so_the_chain_never_offers_it(self):
+        # A21: the registry can no longer list a candidate in a chain whose slot it does not
+        # own, so the old "fell back" note has nothing to report - the case is structural.
+        self.assertIsNone(REGISTRY.unit_of("heavy_spg", "regimental"))
+        self.assertNotIn("heavy_spg", REGISTRY.chains["regimental_artillery"]["order"])
         s = sel("heavy", variant="heavy_spg")
-        self.assertTrue(s.notes)
         self.assertNotIn("heavy_self_propelled_gun_company_regimental", s.regimental)
+        self.assertEqual(s.regimental["pack_artillery_mot_company_regimental"], 5)
+
+    def test_a_line_variant_without_a_regimental_company_leaves_the_block_to_the_assault_gun(self):
+        """A21, the defect this axis exists to close.
+
+        Infantry support is a LINE battalion and owns no regimental company; the assault gun
+        owns both. Before the split, winning the line chain with infantry support took the
+        artillery block away from the assault gun and handed it to towed pack artillery.
+        """
+        s = sel("medium", variant="medium_inf_support", arty="medium_assault")
+        self.assertEqual(s.line["medium_infantry_support_armor_battalion_line"], 3)
+        self.assertEqual(s.regimental["medium_assault_gun_company_regimental"], 5)
+        self.assertNotIn("pack_artillery_mot_company_regimental", s.regimental)
 
     def test_tank_destroyer_block(self):
         s = sel("medium", td="medium_td")
@@ -640,7 +661,76 @@ class ReinforcePriority(unittest.TestCase):
         # Count follows the emitted target set, so it moves whenever a family's axes move.
         # 1634 -> 1502 when the modern family dropped its medium_support quota (registry
         # `medium_support_unit: null`), which removed 132 modern targets with the industrial axis.
-        self.assertEqual(seen, 1502)
+        # 1502 -> 2286 with A21: the regimental-artillery chain became an axis of its own, and
+        # the joint (line winner, artillery winner) digit carries 11 medium / 5 modern / 9 heavy
+        # reachable pairs where the line winner alone carried 7 / 4 / 4.
+        self.assertEqual(seen, 2286)
+
+    def test_a21_every_chain_candidate_owns_the_slot_it_fills(self):
+        """The mechanism, not the instance.
+
+        The defect was a chain offering a candidate that cannot fill the slot the chain fills:
+        infantry support has no regimental company, so a regimental chain must not list it.
+        model.py refuses such a registry outright; this asserts the property holds today.
+        """
+        for chain_id, chain in REGISTRY.chains.items():
+            slot = chain["slot"]
+            for cid in chain["order"]:
+                self.assertTrue(REGISTRY.unit_of(cid, slot),
+                                "%s fills %s but %s owns no %s unit" % (chain_id, slot, cid, slot))
+
+    def test_a21_the_joint_axis_carries_only_reachable_pairs(self):
+        """A pair is reachable only if one eligibility set produces both winners.
+
+        The two chains read the same candidates under one rank order, so an artillery winner
+        that outranks the line winner is arithmetically impossible - it would have won the line.
+        Emitting the rectangle instead of the reachable pairs would multiply medium by 35/11.
+        """
+        rank = lambda cid: REGISTRY.candidate(cid).get("chain_rank", 0)   # noqa: E731
+        for family_id in ENUMERATED:
+            enum = REGISTRY.families[family_id]["enumerate"]
+            line = list(enum.get("line_variant", []))
+            for variant, arty in resolve.variant_arty_pairs(REGISTRY, family_id, "mechanized"):
+                if arty == E or arty not in line:
+                    continue
+                self.assertNotEqual(variant, E,
+                                    "%s: %s wins the artillery block while the line chain has "
+                                    "no winner" % (family_id, arty))
+                self.assertLessEqual(rank(arty), rank(variant),
+                                     "%s: %s outranks the line winner %s and still lost the "
+                                     "line" % (family_id, arty, variant))
+
+    def test_a21_the_line_winner_keeps_the_block_when_it_owns_a_company(self):
+        for family_id in ENUMERATED:
+            for variant, arty in resolve.variant_arty_pairs(REGISTRY, family_id, "mechanized"):
+                if variant != E and REGISTRY.unit_of(variant, "regimental"):
+                    self.assertEqual(arty, variant, "%s/%s" % (family_id, variant))
+
+    def test_a21_the_motorized_plane_does_not_name_the_dropped_line_winner(self):
+        """A dropped axis is a modelling choice, not a claim that nothing is eligible.
+
+        Naming `wins_line_variant_none` on a plane that drops the variant makes every
+        artillery value unreachable the moment a line candidate is eligible: the rungs become
+        dead codes and the division silently keeps towed artillery.
+        """
+        from armor_templates import emit
+        for family_id in ENUMERATED:
+            for plane in resolve.build_planes(REGISTRY, family_id):
+                if plane.form == "mechanized":
+                    continue
+                for value in dict(plane.axes)["variant_arty"]:
+                    names = [n for _p, n in emit._axis_terms(
+                        REGISTRY, family_id, "variant_arty", value, plane.form)]
+                    self.assertFalse([n for n in names if "wins_line_variant" in n],
+                                     "%s/%s names the dropped line winner" % (family_id, value))
+
+    def test_a21_the_medium_family_emits_the_coexistence_target(self):
+        sels = resolve.enumerate_family("medium", REGISTRY, GAME)[0]
+        both = [s for s in sels
+                if "medium_infantry_support_armor_battalion_line" in s.line
+                and "medium_assault_gun_company_regimental" in s.regimental]
+        self.assertTrue(both, "no medium target fields the support tank in the line and the "
+                              "assault gun in regimental support")
 
     def test_the_declared_families_no_longer_pin_their_own(self):
         # light and light_support mirrored a per-profile 1 from the hand-written files. Left in

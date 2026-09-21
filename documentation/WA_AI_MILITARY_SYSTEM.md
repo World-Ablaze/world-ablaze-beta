@@ -1291,6 +1291,25 @@ a date, each enabling below its own bar and aborting above the next one so the n
 hysteresis. The four thresholds, the ring membership and the contested-Germany backstop are all in
 the trigger sections above - **change behaviour there, never by editing the strategy blocks**.
 
+**[phoney-war-no-reich-bombing] Who the ladder applies to (2026-09-20).** The three SUPPRESSION
+rungs are gated on `WA_AI_MILITARY_AIR_should_avoid_reich` = `WA_AI_CONFIG_MILITARY_is_western_allied_power`
+(ENG/USA/CAN/FRA/RAJ/SAF/AST/NZL). Phase 7c had written `WA_AI_CONFIG_MILITARY_is_western_allies_major`
+(ENG/USA/CAN), which silently dropped FRA, RAJ and AST from the legacy block it replaced
+(`ENG_FRA_allies_avoid_bombing_GER`, `allowed = ENG/FRA/CAN/RAJ/AST`, `date < 1941.10.1`, -500,000 on
+6/7/8/22/294/38). Net effect until now: **France carried 0 on every region of both rings** - the one
+Allied air force on the German border during the Phoney War had nothing telling it to stay out.
+MEASURED on campaign `b28209dd`, 1939.10-1940.6: FRA fields 757 -> 1 165 aircraft, far above the
+home-only band (399 arm / 499 release), so `_home_only_reich` never covered it either; and FRA, ENG
+and USA field **zero** strategic bombers for the whole window, so the Allied bombing of that period is
+flown by tactical/strike bombers, which the ladder's strategic-bomber thresholds do not count but
+`strategic_air_importance` does rank. The two raid PULLS keep the narrower major set: a released rung
+already nets 0, so a non-major simply falls back to the engine's own terms.
+**Not covered by this change:** `WA_AI_MILITARY_AIR_theatre_contested_germany` still aborts all three
+rungs for the WHOLE coalition as soon as any co-belligerent controls one listed German state - a Saar
+offensive would lift the blackout for ENG and USA too. MEASURED on `b28209dd`: it never fired (GER
+holds 24/24 states and 198/198 provinces in all ten Phoney-War saves), so it is a latent hazard, not
+this campaign's cause.
+
 **[east-air-theatre] Poland 296 sits in the near ring AND in the Default Eastern Europe theatre.**
 Until 2026-08-29 the western Allies collected both pulls: `WA_AI_MILITARY_DEFAULT_AIR_eastern_europe`
 arms on `WA_AI_MILITARY_AIR_theatre_contested_eastern_europe`, whose "our side" half accepts any

@@ -1498,7 +1498,7 @@ NDefines.NAI.RESEARCH_AHEAD_OF_TIME_FACTOR = 10.0									-- To which extent AI 
 
 NDefines.NAI.MINIMUM_GOOD_TRADE_RATIO_PER_CIV = 0.5   								-- for each civ factory we have mul with this we are allowed to trade under % of resource on a trade
 --NDefines.NAI.EXPORT_RESOURCE_TRADE_NEED_IMPORTANCE = 1.0							-- how important is each lost resource to overexport for trade law selection
-NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 10.0								-- negative balance increases the desire on a resource
+NDefines.NAI.RESOURCE_WANT_PER_MISSING_BALANCE = 15.0								-- negative balance increases the desire on a resource
 NDefines.NAI.RESOURCE_WANT_PER_CONSUMED = 1.0										-- if resource is being used in production, increase the desire
 
 NDefines.NAI.DIPLOMACY_SEND_MAX_FACTION = 0.75										-- Country should not send away more units than this as expeditionaries

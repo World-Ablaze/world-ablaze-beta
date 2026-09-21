@@ -7738,7 +7738,7 @@ calculate_resource_deficite = {
 		# need_iron = (open_steel_mill_target - current_steel_mills) * 25
 		set_temp_variable = { tempIron = open_steel_mill_target }
 		subtract_from_temp_variable = { tempIron = current_steel_mills }
-		set_variable = { tempCoal = tempIron }
+		set_temp_variable = { tempCoal = tempIron }
 		multiply_temp_variable = { tempIron = 25 }
 		multiply_temp_variable = { tempCoal = 20 }
 		set_variable = { need_iron = tempIron }
@@ -7758,7 +7758,7 @@ calculate_resource_deficite = {
 		}
 		set_temp_variable = { tempBauxite = open_alu_mill_target }
 		subtract_from_temp_variable = { tempBauxite = current_alu_mills }
-		set_variable = { tempCoal = tempBauxite }
+		set_temp_variable = { tempCoal = tempBauxite }
 		multiply_temp_variable = { tempBauxite = 35 }
 		multiply_temp_variable = { tempCoal = 20 }
 		set_variable = { need_bauxite = tempBauxite }
@@ -7780,11 +7780,16 @@ calculate_resource_deficite = {
 		subtract_from_temp_variable = { tempCoal = current_synth }
 		multiply_temp_variable = { tempCoal = 60 }
 		add_to_variable = { need_coal = tempCoal }
-		subtract_from_variable = { need_coal = current_coal }
-		clamp_variable = {
-			var = need_coal
-			min = 0
-		}
+	}
+
+	# [refineries] Coal is the only input three families bid for, so the stock is netted off
+	# ONCE here, after all three branches have added their gross demand - iron and bauxite each
+	# net inside their own branch because only one family buys them. Netting coal inside the
+	# synthetic branch instead would report gross coal whenever only steel or aluminium is short.
+	subtract_from_variable = { need_coal = current_coal }
+	clamp_variable = {
+		var = need_coal
+		min = 0
 	}
 }
 

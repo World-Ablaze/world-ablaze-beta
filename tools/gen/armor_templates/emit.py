@@ -270,14 +270,14 @@ def _family_branch(registry, family_id, planes):
         lines.append("%sset_temp_variable = { _template_value = %d }\n" % (TAB * 3, plane.base))
         for axis, values in plane.axes:
             lines.append(_digit_block(registry, family_id, axis, values,
-                                      plane.strides[axis], 3))
+                                      plane.strides[axis], 3, plane.form))
         lines.append("%s}\n" % (TAB * 2))
     lines.append("%sset_temp_variable = { _template_claimed = 1 }\n" % (TAB * 2))
     lines.append("%s}\n" % TAB)
     return "".join(lines)
 
 
-def _digit_block(registry, family_id, axis, values, stride, depth):
+def _digit_block(registry, family_id, axis, values, stride, depth, form="mechanized"):
     if len(values) < 2:
         return ""
     lines = ["%s# %s\n" % (TAB * depth, axis)]
@@ -285,7 +285,7 @@ def _digit_block(registry, family_id, axis, values, stride, depth):
     for index, value in enumerate(values):
         if index == 0:
             continue
-        terms = _axis_terms(registry, family_id, axis, value)
+        terms = _axis_terms(registry, family_id, axis, value, form)
         lines.append("%sif = {\n%slimit = {\n" % (TAB * depth, TAB * (depth + 1)))
         lines.append(_terms(terms, depth + 2))
         lines.append("%s}\n" % (TAB * (depth + 1)))
@@ -297,10 +297,26 @@ def _digit_block(registry, family_id, axis, values, stride, depth):
     return "".join(lines)
 
 
-def _axis_terms(registry, family_id, axis, value):
+def _axis_terms(registry, family_id, axis, value, form="mechanized"):
     """The trigger terms that select one value of one axis. Values are mutually exclusive."""
-    if axis in ("variant", "td", "spaa"):
-        chain = {"variant": "line_variant", "td": "tank_destroyer", "spaa": "spaa"}[axis]
+    if axis == "variant_arty":
+        # A21: one digit, two chain winners. Both terms are named, so the ladder tests exactly
+        # the pair the resolver built - and an unreachable pair has no code to land on.
+        variant, arty = value
+        terms = []
+        # A plane that DROPS the line variant is not claiming no candidate is eligible: it
+        # chose not to model the block. Naming wins_line_variant_none there would make every
+        # artillery value unreachable the moment a line candidate is eligible - the motorized
+        # rungs would be dead code and the division would silently keep towed artillery.
+        dropped = (form != "mechanized"
+                   and "variant" in registry.composition.get("motorized_plane", {})
+                   .get("drop_axes", []))
+        if not dropped:
+            terms.append(("yes", R.wins_trigger_name(family_id, "line_variant", variant)))
+        terms.append(("yes", R.wins_trigger_name(family_id, "regimental_artillery", arty)))
+        return terms
+    if axis in ("td", "spaa"):
+        chain = {"td": "tank_destroyer", "spaa": "spaa"}[axis]
         return [("yes", R.wins_trigger_name(family_id, chain, value))]
     if axis == "rockets":
         return [("yes", registry.candidate("mechanized_rockets")["eligibility"])]
@@ -316,9 +332,6 @@ def _axis_terms(registry, family_id, axis, value):
             if gate.get("trigger"):
                 terms.append(("no", gate["trigger"]))
         return terms
-    if axis == "arty_fallback":
-        fam = registry.families[family_id]
-        return [("yes", registry.eligibility_of(fam["artillery_fallback"][0]))]
     if axis == "waves":
         return [("yes", "WA_AI_TEMPLATES_use_armoured_waves_templates")]
     raise ValueError("unknown axis %s" % axis)
