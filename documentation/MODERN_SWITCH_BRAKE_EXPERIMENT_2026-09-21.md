@@ -1,7 +1,9 @@
 # Medium -> modern armour switch: duplicate role entry diagnosis and the park-brake experiment
 
 Date: 2026-09-21. Branch `ai-rework`. Subject it serves: `modern-switch-amorce` in `WORK.md`.
-Status: **experiment in progress - one control run (`test6`) is owed.** No mod code was shipped.
+Status: **the control run (`test6`) is read - the engine DOES read the source's
+`can_upgrade_in_field` through a `replace_with` edge.** Next owed run: `test7` (medium-hull twins,
+section 7). No mod code was shipped.
 No `WORK.md` subject was opened (admission rule); the owner decides what enters.
 
 Labels, as everywhere in this repo: **MEASURED** = read from a named save, game file or mod file.
@@ -22,18 +24,21 @@ stale. Every binary/doc reading below is of 1.19.3.0, the version that produced 
 2. The park brake `can_upgrade_in_field` does nothing where WA put it (on the modern, i.e.
    destination, targets). Vanilla and Expert AI put it on the SOURCE target, 7 of 7 and always.
    **MEASURED.**
-3. Live experiment, five runs from one save: a source kept alive in a *separate* entry freezes
+3. Live experiment, six runs from one save: a source kept alive in a *separate* entry freezes
    everything (park, recruits, production need) whatever the brake says; a source inside the *same*
    entry with no `replace_with` holds nothing; a source inside the same entry **with a
-   `replace_with` edge** produced the wanted shape for the first time - park held one rung up,
-   recruits on a higher rung, modern chassis production requested. **MEASURED** for the facts,
-   **ASSUMED** that the brake is the cause until the control run (`test6`, brake open) is read.
+   `replace_with` edge** gives the wanted shape - park held one rung up, recruits on a higher
+   rung, modern chassis production requested - and the control with the brake OPEN (`test6`) makes
+   the park follow the children like the baselines. **MEASURED**; the causal reading is
+   **DERIVED** from the `test5` / `test6` pair, whose only difference is the brake line.
 4. The symptom the subject started from is live on the current build: converted divisions are
    nearly tank-less (17 divisions holding ~150 modern chassis for ~2 550 required, medium tanks
    stripped from ~197 to ~8 per division). **MEASURED.**
 5. A static medium -> modern twin mapping is the already-failed "+500 mirror" design (unbuildable
-   slots, `WORK.md` `modern-chassis-tier` Defect A). If the edge is confirmed, the mapping problem
-   is the next thing to solve (section 7).
+   slots, `WORK.md` `modern-chassis-tier` Defect A). Proposal that needs NO mapping, NO second
+   flag store and NO file merge: give every MODERN target a **medium-hull twin** inside the modern
+   entry, enabled by the SAME flag value, carrying the brake and a `replace_with` to its modern
+   target (section 7). `test7` tests it across the 1943.6.1 flag move.
 
 ---
 
@@ -125,22 +130,22 @@ Throwaway edits, all on GENERATED files, never committed:
 | 0 control | same, `always = yes` |
 | 1 | Medium file pristine. A COPY of the 21718 composition added inside `WA_modern_armor_role`, enabled for GER after the latch, `upgrade_prio = 5` (modern targets 10), `always = no`, no `replace_with`. |
 | 2 | Same copy, FIRST in the modern entry, `upgrade_prio = 10` (tie, first in file wins), `always = no`, plus `replace_at_match = 0.9`, `replace_with = <the 24186 target>`, `target_min_match = 0.1` (the Expert AI shape). |
-| 2 control (**owed**) | same, `always = yes` -> save `test6` |
+| 2 control | same, `always = yes` -> `test6` |
 
 Readings at 1943.5.1, GER (all MEASURED; latch 1943.4.1.1 and flag 24186 in every column):
 
-| Reading | `test1` arm 0 | `test3` arm 0 ctrl | `test4` arm 1 | `test5` arm 2 | baseline B4 | baseline B3 |
-| --- | --- | --- | --- | --- | --- | --- |
-| checksum | 28a3 | 54cd | 88a2 | 2b8f | 7851 | 7851 |
-| the 20 original G ids now on | G 20 | G 20 | A 18, G 2 | A 18, G 2 | Medium D 17, G 3 | Modern B 15, G 4, Medium D 1 |
-| template G | live | live | obsolete 4.16 | obsolete 4.14 | obsolete 4.22 | obsolete 4.2 |
-| live template(s) of the role | G | G | A (6+1) | **A (21 div), C (0), D (1)** | Medium D (5+2) | Modern B (2+5) |
-| modern battalions: fielded park / recruits' template | 0 / 0 | 0 / 0 | 1 / 1 | **1 / 3** | 2 / 2 | 5 / 5 |
-| armour training queue on | G | G | A | **D (4 medium + 3 modern)** | Medium D | Modern B |
-| modern chassis lines, factories requested | 16 | 16 | 169 | **211** | 151 | 301 |
-| medium chassis per fielded division (mean) | 193 | 193 | 150 | 148 | 125 | 50 |
-| modern chassis per division / free stock | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
-| B cohort (11 ids) | B 11 | B 11 | B 11 | B 11 | B 11 | B 11 |
+| Reading | `test1` arm 0 | `test3` arm 0 ctrl | `test4` arm 1 | `test5` arm 2 | `test6` arm 2 ctrl | baseline B4 | baseline B3 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| checksum | 28a3 | 54cd | 88a2 | 2b8f | 9553 | 7851 | 7851 |
+| the 20 original G ids now on | G 20 | G 20 | A 18, G 2 | A 18, G 2 | **E 19, A 1** | Medium D 17, G 3 | Modern B 15, G 4, Medium D 1 |
+| template G | live | live | obsolete 4.16 | obsolete 4.14 | obsolete 4.7 | obsolete 4.22 | obsolete 4.2 |
+| live template(s) of the role | G | G | A (6+1) | **A (21 div), C (0), D (1)** | **E (4+3) only**, 21 div; A and D obsolete 4.28 | Medium D (5+2) | Modern B (2+5) |
+| modern battalions: fielded park / recruits' template | 0 / 0 | 0 / 0 | 1 / 1 | **1 / 3** | **3 / 3** | 2 / 2 | 5 / 5 |
+| armour training queue on | G | G | A | **D (4 medium + 3 modern)** | E (4 + 3) | Medium D | Modern B |
+| modern chassis lines, factories requested | 16 | 16 | 169 | **211** | 151 | 151 | 301 |
+| medium chassis per fielded division (mean) | 193 | 193 | 150 | 148 | **100** | 125 | 50 |
+| modern chassis per division / free stock | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| B cohort (11 ids) | B 11 | B 11 | B 11 | B 11 | B 11 | B 11 | B 11 |
 
 `test2` (arm 0 at 1943.6.1): G still 20 of 20, live, 27 divisions with recruits; children created
 in April went obsolete with 0 divisions and none was created after 4.22; modern lines request 1
@@ -158,8 +163,9 @@ Tank template D", match 0.82858.
 | A source in the SAME entry at lower priority and with NO edge holds nothing; `can_upgrade_in_field = no` is not read on that path. | MEASURED (`test4`) |
 | Caveat on `test4`: the added target is a copy under another name. If the engine binds a template to its target by identity rather than by composition, the copy was never tied to G. Not readable from a save. | ASSUMED |
 | With the `replace_with` edge, three live templates coexist - never seen in a baseline, where each child goes obsolete when the next appears. The park sits on A, recruits and the queue are on D, modern production is requested. This is the wanted shape: park held, step-up not blocked, production primed. | MEASURED (facts) / DERIVED (the reading) |
-| Working hypothesis: the brake acts between CLASSES of templates. A (6+1) still best-matches the source target, so G -> A is not braked; A -> D goes toward the `replace_with` target's templates and is braked. Consistent with all five runs, written in no file. | ASSUMED |
-| Rival: `test4` also sat on A for 16 days with no edge - a plain designer delay would give the same 1943.5.1 picture. The control (`test6`, brake open) separates them: if the park then follows the children like the baselines, the brake is read through the edge. | - |
+| Working hypothesis: the brake acts between CLASSES of templates. A (6+1) still best-matches the source target, so G -> A is not braked; A -> D goes toward the `replace_with` target's templates and is braked. Consistent with all six runs, written in no file. | ASSUMED |
+| Rival, now answered: `test4` also sat on A for 16 days with no edge, so a plain designer delay could have produced the `test5` picture. The control `test6` (same edge, brake OPEN, same date) has ONE live template (E, 4+3), 19 of the 20 original ids on it, A and D obsolete since 4.28 - the baselines' one-live-template pattern. The `test5` hold is the brake. | MEASURED (`test6`) / DERIVED (the causal reading: one differing line, one run each) |
+| Cost of the open brake, same date, same rung reached by the designer (#3462, 4+3, in both runs): fielded divisions fall from ~148 medium chassis (`test5`, held on A) to 100 (`test6`), with 0 modern chassis to replace them. | MEASURED |
 | Even if confirmed, the FIRST rung (G -> A) swapped one battalion for the whole park with zero modern chassis in stock. Nobody - recruits included - holds a single modern chassis at 1943.5.1. | MEASURED |
 
 ---
@@ -172,22 +178,25 @@ Tank template D", match 0.82858.
    continue there.
 2. Re-apply the throwaway block below in `common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`,
    immediately before the first target `WA_AI_TEMPLATES_GENERIC_MODERN_ARMOR_30_MEC = {`
-   (tabs, CRLF, no BOM). This is the **arm 2 CONTROL** state (`always = yes`); set `always = no`
-   for arm 2 itself.
-3. Fresh exe -> load `trade_issue.hoi4` -> `observe` -> save at 1943.5.1 as `test6`. **Do not read
-   past 1943.5.1**: the flag moves to 24234 at 1943.6.1 and the static edge to the 24186 target
-   would dangle.
+   (tabs, CRLF, no BOM). This is the **`test7`** state: two medium-hull twins, one per modern code
+   GER holds in the window (24186 until 1943.5, 24234 from 1943.6.1), brake closed. (Arm 2 itself
+   was ONE such block named `..._SOURCE_21718`, enabled by `tag = GER` + the latch flag,
+   `replace_at_match = 0.9`, pointing at the 24186 target; `always = no` for `test5`, `yes` for
+   `test6`.)
+3. Fresh exe -> load `trade_issue.hoi4` -> `observe` -> save at **1943.5.1 (`test7a`), 1943.6.15
+   (`test7b`) and 1943.8.1 (`test7c`)**. The point of `test7` is to read ACROSS the 1943.6.1 flag
+   move, which arm 2's static edge could not survive.
 4. Revert: `git checkout -- common/ai_templates/WA_AI_TEMPLATES_armored_medium_modern.txt`.
    `python tools/gen/gen_ai_armor_templates.py --check` reports `DRIFT` while the block is in -
    expected, and it is what stops an accidental commit.
 
 ```
-	# THROWAWAY-TEST arm 2 CONTROL - DO NOT COMMIT (GENERATED file)
-	WA_AI_TEMPLATES_THROWAWAY_TEST_SOURCE_21718 = {
-		enable = { tag = GER has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }
+	# THROWAWAY-TEST test7 - DO NOT COMMIT (GENERATED file)
+	WA_AI_TEMPLATES_THROWAWAY_TEST_MEDIUM_HULL_TWIN_24186 = {
+		enable = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 24186 } }
 		reinforce_prio = 2
 		custom_icon = 140
-		can_upgrade_in_field = { always = yes }
+		can_upgrade_in_field = { always = no }
 		upgrade_prio = { base = 10 }
 		target_template = {
 			regiments = {
@@ -212,8 +221,42 @@ Tank template D", match 0.82858.
 				signal_mot_company_divisional = 1
 			}
 		}
-		replace_at_match = 0.9
+		replace_at_match = 0.3
 		replace_with = WA_AI_TEMPLATES_GENERIC_MODERN_ARMOR_30_MEC_MISP_MTD_MAA_RMASS_HSUP
+		target_min_match = 0.1
+	}
+
+	WA_AI_TEMPLATES_THROWAWAY_TEST_MEDIUM_HULL_TWIN_24234 = {
+		enable = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 24234 } }
+		reinforce_prio = 2
+		custom_icon = 140
+		can_upgrade_in_field = { always = no }
+		upgrade_prio = { base = 10 }
+		target_template = {
+			regiments = {
+				infantry_heavy_mechanized_battalion_line = 5
+				medium_armor_battalion_line = 7
+				medium_self_propelled_gun_battalion_line = 3
+			}
+			regimental_support = {
+				medium_self_propelled_gun_company_regimental = 5
+				medium_tank_destroyer_company_regimental = 5
+			}
+			support = {
+				engineer_med_tank_battalion_divisional = 1
+				field_hospital_mot_company_divisional = 1
+				heavy_armor_company_divisional = 1
+				logistics_mot_company_divisional = 1
+				maintenance_med_tank_company_divisional = 1
+				medium_self_propelled_anti_air_company_divisional = 1
+				medium_self_propelled_gun_company_divisional = 1
+				military_police_mot_company_divisional = 1
+				recon_light_tank_company_divisional = 1
+				signal_mot_company_divisional = 1
+			}
+		}
+		replace_at_match = 0.3
+		replace_with = WA_AI_TEMPLATES_GENERIC_MODERN_ARMOR_30_MEC_MSPG_MTD_MAA_HSUP
 		target_min_match = 0.1
 	}
 ```
@@ -234,57 +277,78 @@ committed):
 
 ---
 
-## 7. Decision tree after `test6`
+## 7. After `test6`: the medium-hull twin proposal, and `test7`
 
-| `test6` (edge, brake OPEN) at 1943.5.1 | Conclusion | Next |
+`test6` settled the mechanism: **source target in the same entry + `replace_with` edge +
+`can_upgrade_in_field` on the source = an on/off gate on the fielded park that does not block
+recruits, design or production.** What is left is how to emit that for 1752 medium and 258 modern
+targets without a mapping.
+
+### The proposal
+
+The modern family is a `mirror_of` the medium one: the 24186 modern target IS the 21718 medium
+target with the hulls swapped (7 `modern_armor` for 7 `medium_armor`, `engineer_mod_tank` /
+`maintenance_mod_tank` for the `_med_` versions) - **MEASURED**, both blocks read side by side.
+So for every MODERN target M the generator can emit, mechanically, a **medium-hull twin** S(M):
+
+| Field of S(M) | Value |
+| --- | --- |
+| entry | `WA_modern_armor_role` - the same entry as M, emitted just BEFORE M (tie on `upgrade_prio`, first in file wins the arrow, then the edge hands it to M) |
+| `enable` | the SAME flag value as M |
+| composition | M with `modern_armor_battalion_line` -> `medium_armor_battalion_line` and the two `_mod_tank` companies -> `_med_tank` |
+| `replace_with` | M. `replace_at_match` low (0.3 in `test7`) so the arrow goes to M as soon as any fielded template resembles S(M); `target_min_match` 0.1 |
+| `can_upgrade_in_field` | the gate: a scripted trigger on modern chassis stock / production state |
+
+What this removes, each against the blocker recorded in `WORK.md`:
+
+| Blocker | Why it no longer binds | Label |
 | --- | --- | --- |
-| The park follows the children like the baselines (A drains to C/D) | The engine reads the SOURCE's `can_upgrade_in_field` through the `replace_with` edge. The on/off gate the owner wants (scripted trigger on stock / production state) is feasible. | Solve the mapping (below), then the first-rung problem. |
-| The park stays on A like `test5` | The brake is not what holds A - the edge itself or designer variance does. | Re-read at a later date with an edge that survives the 1943.6.1 flag move; if still ambiguous, the remaining levers are the ones in `WORK.md`: a stock bar on the latch, or the engine valve `UPGRADES_DEFICIT_LIMIT_DAYS`. |
+| (a) one enabled target per role / one flag value | S(M) and M are enabled by the same value - the WA light-support and Expert AI pattern. No second, frozen store; no ladder change. | DERIVED |
+| (b) twin mapping not 1:1 (1752 -> 258, modern code computed live) | The edge never leaves the modern code space: S(M) -> M is 1:1 by construction, 258 twins. Which MEDIUM code the country held is irrelevant - the fielded template only has to resemble S(M) more than M. | DERIVED |
+| (c) `replace_with` does not cross entries | Both live in the modern entry. The medium entry dies at the latch exactly as today; no file merge. | DERIVED |
+| dangling edge when the flag moves (24186 -> 24234) | The pair (S(M), M) switches off and (S(M'), M') switches on together. | DERIVED - this is what `test7` measures |
 
-If the edge is confirmed, the open design questions, in order:
+Cost: +258 generated targets (~8 000 lines) in one generated file, an emitter change
+(`tools/gen/armor_templates/emit.py`), the gate trigger, and the removal of the inert
+`can_upgrade_in_field` from the modern targets. No `WA_AI_*` effect changes signature.
 
-1. **One entry.** The edge only resolves inside its entry, so medium and modern targets must be
-   emitted into ONE role entry (generator change: `tools/gen/armor_templates/emit.py`, `model.py`,
-   registry `families.modern.role_group`). This also removes the duplicate `medium_armor` entry;
-   the `infantry` and `light_armor` pairs stay duplicated.
-2. **Source must stay enabled after the latch.** One flag holds one value, so the medium target
-   needs a second, frozen store for the last medium code (10 readers of the flag today). This is a
-   signature-level change to a `WA_AI_*` effect called from an on_action - the owner console-harness
-   rule applies (`WA_TEST_templates`, `WA_TEST_armor_budget` exist).
-3. **The mapping.** 1752 medium -> 258 modern, and the modern code is computed live, not from the
-   medium code. A static twin is the "+500 mirror" that already produced unbuildable slots
-   (`modern-chassis-tier` Defect A); full (source, destination) pairs is the parked
-   `parked/armor-conversion-finals` generator (~9 000 lines). Candidate to test next: a HUB - every
-   medium target's `replace_with` points at ONE generic modern target per plane, relying on the
-   MEASURED rule that field-upgraded divisions land on the best EXISTING match of the edge's
-   destination (lessons log 2026-09-04), i.e. on the live modern template. Unknown: whether the
-   engine follows an edge whose destination is not the arrow. ASSUMED until tested. The OR-enable
-   fan-in already used by the light-support `_FINAL` targets is the in-tree precedent for many
-   sources sharing one destination.
-4. **Horizontal evolution.** In WA it is `enable`-driven (the flag changes value, another target
-   becomes the enabled one); `replace_with` is only consulted on the enabled target. Expert AI ships
-   the same combination (A3 -> A4 edge with A4 latched off for most of the game). DERIVED that an
-   edge does not block horizontal moves; the dangling-edge case (destination disabled) is ASSUMED
-   harmless and is exactly what happens at 1943.6.1 in the test bed.
-5. **The first rung.** G -> A moved the whole park with 0 modern chassis. Either the gate must also
-   cover that rung (the class hypothesis says it cannot, A still matches the source), or the
-   source composition must be made to stop matching A, or the rung must be accepted (25 chassis
-   per division). Needs its own run.
-6. **Gate content.** Test stock per division to convert: ~150-250 modern chassis, not the current
+### What `test7` must show (GER, from `trade_issue.hoi4`, brake closed)
+
+| Date | Wanted reading | What it tests |
+| --- | --- | --- |
+| 1943.5.1 (`test7a`) | same shape as `test5`: park held on the first rung, several live templates, recruits and queue on the top child, modern lines requesting 150+ factories | that a flag-keyed twin with `replace_at_match = 0.3` behaves like arm 2's exact copy |
+| 1943.6.15 (`test7b`) | the hold SURVIVES the 1943.6.1 move to 24234: park still on its rung with its medium tanks, arrow on the 24234 modern target, no full freeze (recruits not back on the park's template, modern lines still requested) | the twin design's answer to the dangling edge |
+| 1943.6.15 / 1943.8.1 | does the HELD park evolve horizontally (24186 mounts 3 `medium_infantry_support_armor` + assault-gun companies, 24234 mounts 3 `medium_self_propelled_gun` + SPG companies)? Expected: no - every new design flows toward M, and the brake blocks the move | the owner's "horizontal evolution while targeting modern" question, measured rather than argued |
+| 1943.8.1 (`test7c`) | chassis per held division still ~150 medium; stock of modern chassis RISING because recruits carry the need (in the baselines it is 332 at 1943.8.1 with a tank-less park) | that the gate can ever open on stock |
+
+Then the control of the gate itself: flip both twins to `always = yes` from the `test7b` save and
+check the park moves to the live template (expect `UPGRADE_PERCENTAGE_OF_FORCES` 20 % per 14 days
+to pace it).
+
+### Open design questions after `test7`
+
+1. **The first rung slips.** In `test5` and `test6` alike 18 of 20 divisions left G for child A
+   (6 medium + 1 modern) with 0 modern chassis in stock; the brake only bites from A upward.
+   Working hypothesis (ASSUMED): A still best-matches the source, so G -> A is a move inside the
+   source's class. Cost MEASURED: ~197 -> ~148 medium chassis per division, one battalion short,
+   and A carries NO maintenance company. Tolerable next to the unbraked outcome (~8), but it needs
+   its own run if the owner wants the park held on G itself.
+2. **Gate content.** Stock needed per division to convert: 150-250 modern chassis, not
    `modern_convert_spares_min = 100`. With the wanted shape the modern need exists (recruits are
    modern, 211 factories requested in `test5`), so stock can build while the park is held - the
-   deadlock of the full hold (arm 0) does not apply. Oscillation of the gate changes no `enable`,
-   hence triggers no decommission pass (DERIVED from the doc).
-7. **Decommission hazard** (lessons log, flag-gated-target entry): at the latch no target goes
-   true -> false in the merged shape, which is better than today's full swap; the pass still runs
-   because a target appears. A park held by the brake sits on a template that is NOT obsolete in
-   `test5` (three live templates) - better than feared, but only one date. Whether a long hold
-   reinforces normally is ASSUMED. Already-latched campaigns on ship day: the frozen store does not
-   exist, the medium targets stay disabled, the enabled set is unchanged (DERIVED).
-
-Intermediate hand-written templates (half medium / half modern) are not recommended: the engine
-already builds its own one-battalion rungs, and each extra scripted rung is one more place where
-the designer's column rules can freeze a template (ENG, six years).
+   deadlock of the full freeze (arm 0) does not apply. Oscillation of the gate changes no `enable`,
+   hence triggers no decommission pass (DERIVED from the install doc).
+3. **Decommission hazard** (lessons log, flag-gated-target entry). The twin design changes NO
+   existing target's `enable`; it adds targets that switch with the flag value exactly as the
+   modern targets already do. The held template is NOT obsolete in `test5` (three live templates) -
+   better than feared, one date only; whether a long hold reinforces normally is what `test7c`
+   reads. Already-latched campaigns on ship day: their flag value enables one more target (the
+   twin); their park is already converted, so nothing resembles the twin - expected inert, ASSUMED.
+4. **The other two duplicate-role pairs** (`infantry`, `light_armor`) stay as they are; nothing here
+   requires merging entries any more. The `[dead-role-entry]` guards remain the mitigation.
+5. **Intermediate hand-written templates** (half medium / half modern) are not recommended: the
+   engine already builds its own one-battalion rungs, and each extra scripted rung is one more
+   place where the designer's column rules can freeze a template (ENG, six years).
 
 ---
 
