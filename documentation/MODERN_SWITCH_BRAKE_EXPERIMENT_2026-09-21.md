@@ -1,9 +1,12 @@
 # Medium -> modern armour switch: duplicate role entry diagnosis and the park-brake experiment
 
 Date: 2026-09-21. Branch `ai-rework`. Subject it serves: `modern-switch-amorce` in `WORK.md`.
-Status: **the control run (`test6`) is read - the engine DOES read the source's
-`can_upgrade_in_field` through a `replace_with` edge.** Next owed run: `test7` (medium-hull twins,
-section 7). No mod code was shipped.
+Status: **OPEN, and weaker than it read after `test6`.** First machine: `test5` / `test6` (one run
+each, one date) read as "the engine reads the source's `can_upgrade_in_field` through a
+`replace_with` edge". Second machine (section 7b): `test7` (twins, 0.3) does NOT hold the park;
+`test8` (twins, 0.9) ends on 7+0 but by going down and coming back, with modern production frozen -
+neither run needs the brake to be explained. Next owed run: **`test9`**, the brake control at 0.9.
+The full list is "What remains to do" at the end of section 7b. No mod code was shipped.
 No `WORK.md` subject was opened (admission rule); the owner decides what enters.
 
 Labels, as everywhere in this repo: **MEASURED** = read from a named save, game file or mod file.
@@ -31,6 +34,8 @@ stale. Every binary/doc reading below is of 1.19.3.0, the version that produced 
    rung, modern chassis production requested - and the control with the brake OPEN (`test6`) makes
    the park follow the children like the baselines. **MEASURED**; the causal reading is
    **DERIVED** from the `test5` / `test6` pair, whose only difference is the brake line.
+   **Weakened by section 7b:** one run each, read at one date, on a bed whose unedited baselines
+   already differ by three rungs at that date; `test7` and `test8` show no braking effect.
 4. The symptom the subject started from is live on the current build: converted divisions are
    nearly tank-less (17 divisions holding ~150 modern chassis for ~2 550 required, medium tanks
    stripped from ~197 to ~8 per division). **MEASURED.**
@@ -39,6 +44,10 @@ stale. Every binary/doc reading below is of 1.19.3.0, the version that produced 
    flag store and NO file merge: give every MODERN target a **medium-hull twin** inside the modern
    entry, enabled by the SAME flag value, carrying the brake and a `replace_with` to its modern
    target (section 7). `test7` tests it across the 1943.6.1 flag move.
+6. Second machine, **MEASURED**: that proposal fails at `replace_at_match = 0.3` (full descent,
+   `test7`) and at 0.9 produces a park that reverts to 7+0 with NO modern template, NO modern
+   chassis built and no armour recruits (`test8`) - the arm 0 deadlock by another road. Whether the
+   brake line does anything at all is what `test9` decides.
 
 ---
 
@@ -261,8 +270,12 @@ Tank template D", match 0.82858.
 	}
 ```
 
-Reading a run (the method; the ad-hoc scripts lived in a session scratchpad and are not
-committed):
+Reading a run. The scripts are committed since the second-machine session, under
+`tools/archive/modern_switch_experiment/` (they resolve the repo from their own location):
+`read_run.py <reference_save> <run_save>...` does every row of the table below in one call and
+prints the closure test; `medium_hull_twins.py apply [--brake no|yes] [--ram 0.9]` writes the 258
+twins of section 7b; `cohort_history.py`, `q_reference.py`, `flag_trajectory.py` are the
+single-question readers. The method they implement:
 
 | Reading | How |
 | --- | --- |
@@ -273,7 +286,9 @@ committed):
 | chassis per division | in the `units` section, each `division={}` has `equipment={ id={ id=N type=70 } amount= }`; resolve N through the top-level `equipments={}` registry (`stock.equipment_definitions`) and bucket on the definition name (`modern_chassis`, `medium_chassis`, `medium_chassis_td`, `heavy_chassis`) |
 | production | `savegame.py section FILE GER production`: per `military_lines` block, `active_factories`, `requested_factories`, `equipment_variant_index`; archetype from `common/units/equipment/*.txt` |
 | recruits | division ids absent from `trade_issue.hoi4`; the training queue lines and the template each is on |
-| tool faults met | `stock.py` needs the full save path and `--all` to show own-built stock; `plans.py --templates` truncates the battalion list at five types |
+| tool faults met | `stock.py` needs the full save path and `--all` to show own-built stock, and `--all` ADDS division-held and training-queue equipment to the stockpile (section 7b) - read free stock from the `production > equipments` block, as `read_run.py` does; `plans.py --templates` truncates the battalion list at five types |
+| binary saves | a local game writes `HOI4bin` unless `settings.txt` carries `save_as_binary=no` (edit it with the game CLOSED - the exe rewrites the file on exit). An existing binary save is recovered by loading it and re-saving while paused |
+| which field is the checksum | in `version=Operation Postern v1.19.3.0.c01a (5122)` the mod checksum is the PARENTHESISED field; `c01a` is the engine build |
 
 ---
 
@@ -349,6 +364,161 @@ to pace it).
 5. **Intermediate hand-written templates** (half medium / half modern) are not recommended: the
    engine already builds its own one-battalion rungs, and each extra scripted rung is one more
    place where the designer's column rules can freeze a template (ENG, six years).
+
+---
+
+## 7b. `test7` re-based on the second machine (campaign `d6190fb7`)
+
+`trade_issue.hoi4` did not travel. The test bed on the second machine is an observer campaign
+(`d6190fb7`, player BHU, monthly saves, engine 1.19.3.0, mod checksum `5122`, produced by the cloud
+test build - which commit it ran is **ASSUMED** close to HEAD: its codes 21718 / 24186 exist only
+in the generator-era tree). All readings below **MEASURED** by an extraction subagent unless marked.
+
+| Item | `d6190fb7` | `02795c2d` (sections 4-5) |
+| --- | --- | --- |
+| Test bed | `modern_bed.hoi4` = copy of `1943.4_Apr.hoi4` (1943.4.1.2, 30 days before the latch) | `trade_issue.hoi4` (1943.3.5) |
+| Latch | 1943.5.1.1 | 1943.4.1.1 |
+| Flag codes | 21718 -> 24186 (5.1) -> **24138** (7.1 .. 12.1) -> 24234 (1944.1.1) | 21718 -> 24186 -> 24234 (6.1) |
+| Park | #3347 "Medium Tank template A" (7+0), **17 divisions** | G #3195, 20 divisions |
+| Frozen cohort - never count it | #2210 "template H", 9 ids, no `heavy_armor` company, light TDs; plus ids 89471 / 95059 that stay on A | "template B", 11 ids |
+
+Baseline of the 17 park ids (the existing monthly saves, no edit):
+
+| Reading | 1943.5 | 1943.6 | 1943.7 | 1943.8 | 1943.9 |
+| --- | --- | --- | --- | --- | --- |
+| on template | A 17 | C (5+2) 15, A 2 | F (4+3) 15, A 2 | same | same |
+| live templates of the role | A | C | F | F | F + "Modern C" (1+5, 0 div, holds the queue) |
+| gun tanks per division (15 converted) | 196 | 124 | 100 | 100 | 100 |
+| modern chassis per division | 0 | 0 | 0 | 0.2 | 2.4 |
+| free modern chassis | 0 | 0 | 0 | 0 | 0 |
+| modern lines, active / requested factories | 0 / 30 | 0 / 258 | 50 / 333 | 186 / 384 | 200 / 314 |
+
+The subject's symptom reproduces: each converted division sheds ~97 gun tanks into the stockpile
+(free medium gun tanks 108 -> 3 191) and holds 2.4 modern chassis four months after the latch.
+
+Tool fault found: `stock.py --all` adds division-held and training-queue equipment to the
+stockpile (1943.9: reports 152 modern chassis, the `production > equipments` block holds 0). The
+"332 modern chassis sit in stock" of section 4 came through it and is **ASSUMED** contaminated.
+
+`test7` state on this machine: a medium-hull twin for **all 258** modern targets (not two - a
+replay may land on another modern code than 24186 / 24138), brake closed, written by a throwaway
+script; the 24186 twin carries the same fields as the block of section 6. Runs, fresh exe, load
+`modern_bed.hoi4`, `observe`:
+
+| Save as | Date | Compare to baseline | Wanted |
+| --- | --- | --- | --- |
+| `test7a` | 1943.6.1 | C 15 / A 2, gun 124 | `test5` shape: park held on A or the first rung, several live templates, queue on a higher child, modern lines requested |
+| `test7b` | 1943.7.15 | F 15, gun 100 | the hold survives the 7.1 move to 24138; no full freeze |
+| `test7c` | 1943.9.1 | F 15, gun 100, free modern 0 | gun tanks still ~150+, free modern chassis RISING |
+
+### `test7` result: the hold does NOT appear (2026-09-21, second machine)
+
+Validity, **MEASURED**: three text saves, campaign `d6190fb7`, mod checksum `7bd1` (baseline
+`5122`), latch 1943.5.1.1, closure test OK on all three (232 / 237 / 240 divisions). The replay
+took 24186 -> 24138 (7.1) -> **24234 (9.1)**; the baseline stays on 24138 until 12.1 - a replay
+does drift, which is what the 258 twins were for. Reader: `read_run.py` (session scratchpad).
+
+| Reading, the 17 park ids | `test7a` 1943.6.1 | `test7b` 1943.7.15 | `test7c` 1943.9.1 | baseline 6.1 / 7.1 / 9.1 |
+| --- | --- | --- | --- | --- |
+| on template | B (6+1) 17 | Modern A (3+4) 17 | Modern A (3+4) 17 | C (5+2) 15 / F (4+3) 15 / F 15 |
+| live templates of the role | B only | Modern A (19 div), Modern B 2+5 (0) | Modern A (19), Modern D 0+6 (0) | one, except 9.1 |
+| gun tanks per division | 149.5 | 74.6 | 74.8 | 124 / 100 / 100 |
+| modern chassis per division | 0 | 0.3 | 10.2 | 0 / 0 / 2.4 |
+| free modern chassis | 0 | 0 | 0 | 0 |
+| free medium gun tanks | 2 734 | 4 643 | 4 863 | 2 471 / 2 932 / 3 191 |
+| modern lines active / requested | 0 / 178 | 32 / 416 | 186 / 403 | 0 / 258, 50 / 333, 200 / 314 |
+| armour training queue / recruits | none / 0 | none / 0 | none / 0 | C (4 lines) / F, 4 recruits |
+
+Template timeline in the run, **MEASURED** (`obsolete_change_date`): A obsolete 5.22, B 6.10,
+C 6.22, D (4+3) 6.26, then "Modern A" (3+4). Four rungs fell between 6.10 and 6.26 with the flag
+constant at 24186 - the park followed every child, each predecessor going obsolete as the next
+appeared. That is the `test6` / baseline pattern (brake open), not the `test5` one (three live
+templates, park held on the first rung). **The flag move of 7.1 is not what broke it: there was
+no hold left to break.**
+
+| Claim | Label |
+| --- | --- |
+| A flag-keyed medium-hull twin with `replace_at_match = 0.3`, brake `always = no`, does not hold the fielded park. | MEASURED (one run) |
+| `test7` ends one rung BELOW the baseline (3+4 vs 4+3, 75 gun tanks vs 100). Not attributable to the twins: the baseline ran on the cloud build, `test7` on HEAD, and no HEAD-without-twins control exists on this machine. | MEASURED / the attribution ASSUMED |
+| No armour division was queued in any of the three saves, against 4 lines in the baseline. Same confound. | MEASURED |
+| Differences between `test5` (hold) and `test7` (no hold): `replace_at_match` 0.9 -> 0.3; twin enabled by flag VALUE instead of `tag = GER` + latch flag; twin placed before its M instead of first in the entry; 258 twins instead of 1; campaign and build. Which one matters is not readable from a save. | MEASURED (the list) |
+| Rival that the data cannot exclude: `test5` was read at ONE date, +30 days. `test7a`, also +31 days, shows the park on the first rung (6+1) too - the rung `test5` sat on. The `test5` hold may have been a slower ladder, not a brake. What speaks against it: `test5` had THREE live templates at that date and `test6` (brake open) had one, 4+3, 19 of 20 ids. | DERIVED |
+| Install doc, `can_upgrade_in_field`: "If false, the AI will not field-upgrade divisions matching this target template." What "matching" means (score above `replace_at_match`? best-matching target?) is documented nowhere. If it is the former, 0.3 should brake MORE than 0.9, and it did not. | MEASURED (the sentence) / ASSUMED (the readings) |
+
+### `test8` - one variable back toward `test5`
+
+Same 258 flag-keyed twins, brake closed, **`replace_at_match = 0.9`** (the `test5` value) - the one
+deliberate parameter change between the run that held and the run that did not. Fresh exe, load
+`modern_bed.hoi4`, `observe`. The rungs fell between 6.10 and 6.26 in `test7`, so the first save
+moves there:
+
+| Save as | Date | Hold = | No hold = |
+| --- | --- | --- | --- |
+| `test8a` | 1943.6.20 | park on A or B (7+0 / 6+1), two or more live templates, gun tanks >= 150 | park on C / D, one live template |
+| `test8b` | 1943.7.15 | same after the 7.1 flag move | Modern A (3+4), ~75 gun tanks |
+| `test8c` | 1943.9.1 | same; free modern chassis > 0 | as `test7c` |
+
+If `test8` holds: 0.3 was the fault, and the generator proposal stands with 0.9. If it does not:
+replay `test5` literally on this bed (ONE twin, first in the entry, `enable = { tag = GER
+has_country_flag = WA_AI_TEMPLATES_modern_chassis_earned }`, 0.9) - if even that fails here, the
+`test5` hold was a one-date reading and section 7 falls. In either failing case the owner's
+`imgui show ai_templates` at 1943.6.15 (arrow, `Best (role)`, match scores of the twin and of M)
+is the reading no save can replace.
+
+### `test8` result: the park ends on 7+0, but by REVERTING, and the modern side is frozen
+
+Validity, **MEASURED**: three text saves, campaign `d6190fb7`, mod checksum `152c`, closure OK
+(235 / 237 / 243). Flag 24186 -> 24138 (7.1) -> 24234 (9.1), as in `test7`. Confound, MEASURED:
+three unrelated files (`FRA.txt`, `WA_AI_MILITARY_FACTION_ALLIES_THEATRE.txt`, `WA_AI_CONFIG.txt`)
+were modified in the working tree by another session (mtime 12:54, the minute `test8c` was
+written); whether the exe that ran `test8` had loaded them is ASSUMED no - none touches templates.
+
+| Reading, the 17 park ids | `test8a` 1943.6.20 | `test8b` 1943.7.15 | `test8c` 1943.9.1 |
+| --- | --- | --- | --- |
+| on template | C (5+2) 11, B (6+1) 3, A (7+0) 3 | **A (7+0) 16**, B 1 | **A (7+0) 17** |
+| live templates of the role | C | **A - live AGAIN** (it was obsolete 5.26 in `test8a`); C obsolete 7.6 | "Medium Tank template E" #3559, 7+0, 0 div (A obsolete 8.9) |
+| gun tanks per division | 140.6 | 187.1 | 194.5 |
+| modern chassis per division / free | 0 / 0 | 0 / 0 | 0 / 0 |
+| modern lines active / requested | **0** / 174 | **0** / 197 | **0** / 128 |
+| any "Modern ..." template designed | no | no | no |
+| armour training queue / recruits | none / 0 | none / 0 | none / 0 |
+
+| Claim | Label |
+| --- | --- |
+| The park went DOWN the ladder first (11 of 17 on 5+2 ten days after C appeared) and then came BACK to 7+0. The closed brake did not stop the descent. | MEASURED |
+| With 0.9 the role never leaves the medium shape: no modern template exists at any date, no modern chassis is built (0 active factories at all three dates; baseline 50 then 200, `test7` 32 then 186), none is held. A gate that waits for modern stock could never open - the arm 0 deadlock. | MEASURED (facts) / DERIVED (the deadlock) |
+| Reading that fits both runs: the arrow sits on M only while the best live template matches S at >= `replace_at_match`. At 0.3 that is always (`test7`: full descent). At 0.9 it stops being true around 5+2, the arrow returns to S, the designer rebuilds toward S and the park follows it back up. A revived and then a new 7+0 template E cut to the 24234 twin is what that predicts. | ASSUMED (no imgui reading) |
+| In NEITHER run is there a reading that needs `can_upgrade_in_field = no` to explain it: at 0.3 the park followed every rung, at 0.9 it followed the descent and the return alike. | DERIVED |
+| This weakens section 5's causal reading. `test5` / `test6` were one run each, read at ONE date (+30 days), and two unedited baselines there already differed by three rungs at that date (5+2 vs 2+5). `test5`'s three live templates can be a snapshot of the same return movement. | DERIVED |
+| Horizontal evolution (the owner's question): yes while the arrow is on S - template E is a new 7+0 cut after the move to 24234. | MEASURED (E exists, 7+0) / ASSUMED (that its support mix is the 24234 one - not read) |
+
+### `test9` - the brake control on this bed
+
+Same 258 twins, `replace_at_match = 0.9`, **`can_upgrade_in_field = { always = yes }`**. One line
+differs from `test8`. Same dates: `test9a` 1943.6.20, `test9b` 1943.7.15, `test9c` 1943.9.1.
+
+| Outcome | Meaning |
+| --- | --- |
+| same as `test8` (back on 7+0, modern frozen) | the brake does nothing here; the 0.9 threshold alone produces the hold; `can_upgrade_in_field` on a source twin is not a usable gate and section 7 falls |
+| full descent like `test7` | the brake is read at 0.9 and not at 0.3; section 7 survives with 0.9, but still has to solve the frozen modern production |
+
+### What remains to do (state at the hand-over back to the first machine, 2026-09-21)
+
+Working tree: the generated modern file is REVERTED on the second machine (another session was
+committing in the same tree); `python tools/archive/modern_switch_experiment/medium_hull_twins.py
+apply --ram 0.9 --brake yes` rebuilds the `test9` state in one command on either machine. Saves
+stay where they were made: `modern_bed.hoi4`, `test7a-c`, `test8a-c` on the second machine,
+`trade_issue.hoi4`, `conversion.hoi4`, `test1`-`test6` on the first.
+
+| # | Owed | Why | Where it can run |
+| --- | --- | --- | --- |
+| 1 | **`test9`**: twins at 0.9, brake OPEN, saves +50 d / +75 d / +120 d after the latch | the one-line control of `test8`; decides whether `can_upgrade_in_field` on a source twin does anything at all | either bed. On the first machine from `trade_issue.hoi4` (latch 1943.4.1): save 1943.5.20, 1943.6.15, 1943.8.1 - and read it against a `test8`-equivalent run made on THAT bed, never against the second machine's `test8` |
+| 2 | owner `imgui show ai_templates` on GER mid-run (around +60 d): arrow, `Best (role)`, match of the twin and of M | the threshold reading of `test7` / `test8` is ASSUMED; no save carries the arrow | live game only |
+| 3 | re-read `test5` / `test6` at LATER dates if those runs can be continued from their saves | both were read at one date (+30 d); `test8` shows the same bed going down then back up, so one date decides nothing | first machine |
+| 4 | a HEAD-without-twins control on whichever bed is used | the second machine's baseline came from the cloud build (checksum `5122`), not from HEAD - the rung gap between `test7` and its baseline is unattributed | either |
+| 5 | if `test9` = `test8` (brake inert): drop section 7, and put the owner decision on the table - hold the role on the medium shape, prime modern stock with the need-blind `equipment_production_min_factories_archetype` floor, switch once. `test8` measured the missing half of that design: with the role held on medium, modern lines get 0 factories for four months | the twin proposal then has no mechanism left | design, no run |
+| 6 | if `test9` descends (brake read at 0.9): section 7 stands with `replace_at_match = 0.9`, and still owes an answer to the frozen modern production of `test8` before any emitter change | a held park with no modern chassis ever built is the arm 0 deadlock | design + one run |
+| 7 | `WORK.md` `modern-switch-amorce` still describes a stock seed inside `WA_AI_TEMPLATES_update_modern_chassis_latch`; the effect at HEAD reads `WA_AI_TEMPLATES_modern_line_open` only (MEASURED, `WA_AI_TEMPLATES_effects.txt`), and both campaigns latch with 0 modern chassis | stale tracker text, listed with section 8 | edit when the subject is next touched |
 
 ---
 

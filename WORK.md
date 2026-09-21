@@ -633,6 +633,14 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   exactly this; WA already uses the type once, for convoys in
   `WA_AI_PRODUCTION_DEFAULT_navy.txt`) - deliberately NOT added in the same pass, so the next run
   isolates the damp.
+- Park-brake experiment, 2026-09-21, two machines, NO code shipped - record and the list of owed
+  runs in `documentation/MODERN_SWITCH_BRAKE_EXPERIMENT_2026-09-21.md` (section 7b, "What remains to
+  do"). State, MEASURED from saves: a medium-hull twin carrying `can_upgrade_in_field = no` and a
+  `replace_with` to its modern target does NOT hold the park at `replace_at_match = 0.3` (`test7`,
+  full descent); at 0.9 the park goes down to 5+2 and comes BACK to 7+0, no modern template is ever
+  designed and modern lines get 0 factories for four months (`test8`). Neither run needs the brake
+  to be explained, so clause (vi) below is still undecided; the owed control is `test9` (same twins,
+  brake open). Scripts: `tools/archive/modern_switch_experiment/`.
 - Verification (console, FRESH exe - a `reloadfile` poisons country triggers and measures
   nothing): run `WA_TEST_armor_budget` on a major inside the window. (i) `amorce:` prints
   `window=1` with a non-zero `priming-floor` while `latch=0`; (ii) `latch=1` never appears with
