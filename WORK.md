@@ -173,6 +173,55 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
+- Owner order 2026-09-20 ("pendant la drôle de guerre, l'aviation alliée ne devrait pas bombarder
+  l'Allemagne"). Intended behaviour: while the western Allies face Germany with no bomber arm, no
+  Allied air force ranks German air space above its own — the RAF, the USAAF *and* the Armée de
+  l'Air.
+- Symptom, MEASURED (repo + git): the Reich bombing ladder
+  (`common/ai_strategy/WA_AI_MILITARY_FACTION_ALLIES_AIR.txt`) gated all five blocks on
+  `WA_AI_CONFIG_MILITARY_is_western_allies_major` = ENG/USA/CAN. The legacy block it replaced,
+  `ENG_FRA_allies_avoid_bombing_GER` (`git show f70e86f192^:common/ai_strategy/ENG.txt:855-905`),
+  was `allowed = ENG/FRA/CAN/RAJ/AST` with `date < 1941.10.1` and -500,000 on 6/7/8/22/294/38.
+  Phase 7c therefore dropped FRA, RAJ and AST: France's net on both rings has been exactly **0**.
+  No fallback covered it — `_home_only_reich` (-300,000) needs <= 399 deployed aircraft and
+  MEASURED on campaign `b28209dd` FRA fields 757 (1939.10) -> 1 165 (1940.6).
+- Second MEASURED fact from the same ten saves: FRA, ENG and USA field **zero** strategic bombers
+  for the whole window (no `strat_bomber`/`heavy_strat_bomber` wing, no such equipment in stock).
+  The Allied bombers of the Phoney War are tactical/strike (ENG tac 69->179, strike 0->200; FRA
+  strike 100->300, tac 0->200), which the medium airframe permits on the strategic-bombing mission
+  (`common/units/equipment/plane_airframes.txt`, `forbid_mission_type` list excludes it). The
+  ladder's thresholds count strategic bombers only, so they stay at their floor all window — which
+  is correct, and is exactly why the missing actor mattered.
+- Change: new DECISION trigger `WA_AI_MILITARY_AIR_should_avoid_reich` =
+  `WA_AI_CONFIG_MILITARY_is_western_allied_power` (ENG/USA/CAN/FRA/RAJ/SAF/AST/NZL), named by the
+  `allowed` of the three SUPPRESSION rungs (`_reich_blackout`, `_reich_raid_too_costly`,
+  `_reich_deep_out_of_reach`). The two raid PULLS keep the narrow major set on purpose: a released
+  rung already nets 0, so a non-major falls back to the engine's own terms rather than being pushed
+  onto the Reich. No value changed, no date added, no new tag list.
+- Not fixed, stated (architecture review item 5): `WA_AI_MILITARY_AIR_theatre_contested_germany`
+  still aborts all three rungs for the WHOLE coalition as soon as any co-belligerent controls one
+  listed German state — a Saar offensive would lift the blackout for ENG and USA too. MEASURED on
+  `b28209dd` it never fired (GER holds 24/24 states, 198/198 provinces in all ten Phoney-War
+  saves), so it is a latent hazard, not this campaign's cause. Needs its own subject if seen.
+- Regression risk, DERIVED: RAJ/SAF/AST/NZL now also collect -20k/-40k/-20k on 6/7/8/296/294/38.
+  Where `_home_only_reich` is armed they stack to -360,000; nothing positive writes on those
+  regions below the raid-force bar, so the stack is inert either way. ASSUMED: that -60,000 is
+  enough to keep a tactical-bomber force off German regions when the only competing regions score
+  0 — `strategic_air_importance` ranks, it never forbids a mission.
+- Gates run: `check_ai_layers.py` 0 ERROR after `--update-baseline` (LAYER4-READS-CONFIG 146->143,
+  a debt DROP). `check_constants.py` exit 0, its 2 ERRORs pre-existing and unrelated
+  (`[production_armor_maintenance_floor]`). Brace balance and BOM verified on both edited scripts.
+- No harness owed: `ai_strategy` gate blocks and one scripted trigger, no `WA_AI_*` effect, no
+  on_action.
+- Verification (owner, console): `tag FRA` then `imgui show ai-strategy` in a save between the
+  German declaration and the fall of France — `WA_AI_MILITARY_ALLIES_AIR_reich_blackout` and
+  `_reich_raid_too_costly` must appear in Active strategies. Today they do not.
+- Verification (campaign): in the Phoney-War saves, no German state of regions 6/7/8 carries a
+  `last_strategic_bombing` stamp or growing building damage.
+- Closed when: one campaign shows both, i.e. the ladder armed for FRA and no Allied bombing damage
+  on German soil before the fall of France.
+
 ### truck-floor-ladder — SHIPPED-UNTESTED (2026-09-20)
 - Owner order 2026-09-20 ("on a un système d'usines minimum sur les camions, comme on a pour les
   mécanisés ?", then "rends le palier camions monotone comme le mécanisé. Base toi sur l'Allemagne
@@ -796,10 +845,13 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt`,
   `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` and
   `tools/generated/armor_templates_manifest.json`. 1872 emitted targets, all 30 wide.
+  SUPERSEDED by the A21 paragraph below (2026-09-21): 2718 enumerated targets, and the code
+  ranges named in this paragraph are the OLD ones - read the A21 paragraph for the live values.
   `WA_AI_TEMPLATES_calculate_{medium,heavy}_armor_template` are thin wrappers;
   `apply_armoured_waves_mirror` and `apply_heavy_support_mirror` are deleted (their only callers
   were the replaced ladders); `gen_ai_medium_modern_mirror.py` and the constants group
-  `templates_modern_tier_offset` are retired with the +500 offset; modern owns codes 8000-8863.
+  `templates_modern_tier_offset` are retired with the +500 offset; modern owned codes 8000-8863
+  at the time of writing (SUPERSEDED: 24000-24257 since A21).
 - The value is now COMPUTED: one mixed-radix digit per declared axis (variant / TD / SPAA /
   rockets / industrial cut / heavy company / waves), one plane per mobile-infantry form.
 - Light and light_support are NOT generated (`"emit": false` in the registry): their hand-written
@@ -996,6 +1048,96 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   which producible variant receives each archetype floor. Owner console owed: in a post-CZE 1939
   AI GER, light target is light-only, medium target is active, and the production panel shows at
   least 5 factories on `light_tank_chassis`; `event wa_maint.3 GER` must report light floor 5.
+- Owner order 2026-09-21, `[a21-line-vs-regimental]`: "les chars de support (pz 4c) sont en ligne,
+  la ou les stugs sont en soutiens regimentaires. Les deux devraient cohabiter." The spec already
+  said so - A8, "select line and support independently" - and the implementation did not: it gave
+  the regimental artillery block to the LINE chain's winner and fell back to towed pack artillery
+  when that winner owned no company.
+  Symptom, MEASURED (campaign `84ae4038`, GER, 13 saves 1939.1-1945.5): the selector flag
+  `WA_MEDIUM_ARMOR_TEMPLATE` reads 20882 / 20884 / 20950 / 24186 / 24138 / 24136 and never once
+  carries an assault-gun value. `ger_medium_infantry_support_tank_1` (Panzer IV C) completes
+  1938.3.2 and `ger_medium_assault_tank_2` (StuG III A) 1940.3.25, so the support tank held the
+  single shared block for the whole war. The only StuGs in the German army came from the
+  hand-written SS templates (31 divisional companies + 2 line battalions at 1945.1), against
+  1029 medium TD chassis in stock.
+  Structural cause, MEASURED (`common/units/`): every `*_infantry_support_*` and
+  `heavy_self_propelled_gun_*` declares a line and a divisional unit and NO regimental company;
+  every `*_assault_gun_*` and light/medium/modern `*_self_propelled_gun_*` declares all three.
+  Change: `chains.regimental_artillery` is now a real chain over the candidates that own a
+  regimental company; each enumerated family declares its own list; the heavy family's
+  `artillery_fallback` axis retires because `medium_spg` is an ordinary candidate below
+  `heavy_assault`. `model.py` refuses any registry that lists a candidate in a chain whose slot
+  it does not own - the mechanism, not the instance. Spec A21 + tech spec 5.3/5.4 updated.
+  Enumeration: the two chains share one rank order, so only the REACHABLE (line, artillery)
+  pairs are carried, as one joint digit - 11 medium / 5 modern / 9 heavy values against 7 / 4 / 4.
+  1766 enumerated targets become 2718 (medium 1368->2232, modern 198->258, heavy 200->228);
+  the rectangle would have been 6720 for medium alone and would not fit the declared code range.
+  Two defects found and fixed on the way, both in the generator's own guards, both with a test:
+  (a) `validate.rendered_scripts` scoped its definition index to ONE rendered file, so the first
+  generation of any new trigger name was refused as UNKNOWN-NAME; (b) the joint digit named
+  `wins_line_variant_none` on the MOTORIZED plane, where the line axis is DROPPED rather than
+  empty - every motorized artillery rung would have been dead code the moment a line candidate
+  was eligible, and the division would have silently kept towed artillery.
+  Regression risk, DERIVED and NOT measured in game: every armour template CODE moves (medium
+  MEC 20000-22111, MOT 22112-22231; modern 24000-24257; heavy 28000-28227). MEASURED, the blast
+  radius of that: a sweep of `common/`, `events/` and `tests/` for a literal
+  `WA_*_ARMOR_TEMPLATE value = N` outside `common/ai_templates/` finds only LIGHT (5109-5116,
+  `WA_TEST_templates.txt`) and LIGHT_SUPPORT (15000-15008, `WA_TEST_armor_budget.txt` and
+  `WA_AI_TEMPLATES_effects.txt`) values - both DECLARED families, both untouched by this change.
+  No medium / modern / heavy literal survives outside the generated files, so nothing new breaks;
+  the already-recorded staleness of those harness decoders is unchanged, not worsened. Demand
+  changes, MEASURED by re-counting both emitted sets: NO composition was removed or altered - the
+  codes that existed before still exist with the same content, and A21 ADDS combinations. The
+  proof is the towed-artillery count, which is unchanged in ABSOLUTE terms while the denominator
+  grows: medium 300/1368 -> 300/2232, modern 51/198 -> 51/258, heavy 38/200 -> 38/228. What moves
+  is which code a country LANDS on: one whose eligibility set holds an infantry-support tank AND
+  an assault gun used to land on the pack-artillery code and now lands on a new assault-gun one.
+  Medium targets carrying an assault-gun regimental company go 384/1368 -> 1200/2232. So a
+  country in that state now builds 5 companies per division (30 chassis) it previously did not -
+  a real draw on chromium and on the assault-gun line, which GER ran at 3-8 factories all war.
+  Prior attempts on this same symptom, named per principle 3(g): **A15** (2026-09-19, "own tier
+  plus the one below") widened which TIER a family may reach and left the slot conflation intact -
+  it could not fix this, because the loser was not a tier away but a SLOT away. **A16** (the Mech
+  SPG rung of the artillery chain) stays NOT IMPLEMENTED: the joint axis does not reach it, since
+  `mechanized_spg` is still absent from `chains.regimental_artillery.order` and adding it would
+  multiply every medium and modern target by 1.5 for a rung the old ladder never used. Neither is
+  a proposal I am overriding; A21 is the first change to address the slot itself.
+  Conversion FINALs re-resolved (lessons rule "a FINAL is safe only when its composition IS the
+  destination role's CURRENT target"), MEASURED against the regenerated files: the four
+  `..._TRANSITION_*_FINAL` profiles declare `regiments` 10 main + 5 mobile infantry and a
+  regimental block of towed pack artillery + towed AT. A21 changed NEITHER - the line budget is
+  untouched (A11) and the no-variant regimental block is still the towed pair, emitted as
+  `WA_AI_TEMPLATES_GENERIC_MEDIUM_ARMOR_30_MEC` / `..._HEAVY_ARMOR_30_MOT` and their twins. What
+  A21 added is artillery-block VARIETY in the sibling targets, which the FINALs never mirrored
+  before this change either; the engine captures a converting division on its best existing
+  match. Their `_comment`s were carrying dead heavy codes (7100 / 7105) and now name the targets.
+  Code-move window, the t0/t1/t2 principle 3(f) asks for. Cadence MEASURED:
+  `WA_AI_TEMPLATES_calculate_all_templates` runs at startup and monthly
+  (`common/on_actions/WA_AI_misc_on_actions.txt:263`); an `ai_template` `enable` is evaluated
+  continuously; the designer acts on `DAYS_BETWEEN_CHECK_BEST_TEMPLATE`.
+
+  | | event | what the flag holds | what any target answers |
+  | --- | --- | --- | --- |
+  | t0 | a pre-A21 save is resumed on this build | the OLD code (e.g. medium 20950) | nothing - no emitted target declares it, so the role has NO target and the designer proposes none |
+  | t1 | next monthly `calculate_all_templates`, at most 1 month later | the NEW code | the matching target, at full composition |
+  | t2 | next designer pass after t1 | unchanged | the division is re-cut toward it |
+
+  So the window is bounded by ONE monthly pulse, and during it the role is target-LESS rather
+  than pointed at a wrong shape - the engine does not decommission a template for having no
+  target, it simply proposes no change. A10 already rules out save migration for this generator.
+  Design coverage of the new demand, MEASURED (`common/ai_equipment/`, `WA_AI_TECHTREE_gates.txt`):
+  A21 adds no chassis that was not already reachable - the same candidates already took their
+  LINE battalion and their divisional company, so every country that can now mount an assault-gun
+  regimental company could already build that chassis. Every tree that reaches a MEDIUM assault
+  rung (fra / ger / ita / sov / swe folders) has a design group: `FRA_assault_tank`,
+  `GER_assault_tank`, `ITA_assault_tank`, `SOV_assault_tank`, `SWE_medium_assault_tank`. Two
+  PRE-EXISTING gaps, unchanged by A21 and not fixed here: no `land_light_assault_tank` group for
+  FRA although `WA_AI_TECHTREE_has_light_assault` admits the French tree, and no heavy-assault
+  group for the `minor_armour_folder` countries although `has_heavy_assault` admits them - those
+  countries get an engine auto-design, outside the `WA_AI_EQUIPMENT_*` resource gates.
+  Verification (campaign): one save where an AI holding BOTH an infantry-support tank and an
+  assault gun fields the support tank in `regiments` and the assault gun in `regimental_support`
+  of the same division - GER after 1940.3 is the case the symptom came from.
 - Verification (campaign): one save where a doctrine-holding AI fields a 12-battalion armour
   division at 30 width, and a non-doctrine AI fields 15 at 30.
 - Closed when: `python tools/gen/gen_ai_armor_templates.py --check` exit 0,

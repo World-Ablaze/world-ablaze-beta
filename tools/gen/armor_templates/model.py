@@ -31,7 +31,7 @@ CHAIN_FIELDS = {"slot", "block_size", "order", "empty", "rocket_candidate", "roc
 FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_group", "flag",
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
-                 "mirror_of", "emit", "front_role_override", "artillery_fallback",
+                 "mirror_of", "emit", "front_role_override",
                  "mode", "profiles", "reinforce_prio", "can_upgrade_in_field", "_comment"}
 
 # A family is either ENUMERATED (its targets are the product of declared axes) or DECLARED (its
@@ -105,6 +105,20 @@ class Registry:
                      "chain %s: order must be ascending by chain_rank, got %s" % (chid, ranks))
             _require(chain["empty"] in self.candidates,
                      "chain %s: unknown empty candidate %s" % (chid, chain["empty"]))
+            # [armor-template-generator] A21: a chain may only offer candidates that own a
+            # company in the slot it fills. Infantry support declares no regimental unit, so
+            # listing it in an regimental chain would silently hand the block to a candidate
+            # that cannot fill it - which is exactly how the line chain used to swallow the
+            # assault gun's regimental company. Checked here so it can never come back.
+            # The `none` sentinel is the block being ABSENT, not a unit that fills it.
+            slot = chain["slot"]
+            checked = list(chain["order"])
+            if chain["empty"] != "none":
+                checked.append(chain["empty"])
+            for cid in checked:
+                _require(self.unit_of(cid, slot),
+                         "chain %s fills slot %s but candidate %s declares no %s unit"
+                         % (chid, slot, cid, slot))
 
         codes_seen = []
         for fid, fam in self.families.items():

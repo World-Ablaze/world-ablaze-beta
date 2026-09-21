@@ -340,16 +340,17 @@
       "slot": "regimental",
       "block_size": 5,
       "order": [
-        "mechanized_rockets",
+        "light_assault",
+        "medium_assault",
         "light_spg",
         "medium_spg",
         "modern_spg",
-        "heavy_spg"
+        "heavy_assault"
       ],
       "empty": "pack_artillery",
       "rocket_candidate": "mechanized_rockets",
       "rocket_cap": 2,
-      "_comment": "A8: heavy SPG in a heavy division takes all 5 and outranks the rocket mix. No heavy regimental SPG unit exists today; validate.py reports the gap instead of inventing one. NOT IMPLEMENTED: the screenshot's Mech SPG rung (between Mot Pack Artillery and Mech Rocket) would need a third artillery state, which multiplies every medium and modern target by 1.5. Recorded as a deviation rather than shipped silently."
+      "_comment": "A8/A21: this chain is resolved INDEPENDENTLY of line_variant, over the candidates that own a company in this slot. Infantry support and heavy SPG declare no regimental company, so they are absent here by construction and cannot take the block away from an assault gun that has one (model.py enforces slot ownership for every chain). mechanized_rockets stays rocket_candidate only - it is its own boolean axis with the 2-of-5 cap. heavy_assault is the real heavy equivalent A4 asks for; medium_spg is the declared non-heavy fallback below it. NOT IMPLEMENTED: the screenshot's Mech SPG rung (between Mot Pack Artillery and Mech Rocket) would need a third artillery state, which multiplies every medium and modern target by 1.5. Recorded as a deviation rather than shipped silently."
     }
   },
   "support_spine": {
@@ -1177,6 +1178,12 @@
           "light_spg",
           "medium_spg"
         ],
+        "regimental_artillery": [
+          "light_assault",
+          "medium_assault",
+          "light_spg",
+          "medium_spg"
+        ],
         "tank_destroyer": [
           "mechanized_td",
           "light_td",
@@ -1218,6 +1225,10 @@
           "medium_inf_support",
           "medium_spg"
         ],
+        "regimental_artillery": [
+          "medium_assault",
+          "medium_spg"
+        ],
         "tank_destroyer": [
           "mechanized_td",
           "medium_td"
@@ -1254,6 +1265,10 @@
           "heavy_inf_support",
           "heavy_spg"
         ],
+        "regimental_artillery": [
+          "medium_spg",
+          "heavy_assault"
+        ],
         "tank_destroyer": [
           "heavy_td"
         ],
@@ -1263,10 +1278,7 @@
         ],
         "rockets": true
       },
-      "front_role_override": "offence",
-      "artillery_fallback": [
-        "medium_spg"
-      ]
+      "front_role_override": "offence"
     },
     "light_support": {
       "mode": "declared",
@@ -1304,7 +1316,7 @@
           "custom_icon": 138,
           "upgrade_prio_base": 15,
           "width_exception": "18: the 1936 starting park, replaced at match 0.9 by the 30-width target",
-          "_comment": "[light-support-field-upgrade] Bridge: engine field-upgrade only moves a deployed division to a\ntarget's `replace_with`, so without this step the 1936 8-battalion \"Tankovaya brigada\" never\nreaches the 30_MOT below (vanilla ENG starter pattern). `has_template` retires it \u2014 the gate\nand the 1.0 best-match are the same template object, so while it exists the role target flips\nstraight to 30_MOT. The second `value = 15000` read is deliberate: one flag, two targets.",
+          "_comment": "[light-support-field-upgrade] Bridge: engine field-upgrade only moves a deployed division to a\ntarget's `replace_with`, so without this step the 1936 8-battalion \"Tankovaya brigada\" never\nreaches the 30_MOT below (vanilla ENG starter pattern). `has_template` retires it — the gate\nand the 1.0 best-match are the same template object, so while it exists the role target flips\nstraight to 30_MOT. The second `value = 15000` read is deliberate: one flag, two targets.",
           "enable_raw": [
             "has_template = \"Tankovaya brigada\""
           ]
@@ -1328,7 +1340,7 @@
           "custom_icon": 138,
           "upgrade_prio_base": 15,
           "width_exception": "18: the 1936 starting park, replaced at match 0.9 by the 30-width mix target",
-          "_comment": "[historical-tank-park] Same bridge as the STARTER above, for the MIXED path \u2014 `replace_with`\nis a static token, so each destination needs its own starter. The flag VALUE (15000 pure /\n15001 mixed, latched once in the type-14 calculator) keeps exactly one pair alive; enables\nnever read the live mixed trigger. Composition and prio are deliberately identical.",
+          "_comment": "[historical-tank-park] Same bridge as the STARTER above, for the MIXED path — `replace_with`\nis a static token, so each destination needs its own starter. The flag VALUE (15000 pure /\n15001 mixed, latched once in the type-14 calculator) keeps exactly one pair alive; enables\nnever read the live mixed trigger. Composition and prio are deliberately identical.",
           "enable_raw": [
             "has_template = \"Tankovaya brigada\""
           ]
@@ -1440,7 +1452,7 @@
           },
           "custom_icon": 138,
           "upgrade_prio_base": 10,
-          "_comment": "[historical-tank-park] The MIXED composition: one target consuming BOTH chassis (one target\nper role is an engine constraint), so the historical park fields its plain lights inside the\nsame divisions \u2014 90 lights + 175 supports each. 7 support / 5 mot, not 6/6: at 150 supports\nper division the 10k fielded bar needs ~68 divisions, past what the run window can train;\n175 crosses at ~59. Enable = the latched 15001, exclusive with pure 30_MOT by flag value.\n4+4 regimental supports, not 5+5: three battalion types shrink the reachable grid and 10 RS\non 15 battalions has zero slack (designer-deadlock rule).\n[light-support-conversion] For the temporary corps: destination of the PONT bridge (15009),\nthen the SOLE target of the STABLE phase (15010) until the T-34 / KV-1 opens the window."
+          "_comment": "[historical-tank-park] The MIXED composition: one target consuming BOTH chassis (one target\nper role is an engine constraint), so the historical park fields its plain lights inside the\nsame divisions — 90 lights + 175 supports each. 7 support / 5 mot, not 6/6: at 150 supports\nper division the 10k fielded bar needs ~68 divisions, past what the run window can train;\n175 crosses at ~59. Enable = the latched 15001, exclusive with pure 30_MOT by flag value.\n4+4 regimental supports, not 5+5: three battalion types shrink the reachable grid and 10 RS\non 15 battalions has zero slack (designer-deadlock rule).\n[light-support-conversion] For the temporary corps: destination of the PONT bridge (15009),\nthen the SOLE target of the STABLE phase (15010) until the T-34 / KV-1 opens the window."
         },
         {
           "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MOT",
@@ -1659,7 +1671,7 @@
           },
           "custom_icon": 140,
           "upgrade_prio_base": 10,
-          "_comment": "[historical-tank-park] The FINAL step, same shape as the [armor-class-handoff] pair in\nWA_light_armor_role: a replace_with must resolve inside its own role group (the cross-group\npointer at the medium templates is the stall the owner measured live at match 0.8125).\nExit = engine best-match capture by the destination role at full composition. Keep the\nFINALs LAST in group: a rung and its FINAL tie at base 10, and the first declared wins.\n[light-support-conversion] Enabled under the rung values (CONVERT-1) AND under the\nFINAL-only values 15011 / 15012 / 15015 / 15016 (CONVERT-2): once the rung goes dark the\nFINAL is the role's only target, so nothing can walk the moved divisions back.\n[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose."
+          "_comment": "[historical-tank-park] The FINAL step, same shape as the [armor-class-handoff] pair in\nWA_light_armor_role: a replace_with must resolve inside its own role group (the cross-group\npointer at the medium templates is the stall the owner measured live at match 0.8125).\nExit = engine best-match capture by the destination role at full composition. Keep the\nFINALs LAST in group: a rung and its FINAL tie at base 10, and the first declared wins.\n[light-support-conversion] Enabled under the rung values (CONVERT-1) AND under the\nFINAL-only values 15011 / 15012 / 15015 / 15016 (CONVERT-2): once the rung goes dark the\nFINAL is the role's only target, so nothing can walk the moved divisions back.\n[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose. A21 note: the medium role's LINE is still 10 + 5 and its no-variant regimental block is still towed pack artillery + towed AT, which is the shape declared here; what A21 added is artillery-block VARIETY in the other medium targets, and the engine captures a converting division on its best existing match, not on this one alone."
         },
         {
           "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_MEC_FINAL",
@@ -1690,7 +1702,7 @@
           },
           "custom_icon": 140,
           "upgrade_prio_base": 10,
-          "_comment": "[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose."
+          "_comment": "[armor-class-handoff] The destination is the medium role's CURRENT target, 10 + 5. A FINAL that mirrors an older shape makes the converting division land on a class nobody chose. A21 note: the medium role's LINE is still 10 + 5 and its no-variant regimental block is still towed pack artillery + towed AT, which is the shape declared here; what A21 added is artillery-block VARIETY in the other medium targets, and the engine captures a converting division on its best existing match, not on this one alone."
         },
         {
           "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MOT_FINAL",
@@ -1719,7 +1731,7 @@
           },
           "custom_icon": 140,
           "upgrade_prio_base": 10,
-          "_comment": "[light-support-conversion] Heavy FINALs, mirrors of the heavy role's 30_MOT (7100) and\n30_MEC_MECHANIZED_SPAA (7105) targets so the heavy role captures them at full composition.\nReached only when the park converts while the medium class is still shut (KV-1 before T-34)."
+          "_comment": "[light-support-conversion] Heavy FINALs, mirrors of the heavy role's NO-VARIANT targets\n(`WA_AI_TEMPLATES_GENERIC_HEAVY_ARMOR_30_MOT` and `..._30_MEC_MAA`) so the heavy role\ncaptures them at full composition. Named by TEMPLATE NAME, never by code: the codes are a\nmixed-radix digit string and move whenever an axis is added - these read 7100 / 7105 until\nthe generator took the family over, and the numbers were still here after that.\nReached only when the park converts while the medium class is still shut (KV-1 before T-34)."
         },
         {
           "id": "WA_AI_TEMPLATES_GENERIC_LIGHT_SUPPORT_ARMOR_TRANSITION_HVY_MEC_FINAL",
