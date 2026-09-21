@@ -51,13 +51,19 @@ ENGINE_VOCABULARY = {
 def rendered_scripts(files, game):
     """Every statement name in the generated .txt files must resolve to something real."""
     out = []
-    for path, text in sorted(files.items()):
-        if "/scripted_effects/" not in path and "/scripted_triggers/" not in path:
-            continue
+    scripts = [(p, t) for p, t in sorted(files.items())
+               if "/scripted_effects/" in p or "/scripted_triggers/" in p]
+    # The definitions of THIS generation, across every rendered file: the effects file calls
+    # triggers the triggers file defines in the same run, so a name new to both is real.
+    # Scoping `top` to one file made the checker refuse the FIRST generation of any new
+    # trigger - a chicken-and-egg in the checker, not a finding about the script.
+    top = set()
+    for _path, _text in scripts:
+        top |= set(re.findall(r"^([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", _text, re.M))
+    for path, text in scripts:
         names = set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", text))
         names |= set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*yes", text))
         names |= set(re.findall(r"\n\t+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*[A-Za-z_]", text))
-        top = set(re.findall(r"^([A-Za-z_][A-Za-z_0-9]*)\s*=\s*\{", text, re.M))
         for name in sorted(names - top):
             if name in ENGINE_VOCABULARY:
                 continue

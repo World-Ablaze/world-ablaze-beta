@@ -160,18 +160,20 @@ C = B - S - V
 line = {main_tank: C, medium_support: S, selected_line_variant: V, mobile_infantry: I}
 ```
 
-Omit zero-count entries. Before doctrine adjustment, assert `C + S + V == B`. A heavy line has `S0 = 0`; its line variant must be heavy. TD remains regimental and consumes no line slot. One line variant wins; do not add separate three-battalion blocks for assault and SPG.
+Omit zero-count entries. Before doctrine adjustment, assert `C + S + V == B`. A heavy line has `S0 = 0`; its line variant must be heavy. TD remains regimental and consumes no line slot. One line variant wins; do not add separate three-battalion blocks for assault and SPG. **A21: `selected_line_variant` is the LINE chain's winner only.** The regimental artillery company is `selected(regimental_artillery)`, a separate resolution over the candidates that own a company in that slot, and it consumes no line slot either.
 
 Armoured Waves: require the corrected doctrine modifier `combat_width = +0.5`, flat per battalion, on the declared affected units, then subtract one from the main-tank count and two from mechanized infantry when that form is present. Leave motorized infantry unchanged. Apply exactly once, after allocation; do not refill slots to restore ten. Reject negative counts. This produces a distinct signature and manifest entry. **DERIVED** - base 15 battalions x 2 = 30 and waves 12 x 2.5 = 30, so the wave target must also validate at 30; a wave composition that does not reach 30 is a conflict to report, not an accepted difference. **MEASURED** - the pulled doctrine (`armor_subdoctrines.txt:345-416`, at `e7e9fb979b`) declares `combat_width = -0.4` per armour battalion line and covers no mobile-infantry line, while the armour templates field `infantry_heavy_mechanized_battalion_line` and `infantry_heavy_motorized_battalion_line` (both width 2). Compatibility checking must fail on both mismatches: the wrong value, and a modifier that does not reach the mobile-infantry lines (which would yield 28.5).
 
 ### 5.4 Regimental and divisional support
 
-Regimental artillery uses the revised functional chain. Filter candidate family and actual slot availability first:
+Regimental artillery uses the revised functional chain, **resolved independently of the line chain (A8/A21)**. A chain may only offer candidates that declare a unit for the slot it fills; `model.py` rejects a registry that breaks this, which is what keeps a line-only candidate (infantry support, heavy SPG) out of a regimental chain. Filter candidate family and actual slot availability first:
 
-1. If a heavy division has an eligible real heavy regimental SPG, fill all five artillery slots with it; it outranks even the final capped rocket option.
-2. Otherwise, early rockets may fill five while no later eligible non-heavy SPG exists.
-3. With eligible later non-heavy SPG and rockets, use two rockets plus three best eligible SPG.
-4. Without rockets, use five best eligible artillery. The medium-SPG fallback inside heavy divisions remains explicitly scoped; never fabricate a heavy regimental unit.
+1. If a heavy division has an eligible real heavy regimental candidate, fill all five artillery slots with it; it outranks even the final capped rocket option. Today that candidate is `heavy_assault_gun_company_regimental`; there is no heavy regimental SPG unit and none is to be fabricated.
+2. Otherwise, early rockets may fill five while no later eligible non-heavy candidate exists.
+3. With an eligible later non-heavy candidate and rockets, use two rockets plus three of it.
+4. Without rockets, use five of it. `medium_spg` inside a heavy division stays the explicitly scoped non-heavy fallback, expressed as an ordinary chain candidate below `heavy_assault`.
+
+**Enumeration.** The line and artillery chains share a candidate set and one rank order, so their winners are not independent coordinates: a candidate that outranks the line winner cannot be eligible. Enumerate the REACHABLE pairs - a pair `(v, a)` is reachable iff the minimal eligibility set `{v, a}` reproduces both winners - and carry them as ONE joint digit. The rectangle would cost 35 values for medium where 11 are reachable, and would overflow the family's declared code range.
 
 TD: none → mechanized → light → medium → modern → heavy. Line/support assault chain: none → light assault → medium assault → light infantry support → medium infantry support → light SPG → medium SPG → modern SPG → heavy assault → heavy infantry support → heavy SPG. Family filtering prevents these terminal heavy choices from entering medium/modern compositions.
 

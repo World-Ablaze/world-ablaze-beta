@@ -3371,15 +3371,28 @@ on_actions = {
 	}
 
 	on_weekly = {
+		# [refineries] Split on purpose. The DISPLAY refresh also covers AI countries, but only in a
+		# -debug launch (WA_REFINERY_panel_is_live), so the panel reads true under `observe`. The
+		# CONTROLLER stays is_ai = no in every launch: manage_* closes mills at resource@iron < 0
+		# and the AI's own controller (_economy_fatigue.txt *_shortage_ai) at < -26, so both armed
+		# on one country oscillate. Never merge the two blocks.
+		effect = {
+			if = {
+				limit = {
+					exists = yes
+					WA_REFINERY_panel_is_live = yes
+				}
+				recalculate_steel_mills = yes
+				recalculate_alu_mills = yes
+				recalculate_synth = yes
+			}
+		}
 		#player resource managment
 		effect = {
 			if = {
 				limit = {
 					is_ai = no
 				}
-				recalculate_steel_mills = yes
-				recalculate_alu_mills = yes
-				recalculate_synth = yes
 				manage_steel_mills = yes
 				manage_alu_mills = yes
 				manage_synth = yes

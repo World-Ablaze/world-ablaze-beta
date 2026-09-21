@@ -316,8 +316,9 @@ def digest(data: dict, tags: list[str] | None = None, every: int = 12) -> str:
 
     w("## Resource balance at the last save")
     w("")
-    w("Only resources with a negative effective balance (unmet demand after imports and transfers). "
-      "Columns follow the save's ledger: produced, imported, available, effective.")
+    w("Only resources whose balance is negative: the industry asks for more than the available "
+      "supply, and the difference is what goes unserved. Columns follow the save's ledger: "
+      "produced, imported, available, effective.")
     w("")
     for tag in tags:
         c = country(last, tag)
@@ -327,7 +328,7 @@ def digest(data: dict, tags: list[str] | None = None, every: int = 12) -> str:
                  and any((r.get(k) or 0) for k in ("produced", "imported", "available"))]
         short.sort(key=lambda nr: nr[1].get("effective") or 0)
         if not short:
-            w(f"- {tag}: no deficit")
+            w(f"- {tag}: no resource shortfall")
             continue
         w(f"- {tag}: " + "; ".join(
             f"{name} produced {num(r.get('produced'))} / imported {num(r.get('imported'))} / "
