@@ -530,8 +530,8 @@ NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to s
 
 NDefines.NMilitary.PREFERRED_TACTIC_CHARACTER_SKILL_LEVEL_REQUIRED = 5			    -- Which level a field marhal or general has to be before they can pick their preferred tactic
 NDefines.NMilitary.COUNTRY_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.25 				    -- extra weight multiplier for the country preferred tactic when doing weighted random
-NDefines.NMilitary.ARMY_GENERAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.15 			    -- extra weight multiplier for the army general preferred tactic when doing weighted random
-NDefines.NMilitary.FIELD_MARSHAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.25			    -- extra weight multiplier for the field marhsal preferred tactic when doing weighted random
+NDefines.NMilitary.ARMY_GENERAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.20 			    -- extra weight multiplier for the army general preferred tactic when doing weighted random
+NDefines.NMilitary.FIELD_MARSHAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.15			    -- extra weight multiplier for the field marhsal preferred tactic when doing weighted random
 NDefines.NMilitary.PREFERRED_TACTIC_COMMAND_POWER_COST = 20	  				        -- command point cost for changing preferred tactic
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to prepare an airborne invasion
