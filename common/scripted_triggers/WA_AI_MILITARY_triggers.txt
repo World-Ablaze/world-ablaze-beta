@@ -158,6 +158,35 @@ WA_AI_MILITARY_home_threatened = {
 	}
 }
 
+# [britain-buffer-release] Does an enemy (the major, its puppets or its faction alike: whoever holds
+# the belt) control European ground touching ground ROOT, a subject of ROOT or a faction ally holds?
+# True = a land campaign is on; a Britain staging buffer sized for a landing then only starves the
+# line. Our side is faction/subject only, never a co-belligerent (SOV touching GER is not our
+# campaign); looser than the posture calculus, which also wants the ally at war with that enemy
+# and counts the overlord - here the gate's own "an enemy major exists" term carries that.
+# Assumes contact = state adjacency; whether a strait crossing counts as a neighbour is ASSUMED.
+# Gone if a buffer stays armed with the enemy on a state next to Allied ground, or with our
+# divisions on co-belligerent (non-faction) ground next to the enemy, or releases with only water
+# between them. ROOT-relative: only sound from a country's own gate, never inside an
+# any_*_country iterator.
+# THIS = country
+WA_AI_MILITARY_has_continental_contact_with_enemy = {
+	any_enemy_country = {
+		any_controlled_state = {
+			is_on_continent = europe
+			any_neighbor_state = {
+				CONTROLLER = {
+					OR = {
+						tag = ROOT
+						is_subject_of = ROOT
+						is_in_faction_with = ROOT
+					}
+				}
+			}
+		}
+	}
+}
+
 # THIS = STATE (consumer: front_unit_request state_trigger).
 # Exact geographic replacement for the retired WA_AI_MILITARY_sink_southeast_asia_regions ai_area:
 # using a state predicate frees one slot in the engine's 72-area database without changing the five

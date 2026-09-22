@@ -173,6 +173,89 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### britain-buffer-release — OPEN (2026-09-22)
+- Owner request 2026-09-22 ("corrige le buffer sur ENG : si bataille en France, pas besoin
+  d'autant de divisions en Angleterre"). Intended behaviour: the USA Britain staging buffer exists
+  to mass an army for a landing; once a land campaign against a major enemy is running on the
+  continent it must not re-park the army in England.
+- Symptom, MEASURED (`battle_plan2.hoi4`, campaign `e953ae9b`, 1945.8.11, observe): 7 scripted
+  buffer orders (`area_defense_settings = 102`) in Kent / Cornwall / Dorset / Yorkshire / Sussex /
+  Essex / Norfolk created 1945.7.4-5 holding **81 USA divisions**; the Western contact line
+  (Benelux / Rhine / Alsace) read USA 31 + ENG 28 + FRA 2 vs GER 64; 0 Allied land attack live in
+  the West (19 combats worldwide). USA posture vs GER = 1 (execute balanced) and the owner's
+  `imgui show ai-strategy` listed `WA_AI_MILITARY_DEFAULT_FRONT_posture_execute` — the order was
+  armed, the mass was not on the line. Earlier save `battleplan_france.hoi4` (1945.3.20, coast
+  states 29 RBE / 785 GER): no Britain buffer, USA 162 divisions in front orders, 4 live attacks.
+- Cause, DERIVED from the gates: `should_USA_invade_europe_or_africa`
+  (`00_scripted_triggers.txt:356`) requires all 8 coast states enemy-held → NO after liberation;
+  `WA_AI_MILITARY_should_usa_buffer_britain_defensive` (`THEATRE_gate_triggers.txt`) = coast free +
+  Britain free + faction ENG + an enemy major + GER at war with SOV + invade = no → every term is
+  the post-liberation state, so the block `..._buffer_britain_defensive` (`put_unit_buffers ratio
+  0.5`, order_id 1, south England) arms exactly when France is freed. Its comment said
+  "pre-liberation staging"; the gate had no pre-liberation term. Same hole on `_aggressive`
+  (dead in practice: it needs invade = yes AND a free coast, which contradict).
+- Change (35 lines, uncommitted; v2 after the two reviewers): new OBSERVATION trigger
+  `WA_AI_MILITARY_has_continental_contact_with_enemy` (`WA_AI_MILITARY_triggers.txt`, after
+  `home_threatened`): ANY enemy country (the major, its puppets, its faction - whoever holds the
+  belt) controls a European state adjacent to a state held by ROOT, a subject of ROOT or a faction
+  ally. `NOT = { it }` added to the `_defensive` gate only. `_aggressive` is unreachable as
+  written (needs all 8 coast states enemy-held via `should_USA_invade_europe_or_africa = yes` AND
+  none of them via its first NOT): left untouched, a comment records it. `_east_quiet` /
+  `_japan_defeated` untouched. The "enemy major exists" term stays in the gate, so contact with a
+  European minor alone changes nothing.
+- Walks (lessons reviewer v1 CONFLICT on the first draft, which read the major's OWN states):
+  (1) RBE belt - coast liberated, inland Belgium RBE-held, GER states behind: v1 read no contact
+  and re-armed the buffer mid-offensive; v2 reads RBE's states (RBE is at war with USA) → contact
+  → released. (2) GER capitulated but alive, still holding contact ground (v1 had
+  `has_capitulated = no`): v2 keeps releasing while any enemy holds adjacent ground. (3) GER
+  annexed, JAP still a major enemy, no enemy ground in Europe: the `_defensive` gate arms and
+  parks 0.5 of the army in England for the Pacific war - IDENTICAL to pre-change behaviour, a
+  stated non-regression, not fixed here. (4) Historical path pre-D-Day (coast enemy-held): the two
+  touched gates are false anyway (first NOT); the pre-landing variants carry the staging and are
+  untouched. (5) Ahistorical France never falls: a Franco-German land front reads as contact from
+  day one → the buffer never arms, the intended reading of "bataille en France". (6) Co-belligerent
+  contact (SOV ground touching GER) is deliberately NOT ours; the miss this buys (lessons reviewer
+  v2, CONCERNS): US divisions standing on a NON-faction co-belligerent host's ground (an ETH-style
+  liberated tag) next to the enemy read no contact and the buffer stays armed - the pre-change
+  behaviour, recorded in the trigger's "gone if" clause rather than fixed with a
+  `divisions_in_state` guard (PREV chain four scopes deep, not worth the risk here). The trigger is
+  looser than the posture calculus (no "ally at war with that enemy" term, no overlord count);
+  the gate's "enemy major exists" term carries that. (7) Owner check 2026-09-22 "un débarquement
+  en Italie ou en Grèce ne doit pas désarmer le trigger" - MEASURED from the four gates: the only
+  variant carrying the contact term (`_defensive`) needs the 8 French coast states NOT enemy-held,
+  so while France is occupied it is false whatever happens in Italy or Greece; the two variants
+  that can be armed with the coast enemy-held (`_east_quiet`, `_japan_defeated`) carry no contact
+  term and also need the East quiet (no GER-SOV war, or SOV capitulated, or 572 Chelyabinsk
+  GER-held) - on the historical path no Britain buffer is armed during 1943-44 at all. With the
+  coast free, an Italy/Greece contact releasing the buffer is wanted (a land campaign is on).
+- Impact: readers of the gate = its one block (grep). Countries: USA. Cadence: ai_strategy enable
+  re-evaluation (engine, daily order) vs the weekly posture pulse - the release does not wait for
+  a pulse.
+- Regression risk, DERIVED: an Allied bridgehead of one state adjacent to enemy ground releases
+  the whole buffer at once (ratio 0.5 → 0): the freed divisions go where fronts request them,
+  which is the front_unit_request lever, not this one. ASSUMED (two engine facts the save cannot
+  show): the engine deletes the seven existing type-5 orders when the strategy disables
+  (`abort_when_not_enabled = yes`) - the symptom proved creation on enable, never removal on
+  disable, hence the t0/t1 verification below; and whether a strait crossing counts as
+  `any_neighbor_state` adjacency (Dover, Messina) - if it does, contact reads true one state
+  early, on the safe side.
+- Gates run: `check_ai_layers.py` — 1 ERROR `CONFIG-LIVE WA_AI_CONFIG_PC_is_disabled: has_war`,
+  pre-existing (HEAD `350337f1f6`), ratchet unchanged; `check_worklist.py` WIP-LIMIT /
+  UNTESTED-STALE pre-existing. No BOM, braces balanced, CRLF preserved on both trigger files.
+- No harness: < 40 lines, no scripted effect touched, system without a `WA_TEST_*` harness.
+- Verification (owner, console): load `battle_plan2.hoi4` on the new build, run ~1 week,
+  `observe`: the seven south-England armies must leave their area-defence orders (`imgui show
+  ai-strategy` no longer lists `WA_AI_MILITARY_COUNTRY_USA_THEATRE_buffer_britain_defensive`).
+- Verification (campaign, order DISAPPEARANCE - the only save-side signature of an order's end):
+  t0 = `battle_plan2.hoi4` 1945.8.11, seven USA type-5 `order_instance` on states
+  123/127/857/125/860/859/130 created 1945.7.4-5, 81 members. t1 = the first save after the new
+  build with the coast free and enemy ground adjacent to Allied ground: 0 USA type-5 orders on
+  those states (`plans.py USA <save> --oob`, no `buffer` block in southern England) and USA
+  front-class divisions on the Western states above the GER count. A t1 that still carries the
+  seven orders falsifies the ASSUMED removal-on-disable and the fix needs a mover, not a gate.
+- Closed when: one post-liberation campaign save shows the Britain buffer empty while a
+  continental contact with GER exists, and the Western line manned above parity.
+
 ### oil-need-is-fuel — SHIPPED-UNTESTED (2026-09-22)
 - Owner question 2026-09-22 ("pourquoi GER fait pas les décisions de pétrole ?", screenshot of
   Emsland / Matzen / Friesland available and untaken). Intended behaviour: an AI at war and short
