@@ -672,6 +672,16 @@ def run(root):
 
     merge_generated_manifest(root, reachable, issues)
 
+    # [modern-tier-ladder] A STATE flag stepped by a latch (`set_country_flag = { flag = F
+    # value = N }` in the templates effects file) is written by no calculator, yet every value it
+    # is set to is reachable. Only flags that ai_templates actually read and that name no
+    # template TYPE are taken from here, so a typo in a type flag still reports.
+    for fname, fval in re.findall(
+            r"set_country_flag\s*=\s*\{\s*flag\s*=\s*(\w+)\s+value\s*=\s*(\d+)\s*\}",
+            effects.read_text(encoding="utf-8-sig", errors="ignore")):
+        if fname in by_flag and fname not in type_map.values():
+            reachable.setdefault(fname, set()).add(int(fval))
+
     for flag, vals in sorted(reachable.items()):
         have = by_flag.get(flag, {})
         for v in sorted(vals):

@@ -103,6 +103,12 @@ Example candidate mapping:
 
 **MEASURED** — Parse actual demand: after upstream commit `e7e9fb979b`, this unit requires 12 heavy TD chassis. Validate that mapping; a medium demand is a regression, not an authorized exception. A1 readiness policy remains separate from actual equipment demand.
 
+`tier_ladder` (optional, per family; A22): `{flag, unit, fallback_unit, max_value}`. `unit` must be
+the family's `main_tank`. `emit._tier_blocks` renders N targets per composition group (N = the
+composition's count of `unit`), all on the group's codes; `model.py` validates the shape;
+`check_templates.py` treats a flag written by `set_country_flag = { flag = F value = N }` in the
+templates effects file as reachable at N, so the ladder flag is not reported as calculator-less.
+
 ### 4.2 Input adapters
 
 Parse `common/units/*.txt` for unit definitions, slot classification, width, categories, and `need`; parse relevant script constants and doctrine modifiers; index scripted trigger/effect definitions and the existing type map. Every parsed record carries file and source location. Do not infer unit existence or slot legality from naming alone.

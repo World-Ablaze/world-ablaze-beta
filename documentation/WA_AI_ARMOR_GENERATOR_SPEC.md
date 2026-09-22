@@ -160,6 +160,26 @@ For the generator, represent these existing conditions as reusable component pre
 
 The purpose of that optional refinement would be to limit premature field conversion while leaving a route to start production. Its feasibility and effect are not established by this static audit.
 
+### A22 - Modern tier ladder (2026-09-22)
+
+A family may declare `tier_ladder` (`flag`, `unit` = its main tank, `fallback_unit`, `max_value`).
+Every enumerated target of that family is then emitted once per TIER: tier k mounts k of `unit`
+and N-k of `fallback_unit` on the line, keeps every other slot, shares the composition's code
+value(s), and adds an enable term on the ladder flag (k; tier 1 also while the flag is absent;
+the top tier - the composition itself - at every value from N to `max_value`). Names carry
+`__TIER_k`. The flag is stepped one-way by a scripted latch outside the generator
+(`WA_AI_TEMPLATES_update_modern_tier_latch`), one tier per monthly pulse while the fielded tier
+is filled past `modern_tier_fill_bar` AND the requirement has grown, since the last step, by
+`modern_tier_adoption_share` of the growth a full re-cut to the tier gives ((v+1)/v from tier v;
+a fixed ratio is unreachable from tier 3 on). A pre-ladder save that already fields modern
+battalions starts at `max_value`. Decision basis, MEASURED over 13 runs
+(`documentation/MODERN_SWITCH_BRAKE_EXPERIMENT_2026-09-21.md`): the engine moves factories to a
+new chassis over about a quarter whatever is requested, and a park re-cut to the full modern
+shape in that quarter fields 4 of 7 battalions empty; one battalion per tier keeps every fielded
+battalion full. Rejected on the same evidence: a park brake (`can_upgrade_in_field`, inert on
+every target shape), the deficit valve, production factors and need-blind floors. The manifest
+carries the `tier_ladder` declaration; target rows stay one per code (the top tier).
+
 ## 7. Generator Contract and Future Validation
 
 The shared definition must contain families, slots, candidates, priorities, conditions, composition profiles, modifiers, and conversion paths. Classification data remains in CONFIG; shared numbers remain in constants; decision conditions remain in their owning files. Do not generate every theoretical combination without filtering: emit only legal compositions and necessary steps.

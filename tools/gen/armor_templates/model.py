@@ -32,7 +32,12 @@ FAMILY_FIELDS = {"chassis", "main_tank", "medium_support_unit", "role", "role_gr
                  "type_code", "admission", "extra_admission", "file", "name_token",
                  "custom_icon", "code_range", "waves", "heavy_divisional_company", "enumerate",
                  "mirror_of", "emit", "front_role_override",
-                 "mode", "profiles", "reinforce_prio", "can_upgrade_in_field", "_comment"}
+                 "mode", "profiles", "reinforce_prio", "can_upgrade_in_field", "_comment",
+                 "tier_ladder"}
+
+# [modern-tier-ladder] A family may declare a ladder on its main line unit: every target is then
+# emitted once per tier (see emit._tier_blocks) and a latch steps the flag.
+TIER_LADDER_FIELDS = {"flag", "unit", "fallback_unit", "max_value", "_comment"}
 
 # A family is either ENUMERATED (its targets are the product of declared axes) or DECLARED (its
 # targets are written out one by one, because they are a conversion state machine and not a
@@ -124,6 +129,17 @@ class Registry:
         for fid, fam in self.families.items():
             extra = set(fam) - FAMILY_FIELDS
             _require(not extra, "family %s: unknown fields %s" % (fid, sorted(extra)))
+            ladder = fam.get("tier_ladder")
+            if ladder:
+                extra = set(ladder) - TIER_LADDER_FIELDS
+                _require(not extra, "family %s: tier_ladder unknown fields %s"
+                         % (fid, sorted(extra)))
+                for key in ("flag", "unit", "fallback_unit", "max_value"):
+                    _require(key in ladder, "family %s: tier_ladder needs %s" % (fid, key))
+                _require(ladder["unit"] == fam.get("main_tank"),
+                         "family %s: tier_ladder.unit must be the family's main_tank" % fid)
+                _require(isinstance(ladder["max_value"], int) and ladder["max_value"] >= 1,
+                         "family %s: tier_ladder.max_value must be a positive integer" % fid)
             mode = fam.get("mode", "enumerated")
             _require(mode in MODES, "family %s: mode %r not in %s" % (fid, mode, sorted(MODES)))
             required = ["chassis", "main_tank", "role", "role_group", "flag", "admission",

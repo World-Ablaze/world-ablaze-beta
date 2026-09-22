@@ -347,7 +347,7 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the console run above is pasted here with all five verdict values at 1, and one
   scored campaign shows no AI country pinned at a truck floor while its reserve is over the hold bar.
 
-### modern-switch-amorce — SHIPPED-UNTESTED (2026-09-20)
+### modern-switch-amorce — SHIPPED-UNTESTED (2026-09-22)
 - Owner order 2026-09-20 ("le passage des chars moyens aux modernes ne se passe pas bien. l'IA
   améliore trop vite, sans assez de stocks, ce qui mène à des blindés sans force sur le terrain"),
   then "seed à 100 et les paliers 6/15/30, implémente". Intended behaviour: the medium role may
@@ -705,9 +705,32 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   modern targets capped at 6+1, factors kept): owner live - factors armed (-1.000 / +5.000 in
   `imgui show ai-strategy`), 246 factories WANTED on modern but held on other lines, and the
   need collapses as the 1-battalion deficit closes - a tier must open at HALF its deficit filled
-  (report 7f). `test13` prepared: tier ladder 1..N modern battalions on every modern target,
-  weekly one-way step at fill > 0.5, logged to game.log. Scripts:
-  `tools/archive/modern_switch_experiment/`.
+  (report 7f). `test13` (tier ladder 1..N modern battalions on every modern target, weekly
+  one-way step): first attempt ran the flag 0 -> 4 in four weeks against the unchanged 6+1
+  requirement and cut no rung (imgui: arrow on the tier target, best template E at 0.657);
+  with the step also requiring ADOPTION (requirement grown 1.4x since the last step) the owner
+  ran it to 1944.4.1 and is satisfied: park on 6+1 at 149 gun tanks + 42 modern per division, the
+  frozen B cohort on 5+2 at 69 modern, one division on 4+3, 0 free modern chassis, no hollow
+  battalion anywhere (report 7g, save `resultat final`). Research record: report sections
+  7c-7g, `tools/archive/modern_switch_experiment/`, `documentation/MODERN_SWITCH_RECAP_2026-09-22.md`.
+- **SHIPPED 2026-09-22 `[modern-tier-ladder]`**: the modern family's targets are GENERATED once
+  per tier (registry `tier_ladder`, `emit._tier_blocks`; tier k = k modern + N-k medium main-gun
+  battalions, enabled by the code AND `WA_AI_TEMPLATES_modern_tier` = k, top tier at N..10);
+  `WA_AI_TEMPLATES_update_modern_tier_latch` (monthly, after the chassis latch) inits the flag
+  to 1 (to the ceiling 10 when the park already fields modern battalions - a pre-ladder save is
+  never re-cut down) and climbs one tier per pulse while
+  `WA_AI_TEMPLATES_should_step_modern_tier` holds (`is_modern_tier_filled`: modern in armies /
+  required > `modern_tier_fill_bar` 0.5; `has_adopted_modern_tier`: required > the value stored
+  at the last step x (1 + `modern_tier_adoption_share` 0.5 / v) - half of the (v+1)/v growth a
+  full re-cut to the next tier gives; both reviewers caught that the first draft's fixed 1.4 was
+  unreachable from tier 3 on, and the `resultat final` save had indeed sat at tier 3 since
+  1944.2.7 under the throwaway's fixed bar). The ceiling 10 is one constants-registry group
+  (`templates_modern_tier_max`, owner = registry `max_value`, three script mirrors). Big
+  scripted-effect change on a system with a harness -> SHIPPED-UNTESTED until the owner's
+  console run; ALSO owed: one ladder run on THIS build read from saves at three dates (the only
+  positive run so far is the throwaway's, read at one date). The priming floors / -50 damp / `can_upgrade_in_field` of the
+  earlier passes are left in place, all MEASURED inert or windowless; their removal is a
+  separate decision.
 - Verification (console, FRESH exe - a `reloadfile` poisons country triggers and measures
   nothing): run `WA_TEST_armor_budget` on a major inside the window. (i) `amorce:` prints
   `window=1` with a non-zero `priming-floor` while `latch=0`; (ii) `latch=1` never appears with
@@ -717,10 +740,18 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   modern demand RISING while `latch=1`. (vi) `latch=1 + gate=0` with medium demand still falling
   means the engine does not read `can_upgrade_in_field` on a target without `replace_with` - the
   DERIVED bet is lost, the field is inert, and the piece costs nothing but should be recorded.
+  (vii) the `ladder:` row: `tier` is never -1 while `latch=1`; across runs a month apart the tier
+  climbs by at most one per month and only on lines where the previous run printed `filled=1
+  adopted=1`; `fill > 1` for three months with `adopted=0` means the park is not re-cutting to the
+  enabled tier (read `imgui show ai_templates`: one `__TIER_k` target of the current code must
+  carry the arrow).
 - Closed when: the owner pastes a harness run showing (i)-(iv), a scored campaign shows no major
   latching with cover under the bar on a park over min_park in the latch month, AND the `convert:
   row (v) shows the park actually moving - a campaign where medium demand stays flat for more than
   two years after the latch reopens this subject from the symptom, whatever the fill numbers say.
+  Since the ladder: ALSO (vii) above on a harness run, and a scored campaign where no armoured
+  division of a latched major holds fewer than 80 % of its required tank chassis in any monthly
+  save after the latch - the hollow park is the symptom this subject exists for.
 
 ### impassable-rail-guard — SHIPPED-UNTESTED (2026-09-19)
 - Owner order 2026-09-19 (game log pasted: `[1941.04.14] memfile:2: build_railway: invalid or
