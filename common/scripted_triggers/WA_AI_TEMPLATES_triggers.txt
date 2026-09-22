@@ -349,6 +349,52 @@ WA_AI_TEMPLATES_can_convert_park_to_modern = {
 	check_variable = { num_equipment@modern_tank_chassis > constant:wa_ai_production.armor.modern_convert_spares_min }
 }
 
+# [modern-tier-ladder] OBSERVATION: the modern main-gun battalions the armies field are filled
+# past the bar (chassis held in armies / chassis they require). Read against the requirement the
+# FIELDED templates create, so a tier the park has not adopted yet reads as filled - which is why
+# the step also needs WA_AI_TEMPLATES_has_adopted_modern_tier. Country scope, AI pulse only.
+WA_AI_TEMPLATES_is_modern_tier_filled = {
+	check_variable = { num_target_equipment_in_armies@modern_tank_chassis > 0 }
+	set_temp_variable = { _mt_fill = num_equipment_in_armies@modern_tank_chassis }
+	divide_temp_variable = { _mt_fill = num_target_equipment_in_armies@modern_tank_chassis }
+	check_variable = { _mt_fill > constant:wa_ai_production.armor.modern_tier_fill_bar }
+}
+
+# [modern-tier-ladder] OBSERVATION: the park has adopted the tier the flag enables. A full
+# re-cut from tier v to v+1 grows the modern requirement by (v+1)/v; the bar is the share
+# (modern_tier_adoption_share) of that growth over the requirement stored at the last step. Without
+# this term the flag runs one step per pulse against an unchanged requirement. Passes before the
+# first step (nothing to adopt yet).
+WA_AI_TEMPLATES_has_adopted_modern_tier = {
+	if = {
+		limit = { has_country_flag = WA_AI_TEMPLATES_modern_tier }
+		set_temp_variable = { _mt_div = 1 }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 2 } } set_temp_variable = { _mt_div = 2 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 3 } } set_temp_variable = { _mt_div = 3 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 4 } } set_temp_variable = { _mt_div = 4 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 5 } } set_temp_variable = { _mt_div = 5 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 6 } } set_temp_variable = { _mt_div = 6 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 7 } } set_temp_variable = { _mt_div = 7 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 8 } } set_temp_variable = { _mt_div = 8 } }
+		if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 9 } } set_temp_variable = { _mt_div = 9 } }
+		set_temp_variable = { _mt_bar = constant:wa_ai_production.armor.modern_tier_adoption_share }
+		divide_temp_variable = { _mt_bar = _mt_div }
+		add_to_temp_variable = { _mt_bar = 1 }
+		multiply_temp_variable = { _mt_bar = WA_AI_TEMPLATES_modern_tier_required_at_step }
+		check_variable = { num_target_equipment_in_armies@modern_tank_chassis > _mt_bar }
+	}
+	else = { always = yes }
+}
+
+# [modern-tier-ladder] DECISION: climb one tier of the modern ladder this pulse. The ceiling is
+# the registry's tier_ladder.max_value (tools/constants_registry.json binds the three copies).
+WA_AI_TEMPLATES_should_step_modern_tier = {
+	WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes
+	WA_AI_TEMPLATES_is_modern_tier_filled = yes
+	WA_AI_TEMPLATES_has_adopted_modern_tier = yes
+	NOT = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 10 } }
+}
+
 # [modern-chassis-tier] Modern armour is the last CHASSIS GENERATION of the medium weight class,
 # not a class of division: there is no `role = modern_armor` any more. This answers "does
 # the medium role field the modern chassis", and the selector adds +500 to the medium template
