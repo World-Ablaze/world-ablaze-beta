@@ -611,18 +611,20 @@ WA_AI_check_resource_needs = {
 
 	### oil
 
-	# [overextension-brake] oil arm added (audit 2026-08-11: WA_AI_needs_oil was read by the oil
-	# prospecting triggers in WA_AI_RESOURCE_NEEDS_triggers.txt but never written -
-	# always 0, so those triggers were permanently false). Same form as the eight
-	# arms above; thresholds match coal (40) because oil is a high-volume resource
-	# and the lower thresholds would ratchet every import-dependent minor to 3.
-	# Also read by WA_AI_RESEARCH_needs_synth_oil (WA_AI_RESEARCH_industry.txt).
+	# [oil-need-is-fuel] oil has no industrial demand, so resource@oil is never negative and the
+	# balance term the other arms use can never arm this one; the shortage the AI feels is FUEL.
+	# Assumes fuel_ratio is only meaningful for a country that draws fuel - gated on war so a
+	# peacetime minor whose infantry never consumes (ratio ~0) does not ratchet to 3. Readers:
+	# WA_AI_should_prospect_resource_oil, WA_AI_allies_need_oil, WA_AI_RESEARCH_needs_synth_oil.
 
 	if = {
 		limit = {
 			OR = {
-				check_variable = { resource@oil < -80 }
 				check_variable = { resource_imported@oil > 80 } # 4 civs worth of import per need level
+				AND = {
+					has_war = yes
+					fuel_ratio < 0.5
+				}
 			}
 		}
 
@@ -663,6 +665,8 @@ WA_AI_check_resource_needs = {
 	# clears one quantum, whether or not a single unit of it is bought: the sold-out test this
 	# effect exists to perform does not happen. NOT fixed here - see the QUEUE row.
 	# The old falsifier was the wrong way round; the symptom is "reads 1 for everyone".
+	# COAL and OIL no longer use this estimator: their blocks below compute
+	# WA_AI_coop_export_shortage_<r> (faction offer vs members' deficit) - see [coal-prospect-loop].
 	# resource_produced@<r> and resource_imported@<r> were probed at the same time and DO match
 	# their columns.
 
@@ -791,26 +795,34 @@ WA_AI_check_resource_needs = {
 		}
 	}
 
-	set_variable = { WA_AI_coop_can_supply_coal = 0 }
+	# [coal-prospect-loop] coal asks a different question: is the FACTION short of coal to OFFER?
+	# Export shortage = the members' post-import deficit (resource@ < 0, at least one quantum)
+	# exceeds what the faction offers (resource_exported@ = to_export). The sold amount has no
+	# token, so this reads the offer as the ceiling and UNDER-detects by design (a false fire is
+	# 5 civs x 60-210 d wasted, a miss a slower ally). Read by WA_AI_allies_need_coal only.
+	# Gone when: a token exposes the sold amount, or coal gets a scripted intra-faction trade.
+	set_variable = { WA_AI_coop_export_shortage_coal = 0 }
 	if = {
-		limit = {
-			check_variable = { _wa_coop_f_ > 0 }
-			check_variable = { resource_exported@coal > 0 }
+		limit = { is_in_faction = yes }
+		set_temp_variable = { _wa_coop_offer_ = resource_exported@coal }
+		set_temp_variable = { _wa_coop_deficit_ = 0 }
+		every_other_country = {
+			limit = { is_in_faction_with = ROOT }
+			add_to_temp_variable = { _wa_coop_offer_ = resource_exported@coal }
+			if = {
+				limit = { check_variable = { resource@coal < 0 } }
+				subtract_from_temp_variable = { _wa_coop_deficit_ = resource@coal }
+			}
 		}
-		set_temp_variable = { _wa_coop_off_ = resource_produced@coal }
-		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
-		# the offer must be worth at least one quantum, i.e. offered * cic > 1
-		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		# the deficit must be worth at least one quantum, i.e. deficit * cic > 1
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_deficit_ }
 		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.coal }
 		if = {
-			limit = { check_variable = { _wa_coop_min_ > 1 } }
-			# sold out when the unsold residue is worth less than one quantum
-			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@coal }
-			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.coal }
-			if = {
-				limit = { check_variable = { _wa_coop_off_ < 1 } }
-				set_variable = { WA_AI_coop_can_supply_coal = 1 }
+			limit = {
+				check_variable = { _wa_coop_min_ > 1 }
+				check_variable = { _wa_coop_offer_ < _wa_coop_deficit_ }
 			}
+			set_variable = { WA_AI_coop_export_shortage_coal = 1 }
 		}
 	}
 
@@ -860,26 +872,29 @@ WA_AI_check_resource_needs = {
 		}
 	}
 
-	set_variable = { WA_AI_coop_can_supply_oil = 0 }
+	# [coal-prospect-loop] oil: same EXPORT-SHORTAGE question as coal above (faction offer below the
+	# members' post-import deficit, at least one quantum); read by WA_AI_allies_need_oil only.
+	set_variable = { WA_AI_coop_export_shortage_oil = 0 }
 	if = {
-		limit = {
-			check_variable = { _wa_coop_f_ > 0 }
-			check_variable = { resource_exported@oil > 0 }
+		limit = { is_in_faction = yes }
+		set_temp_variable = { _wa_coop_offer_ = resource_exported@oil }
+		set_temp_variable = { _wa_coop_deficit_ = 0 }
+		every_other_country = {
+			limit = { is_in_faction_with = ROOT }
+			add_to_temp_variable = { _wa_coop_offer_ = resource_exported@oil }
+			if = {
+				limit = { check_variable = { resource@oil < 0 } }
+				subtract_from_temp_variable = { _wa_coop_deficit_ = resource@oil }
+			}
 		}
-		set_temp_variable = { _wa_coop_off_ = resource_produced@oil }
-		multiply_temp_variable = { _wa_coop_off_ = _wa_coop_f_ }
-		# the offer must be worth at least one quantum, i.e. offered * cic > 1
-		set_temp_variable = { _wa_coop_min_ = _wa_coop_off_ }
+		set_temp_variable = { _wa_coop_min_ = _wa_coop_deficit_ }
 		multiply_temp_variable = { _wa_coop_min_ = constant:wa_ai_resource.cic.oil }
 		if = {
-			limit = { check_variable = { _wa_coop_min_ > 1 } }
-			# sold out when the unsold residue is worth less than one quantum
-			subtract_from_temp_variable = { _wa_coop_off_ = resource_exported@oil }
-			multiply_temp_variable = { _wa_coop_off_ = constant:wa_ai_resource.cic.oil }
-			if = {
-				limit = { check_variable = { _wa_coop_off_ < 1 } }
-				set_variable = { WA_AI_coop_can_supply_oil = 1 }
+			limit = {
+				check_variable = { _wa_coop_min_ > 1 }
+				check_variable = { _wa_coop_offer_ < _wa_coop_deficit_ }
 			}
+			set_variable = { WA_AI_coop_export_shortage_oil = 1 }
 		}
 	}
 	##################################################################################

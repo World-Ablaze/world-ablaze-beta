@@ -173,6 +173,54 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### oil-need-is-fuel — SHIPPED-UNTESTED (2026-09-22)
+- Owner question 2026-09-22 ("pourquoi GER fait pas les décisions de pétrole ?", screenshot of
+  Emsland / Matzen / Friesland available and untaken). Intended behaviour: an AI at war and short
+  of FUEL develops the oil fields it controls.
+- Symptom, MEASURED (`test_bascule.hoi4`, campaign `02795c2d`, 1943.11.27, GER observed): GER
+  `fuel = 0` of `max_fuel = 3 457 000`, fuel consumers served ~82 % (368/449); yet
+  `wa_ai_needs_oil = 0`, so every branch of the three decisions' `ai_will_do` reads 0 (reactive
+  needs > 1: no; cooperative: all 20 Axis members at `needs_oil = 0` and oil effective >= 0;
+  proactive: IRQ/BRA/UKO only). No `decision_status` entry for any oil decision.
+- Cause, MEASURED: the oil arm of `WA_AI_check_resource_needs` (`WA_AI_misc_effects.txt` § oil)
+  armed on `resource@oil < -80` OR `resource_imported@oil > 80`. Oil has NO industrial demand
+  (ledger demand column = 0 on all 9 resources read: GER, ITA, HUN, ROM, BUL, RCZ, RPO, RBL, RUK),
+  so `resource@oil` is never negative — the balance term was dead by construction; GER imports 60
+  < 80. DERIVED: the arm could only ever fire for a heavy importer, never for a fuel-starved
+  producer.
+- Engine check, MEASURED (install 1.19.2 `documentation/triggers_documentation.md` § fuel_ratio,
+  § has_fuel; `dynamic_variables_documentation.md` § fuel_ratio): both COUNTRY-scope triggers
+  exist, `fuel_ratio` is also a dynamic variable. WA peer use:
+  `WA_AI_CONSTRUCTION_has_needed_resource_for_infrastructure` (`has_war = yes fuel_ratio < 0.8`).
+  Known trap kept (`WA_AI_MILITARY_posture_triggers.txt`): `fuel_ratio` ~0 for a country with no
+  fuel consumers — hence the war gate.
+- Change: the oil arm's `resource@oil < -80` term is replaced by `AND = { has_war = yes
+  fuel_ratio < 0.5 }`; the import term is unchanged. Comment `# [oil-need-is-fuel]` at the site
+  and on the reader `WA_AI_should_prospect_resource_oil`. 9 lines net.
+- Impact, three readers of `WA_AI_needs_oil`: `WA_AI_should_prospect_resource_oil` (> 1) now
+  fires for GER in 3 pulses of the 2-day event (~6 days) → +10 on the three decisions (GER
+  controls 4 and 56 directly, 36 via subject RHO; 12 civs / 120 d each, `available` needs > 11
+  free civs); `WA_AI_RESEARCH_needs_synth_oil` (= 3 AND overextended flag) becomes reachable for a
+  fuel-starved major — wanted; `WA_AI_allies_need_oil` stays inert: its ally-side `resource@oil
+  < 0` term has the same dead-balance defect. NOT fixed here — own subject if the owner wants
+  cooperative oil prospecting.
+- Regression risk, DERIVED: a wartime minor at ratio < 0.5 owning an oil state with 12 spare civs
+  now prospects it (cost 5 PP) — acceptable. Ratchet hysteresis unchanged (counter 0..3, -1 per
+  pulse when the condition is false), so a country refuelling above 0.5 drops out in 2 pulses.
+- Gates run: `check_ai_layers.py` 0 ERROR (ratchet unchanged; `fuel_ratio` is not a NUM_TERM);
+  `check_constants.py` 2 ERROR pre-existing and unrelated (`[production_armor_maintenance_floor]`);
+  `check_worklist.py` WIP-LIMIT / UNTESTED-STALE pre-existing. CRLF and no BOM verified on both
+  scripts.
+- No harness written: < 40 lines, no signature change, system without a `WA_TEST_*` harness.
+- Verification (owner, console): load `test_bascule.hoi4`, run ~6 days, `observe GER`: the
+  National-Projects tooltip must show the three oil decisions in flight; or
+  `set_country_flag WA_AI_resources_logging` then read `game.log` for `GER | RESOURCES: needs OIL`.
+- Verification (campaign): in a campaign where GER's `fuel_status.fuel` sits near 0 while at war,
+  `decisions GER --match oil` shows `develop_ems_oil_fields` / `develop_matzen_oil_fields` /
+  `develop_friesland_oil_fields` taken within two monthly saves.
+- Closed when: one campaign save shows an AI major at war with `fuel_ratio < 0.5` and its owned
+  oil-field decisions taken.
+
 ### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
 - Owner order 2026-09-20 ("pendant la drôle de guerre, l'aviation alliée ne devrait pas bombarder
   l'Allemagne"). Intended behaviour: while the western Allies face Germany with no bomber arm, no
@@ -638,9 +686,28 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   do"). State, MEASURED from saves: a medium-hull twin carrying `can_upgrade_in_field = no` and a
   `replace_with` to its modern target does NOT hold the park at `replace_at_match = 0.3` (`test7`,
   full descent); at 0.9 the park goes down to 5+2 and comes BACK to 7+0, no modern template is ever
-  designed and modern lines get 0 factories for four months (`test8`). Neither run needs the brake
-  to be explained, so clause (vi) below is still undecided; the owed control is `test9` (same twins,
-  brake open). Scripts: `tools/archive/modern_switch_experiment/`.
+  designed and modern lines get 0 factories for four months (`test8`). 2026-09-22, first machine,
+  bed `trade_issue.hoi4`: `test8'` (brake closed) and `test9` (brake open), one line apart, give
+  the SAME trajectory at +50 / +75 / +120 d (down to 5+2, back to 7+0, no modern template, 0 modern
+  chassis) - `can_upgrade_in_field` on a source twin is INERT, the twin proposal (report section 7)
+  is dropped. Clause (vi) below therefore has no twin-based answer. NOT an option either: "hold
+  on medium + need-blind floor + cover bar" is the design `6f04283f85` already removed (floor 30
+  requested / 0 assigned on `bascule3`). Since that commit the latch has no stock term, so the
+  priming floor and the -50 damp have a 0-day window and have never run. `test10` (2026-09-22,
+  `UPGRADES_DEFICIT_LIMIT_DAYS` 90 -> 30, no twin): inert, full-speed descent as the unedited
+  campaign. MEASURED across every run on both beds: modern lines get 0 factories for ~75 days
+  after the switch whatever is requested (199-258), then 169-200 by +120 d, while medium-family
+  lines keep 145-163 factories with ~4 900 free medium gun tanks - the bottleneck is the factory
+  pool, not the template (report section 7d). `test11` (2026-09-22, graduated factors medium -100
+  / modern +500 net, no template change): nothing a save shows moves at +50 d (requested and
+  assigned identical to HEAD), 12 modern factories at +84 d - the factor is not the lever (7e).
+  Owner ruling 2026-09-22: intermediate-template problem, not production. `test12` (all 258
+  modern targets capped at 6+1, factors kept): owner live - factors armed (-1.000 / +5.000 in
+  `imgui show ai-strategy`), 246 factories WANTED on modern but held on other lines, and the
+  need collapses as the 1-battalion deficit closes - a tier must open at HALF its deficit filled
+  (report 7f). `test13` prepared: tier ladder 1..N modern battalions on every modern target,
+  weekly one-way step at fill > 0.5, logged to game.log. Scripts:
+  `tools/archive/modern_switch_experiment/`.
 - Verification (console, FRESH exe - a `reloadfile` poisons country triggers and measures
   nothing): run `WA_TEST_armor_budget` on a major inside the window. (i) `amorce:` prints
   `window=1` with a non-zero `priming-floor` while `latch=0`; (ii) `latch=1` never appears with
@@ -2837,6 +2904,56 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   for ITA's `ai_will_do` / activation terms — proposed, not admitted.
 - Closed when: (1) and (2) are pasted here and pass, then (3) and (4) pass on one campaign; OR (2)
   fails and the in-flight-instance behaviour ships a `cancel_trigger` under this slug.
+- Owner ruling 2026-09-22 (campaign `02795c2d`, GER 1943.10.25: 11 basins / 55 civs for ROM at
+  effective −279 while GER OFFERS 5 284 and sells 2 533, ROM imports 0 with 84 civs, ITA imports
+  1 778 on the same market): the coop leg must detect an EXPORT SHORTAGE — faction offer
+  (`Σ resource_exported@<r>`, = `to_export`) below the members' deficits (`Σ resource@<r> < 0`) —
+  not a member in deficit. No token reads the sold amount, so the rule UNDER-detects; **the owner
+  prefers under-detection to over-detection** (a false fire is 5 civs × 60-210 d of useless
+  investment, a miss is a slower ally). Proposed line only. Controls MEASURED on `02795c2d`
+  1943.10.25 (all 5 factions × 9 resources, faction `to_export` vs Σ negative effective):
+  NEGATIVE = Axis coal, offer 5 655 / sold 2 533 / deficit 296 (the current leg fires here);
+  POSITIVE = chinese_united_front aluminium, offer 12 / deficit 54, CHI at −47 while IMPORTING
+  39 — an ally buying and still short with nothing left to offer, the only case extraction can
+  help. Every other shortage row is sub-quantum (Axis iron 18 vs 24, comintern iron 0 vs 9) or an
+  ally that does not buy at all (JAP aluminium −109 / imports 0 / offer 83), so the rule also
+  needs the ally's deficit ≥ 1 quantum. `sold` is 14-50 % of `offer` in every faction: the
+  market is glutted, the offer test under-detects by construction. The ITA 1944 candidate of
+  `d1c51a6c` is VOID (no save kept; owner recalls the deficit came from Italy's side-switch).
+- Change (C), owner order 2026-09-22 ("écris la règle dans WA_AI_allies_need_coal"), coal only:
+  `WA_AI_check_resource_needs` (`WA_AI_misc_effects.txt`, 2-day pulse) writes
+  `WA_AI_coop_export_shortage_coal` = 1 iff Σ(ROOT + members) `resource_exported@coal` <
+  Σ(other members) negative `resource@coal` and that deficit ≥ 1 quantum (`cic.coal`);
+  `WA_AI_allies_need_coal` = ROOT offers coal AND that variable = 1. The old member-in-deficit
+  body and the coal block of the DISPROVEN `WA_AI_coop_can_supply_*` estimator are removed (only
+  reader gone); the other eight resources keep change (B). Callers: the three `coal_prospecting`
+  ai_will_do sites only. Reach: every faction member with excavation4/5 (no tag, no date).
+  Regression risk, STATED: a real coal shortage whose buyers are parked at ≥ 0 by imports is now
+  missed — accepted (under-detection ruling). Layer baseline NUMBER-LEAK 340 → 339 refreshed.
+  Sweep of the rule, MEASURED on 12 saves × 3 campaigns (`02795c2d` 1943.4/.7/.10/.11,
+  `84ae4038` 1939.1/1941.1/1942.9/1944.6, `b28209dd` same dates), scratchpad `faction_offer.py`:
+  NO coal faction row ever reads offer < deficit with the deficit ≥ 1 quantum — offer 4 420-19 107
+  against deficits 2-296, sold 14-75 % of offer everywhere. The old leg fired on Axis 1941.1
+  (ITA −62 importing 1 333, ROM −175), 1942.9 (FIN −91, ROM −30), 1944.6 (BUL −200) — all glut,
+  not shortage. So on every campaign measured the coal cooperative leg is DEAD by design and only
+  the reactive leg (own need) prospects coal; a coal POSITIVE control does not exist in the save
+  dir — the rule's fire path is unmeasured (the aluminium row is the shape, not the resource).
+  Verification (5), save-visible, gauge consistency only (the gauge is a 2-day snapshot, an
+  instance runs 60-210 d, so "live instance ⇒ gauge = 1 in the same save" is NOT a valid test):
+  on every scored save, for every faction, `wa_ai_coop_export_shortage_coal` on each member equals
+  the ledger verdict recomputed from `to_export` and negative effective (≥ 1 quantum) — 0 where the
+  offer covers, 1 where it does not; and every `coal_prospecting` instance TAKEN between two saves
+  (TOTAL counter rises) by a country at `wa_ai_needs_coal < 2` has the ledger verdict = 1 in one of
+  the two saves. Tell-tale of over-blocking: a faction at ledger verdict 1 for ≥ 3 saves with no
+  supplier's counter rising.
+  OIL, owner order 2026-09-22 ("avec les changements pétrole aussi"): same rule, same shape
+  (`WA_AI_coop_export_shortage_oil`, quantum `cic.oil` = 20, `WA_AI_allies_need_oil` = ROOT offers
+  oil AND variable = 1; the oil block of the DISPROVEN estimator removed). Sweep MEASURED on the
+  same 8 saves × 3 campaigns: no faction member ever reads effective oil < 0, so neither the old
+  nor the new oil coop leg fires anywhere measured; verification (5) applies to oil verbatim.
+  Observation, outside this subject (not admitted): `WA_AI_check_resource_needs` also sets a
+  write-only country FLAG named `WA_AI_allies_need_coal` (and eight siblings, `WA_AI_misc_effects.txt`
+  "allied resource needs" loop) — same name as the scripted trigger, no reader in `common/`.
 
 ### posture-v3 — PARKED (2026-09-09)
 - Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED since 2026-09-04 (UNTESTED-STALE); code committed, the owner console harness run is the only thing owed - paste it here and move to TESTED, no session work pending.
