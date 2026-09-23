@@ -16,7 +16,7 @@ Commands:
   tlm TAG FILE... [--match]     WA_TLM telemetry dashboard: scalars + decoded ring buffers
                                 (clock values -> dates; see documentation/WA_TLM_TELEMETRY_SYSTEM.md)
   army TAG FILE...              deployed division count (units section ONLY) + cross-checks
-  resources TAG FILE...         per-resource ledger: produced/transfer/imported/net/deficit/export
+  resources TAG FILE...         per-resource ledger: produced/transfer/imported/net/demand/export
   buildings TAG FILE... [--match] building levels summed over owned vs controlled states,
                                 *_inactive twins shown next to their active counterpart
   decisions TAG FILE... [--match]  decoded decision_status: live entries (days) vs the
@@ -659,20 +659,29 @@ def _parse_resources(sec):
 
 def cmd_resources(args):
     print("# WARNING: `resource@X` in script reads the `effective` column below "
-          "= net + deficit")
+          "= net + demand")
     print("#   (to_use[0] + to_use[2]), NOT `produced` and NOT `net` alone. "
           "Measured 2026-08-13")
     print("#   on campaign 02bd4445: 36 discriminating WA_AI_EQUIPMENT latch "
           "readings all side with")
-    print("#   net+deficit, zero with net. ENG aluminium 1942.6 is net 807.3, "
-          "deficit -799.0,")
+    print("#   net+demand, zero with net. ENG aluminium 1942.6 is net 807.3, "
+          "demand -799.0,")
     print("#   effective +8.3 - which is why its `> 50` gate stayed shut while "
           "the net column")
     print("#   looked like 16x headroom. The older `net alone` rule was drawn "
           "from ENG bauxite,")
-    print("#   whose deficit happened to be -1.0 so both readings coincided.")
-    print("# net = to_use[0] (available now) | deficit = to_use[2] (unmet demand, "
-          "negative)")
+    print("#   whose demand happened to be -1.0 so both readings coincided.")
+    print("# net = to_use[0] (available supply) | demand = to_use[2] (what the "
+          "INDUSTRY ASKS FOR,")
+    print("#   stored negative - NOT demand left unserved: the unserved part is "
+          "`effective` when it")
+    print("#   is negative, and a positive `effective` is the green surplus the "
+          "game's top bar shows.")
+    print("#   Measured 1942.9.1 campaign 84ae4038 as USA: steel demand -1204 "
+          "with a green +1522 on")
+    print("#   the bar; -to_use[2] correlates 0.89-0.99 with factory count "
+          "across the seven majors,")
+    print("#   ~0.00 with the shortfall.)")
     print("# identity: produced + transfer + imported = net + to_export; `resid` is "
           "the leftover")
     print("#   (marked ! above 1.0; a residual of ~1 shows up on resources whose gross "
@@ -688,9 +697,9 @@ def cmd_resources(args):
             continue
         flat, to_use = _parse_resources(sec)
         net = to_use[0] if len(to_use) > 0 else {}
-        deficit = to_use[2] if len(to_use) > 2 else {}
+        demand = to_use[2] if len(to_use) > 2 else {}
         names = []
-        for block in (flat.get("produced", {}), net, deficit, flat.get("imported", {}),
+        for block in (flat.get("produced", {}), net, demand, flat.get("imported", {}),
                       flat.get("transfer_overlord_subject", {}),
                       flat.get("to_export", {}), flat.get("exported", {})):
             for k in block:
@@ -700,14 +709,14 @@ def cmd_resources(args):
             print("  (resources section carries no ledger blocks)")
             continue
         print(f"  {'resource':<11}{'produced':>11}{'transfer':>10}{'imported':>11}"
-              f"{'net':>11}{'deficit':>10}{'EFFECTIVE':>11}{'to_export':>11}"
+              f"{'net':>11}{'demand':>10}{'EFFECTIVE':>11}{'to_export':>11}"
               f"{'exported':>10}{'resid':>8}")
         for r in sorted(names):
             prod = flat.get("produced", {}).get(r, 0.0)
             tr = flat.get("transfer_overlord_subject", {}).get(r, 0.0)
             imp = flat.get("imported", {}).get(r, 0.0)
             av = net.get(r, 0.0)
-            dfc = deficit.get(r, 0.0)
+            dfc = demand.get(r, 0.0)
             # What `check_variable = { resource@<r> > N }` actually compares.
             effective = av + dfc
             exp_t = flat.get("to_export", {}).get(r, 0.0)

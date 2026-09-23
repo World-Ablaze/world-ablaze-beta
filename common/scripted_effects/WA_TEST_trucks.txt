@@ -1,0 +1,214 @@
+############################################################################################################
+#	World Ablaze - TRUCK FLOOR LADDER console harness. harness-contract: v1 (wa-testing SKILL).
+############################################################################################################
+#	[truck-floor-ladder] Instrument for the motorized_equipment factory floor: which industry band a
+#	country is in, which of the nine floor blocks are armed, and how many factories they owe together.
+#	Nothing in a savegame names an ai_strategy block, so the only way to see the gate is to print it.
+#
+#	Recipe: events/wa_test_trucks.txt header. Fire `event wa_truck.1 GER` from ANY tag - do NOT tag
+#	into the country under test (tag-switching makes it human and is_ai reads no).
+#	Output: logs/game.log, "TRUCK FLOOR TEST".
+#
+#	READ THE VERDICT LINE AT THE BOTTOM. All five values must read 1.
+############################################################################################################
+
+WA_TEST_TRUCK_report = {
+
+	log = "=== TRUCK FLOOR TEST === [Root.GetName] [GetDateText]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _trk_e1_ = 0 }
+	set_temp_variable = { _trk_e2_ = 0 }
+	set_temp_variable = { _trk_e3_ = 0 }
+	set_temp_variable = { _trk_e4_ = 0 }
+	set_temp_variable = { _trk_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _trk_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _trk_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _trk_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _trk_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _trk_e5_ = 1 } }
+	log = "  scope : always=[?_trk_e1_|.0]  I-am-ROOT=[?_trk_e2_|.0]  I-am-THIS=[?_trk_e3_|.0]  ROOT-scope-usable=[?_trk_e4_|.0]  control-false=[?_trk_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file before editing a line of this effect.)"
+
+	############################################################
+	# A. Inputs and bars
+	############################################################
+
+	set_temp_variable = { _trk_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _trk_ai = 1 } }
+	set_temp_variable = { _trk_on = 0 }
+	if = { limit = { WA_AI_PRODUCTION_ground_is_enabled = yes } set_temp_variable = { _trk_on = 1 } }
+	set_temp_variable = { _trk_mils = num_of_military_factories }
+	set_temp_variable = { _trk_stock = num_equipment@motorized_equipment }
+	set_temp_variable = { _trk_deep_bar = constant:wa_ai_production.trucks.deep_starve_stock }
+	set_temp_variable = { _trk_arm_bar = constant:wa_ai_lend_lease.motorized.starve }
+	set_temp_variable = { _trk_rel_bar = constant:wa_ai_production.trucks.release_stock }
+	log = "  inputs: is_ai=[?_trk_ai|.0]  default_ground_production=[?_trk_on|.0]  mils=[?_trk_mils|.0]  free trucks=[?_trk_stock|.0]"
+	log = "  bars  : deep<[?_trk_deep_bar|.0]  arm<[?_trk_arm_bar|.0]  hold-until<[?_trk_rel_bar|.0]   (a country between arm and hold-until keeps a floor it already had)"
+
+	############################################################
+	# B. Which industry band. Exactly one of the six must read 1.
+	############################################################
+
+	set_temp_variable = { _trk_b1 = 0 }
+	set_temp_variable = { _trk_b2 = 0 }
+	set_temp_variable = { _trk_b3 = 0 }
+	set_temp_variable = { _trk_b4 = 0 }
+	set_temp_variable = { _trk_b5 = 0 }
+	set_temp_variable = { _trk_b6 = 0 }
+	set_temp_variable = { _trk_btop = 0 }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_small = yes } set_temp_variable = { _trk_b1 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_medium = yes } set_temp_variable = { _trk_b2 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_large = yes } set_temp_variable = { _trk_b3 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_major = yes } set_temp_variable = { _trk_b4 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_supermajor = yes } set_temp_variable = { _trk_b5 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_superpower = yes } set_temp_variable = { _trk_b6 = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_trucks_industry_top = yes } set_temp_variable = { _trk_btop = 1 } }
+	set_temp_variable = { _trk_bsum = _trk_b1 }
+	add_to_temp_variable = { _trk_bsum = _trk_b2 }
+	add_to_temp_variable = { _trk_bsum = _trk_b3 }
+	add_to_temp_variable = { _trk_bsum = _trk_b4 }
+	add_to_temp_variable = { _trk_bsum = _trk_b5 }
+	add_to_temp_variable = { _trk_bsum = _trk_b6 }
+	set_temp_variable = { _trk_ok_band = 0 }
+	if = { limit = { check_variable = { _trk_bsum = 1 } } set_temp_variable = { _trk_ok_band = 1 } }
+	log = "  band  : small=[?_trk_b1|.0] medium=[?_trk_b2|.0] large=[?_trk_b3|.0] major=[?_trk_b4|.0] supermajor=[?_trk_b5|.0] superpower=[?_trk_b6|.0]   (sum=[?_trk_bsum|.0], must be 1)   deep-top=[?_trk_btop|.0]"
+
+	############################################################
+	# C. The nine floor gates and what they owe. Bands are exclusive, the deep tier SUMS on top.
+	############################################################
+
+	set_temp_variable = { _trk_owed = 0 }
+	set_temp_variable = { _trk_arm = 0 }
+	set_temp_variable = { _trk_deep = 0 }
+
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_small = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_small } set_temp_variable = { _trk_arm = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_medium = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_medium } set_temp_variable = { _trk_arm = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_large = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_large } set_temp_variable = { _trk_arm = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_major = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_major } set_temp_variable = { _trk_arm = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_supermajor = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_supermajor } set_temp_variable = { _trk_arm = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_superpower = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.floor_superpower } set_temp_variable = { _trk_arm = 1 } }
+
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_deep_large = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.deep_add_large } set_temp_variable = { _trk_deep = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_deep_major = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.deep_add_major } set_temp_variable = { _trk_deep = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_floor_trucks_deep_top = yes } add_to_temp_variable = { _trk_owed = constant:wa_ai_production.trucks.deep_add_top } set_temp_variable = { _trk_deep = 1 } }
+
+	log = "  gates : band floor armed=[?_trk_arm|.0]  deep tier armed=[?_trk_deep|.0]  FACTORIES OWED=[?_trk_owed|.0]"
+
+	# deep implies band: the deep bar is the tighter one, so a deep gate without its band floor
+	# means the two bars have crossed.
+	set_temp_variable = { _trk_ok_deep = 1 }
+	if = {
+		limit = {
+			check_variable = { _trk_deep = 1 }
+			check_variable = { _trk_arm = 0 }
+		}
+		set_temp_variable = { _trk_ok_deep = 0 }
+	}
+
+	############################################################
+	# D. The hold partners. An armed gate whose hold reads 0 is a Schmitt pair with crossed bars.
+	############################################################
+
+	set_temp_variable = { _trk_hold = 0 }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_small = yes } set_temp_variable = { _trk_hold = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_medium = yes } set_temp_variable = { _trk_hold = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_large = yes } set_temp_variable = { _trk_hold = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_major = yes } set_temp_variable = { _trk_hold = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_supermajor = yes } set_temp_variable = { _trk_hold = 1 } }
+	if = { limit = { WA_AI_PRODUCTION_should_hold_floor_trucks_superpower = yes } set_temp_variable = { _trk_hold = 1 } }
+	set_temp_variable = { _trk_ok_schmitt = 1 }
+	if = {
+		limit = {
+			check_variable = { _trk_arm = 1 }
+			check_variable = { _trk_hold = 0 }
+		}
+		set_temp_variable = { _trk_ok_schmitt = 0 }
+	}
+	log = "  hold  : a hold partner reads 1 = [?_trk_hold|.0]   (arm=1 with hold=0 means the arm bar sits above the release bar)"
+
+	############################################################
+	# E. Independent walk (contract rule 4): re-derive the band from the factory count directly,
+	#    without the band triggers, and compare. The literals here are deliberate - a walk that
+	#    reads the same constants as the thing it checks measures nothing.
+	############################################################
+
+	set_temp_variable = { _trk_w = 0 }
+	if = { limit = { num_of_military_factories > 29 } set_temp_variable = { _trk_w = 1 } }
+	if = { limit = { num_of_military_factories > 49 } set_temp_variable = { _trk_w = 2 } }
+	if = { limit = { num_of_military_factories > 99 } set_temp_variable = { _trk_w = 3 } }
+	if = { limit = { num_of_military_factories > 199 } set_temp_variable = { _trk_w = 4 } }
+	if = { limit = { num_of_military_factories > 299 } set_temp_variable = { _trk_w = 5 } }
+	set_temp_variable = { _trk_s = 0 }
+	if = { limit = { check_variable = { _trk_b2 = 1 } } set_temp_variable = { _trk_s = 1 } }
+	if = { limit = { check_variable = { _trk_b3 = 1 } } set_temp_variable = { _trk_s = 2 } }
+	if = { limit = { check_variable = { _trk_b4 = 1 } } set_temp_variable = { _trk_s = 3 } }
+	if = { limit = { check_variable = { _trk_b5 = 1 } } set_temp_variable = { _trk_s = 4 } }
+	if = { limit = { check_variable = { _trk_b6 = 1 } } set_temp_variable = { _trk_s = 5 } }
+	set_temp_variable = { _trk_ok_walk = 0 }
+	if = { limit = { check_variable = { _trk_s = _trk_w } } set_temp_variable = { _trk_ok_walk = 1 } }
+	log = "  E walk: band index shipped=[?_trk_s|.0]  re-derived=[?_trk_w|.0]   (0 small .. 5 superpower)"
+
+	############################################################
+	# F. The ladder itself, read straight from the constants: monotone, and under the archetype cap.
+	#    max_military_factories on motorized_equipment is 75 (common/units/equipment/motorized.txt);
+	#    the literal 75 here is the copy of an ENGINE-side number no constant can reach.
+	############################################################
+
+	set_temp_variable = { _trk_f1 = constant:wa_ai_production.trucks.floor_small }
+	set_temp_variable = { _trk_f2 = constant:wa_ai_production.trucks.floor_medium }
+	set_temp_variable = { _trk_f3 = constant:wa_ai_production.trucks.floor_large }
+	set_temp_variable = { _trk_f4 = constant:wa_ai_production.trucks.floor_major }
+	set_temp_variable = { _trk_f5 = constant:wa_ai_production.trucks.floor_supermajor }
+	set_temp_variable = { _trk_f6 = constant:wa_ai_production.trucks.floor_superpower }
+	set_temp_variable = { _trk_d3 = constant:wa_ai_production.trucks.deep_add_large }
+	set_temp_variable = { _trk_d4 = constant:wa_ai_production.trucks.deep_add_major }
+	set_temp_variable = { _trk_d6 = constant:wa_ai_production.trucks.deep_add_top }
+	set_temp_variable = { _trk_ok_mono = 1 }
+	if = { limit = { NOT = { check_variable = { _trk_f2 > _trk_f1 } } } set_temp_variable = { _trk_ok_mono = 0 } }
+	if = { limit = { NOT = { check_variable = { _trk_f3 > _trk_f2 } } } set_temp_variable = { _trk_ok_mono = 0 } }
+	if = { limit = { NOT = { check_variable = { _trk_f4 > _trk_f3 } } } set_temp_variable = { _trk_ok_mono = 0 } }
+	if = { limit = { NOT = { check_variable = { _trk_f5 > _trk_f4 } } } set_temp_variable = { _trk_ok_mono = 0 } }
+	if = { limit = { NOT = { check_variable = { _trk_f6 > _trk_f5 } } } set_temp_variable = { _trk_ok_mono = 0 } }
+	set_temp_variable = { _trk_max = _trk_f6 }
+	add_to_temp_variable = { _trk_max = _trk_d6 }
+	set_temp_variable = { _trk_ok_cap = 0 }
+	if = { limit = { check_variable = { _trk_max < 75 } } set_temp_variable = { _trk_ok_cap = 1 } }
+	log = "  ladder: [?_trk_f1|.0] [?_trk_f2|.0] [?_trk_f3|.0] [?_trk_f4|.0] [?_trk_f5|.0] [?_trk_f6|.0]   deep +[?_trk_d3|.0] +[?_trk_d4|.0] +[?_trk_d6|.0]   deepest total=[?_trk_max|.0] of the archetype cap 75"
+
+	############################################################
+	# G. Verdict
+	#    one-band    exactly one industry band claims this country
+	#    walk        the band triggers agree with a direct factory-count walk
+	#    schmitt     no armed floor is missing its hold partner
+	#    deep        the deep tier never arms without its band floor
+	#    ladder      the constants are monotone and the deepest total is under the archetype cap
+	############################################################
+
+	set_temp_variable = { _trk_ok_ladder = 0 }
+	if = {
+		limit = {
+			check_variable = { _trk_ok_mono = 1 }
+			check_variable = { _trk_ok_cap = 1 }
+		}
+		set_temp_variable = { _trk_ok_ladder = 1 }
+	}
+	log = "  VERDICT: one-band=[?_trk_ok_band|.0]  shipped-vs-walk=[?_trk_ok_walk|.0]  schmitt-holds=[?_trk_ok_schmitt|.0]  deep-implies-band=[?_trk_ok_deep|.0]  ladder-sane=[?_trk_ok_ladder|.0]   (all five must read 1)"
+	log = "=== END TRUCK FLOOR TEST ==="
+}
+
+############################################################################################################
+#	FIELD PROBE - the one ASSUMED engine fact the ladder rests on, which no script can decide: do
+#	min_factories_archetype floors on one id SUM (band floor + deep add), or does the engine take the
+#	maximum? Fire this on a country the report says owes a deep total, then READ THE PRODUCTION PANEL:
+#	the motorized line must hold the OWED number, not just the band floor.
+############################################################################################################
+WA_TEST_TRUCK_probe_field = {
+	log = "=== TRUCK FLOOR FIELD PROBE === [Root.GetName] [GetDateText]"
+	set_temp_variable = { _trk_p1 = num_equipment@motorized_equipment }
+	set_temp_variable = { _trk_p2 = num_of_military_factories }
+	log = "  state : free trucks=[?_trk_p1|.0]  mils=[?_trk_p2|.0]"
+	log = "  NOW READ THE PRODUCTION PANEL: compare the motorized line factory count with FACTORIES OWED from wa_truck.1. Equal = the floors sum; band floor only = the engine takes the maximum and the deep tier is inert."
+	log = "=== END TRUCK FLOOR FIELD PROBE ==="
+}

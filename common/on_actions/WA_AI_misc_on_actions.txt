@@ -278,6 +278,10 @@ on_actions = {
 				# [modern-chassis-tier] same ordering rule: the chassis latch must be set before
 				# the calculate, or the +500 tier offset lands one month late.
 				WA_AI_TEMPLATES_update_modern_chassis_latch = yes
+				# [modern-tier-ladder] AFTER the chassis latch (it reads the flag that one sets) and
+				# BEFORE the calculate: the tier flag changes WHICH target of the modern family is
+				# enabled for this month's code, so a step must precede the design pass.
+				WA_AI_TEMPLATES_update_modern_tier_latch = yes
 				# [mot-field-hospital] same ordering rule: the hospital latch must be set before
 				# the calculate, or the +100 mirror offset lands one month late.
 				WA_AI_TEMPLATES_update_motorized_hospital_latch = yes
@@ -286,6 +290,16 @@ on_actions = {
 				# this month's open roles.
 				WA_AI_TEMPLATES_update_heavy_support_latch = yes
 				WA_AI_TEMPLATES_calculate_templates = yes
+
+				# [light-medium-conversion] AFTER the calculate: the gate below reads this month's
+				# medium-role verdict and the template the calculate may have just created. Scraps
+				# ONE legacy light tank division and raises a medium one in its place - the only
+				# lever that moves a division's ROLE, since replace_with cannot cross role groups.
+				# Gate: WA_AI_TEMPLATES_should_convert_light_armor_division.
+				if = {
+					limit = { WA_AI_TEMPLATES_should_convert_light_armor_division = yes }
+					WA_AI_TEMPLATES_convert_one_light_armor_division = yes
+				}
 
 				# [armor-role-budget] price this month's OPEN tank roles into one constant
 				# role_ratio budget. Must run AFTER the calculate above so the role set it

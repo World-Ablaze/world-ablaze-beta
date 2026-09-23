@@ -2178,7 +2178,7 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Symptom:** `build_railway` with a 30-province explicit `path` silently built NOTHING (flag latched, zero track); rebuilt edge-by-edge, 17 of 29 edges built at level 5 and 12 were refused by `can_build_railway`, leaving three gaps in the Sahara.
 - **Cause:** every refused edge touched a province of a state marked `impassable = yes` in `history/states` (786 Mauritanian Desert, 515 Southern Sahara, 775 B.E.T., 767 North Darfur; also on other routes: 514, 273, 552). The engine refuses rail construction there — and rejects an entire multi-province `path` list if ANY edge in it is invalid, with no error and no log. The generated `WA_AI_MAP_province_connections.txt` land graph INCLUDES impassable-state provinces, and hop-minimising pathfinding prefers exactly those huge desert provinces, so any path computed on WA map data walks into them by default.
 - **Rule:** (i) never emit a `build_railway`/`can_build_railway` path that touches an impassable-state province — filter `history/states` `impassable = yes` out of the graph before pathing (`tools/gen/gen_rail_corridors.py parse_impassable_states`); (ii) build multi-hop rail EDGE BY EDGE (`path = { a b }`, the PC-core form) with `can_build_railway` guarding each edge — a whole-path call is all-or-nothing and fails silently; (iii) latch a save-visible incomplete flag off `has_railway_connection` so a partial build is measurable (it is what isolated this).
-- **Wider caveat, unaudited:** WA script-side pathfinding (`WA_AI_pathfinding_effects`) runs on the same graph and can likewise route through impassable provinces; whether any consumer cares is not established.
+- **Wider caveat, CLOSED 2026-09-19 — it does, and the PC railway pass is the consumer.** `1941.04.14 … memfile:2: build_railway: invalid or non-land province 12099` (state 552 Western Desert): `WA_AI_PATHFIND_PROV_get_neighbors` filtered on CONTROL only, and the type-13 executor (`WA_AI_CONSTRUCTION_PRIORITY_core.txt`) recorded `WA_AI_PC_railway_connection_level_` for the refused hop. Nothing ever decrements that mirror, and the rail g-cost divides by `level + 1`, so the phantom hop became the cheapest step on the map and re-attracted routes for the rest of the campaign (~4000 CP per hop over 5 passes, nothing built). Rule (i) had been applied offline (`gen_rail_corridors.py`) and to the corridor builder, never to the runtime pass. Fixed by `[impassable-rail-guard]`: `global.WA_AI_MAP_province_impassable` built at startup from the STATE trigger `impassable` + a `can_build_railway` guard on the emission. **Key the set on the state flag, never on the `*_impassable` terrain name** — they disagree on 63 provinces (52 impassable-state provinces carry a normal terrain name; 11 `*_impassable` provinces sit in a passable state), and `province_terrain.py` maps every `*_impassable` name to code 8, which already means `mountain`.
 - **Evidence:** `rail.py --corridor` on `SAF_1945_08_09_02` (12 BREAK pairs, all zero-rail provinces in the four impassable states); `history/states/786-*,515-*,775-*,767-*` (`impassable = yes`); triggers_documentation.md:1884 (`can_build_railway`), :4603 (`has_railway_connection`).
 
 ### `front_armor_score` with an ally's id is a silent no-op
@@ -2566,7 +2566,8 @@ process caveats (stale process, and the absence of a load-time hook).
   queue also needs the deficit valve (`UPGRADES_DEFICIT_LIMIT_DAYS`) sized for it.
 - **Detection:** live, in `imgui show ai_templates`: a best-match score >= `replace_at_match` with
   the arrow still on the same target is condition (2) or (3) blocking; a correct chain moves the
-  arrow to the replace_with target within one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass.
+  arrow to the replace_with target within one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` pass (7 days when
+  this was measured; 14 in WA since 2026-09-20, so wait a fortnight before concluding).
   Positive control from the same session: the first hop (old composition -> transition) fires even
   on a role whose role_ratio want is NEGATIVE - want does not gate field upgrades.
 - **Evidence:** WORK.md `armor-class-handoff` (conversion half); commits `e75346fea` (valves),
@@ -2757,7 +2758,7 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Rule:** any reading of the AI template designer (`imgui show ai_templates`,
   `ai_division_production`, a lettered template appearing or not, a field upgrade firing or not)
   taken in a session that hot-reloaded scripts is void. Restart the executable, reload the save,
-  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (7-day) pass, then read. Before concluding "the AI
+  wait one `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` pass (14 days in WA since 2026-09-20), then read. Before concluding "the AI
   never designs X", ask how the session was started - and only then look for a script cause.
 - **Detection:** the session history (a `reload` in the console log); a `WA_TEST_*` harness whose
   contract-v1 scope line is not `1 1 1 1 0` in the same session; the designer resuming after a
@@ -2768,3 +2769,91 @@ process caveats (stale process, and the absence of a load-time hook).
   entry stays class C; the cold-restart pair of the previous entry
   (`WA_TEST_pc_lost_purge.txt`, WORK.md `pc-lost-state-purge` runs 1-2) for the trigger-poisoning
   half; engine doc `common/ai_templates/_documentation.md` for what the designer evaluates.
+
+### A min_factories floor does not preempt a saturated factory pool
+
+- **Date:** 2026-09-20
+- **Symptom:** the AI's modern-tank line sat at 30 factories REQUESTED and 0 assigned for months, while a 30-factory `equipment_production_min_factories_archetype` floor was correctly armed for it.
+- **Cause:** the floor is a REQUEST that takes rank, not a requisition. MEASURED on GER 1943.5 (`bascule3`): 662 of 716 factories already committed across 39 `military_lines`, and TEN lines requesting with zero assigned - the modern one was simply last. The engine's own wording, *"Forces the AI to allocate this many factories ... Use with caution since it doesn't take into account how many factories are actually available"* (install `common/ai_strategy/_documentation.md`), reads stronger than it behaves. Companion fact: a line's `requested_factories` can BE the floor - that line had zero template demand behind it.
+- **Rule:** in a saturated war economy you cannot make the AI build something by adding a floor; the only lever that frees capacity is lowering the COMPETING requests. A production FACTOR cannot lead either - `equipment_variant_production_factor` multiplies a NEED, and the need is 0 until a template mounts the battalion - so there is no way to pre-build a stock of equipment no division wants. Design around that instead of around the floor.
+- **Evidence:** subject `modern-switch-amorce` in `WORK.md`; saves `bascule3` (1943.5) and `bascule4` (1943.11); header of `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt`.
+
+### Production factor entries on one id STACK across blocks
+
+- **Date:** 2026-09-20
+- **Symptom:** a deliberate -50 damp on `medium_tank_chassis` changed nothing in game; the medium lines kept every factory and the modern line kept starving.
+- **Cause:** a SECOND block was adding +75 to the same id from another part of the same file - `WA_AI_PRODUCTION_focus_on_medium_armor`, the doctrine focus - and the two entries sum. The damp netted +25. Before the session medium sat at 150 + 75 = 225, which is why nothing else could ever outbid it.
+- **Rule:** before tuning any `ai_strategy` value, grep EVERY block writing that `id` across `common/ai_strategy/` (the country layer included) and state the NET. One block's number is never the weight the engine sees. The same holds for `min_factories` floors on one id, which the constants registry already records as summing.
+- **Evidence:** `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt`, blocks `WA_AI_PRODUCTION_build_medium_armor`, `WA_AI_PRODUCTION_focus_on_medium_armor_main_gun`, `WA_AI_PRODUCTION_DEFAULT_modern_priming_medium_damp`; commit `6f04283f85`.
+
+### WA rewrites the whole production ramp - never estimate a build time from the defines
+
+- **Date:** 2026-09-20
+- **Symptom:** a confident table of "months to build N chassis" was produced from `POWERED_FACTORY_SPEED_MIL` and an assumed efficiency of 0.8. The owner rejected it; it was wrong by an unknown but large factor, and optimistic.
+- **Cause:** `common/defines/05_defines.lua` overrides the entire ramp against vanilla - an UNPOWERED military factory produces NOTHING (`BASE_FACTORY_SPEED_MIL` 0.0 against 3.5), a powered one 2.5 (4.5), a new line starts at 1 % (10 %), the base efficiency CAP is 10 % (50 %), and the ramp itself is halved (`BASE_FACTORY_EFFICIENCY_GAIN` 0.5 against 1). An efficiency of 0.8 is not a number this mod hands out by default at all: the reachable cap is `10 % x whatever production_factory_max_efficiency_factor that country holds`, and how that modifier composes with the base is documented in NO file.
+- **Rule:** state the MEASURED defines, say the rate is not derivable from script, and name the in-game read that settles it (the production screen shows the line's cap and daily output). Relative claims survive ("30 factories prime five times faster than 6"); absolute month counts do not. Also: `build_cost_ic` on an ARCHETYPE is a floor - a real design with modules costs more.
+- **Evidence:** the NProduction block of `common/defines/05_defines.lua` against the install's `common/defines/00_defines.lua`; the withdrawn-claim bullet of subject `modern-switch-amorce` in `WORK.md`.
+
+### can_upgrade_in_field is NOT inert without replace_with, and four engine valves pace field upgrades
+
+- **Date:** 2026-09-20
+- **Symptom:** `can_upgrade_in_field` was written off as dead in WA because the armour families carry no `replace_with`, so the field-upgrade brake was believed unavailable without a generator rewrite.
+- **Cause:** vanilla itself uses the field with a meaningful condition and NO outgoing edge - `panzergrenadier_early_GER` in the install's `common/ai_templates/templates_GER.txt`, comment *"this is a stop-gap towards medium tanks, if deployed dont upgrade to medium tanks until we burn out our light tanks"*, gate `has_equipment = { light_tank_chassis < 600 }`; two more sites do the same. The engine doc only spells out the `replace_with` case, so behaviour on a target with no outgoing edge is DERIVED from vanilla usage - and the two vanilla sites support OPPOSITE readings of *"divisions matching this target template"* (the old shape versus the currently targeted one). That ambiguity is still open.
+- **Rule:** do not call the field inert. Treat it as a fail-safe brake worth trying - inert if the reading is wrong, costly only in a probe. And remember the conversion is paced by FOUR `NDefines.NAI` valves regardless: `UPGRADES_DEFICIT_LIMIT_DAYS` (WA 90, vanilla 60 - refuses an upgrade whose equipment need takes longer than that to fill), `UPGRADE_PERCENTAGE_OF_FORCES` (0.2 - share of the army considered per pass), `UPGRADE_DIVISION_RELUCTANCE` (WA 14, vanilla 7) and `DAYS_BETWEEN_CHECK_BEST_TEMPLATE` (WA 14, vanilla 7). A training queue consuming the same stockpile keeps the deficit estimate above any limit, so new-division training and field conversion compete - which is why 90 is the value the 2026-08-29 entry names as blocking every conversion.
+- **Evidence:** install `common/ai_templates/templates_GER.txt` and `common/ai_templates/_documentation.md`; `tools/gen/armor_templates/emit.py`; `common/defines/05_defines.lua`; subject `modern-switch-amorce`.
+
+### A reconcile that writes its book unconditionally can never notice a desync
+
+- **Date:** 2026-09-20
+- **Symptom:** the AI View reported GER `medium_armor` Current 21.0 and **Wanted 0**, while the scripted book `wa_ai_armor_budget_medium` read 25. The owner's `imgui show ai-strategy` showed no `role_ratio medium_armor` entry armed at all.
+- **Cause:** `role_ratio` entries are additive per id and can only be retired by adding their exact negation, so the emitter keeps books of what it believes is applied. But the book is written OUTSIDE the emit branch - `set_variable = { WA_AI_ARMOR_BUDGET_medium = _abg_t_medium }` runs whether or not the `add_ai_strategy` fired. An emission that does nothing is therefore recorded as applied, the next pulse sees "slot unchanged" and emits nothing, and the desync is permanent and invisible to the system that caused it. (What broke the emission in the first place is not settled; a hot script reload is one candidate the owner has seen before.)
+- **Rule:** a book-keeping reconcile must never write its book on a path where the write it records can silently fail. Either verify the effect landed, or re-assert on a slow cadence, or drop `add_ai_strategy` for static `ai_strategy` blocks gated by triggers - the shape Expert AI uses to work around literal-only values, and the one WA's own mechanized floors already use. The same hazard applies to every `add_ai_strategy` ledger in this repo.
+- **Evidence:** `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt` (the per-role reconcile blocks); save `bug_ratio` (1944.6.8).
+
+### A JSON round-trip reformats a whole registry - edit it textually
+
+- **Date:** 2026-09-20
+- **Symptom:** a two-line change to `tools/armor_templates_registry.json` came out as a 3427-line diff.
+- **Cause:** the edit was made with `json.load` / `json.dumps`, which re-serialises the entire file with its own spacing. The file's layout is not what `json.dumps` produces by default, and matching it by trial is not worth the attempt.
+- **Rule:** edit a large hand-maintained JSON registry as TEXT, anchored on a unique substring, and re-parse afterwards only to verify it still loads. Related, from the same session: a hardcoded total in a generator test (`self.assertEqual(seen, 1634)`) is not an invariant - it follows the emitted target set and breaks the moment a family's axes move, so update it with the generator rather than reading the failure as a regression.
+- **Evidence:** `tools/armor_templates_registry.json`; `tools/tests/test_armor_templates.py`, `ReinforcePriority.test_every_emitted_armour_target_carries_it`; commit `6f04283f85`.
+
+### One run read at one date is not a control pair when two unedited runs already differ
+
+- **Date:** 2026-09-21
+- **Symptom:** `test5` (brake closed) showed three live armour templates and a park held on the first rung, `test6` (brake open, one line different) showed the park following its children. The pair was written up as "the engine reads the source's `can_upgrade_in_field` through a `replace_with` edge" and a generator proposal was built on it. On a second test bed the same shape did not brake anything in two runs.
+- **Cause:** each arm was ONE run read at ONE date (+30 days), on a bed where two runs with NO edit already differed by three template rungs at that same date (5+2 vs 2+5). And the process being read is not monotone: `test8` has the park on 5+2 at +50 days and back on 7+0 at +75 days, so a single date can catch the same run in either state.
+- **Rule:** before attributing a difference between two live runs to the line that differs, size the run-to-run spread with two unedited runs from the same save, and read every arm at two dates or more. If the spread between baselines is as large as the effect, the pair proves nothing - label the causal reading ASSUMED, not DERIVED. A control is compared to a baseline made on the SAME build: a cloud-build campaign is not the baseline of a local HEAD run.
+- **Evidence:** `documentation/MODERN_SWITCH_BRAKE_EXPERIMENT_2026-09-21.md`, section 5 (baselines B3 / B4, `test5`, `test6`) and section 7b (`test7`, `test8`).
+
+### A low replace_at_match keeps the arrow on the replacement forever; a high one makes the designer walk back
+
+- **Date:** 2026-09-21
+- **Symptom:** a source target S with `replace_with = M`, `target_min_match = 0.1` and `can_upgrade_in_field = { always = no }`, S and M enabled together. With `replace_at_match = 0.3` the fielded park followed every one-battalion rung from S's shape to M's (7+0 to 3+4 in ten weeks). With 0.9 it went down two rungs, then a template identical to S became live AGAIN, the park returned to it, no M-shaped template was ever designed and the M-only equipment got 0 factories for four months.
+- **Cause:** MEASURED, the two trajectories (GER, campaign `d6190fb7`, saves `test7a-c` / `test8a-c`). ASSUMED, the mechanism - no imgui reading was taken: the arrow sits on M only while the best live template matches S at `replace_at_match` or better; at 0.3 that never stops being true, at 0.9 it stops around two swapped battalions of seven, the arrow returns to S and the designer rebuilds toward S. In neither run did the closed `can_upgrade_in_field` visibly hold a division.
+- **Rule:** `replace_at_match` is not a one-way gate - a chain whose source stays enabled can hand the role BACK. Do not read a park sitting on the source shape as "the brake works": check that templates of the replacement shape exist and that its equipment is being built, or it is the full freeze (no need, no stock, the gate never opens). And do not rely on `can_upgrade_in_field` on a source twin until a brake-open control on the same bed shows a difference.
+- **Evidence:** `documentation/MODERN_SWITCH_BRAKE_EXPERIMENT_2026-09-21.md` section 7b; install `common/ai_templates/_documentation.md` ("replace-with chain" paragraph); `tools/archive/modern_switch_experiment/`.
+
+### The engine moves factories to a new chassis over a quarter, and no need or factor lever shortens it
+
+- **Date:** 2026-09-22
+- **Symptom:** after the medium -> modern switch, the modern lines showed 199-336 factories REQUESTED and 0 ACTIVE for ~75 days on every run of two test beds, then 169-246 by +120 days; the owner's live production view read 246 factories WANTED on modern with the factories still on other lines. Meanwhile the park re-cut itself to the modern shape in 50 days and fielded 4 of 7 battalions empty.
+- **Cause:** MEASURED (13 runs, `documentation/MODERN_SWITCH_BRAKE_EXPERIMENT_2026-09-21.md` 7c-7f): the lag is the engine reassigning factories between production lines. `equipment_variant_production_factor` at -100 medium / +500 modern (armed, verified in `imgui show ai-strategy`, "Weighted Value" = sum of the factors / 100) zeroed the medium NEED and changed nothing else; a need-blind `equipment_production_min_factories_archetype` floor got 0 factories on a saturated pool; `can_upgrade_in_field` on any target and `UPGRADES_DEFICIT_LIMIT_DAYS` at 30 did not slow the conversion. No `NDefines` exposes the reassignment rate (`MILITARY_FACTORY_COHERENCY_BONUS` and the 20 % efficiency restart on an archetype change are the neighbouring terms).
+- **Rule:** a chassis switch is paced by the factory pool, not by templates or production weights. Do not try to hold the park or to buy the stock before the switch; make the switch itself gradual - one main-gun battalion per tier, the next tier opening only once the fielded one is filled AND adopted (`[modern-tier-ladder]`). Before proposing any brake / valve / factor / floor design for a chassis transition, read section 4 of that report.
+- **Evidence:** report sections 5-7g; saves `test8a-c` (bed 1), `test9a-c`, `test10-c`, `test11-b`, `test_bascule2`, `resultat final`; `tools/archive/modern_switch_experiment/`.
+
+### A ladder stepped on fill must also require adoption, or it runs against the unchanged requirement
+
+- **Date:** 2026-09-22
+- **Symptom:** the first tier ladder stepped its flag weekly when modern chassis in armies / required > 0.5. The flag ran 0 -> 4 in four weeks while the park stayed on 6+1 and no template with more modern battalions was ever cut; `imgui show ai_templates` had the arrow on `__T13_6` with the best template E at match 0.657.
+- **Cause:** MEASURED (save `test_bascule2`): `num_target_equipment_in_armies` is the requirement of the templates the divisions FIELD. The 6+1 park held 28.7 modern chassis per division for 25 required, so the fill read 1.1 against a requirement that only changes once the park re-cuts to the new tier - and the designer, re-picking every 14 days (`DAYS_BETWEEN_CHECK_BEST_TEMPLATE`), never had a target that stayed enabled long enough to cut a rung.
+- **Rule:** a one-way ladder on fielded equipment steps on TWO terms: the fielded tier is filled, AND the requirement has grown since the last step by a declared SHARE of the growth a full adoption would give (the park adopted the previous tier). The growth of step v -> v+1 is (v+1)/v, so a FIXED ratio is unreachable past the first tiers (1.4 dies at 3 -> 4: both reviewers caught it, and the owner's own run had sat at tier 3 for two months). Store the requirement at each step in a country variable; a cadence guard alone does not replace the adoption term. `WA_AI_TEMPLATES_has_adopted_modern_tier` is the shape.
+- **Evidence:** report section 7f; `common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt`.
+
+### imgui ai_templates lists every target of an entry, enabled or not; only the arrow is a reading
+
+- **Date:** 2026-09-22
+- **Symptom:** the target list of the modern entry showed all seven `__T13_k` tiers of every code (MTD_MAA, WAVES, HSUP, ROC ...) although exactly one tier of one code was enabled. Read as "every target is enabled", it would have falsified the flag-value enable.
+- **Cause:** MEASURED (owner screenshots 2026-09-22): the panel lists the entry's declared targets; the `enable` state is not displayed. The `->` arrow marks the engine's current target, and the `Best (all)` / `Best (role)` lines under it give the best existing template and its match.
+- **Rule:** in `imgui show ai_templates`, presence in the list proves nothing about `enable`; read the arrow and the two `Best` lines. A `log =` line inside a scripted effect is buffered while `hoi4.exe` runs - an empty `game.log` during a run does not mean the effect did not fire; read the flag from a save instead.
+- **Evidence:** report section 7f; saves `test_bascule2` (flag at 4 with 0 log lines while the exe was alive).

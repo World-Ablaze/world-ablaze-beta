@@ -950,6 +950,24 @@ WA_has_one_t2_air_doctrine = {
 	}
 }
 
+# [home-defence-spirit] Mirrors the `available` of home_defence_spirit so no call site
+# adds the spirit while it is invalid. A country whose air doctrine went down a branch
+# other than fighter never satisfies this; the engine then logs
+# "couldn't remove/replace invalid idea" every day it holds the idea.
+WA_can_take_home_defence_spirit = {
+	if = {
+		limit = {
+			original_tag = JAP
+			has_idea = JAP_subordinante_airforce
+		}
+		NOT = { has_idea = JAP_subordinante_airforce }
+	}
+	OR = {
+		has_doctrine = aces_in_wings
+		has_doctrine = aces_in_schools
+	}
+}
+
 WA_has_one_t3_air_doctrine = {
 	custom_trigger_tooltip = {
 		tooltip = WA_has_one_t3_air_doctrine_tt
@@ -1126,4 +1144,16 @@ WA_series_g_bonds_trigger = {
 
 test_jam = {
     335 = { has_contested_owner = JAP }
+}
+
+# [refineries] The refinery panel and the counter family behind it are PLAYER bookkeeping:
+# open_*_target is a setpoint only a human sets, and manage_* is a controller only a human runs.
+# They are maintained for an AI country only in a -debug launch, where the owner watches one with
+# `observe`. Outside debug that would be three every_controlled_state walks per country per week
+# for a panel nobody can open. Drop the is_debug term only if AI refineries gain a live reader.
+WA_REFINERY_panel_is_live = {
+	OR = {
+		is_ai = no
+		is_debug = yes
+	}
 }

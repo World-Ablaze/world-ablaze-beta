@@ -1,0 +1,67 @@
+############################################################################################################
+# WA AI Production - COUNTRY_GER
+############################################################################################################
+# Country layer, hand-written. The GENERATED per-design production-line strategies live in
+# WA_AI_PRODUCTION_COUNTRY_GER_TANKS.txt / _AIR.txt / _VEHICLES.txt / _ARTILLERY.txt - never edit those
+# by hand. Anything hand-authored for GER production belongs here.
+############################################################################################################
+
+# [armor-prod-category] GER armour demand top-up: +60 on the `armor` CATEGORY on top of the +100 that
+# WA_AI_PRODUCTION_DEFAULT_armor_category_push gives every armour country, i.e. 160 for GER alone.
+# It exists because GER never reaches its wanted armoured-division count: the engine's perceived need
+# for tank equipment does not track the wanted-vs-fielded division gap, and the category factor is the
+# only demand lever left after the per-chassis floors were dropped (WORK.md `armor-prod-category`).
+# Same gate as the DEFAULT push by construction - it reads the very same decision trigger, so the
+# top-up can never be armed while the base push is not.
+# Literal 60, not `constant:` - `ai_strategy value =` does not resolve constant references.
+# ASSUMES two entries of the same type+id from two blocks SUM (160), the way role_ratio entries do.
+# HOW TO TELL THAT FACT IS GONE: a save where GER's armour lines request no more factories than on a
+# build without this file - then the entries do not sum, one wins, and this lever is inert.
+WA_AI_PRODUCTION_COUNTRY_GER_armor_category_top_up = {
+
+	allowed = {
+		original_tag = GER
+	}
+	enable = {
+		WA_AI_PRODUCTION_armor_category_push = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_production_factor
+		id = armor
+		value = 35
+	}
+}
+
+# [barbarossa-train-push] Once GER completes Prepare Barbarossa, hold at least 40 military factories on
+# the train line until the free train stockpile passes 10000 (constant:wa_ai_production.trains.
+# barbarossa_floor_stock, read by the arming trigger). Rail capacity is what carries supply east, and
+# the engine's own wanted-trains figure never sizes an invasion of the USSR - it tracks current rail
+# usage, which is low until the front exists. Owner request, owner numbers.
+# Literal 40, not `constant:` - `ai_strategy value =` does not resolve constant references.
+# ASSUMES equipment_production_min_factories_archetype is a HARD allocation floor that outranks the
+# -50 equipment_variant_production_factor every country carries from WA_AI_PRODUCTION_DEFAULT_ground.txt
+# (documentation.info: "Forces the AI to allocate this many factories"); and that 40 is small enough
+# against GER's mil count in 1941 that the floor does not starve the armour and infantry lines.
+# HOW TO TELL THOSE FACTS ARE GONE: a 1941 save where GER's train line runs under 40 factories with the
+# focus taken and stock under 10000 (floor inert), or where armour/infantry lines drop to near zero
+# the month the floor arms (floor too large).
+WA_AI_PRODUCTION_COUNTRY_GER_eastern_offensive_train_floor = {
+
+	allowed = {
+		original_tag = GER
+	}
+	enable = {
+		WA_AI_PRODUCTION_should_floor_trains_eastern_offensive = yes
+	}
+
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = equipment_production_min_factories_archetype
+		id = train_equipment
+		value = 40
+	}
+}

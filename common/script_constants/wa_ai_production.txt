@@ -1,8 +1,9 @@
 ####################################################################################################
 #	World Ablaze AI - army-composition production constants.
-#	Read with `constant:wa_ai_production.<group>.<key>` (HOI4 1.18 script constants) from
-#	WA_AI_PRODUCTION_armor_budget.txt (the runtime role_ratio emitter). Full restart, not `reload`,
-#	when tuning: the emitter reconciles against a stored book, it does not re-derive from the file.
+#	Read with `constant:wa_ai_production.<group>.<key>` (HOI4 1.18 script constants) from the
+#	production systems: the role_ratio emitter WA_AI_PRODUCTION_armor_budget.txt, the maintenance
+#	and tank triggers, and the armour-template latches. Full restart, not `reload`, when tuning the
+#	emitter: it reconciles against a stored book, it does not re-derive from the file.
 ####################################################################################################
 
 wa_ai_production = {
@@ -103,6 +104,48 @@ wa_ai_production = {
 	# variants share the train_equipment archetype (common/units/equipment/trains.txt).
 	trains = {
 		armored_reserve = 10000
+
+		# [barbarossa-train-push] Free train stockpile (num_equipment@train_equipment, strict >) at
+		# which the eastern-offensive train floor releases. Same bar as armored_reserve by the owner's
+		# numbers, kept as its own key because the two answer different questions: one picks a VARIANT,
+		# this one ends a 40-factory ALLOCATION floor. Assumes trains are barely consumed in peace, so
+		# a single bar with no release hysteresis will not oscillate the 40 factories.
+		barbarossa_floor_stock = 10000
+	}
+
+	# [truck-floor-ladder] The truck floor's stock bars, read as `has_equipment motorized_equipment
+	# < ...` (the FREE pool). Three bars, strictly ordered deep < arm < release:
+	#   deep_starve_stock  750  - the deep tier arms and the shallow tier's hold ends here
+	#   (arm)             1500  - wa_ai_lend_lease.motorized.starve, the shallow tier's arm bar
+	#   release_stock     3000  - the shallow tier's HOLD bar, the Schmitt partner of the arm bar
+	# A floor that armed and released on one bar would drop 30-45 factories the month it crosses
+	# it, drain, and re-arm; the release bar makes re-arming cost a real 1500-truck drain.
+	#
+	# The bars are ABSOLUTE, not the num_target_equipment_in_armies_k ratio the [maintenance-floor]
+	# doctrine below makes the rule, and deliberately so: supply-hub motorization costs 500 trucks
+	# per hub (SUPPLY_HUB_FULL_MOTORIZATION_TRUCK_COST) and NO division establishment counts it, so
+	# a ratio against what the armies require would delete the hub demand entirely. Do not "correct"
+	# these into a ratio without a second term for the hubs. Assumes the ordering above - a deep bar
+	# at or above the arm bar makes the shallow band unreachable.
+	trucks = {
+		deep_starve_stock = 750
+		release_stock     = 3000
+
+		# The ladder itself. floor_* is the band floor, deep_add_* the emergency tier that SUMS on
+		# top of it (totals 15 / 24 / 37 / 45). Monotone by construction: read them in order, and a
+		# band that owes less than the band below it is the bug this group exists to prevent.
+		# Mirrored by hand into the ai_strategy payloads (`value =` cannot resolve `constant:`) and
+		# held equal by tools/constants_registry.json. Assumes the motorized archetype's
+		# max_military_factories (75) stays above the deepest total.
+		floor_small      = 3
+		floor_medium     = 6
+		floor_large      = 10
+		floor_major      = 16
+		floor_supermajor = 22
+		floor_superpower = 30
+		deep_add_large   = 5
+		deep_add_major   = 8
+		deep_add_top     = 15
 	}
 
 	# [air-park-caps] Force caps of the air production decisions (WA_AI_PRODUCTION_air.txt): the
@@ -274,9 +317,87 @@ wa_ai_production = {
 		# Armour is the deeper pair: a chassis is two orders of magnitude dearer than a towed gun
 		# (MEASURED build_cost_ic 200 per chassis), so one factory is a trickle there and a real
 		# flow for a support gun.
-		floor_base            = 2	# armour chassis
-		floor_deep_add        = 3	# added above industry.tier_large_mils -> 5
+		floor_base            = 5	# EVERY armour chassis archetype fielded by the army, variants included
 		ground_floor_base     = 1	# support equipment
 		ground_floor_deep_add = 2	# -> 3 here; + the [minor-gun-floor] baseline of 1 = 4 on anti-tank
+	}
+
+	# [modern-switch-amorce] The medium role fields the MODERN chassis on a one-way latch
+	# (WA_AI_TEMPLATES_update_modern_chassis_latch). The switch swaps 4 medium_armor_battalion_line
+	# for 4 modern ones and a battalion needs 25 chassis (MEASURED, common/units/armor_tanks.txt),
+	# so the latch used to retarget the whole medium park onto a stockpile of 0.
+	#
+	# THE BAR IS A COVERAGE RATIO, NOT AN ABSOLUTE STOCK. An absolute seed cannot work: set it low
+	# and a big park still goes hollow, set it high and a small country never reaches it at its
+	# minimum factories. The two failure modes trade against each other and no single number wins.
+	# The park itself is the scale - and it is MEASURABLE: before the switch those 4 slots demand
+	# medium_tank_chassis, after it they demand modern, so `num_target_equipment_in_armies@
+	# medium_tank_chassis` IS the demand the switch hands to the modern chassis.
+	#   cover_ratio  = (modern held, spares + in armies) / (that demand), required before the switch
+	#   min_park     = demand below which the switch can hollow nothing and is allowed outright
+	# It is a cover VERIFICATION, not a capability test (the capability test is the band below):
+	# captured and lend-leased chassis count, so a country can arm the latch with no line of its own.
+	#
+	# catchup_fill_* are the SCHMITT PAIR of the post-switch catch-up floor - fill = chassis in the
+	# armies over what those armies require. Never equal: a park sitting on one bar would toggle the
+	# block every evaluation. The catch-up floor SUMS with the flat maintenance floor, on purpose -
+	# a park-wide retarget is not a loss-replacement problem.
+	#
+	# The prime_* rows are the PRIMING line that fills it - see WA_AI_PRODUCTION_DEFAULT_tanks.txt.
+	# band_*_min are the industrial cut (read as `> constant:`, so the bands are disjoint by
+	# construction); floor_* are the factory counts, and the ai_strategy payloads mirror them by
+	# hand because ai_strategy does not resolve constant: (registry group
+	# production_armor_priming_floor_*).
+	#
+	# NO month figure is asserted for the priming, and none can be derived here. MEASURED
+	# (common/defines/05_defines.lua): WA rewrites the whole production ramp - an UNPOWERED mil
+	# factory produces nothing (BASE_FACTORY_SPEED_MIL 0.0, vanilla 3.5), a powered one 2.5 (vanilla
+	# 4.5), a new line starts at 1 % (vanilla 10) and the base efficiency CAP is 10 % (vanilla 50),
+	# lifted only by the production_factory_max_efficiency_factor the country actually holds. The
+	# rate therefore depends on that country's modifier set, and how the modifier composes with the
+	# base is documented nowhere - ASSUMED. Read the line's output off the production screen in game
+	# before retuning these; the fact that a band is too small is a campaign where a country sits
+	# inside the window for years and the harness `amorce:` row shows the stock barely moving.
+	armor = {
+		modern_switch_min_park       = 100	# a park below this cannot be hollowed; also the fill guard
+		modern_prime_band_medium_min = 249
+		modern_prime_band_large_min  = 399
+		modern_prime_floor_small     = 6
+		modern_prime_floor_medium    = 15
+		modern_prime_floor_large     = 30
+		modern_catchup_fill_enable   = 0.60	# arm the catch-up under 60 % filled
+		modern_catchup_fill_abort    = 0.85	# release at 85 % - hysteresis, never equal
+		modern_catchup_floor_small   = 12
+		modern_catchup_floor_medium  = 30
+		modern_catchup_floor_large   = 60
+
+		# [modern-switch-amorce] equipment_variant_production_factor applied to the MEDIUM main gun
+		# while the country is priming its modern line. NEGATIVE on purpose: MEASURED in game
+		# 1943.5 (GER, saves test_bascule / bascule2), the 30-factory priming floor was REQUESTED
+		# and 0 factories were assigned, because medium carried +150 and outbid it. A need-blind
+		# floor does not preempt a saturated pool - the competition has to come down. Replacements
+		# survive on the demand-driven maintenance floor, which a factor cannot touch.
+		modern_prime_medium_factor   = -50
+
+		# Free modern spares needed before already-fielded divisions are re-cut to the modern
+		# shape (WA_AI_TEMPLATES_can_convert_park_to_modern -> the modern family's
+		# can_upgrade_in_field). One division's worth, so conversions throttle themselves: they
+		# drain the spares, the gate closes, the lines refill it. Deliberately a SEPARATE number
+		# from modern_switch_min_park even though both read 100 - one is free stock, the other a
+		# demand, and tying them would drift the day either is retuned.
+		modern_convert_spares_min    = 100
+
+		# [modern-tier-ladder] The modern family's targets exist once per TIER of modern main-gun
+		# battalions; WA_AI_TEMPLATES_update_modern_tier_latch climbs one tier per monthly pulse
+		# while BOTH hold. fill_bar: modern chassis held in the armies over what they require -
+		# half the deficit, because a tier that waits for its deficit to close lets the modern
+		# need collapse and the engine takes the factories back. adoption_share: the requirement
+		# must have grown by this share of the growth a FULL adoption of the tier gives ((v+1)/v
+		# from tier v), i.e. at least this share of the park re-cut to the tier. A fixed ratio is
+		# unreachable from tier 3 on; no adoption term at all lets the flag run one step per pulse
+		# against an unchanged requirement. Readers: WA_AI_TEMPLATES_is_modern_tier_filled,
+		# WA_AI_TEMPLATES_has_adopted_modern_tier. The ceiling of the flag is registry max_value.
+		modern_tier_fill_bar         = 0.5
+		modern_tier_adoption_share   = 0.5
 	}
 }

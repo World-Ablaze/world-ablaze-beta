@@ -17,7 +17,14 @@ couche 4 qui appellent des triggers de couche 3.
 | 1 | **DÉCLARATION** | « Quelle est la valeur ? » | `common/script_constants/wa_ai_*.txt` + `common/scripted_triggers/WA_AI_CONFIG*.txt` + `common/scripted_triggers/WA_AI_TECHTREE_membership.txt` (GÉNÉRÉ, cf. §5) | rien |
 | 2 | **OBSERVATION** | « Qu'est-ce qui est vrai, maintenant ? » | `WA_AI_<SYS>_is_*` / `_has_*` / `_holds_*` dans `common/scripted_triggers/WA_AI_<SYS>_*.txt` | couche 1 |
 | 3 | **DÉCISION** | « Faut-il agir ? » | `WA_AI_<SYS>_should_*` / `_can_*`, mêmes fichiers | couches 1 + 2 |
-| 4 | **CONSOMMATION** | — | `common/ai_strategy/`, `common/scripted_effects/`, `events/`, `common/decisions/` | couche 3 (plus l'adressage Country `allowed = { tag = X }`) |
+| 4 | **CONSOMMATION** | — | `common/ai_strategy/`, `common/scripted_effects/`, `events/`, `common/decisions/`, `common/ai_templates/` | couche 3 (plus l'adressage Country `allowed = { tag = X }`) |
+
+`common/ai_templates/` est une surface de consommation comme les autres — un `enable`,
+un `can_upgrade_in_field` ou un `upgrade_prio` nomme un trigger de couche 3 — mais
+`tools/check_ai_layers.py` **ne balaie pas ce dossier** : ses fichiers sont GÉNÉRÉS
+(`tools/gen/gen_ai_armor_templates.py`), donc la règle se tient dans le registre source
+et non par grep. Ajouter un terme de couche 2 dans un champ de template est une dette que
+le cliquet ne verra pas ; c'est la revue du registre qui l'attrape.
 
 La couche est **portée par le nom** (préfixe + verbe) : c'est ce qui rend le modèle vérifiable
 par grep. Les triggers existants antérieurs au modèle ne sont **pas** renommés en masse
@@ -110,6 +117,8 @@ Un gate de couche 3 s'écrit `WA_AI_<SYS>_should_[<tag>_][not_]<intention>[_N]` 
   `_10/_11`) : légitime tant que la séquence existe ; un `_2` qui ne fait pas partie d'une
   échelle est un nom à finir d'écrire.
 - Suffixe `_allowed` : la moitié `allowed` d'un bloc converti dont l'`enable` a son propre gate.
+
+- `WA_AI_TEMPLATES_ARMOR_<famille>_wins_<chaîne>_<candidat>` (GENERATED, `tools/gen/gen_ai_armor_templates.py`) : OBSERVATION de couche 2, un verbe de plus que `is_`/`has_`/`holds_`. Le nom répond « quel candidat remporte cette chaîne de priorité » — exactement un candidat par chaîne est vrai, y compris `_none`, ce que `is_`/`has_` ne dit pas. Le corps ne lit que les triggers d'éligibilité déjà écrits à la main et les nie dans l'ordre du registre ; il ne décide rien. Verbe réservé à ce générateur : ne pas l'étendre à du code écrit à la main sans repasser par cette section.
 
 - `has_branch_<cap>` est une OBSERVATION de couche 2, pas une décision : le nom dit `has_`, et
   c'est délibéré. La première écriture s'appelait `can_ever_<cap>` — `_can_` est le verbe de

@@ -680,6 +680,16 @@ WA_AI_PATHFIND_PROV_get_neighbors = {
 			set_temp_variable = { _neighbor_passes_control = 1 }
 		}
 
+		### [impassable-rail-guard] A province of an impassable state is never a valid step: the
+		### engine refuses build_railway there and land units cannot enter it either, so the filter
+		### is unconditional across _pathfind_prov_type rather than rail-only. The generated
+		### adjacency deliberately still CONTAINS these provinces - it is the input of the offline
+		### landmass flood fill (tools/gen/map_generators/landmass.py), which must keep them.
+		if = {
+			limit = { check_variable = { global.WA_AI_MAP_province_impassable^neighbor_id = 1 } }
+			set_temp_variable = { _neighbor_passes_control = 0 }
+		}
+
 		### Add to valid neighbors if control check passed
 		if = {
 			limit = { check_variable = { _neighbor_passes_control = 1 } }

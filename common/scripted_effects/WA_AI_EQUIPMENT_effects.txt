@@ -47,6 +47,11 @@
 # gates. See the fail-safe note in the trigger file.
 ###############################################################################
 
+# Life of every one-sample carry flag below. Protects: a confirmation chain counts CONSECUTIVE
+# monthly pulses. Assumes: one pulse gap <= 31 d < 45 < two pulse gaps (>= 59 d), so a carry
+# survives exactly one gap and a clean month breaks the chain by expiry alone.
+@WA_AI_EQUIPMENT_CARRY_DAYS = 45
+
 WA_AI_EQUIPMENT_update_context_flags = {
 
 	### ------------------------------------------------------------------
@@ -59,7 +64,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_steel_small_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_steel_small_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_small_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_small_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -68,7 +73,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_steel_large_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_steel_large_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_large_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_steel_large_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -77,7 +82,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_alu_small_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_alu_small_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_small_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_small_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -86,7 +91,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_alu_large_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_alu_large_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_large_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_alu_large_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	# Chromium and tungsten - the jet-era pair. Same two-consecutive-months
@@ -99,7 +104,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_chr_small_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_chr_small_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_small_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_small_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -108,7 +113,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_chr_large_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_chr_large_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_large_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_chr_large_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -117,7 +122,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_tun_small_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_tun_small_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_small_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_small_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	if = {
@@ -126,7 +131,7 @@ WA_AI_EQUIPMENT_update_context_flags = {
 			limit = { has_country_flag = WA_AI_EQUIPMENT_tun_large_armed }
 			set_country_flag = { flag = WA_AI_EQUIPMENT_tun_large_ok value = 1 days = 180 }
 		}
-		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_large_armed value = 1 days = 45 }
+		set_country_flag = { flag = WA_AI_EQUIPMENT_tun_large_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 	}
 
 	### ------------------------------------------------------------------
@@ -230,13 +235,14 @@ WA_AI_EQUIPMENT_update_context_flags = {
 # ai_equipment/*_tank.txt flip on a signal that cannot chatter, and flip BACK when the economy
 # recovers. Assumes: `resource@chromium < 0` only when trade could not close the gap. Gone when:
 # the strong module stops costing chromium (01_generic_tank_modules.txt) - the pair is then dead weight.
-# ENTER after two consecutive deficit months (the 45-day armed flag carries the first sample over
-# the month gap). EXIT when the dwell has elapsed AND two consecutive months read no deficit
+# ENTER after THREE consecutive deficit months (two 45-day armed stages carry the earlier samples
+# over the month gaps; a stage outlives one pulse gap and no more, so a clean month breaks the
+# chain by expiry alone). EXIT when the dwell has elapsed AND two consecutive months read no deficit
 # (equilibrium; the 45-day recover flag carries the first). NOT on a surplus bar: the trade AI
 # buys to equilibrium and never past it, so `> N` is unreachable for an importer (lessons-log).
 # Reachability: the flip itself removes the chromium draw, so an importer returns to ~0 and a
 # producer to its retained surplus - both read "no deficit" - hence the return is ALWAYS
-# reachable, and a return the economy cannot carry re-trips the entry after two months. Dwell =
+# reachable, and a return the economy cannot carry re-trips the entry after three months. Dwell =
 # 6 months on first entry, doubled on every re-entry, capped at 24: each failed return slows
 # the next swing (6 -> 12 -> 24 months between swings). Every transition opens the 120-day
 # XP window read by WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign.
@@ -259,7 +265,7 @@ WA_AI_EQUIPMENT_update_shortage_latch_chromium = {
 				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
 			}
 			else = {
-				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_recover_armed value = 1 days = 45 }
+				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_recover_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 			}
 		}
 	}
@@ -267,8 +273,9 @@ WA_AI_EQUIPMENT_update_shortage_latch_chromium = {
 		if = {
 			limit = { WA_AI_EQUIPMENT_has_chromium_deficit = yes }
 			if = {
-				limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_armed }
-				clr_country_flag = WA_AI_EQUIPMENT_chr_short_armed
+				limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_armed_2 }
+				clr_country_flag = WA_AI_EQUIPMENT_chr_short_armed	# belt-and-braces: expired by now
+				clr_country_flag = WA_AI_EQUIPMENT_chr_short_armed_2
 				set_country_flag = WA_AI_EQUIPMENT_chr_short_latched
 				set_variable = { WA_AI_EQUIPMENT_chr_short_months = 0 }
 				if = {
@@ -282,8 +289,14 @@ WA_AI_EQUIPMENT_update_shortage_latch_chromium = {
 				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
 				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
 			}
+			else_if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_chr_short_armed }
+				# Second deficit month. Stage 1 is left to expire on its own (45d < two pulse gaps),
+				# so only stage 2 can reach the third month - no extra month is ever granted.
+				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_short_armed_2 value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
+			}
 			else = {
-				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_short_armed value = 1 days = 45 }
+				set_country_flag = { flag = WA_AI_EQUIPMENT_chr_short_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 			}
 		}
 	}
@@ -293,13 +306,14 @@ WA_AI_EQUIPMENT_update_shortage_latch_chromium = {
 # ai_equipment/*_tank.txt flip on a signal that cannot chatter, and flip BACK when the economy
 # recovers. Assumes: `resource@tungsten < 0` only when trade could not close the gap. Gone when:
 # the strong module stops costing tungsten (01_generic_tank_modules.txt) - the pair is then dead weight.
-# ENTER after two consecutive deficit months (the 45-day armed flag carries the first sample over
-# the month gap). EXIT when the dwell has elapsed AND two consecutive months read no deficit
+# ENTER after THREE consecutive deficit months (two 45-day armed stages carry the earlier samples
+# over the month gaps; a stage outlives one pulse gap and no more, so a clean month breaks the
+# chain by expiry alone). EXIT when the dwell has elapsed AND two consecutive months read no deficit
 # (equilibrium; the 45-day recover flag carries the first). NOT on a surplus bar: the trade AI
 # buys to equilibrium and never past it, so `> N` is unreachable for an importer (lessons-log).
 # Reachability: the flip itself removes the tungsten draw, so an importer returns to ~0 and a
 # producer to its retained surplus - both read "no deficit" - hence the return is ALWAYS
-# reachable, and a return the economy cannot carry re-trips the entry after two months. Dwell =
+# reachable, and a return the economy cannot carry re-trips the entry after three months. Dwell =
 # 6 months on first entry, doubled on every re-entry, capped at 24: each failed return slows
 # the next swing (6 -> 12 -> 24 months between swings). Every transition opens the 120-day
 # XP window read by WA_AI_EQUIPMENT_should_spend_xp_on_grade_redesign.
@@ -322,7 +336,7 @@ WA_AI_EQUIPMENT_update_shortage_latch_tungsten = {
 				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
 			}
 			else = {
-				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_recover_armed value = 1 days = 45 }
+				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_recover_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 			}
 		}
 	}
@@ -330,8 +344,9 @@ WA_AI_EQUIPMENT_update_shortage_latch_tungsten = {
 		if = {
 			limit = { WA_AI_EQUIPMENT_has_tungsten_deficit = yes }
 			if = {
-				limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_armed }
-				clr_country_flag = WA_AI_EQUIPMENT_tun_short_armed
+				limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_armed_2 }
+				clr_country_flag = WA_AI_EQUIPMENT_tun_short_armed	# belt-and-braces: expired by now
+				clr_country_flag = WA_AI_EQUIPMENT_tun_short_armed_2
 				set_country_flag = WA_AI_EQUIPMENT_tun_short_latched
 				set_variable = { WA_AI_EQUIPMENT_tun_short_months = 0 }
 				if = {
@@ -345,8 +360,14 @@ WA_AI_EQUIPMENT_update_shortage_latch_tungsten = {
 				set_country_flag = { flag = WA_AI_EQUIPMENT_grade_redesign_window value = 1 days = 120 }
 				add_to_variable = { WA_TLM_gdn_flip_n = 1 }
 			}
+			else_if = {
+				limit = { has_country_flag = WA_AI_EQUIPMENT_tun_short_armed }
+				# Second deficit month. Stage 1 is left to expire on its own (45d < two pulse gaps),
+				# so only stage 2 can reach the third month - no extra month is ever granted.
+				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_short_armed_2 value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
+			}
 			else = {
-				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_short_armed value = 1 days = 45 }
+				set_country_flag = { flag = WA_AI_EQUIPMENT_tun_short_armed value = 1 days = @WA_AI_EQUIPMENT_CARRY_DAYS }
 			}
 		}
 	}

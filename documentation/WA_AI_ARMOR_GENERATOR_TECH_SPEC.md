@@ -1,25 +1,25 @@
 # AI Armor Template Generator — Technical Implementation Specification
 
 Date: 2026-09-18. Subject: `armor-template-generator`.
-Status: implementation design; no generator or gameplay change has been implemented by this document.
-Functional authority: [WA_AI_ARMOR_GENERATOR_SPEC.md](WA_AI_ARMOR_GENERATOR_SPEC.md), including the latest owner decisions A1–A11.
+Status: all five families are generated. Owner revision 2026-09-19 supersedes the ordinary-light transfer design: post-boundary light targets remain light-only and carry no `replace_with`; only the Soviet light-support family retains its historical conversion graph. Step 6 (in-game validation) is owed.
+Functional authority: [WA_AI_ARMOR_GENERATOR_SPEC.md](WA_AI_ARMOR_GENERATOR_SPEC.md), including the latest owner decisions A1-A12.
 
 This document specifies proposed interfaces and algorithms. Paths marked **new** do not exist yet. Statements about existing code are labeled; requirements and proposed designs describe what must be implemented, not measured engine behavior.
 
 ## 1. Scope and Non-negotiable Behavior
 
-Implement one Python generator that owns the five armor template files, their generic selection logic, generated selection predicates, and a machine-readable manifest connecting every selection code to its targets and conversion path.
+Implement one Python generator that owns the five armor template files, their generic selection logic, generated selection predicates, and a machine-readable manifest connecting every selection code to its target.
 
 The implementation must preserve:
 
-- Existing startup/monthly scheduling, admission rules, explicit progression memories, and the Soviet mission/conversion/retirement state machine.
+- Existing startup/monthly scheduling and admission rules. Preserve the ordinary light park as light-only and preserve the Soviet mission, conversion and intentional retirement policy.
 - Existing role identities: light and light support share `light_armor`; medium and modern share `medium_armor`; heavy uses `heavy_armor`.
-- A1's existing readiness alternatives and threshold, A2's live reevaluation, A5's Soviet heavy alternative and retirement, and A6's heavy-support/heavy-division exclusion.
+- A1 readiness and A2 reevaluation. `heavy_armor_company_divisional` is the sole exception to the ban on heavy components outside heavy divisions; it is admitted in the medium and modern families only, and never in heavy, light or light-support divisions.
 - The approved 10-slot line allocation and independent component progression; no universal upgrade of all variants when the main chassis changes.
-- The exact Armoured Waves adjustments, including their explicit precedence over attempts to force a calculated width of 30.
-- The named regimental exceptions: medium SPG when no heavy equivalent exists, and the existing heavy TD unit despite its medium-equipment requirement.
+- Armoured Waves `combat_width = +0.5`, a flat per-battalion addition, with the exact screenshot adjustments -1 main tank / -2 mechanized; together they hold the wave target at 30. Validate corrected doctrine inputs; do not silently use the installed -0.4 value.
+- Heavy priority after all non-heavy candidates, filtered by family and slot before selection, support companies included. Retain explicit non-heavy support fallbacks in heavy divisions; remove the obsolete heavy-TD/medium-equipment waiver.
 
-No save migration is required. New campaigns must still convert their starting and subsequently created divisions. Do not rewrite other infantry templates, change unit equipment definitions, redesign doctrine effects, or add a new recruitment role for modern armor.
+Countries configured for 20-width divisions still receive 30-width armor targets. The Armoured Waves doctrine correction is an explicit prerequisite of `--apply`, applied by `python tools/gen/gen_ai_armor_templates.py --doctrine-patch` **in the same commit as the generated templates**. **MEASURED (2026-09-19)** - shipping the +0.5 alone makes the CURRENT live templates 37.5 wide (base) and 45 wide (wave twin, 18 battalions) for any country holding the doctrine, so the value and the templates land together or neither does. The generator neither edits doctrine during `--apply` nor substitutes its value silently. No other doctrine redesign is included. No save migration is required. Do not rewrite other infantry templates, change unit equipment definitions, redesign doctrine effects, or add a new recruitment role for modern armor.
 
 ## 2. Existing Interfaces and Impact Surface
 
@@ -28,7 +28,7 @@ No save migration is required. New campaigns must still convert their starting a
 | Scheduling | **MEASURED** — `common/on_actions/WA_AI_startup_on_actions.txt` and `WA_AI_misc_on_actions.txt:263` call progression updates before template calculation. Keep that order and cadence. |
 | Orchestration | **MEASURED** — `WA_AI_TEMPLATES_calculate_all_templates` in `common/scripted_effects/WA_AI_TEMPLATES_effects.txt:730` calculates medium before light, and calls the historical light-support path only once per pass. Preserve the call contract. |
 | Numeric-to-flag interface | **MEASURED** — `WA_AI_TEMPLATES_update_target_template` takes `_template_type_code` and `_template_value`, clears the corresponding flag, and writes a nonzero value. `common/scripted_localisation/WA_AI_templates_scripted_loc.txt` maps types 4/5/6/14 to light/medium/heavy/light-support flags. Retain this interface. |
-| Modern output | **MEASURED** — `tools/gen/gen_ai_medium_modern_mirror.py` currently owns `_armored_medium_modern.txt`, with a +500 offset and composition overrides. Replace its ownership explicitly; it must not remain a second writer. |
+| Modern output | **DONE** - `tools/gen/gen_ai_medium_modern_mirror.py` is deleted and `_armored_medium_modern.txt` is written by the new generator as its own family, with its own code range `8000-8999` instead of the +500 offset. The constants group `templates_modern_tier_offset` is retired with it. |
 | Existing checker | **MEASURED** — `tools/check_templates.py:557` reads one hard-coded effects file and understands existing code offsets. Its analysis must be extended when generic selectors move to generated files. A wrapper calling another effect is not sufficient for its current scan. |
 | Production | **MEASURED** — `common/scripted_triggers/WA_AI_PRODUCTION_tanks.txt` shares component eligibility predicates with template selection. Separate “may produce/use a component” from the generated “wins this slot” predicates. Do not make production contingent on already winning a template slot. |
 | Role budget | **MEASURED** — `common/scripted_effects/WA_AI_PRODUCTION_armor_budget.txt` reconciles role shares after calculation. Keep the same role set and weights; a modern chassis is not an additional budget share. |
@@ -41,18 +41,18 @@ Before applying gameplay output, produce an impact inventory listing every defin
 
 | Path | Ownership and purpose |
 |---|---|
-| `tools/armor_templates_registry.json` **new** | Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles, exceptions, and transition profiles. No country-tag lists or copied technology lists. |
-| `tools/gen/gen_ai_armor_templates.py` **new** | CLI entry point. Resolve repository root from the script location. Standard library only. |
-| `tools/gen/armor_templates/` **new** | Small implementation package: `model.py`, `inputs.py`, `resolve.py`, `transitions.py`, `emit.py`, `validate.py`. Avoid a framework with one class per template. |
+| `tools/armor_templates_registry.json` | EXISTS. Human-maintained schema-versioned families, candidates, chains, slot mappings, composition profiles and exceptions. Ordinary light declares no transition; Soviet light-support conversion remains in its declared profiles and handwritten calculator. No copied technology lists. |
+| `tools/gen/gen_ai_armor_templates.py` | EXISTS. CLI entry point, standard library only, resolves the repository root from its own location. |
+| `tools/gen/armor_templates/` | EXISTS: `model.py` (registry schema), `inputs.py` (read-only adapters over `common/units`, the scripted triggers, the sub-doctrine and the defines), `resolve.py` (pure resolver + enumeration), `emit.py`, `validate.py`, `transitions.py`. |
 | `common/ai_templates/WA_AI_TEMPLATES_armored_{light,light_support,medium,medium_modern,heavy}.txt` | Fully generated. Preserve appropriate role metadata, front-role override, reinforcement priority, icons, and naming groups from explicit registry profiles. |
-| `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt` **new** | Generated generic selection effects. Contains no duplicate definitions of public wrappers. |
-| `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` **new** | Generated decision predicates for candidate winners, template activation, semantic code sets, and bridge entry/exit conditions. |
-| `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` | Retains scheduling-facing wrappers, flag writer, admission/spirit handling, existing progression updates, and Soviet phase orchestration. Replace only generic armor calculation bodies with calls to generated implementations. |
+| `common/scripted_effects/WA_AI_TEMPLATES_ARMOR_generated.txt` | WRITTEN. Generated selection ladders, one effect per template flag. Rendered at 20.7 KiB. |
+| `common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt` | WRITTEN. Generated decision predicates: the chain winners, the two industrial cuts and the semantic code sets. Rendered at 13.6 KiB. |
+| `common/scripted_effects/WA_AI_TEMPLATES_effects.txt` | Retains scheduling-facing wrappers, flag writer, admission/spirit handling, existing progression updates, and Soviet mission/retirement orchestration. Replace generic armor calculation bodies with generated implementations, and deliberately retire conversion-only phases/codes/readers after an impact inventory. |
 | `common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt` | Retains shared equipment/capability policy. Make A7's obsolescence change in reviewed component predicates; do not duplicate stock/resource tests in generated template blocks. |
-| `common/script_constants/wa_ai_armor_templates.txt` **new** | Authoritative shared numeric tuning: base counts, factory thresholds, variant count, Armoured Waves deltas, and transition thresholds. Read by Python as input; do not maintain a second numeric copy in JSON. Reuse the existing readiness threshold in `wa_ai_production.txt`. |
-| `tools/generated/armor_templates_manifest.json` **new** | Generated signatures, codes, group ownership, conditions, full slot compositions, actual equipment demand, conversion edges, exemptions, and input digests. No timestamps in deterministic artifacts. |
+| `common/script_constants/wa_ai_armor_templates.txt` **new** | Authoritative shared numeric tuning: base counts, factory thresholds, variant count and Armoured Waves count deltas. The doctrine file owns its Armoured Waves width modifier; register any validation mirror instead of duplicating a tunable doctrine value. Read by Python as input; do not maintain a second numeric copy in JSON. Reuse the existing readiness threshold in `wa_ai_production.txt`. |
+| `tools/generated/armor_templates_manifest.json` | WRITTEN. One row per code: name, categorical facts, full composition, width. The ladder computes the code arithmetically, so no per-target trigger conjunction is carried. Rendered at 2.1 MiB. |
 | `tools/constants_registry.json` | Reviewed integration edit: register new rendered numeric mirrors and retire the old modern-tier offset group only when its source and mirror are both removed. Not an unrestricted generator rewrite target. |
-| `tools/tests/test_armor_templates.py` **new** | Hand-authored fixtures and semantic/compiler/CLI tests using `unittest`. |
+| `tools/tests/test_armor_templates.py` | EXISTS. 34 hand-authored `unittest` cases over the owner decisions, the code assignment and the rendering. |
 | `documentation/WA_AI_DIVISION_TEMPLATES.md` | Update maintenance instructions and code/role model when the implementation ships. |
 
 Retire the old mirror generator as a writer in the same change that transfers ownership. Either remove it after updating every caller, or retain a deprecated forwarding CLI that invokes the new pipeline and cannot emit its old mirror independently.
@@ -82,11 +82,12 @@ Use JSON with `schema_version = 1`; reject unknown fields, duplicate IDs, missin
 | Family | ID, output file, role-group ID, engine role, flag, existing type code, admission predicate, chassis selection policy, permitted profiles. |
 | Candidate | ID, semantic chassis class, role/capability, actual unit IDs by slot, unlock/eligibility predicate references, optional CONFIG policy reference, successor relationships used by A7. |
 | Chain | ID, slot, ordered candidate IDs, empty/default candidate, optional capped-tail rule. Numeric order is explicit; JSON object ordering is not semantic. |
-| Profile | ID, family restrictions, mobile-infantry type, support policy, base-count constant references, applied modifiers, metadata, optional preserved legacy phase. |
-| Transition | ID, source-profile set, destination-profile rule, local group, entry condition, source-presence condition, phase/exit handling, match thresholds, destination pinning policy. |
+| Profile | ID, family restrictions, mobile-infantry type, support policy, base-count constant references, applied modifiers, metadata, optional preserved mission profile. |
+| Profile (DECLARED family) | ID, the codes it answers, then EITHER `facts` - resolved by the same composition rules as any enumerated target - OR explicit `regiments` / `regimental_support` / `support` sections kept verbatim. Optional `replace_with` (must name a profile of the SAME family: a cross-group pointer does not resolve), `replace_at_match`, `target_min_match`, `enable_extra` trigger terms, `custom_icon`, `reinforce_prio`, `upgrade_prio_base`, and `width_exception` naming why this target is not 30 wide. Declaration ORDER is preserved: it is what breaks a tie between two targets at equal upgrade_prio. |
+| Transition | Empty for ordinary light. Country-specific light-support conversion remains expressed by declared profiles and handwritten phase logic. |
 | Exception | Exact ID, eligible families/slots/unit IDs, reason, owner decision, actual equipment mapping, permitted diagnostic. No wildcard “ignore heavy checks.” |
 
-Keep three different concepts in the model: `medium_support` (the 6/3/0 substitute), `medium_infantry_support` (a candidate in the three-battalion chain), and `heavy_divisional_support` (a support company). Their names must never alias.
+Keep four different concepts in the model, never aliased: `medium_support` (the 6/3/0 line substitute), `medium_infantry_support` (a candidate in the three-battalion chain), `heavy_divisional_support` (the A6 exception, unit `heavy_armor_company_divisional`, medium and modern only), and `heavy_support_battalion` (unit `heavy_support_armor_battalion_divisional`, used by no template today, scope open under A12).
 
 Example candidate mapping:
 
@@ -96,11 +97,17 @@ Example candidate mapping:
   "semantic_class": "heavy",
   "eligibility_ref": "WA_AI_TEMPLATES_use_heavy_td_armor",
   "units": {"regimental_support": "heavy_tank_destroyer_company_regimental"},
-  "exceptions": ["owner_heavy_td_uses_medium_equipment"]
+  "allowed_families": ["heavy"]
 }
 ```
 
-The example's semantic class does not override the equipment definition. Parse the unit's actual `need` block and report medium TD demand. Preserve its current availability policy under A1; do not silently add a new medium-stock threshold because the unit is an exception.
+**MEASURED** — Parse actual demand: after upstream commit `e7e9fb979b`, this unit requires 12 heavy TD chassis. Validate that mapping; a medium demand is a regression, not an authorized exception. A1 readiness policy remains separate from actual equipment demand.
+
+`tier_ladder` (optional, per family; A22): `{flag, unit, fallback_unit, max_value}`. `unit` must be
+the family's `main_tank`. `emit._tier_blocks` renders N targets per composition group (N = the
+composition's count of `unit`), all on the group's codes; `model.py` validates the shape;
+`check_templates.py` treats a flag written by `set_country_flag = { flag = F value = N }` in the
+templates effects file as reachable at N, so the ladder flag is not reported as calculator-less.
 
 ### 4.2 Input adapters
 
@@ -124,14 +131,14 @@ Implement a pure function:
 resolve(family_id: str, facts: CountryFacts, policy: Registry) -> Selection
 ```
 
-`CountryFacts` is a test/compile-time representation of booleans and categories, not a Python connection to the running game. Runtime evaluates corresponding scripted predicates. `Selection` is either disabled with a reason, or contains a semantic signature, composition, selected candidates, exceptions, and transition context.
+`CountryFacts` is a test/compile-time representation of booleans and categories, not a Python connection to the running game. Runtime evaluates corresponding scripted predicates. `Selection` is either disabled with a reason, or contains a semantic signature, composition, selected candidates, exceptions and admission context.
 
 ### 5.1 Evaluation order
 
 1. Evaluate existing admission and family policy. A disabled family returns code zero through the existing writer. Preserve historical park overrides.
 2. Select the main chassis family and mobile-infantry form, honoring existing explicit progression flags. Modern remains a chassis tier of the medium role.
 3. Resolve candidate eligibility. Preserve existing unlock and readiness terms, applying A7 as described below.
-4. Filter each slot's candidates by family restrictions and exact owner-authorized exceptions. Filter before priority selection.
+4. Filter each slot by family before priority selection: heavy candidates only in heavy divisions, support companies included. The single exception is `heavy_armor_company_divisional`, admitted in medium and modern and forbidden in heavy. That exception never authorizes heavy TD/SPG/assault or heavy line components in a medium/modern division, and never admits any heavy component into light or light support.
 5. Choose the highest-priority eligible candidate for each chain. Component progress is independent: modern main tanks may keep medium TD/SPG/AA until the corresponding modern candidate wins.
 6. Calculate the medium-support quota from current military factories: below 300 → 6, 300–499 → 3, 500 or above → 0; use zero if medium support is ineligible or prohibited for the family. Emit exact boundary comparisons, e.g. `> 299` and `> 499` for integral factory counts, not an unverified `>=` spelling.
 7. Allocate armored line counts, then apply Armoured Waves.
@@ -159,74 +166,63 @@ C = B - S - V
 line = {main_tank: C, medium_support: S, selected_line_variant: V, mobile_infantry: I}
 ```
 
-Omit zero-count entries. Before doctrine adjustment, assert `C + S + V == B`. A heavy line has `S0 = 0`; its line variant must be heavy. TD remains regimental and consumes no line slot. One line variant wins; do not add separate three-battalion blocks for assault and SPG.
+Omit zero-count entries. Before doctrine adjustment, assert `C + S + V == B`. A heavy line has `S0 = 0`; its line variant must be heavy. TD remains regimental and consumes no line slot. One line variant wins; do not add separate three-battalion blocks for assault and SPG. **A21: `selected_line_variant` is the LINE chain's winner only.** The regimental artillery company is `selected(regimental_artillery)`, a separate resolution over the candidates that own a company in that slot, and it consumes no line slot either.
 
-Armoured Waves: subtract one from the main-tank count and two from mechanized infantry when that form is present. Leave motorized infantry unchanged. Apply exactly once, after allocation; do not refill slots to restore ten. Reject negative counts. This produces a distinct signature and manifest entry. Report the width difference from 30 as an explicit owner-accepted Armoured Waves diagnostic, not an excuse to change counts.
+Armoured Waves: require the corrected doctrine modifier `combat_width = +0.5`, flat per battalion, on the declared affected units, then subtract one from the main-tank count and two from mechanized infantry when that form is present. Leave motorized infantry unchanged. Apply exactly once, after allocation; do not refill slots to restore ten. Reject negative counts. This produces a distinct signature and manifest entry. **DERIVED** - base 15 battalions x 2 = 30 and waves 12 x 2.5 = 30, so the wave target must also validate at 30; a wave composition that does not reach 30 is a conflict to report, not an accepted difference. **MEASURED** - the pulled doctrine (`armor_subdoctrines.txt:345-416`, at `e7e9fb979b`) declares `combat_width = -0.4` per armour battalion line and covers no mobile-infantry line, while the armour templates field `infantry_heavy_mechanized_battalion_line` and `infantry_heavy_motorized_battalion_line` (both width 2). Compatibility checking must fail on both mismatches: the wrong value, and a modifier that does not reach the mobile-infantry lines (which would yield 28.5).
 
 ### 5.4 Regimental and divisional support
 
-Regimental artillery uses the approved chain in the functional specification:
+Regimental artillery uses the revised functional chain, **resolved independently of the line chain (A8/A21)**. A chain may only offer candidates that declare a unit for the slot it fills; `model.py` rejects a registry that breaks this, which is what keeps a line-only candidate (infantry support, heavy SPG) out of a regimental chain. Filter candidate family and actual slot availability first:
 
-- Without an eligible SPG candidate later than the early rocket position, early rockets may occupy all five artillery slots if they win.
-- If a later SPG candidate and rockets are both eligible, use two rocket companies plus three companies of the highest eligible SPG.
-- Without eligible rockets, give all five to the highest eligible artillery candidate.
-- Aggregate repeated unit IDs; never emit duplicate keys as a way to express counts.
+1. If a heavy division has an eligible real heavy regimental candidate, fill all five artillery slots with it; it outranks even the final capped rocket option. Today that candidate is `heavy_assault_gun_company_regimental`; there is no heavy regimental SPG unit and none is to be fabricated.
+2. Otherwise, early rockets may fill five while no later eligible non-heavy candidate exists.
+3. With an eligible later non-heavy candidate and rockets, use two rockets plus three of it.
+4. Without rockets, use five of it. `medium_spg` inside a heavy division stays the explicitly scoped non-heavy fallback, expressed as an ordinary chain candidate below `heavy_assault`.
 
-The TD chain is none → mechanized → light → medium → optional heavy → modern, filtered for the family. The heavy TD named exception remains available in its allowed regimental context despite its actual medium demand. The heavy-family medium-SPG exception is also limited to regimental support.
+**Enumeration.** The line and artillery chains share a candidate set and one rank order, so their winners are not independent coordinates: a candidate that outranks the line winner cannot be eligible. Enumerate the REACHABLE pairs - a pair `(v, a)` is reachable iff the minimal eligibility set `{v, a}` reproduces both winners - and carry them as ONE joint digit. The rectangle would cost 35 values for medium where 11 are reachable, and would overflow the family's declared code range.
 
-Divisional engineer/maintenance/recon and other support use an explicit per-role fallback table. No generic “nearest chassis” arithmetic: the registry must map real unit IDs. Heavy support replaces divisional heavy artillery: require at most one of the pair in the final composition. Selection of divisional support must not alter the ten-slot line budget.
+TD: none → mechanized → light → medium → modern → heavy. Line/support assault chain: none → light assault → medium assault → light infantry support → medium infantry support → light SPG → medium SPG → modern SPG → heavy assault → heavy infantry support → heavy SPG. Family filtering prevents these terminal heavy choices from entering medium/modern compositions.
+
+Divisional engineer/maintenance/recon/AA use explicit real-unit fallback tables. `heavy_armor_company_divisional` (`common/units/armor_tanks.txt:388`, 12 `heavy_tank_chassis`) is the one deliberate exception: admitted in the medium and modern families, forbidden in heavy, light and light support. On full-slot rungs it replaces `heavy_artillery_mot_company_divisional` and never adds a company on top; on the 20-width rungs it occupies a free slot. Do not apply its exception to any other heavy unit, and do not alias it with `heavy_support_armor_battalion_divisional` (`common/units/armor_support.txt:390`, 25 `heavy_tank_support_chassis`), which no AI template uses and whose scope is open under A12.
+
+**MEASURED** - the fetched correction `e7e9fb979b` modifies `armor_tank_destroyer.txt:756` (`medium_tank_destroyer_chassis` to `heavy_tank_destroyer_chassis`), not SPG; after it, no land `heavy_*` sub-unit declares a light, medium or modern chassis in its `need` block. `armor_sp_artillery.txt` has heavy line/divisional SPG but no heavy regimental SPG. Record the missing slot capability and retain the approved fallback; if later input adds a real heavy regimental SPG, it takes the final priority automatically after validation.
 
 ## 6. Compilation, Signatures, and Codes
 
 Build a typed intermediate representation before rendering any file. It must contain both composition and selection behavior; neither the calculator nor template emitter independently reconstructs the rules.
 
-A normalized composition signature contains family, main chassis, motorization, sorted units/counts in all three slot maps, metadata, and owner exceptions. A selection identity additionally contains role group, phase, admission context, and transition destination. Two identical compositions with different conversion semantics must not be merged as one target.
+A normalized composition signature contains family, main chassis, motorization, sorted units/counts in all three slot maps, metadata, and owner exceptions. A selection identity additionally contains role group, mission context and admission context.
 
-Enumerate categorical choices after priority resolution, not all combinations of arbitrary country booleans. Prune only combinations proved illegal by declared constraints; do not prune based on historical country assumptions. Record conservative reachability when external predicates are opaque. Deduplicate identical composition payloads internally; emit local copies when group ownership requires them.
+Enumerate categorical choices after priority resolution, not all combinations of arbitrary country booleans. Prune only combinations proved illegal by declared constraints; do not prune based on historical country assumptions. Record conservative reachability when external predicates are opaque. Deduplicate identical composition payloads internally. Do not emit duplicate destination payloads in source groups merely to build role-conversion ladders.
 
-Assign deterministic positive dense integer codes per flag from sorted selection identities. Zero remains disabled. A code is opaque; no arithmetic +50/+100/+500 convention in the new generic system. Reserve light-support values 15000–15016 while the retained Soviet state machine reads/writes those values; reserve additional legacy values only when the integration inventory demonstrates a live retained reader. This is preservation of current orchestration, not save migration.
+Assign deterministic positive dense integer codes per flag. The code is COMPUTED, not looked up: each declared axis is one digit of a mixed-radix value, dense inside the family's declared range, with one rectangular plane per mobile-infantry form (the motorized plane carries no Armoured Waves digit). Zero remains disabled; no generic +50/+100/+500 arithmetic survives - the modern family owns `8000-8999` instead of medium+500. Inventory Soviet phase-code readers and retire conversion-only codes together with their effects, triggers, template entries, reports and telemetry readers. No save migration is required.
 
-Keep generated code magnitudes within the already-used 15016 envelope for the first implementation: fail on exhaustion rather than widen silently. Emit counts before writing: signatures per family, targets per group, bridges, output bytes, and largest code. This is a conservative encoding limit, not a claim about the engine's maximum supported integer.
+Keep generated code magnitudes within the already-used 15016 envelope: the largest code rendered today is 8863. Fail on exhaustion rather than widen silently - `--dry-run` prints the per-family plane bases and sizes and the code-budget warning at 80 % of a range.
 
-The manifest maps `(flag, code)` to one deterministic entry/path, not necessarily one active target block. Produce semantic code-set predicates from the manifest for waves, modern chassis, medium infantry support, heavy support, and transition phases. Replace handwritten numeric bands in tests/readers with these definitions where applicable. Flag presence alone remains distinct from component choice.
+The manifest maps `(flag, code)` to one deterministic target selection. Produce semantic code-set predicates from the manifest for waves, modern chassis, medium infantry support and heavy support. Replace handwritten numeric bands in tests/readers with these definitions where applicable. Flag presence alone remains distinct from component choice.
 
 ### Runtime code selection
 
 Compile the resolver into a nested decision tree over reusable predicates and selected categorical values. Each leaf writes a literal `_template_value`, with a disabled default. Avoid a flat repeated conjunction for every target; share prefixes and component tests. Initialize every `_wa_ag_*` temporary at entry and clear owned scratch at exit; public `_template_type_code` and `_template_value` follow the existing writer contract.
 
+**MEASURED (2026-09-19, `--apply`)** — all five families are generated, in two modes. ENUMERATED: medium 1368, modern 402 and heavy 200 targets. DECLARED: light 30 targets on retained 5100-5222 selector values and light_support 18 on 15000-15016. Current output totals 2018 targets; the manifest declares no ordinary-light transition. The arithmetic encoding keeps the runtime ladder compact by sharing prefixes instead of emitting one full conjunction per target.
+
+
 Use mutually exclusive branches or explicit first-claim guards. Generated input predicates and the Python resolver must be tested against the rendered script tree, so tests do not merely compare two calls to the same function. Avoid unsupported dynamic identifiers and arbitrary runtime string construction.
 
 Every generated target has exactly one `upgrade_prio` block. Template `enable` calls a generated decision predicate. Preserve group-level zero upgrade weight when no target in that group is selectable; preserve medium-versus-modern and light-versus-light-support ownership gates.
 
-Compute group activity from the generated selectable code/path set, including active bridges. Do not copy a chassis-latch-only group shutdown if it would disable the old group's bridge to the new chassis. During a medium→modern bridge, its code belongs to the source group and enables the local modern terminal there; the normal modern group must not concurrently become the recruitment entry for the same selection identity. Transition exit selects the normal destination entry. For separate light/light-support flags sharing a role, preserve their existing ownership policy and test both flags together. This is an entry-ownership rule, not a new recruitment role or budget share.
+Compute group activity from legal selectable targets. Medium/modern ownership remains mutually exclusive for recruitment selection; light/light-support sharing a role must not produce ambiguous entries. Opening the medium group changes new recruitment and does not transfer ordinary light divisions.
 
-## 7. Conversion Graph and Existing-Division Handling
+## 7. Ordinary light preservation and Soviet conversion
 
-Generate explicit local `replace_with` graphs from declarative transition profiles. A profile is a conversion need, not a link between consecutive numeric codes. Preserve threshold pairs from existing profiles as initial data, then verify each new composition pair in game. Both `replace_at_match` and `target_min_match` must be present and tested.
+The medium boundary changes new recruitment only. Historical 51xx/52xx selector values remain for
+compatibility, but every emitted ordinary-light target uses light chassis exclusively and emits no
+`replace_with` or FINAL. The manifest therefore declares no ordinary light transition.
 
-For each supported source shape and selected destination:
-
-1. Generate a source-matching bridge only when that source is present and the transition's admission conditions hold.
-2. Generate the terminal target in the same role group from the destination's complete resolved payload: line, regimental support, divisional support, metadata, and doctrine form. Do not copy only its main battalions.
-3. Give bridge and terminal explicit priorities and deterministic declaration order; ensure the terminal is enabled whenever its bridge can point to it.
-4. Give the bridge an exit condition based on available source-presence checks and retained phase state. Absence of a selection flag alone is not proof all divisions converted.
-5. Keep generic live destination reevaluation under A2. Preserve the existing Soviet pinned destination/class/motorization where its phase machine requires it. An intentional new decision is not an accidental bridge loop.
-
-Cover starting light divisions, starting light-support brigade/corps shapes, light→medium, medium-chassis→modern-chassis, and independent component upgrades/downgrades selected under A2. Source profiles must include intermediate compositions the generator can emit; a path that only handles starting units does not cover a later partially modernized division.
-
-Do not generate the unrestricted Cartesian product of every old and new target. Author allowed transition axes and source-presence equivalence classes; compose multi-axis changes through explicit intermediate steps when required. Any unresolved source class must appear in a coverage error, not silently disappear. The first implementation must report graph size and prove path coverage for all generated source signatures before applying output.
-
-Prior design objection: **MEASURED** — The lessons review found the earlier concern “~9 000 generated lines a massive complexity increase” in `.claude/skills/wa-lessons-learned/references/lessons-log.md:2642`. This design covers that concern because the maintained source is a shared registry and pure resolver, generated targets are deduplicated where semantics permit, transition profiles restrict pairing, and every dry-run reports total output size and growth. These measures make complexity visible; they do not establish that a large generated output is harmless to the engine. If the graph still expands excessively, revise the representation before applying output rather than hand-maintain thousands of exceptions.
-
-**MEASURED** — The same lessons review identifies “The field-upgrade destination is the FINAL's best EXISTING match, not the FINAL” (`lessons-log.md:2627`). The runtime test must therefore inspect competing existing templates, including heavy shapes, not merely compare generated FINAL payloads. Test both thresholds against an intermediate composition reachable through the actual designer edits.
-
-**ASSUMED** — Static graph validity does not prove engine matching or field conversion. Whether same-role target reselection suffices for a particular component change must be established through a cold-start owner test. The technical requirement is coverage of fielded divisions, not “every change must have its own bridge.” Omit a bridge only when the simpler path has validation evidence recorded for that transition class.
-
-### Soviet compatibility island
-
-Retain the current MISSION → BRIDGE → STABLE → CONVERT-1 → CONVERT-2 orchestration, counters, destination memory, and retirement event. Represent its exact starting/phase target payloads as explicitly named registry profiles, not undocumented exceptions in emitter code. Preserve starting shapes and timing even though generic terrain exceptions are removed. Its terminal forms must remain consistent with the retained behavior; any intentional alignment to new generic targets requires comparison of full payloads and the owner-run conversion test.
-
-The historical path must advance once per existing monthly calculation. An explain/report command must never call the real phase-advancing calculator. Do not “test idempotence” by invoking a phase counter twice and then treating the extra pulse as a gameplay result.
+The Soviet light-support conversion remains a separate system. Preserve its mission admission,
+starting-force purpose, phase progression and intentional retirement. Test that path independently
+from ordinary light preservation.
 
 ## 8. CLI and Safe Publication of Output
 
@@ -237,7 +233,7 @@ python tools/gen/gen_ai_armor_templates.py --apply
 python tools/gen/gen_ai_armor_templates.py --explain tools/tests/fixtures/armor_case.json
 ```
 
-No flag defaults to dry-run. `--dry-run` validates and reports changed paths/diff/counts without writing. `--check` validates and compares canonical output byte-for-byte. `--apply` writes only declared outputs after all validation passes. `--explain` is an offline fixture explanation: evaluated facts, rejected candidates, winning chains, allocations, exceptions, and conversion path; it does not claim to read the running game.
+Invocation without a mode flag defaults to dry-run. `--dry-run` validates and reports changed paths/diff/counts without writing. `--check` validates and compares canonical output byte-for-byte. `--apply` writes only declared outputs after all validation passes. `--explain` is an offline fixture explanation: evaluated facts, rejected candidates, winning chains, allocations, exceptions, and conversion path; it does not claim to read the running game.
 
 Exit codes: 0 success/clean; 1 drift in check mode; 2 invalid input or semantic validation failure; 3 write failure. Resolve imports and paths so execution works outside the repository cwd.
 
@@ -248,20 +244,20 @@ Render and validate all outputs in memory/staging before writes. Capture input/o
 | Check | Required assertion |
 |---|---|
 | Registry/schema | References exist; chains are ordered and acyclic; no raw country tags; documented exemptions have exact scopes. |
-| Unit demand | Actual units and slot flags exist; heavy line consumes heavy equipment; allowed regimental exceptions report their true demand. |
-| Column geometry | Check `same_support_type`, allowed battalion groups, available regiment columns, per-row battalion requirements, and divisional support capacity. A legal total count is insufficient: test reachable intermediate edits and mixed rocket/SPG placement across columns. |
-| Counts | Six approved quota/variant examples match; armored line totals 10 before waves; waves applies once; all counts nonnegative; rocket count and remaining artillery sum to five. |
-| Width | Calculate effective width for each declared modifier scenario. Ordinary final targets must satisfy 30 with no implicit tolerance. Named preserved starting/bridge profiles and the exact owner-prescribed Armoured Waves transform are the only declared exceptions. Unsupported modifier semantics produce an unresolved-calculation error, never an assumed 30. Do not alter approved counts to hide a conflict. |
+| Unit demand | Actual units and slot flags exist; heavy line consumes heavy equipment; corrected heavy TD uses heavy chassis; no land heavy unit declares a non-heavy chassis; no heavy component in a non-heavy family except `heavy_armor_company_divisional` in medium and modern. Support fallback demand remains explicit. |
+| Column geometry | Check `same_support_type`, allowed battalion groups, available regiment columns, per-row battalion requirements, and divisional support capacity. A legal total count is insufficient: test normal designer edits and mixed rocket/SPG placement across columns, without emitting CONVERT templates. |
+| Counts | Six approved quota/variant examples match; armored line totals 10 before waves; waves applies once; all counts nonnegative; rocket count and remaining artillery sum to five; eligible heavy SPG overrides the capped rocket mix. |
+| Width | Calculate effective width for each declared modifier scenario using the flat per-battalion values. Both the base and the Armoured Waves target must satisfy 30 with no implicit tolerance; existing source profiles are the only declared exception. Require the corrected `+0.5` doctrine covering every battalion line the composition fields, mobile infantry included; an uncovered line or an installed -0.4 is a validation error, never an assumed result. 20-width-country armor targets are still 30. Unsupported modifier semantics produce an unresolved-calculation error, never an assumed 30. Do not alter approved counts to hide a conflict. |
 | Selection | Zero on genuine closed admission; otherwise a deterministic selectable path; no uncovered code, ambiguous equal-priority entry, or first-branch starvation. |
 | Generated behavior | Evaluate an independently parsed subset of rendered selector conditions against hand-authored facts and compare expected selection. Unsupported script syntax fails validation instead of being assumed true. |
-| Conversion | All referenced targets are local/existent/enabled under source conditions; graph has no unintended cycle; required sources reach destinations; final payload equals its intended resolved destination. |
+| Light behavior | Ordinary light has no transition contract and no `replace_with`; Soviet light-support retains its declared, country-specific conversion graph. |
 | Stability | Repeated identical input produces byte-identical output; registry object reordering does not change semantic output; check mode never writes. |
 | Consumers | No generic dependency on retired code offsets; checker follows generated effect definitions; semantic test/telemetry readers agree with manifest code sets. |
 | Performance | Report emitted targets, edges, bytes, and maximum predicate-tree depth; inspect growth when adding one candidate. Do not disguise multiplicative expansion with a successful syntax check. |
 
-Minimum fixtures: quota boundaries 299/300/499/500; zero/100/101 stock; 60 stock+60 deployed; zero stock with economic admission; modern chassis without modern variants; modern TD before modern SPG and reverse; heavy without heavy SPG; accepted heavy TD requiring medium; technology granted outside original tree; no relevant tech branch; heavy support on/off; waves on/off with motorized/mechanized; all rocket stages; A7 researched-but-ineligible successor; resource deterioration under A2; light-support mission and phase boundaries; no destination class; delayed light conversion at modern era.
+Minimum fixtures: quota boundaries 299/300/499/500; zero/100/101 stock; 60 stock+60 deployed; zero stock with economic admission; modern chassis without modern variants; modern TD before modern SPG and reverse; heavy without heavy SPG; corrected heavy TD requiring heavy; rejection of heavy TD/SPG in medium/modern; the `heavy_armor_company_divisional` exception accepted in medium and in modern and rejected in heavy, light and light support; technology granted outside original tree; no relevant tech branch; heavy support on/off; waves on/off with motorized/mechanized; all rocket stages; A7 researched-but-ineligible successor; resource deterioration under A2; ordinary light preservation across the medium boundary; light-support mission/conversion/retirement boundaries; countries configured for 20-width divisions.
 
-Negative tests must include unknown unit, fabricated heavy SPG, invalid slot, code collision, destination outside group, disabled destination, stale phase target, missing consumer mapping, repeated modifier application, and zero-code transformed into a valid code by an offset.
+Negative tests must include unknown unit, fabricated heavy SPG, invalid slot, code collision, an ordinary-light transition entry, ordinary-light `replace_with`, stale conversion-phase reader, missing consumer mapping, repeated modifier application, and zero-code transformed into a valid code by an offset.
 
 Expected existing-check commands after implementation:
 
@@ -291,9 +287,9 @@ Require a full game restart after generated definitions/constants change. Inspec
 
 Include a live recruitment queue in conversion checks, record engine upgrade/design progress after the restart, and inspect intermediate column layout. Do not interpret an observation made after hot reload as validation of the new designer behavior.
 
-Owner-run scenarios must include a historical major, a country using an adopted/foreign technology path, a minor with no medium unlock, and the Soviet mission/retirement sequence. Test new recruitment separately from already-deployed divisions. Observe the source, intermediate stage, terminal stage, and later reevaluation; do not infer completion from a single flag or a monthly elapsed-time count.
+Owner-run scenarios must include a historical major, a country using an adopted/foreign technology path, a minor with no medium unlock, and the Soviet mission/retirement sequence. Test new recruitment separately from already-deployed divisions. Observe that ordinary light stays light-only while new recruitment moves to medium; test the Soviet conversion separately.
 
-Use existing WA_TLM probes when sufficient. Any new save-visible probe follows `documentation/WA_TLM_TELEMETRY_SYSTEM.md`: write-only, initialized, registered, and explicit about whether it measures selection intent or actual unit composition. No gameplay decisions may read telemetry. Do not add a conversion-complete counter based solely on bridge activation.
+Use existing WA_TLM probes when sufficient. Any new save-visible probe follows `documentation/WA_TLM_TELEMETRY_SYSTEM.md`: write-only, initialized, registered, and explicit about whether it measures selection intent or actual unit composition. No gameplay decisions may read telemetry. Do not add a conversion-complete counter based solely on a transition request or spawn command.
 
 The implementation subject remains `SHIPPED-UNTESTED` after a qualifying script commit until the owner runs the harness and records its output in WORK.md. No game test is implied by publication of this design.
 
@@ -301,13 +297,13 @@ The implementation subject remains `SHIPPED-UNTESTED` after a qualifying script 
 
 | Step | Deliverable and exit condition |
 |---|---|
-| 1. Inventory | Source/consumer report, unit/slot map, all preserved Soviet profiles, measured generator/checker baseline. Every unit named by the functional chains maps to a real definition or explicit fallback. |
+| 1. Inventory | Source/consumer report, unit/slot map, Soviet mission/retirement dependencies and conversion-only readers, measured generator/checker baseline. Every unit named by the functional chains maps to a real definition or explicit fallback. |
 | 2. Model and resolver | Registry, constant input adapter, pure resolver, hand-authored fixtures for all owner decisions. No game output applied. |
-| 3. Code and graph compiler | Deterministic manifest, selector tree, conversion graph, code-set predicates. Structural and path coverage checks pass; output size is reported and reviewed. |
-| 4. Dry-run rendering | All five files and generated scripts produced consistently; exact full-payload terminal matching; one owner per output; no duplicate public effect. |
+| 3. Code compiler | Deterministic manifest, selector tree and semantic predicates. Ordinary light has no transition entry. |
+| 4. Dry-run rendering | All five files and generated scripts produced consistently; exact destination-payload matching; one owner per output; no duplicate public effect. |
 | 5. Integration | Public wrappers delegate, old mirror writer retired, checker and all code readers adapted, production/readiness consumers reviewed, docs synchronized. |
-| 6. Validation | Static checks reported honestly; owner cold-start harness and field-conversion results recorded; expected A5 retirement distinguished from unintended unit loss. |
+| 6. Validation | Static checks reported honestly; owner cold-start harness records ordinary light preservation, medium recruitment and the separate Soviet light-support conversion. |
 
-Completion means the generator reproduces its committed outputs, every selected code resolves, approved cases are covered by independent tests, and the owner-run checks demonstrate recruitment and conversion behavior. No claim of bounded conversion duration is part of this design.
+Completion means the generator reproduces its committed outputs, every selected code resolves, approved cases are covered by independent tests, and the owner-run checks demonstrate medium recruitment, ordinary light preservation and the separate Soviet conversion behavior.
 
-Primary regression risks: shared eligibility changes unintentionally closing research/production, explosion of generated combinations, destination payload mismatch, bridge reactivation, empty role entries still receiving upgrade priority, Soviet phase counters advanced twice, and a caller continuing to interpret old code ranges. The implementation review must examine both historical and ahistorical paths and verify the explicit owner exceptions rather than “cleaning them up.”
+Primary regression risks: shared eligibility changes unintentionally closing research/production, explosion of generated combinations, ordinary light targets acquiring medium components, Soviet phase counters advancing twice, and a caller continuing to interpret old code ranges. The implementation review must examine both historical and ahistorical paths and verify the explicit owner exceptions.

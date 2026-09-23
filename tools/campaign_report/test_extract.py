@@ -59,6 +59,15 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(sorted(result["resources"]), ["steel"])
         self.assertEqual(result["resources"]["steel"]["produced"], 100.0)
         self.assertEqual(result["resources"]["steel"]["effective"], 86.0)
+        # A ledger block the save never writes is a flow the country does not have: 0.0, not unknown.
+        # As unknown it broke the Imports and Exports lines into fragments and silenced `residual`.
+        for absent in ("transfer", "imported", "to_export", "exported"):
+            self.assertEqual(result["resources"]["steel"][absent], 0.0, absent)
+        self.assertEqual(result["resources"]["steel"]["residual"], 10.0)
+        # to_use[2] is what the industry asks for, stored negative - never "unmet demand": 90 - 4
+        # leaves a surplus of 86, which is the green number the game's top bar shows.
+        self.assertEqual(result["resources"]["steel"]["demand"], -4.0)
+        self.assertNotIn("deficit", result["resources"]["steel"])
 
     def test_convoys_fatigue_and_kills_come_from_their_own_sections(self):
         raw = {"scalars": ["convoys_destroyed=9\n"],

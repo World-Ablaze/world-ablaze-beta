@@ -1037,6 +1037,29 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 	set_temp_variable = { _rail_family_latched_ = _railway_family_ }
 	set_temp_variable = { _railway_family_ = 0 }
 
+	# [impassable-rail-guard] A segment with an endpoint in an impassable state can never be built:
+	# the engine refuses build_railway there. Protects: the type-13 queue from projects that are
+	# funded to completion and spawn nothing. Assumes: global.WA_AI_MAP_province_impassable is
+	# populated (WA_AI_MAP_set_province_impassable, called from WA_AI_MAP_startup); if it is not,
+	# the set reads 0 and the can_build_railway guard in the executor catches the hop instead.
+	# Read AFTER the family latch is zeroed and ANDed into the admission gate below, so an
+	# impassable segment neither leaks _railway_family_ into the next segment nor books a
+	# WA_TLM_r103_corridor_blocked_n - that counter measures CONTROLLER refusals and a geography
+	# refusal summed into it would retarget it.
+	set_temp_variable = { _rail_impassable_ = 0 }
+	if = {
+		limit = {
+			OR = {
+				check_variable = { global.WA_AI_MAP_province_impassable^_project_province_id = 1 }
+				check_variable = { global.WA_AI_MAP_province_impassable^_project_connect_id = 1 }
+			}
+		}
+		set_temp_variable = { _rail_impassable_ = 1 }
+		ROOT = { if = { limit = { has_country_flag = WA_AI_construction_logging }
+			log = "[GetYear] [GetMonth] | AI | [Root.GetName] | RAILWAY: segment [?_project_province_id]->[?_project_connect_id] REFUSED - impassable state"
+		} }
+	}
+
 	# Check if railway already at target level
 	meta_effect = {
 		text = {
@@ -1090,6 +1113,7 @@ WA_AI_PC_start_railway_project = { # THIS = state, _project_province_id, _projec
 	if = {
 		limit = {
 			check_variable = { current_level < _project_target_level }
+			check_variable = { _rail_impassable_ = 0 }	# [impassable-rail-guard] see the header above
 		}
 		# tlm r103_corridor_blocked_n - counter, VERIFIED EFFECT: this corridor segment wanted a
 		# level (the check above passed, so it is neither built nor already queued) and the

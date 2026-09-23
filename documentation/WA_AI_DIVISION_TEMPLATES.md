@@ -45,6 +45,16 @@ Do not skip the research or production layers. A template that selects equipment
 
 Keep numeric values inside the existing family ranges. The value is stored on the country flag and matched by `enable` blocks in `common/ai_templates/`.
 
+The three armour ranges above are GENERATED, not chosen here: they are `families.<f>.code_range` in
+`tools/armor_templates_registry.json`, and `python tools/check_constants.py` holds this table equal
+to it (group `templates_armor_code_ranges`). Two facts the old table got wrong and that a reader
+re-pointing a harness must not inherit: **modern armour has no flag of its own** - it writes into
+`WA_MEDIUM_ARMOR_TEMPLATE` under type code 5, because it is the same ROLE with a different hull, and
+`WA_MODERN_ARMOR_TEMPLATE` occurs in no file in this mod - and a value inside a range is only
+meaningful against the manifest (`tools/generated/armor_templates_manifest.json`), never by
+arithmetic on the range, because the code is a mixed-radix digit string that changes shape whenever
+an axis is added.
+
 | Family | Value Range | Flag | Type Code |
 | --- | ---: | --- | ---: |
 | Infantry | `1000-1999` | `WA_INFANTRY_TEMPLATE` | `1` |
@@ -52,9 +62,10 @@ Keep numeric values inside the existing family ranges. The value is stored on th
 | Motorized | `3000-3999` | `WA_MOTORIZED_TEMPLATE` | `2` |
 | Mechanized | `4000-4999` | `WA_MECHANIZED_TEMPLATE` | `3` |
 | Light Armor | `5000-5999` | `WA_LIGHT_ARMOR_TEMPLATE` | `4` |
-| Medium Armor | `6000-6999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
-| Heavy Armor | `7000-7999` | `WA_HEAVY_ARMOR_TEMPLATE` | `6` |
-| Modern Armor | `8000-8999` | `WA_MODERN_ARMOR_TEMPLATE` | `7` |
+| Medium Armor | `20000-23999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
+| Modern Armor | `24000-27999` | `WA_MEDIUM_ARMOR_TEMPLATE` | `5` |
+| Heavy Armor | `28000-28999` | `WA_HEAVY_ARMOR_TEMPLATE` | `6` |
+| Light Support Armor | `15000-15999` | `WA_LIGHT_SUPPORT_ARMOR_TEMPLATE` | `14` |
 | Marines | `10000-10999` | `WA_MARINES_TEMPLATE` | `9` |
 | Airborne | `11000-11999` | `WA_AIRBORNE_TEMPLATE` | `10` |
 | Rangers | `13000-13999` | `WA_RANGERS_TEMPLATE` | `12` |
@@ -247,6 +258,12 @@ country's doctrine pushes. The TEMPLATE layer asks a different question and has 
   the handoff derive from it: `WA_AI_TEMPLATES_switch_from_light_to_medium_armor` closes light,
   `WA_AI_CONFIG_TEMPLATES_admits_medium_armor` opens medium. Do not add a second light-era or
   medium-era date anywhere.
+- `WA_AI_CONFIG_TEMPLATES_light_to_medium_conversion_window` — the ONE sanctioned exception to the
+  rule above (`[light-medium-conversion]`, owner order 2026-09-19). It is not an era boundary: its
+  only reader, `WA_AI_TEMPLATES_should_convert_light_armor_division`, also requires
+  `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`, so the window is a DELAY after the boundary
+  and can never re-open the 1940 gap. It decides when already-FIELDED light divisions are scrapped,
+  not when the light class closes. Generic path 1942.1.1; GER opens on `GER_prepare_barbarossa`.
 
 There is no `WA_AI_CONFIG_TEMPLATES_focus_on_light_armor`: it was deleted with
 `[armor-class-handoff]` because the switch closes the light class a year before that trigger's
@@ -317,7 +334,7 @@ Ground production triggers:
 - Artillery: `WA_AI_PRODUCTION_build_artillery`, `WA_AI_PRODUCTION_build_artillery_major`.
 - Anti-tank: `WA_AI_PRODUCTION_build_anti_tank`, `WA_AI_PRODUCTION_build_heavy_anti_tank`.
 - Anti-air: `WA_AI_PRODUCTION_build_anti_air`, `WA_AI_PRODUCTION_build_heavy_anti_air`.
-- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, `WA_AI_PRODUCTION_build_trucks_stockpile_low`, `WA_AI_PRODUCTION_build_trucks_stockpile_very_low`, `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
+- Trucks and trains: `WA_AI_PRODUCTION_build_trucks`, the six band gates `WA_AI_PRODUCTION_should_floor_trucks_<band>` and their `should_hold_floor_trucks_<band>` partners, the three `should_floor_trucks_deep_<band>` gates ([truck-floor-ladder]), `WA_AI_PRODUCTION_build_trains`, `WA_AI_PRODUCTION_build_trains_reduce_factor`, `WA_AI_PRODUCTION_should_build_cheap_trains`, `WA_AI_PRODUCTION_should_build_armored_trains` (variant choice; the latter is also the AI-only `can_be_produced` gate of the Armored Train in `common/units/equipment/trains.txt`).
 
 Tank and mechanized production triggers:
 

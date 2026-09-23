@@ -101,17 +101,17 @@ WA_TEST_TMPL_role_armour = {
 	if = { limit = { has_country_flag = WA_HEAVY_ARMOR_TEMPLATE } set_temp_variable = { _tm_s3 = 1 } }
 	if = { limit = { WA_AI_TEMPLATES_use_light_support_armor_templates = yes } set_temp_variable = { _tm_u4 = 1 } }
 	if = { limit = { has_country_flag = WA_LIGHT_SUPPORT_ARMOR_TEMPLATE } set_temp_variable = { _tm_s4 = 1 } }
-	# [heavy-in-support] hvy_sup and heavy are MUTUALLY EXCLUSIVE by construction. Both 1, or a
-	# hvy_sup=1 whose medium flag value is not in a +50 band, is the defect this line exists for.
+	# [heavy-in-support] hvy_sup and heavy are MUTUALLY EXCLUSIVE by construction: both 1 is the
+	# defect this line exists for. The company is an axis of the computed value now, not a +50 band.
 	set_temp_variable = { _tm_u5 = 0 }
 	if = { limit = { WA_AI_TEMPLATES_use_heavy_armor_support_templates = yes } set_temp_variable = { _tm_u5 = 1 } }
 	log = "  armour: light used=[?_tm_u1|.0] set=[?_tm_s1|.0] | medium used=[?_tm_u2|.0] set=[?_tm_s2|.0] | heavy used=[?_tm_u3|.0] set=[?_tm_s3|.0] | hvy_sup used=[?_tm_u5|.0] | light_support used=[?_tm_u4|.0] set=[?_tm_s4|.0]"
-	# [armor-class-handoff] The conversion window. `light used=0 set=1 window=1 trans=5xxx` is
-	# HEALTHY: the light class is closed and the flag holds a LIGHT_MEDIUM transition template
-	# that walks the fielded divisions into the medium role. `window=1 trans=0` is the defect.
+	# [armor-class-handoff] The preservation window. `light used=0 set=1 window=1 trans=5xxx` is
+	# HEALTHY: new recruitment uses medium while the flag keeps a light-only target for the old park.
+	# `window=1 trans=0` means that maintenance target was not selected.
 	set_temp_variable = { _tm_w = 0 }
 	set_temp_variable = { _tm_tv = 0 }
-	if = { limit = { WA_AI_TEMPLATES_should_convert_light_to_medium_armor = yes } set_temp_variable = { _tm_w = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_should_preserve_light_armor = yes } set_temp_variable = { _tm_w = 1 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5109 } } set_temp_variable = { _tm_tv = 5109 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5110 } } set_temp_variable = { _tm_tv = 5110 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5111 } } set_temp_variable = { _tm_tv = 5111 } }
@@ -128,6 +128,28 @@ WA_TEST_TMPL_role_armour = {
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5216 } } set_temp_variable = { _tm_tv = 5216 } }
 	if = { limit = { has_country_flag = { flag = WA_LIGHT_ARMOR_TEMPLATE value = 5222 } } set_temp_variable = { _tm_tv = 5222 } }
 	log = "  conv  : window=[?_tm_w|.0] trans=[?_tm_tv|.0] (window=1 trans=0 is the defect: the light class closed and no transition template answers)"
+	# [light-medium-conversion] Is the monthly light->medium ROLE conversion armed, and does it have
+	# both ends? Independent walk: the two halves are read on their own, not through the gate.
+	# light_divs=1 medium_template=1 conv_gate=0 inside the window = one of the two NOT terms still
+	# wants light divisions. conv_gate=1 with conversions flat over months = the spawn never lands
+	# (bad name, non-English client) - the case the resolver cannot report on its own.
+	set_temp_variable = { _tm_cg = 0 }
+	set_temp_variable = { _tm_cl = 0 }
+	set_temp_variable = { _tm_cm = 0 }
+	if = { limit = { WA_AI_TEMPLATES_should_convert_light_armor_division = yes } set_temp_variable = { _tm_cg = 1 } }
+	if = { limit = { any_country_division = { division_has_majority_template = light_armor_battalion_line } } set_temp_variable = { _tm_cl = 1 } }
+	if = {
+		limit = {
+			meta_trigger = {
+				text = {
+					has_template = "[MEDIUM_TEMPLATE]"
+				}
+				MEDIUM_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+			}
+		}
+		set_temp_variable = { _tm_cm = 1 }
+	}
+	log = "  role  : conv_gate=[?_tm_cg|.0] light_divs=[?_tm_cl|.0] medium_template=[?_tm_cm|.0] conversions=[?WA_TLM_lmc_conv_n|.0] resolved=[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
 }
 
 WA_TEST_TMPL_role_other = {
@@ -146,99 +168,59 @@ WA_TEST_TMPL_role_other = {
 	log = "  other : motorized used=[?_tm_u1|.0] set=[?_tm_s1|.0] | mechanized used=[?_tm_u2|.0] set=[?_tm_s2|.0] | suppression used=[?_tm_u3|.0] set=[?_tm_s3|.0]"
 	log = "            (used=1 set=0 on ANY line above is the defect: the role is wanted and no ai_template answers it)"
 }
-
-# [armoured-waves] The wave twins (6200-6216 / 6700-6716 / 7200-7213) are the SAME composition as
-# their 61xx/71xx base with 2-3 more tank battalions. They only fit inside the width because the
-# armoured_waves sub-doctrine cuts armour combat width by 40 %, so the two readings pair:
-#   doc=1 with med_set=1 and med=0  -> the +100 mirror did not fire; the role is on its base twin.
-#   doc=0 with med>0 or hvy>0       -> the dangerous one: a wave target held with no width cut,
-#                                      i.e. a 36-40 width division instead of ~27.
-# doc=0 with med=0 hvy=0 is the normal reading for every country without the doctrine.
+# [armor-template-generator] The wave twin is no longer a +100 band: it is ONE DIGIT of a value
+# the ladder COMPUTES (tools/armor_templates_registry.json). Reading the number back would need
+# one comparison per code - 2064 for medium alone - so this reports the AXES the ladder reads
+# instead. Same independent walk: every term below is a `use_*` or a generated `_wins_` trigger,
+# never a calculator temp variable.
+# READ: doc=1 with med_set=0 is the defect - the doctrine is held and no medium template answers.
+# doc=0 everywhere is the normal reading for a country without the sub-doctrine. The axes line
+# says WHY the chosen template is the one it is; check it against the division the country
+# actually fields in `imgui show ai_templates`.
 WA_TEST_TMPL_armoured_waves = {
 	set_temp_variable = { _tm_wd = 0 }
-	set_temp_variable = { _tm_wm = 0 }
-	set_temp_variable = { _tm_wh = 0 }
 	set_temp_variable = { _tm_wms = 0 }
 	set_temp_variable = { _tm_whs = 0 }
+	set_temp_variable = { _tm_wmod = 0 }
+	set_temp_variable = { _tm_wmec = 0 }
+	set_temp_variable = { _tm_wsup = 0 }
 	if = { limit = { WA_AI_TEMPLATES_use_armoured_waves_templates = yes } set_temp_variable = { _tm_wd = 1 } }
 	if = { limit = { has_country_flag = WA_MEDIUM_ARMOR_TEMPLATE } set_temp_variable = { _tm_wms = 1 } }
 	if = { limit = { has_country_flag = WA_HEAVY_ARMOR_TEMPLATE } set_temp_variable = { _tm_whs = 1 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6200 } } set_temp_variable = { _tm_wm = 6200 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6201 } } set_temp_variable = { _tm_wm = 6201 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6202 } } set_temp_variable = { _tm_wm = 6202 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6203 } } set_temp_variable = { _tm_wm = 6203 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6204 } } set_temp_variable = { _tm_wm = 6204 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6205 } } set_temp_variable = { _tm_wm = 6205 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6206 } } set_temp_variable = { _tm_wm = 6206 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6207 } } set_temp_variable = { _tm_wm = 6207 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6208 } } set_temp_variable = { _tm_wm = 6208 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6209 } } set_temp_variable = { _tm_wm = 6209 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6210 } } set_temp_variable = { _tm_wm = 6210 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6211 } } set_temp_variable = { _tm_wm = 6211 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6212 } } set_temp_variable = { _tm_wm = 6212 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6213 } } set_temp_variable = { _tm_wm = 6213 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6214 } } set_temp_variable = { _tm_wm = 6214 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6215 } } set_temp_variable = { _tm_wm = 6215 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6216 } } set_temp_variable = { _tm_wm = 6216 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6217 } } set_temp_variable = { _tm_wm = 6217 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6218 } } set_temp_variable = { _tm_wm = 6218 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6219 } } set_temp_variable = { _tm_wm = 6219 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6220 } } set_temp_variable = { _tm_wm = 6220 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6221 } } set_temp_variable = { _tm_wm = 6221 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6222 } } set_temp_variable = { _tm_wm = 6222 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6223 } } set_temp_variable = { _tm_wm = 6223 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6224 } } set_temp_variable = { _tm_wm = 6224 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6225 } } set_temp_variable = { _tm_wm = 6225 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6226 } } set_temp_variable = { _tm_wm = 6226 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6227 } } set_temp_variable = { _tm_wm = 6227 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6228 } } set_temp_variable = { _tm_wm = 6228 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6229 } } set_temp_variable = { _tm_wm = 6229 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6250 } } set_temp_variable = { _tm_wm = 6250 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6251 } } set_temp_variable = { _tm_wm = 6251 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6252 } } set_temp_variable = { _tm_wm = 6252 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6253 } } set_temp_variable = { _tm_wm = 6253 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6254 } } set_temp_variable = { _tm_wm = 6254 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6255 } } set_temp_variable = { _tm_wm = 6255 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6256 } } set_temp_variable = { _tm_wm = 6256 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6257 } } set_temp_variable = { _tm_wm = 6257 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6258 } } set_temp_variable = { _tm_wm = 6258 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6259 } } set_temp_variable = { _tm_wm = 6259 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6260 } } set_temp_variable = { _tm_wm = 6260 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6261 } } set_temp_variable = { _tm_wm = 6261 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6262 } } set_temp_variable = { _tm_wm = 6262 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6263 } } set_temp_variable = { _tm_wm = 6263 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6264 } } set_temp_variable = { _tm_wm = 6264 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6265 } } set_temp_variable = { _tm_wm = 6265 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6266 } } set_temp_variable = { _tm_wm = 6266 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6267 } } set_temp_variable = { _tm_wm = 6267 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6268 } } set_temp_variable = { _tm_wm = 6268 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6269 } } set_temp_variable = { _tm_wm = 6269 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6270 } } set_temp_variable = { _tm_wm = 6270 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6271 } } set_temp_variable = { _tm_wm = 6271 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6272 } } set_temp_variable = { _tm_wm = 6272 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6273 } } set_temp_variable = { _tm_wm = 6273 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6274 } } set_temp_variable = { _tm_wm = 6274 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6275 } } set_temp_variable = { _tm_wm = 6275 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6276 } } set_temp_variable = { _tm_wm = 6276 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6277 } } set_temp_variable = { _tm_wm = 6277 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6278 } } set_temp_variable = { _tm_wm = 6278 } }
-	if = { limit = { has_country_flag = { flag = WA_MEDIUM_ARMOR_TEMPLATE value = 6279 } } set_temp_variable = { _tm_wm = 6279 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7200 } } set_temp_variable = { _tm_wh = 7200 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7201 } } set_temp_variable = { _tm_wh = 7201 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7202 } } set_temp_variable = { _tm_wh = 7202 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7203 } } set_temp_variable = { _tm_wh = 7203 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7204 } } set_temp_variable = { _tm_wh = 7204 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7205 } } set_temp_variable = { _tm_wh = 7205 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7206 } } set_temp_variable = { _tm_wh = 7206 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7207 } } set_temp_variable = { _tm_wh = 7207 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7208 } } set_temp_variable = { _tm_wh = 7208 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7209 } } set_temp_variable = { _tm_wh = 7209 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7210 } } set_temp_variable = { _tm_wh = 7210 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7211 } } set_temp_variable = { _tm_wh = 7211 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7212 } } set_temp_variable = { _tm_wh = 7212 } }
-	if = { limit = { has_country_flag = { flag = WA_HEAVY_ARMOR_TEMPLATE value = 7213 } } set_temp_variable = { _tm_wh = 7213 } }
-	log = "  waves : doc=[?_tm_wd|.0] med_set=[?_tm_wms|.0] med=[?_tm_wm|.0] | hvy_set=[?_tm_whs|.0] hvy=[?_tm_wh|.0]"
-	log = "            (doc=1 med_set=1 med=0 means the +100 mirror did not fire; doc=0 with med>0 or hvy>0 means an overwidth target - stop the campaign)"
+	if = { limit = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role = yes } set_temp_variable = { _tm_wmod = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_mechanized_templates = yes } set_temp_variable = { _tm_wmec = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_use_heavy_armor_support_templates = yes } set_temp_variable = { _tm_wsup = 1 } }
+	log = "  waves : doc=[?_tm_wd|.0] med_set=[?_tm_wms|.0] hvy_set=[?_tm_whs|.0] | modern=[?_tm_wmod|.0] mech=[?_tm_wmec|.0] hvy_sup=[?_tm_wsup|.0]"
+	log = "            (doc=1 med_set=0 is the defect. modern=1 = the modern family owns the medium role; mech=0 = the motorized plane, which carries no wave twin by design.)"
+
+	### The medium family's chain winners: the digits of the computed value, in axis order.
+	### Exactly one winner per chain is true, the _none one included, so 0 always means "none".
+	set_temp_variable = { _tm_xv = 0 }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_light_assault = yes } set_temp_variable = { _tm_xv = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_assault = yes } set_temp_variable = { _tm_xv = 2 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_light_inf_support = yes } set_temp_variable = { _tm_xv = 3 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_inf_support = yes } set_temp_variable = { _tm_xv = 4 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_light_spg = yes } set_temp_variable = { _tm_xv = 5 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_line_variant_medium_spg = yes } set_temp_variable = { _tm_xv = 6 } }
+	set_temp_variable = { _tm_xt = 0 }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_tank_destroyer_mechanized_td = yes } set_temp_variable = { _tm_xt = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_tank_destroyer_light_td = yes } set_temp_variable = { _tm_xt = 2 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_tank_destroyer_medium_td = yes } set_temp_variable = { _tm_xt = 3 } }
+	set_temp_variable = { _tm_xa = 0 }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_spaa_light_spaa = yes } set_temp_variable = { _tm_xa = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_ARMOR_medium_wins_spaa_medium_spaa = yes } set_temp_variable = { _tm_xa = 2 } }
+	set_temp_variable = { _tm_xr = 0 }
+	if = { limit = { WA_AI_TEMPLATES_use_mechanized_rocket_artillery_armor = yes } set_temp_variable = { _tm_xr = 1 } }
+	set_temp_variable = { _tm_xq = 0 }
+	if = { limit = { WA_AI_TEMPLATES_is_below_medium_support_first_cut = yes } set_temp_variable = { _tm_xq = 6 } }
+	if = {
+		limit = {
+			NOT = { WA_AI_TEMPLATES_is_below_medium_support_first_cut = yes }
+			WA_AI_TEMPLATES_is_below_medium_support_second_cut = yes
+		}
+		set_temp_variable = { _tm_xq = 3 }
+	}
+	log = "  axes  : variant=[?_tm_xv|.0] (0 none 1 Lass 2 Mass 3 Lisp 4 Misp 5 Lspg 6 Mspg)  td=[?_tm_xt|.0] (0 towed 1 mech 2 light 3 medium)  spaa=[?_tm_xa|.0] (0 towed 1 light 2 medium)  rockets=[?_tm_xr|.0]  support_quota=[?_tm_xq|.0]"
 }
 
 # Execute: run one real calculation pass, then re-read the flags in the SAME tick.

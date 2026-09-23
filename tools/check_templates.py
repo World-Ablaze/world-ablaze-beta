@@ -45,23 +45,16 @@ TEMPLATE_DIR = REPO / "common" / "ai_templates"
 # The three value-rewriting effects the calculators call. Each turns one written value N into a
 # second reachable value; a checker that ignores them reports every mirror target as orphaned.
 #   +100 : WA_AI_TEMPLATES_apply_motorized_hospital_mirror   [mot-field-hospital]
-#   +100 : WA_AI_TEMPLATES_apply_armoured_waves_mirror       [armoured-waves]
-#   + 50 : WA_AI_TEMPLATES_apply_heavy_support_mirror        [heavy-in-support]
-#   +500 : add_to_temp_variable = { _template_value = _tier_offset }   [modern-chassis-tier]
+# The waves (+100), heavy-support (+50) and modern-tier (+500) rewrites are GONE: the armour
+# families are generated and encode those states as digits of the value instead
+# ([armor-template-generator]). Their rules were retired with them - an inert rule that still
+# passes its self-test is the 2026-08-18 precedent.
 # The two +100 levers attach differently and must not be modelled the same way: the hospital
 # mirror is called INSIDE a branch and rewrites that branch's value, while the waves mirror is
 # called ONCE at the end of the ladder, under a `_template_value > N` floor, and so rewrites
 # every value the ladder can leave above that floor.
 HOSPITAL_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_motorized_hospital_mirror"
 HOSPITAL_MIRROR_OFFSET = 100
-WAVES_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_armoured_waves_mirror"
-WAVES_MIRROR_OFFSET = 100
-# [heavy-in-support] the third rewriting effect. Unlike the two above it has NO floor: it
-# twins every value the ladder can leave, because the same flag closes the heavy-division
-# role and a value without a twin would leave the country with neither.
-HEAVY_SUPPORT_MIRROR_EFFECT = "WA_AI_TEMPLATES_apply_heavy_support_mirror"
-HEAVY_SUPPORT_MIRROR_OFFSET = 50
-TIER_OFFSET = 500
 
 # A unit name carries the slot it belongs to as its last word, and the convention holds without a
 # single exception across common/ai_templates (measured 2026-08-29: 278/278 `_line` in `regiments`,
@@ -426,52 +419,6 @@ def claim_guards(calc, issues, path):
                                % (calc.key, writes[0].block[0].scalar, " and ".join(missing))))
 
 
-def waves_mirror_floor(block):
-    """The `_template_value > N` floor guarding the armoured-waves mirror, or None if uncalled.
-
-    Read from the script rather than hard-coded per role: the floor is what decides which values
-    have a wave twin, so a checker carrying its own copy would keep passing after the guard moved.
-    """
-    for node in block:
-        if node.key == "if" and node.block:
-            calls = any(n.key == WAVES_MIRROR_EFFECT for n in node.block)
-            limit = node.get("limit")
-            if calls and limit is not None and limit.block:
-                for cv in limit.block:
-                    if cv.key != "check_variable" or not cv.block:
-                        continue
-                    kv = cv.block[0]
-                    if kv.key == "_template_value" and kv.scalar and kv.scalar.isdigit():
-                        return int(kv.scalar)
-        if node.block:
-            found = waves_mirror_floor(node.block)
-            if found is not None:
-                return found
-    return None
-
-
-def calls_heavy_support_mirror(block):
-    """True when this calculator can add the +50 heavy-support twin anywhere in its body."""
-    for n in block:
-        if n.key == HEAVY_SUPPORT_MIRROR_EFFECT:
-            return True
-        if n.block and calls_heavy_support_mirror(n.block):
-            return True
-    return False
-
-
-def sets_tier_offset(block):
-    """True when this calculator can add the +500 chassis tier anywhere in its body."""
-    for n in block:
-        if n.key == "set_temp_variable" and n.block:
-            kv = n.block[0]
-            if kv.key == "_tier_offset" and kv.scalar == str(TIER_OFFSET):
-                return True
-        if n.block and sets_tier_offset(n.block):
-            return True
-    return False
-
-
 # ----------------------------------------------------------------------------- ai_templates
 
 
@@ -554,6 +501,103 @@ def load_type_map(loc_file):
 # ----------------------------------------------------------------------------- checks
 
 
+GENERATED_PREFIX = "WA_AI_TEMPLATES_ARMOR_"
+GENERATED_EFFECTS = ("common", "scripted_effects", "WA_AI_TEMPLATES_ARMOR_generated.txt")
+GENERATED_MANIFEST = ("tools", "generated", "armor_templates_manifest.json")
+
+
+def derive_generated_values(root):
+    """Re-derive the values the GENERATED ladder can write, from the shipped script.
+
+    The generated calculator computes its value: a plane base plus one mixed-radix digit per axis
+    (`set_temp_variable { _wa_ag_digit = k }` ... optional `multiply_temp_variable`, then
+    `add_to_temp_variable { _template_value = _wa_ag_digit }`). This walks that arithmetic so the
+    join-key diff does NOT take the generator's word for its own output: a manifest-only check is
+    the self-vouching shape that let a role be deleted silently once already.
+
+    Returns {flag: set(values)} plus a list of parse complaints.
+    """
+    path = root.joinpath(*GENERATED_EFFECTS)
+    if not path.exists():
+        return {}, ["%s is missing" % path.as_posix()]
+    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    out, issues = {}, []
+    flag_of = {}
+    for m in re.finditer(r"^(WA_AI_TEMPLATES_ARMOR_calculate_(\w+)) = \{", text, re.M):
+        flag_of[m.start()] = "WA_" + m.group(2).upper()
+    starts = sorted(flag_of)
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(text)
+        body = text[start:end]
+        flag = flag_of[start]
+        values = set()
+        # one plane per `set_temp_variable = { _template_value = N }`
+        planes = list(re.finditer(r"set_temp_variable = \{ _template_value = (\d+) \}", body))
+        for pos, plane in enumerate(planes):
+            base = int(plane.group(1))
+            if base == 0:
+                continue
+            stop = planes[pos + 1].start() if pos + 1 < len(planes) else len(body)
+            chunk = body[plane.end():stop]
+            reach = {0}
+            for digits, stride in _digit_blocks(chunk):
+                reach = {r + d * stride for r in reach for d in digits}
+            values |= {base + r for r in reach}
+        if not values:
+            issues.append("no computed values found in %s" % flag)
+        out.setdefault(flag, set()).update(values)
+    return out, issues
+
+
+def _digit_blocks(chunk):
+    """Yield (set of digit values, stride) for every digit block in one plane's body."""
+    for block in re.finditer(
+            r"set_temp_variable = \{ _wa_ag_digit = 0 \}(.*?)"
+            r"add_to_temp_variable = \{ _template_value = _wa_ag_digit \}",
+            chunk, re.S):
+        body = block.group(1)
+        digits = {0} | {int(d) for d in re.findall(
+            r"set_temp_variable = \{ _wa_ag_digit = (\d+) \}", body)}
+        mul = re.search(r"multiply_temp_variable = \{ _wa_ag_digit = (\d+) \}", body)
+        yield digits, int(mul.group(1)) if mul else 1
+
+
+def merge_generated_manifest(root, reachable, issues):
+    """Add the generated families' codes to the reachable set, after cross-checking them.
+
+    The manifest says what the generator MEANT to emit; derive_generated_values says what the
+    shipped ladder can actually write. They must agree exactly.
+    """
+    path = root.joinpath(*GENERATED_MANIFEST)
+    derived, complaints = derive_generated_values(root)
+    for complaint in complaints:
+        issues.append(("ERROR", "GENERATED-LADDER", complaint, 0, complaint))
+    if not path.exists():
+        if derived:
+            issues.append(("ERROR", "NO-MANIFEST", path.as_posix(), 0,
+                           "generated armour templates need their manifest - run "
+                           "python tools/gen/gen_ai_armor_templates.py --apply"))
+        return
+    import json
+    data = json.loads(path.read_text(encoding="utf-8"))
+    declared = {}
+    for family in data.get("families", {}).values():
+        if not family.get("emitted", True):
+            continue
+        codes = set(x["code"] for x in family.get("targets", []))
+        if codes:
+            declared.setdefault(family["flag"], set()).update(codes)
+    for flag in sorted(set(declared) | set(derived)):
+        only_manifest = sorted(declared.get(flag, set()) - derived.get(flag, set()))
+        only_ladder = sorted(derived.get(flag, set()) - declared.get(flag, set()))
+        if only_manifest or only_ladder:
+            issues.append(("ERROR", "GENERATED-LADDER", path.as_posix(), 0,
+                           "%s: the generated ladder and the manifest disagree - only in the "
+                           "manifest %s, only in the ladder %s"
+                           % (flag, only_manifest[:5], only_ladder[:5])))
+        reachable.setdefault(flag, set()).update(declared.get(flag, set()) | derived.get(flag, set()))
+
+
 def run(root):
     """Run every check against the mod tree at `root`. Returns (issues, reachable)."""
     effects = root / "common" / "scripted_effects" / "WA_AI_TEMPLATES_effects.txt"
@@ -573,6 +617,12 @@ def run(root):
         if calc.block is None:
             continue
 
+        # [armor-template-generator] A wrapper whose body is a call into the generated ladder
+        # writes nothing this scan can see: the value is a mixed-radix computation. Its reachable
+        # values come from the generator's manifest, merged in below.
+        if any(n.key.startswith(GENERATED_PREFIX) for n in calc.block if n.key):
+            continue
+
         code = None
         for n in calc.block:
             if n.key == "set_temp_variable" and n.block:
@@ -582,7 +632,6 @@ def run(root):
         # `_tier_offset = 500` is set inside a gate, never at the top of the effect, so this has
         # to look through the whole body - scanning only the top level is what made every 6500+
         # mirror target read as orphaned.
-        offset_500 = sets_tier_offset(calc.block)
         if code is None:
             issues.append(("ERROR", "NO-TYPE-CODE", eff_rel, calc.line,
                            "%s sets no _template_type_code" % calc.key))
@@ -598,17 +647,6 @@ def run(root):
         walk_values(calc.block, set(), written, mirrors, sink)
         vals = {v for v, _, _ in written if v != 0}
         vals |= {v + HOSPITAL_MIRROR_OFFSET for v in mirrors if v != 0}
-        # [heavy-in-support] first, exactly as the ladder applies it: the twin must stay inside
-        # the band the waves floor names, and the tier offset is flat either way.
-        if calls_heavy_support_mirror(calc.block):
-            vals |= {v + HEAVY_SUPPORT_MIRROR_OFFSET for v in set(vals)}
-        # [armoured-waves] before the tier offset, exactly as the ladder applies it: after +500
-        # the floor would admit 6500 and turn the 20-width modern twin into the 30-width one.
-        waves_floor = waves_mirror_floor(calc.block)
-        if waves_floor is not None:
-            vals |= {v + WAVES_MIRROR_OFFSET for v in set(vals) if v > waves_floor}
-        if offset_500:
-            vals |= {v + TIER_OFFSET for v in set(vals)}
         reachable.setdefault(flag, set()).update(vals)
 
         no_direct_effect(calc.block, issues, eff_rel)
@@ -631,6 +669,18 @@ def run(root):
                                        % (calc.key, prev_line, sorted(prev_cond))))
                         break
                 seen.append((br.cond, br.line))
+
+    merge_generated_manifest(root, reachable, issues)
+
+    # [modern-tier-ladder] A STATE flag stepped by a latch (`set_country_flag = { flag = F
+    # value = N }` in the templates effects file) is written by no calculator, yet every value it
+    # is set to is reachable. Only flags that ai_templates actually read and that name no
+    # template TYPE are taken from here, so a typo in a type flag still reports.
+    for fname, fval in re.findall(
+            r"set_country_flag\s*=\s*\{\s*flag\s*=\s*(\w+)\s+value\s*=\s*(\d+)\s*\}",
+            effects.read_text(encoding="utf-8-sig", errors="ignore")):
+        if fname in by_flag and fname not in type_map.values():
+            reachable.setdefault(fname, set()).add(int(fval))
 
     for flag, vals in sorted(reachable.items()):
         have = by_flag.get(flag, {})

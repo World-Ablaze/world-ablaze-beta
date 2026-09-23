@@ -24,6 +24,36 @@
  "dead_allowlist": [],
  "groups": [
   {
+   "id": "templates_modern_tier_max",
+   "policy": "strict",
+   "governs": "[modern-tier-ladder] The ceiling of the WA_AI_TEMPLATES_modern_tier flag. The generator enables every composition's top tier at every value from N up to it (registry tier_ladder.max_value), the latch's else_if chain climbs to it, WA_AI_TEMPLATES_should_step_modern_tier stops at it, and the harness reads the flag with one comparison per value up to it. A join key across four files; a comment is not a mechanism.",
+   "owner": {
+    "kind": "regex",
+    "file": "tools/armor_templates_registry.json",
+    "pattern": "\"max_value\": (\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_effects/WA_AI_TEMPLATES_effects.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_TEMPLATES_update_modern_tier_latch = \\{[\\s\\S]*flag = WA_AI_TEMPLATES_modern_tier value = (\\d+) \\}",
+     "note": "last value the step chain writes"
+    },
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_TEMPLATES_should_step_modern_tier = \\{[\\s\\S]*?value = (\\d+) \\}",
+     "note": "the NOT cap of the decision trigger"
+    },
+    {
+     "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
+     "kind": "regex",
+     "pattern": "[\\s\\S]*set_temp_variable = \\{ _abt_tier = (\\d+) \\}",
+     "note": "the last tier comparison of the ladder: row"
+    }
+   ]
+  },
+  {
    "id": "pc_alloc_fraction",
    "governs": "share of the reconstructed civ pool WA_AI_PC_assign_factories may fund per pass; the floored civ gates WA_AI_PC_has_project_civs_16/_20/_31 must judge at the SAME fraction or they refuse projects the fill would pay for (Fix 90; the affordability gate WA_AI_PC_can_afford_project that also read it was deleted by Fix 90b)",
    "owner": {
@@ -1046,7 +1076,7 @@
   },
   {
    "id": "resource_cic_oil",
-   "governs": "civilian factories per unit of oil imported; its inverse is the trade quantum (quantum 20), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_oil, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "governs": "civilian factories per unit of oil imported; its inverse is the trade quantum (quantum 20), which is what the faction oil deficit is measured against in WA_AI_check_resource_needs (WA_AI_coop_export_shortage_oil, [coal-prospect-loop]: a deficit under one quantum is noise). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
    "owner": {
     "file": "common/resources/00_resources.txt",
     "kind": "pdx_block_key",
@@ -1148,7 +1178,7 @@
   },
   {
    "id": "resource_cic_coal",
-   "governs": "civilian factories per unit of coal imported; its inverse is the trade quantum (quantum 100), which is what \"the offered export share is sold out\" is measured against in WA_AI_check_resource_needs (WA_AI_coop_can_supply_coal, Fix 102). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
+   "governs": "civilian factories per unit of coal imported; its inverse is the trade quantum (quantum 100), which is what the faction coal deficit is measured against in WA_AI_check_resource_needs (WA_AI_coop_export_shortage_coal, [coal-prospect-loop]: a deficit under one quantum is noise). Stored as cic, not as the quantum, because this checker compares mirrors verbatim and has no reciprocal transform - the reader multiplies by cic instead of dividing by the quantum.",
    "owner": {
     "file": "common/resources/00_resources.txt",
     "kind": "pdx_block_key",
@@ -1395,22 +1425,6 @@
    ]
   },
   {
-   "id": "templates_modern_tier_offset",
-   "governs": "flag-value offset between a medium armour template value and its modern-chassis twin; the calculator's +500 and the generator's TIER_OFFSET must be equal or a country holds a flag value no ai_template answers (armor-ladder-integrity's silent failure)",
-   "owner": {
-    "file": "common/scripted_effects/WA_AI_TEMPLATES_effects.txt",
-    "kind": "regex",
-    "pattern": "set_temp_variable = \\{ _tier_offset = ([1-9]\\d*) \\}"
-   },
-   "mirrors": [
-    {
-     "file": "tools/gen/gen_ai_medium_modern_mirror.py",
-     "kind": "regex",
-     "pattern": "^TIER_OFFSET = (\\d+)"
-    }
-   ]
-  },
-  {
    "id": "aifc_armor_boost_magnitude",
    "governs": "[aifc-revived-tag-residue] magnitude of the AIFC front_armor_score boost. Add and cancel emitters must negate each other EXACTLY (there is no remove effect - retirement IS the negation), and aifc.py's closure test must expect the same number, or every reconcile leaves drift the analysis then misreads. Literals because meta_effect runtime text cannot read constants (validated-context exception).",
    "owner": {
@@ -1453,6 +1467,198 @@
    ]
   },
   {
+   "id": "production_armor_maintenance_floor",
+   "policy": "strict",
+   "governs": "[armor-maintenance] [armor-variant-maintenance] the flat five-factory floor for EVERY tank chassis archetype currently required by fielded divisions - the four main gun classes and the 32 variant chassis (tank destroyer, SP artillery, SP rocket, assault gun, SPAA, infantry-support, support tank, super-heavy family, amphibious tank, scout and combat car). ai_strategy value cannot resolve constant:, so all 36 payload literals mirror this constant exactly. NOT the only floor on modern_tank_chassis: [modern-switch-amorce] adds a PRIMING floor (production_armor_priming_floor_*) that builds a modern stock before any division demands one. Floors on one id SUM, so the two are kept disjoint by the priming bands' `NOT = { WA_AI_TEMPLATES_modern_chassis_owns_medium_role }` term, which retires the priming line at the switch - the moment the maintenance floor can first arm.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.maintenance.floor_base",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_tank_destroyer_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_tank_artillery_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_assault_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_spaa_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_infantry_support_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = light_tank_support_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_tank_destroyer_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_tank_artillery_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_tank_rocket_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_assault_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_spaa_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_infantry_support_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = medium_tank_support_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_tank_destroyer_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_tank_artillery_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_assault_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_spaa_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_infantry_support_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = heavy_tank_support_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_tank_destroyer_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_tank_artillery_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_assault_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_spaa_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = modern_infantry_support_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = super_heavy_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = super_heavy_tank_destroyer_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = super_heavy_tank_artillery_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = super_heavy_spaa_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = landkruiser_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = amphibious_tank_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = scout_car_chassis\\s+value = (\\d+)"
+    },
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt",
+     "kind": "regex",
+     "pattern": "min_factories_archetype id = combat_car_chassis\\s+value = (\\d+)"
+    }
+   ]
+  },
+  {
    "id": "production_ground_floor_base",
    "policy": "advisory",
    "governs": "the one-factory BASELINE floor for a towed support gun. `ai_strategy value =` cannot resolve `constant:` (validated contexts, wa-constants-registry), so every floor literal is a hand-kept copy of this constant. Sites: the two [minor-gun-floor] blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt (artillery_equipment non-major, anti_tank_equipment) and the six base blocks of common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt (anti_tank / anti_air / heavy_anti_air / heavy_artillery / pack_artillery / amphibious_mechanized). The maintenance file is named here but NOT regex-mirrored: its `_large` twins carry ground_floor_deep_add = 2 on the same ids, so no single pattern can pin the base sites without matching them too - advisory for that reason. Floors on one id SUM, so anti_tank totals 2 while short and 4 deep",
@@ -1471,6 +1677,377 @@
      "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
      "kind": "regex",
      "pattern": "min_factories_archetype\\s+id = anti_tank_equipment\\s+value = (\\d+)"
+    }
+   ]
+  },
+  {
+   "id": "templates_medium_support_cuts",
+   "governs": "the two industrial cuts of the medium-support quota (6 battalions below the first cut, 3 below the second, 0 above). Declared once in tools/armor_templates_registry.json; the generated trigger renders them as literals because constant: is not validated in num_of_military_factories. If the two drift, the AI keeps a support quota its factories no longer justify",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"below_military_factories\": (300)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "num_of_military_factories < (300)"
+    }
+   ]
+  },
+  {
+   "id": "templates_medium_support_second_cut",
+   "governs": "the two industrial cuts of the medium-support quota (6 battalions below the first cut, 3 below the second, 0 above). Declared once in tools/armor_templates_registry.json; the generated trigger renders them as literals because constant: is not validated in num_of_military_factories. If the two drift, the AI keeps a support quota its factories no longer justify",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"below_military_factories\": (500)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "num_of_military_factories < (500)"
+    }
+   ]
+  },
+  {
+   "id": "templates_heavy_company_cut",
+   "governs": "the military-factory count at which the A6 heavy tank company opens in divisional support (A19). Declared once in tools/armor_templates_registry.json; the generated trigger renders it as a literal because constant: is not validated in num_of_military_factories. Equal to the medium-support second cut today and deliberately NOT the same group: they are two decisions that happen to share a number",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"min_military_factories\": (500)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_ARMOR_generated.txt",
+     "kind": "regex",
+     "pattern": "is_below_heavy_company_cut = \\{\\s*num_of_military_factories < (500)"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_priming_floor_small",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the small industrial band while the country is inside the modern window and has not yet switched. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_prime_floor_small",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_small = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_priming_floor_medium",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the medium industrial band while the country is inside the modern window and has not yet switched. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_prime_floor_medium",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_medium = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_priming_floor_large",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the large industrial band while the country is inside the modern window and has not yet switched. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_prime_floor_large",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_priming_floor_large = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_small",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the small industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_small",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_small = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_medium",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the medium industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_medium",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_medium = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_large",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the large industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_large",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_large = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_major",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the major industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_major",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_major = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_supermajor",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the supermajor industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_supermajor",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_supermajor = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_superpower",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] factories the band floor reserves reserved on motorized_equipment in the superpower industrial band. Exactly one band floor arms at a time. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.floor_superpower",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_superpower = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_deep_large",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] extra factories the emergency tier adds reserved on motorized_equipment in the large industrial band. Floors on one id SUM, so this adds to the band floor of the same band. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.deep_add_large",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_deep_large = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_deep_major",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] extra factories the emergency tier adds reserved on motorized_equipment in the major industrial band. Floors on one id SUM, so this adds to the band floor of the same band. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.deep_add_major",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_deep_major = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_trucks_floor_deep_top",
+   "policy": "strict",
+   "governs": "[truck-floor-ladder] extra factories the emergency tier adds reserved on motorized_equipment in the top industrial band. Floors on one id SUM, so this adds to the band floor of the same band. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.trucks.deep_add_top",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_ground.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_floor_trucks_deep_top = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_catchup_floor_small",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the small industrial band while the switched park is under its fill bar. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_catchup_floor_small",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_small = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_catchup_floor_medium",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the medium industrial band while the switched park is under its fill bar. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_catchup_floor_medium",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_medium = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_catchup_floor_large",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] factories reserved on modern_tank_chassis in the large industrial band while the switched park is under its fill bar. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_catchup_floor_large",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_catchup_floor_large = \\{[\\s\\S]*?value = (\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "production_armor_priming_medium_damp",
+   "policy": "strict",
+   "governs": "[modern-switch-amorce] the NEGATIVE equipment_variant_production_factor applied to medium_tank_chassis while the country primes its modern line. ai_strategy value cannot resolve constant:, so the payload literal mirrors this constant by hand.",
+   "owner": {
+    "kind": "script_constant",
+    "path": "wa_ai_production.armor.modern_prime_medium_factor",
+    "file": "common/script_constants/wa_ai_production.txt"
+   },
+   "mirrors": [
+    {
+     "file": "common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_tanks.txt",
+     "kind": "regex",
+     "pattern": "WA_AI_PRODUCTION_DEFAULT_modern_priming_medium_damp = \\{[\\s\\S]*?value = (-?\\d+) \\}"
+    }
+   ]
+  },
+  {
+   "id": "templates_armor_code_range_medium",
+   "policy": "strict",
+   "governs": "[armor-template-generator] the LOW bound of the medium armour family's generated template code range. The range exists in two formats that nothing bound together - the registry the generator reads and the published table that readers and harness authors consult - and the A21 axis change moved all three ranges at once while the table still published the pre-2026-09 6000/7000/8000 values. A comment is not a mechanism; this group is. The HIGH bound is deliberately not registered: the generator fails on its own when a family outgrows its range.",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"medium\": \\{[\\s\\S]*?\"code_range\": \\[\\s*(\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "documentation/WA_AI_DIVISION_TEMPLATES.md",
+     "kind": "regex",
+     "pattern": "\\| Medium Armor \\| `(\\d+)-\\d+`"
+    }
+   ]
+  },
+  {
+   "id": "templates_armor_code_range_modern",
+   "policy": "strict",
+   "governs": "[armor-template-generator] the LOW bound of the modern armour family's generated template code range. The range exists in two formats that nothing bound together - the registry the generator reads and the published table that readers and harness authors consult - and the A21 axis change moved all three ranges at once while the table still published the pre-2026-09 6000/7000/8000 values. A comment is not a mechanism; this group is. The HIGH bound is deliberately not registered: the generator fails on its own when a family outgrows its range.",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"modern\": \\{[\\s\\S]*?\"code_range\": \\[\\s*(\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "documentation/WA_AI_DIVISION_TEMPLATES.md",
+     "kind": "regex",
+     "pattern": "\\| Modern Armor \\| `(\\d+)-\\d+`"
+    }
+   ]
+  },
+  {
+   "id": "templates_armor_code_range_heavy",
+   "policy": "strict",
+   "governs": "[armor-template-generator] the LOW bound of the heavy armour family's generated template code range. The range exists in two formats that nothing bound together - the registry the generator reads and the published table that readers and harness authors consult - and the A21 axis change moved all three ranges at once while the table still published the pre-2026-09 6000/7000/8000 values. A comment is not a mechanism; this group is. The HIGH bound is deliberately not registered: the generator fails on its own when a family outgrows its range.",
+   "owner": {
+    "file": "tools/armor_templates_registry.json",
+    "kind": "regex",
+    "pattern": "\"heavy\": \\{[\\s\\S]*?\"code_range\": \\[\\s*(\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "documentation/WA_AI_DIVISION_TEMPLATES.md",
+     "kind": "regex",
+     "pattern": "\\| Heavy Armor \\| `(\\d+)-\\d+`"
     }
    ]
   }

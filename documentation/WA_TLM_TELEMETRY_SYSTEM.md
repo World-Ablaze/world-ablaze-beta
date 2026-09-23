@@ -315,9 +315,9 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_gdn_last_t` | stamp | monthly, all AI | `gdn_*` absence contract | v38 |
 | `WA_TLM_pc_aging_grants` | counter | on verified lane grant (weekly PC allocator, `WA_AI_PC_assign_factories`) | R26 (PC allocator health) | v2 |
 | `WA_TLM_pc_aging_reval_cancels` | counter | on revalidation-cancel (same site) | R26 | v2 |
-| `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..16 range the effect's own ladder covers — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
+| `WA_TLM_pc_built_n` | counter | **at the spawn site** in `WA_AI_PC_add_finished_building_by_id`, gated on `_build_type` being inside the 1..17 range the effect's own ladder covers, AND on `_pc_rail_refused_ = 0` (a type-13 hop the engine refused via `can_build_railway` spawns nothing, so it books `pc_refused_n` instead) — NOT the monthly sampler | standing — the **success** half of the PC termination ledger. A building actually appeared | v14 |
 | `WA_TLM_pc_built_by_type^<code>` | counter, **indexed by building type** | same site | standing — "did the air bases ever finish" in one read. **Deliberately not zero-initialised**: an absent index means this country never completed that type, which is unambiguous because the zero-init'd `pc_built_n` beside it witnesses the family's presence. Codes are the `WA_AI_PC_building_type` set (2 = air_base, 4 = radar, 13 = railway, 14 = naval_base, …) | v14 |
-| `WA_TLM_pc_refused_n` | counter | **at the completion site** in `WA_AI_PC_complete_project_by_id`, in the `else` of the two spawn branches | standing — **the failure mode that had no fingerprint at all**: a project that reached progress ≤ 0, i.e. was fully paid for in civ-weeks, and was then denied its building and discarded. From outside it is indistinguishable from a completion | v14 |
+| `WA_TLM_pc_refused_n` | counter | **at the completion site** in `WA_AI_PC_complete_project_by_id`, in the `else` of the two spawn branches; **also** in the type-13 `else` of `WA_AI_PC_add_finished_building_by_id`, one level deeper, where the refusal is the ENGINE's (`can_build_railway` = no) rather than a controller/slot test — that one is deliberately NOT in `pc_refused_ctrl_n`, its cause is geography | standing — **the failure mode that had no fingerprint at all**: a project that reached progress ≤ 0, i.e. was fully paid for in civ-weeks, and was then denied its building and discarded. From outside it is indistinguishable from a completion | v14 |
 | `WA_TLM_pc_refused_ctrl_n` | counter | same site, subset | standing — the refusals caused by **control** of the target state, testing each branch's own controller rule (allied-buildable types accept faction/subject ground; factory types demand direct control). `_refused_n − _refused_ctrl_n` is therefore "friendly ground, no free building slot" | v14 |
 | `WA_TLM_pc_sweep_n` | counter | **at the sweep decision** in `WA_AI_PC_update_project_progress` (`constant:wa_ai_pc.alloc.stall_cancel_weeks` = 30) | standing — the counter whose absence forced checklist R19 to be held rather than retired. Everything added to `_cancel_projects_IDS` there is unconditionally ended by the `WA_AI_PC_cancel_projects` call below it | v14 |
 | `WA_TLM_pc_orphan_n` | counter | **after `end_project_by_id`** in the broken-project cleanup of `WA_AI_PC_update_project_progress` (`target_state = 0` or `cost ≤ 0`) | standing — bookkeeping corruption, as distinct from a strategic cancel | v14 |
@@ -403,11 +403,14 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r67_aifc_arm_first_t` / `_last_t` | stamps | same effect, written only on ticks that actually emitted | R67 — persistence. `_first_t` under a `= 0` guard, so read `entries_n > 0` first. A frozen `_last_t` on a healthy tag is the **expected** reading (ENG's reconcile did zero work for 24 months), not an alarm — pair it with `retire_n = 0` to tell health from a dead code path | v24 |
 | `WA_TLM_r51_local_hold_first_t` / `_last_t` | stamps | same site | R51 — **timing is the pass criterion**: `_first_t` must fall inside the landing's contested window (the D-Day month + 3 on an `af003548`-shaped run), not years later on some other front. Written under a `= 0` guard; read `_n > 0` first. `_last_t` running to the war's end with `_n` climbing is the band being the *only* thing keeping orders on — pair with the front-movement proxy before calling that healthy | v16 |
 | `WA_TLM_resv_stamp_n` / `_first_t` / `_last_t` | counter + stamps | **in `WA_AI_LANDING_stamp_reservation`** (`WA_AI_LANDING_effects.txt`), one per reservation sweep actually executed — the flag write is on the adjacent lines, monthly per pending OP whose target is at war (two ops against the same target in one sweep count twice) | [scripted-invasion-reservation] — **the target-reservation system armed.** `stamp_n = 0` on USA/ENG/GER/JAP/AST at war on historical difficulty = the loader or the monthly gate never fired. Second signal: the `WA_AI_LANDING_reserved_for_<TAG>` timed flags serialized on the target countries — flags present with engine invasions of that target anyway = the `@FROM` country_trigger rendering failed (the block's stated ASSUMED) | v30 |
-| `WA_TLM_r115_maint_armor_n` | gauge (0-4 tank chassis maintained) | monthly, all AI | probe r115 - `[maintenance-floor]` | v37 |
+| `WA_TLM_r115_maint_armor_n` | gauge (0-4 MAIN gun chassis classes maintained because the army still fields them; stock size does not release these floors. Deliberately still 0-4 after v39 so readings across the change stay comparable) | monthly, all AI | probe r115 - `[maintenance-floor]` | v37 |
+| `WA_TLM_r115_maint_armor_var_n` | gauge (0-32 VARIANT chassis archetypes maintained - tank destroyer, SP artillery/rocket, assault gun, SPAA, infantry-support, support tank, super-heavy family, landkruiser, amphibious tank, scout and combat car. Same gate and same 5-factory floor as the main classes. **This is the number that tells a 5-factory request from a 40-factory one**: `maint_floor` alone cannot, and the floors SUM on the same military pool. A minor above `wartime_min_mils` reading `armor_var_n > 0` with `armor_n = 0` is maintaining armoured cars or SPGs it fields without any tank arm - intended, but read it against its mils before calling the total sane) | monthly, all AI | probe r115 - `[armor-variant-maintenance]` | v39 |
 | `WA_TLM_r115_maint_ground_n` | gauge (0-6 support archetypes maintained - their gate is a SHORTAGE, so a high count is a country running its support companies dry) | monthly, all AI | probe r115 | v37 |
-| `WA_TLM_r115_maint_floor` | gauge (factories WA **requested** across all ten - never what the engine allocated, and never the country TOTAL on those ids: POL/HUN/SWE, the CZE plan and the lend-lease donors floor the same types and floors sum) | monthly, all AI | probe r115 | v37 |
+| `WA_TLM_r115_maint_floor` | gauge (factories WA **requested** across all 42 floors - never what the engine allocated, and never the country TOTAL on those ids: POL/HUN/SWE, the CZE plan and the lend-lease donors floor the same types and floors sum) | monthly, all AI | probe r115 | v37, widened v39 |
 | `WA_TLM_r115_maint_at_ratio` | gauge (free anti-tank spares over what the armies require - the verified EFFECT: it must RISE while `ground_n` > 0) | monthly, all AI | probe r115 | v37 |
 | `WA_TLM_r115_maint_last_t` | stamp | monthly, all AI | probe r115 absence contract | v37 |
+| `WA_TLM_lmc_conv_n` | counter (verified effect) | event-site, on a completed conversion | `[light-medium-conversion]` | v40 |
+| `WA_TLM_lmc_conv_last_t` | stamp | written with the counter | `[light-medium-conversion]` absence contract | v40 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and
@@ -752,8 +755,26 @@ variant desire), not the latch. Second signal: the country's `resource@chromium`
 same saves must show the deficit the latch claims.
 
 **Probe**: `tlm <TAG> <saves>` → `gdn_chr_n`, `gdn_tun_n`, `gdn_flip_n`, `gdn_last_t`. Pass =
-on a country that shows ≥ 2 consecutive deficit months in its resource series, `gdn_*_n` rises
+on a country that shows ≥ 3 consecutive deficit months in its resource series, `gdn_*_n` rises
 from the following save on, and `gdn_flip_n ≤ 4` per resource over the campaign.
+
+## 6i. Light → medium role conversion (probe, v40)
+
+`replace_with` cannot resolve across ROLE groups, so a division on a light target can end up
+medium in COMPOSITION while its role stays `light_armor`. `[light-medium-conversion]` trades one
+light-majority division per month for a medium one; the trade is invisible in a save (a destroy
+plus a create nets to zero divisions), so it needs its own counter.
+
+`WA_TLM_lmc_conv_n` is a **verified effect**: it is incremented only on the branch where
+`num_divisions` has already risen, i.e. the medium division exists AND a light-majority division
+was destroyed in the same pulse. Gate entry is deliberately NOT counted — the two silent-no-op
+paths the probe exists to separate (a name the resolver cannot build, a non-English client) both
+pass the gate and fail the spawn.
+
+**Probe**: `tlm <TAG> <saves>` → `lmc_conv_n`, `lmc_conv_last_t`. Pass = on a country whose
+`WA_TEST_templates` line shows `conv_gate=1`, `lmc_conv_n` rises by ~1 per month from the window
+opening until no light-majority division remains, then stops. `conv_gate=1` with `lmc_conv_n`
+flat is the defect: the gate is armed and the spawn never lands. Absence contract per §3.5.
 
 ## 7. Adding a metric — checklist for authors
 

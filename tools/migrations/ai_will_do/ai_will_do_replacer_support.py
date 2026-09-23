@@ -28,6 +28,8 @@ from ai_replacer_base import (
 from ai_replacer_base.text_utils import (
     extract_start_year,
     extract_categories,
+    extract_base_factor,
+    extract_research_triggers,
 )
 
 
@@ -38,6 +40,28 @@ class SupportFileProcessor(BaseFileProcessor):
     Handles support company equipment only.
     Self-propelled variants (SPG, SPAA, TD) are handled by armor parser.
     """
+
+    # [support-research-priority] Research weight per support family, read off the tech's own
+    # `categories = {}`. Baseline is 1 (every other tech domain); these four are the families
+    # whose absence costs the AI attrition, supply and command efficiency it never recovers, so
+    # they must out-weigh the generic support line rather than queue behind it. Most specific
+    # first - a tech carrying two listed categories takes the first match.
+    # HQ techs (tech_headquarters1/2/3) hang off tech_signal_company3/4/5, so the signal weight
+    # is what makes them reachable at all; raising HQ without raising signal does nothing.
+    PRIORITY_FACTORS: dict[str, float] = {
+        "headquarters_tech": 8,
+        "signal_company_tech": 6,
+        "logistics_tech": 5,
+        "hospital_tech": 5,
+    }
+
+    def get_priority_factor(self, tech_name: str, categories: list[str]) -> float:
+        """Weight from the first matching category in PRIORITY_FACTORS, else the baseline 1."""
+        cats = set(categories or [])
+        for category, factor in self.PRIORITY_FACTORS.items():
+            if category in cats:
+                return factor
+        return 1
 
     def get_file_patterns(self) -> list[str]:
         return [
@@ -69,6 +93,7 @@ class SupportFileProcessor(BaseFileProcessor):
             "cat_logistics": "WA_AI_RESEARCH_needs_logistics_company",
             "cat_hospital": "WA_AI_RESEARCH_needs_field_hospitals",
             "cat_military_police": "WA_AI_RESEARCH_needs_military_police",
+            "train_tech": "WA_AI_RESEARCH_needs_trains",
             "cat_camo": "WA_AI_RESEARCH_needs_camo",
             "cat_camouflage": "WA_AI_RESEARCH_needs_camo",
             "camo_tech": "WA_AI_RESEARCH_needs_camo",
@@ -76,6 +101,11 @@ class SupportFileProcessor(BaseFileProcessor):
 
     def get_name_patterns(self) -> list[tuple[str, str | list[str]]]:
         return [
+            # Trains, most specific first. The armoured train and the railway gun keep the
+            # railway-artillery gate the tech file already carries; only the three supply-train
+            # techs (basic / simplified / wartime) answer to the train trigger.
+            (r"^armored_train$|^railway_gun", "WA_AI_RESEARCH_needs_railway_artillery"),
+            (r"train", "WA_AI_RESEARCH_needs_trains"),
             # Specific support types (most specific first)
             (r"engineer|combat_engineer|field_engineer", "WA_AI_RESEARCH_needs_engineer_company"),
             (r"recon|reconnaissance|scout_company", "WA_AI_RESEARCH_needs_recon_company"),
@@ -83,7 +113,7 @@ class SupportFileProcessor(BaseFileProcessor):
             (r"maintenance|repair|field_repair", "WA_AI_RESEARCH_needs_maintenance_company"),
             (r"logistics|supply|field_supply", "WA_AI_RESEARCH_needs_logistics_company"),
             (r"hospital|medic|medical|field_hospital", "WA_AI_RESEARCH_needs_field_hospitals"),
-            (r"military_police_horse_company_divisional|mp_|field_police", "WA_AI_RESEARCH_needs_military_police"),
+            (r"military_police|mp_|field_police", "WA_AI_RESEARCH_needs_military_police"),
             (r"camo|camouflage|false_emplacements", "WA_AI_RESEARCH_needs_camo"),
             # Line artillery (for artillery support companies)
             (r"artillery", "WA_AI_RESEARCH_needs_line_artillery"),
@@ -118,20 +148,24 @@ class SupportFileProcessor(BaseFileProcessor):
 
             block_start, block_end, block_content = ai_result
 
-            # Check if needs update
-            if not self.needs_update(block_content, tech_name, tech_block):
+            # Get the categories, the research weight they earn this tech, and the gate
+            categories = extract_categories(tech_block)
+            want_factor = self.get_priority_factor(tech_name, categories)
+            trigger = self.resolve_trigger(tech_name, [], categories, tech_block)
+            if trigger is None and 'support' in filepath.name.lower():
+                # Only use file-based inference for support files
+                trigger = self._infer_from_file(filepath, tech_name)
+            want_triggers = set([trigger] if isinstance(trigger, str) else (trigger or []))
+
+            # A block can be the right SHAPE and still be stale: a base factor or a gate
+            # trigger that no longer matches what the generator resolves is a reason to rewrite
+            stale = (self.needs_update(block_content, tech_name, tech_block)
+                     or extract_base_factor(block_content) != want_factor
+                     or (want_triggers
+                         and extract_research_triggers(block_content) != want_triggers))
+            if not stale:
                 stats.skipped += 1
                 continue
-
-            # Get categories and determine trigger
-            categories = extract_categories(tech_block)
-
-            trigger = self.resolve_trigger(tech_name, [], categories, tech_block)
-
-            if trigger is None:
-                # Only use file-based inference for support files
-                if 'support' in filepath.name.lower():
-                    trigger = self._infer_from_file(filepath, tech_name)
 
             if trigger is None:
                 stats.skipped += 1  # Skip unknown techs instead of error
@@ -146,14 +180,20 @@ class SupportFileProcessor(BaseFileProcessor):
 
             # Generate new block
             triggers = [trigger] if isinstance(trigger, str) else trigger
-            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t", tech_name=tech_name, categories=categories)
+            new_block = generate_ai_will_do_block(triggers, start_year, indent="\t\t",
+                                                  factor=want_factor, tech_name=tech_name,
+                                                  categories=categories)
 
-            # Replace the block
+            # Only replace if the block actually changed
+            if new_block == content[block_start:block_end]:
+                stats.skipped += 1
+                continue
+
             content = content[:block_start] + new_block + content[block_end:]
             stats.updated += 1
 
             if self.verbose:
-                print(f"  Updated: {tech_name} -> {trigger} (year: {start_year})")
+                print(f"  Updated: {tech_name} -> {trigger} (year: {start_year}, factor: {want_factor})")
 
         # Write if changed
         if content != original_content and not self.dry_run:

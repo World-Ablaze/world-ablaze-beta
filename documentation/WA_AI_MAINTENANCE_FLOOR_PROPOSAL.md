@@ -1,33 +1,36 @@
 # WA_AI maintenance floors — keeping a fielded park supplied
 
-Status: **IMPLEMENTED, NOT COMMITTED** (2026-09-11). Revision 4, owner decision "B": the shortage
-gate becomes a RATIO with `enable`/`abort` hysteresis, and armour moves from the `armor` type to
-four chassis ARCHETYPES — both changes taken from Expert AI 5.0 (§2).
+Status: **IMPLEMENTED, NOT COMMITTED**. Owner revision 2026-09-19: **every** armour chassis
+archetype — the four main gun classes and all 32 variant chassis — keeps a flat five-factory floor
+whenever fielded divisions require that chassis. Their captured stock no longer disables
+maintenance. Support-equipment floors retain the ratio and hysteresis model below.
+
+**Why the variants were added (owner directive, 2026-09-19).** A Flakpanzer I is
+`light_spaa_tank_chassis` and a Sturmpanzer I 'Bison' is `light_assault_tank_chassis`: to the engine
+these are **not** `light_tank_chassis`, so the four main-class floors never reached them
+(**MEASURED**, `common/units/equipment/tank_chassis.txt` + `x_tank_chassis.txt`: 36 tank archetypes,
+of which the floors covered 4). GER 1939 was seen running a Panzer II line at exactly the 5-factory
+floor beside a Flakpanzer line at 2 and a Bison line at 15 — the floor working on one archetype and
+absent on the others.
 
 Files in the working tree:
 
 | File | |
 | --- | --- |
-| `common/script_constants/wa_ai_production.txt` | new `maintenance` group, **7 numbers** |
-| `common/scripted_triggers/WA_AI_PRODUCTION_maintenance_triggers.txt` | 60 triggers, 10 keys x 6 |
-| `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt` | 20 blocks, 10 keys x base/deep |
+| `common/script_constants/wa_ai_production.txt` | `maintenance` group, **6 numbers** |
+| `common/scripted_triggers/WA_AI_PRODUCTION_maintenance_triggers.txt` | 108 triggers: 2 per armour chassis (36 of them), 6 per support key |
+| `common/ai_strategy/WA_AI_PRODUCTION_DEFAULT_maintenance.txt` | 48 blocks: one per armour chassis (36), base/deep for six support keys |
 | `common/scripted_effects/WA_TEST_maintenance.txt` + `events/wa_test_maintenance.txt` | harness v1, namespace `wa_maint` |
-| `common/scripted_effects/WA_TLM_core.txt` + `documentation/WA_TLM_TELEMETRY_SYSTEM.md` | probe `WA_TLM_r115_maint_*`, TLM v37 |
+| `common/scripted_effects/WA_TLM_core.txt` + `documentation/WA_TLM_TELEMETRY_SYSTEM.md` | probe `WA_TLM_r115_maint_*` + `_armor_var_n`, TLM **v39** |
 
-Gates: `check_constants` 0 error / 0 warning / 84 groups · `check_worklist` 0 ERROR ·
+Gates: `check_constants` 0 error / 0 warning / 88 groups · generator tests 73/73 ·
 `check_ai_layers` unchanged from HEAD (same single pre-existing `NAME-COLLISION`, all six ratchets
-identical) · `check_skill_refs` 0 dead · 60 triggers, no dangling reference, none unread.
+identical) · 44 maintenance triggers, no dangling armour-maintenance reference.
 
-**Owed before this can be committed** — all owner decisions, not code:
+**Owed before this can be marked TESTED:**
 
 1. **Phase 0 not run.** The two engine facts of §7 are ASSUMED. `event wa_maint.3 <TAG>`, then the
    production panel.
-2. **No `WORK.md` subject.** The checker's OPEN set already holds four (`air-budget`,
-   `sov-conscription-oscillation`, `ger-labour-law`, `repeatable-pp-decisions`), so admitting
-   `maintenance-floor` trips WIP-LIMIT unless one is parked.
-3. **Probe r115 has no checklist item** (`WA_TLM_TELEMETRY_SYSTEM.md` §7.4).
-4. **Sequencing.** `armor-prod-category` is PARKED awaiting a campaign probe on the armour lines;
-   this ships onto the same lines.
 
 ---
 
@@ -42,7 +45,7 @@ lines already run (`WA_AI_PRODUCTION_air.txt` § MAINTENANCE), generalised to la
 
 | | Trigger | Keys |
 | --- | --- | --- |
-| **ARMOUR** | WA itself closes the lines — the class ladder, the era boundary, a fielded cap | `light_tank_chassis`, `medium_tank_chassis`, `heavy_tank_chassis`, `modern_tank_chassis` |
+| **ARMOUR** | fielded divisions still require the chassis, regardless of captured stock or expansion demand | all **36** tank archetypes: `light/medium/heavy/modern_tank_chassis`, the four `_tank_destroyer_`, four `_tank_artillery_` (+ `medium_tank_rocket_`), four `_assault_tank_`, four `_spaa_tank_`, four `_infantry_support_tank_`, three `_tank_support_`, the four super-heavy / `landkruiser_tank_chassis`, `amphibious_tank_chassis`, `scout_car_chassis`, `combat_car_chassis` |
 | **SUPPORT** | nothing closes anything. Anti-tank, AA, heavy AA, heavy and pack artillery had **no factory floor anywhere in the DEFAULT tier**, so the engine's need heuristic alone decided whether they were built | `anti_tank_equipment`, `anti_air_equipment`, `heavy_anti_air_equipment`, `heavy_artillery_equipment`, `pack_artillery_equipment` |
 | both | amtrac is a support archetype whose line *does* close (peace), so it carries a closure term too | `amphibious_mechanized_equipment` |
 
@@ -118,6 +121,11 @@ scan), as did `minor_highered_armored_production`. **No `equipment_production_mi
 
 ## 4. The gate
 
+For every armour chassis archetype, the 2026-09-19 owner revision replaces the ratio gate below:
+maintenance is active whenever `num_target_equipment_in_armies_k@<chassis> > target_min_k` and the
+country passes the shared industry floor. Captured stock does not close it. The ratio/Schmitt model
+below now describes support equipment and amtracs only.
+
 ```
 ratio(X) = num_equipment@X / num_target_equipment_in_armies_k@X / 1000     # spares / required
 ```
@@ -126,42 +134,39 @@ Wrapped in the `if / else = { always = no }` division-by-zero guard — the shap
 the same computation.
 
 ```
-WA_AI_PRODUCTION_should_maintain_<key> = {
-	<domain>                                              # tanks_is_enabled / ground_is_enabled
-	NOT = { WA_AI_PRODUCTION_armor_category_push = yes }  # armour keys only - see below
-	NOT = { WA_AI_PRODUCTION_build_<class>_armor = yes }  # armour keys + amtrac: the line is closed
+WA_AI_PRODUCTION_should_maintain_<armor_class>_tank = {
+	WA_AI_PRODUCTION_tanks_is_enabled = yes
 	num_of_military_factories > constant:wa_ai_production.industry.wartime_min_mils
-	WA_AI_PRODUCTION_is_<key>_short = yes                 # ratio < shortage_enable
+	check_variable = { num_target_equipment_in_armies_k@<chassis> > constant:wa_ai_production.maintenance.target_min_k }
 }
 ```
 
-`should_hold_maintain_<key>` repeats every term but swaps the last for
-`NOT = { is_<key>_supplied }` (ratio < `shortage_abort`), and the `ai_strategy` block reads
-`enable = { should_maintain }` / `abort = { NOT = { should_hold_maintain } }`.
+For armour, `should_hold_maintain_<key>` repeats the same fielded-demand gate. Support equipment
+keeps the ratio form: its hold trigger swaps `_short` for `NOT = { _supplied }`. Every strategy
+reads `enable = { should_maintain }` / `abort = { NOT = { should_hold_maintain } }`.
 
 **`abort` is not the negation of `enable`.** It must also fire when a closure term comes back, or a
 reopened line would keep its floor — which is why `should_hold_maintain_*` repeats the closure
 terms rather than carrying only the stock bar.
 
-**Why the category push is negated on the armour keys.** `WA_AI_PRODUCTION_armor_category_push`
-raises the engine's perceived NEED for armour; a floor FORCES allocation regardless of need. The two
-together double-count, which is why the per-chassis floors were dropped once before:
+**Why the category push may coexist with the armour floor.** The old design excluded it because it
+raises perceived demand:
 
 > Tank chassis carry **NO floor**: the armor category factor above is their only lever. A floor is
 > need-blind […] re-adding one under the category factor would force allocation on top of a raised
 > demand and **double-count**. — `[armor-prod-category]`, `WA_AI_PRODUCTION_DEFAULT_tanks.txt`,
 > owner instruction 2026-09-01
 
-The negation makes them mutually exclusive **by construction**: this floor can only run while that
-lever has nothing to multiply. Option B re-introduces per-chassis floors knowingly, with that guard
-and after the objection was quoted; the harness asserts the exclusivity on every run
-(`exclusive-with-category-push`).
+The 2026-09-19 owner revision supersedes that exclusion. The demand factor may allocate more than
+five factories, while the archetype minimum guarantees five when captured stock suppresses demand.
+The floor does not add five above an allocation already at or above five. The harness now asserts
+that every armour gate — main class and variant — agrees with fielded demand (`armor-fielded-gates`).
 
 ---
 
 ## 5. The numbers
 
-`common/script_constants/wa_ai_production.txt`, group `maintenance`. **Seven**, down from the
+`common/script_constants/wa_ai_production.txt`, group `maintenance`. **Six**, down from the
 sixteen absolute bars revision 3 had to guess — the ratio removed the need for a park bar and a
 stock ceiling per archetype.
 
@@ -170,8 +175,7 @@ stock ceiling per archetype.
 | `target_min_k` | 0.1 | the armies must require at least ~100 of it before a floor is owed |
 | `shortage_enable` | 0.10 | arm: free spares under 10 % of what the armies require |
 | `shortage_abort` | 0.25 | release: spares back to 25 %. **Never equal to the above** |
-| `floor_base` | 2 | armour chassis |
-| `floor_deep_add` | 3 | added above `industry.tier_large_mils` → 5 |
+| `floor_base` | 5 | each armour chassis archetype required by fielded divisions, variants included |
 | `ground_floor_base` | 1 | support equipment |
 | `ground_floor_deep_add` | 2 | → 3 |
 
@@ -179,9 +183,70 @@ Armour is the deeper pair because a chassis is two orders of magnitude dearer th
 (**MEASURED** `build_cost_ic = 200` per chassis), so one factory is a trickle there and a real flow
 for a support gun.
 
-The two `ai_strategy value =` literals per key are the one place `constant:` cannot be used and are
-kept equal by hand; every other reader — the probe, the harness — takes the constants, so retuning
-cannot make them disagree with the shipped floor.
+The armour keys have one `ai_strategy value = 5` literal each; support keys keep base/deep pairs.
+These are the one place `constant:` cannot be used. `tools/constants_registry.json` checks all **36**
+armour copies strictly against `floor_base`; every other reader takes the constants.
+
+**Who this newly reaches — the ahistorical/minor walk (AGENTS P3 b–c).** Three of the 32 variants
+are not armour-doctrine equipment at all:
+
+| Archetype | Carried by | Who now reserves 5 mils |
+| --- | --- | --- |
+| `scout_car_chassis` | `recon_scout_car_company_divisional` (15/company, `common/units/support_recon.txt`), `scout_car_battalion_line` | **any** AI above `wartime_min_mils` whose divisions take the scout-car recon company — most minors with an industry |
+| `combat_car_chassis` | armoured-car recon (`common/units/armor_armored_cars.txt`) | same shape |
+| `*_infantry_support_tank_chassis` | `*_infantry_support_armor_battalion_line` | a country with infantry-support armour but no tank arm |
+
+**This does not contradict the `[minor-gun-floor]` owner ruling of 2026-09-16** ("a country that does
+not pass `WA_AI_TEMPLATES_use_armor_templates` … builds no tanks at all … never add a bootstrap floor
+to 'fix' it"). That ruling forbids a floor that *gives* a country a tank arm. Every floor here arms
+only on `num_target_equipment_in_armies_k@<arch> > 0.1k` — the country's own divisions already
+require the chassis — so it replaces attrition losses on a park that exists and can never create one.
+A country with zero armour battalions reads `require = 0` on all 36 and gets nothing. The ruling's
+text is restored verbatim at `WA_AI_PRODUCTION_DEFAULT_tanks.txt` with this distinction attached.
+**ASSUMED** and owed the harness: that a recon-only minor reads `armor_var_n = 1-2` and not more.
+
+### The aggregate cost table (AGENTS P3 f) — **this is the open question**
+
+The floors SUM on the same military pool. `wartime_min_mils` only asks for 21, so the aggregate is
+**not** bounded by anything. Three timepoints:
+
+**t0 — 1936 start templates.** **MEASURED** by mapping every `x = / y =` regiment in
+`history/units/*_1936.txt` through the `*_chassis` reference of its sub-unit in `common/units/`, and
+summing `arms_factory` over `history/states/` per owner. Only **19 of 313** country files field any
+armour archetype at all, and the `> 20 mils` gate silences the small ones (BUL 5, SAF 4, NZL 2,
+AST/BEL 10). What is left:
+
+| Tag | Archetypes | Floor | Mils 1936 | Floor / mils |
+| --- | --- | --- | --- | --- |
+| USA | 4 | 20 | 21 | **95 %** |
+| FRA | 6 | 30 | 59 | **51 %** |
+| ENG | 4 | 20 | 45 | **44 %** |
+| ITA | 4 | 20 | 49 | **41 %** |
+| JAP | 4 | 20 | 59 | 34 % |
+| GER | 4 | 20 | 93 | 22 % |
+| SOV | 5 | 25 | 133 | 19 % |
+| CZE | 1 | 5 | 32 | 16 % |
+| CRO | 3 | 15 | 0 | inert (under the mils gate) |
+
+**t1 / t2 — as WA's own AI templates open more roles.** **DERIVED**, not measured: the same mapping
+over `common/ai_templates/WA_AI_TEMPLATES_*.txt` reaches **21 distinct chassis archetypes** (the four
+gun classes plus TD, SP artillery, assault gun, SPAA, infantry-support and support tank in the light /
+medium / heavy / modern families). At that ceiling a single country requests **105 factories** of
+maintenance floor. A 1943 major holds 150–200 mils, so the ceiling is **over half its arsenal**.
+
+**No taper is implemented.** `floor_base` is flat 5 for all 36 ids, per the owner directive of
+2026-09-19. The three obvious levers, none chosen: a smaller `variant_floor_base` (a Flakpanzer
+company is ~1/10 the equipment demand of a tank battalion); a per-country cap on the sum; or scaling
+the floor by the band ladder in `wa_ai_production.industry` the way the ground floors do. **The
+number to watch in a campaign is `WA_TLM_r115_maint_floor` against that country's mils.**
+
+**The floors SUM, and that is the cost of this revision.** Each armed archetype reserves 5
+factories, and `wartime_min_mils` only asks for 21. A country whose divisions field six armour
+archetypes (a plausible GER 1939: light tank, light SPAA, light assault gun, light TD, medium tank,
+scout car) has **30 factories reserved before anything else is weighed** — **DERIVED** from
+6 × `floor_base`, not measured in a campaign. The self-limiting gate keeps an *unfielded* archetype
+free, but it does nothing about a country that genuinely fields many. The harness totals line prints
+the factory sum beside `mils` for exactly this reason; read it before calling a campaign healthy.
 
 ---
 
@@ -189,14 +254,14 @@ cannot make them disagree with the shipped floor.
 
 | # | Case | Guard |
 | --- | --- | --- |
-| 1 | **1936, 20 mils, 5 maintenance factories on chars** | Three independent guards: `wartime_min_mils` holds the system off at or below 20; `target_min_k` fails because the armies require almost nothing; and the ratio is high because the starting stockpile is full |
-| 2 | Captured stock inflates the park | The denominator is what the armies REQUIRE, not what they hold, so a captured stockpile *raises* the ratio and releases the floor — the correct direction |
+| 1 | **1936, 20 mils, 5 maintenance factories on chars** | `wartime_min_mils` holds the system off at or below 20; above it, any main chassis actually required by fielded divisions receives its floor, including in 1936 |
+| 2 | Captured stock inflates an armour park | Armour ignores the surplus ratio and keeps five factories while the chassis remains required by fielded divisions. Support equipment still releases its floor through the ratio. |
 | 3 | A country with no AT templates gets AT factories forced | `target_min_k`: no requirement, no floor. The gate cannot fire on equipment the templates never mount |
 | 4 | Entry accumulation (the AIFC 517-entry failure) | Not reachable: static `ai_strategy` blocks with `enable`/`abort`, no `add_ai_strategy` |
-| 5 | A park sitting on the bar toggles every evaluation | The Schmitt pair, 0.10 / 0.25. The harness asserts the bars have not crossed (`schmitt-disjoint`) |
-| 6 | The floor runs for ever | It cannot: producing raises the numerator, the ratio crosses 0.25, the block aborts. The shortage is self-extinguishing — this is what replaced revision 3's absolute stock ceiling |
-| 7 | Floors starve the factory pool | 10 keys x at most 5 = 25 factories worst case, and only on a country short of all ten at once above 49 mils. The harness prints the running total |
-| 8 | Two floors on one id | §3: the `armor`, `anti_tank`, `anti_air` and `artillery` TYPES carry floors elsewhere and sum with these. Bounded, printed. **[minor-gun-floor], 2026-09-16**: `WA_AI_PRODUCTION_DEFAULT_ground.txt` now carries a BASELINE archetype floor of 1 on `anti_tank_equipment` under these, so the anti-tank totals are **2 while short, 4 deep** (`deepen` implies `maintain`, so 1+2 fire together). Printed by harness section B2 |
+| 5 | A support park sitting on the bar toggles every evaluation | The support-equipment Schmitt pair, 0.10 / 0.25. The harness asserts the bars have not crossed (`schmitt-disjoint`) |
+| 6 | An armour floor runs after its class disappears | The identical hold gate aborts when fielded divisions no longer require that chassis |
+| 7 | Floors starve the factory pool | Armour reserves 5/10/15/20 factories when 1/2/3/4 main chassis classes coexist; support floors add only while short. The harness prints the running total. |
+| 8 | Two floors on one id | No other main-chassis archetype floor exists. Support type/archetype floors can still sum. **[minor-gun-floor], 2026-09-16**: `WA_AI_PRODUCTION_DEFAULT_ground.txt` carries a baseline archetype floor of 1 on `anti_tank_equipment`, so anti-tank totals are **2 while short, 4 deep**. Printed by harness section B2 |
 | 9 | Puppets and subjects | All reads are ROOT-scoped country variables; re-check the puppet-scope trap in `wa-lessons-learned` before the first commit |
 | 10 | A floor buys volume, not modernisation | The AI walks the `parent` chain to the deepest producible variant. **ASSUMED** — §7 |
 
