@@ -152,3 +152,8 @@ A 09-20 A min_factories floor takes rank, it does not preempt a full factory poo
 - A 09-20 can_upgrade_in_field works without replace_with; four NAI valves pace conversions - grep:"NOT inert without replace_with"
 - B 09-20 A reconcile writing its book outside the emit branch cannot see a desync - grep:"writes its book unconditionally"
 - G 09-20 Edit a big JSON registry textually; a json round-trip reformats the whole file - grep:"reformats a whole registry"
+- E 09-21 One run at one date is no control pair when two unedited runs already differ - grep:"is not a control pair"
+- A 09-21 replace_at_match is two-way: low = arrow stays on the replacement, high = designer walks back - grep:"makes the designer walk back"
+- B 09-22 A chassis switch is paced by the factory pool (~a quarter); no need/factor lever shortens it - grep:"moves factories to a new chassis over a quarter"
+- A 09-22 A fill-stepped ladder also needs an adoption term (requirement grown since last step) - grep:"must also require adoption"
+- E 09-22 imgui ai_templates lists all targets; only the arrow and Best lines are readings; log= is buffered - grep:"lists every target of an entry"

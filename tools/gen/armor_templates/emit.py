@@ -74,14 +74,60 @@ def family_file(registry, family_id, selections, game=None, declared=()):
             continue
         index[sel.signature] = len(groups)
         groups.append((sel, [sel]))
+    ladder = fam.get("tier_ladder")
     for first, members in groups:
-        out.append(_target_block(registry, fam, first, [m.code for m in members]))
+        codes = [m.code for m in members]
+        if ladder:
+            out.append(_tier_blocks(registry, fam, first, codes, ladder))
+        else:
+            out.append(_target_block(registry, fam, first, codes))
     # Declared profiles keep their own codes, their own order and their replace_with links: they
     # are a conversion state machine, and the order a role group declares its targets in is what
     # breaks a tie between two targets at equal upgrade_prio.
     for sel in declared:
         out.append(_target_block(registry, fam, sel, sel.codes, profile=sel.profile))
     out.append("}\n")
+    return "".join(out)
+
+
+def _tier_blocks(registry, fam, sel, codes, ladder):
+    """[modern-tier-ladder] One target per TIER of the main line unit.
+
+    A composition with N main-line battalions becomes N targets: tier k mounts k of `unit` and
+    N-k of `fallback_unit`, enabled by the composition's own value(s) AND the ladder flag at
+    k - tier 1 also while the flag is absent, the top tier (the composition itself) at every
+    value from N to max_value. The flag is stepped one-way by the templates latch while the
+    fielded tier is filled and adopted, so the park climbs one battalion at a time and stays
+    full while the engine moves factories to the new chassis (MEASURED, a quarter). A
+    composition with fewer than two main-line battalions has no ladder to climb.
+    """
+    unit, fallback, flag = ladder["unit"], ladder["fallback_unit"], ladder["flag"]
+    n = sel.line.get(unit, 0)
+    if n < 2:
+        return _target_block(registry, fam, sel, codes)
+    if n > ladder["max_value"]:
+        raise ValueError("%s: %d %s battalions exceed tier_ladder.max_value %d"
+                         % (sel.name, n, unit, ladder["max_value"]))
+    out = []
+    for k in range(1, n + 1):
+        tier = R.Selection(sel.family, sel.facts)
+        tier.line = dict(sel.line)
+        tier.line[unit] = k
+        if n - k:
+            tier.line[fallback] = tier.line.get(fallback, 0) + (n - k)
+        tier.regimental, tier.support, tier.width = sel.regimental, sel.support, sel.width
+        tier.code, tier.codes = sel.code, codes
+        tier.name = "%s__TIER_%d" % (sel.name, k)
+        if k == 1:
+            term = ("OR = { NOT = { has_country_flag = %s } "
+                    "has_country_flag = { flag = %s value = 1 } }" % (flag, flag))
+        elif k < n:
+            term = "has_country_flag = { flag = %s value = %d }" % (flag, k)
+        else:
+            term = "OR = { %s }" % " ".join(
+                "has_country_flag = { flag = %s value = %d }" % (flag, v)
+                for v in range(n, ladder["max_value"] + 1))
+        out.append(_target_block(registry, fam, tier, codes, profile={"enable_raw": [term]}))
     return "".join(out)
 
 
@@ -447,6 +493,9 @@ def manifest(registry, per_family_selections, stats, extra=None, declared=None):
             "code_range": fam.get("code_range"),
             "mode": fam.get("mode", "enumerated"),
             "codes_used": [min(s.code for s in sels), max(s.code for s in sels)] if sels else [],
+            # [modern-tier-ladder] Declared once here so a reader knows every code of this family
+            # is answered by several targets (one per tier) that share the value.
+            "tier_ladder": fam.get("tier_ladder"),
             # One row per code: what the engine will field, and which categorical point produced
             # it. The ladder computes the code arithmetically, so the per-target trigger
             # conjunction is not part of the contract and is not carried here.

@@ -57,7 +57,7 @@
 #	v34 armor_*                      armour-template coverage ([armor-class-handoff])
 #	v37 r115_maint_*                 land maintenance floor, probe ([maintenance-floor])
 #	v39 r115_maint_armor_var_n       the 32 variant chassis floors ([armor-variant-maintenance])
-#	v40 lmc_conv_n / _last_t         light->medium role conversions, probe ([light-medium-conversion])
+#	v40 lmc_conv_n / _last_t         light->medium role conversions, probe ([light-medium-conversion]) - retired 2026-09-23
 @WA_TLM_VERSION = 40
 
 ############################################################################################################
@@ -391,10 +391,6 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_r98_eth_both_n } } set_variable = { WA_TLM_r98_eth_both_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r98_eth_both_first_t } } set_variable = { WA_TLM_r98_eth_both_first_t = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_r98_eth_both_last_t } } set_variable = { WA_TLM_r98_eth_both_last_t = 0 } }
-
-	# lmc light->medium role conversion ([light-medium-conversion]) - written by WA_TLM_note_light_medium_conversion
-	if = { limit = { NOT = { has_variable = WA_TLM_lmc_conv_n } } set_variable = { WA_TLM_lmc_conv_n = 0 } }
-	if = { limit = { NOT = { has_variable = WA_TLM_lmc_conv_last_t } } set_variable = { WA_TLM_lmc_conv_last_t = 0 } }
 
 	# r99 Axis Tunis bridge ([med-axis-posture], consumer: checklist R64) - monthly sampler WA_TLM_sample_tunis_bridge
 	if = { limit = { NOT = { has_variable = WA_TLM_r99_tunis_states_manned } } set_variable = { WA_TLM_r99_tunis_states_manned = 0 } }
@@ -1314,17 +1310,4 @@ WA_TLM_sample_sq = {
 		clamp_temp_variable = { var = _tlm_sq_k_ min = 1 max = 20 }
 		set_variable = { WA_TLM_sq_k = _tlm_sq_k_ }
 	}
-}
-
-############################################################################################################
-#	Light -> medium ROLE conversion ([light-medium-conversion]). Scope: country. NOT a sampler -
-#	called once by WA_AI_TEMPLATES_convert_one_light_armor_division, and only on the branch where
-#	the division count has already proven the medium division spawned. Absence of the counter on a
-#	country inside the window therefore reads "never converted", never "converted silently".
-############################################################################################################
-WA_TLM_note_light_medium_conversion = {
-	# tlm: lmc_conv_n / lmc_conv_last_t - counter + stamp, verified effect (medium division created
-	# AND a light-majority division destroyed in the same pulse) - consumer [light-medium-conversion].
-	add_to_variable = { WA_TLM_lmc_conv_n = 1 }
-	set_variable = { WA_TLM_lmc_conv_last_t = global.WA_TLM_clock }
 }

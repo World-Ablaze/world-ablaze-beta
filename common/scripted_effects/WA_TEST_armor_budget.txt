@@ -340,6 +340,37 @@ WA_TEST_ABG_report = {
 	log = "  convert: latch=[?_abt_modlatch|.0]  gate=[?_abt_modconv|.0]  divisions medium=[?_abt_medivs|.0] modern=[?_abt_moddivs|.0]  demand medium=[?_abt_modpark|.0] modern=[?_abt_tgtmod|.0]"
 	log = "           latch=1 + gate=1 across runs with medium demand FLAT = no conversion is happening, cause not distinguished (engine ignoring can_upgrade_in_field / frozen decommissioned template / no XP / in combat)"
 	log = "           latch=1 + gate=0 while medium demand STILL FALLS = the gate is not read on a target without replace_with - the bet is lost and the field is inert, which costs nothing"
+
+	# [modern-tier-ladder] The tier the modern family is enabled on (1 = one modern battalion; the
+	# ceiling is registry max_value), and the two terms that step it. A flag value cannot be
+	# loaded into a variable, so the tier is read by one comparison per value. -1 = no flag yet.
+	set_temp_variable = { _abt_tier = -1 }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 1 } } set_temp_variable = { _abt_tier = 1 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 2 } } set_temp_variable = { _abt_tier = 2 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 3 } } set_temp_variable = { _abt_tier = 3 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 4 } } set_temp_variable = { _abt_tier = 4 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 5 } } set_temp_variable = { _abt_tier = 5 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 6 } } set_temp_variable = { _abt_tier = 6 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 7 } } set_temp_variable = { _abt_tier = 7 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 8 } } set_temp_variable = { _abt_tier = 8 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 9 } } set_temp_variable = { _abt_tier = 9 } }
+	if = { limit = { has_country_flag = { flag = WA_AI_TEMPLATES_modern_tier value = 10 } } set_temp_variable = { _abt_tier = 10 } }
+	set_temp_variable = { _abt_tfill = 0 }
+	set_temp_variable = { _abt_treq = num_target_equipment_in_armies@modern_tank_chassis }
+	if = {
+		limit = { check_variable = { num_target_equipment_in_armies@modern_tank_chassis > 0 } }
+		set_temp_variable = { _abt_tfill = num_equipment_in_armies@modern_tank_chassis }
+		divide_temp_variable = { _abt_tfill = num_target_equipment_in_armies@modern_tank_chassis }
+	}
+	set_temp_variable = { _abt_tstep = WA_AI_TEMPLATES_modern_tier_required_at_step }
+	set_temp_variable = { _abt_tfilled = 0 }
+	if = { limit = { WA_AI_TEMPLATES_is_modern_tier_filled = yes } set_temp_variable = { _abt_tfilled = 1 } }
+	set_temp_variable = { _abt_tadopt = 0 }
+	if = { limit = { WA_AI_TEMPLATES_has_adopted_modern_tier = yes } set_temp_variable = { _abt_tadopt = 1 } }
+	set_temp_variable = { _abt_tnow = 0 }
+	if = { limit = { WA_AI_TEMPLATES_should_step_modern_tier = yes } set_temp_variable = { _abt_tnow = 1 } }
+	log = "  ladder: tier=[?_abt_tier|.0]  fill=[?_abt_tfill|.2]  required=[?_abt_treq|.0]  required-at-step=[?_abt_tstep|.0]  filled=[?_abt_tfilled|.0]  adopted=[?_abt_tadopt|.0]  step-now=[?_abt_tnow|.0]"
+	log = "           (tier -1 with latch=1 = the tier latch never ran; tier stuck for three pulses with filled=1 and adopted=1 = the effect's else_if chain is broken; fill > 1 for three months with adopted=0 = the park is not re-cutting to the enabled tier, read imgui ai_templates; tier at the ceiling on the first line after the latch = a pre-ladder save, expected)"
 	log = "  band  : medium-chassis=[?_abt_bandmed|.0]  modern-chassis=[?_abt_bandmod|.0]  (exactly one must be 1 once the medium role is open; this is the ladder INTENT, not the carried value - see the comment above)"
 
 	############################################################

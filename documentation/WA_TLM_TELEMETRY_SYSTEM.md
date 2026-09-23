@@ -409,8 +409,6 @@ per series — trivial at depth 44, but do not raise depth casually.
 | `WA_TLM_r115_maint_floor` | gauge (factories WA **requested** across all 42 floors - never what the engine allocated, and never the country TOTAL on those ids: POL/HUN/SWE, the CZE plan and the lend-lease donors floor the same types and floors sum) | monthly, all AI | probe r115 | v37, widened v39 |
 | `WA_TLM_r115_maint_at_ratio` | gauge (free anti-tank spares over what the armies require - the verified EFFECT: it must RISE while `ground_n` > 0) | monthly, all AI | probe r115 | v37 |
 | `WA_TLM_r115_maint_last_t` | stamp | monthly, all AI | probe r115 absence contract | v37 |
-| `WA_TLM_lmc_conv_n` | counter (verified effect) | event-site, on a completed conversion | `[light-medium-conversion]` | v40 |
-| `WA_TLM_lmc_conv_last_t` | stamp | written with the counter | `[light-medium-conversion]` absence contract | v40 |
 
 **v4 naval readings are artefacts — do not score them.** `nav_screens` and
 `nav_convoys` were written from `num_ships_with_type@screen_ship` and
@@ -758,23 +756,12 @@ same saves must show the deficit the latch claims.
 on a country that shows ≥ 3 consecutive deficit months in its resource series, `gdn_*_n` rises
 from the following save on, and `gdn_flip_n ≤ 4` per resource over the campaign.
 
-## 6i. Light → medium role conversion (probe, v40)
+## 6i. Light → medium role conversion (probe, v40) — RETIRED 2026-09-23
 
-`replace_with` cannot resolve across ROLE groups, so a division on a light target can end up
-medium in COMPOSITION while its role stays `light_armor`. `[light-medium-conversion]` trades one
-light-majority division per month for a medium one; the trade is invisible in a save (a destroy
-plus a create nets to zero divisions), so it needs its own counter.
-
-`WA_TLM_lmc_conv_n` is a **verified effect**: it is incremented only on the branch where
-`num_divisions` has already risen, i.e. the medium division exists AND a light-majority division
-was destroyed in the same pulse. Gate entry is deliberately NOT counted — the two silent-no-op
-paths the probe exists to separate (a name the resolver cannot build, a non-English client) both
-pass the gate and fail the spawn.
-
-**Probe**: `tlm <TAG> <saves>` → `lmc_conv_n`, `lmc_conv_last_t`. Pass = on a country whose
-`WA_TEST_templates` line shows `conv_gate=1`, `lmc_conv_n` rises by ~1 per month from the window
-opening until no light-majority division remains, then stops. `conv_gate=1` with `lmc_conv_n`
-flat is the defect: the gate is armed and the spawn never lands. Absence contract per §3.5.
+`WA_TLM_lmc_conv_n` / `_last_t` retired with `[light-medium-conversion]` (criterion MET on
+campaign `73c03fd3`: GER 0 → 4 over 1940.10-1941.2, ITA and JAP 1 → 3 over 1942.1-3). No analysis
+used it beyond its own pass/fail, so it was deleted, not promoted (§3.8). Saves up to `73c03fd3`
+still carry the values; git holds the probe definition.
 
 ## 7. Adding a metric — checklist for authors
 
