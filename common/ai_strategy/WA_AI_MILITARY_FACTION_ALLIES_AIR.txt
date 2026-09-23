@@ -27,12 +27,14 @@
 # fleet oscillating around a threshold does not flip the campaign on and off week to week.
 #
 #   coalition strat bombers |  near ring (6/7/8/296)  |  deep ring (294/38)
-#   ------------------------+-------------------------+---------------------
-#   0   - 450               |  -60,000                |  -80,000
+#   ------------------------+-------------------------+---------------------------------
+#   0   - 450               |  -190,000               |  -210,000 (38) / -160,000 (294)
 #   451 - 700               |  -40,000 +50,000 = +10k |  -60,000
 #   701 - 900               |        0 +50,000 = +50k |  -20,000 +50,000 = +30k
 #   901 +                   |        0 +50,000 = +50k |        0 +50,000 = +50k
 #
+# The 451-700 row assumes the blackout has released. It aborts only above the raid-force bar, so a
+# fleet that grew through 450 still carries its -150,000 (-100,000 on 294) until it passes that bar.
 #
 # WHO RUNS IT ([phoney-war-no-reich-bombing])
 # The three SUPPRESSION rungs are gated on WA_AI_MILITARY_AIR_should_avoid_reich = the western
@@ -67,11 +69,17 @@
 # VALUE ECONOMY
 # The contract set by the ENG.txt suppression retune holds: the deepest contested-theatre pull is
 # +50,000 per region (WA_AI_MILITARY_DEFAULT_AIR_theatres.txt) and the engine's hot-main-front
-# reference is ~35,000. A -60,000 net therefore keeps the region off the target list against
-# standing pulls while staying far below the emergency family (+100k Husky / +200k D-Day), which
-# must keep precedence. The legacy -500,000 and -1,000,000 values these blocks carried were black
+# reference is ~35,000. The legacy -500,000 and -1,000,000 values these blocks carried were black
 # holes in the sense of WA_AI_MILITARY_ECONOMY.md principle 2: nothing in the ledger could ever
 # out-vote them, so every other air signal over Europe was unreadable.
+# [phoney-war-no-reich-bombing] The blackout rung (and its Italian twin) is -150,000: strong enough
+# to keep a tactical-bomber force off German regions (ASSUMED - strategic_air_importance ranks, never
+# forbids; unmeasured), four times the ~35,000 main-front reference, yet below every positive
+# writer that must still win while it is armed: 294 carries -100,000 so
+# home_islands_lost (+200,000) out-votes the -160,000 net; Husky (+100,000 on 238) and
+# DEFAULT_AIR_italy (+50,000) only arm once Italy is contested, which aborts the Italian blackout.
+# Italy nets -170,000 before a landing: the blackout stacks on avoid_italy_no_foothold (-20,000),
+# which has no bomber bar and keeps its own mild role once the coalition's bombers release this one.
 #
 # LEDGER - other writers on these regions:
 # - WA_AI_MILITARY_DEFAULT_AIR_theatres.txt has NO Germany block by design (the capital-theatre
@@ -83,7 +91,7 @@
 #   not the Reich.
 # - WA_AI_MILITARY_ALLIES_AIR_home_islands_lost pushes +20,000 on 6/8/38 and +200,000 on 294 once the
 #   British home islands are lost. Under the legacy -500,000 blackout that push was arithmetically
-#   dead; against the -60,000/-80,000 here it wins, which is what that block always intended.
+#   dead; against the -160,000 net on 294 here it wins, which is what that block always intended.
 # - THE ONE THING NONE OF THESE VALUES DO: create demand. strategic_air_importance ranks regions for
 #   the planes the engine already requests; see the Phase 7d banner further down and checklist R15.
 # - WA_AI_MILITARY_COUNTRY_ENG_THEATRE.txt WA_AI_MILITARY_ENG_strategic_bombing_focus_THEATRE and
@@ -97,7 +105,7 @@
 
 
 # purpose: keep the coalition out of German air space entirely while it has no bomber arm to send
-# range:   -20000 per strategic region (engine main-front reference ~35000)
+# range:   -150000 per strategic region, -100000 on 294 (engine main-front reference ~35000)
 # policy:  Additive per region
 # domain:  AIR
 WA_AI_MILITARY_ALLIES_AIR_reich_blackout = {
@@ -105,10 +113,7 @@ WA_AI_MILITARY_ALLIES_AIR_reich_blackout = {
 		WA_AI_MILITARY_AIR_should_avoid_reich = yes
 	}
 	enable = {
-		WA_AI_MILITARY_AIR_actor_enabled = yes
-		WA_AI_CONFIG_is_in_allies = yes
-		WA_AI_MILITARY_AIR_enemy_holds_germany = yes
-		NOT = { WA_AI_MILITARY_AIR_allies_bombers_reach_nucleus = yes }
+		WA_AI_MILITARY_AIR_should_black_out_reich = yes
 	}
 	abort = {
 		OR = {
@@ -120,15 +125,40 @@ WA_AI_MILITARY_ALLIES_AIR_reich_blackout = {
 	}
 
 	# near ring
-	ai_strategy = { type = strategic_air_importance id = 6 value = -20000 }		# North-West Germany
-	ai_strategy = { type = strategic_air_importance id = 7 value = -20000 }		# Western Germany
-	ai_strategy = { type = strategic_air_importance id = 8 value = -20000 }		# Eastern Germany
-	ai_strategy = { type = strategic_air_importance id = 296 value = -20000 }	# Poland
+	ai_strategy = { type = strategic_air_importance id = 6 value = -150000 }	# North-West Germany
+	ai_strategy = { type = strategic_air_importance id = 7 value = -150000 }	# Western Germany
+	ai_strategy = { type = strategic_air_importance id = 8 value = -150000 }	# Eastern Germany
+	ai_strategy = { type = strategic_air_importance id = 296 value = -150000 }	# Poland
 	# deep ring
-	ai_strategy = { type = strategic_air_importance id = 294 value = -20000 }	# Austria
-	ai_strategy = { type = strategic_air_importance id = 38 value = -20000 }		# Prussia
+	ai_strategy = { type = strategic_air_importance id = 38 value = -150000 }	# Prussia
+	ai_strategy = { type = strategic_air_importance id = 294 value = -100000 }	# Austria - see VALUE ECONOMY
 }
 
+# purpose: keep the coalition out of Italian air space while it has no bomber arm to send and no
+#          foothold in Italy; releases the moment the peninsula is contested (Husky/Avalanche)
+# range:   -150000 per strategic region; nets -170000 with avoid_italy_no_foothold (see VALUE ECONOMY)
+# policy:  Additive per region
+# domain:  AIR
+WA_AI_MILITARY_ALLIES_AIR_italian_blackout = {
+	allowed = {
+		WA_AI_MILITARY_AIR_should_avoid_reich = yes
+	}
+	enable = {
+		WA_AI_MILITARY_AIR_should_black_out_italy = yes
+	}
+	abort = {
+		OR = {
+			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
+			WA_AI_MILITARY_AIR_allies_bombers_reach_raid_force = yes
+			WA_AI_MILITARY_AIR_theatre_contested_italy = yes
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_italy = yes }
+		}
+	}
+
+	ai_strategy = { type = strategic_air_importance id = 21 value = -150000 }	# Northern Italy
+	ai_strategy = { type = strategic_air_importance id = 23 value = -150000 }	# Central Italy
+	ai_strategy = { type = strategic_air_importance id = 238 value = -150000 }	# Southern Italy
+}
 
 # purpose: hold the raid down to mild avoidance while the bomber arm is still too small to absorb
 #          the losses over the Reich; a contested theatre elsewhere out-shouts it
@@ -341,7 +371,7 @@ WA_AI_MILITARY_ALLIES_AIR_avoid_occupied_europe = {
 	enable = {
 		WA_AI_MILITARY_AIR_actor_enabled = yes
 		WA_AI_CONFIG_is_in_allies = yes
-		WA_AI_MILITARY_AIR_channel_coast_fully_enemy_held = yes
+		WA_AI_MILITARY_AIR_enemy_holds_all_channel_coast = yes
 		# never tell a member to avoid its own homeland (France for a non-exiled FRA)
 		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
 	}
@@ -361,7 +391,7 @@ WA_AI_MILITARY_ALLIES_AIR_avoid_occupied_europe = {
 	ai_strategy = { type = strategic_air_importance id = 26 value = -20000 }	# Eastern Balkans
 	ai_strategy = { type = strategic_air_importance id = 154 value = -7500 }	# Southern Home Islands (JAP; outside the family range, kept as was)
 	# was Allies_avoid_bombing_occupied_allies only
-	ai_strategy = { type = strategic_air_importance id = 296 value = -8000 }	# Poland (stacks with the Reich ladder: -48k once the ladder is at one rung, -68k in the 0-450-bomber band where blackout -20k and too_costly -40k both hold - there the +50k Eastern-Europe pull nets -18k, accepted: a coalition with no bomber arm has nothing to send over Poland)
+	ai_strategy = { type = strategic_air_importance id = 296 value = -8000 }	# Poland (stacks with the Reich ladder: -48k once the ladder is at one rung, -198k in the 0-450-bomber band where blackout -150k and too_costly -40k both hold - there the +50k Eastern-Europe pull nets -148k, accepted: a coalition with no bomber arm has nothing to send over Poland)
 	ai_strategy = { type = strategic_air_importance id = 27 value = -20000 }	# Northern Balkans
 	ai_strategy = { type = strategic_air_importance id = 11 value = -20000 }	# Southern Norway
 	ai_strategy = { type = strategic_air_importance id = 297 value = -20000 }	# Central Norway
@@ -386,7 +416,7 @@ WA_AI_MILITARY_ALLIES_AIR_channel_coast_no_foothold = {
 	enable = {
 		WA_AI_MILITARY_AIR_actor_enabled = yes
 		WA_AI_CONFIG_is_in_allies = yes
-		WA_AI_MILITARY_AIR_channel_coast_fully_enemy_held = yes
+		WA_AI_MILITARY_AIR_enemy_holds_all_channel_coast = yes
 		# off while any overseas ally is above the OFF bar - keeps this block gate-exclusive with the push
 		NOT = { WA_AI_MILITARY_AIR_allies_still_staging_on_channel_coast = yes }
 		NOT = { capital_scope = { OR = { region = 239 region = 19 region = 290 region = 20 region = 5 } } }
@@ -407,7 +437,7 @@ WA_AI_MILITARY_ALLIES_AIR_channel_coast_push = {
 		WA_AI_MILITARY_AIR_actor_enabled = yes
 		WA_AI_CONFIG_is_in_allies = yes
 		has_deployed_air_force_size = { size > 99 }
-		WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes
+		WA_AI_MILITARY_AIR_enemy_holds_channel_coast = yes
 		OR = {
 			WA_AI_MILITARY_AIR_allies_staging_on_channel_coast = yes		# arm at ON = 6
 			WA_AI_MILITARY_AIR_allies_hold_far_shore = yes
@@ -419,7 +449,7 @@ WA_AI_MILITARY_ALLIES_AIR_channel_coast_push = {
 		OR = {
 			NOT = { WA_AI_MILITARY_AIR_actor_enabled = yes }
 			NOT = { WA_AI_CONFIG_is_in_allies = yes }
-			NOT = { WA_AI_MILITARY_AIR_channel_coast_enemy_held = yes }
+			NOT = { WA_AI_MILITARY_AIR_enemy_holds_channel_coast = yes }
 			AND = {
 				NOT = { WA_AI_MILITARY_AIR_allies_still_staging_on_channel_coast = yes }
 				NOT = { WA_AI_MILITARY_AIR_allies_hold_far_shore = yes }
@@ -444,8 +474,8 @@ WA_AI_MILITARY_ALLIES_AIR_sicily_landing_push = {
 		WA_AI_MILITARY_AIR_actor_enabled = yes
 		WA_AI_CONFIG_is_in_allies = yes
 		has_deployed_air_force_size = { size > 99 }
-		WA_AI_MILITARY_AIR_allies_sicily_foothold = yes
-		WA_AI_MILITARY_AIR_southern_italy_enemy_held = yes
+		WA_AI_MILITARY_AIR_allies_hold_sicily = yes
+		WA_AI_MILITARY_AIR_enemy_holds_southern_italy = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -489,7 +519,7 @@ WA_AI_MILITARY_ALLIES_AIR_avoid_italy_no_foothold = {
 	enable = {
 		WA_AI_MILITARY_AIR_actor_enabled = yes
 		WA_AI_CONFIG_is_in_allies = yes
-		WA_AI_MILITARY_AIR_italy_enemy_held = yes
+		WA_AI_MILITARY_AIR_enemy_holds_italy = yes
 		NOT = { WA_AI_MILITARY_AIR_theatre_contested_italy = yes }
 	}
 	abort_when_not_enabled = yes
