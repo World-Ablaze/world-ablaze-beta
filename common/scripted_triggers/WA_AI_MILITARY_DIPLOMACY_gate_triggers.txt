@@ -784,24 +784,47 @@ WA_AI_MILITARY_should_allies_avoid_turkey_overstack = {
 		has_war_with = GER
 }
 
-# gate of WA_AI_MILITARY_ALLIES_do_not_save_east_without_foothold (WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt)
-WA_AI_MILITARY_should_allies_do_not_save_east_without_foothold = {
-		WA_AI_CONFIG_is_in_allies = yes
+# gate of WA_AI_MILITARY_ALLIES_do_not_save_eastern_europe_without_foothold (WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt)
+WA_AI_MILITARY_should_allies_not_save_eastern_europe = {
+		WA_AI_CONFIG_MILITARY_is_western_allied_power = yes
 		has_war_with = GER
-		NOT = { has_war_with = SOV }
-		NOT = { WA_AI_MILITARY_has_western_foothold = yes }
+		# Ends when our side stands on German soil. Not has_western_foothold: its state list is French,
+		# so it is true for the whole Phoney War and kept this gate dead. Ahistorical path: a coalition
+		# that never reaches Germany never marches through it for these borders either - intended.
+		NOT = { WA_AI_MILITARY_AIR_allies_hold_germany = yes }
 
 		# Phase 5 mutual exclusion: yield to Country-layer overrides.
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_CZE = yes }
+		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_POL = yes }
+}
+
+# gate of WA_AI_MILITARY_ALLIES_do_not_save_balkans_without_foothold (WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt)
+WA_AI_MILITARY_should_allies_not_save_balkans = {
+		WA_AI_CONFIG_MILITARY_is_western_allied_power = yes
+		WA_AI_MILITARY_at_war_with_italian_homeland_power = yes
+		NOT = { WA_AI_MILITARY_has_italian_foothold = yes }
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
+		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_GRE = yes }
+		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_YUG = yes }
+}
+
+# gate of WA_AI_MILITARY_ALLIES_do_not_defend_french_colonies (WA_AI_MILITARY_FACTION_ALLIES_DIPLOMACY.txt)
+# France defends its own empire until it falls; the rest of the coalition then takes it over. Same
+# actor set as the pre-split east block (all Allies). Released by the france.10 surrender flag OR by
+# an enemy holding Paris (state 16), so a France that falls off the scripted path releases it too.
+WA_AI_MILITARY_should_allies_not_defend_french_colonies = {
+		WA_AI_MILITARY_allies_at_war_with_axis = yes
+		NOT = { has_global_flag = fall_of_france }
+		NOT = { 16 = { CONTROLLER = { has_war_with = ROOT } } }
+
+		# Phase 5 mutual exclusion: yield to Country-layer overrides.
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRC = yes }
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRI = yes }
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRJ = yes }
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRO = yes }
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRV = yes }
 		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_FRW = yes }
-		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_GRE = yes }
-		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_POL = yes }
-		NOT = { WA_AI_MILITARY_country_owns_dont_defend_ally_borders_YUG = yes }
 }
 
 # gate of WA_AI_MILITARY_AXIS_tunis_bridge_defend_ally_DIPLOMACY (WA_AI_MILITARY_FACTION_AXIS_DIPLOMACY.txt)

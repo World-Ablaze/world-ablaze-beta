@@ -5,7 +5,7 @@ description: The Python tooling under `tools/` that generates World Ablaze conte
 
 # WA Python tooling
 
-Reference: `tools/migrations/ai_will_do/REFACTORING_SUMMARY.md` for current parser status and known limitations. `PRESERVED_MODIFIER_FIX_FINAL.md` (repo root) for the prospecting modifier-preservation history.
+Reference: `tools/migrations/ai_will_do/REFACTORING_SUMMARY.md` for current parser status and known limitations. `documentation/PRESERVED_MODIFIER_FIX_FINAL.md` (repo root) for the prospecting modifier-preservation history.
 
 ## Recognising generated content
 
@@ -93,7 +93,7 @@ python ai_will_do_replacer_prospecting.py --apply --verbose
 
 This rebuilds prospecting `ai_will_do` blocks with reactive, cooperative, and proactive layers, driven by `WA_AI_RESOURCE_NEEDS_triggers.txt`.
 
-This pipeline has a history of two specific bugs — **nested modifier extraction** and **indentation** — documented in `PRESERVED_MODIFIER_FIX_FINAL.md`. After any apply, verify in the diff that:
+This pipeline has a history of two specific bugs — **nested modifier extraction** and **indentation** — documented in `documentation/PRESERVED_MODIFIER_FIX_FINAL.md`. After any apply, verify in the diff that:
 
 - Country-specific modifiers that existed before still exist after.
 - Nested `modifier = {}` blocks were not flattened or dropped.
