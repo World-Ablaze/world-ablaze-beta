@@ -4754,6 +4754,15 @@ power capitulates.
 
 ## PARKED
 
+### sov-finland-prewar-staging — PARKED (2026-09-25)
+- Parked pending an owner-run in-game check; the code is present in the working tree. `WORK.md` already exceeds its four-subject OPEN limit before this request.
+- Owner request: issue 18 in the attached playthrough report says Soviet AI divisions reach the Finnish border only after war is declared. No save or date accompanied the screenshot.
+- Script diagnosis: `WA_AI_MILITARY_SOV_prepare_war_with_finland` supplies only `front_unit_request`; the game documentation describes that type as changing requests for existing fronts. The peace-time placement decision is unmeasured.
+- Change: Country SOV THEATRE buffer order 9630 stages 0.10 of the army in Soviet states 195/216/215/213 during Finnish-war preparation. The new gate accepts the existing focus window or an active Soviet justification/war goal, and stops at war, competing major war, or Soviet ownership of 146.
+- Regression risk: reserving 10% of the Soviet army can draw divisions from other peace-time duties; actual engine arbitration between orders is unverified.
+- Verification: in an AI SOV prewar save, confirm the gate is active and count Soviet divisions in 195/216/215/213 before the Finnish declaration; compare with an earlier save, then confirm order 9630 disarms at war and no longer reserves divisions after Soviet ownership of 146. Use `observe`, not `tag SOV`.
+- Closed when: a historical and a late ahistorical prewar case both place divisions in the listed Soviet border states before declaration, without reducing the main active front below its needed strength.
+
 ### resource-grade-downshift — PARKED (2026-09-12)
 - Parked heading only for the WIP limit (7 under OPEN for 4). **Owner boot 2026-09-12: OK, no
   parse error; COMMITTED + PUSHED on owner order ("boot ok, commit et push").** The console run

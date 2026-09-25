@@ -40,6 +40,14 @@ If the same intent can be expressed at multiple layers, prefer the **highest-sha
 
 ## 3. Domain split convention
 
+`[sov-finland-prewar-staging]` (2026-09-25): the Soviet Finland preparation in `_FRONT` uses
+`front_unit_request`, which sizes an existing front. The Country `_THEATRE` block now uses a
+separate `put_unit_buffers` order (9630, 0.10 of the army) in Soviet states 195/216/215/213
+while the Finnish war is being prepared. Its gate accepts the existing focus preparation window
+or a live Soviet justification/war goal against Finland, including late ahistorical cases. It
+ends at war with Finland or a major competing land war, and when the USSR owns Viipurin Karjala
+(146). Peace-time placement and competition with other orders require an in-game check.
+
 Every country and every faction with content in more than one domain is split into one file per domain. This is a uniform structure, applied even for small files, so that adding a new strategy block always has a predictable destination.
 
 | Domain | File suffix | Strategy types it owns |
