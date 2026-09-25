@@ -224,6 +224,7 @@ change (> 40 lines, or a signature/scope change of an effect called by an on_act
 | Scope isolation (meta: validates harnesses) | `common/scripted_effects/WA_TEST_scope_isolation_effects.txt` | `tag GER`, `event wa_iso.1` / `wa_iso.2` |
 | Spirits / stats parity | `WA_TEST_spirits.txt`, `WA_TEST_stats.txt` + `tests/wa_*_strict_parity.txt` | test bundles — see `tests/` section above |
 | PC lost-state purge (`on_state_control_changed`) | `common/scripted_effects/WA_TEST_pc_lost_purge.txt` | `event wa_pclost.1 ITA` (report) / `wa_pclost.9 ITA` (three legs) — fixtures and recipe in `events/wa_test_pc_lost_purge.txt` |
+| Organic invasion discipline + naval posture (`[naval-invasion-discipline]`) | `common/scripted_effects/WA_TEST_naval_discipline.txt` | `event wa_nid.2` (every AI major at war) / `event wa_nid.1 <TAG>` — recipe in `events/wa_test_naval_discipline.txt` |
 | **No harness yet** — priority construction (non-rail), templates/division creator, military posture triggers, production strategy, research weights, prospecting, laws/espionage | — | first big change writes the harness (contract v1 below) |
 
 ## The harness contract (v1) — mandatory for every new console harness

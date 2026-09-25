@@ -58,7 +58,7 @@
 #	v37 r115_maint_*                 land maintenance floor, probe ([maintenance-floor])
 #	v39 r115_maint_armor_var_n       the 32 variant chassis floors ([armor-variant-maintenance])
 #	v40 lmc_conv_n / _last_t         light->medium role conversions, probe ([light-medium-conversion]) - retired 2026-09-23
-@WA_TLM_VERSION = 40
+@WA_TLM_VERSION = 41
 
 ############################################################################################################
 #	Clock - global.WA_TLM_clock = months elapsed since 1936.1
@@ -214,6 +214,22 @@ WA_TLM_init_country = {
 	if = { limit = { NOT = { has_variable = WA_TLM_gdn_tun_n } } set_variable = { WA_TLM_gdn_tun_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_gdn_flip_n } } set_variable = { WA_TLM_gdn_flip_n = 0 } }
 	if = { limit = { NOT = { has_variable = WA_TLM_gdn_last_t } } set_variable = { WA_TLM_gdn_last_t = 0 } }
+
+	# [naval-invasion-discipline] organic invasion discipline + naval posture (v41, probe). Write sites:
+	# WA_AI_LANDING_effects.txt (bh / org / open / hold), WA_AI_NAVAL_posture_effects.txt (inf / sup /
+	# flip / home_lost), WA_TLM_sample_naval_discipline below (ratio / lost_seas / nid_last_t).
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_bh_n } } set_variable = { WA_TLM_nid_bh_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_bh_last_t } } set_variable = { WA_TLM_nid_bh_last_t = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_org_n } } set_variable = { WA_TLM_nid_org_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_open_n } } set_variable = { WA_TLM_nid_open_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_hold_n } } set_variable = { WA_TLM_nid_hold_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_inf_n } } set_variable = { WA_TLM_nid_inf_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_sup_n } } set_variable = { WA_TLM_nid_sup_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_flip_n } } set_variable = { WA_TLM_nid_flip_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_home_lost_n } } set_variable = { WA_TLM_nid_home_lost_n = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_ratio } } set_variable = { WA_TLM_nid_ratio = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_lost_seas } } set_variable = { WA_TLM_nid_lost_seas = 0 } }
+	if = { limit = { NOT = { has_variable = WA_TLM_nid_last_t } } set_variable = { WA_TLM_nid_last_t = 0 } }
 
 	# (WA_TLM_r48_prebuild_synth_* retired with the proactive synthetic-rubber lane; names free.)
 
@@ -464,6 +480,27 @@ WA_TLM_monthly_sample = {
 	WA_TLM_sample_east_africa = yes
 	WA_TLM_sample_tunis_bridge = yes
 	WA_TLM_sample_maintenance = yes
+	WA_TLM_sample_naval_discipline = yes
+}
+
+############################################################################################################
+#	[naval-invasion-discipline] naval posture sample (PROBE, v41). Scope: country, is_ai gated by the
+#	caller; majors at war only (the audience of the posture sweep). ratio is the fair-share ratio the
+#	sweep stored (0 = no fleet); lost_seas the enemy-controlled sea regions it counted. Copied, never
+#	recomputed: the sweep may run later in the same month for a country sampled earlier - read the
+#	pair against nid_last_t, which is the month this country was sampled.
+############################################################################################################
+WA_TLM_sample_naval_discipline = {
+	if = {
+		limit = {
+			WA_AI_CONFIG_is_major_country = yes
+			has_war = yes
+		}
+		# tlm: nid_ratio / nid_lost_seas / nid_last_t - consumer: [naval-invasion-discipline]
+		set_variable = { WA_TLM_nid_ratio = WA_AI_NAVAL_fair_ratio }
+		set_variable = { WA_TLM_nid_lost_seas = WA_AI_NAVAL_lost_sea_n }
+		set_variable = { WA_TLM_nid_last_t = global.WA_TLM_clock }
+	}
 }
 
 ############################################################################################################

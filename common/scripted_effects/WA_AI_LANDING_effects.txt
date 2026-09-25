@@ -268,6 +268,10 @@ WA_AI_LANDING_stamp_reservation = {
 		clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
 		set_country_flag = { flag = WA_AI_LANDING_reserved_for_@PREV value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
 	}
+	# [naval-invasion-discipline] same lease on the HOLDER, so a trigger can ask "does the calendar
+	# still claim my invasion planning" without rendering a dynamic flag name (WA_AI_LANDING_has_scripted_claim).
+	clr_country_flag = WA_AI_LANDING_holds_reservation
+	set_country_flag = { flag = WA_AI_LANDING_holds_reservation value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
 	# tlm: resv_stamp_n / resv_first_t / resv_last_t - consumer: [scripted-invasion-reservation]
 	# verification. Verified effect (doc sec.3.6 rule 1): the flag this counts is written on the
 	# lines above. Second signal for the first campaign: the WA_AI_LANDING_reserved_for_* flags
@@ -289,6 +293,8 @@ WA_AI_LANDING_stamp_reservation = {
 			clr_country_flag = WA_AI_LANDING_reserved_for_@PREV
 			set_country_flag = { flag = WA_AI_LANDING_reserved_for_@PREV value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
 		}
+		clr_country_flag = WA_AI_LANDING_holds_reservation
+		set_country_flag = { flag = WA_AI_LANDING_holds_reservation value = 1 days = @WA_AI_LANDING_RESERVATION_LEASE_DAYS }
 	}
 }
 
@@ -348,6 +354,175 @@ WA_AI_LANDING_announce_landing = {
 					}
 				}
 				country_event = { id = WA_AI_landings.3 }
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	[naval-invasion-discipline] ORGANIC INVASION DISCIPLINE - markers
+############################################################################################################
+#	Control panel and decisions: WA_AI_LANDING_triggers.txt (section [naval-invasion-discipline]).
+#	Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27. Event-driven markers plus two monthly
+#	latches; the ai_strategy consumers read only the flags written here.
+############################################################################################################
+
+# Beachhead window: the landed state stays a rush target this long, renewed while it is cut off.
+# Must exceed the 31-day gap between two monthly renewals (same rule as the reservation lease), or a
+# cut-off beachhead lapses at the first long month.
+@WA_AI_LANDING_BEACHHEAD_DAYS = 45
+# Monthly claim of the renewal pass: shorter than any month, longer than the spread of AI pulses.
+@WA_AI_LANDING_BEACHHEAD_CLAIM_DAYS = 20
+
+############################################################################################################
+#	WA_AI_LANDING_mark_beachhead - SCOPE: THIS = the landed state. Any caller, scripted or organic.
+#	One untagged state flag: the rush block only runs for a country with a beachhead of its own, and a
+#	retaken state stops being renewed (its new controller is not cut off), so it lapses by itself.
+############################################################################################################
+WA_AI_LANDING_mark_beachhead = {
+	clr_state_flag = WA_AI_LANDING_beachhead
+	set_state_flag = { flag = WA_AI_LANDING_beachhead value = 1 days = @WA_AI_LANDING_BEACHHEAD_DAYS }
+}
+
+############################################################################################################
+#	WA_AI_LANDING_note_beachhead - SCOPE: THIS = the invading country. Arms the R4 rush gate for a NEW
+#	landing; WA_AI_LANDING_refresh_beachhead_gate is the uncounted twin the monthly renewal uses.
+############################################################################################################
+WA_AI_LANDING_note_beachhead = {
+	WA_AI_LANDING_refresh_beachhead_gate = yes
+	# tlm: nid_bh_n / nid_bh_last_t - consumer: [naval-invasion-discipline] verification. Verified
+	# effect: the gate flag is written by the call above.
+	add_to_variable = { WA_TLM_nid_bh_n = 1 }
+	set_variable = { WA_TLM_nid_bh_last_t = global.WA_TLM_clock }
+}
+
+# SCOPE: THIS = a country holding a beachhead.
+WA_AI_LANDING_refresh_beachhead_gate = {
+	clr_country_flag = WA_AI_LANDING_recent_beachhead
+	set_country_flag = { flag = WA_AI_LANDING_recent_beachhead value = 1 days = @WA_AI_LANDING_BEACHHEAD_DAYS }
+}
+
+############################################################################################################
+#	WA_AI_LANDING_register_organic_landing - SCOPE: THIS = the invaded state, ROOT = the invader
+#	(on_naval_invasion). Marks the beachhead for any landing the engine reports; the ORGANIC part (R2
+#	freeze + stall clock) is skipped for a scripted spawn: WA_AI_DIVISION_spawn_invasion adds the 1-day
+#	idea WA_AI_scripted_invasion_fix BEFORE create_unit, so it is live whenever the engine could report
+#	a scripted landing here. Whether it ever does is ASSUMED no; the guard makes that irrelevant.
+############################################################################################################
+WA_AI_LANDING_register_organic_landing = {
+	WA_AI_LANDING_mark_beachhead = yes
+	ROOT = { WA_AI_LANDING_note_beachhead = yes }
+	if = {
+		limit = { ROOT = { NOT = { has_idea = WA_AI_scripted_invasion_fix } } }
+		ROOT = {
+			clr_country_flag = WA_AI_LANDING_organic_landing
+			set_country_flag = WA_AI_LANDING_organic_landing
+			# tlm: nid_org_n - consumer: [naval-invasion-discipline]. Verified effect: flag above.
+			add_to_variable = { WA_TLM_nid_org_n = 1 }
+		}
+		if = {
+			limit = {
+				OR = {
+					is_on_continent = europe
+					is_on_continent = africa
+					is_on_continent = middle_east
+				}
+			}
+			ROOT = {
+				clr_country_flag = WA_AI_LANDING_organic_freeze_west
+				set_country_flag = WA_AI_LANDING_organic_freeze_west
+			}
+		}
+		else_if = {
+			limit = {
+				OR = {
+					is_on_continent = asia
+					is_on_continent = australia
+				}
+			}
+			ROOT = {
+				clr_country_flag = WA_AI_LANDING_organic_freeze_east
+				set_country_flag = WA_AI_LANDING_organic_freeze_east
+			}
+		}
+	}
+}
+
+############################################################################################################
+#	WA_AI_LANDING_note_land_front_moved_west / _east - SCOPE: THIS = a country whose land front just
+#	moved in that macro-theatre (on_state_control_changed, called for the new AND the old controller).
+############################################################################################################
+WA_AI_LANDING_note_land_front_moved_west = {
+	clr_country_flag = WA_AI_LANDING_land_front_moved_west
+	set_country_flag = WA_AI_LANDING_land_front_moved_west
+}
+
+WA_AI_LANDING_note_land_front_moved_east = {
+	clr_country_flag = WA_AI_LANDING_land_front_moved_east
+	set_country_flag = WA_AI_LANDING_land_front_moved_east
+}
+
+############################################################################################################
+#	WA_AI_LANDING_update_organic_permission - SCOPE: THIS = an AI major. Monthly, at war or not, so the
+#	age flag R5 reads is cleared when a war ends and a new war starts its clock at zero.
+############################################################################################################
+WA_AI_LANDING_update_organic_permission = {
+	if = {
+		limit = { WA_AI_LANDING_can_plan_organic_invasions = yes }
+		if = {
+			limit = { NOT = { has_country_flag = WA_AI_LANDING_organic_permitted_since } }
+			set_country_flag = WA_AI_LANDING_organic_permitted_since
+		}
+		# tlm: nid_open_n - months the organic permission was open. consumer: [naval-invasion-discipline]
+		add_to_variable = { WA_TLM_nid_open_n = 1 }
+	}
+	else = {
+		clr_country_flag = WA_AI_LANDING_organic_permitted_since
+		if = {
+			limit = { has_war = yes }
+			# tlm: nid_hold_n - war months the permission was closed. consumer: [naval-invasion-discipline]
+			add_to_variable = { WA_TLM_nid_hold_n = 1 }
+		}
+	}
+}
+
+############################################################################################################
+#	WA_AI_LANDING_beachhead_monthly_tick - SCOPE: any AI country (on_monthly). The first pulse of the
+#	month claims a 20-day global flag and renews every beachhead that is still CUT OFF: no neighbouring
+#	state outside the beachhead is held by its controller, a subject, a faction member or a
+#	co-belligerent (a neutral neighbour is not a breakout) AND at least one neighbour is enemy-held
+#	(an island or a mopped-up pocket has no front left). That is the R4 exit read from the beachhead's
+#	own situation - it ends at the breakout, when the fighting stops, or when the enemy retakes it.
+############################################################################################################
+WA_AI_LANDING_beachhead_monthly_tick = {
+	if = {
+		limit = { NOT = { has_global_flag = WA_AI_LANDING_beachhead_pulse } }
+		set_global_flag = { flag = WA_AI_LANDING_beachhead_pulse value = 1 days = @WA_AI_LANDING_BEACHHEAD_CLAIM_DAYS }
+		every_state = {
+			limit = { has_state_flag = WA_AI_LANDING_beachhead }
+			CONTROLLER = { save_event_target_as = WA_AI_LANDING_bh_holder }
+			if = {
+				limit = {
+					event_target:WA_AI_LANDING_bh_holder = { has_war = yes }
+					any_neighbor_state = {
+						CONTROLLER = { has_war_with = event_target:WA_AI_LANDING_bh_holder }
+					}
+					NOT = {
+						any_neighbor_state = {
+							NOT = { has_state_flag = WA_AI_LANDING_beachhead }
+							CONTROLLER = {
+								OR = {
+									tag = event_target:WA_AI_LANDING_bh_holder
+									is_subject_of = event_target:WA_AI_LANDING_bh_holder
+									is_in_faction_with = event_target:WA_AI_LANDING_bh_holder
+									has_war_together_with = event_target:WA_AI_LANDING_bh_holder
+								}
+							}
+						}
+					}
+				}
+				WA_AI_LANDING_mark_beachhead = yes
+				event_target:WA_AI_LANDING_bh_holder = { WA_AI_LANDING_refresh_beachhead_gate = yes }
 			}
 		}
 	}

@@ -173,6 +173,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
 
+### naval-invasion-discipline — SHIPPED-UNTESTED (2026-09-25)
+- Owner order 2026-09-25 ("implémente sur un fork de ai-rework"), branch `ai-rework-naval-invasion`.
+  Intended behaviour: scripted landings and ENGINE-planned ("organic") invasions coexist without
+  conflict; organic invasions happen only when the land war does not need the divisions, one
+  beachhead at a time, close to a held coast, and every beachhead attacks out; the navy supports
+  invasions ahead of routine escort. Design: `documentation/AI_INVASION_COEXISTENCE_PROPOSAL_2026-09-25.md`
+  (audit of Sheep's KR Japan AI: `documentation/AI_NAVAL_KR_JAPAN_AUDIT_2026-09-25.md`); spec
+  `documentation/WA_AI_MILITARY_SYSTEM.md` §27.
+- Symptoms it rests on, MEASURED: JAP organic windows date-bound to 1941.12.1-1942.3.15 and nothing
+  after mid-1942; the only strike-force template needs 2 CV + 2 BB + 10 CL (GER/ITA/SOV/FRA form none,
+  209 saves of `73c03fd3` / `e953ae9b`); `naval_invasion_support` 4-15 under `convoy_protection`
+  15-30 in `goals_generic.txt`; 34-47 % of majors' ships without an active mission at 1943.6.
+- Change: R1 per-theatre land-front hold, R2 organic freeze, R3 leash, R4 beachhead rush (scripted
+  and organic, renewed while cut off), R5 stall reset, T1 (JAP windows yield to the calendar),
+  N1 goal 12-24, N3 fair-share posture + per-region sea control (generated,
+  `tools/gen/gen_naval_sea_control.py`), N4 supremacy +50, N6 training 0.99, N7 Med dominance 100.
+  Every organic rule steps aside while the calendar claims the country (reservation / freeze).
+- Gates run: `check_ai_layers.py` - only the pre-existing CONFIG-LIVE error, ratchet counts
+  unchanged; `check_constants.py` - only the 3 pre-existing `[production_armor_maintenance_floor]`
+  DRIFT errors; `gen_naval_sea_control.py --check` exit 0; brace balance / BOM clean on every
+  touched script. Reviews: wa-architecture-reviewer + wa-lessons-reviewer - first pass CONFLICT
+  (ROOT/FROM binding, R1 global lock, stacking vs named plans, R4 exit), resolved in two revision
+  passes; residual CONCERNS stated in §27 (named-plan mirror kept by hand, T1 tag payload, WEST
+  lumps the Eastern Front with the Channel).
+- Harness (owner, console, cold boot, mid-war save 1942+): `event wa_nid.2` → `logs/game.log`,
+  "NAVAL DISCIPLINE TEST". Recipe and expected values: `events/wa_test_naval_discipline.txt`.
+  Paste the first run here.
+- Probe: `WA_TLM_nid_*` (TLM doc §6j, `wa_tlm_version = 41`).
+- Verification (console): per major, `ships` sum == `num_ships`; stored S / ratio equal the
+  recomputed ones; R1 terms match the printed formula; after a landing the landed state is listed.
+- Verification (campaign): `nid_bh_n` rises in every scripted-landing month; `nid_flip_n` ≤ 4 per
+  major; the 1943 Italian beachheads advance out of their landing states within 30 days; on a
+  Competitive run JAP lands organically after 1942 (`nid_org_n` > 0).
+- Closed when: one campaign shows the Italian beachheads breaking out AND an organic landing by a
+  major after its land front stalled, with no posture flapping.
+
 ### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
 - **Campaign `73c03fd3` scored 2026-09-23** (cloud, build proven through `cddb2f605d`): NOT MET (strict). War 1939.10.11, France falls 1940.6.30. States 54 Franken + 55 Hessen (region 7) carry `last_strategic_bombing` 1939.10.12 - the day after the declaration - frozen through 1940.7; no other GER state stamped, no `building_damage_*` anywhere (MEASURED, 11 saves). No Allied wing on a strategic-bombing mission over 6/7/8 in 1939.11-1940.6 (ENG/FRA strike bombers over 206 at 1940.5 and region 5 at 1940.6). Ladder-armed leg NOT CHECKABLE from a save. ASSUMED: the day-1 raid precedes the first ai_strategy evaluation; one console read at war start settles it.
 - Owner order 2026-09-20 ("pendant la drôle de guerre, l'aviation alliée ne devrait pas bombarder

@@ -107,7 +107,7 @@ This is the master legend. For each `ai_strategy` `type` currently in use, it st
 | `support` | **Unverified** — assumed to sum per target by analogy with its neighbours, never measured | Additive per target (assumed) | n/a | 100 (nudge) / 200 / 500 (strong) / -1000 to -5000 (suppress) |
 | `naval_avoid_region` | **I** - no engine section; the signed convention below is grounded in a 402-entry measurement, not in engine text | Additive per region | n/a | -10000 to +2000 — see the convention note below |
 | `naval_convoy_raid_region` | **I** - token listed, no engine section | Additive per region | n/a | -1000 to +1000 (negative = suppress raiding there) |
-| `naval_dominance` | **E** - "used to **set** the naval dominance for an AI area", `value` a "Percentage between 0 and 100" (`documentation.info` section `naval_dominance`). The engine states no additive behaviour; "Additive" is an inference | Additive per region | n/a | 70 - 80, the only values live (6 entries) |
+| `naval_dominance` | **E** - "used to **set** the naval dominance for an AI area", `value` a "Percentage between 0 and 100" (`documentation.info` section `naval_dominance`). The engine states no additive behaviour; "Additive" is an inference | Additive per region | n/a | 70 - 100 (Atlantic corridors 70 / 80, Mediterranean Fleet 100) |
 | `naval_mission_threshold` | **I** - token listed, no engine section | Additive | n/a | -100 to +100 |
 | `naval_invasion_dominance_weight` | **I** - Sums | Additive | n/a | 0 to +100 |
 | `naval_invasion_support_priority` | **Real type, undocumented.** Absent from both editions of `documentation.info`, but the literal string is present in `hoi4.exe` (1.19.2) and vanilla's own `ENG.txt` writes 7 entries of it. Combination and range: **I**, and untested - **WA has zero uses** | Additive per region | n/a | vanilla uses 200 / 25 / -100 keyed by `id = <strategic region>` |
@@ -185,6 +185,7 @@ types the engine gives no precedence field at all.
 | --- | --- | --- | --- |
 | `10000` | Default | 1 | `EXEC_no_stockpiles_stop` - emergency stop, must beat everything |
 | `500` | Default | 1 | `EXEC_low_equipment_hold` - equipment brake |
+| `360` | Default | 1 | `DEFAULT_FRONT_beachhead_rush` - rush out of a fresh beachhead, beachhead states and their neighbours only (§27, `[naval-invasion-discipline]`); above the posture family so it owns the beach, below the 500/10000 brakes |
 | `350` | Default | 1 | `DEFAULT_FRONT_posture_pursuit` - posture level 4 (§9, `[posture-v3]`) |
 | `340` | Default | 2 | `DEFAULT_FRONT_posture_execute` / `_careful` - posture levels 1 / 2-3 (§9); the tier the deleted CHINA_FRONT pair held, so it still outranks the row below |
 | `320` - `330` | Faction | 6 | CHINA_FRONT careful-exec blocks (vs JAP, vs collaborators) - not posture-gated |
@@ -492,6 +493,10 @@ USA/ENG-only, 1944.2.1-1944.3.15 hard-dated decision whose payload `naval_invasi
 author believed dead. It is not dead (the modifier is live in 1.18.0), which means it had been zeroing
 both countries' invasion capacity - Pacific included - for ~40 days every campaign. Removed; the removal
 comment in that file carries the full reasoning and the behaviour delta.
+
+**Organic invasions after a landing** (§27): the freeze above brakes a SECOND beach; the beachhead
+itself is rushed by a FRONT order (R4), which the freeze does not touch. Engine-planned landings get
+their own per-country freeze (R2) and never stamp this scripted one.
 
 ---
 
@@ -1466,7 +1471,7 @@ Mediterranean Fleet HQ), against **259** for the nearest province of any other M
 
 | Piece | File |
 | --- | --- |
-| Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria` (`strike_force_home_base 69`, `naval_dominance` 69 at 80 / 327 at 70, `naval_avoid_region` -1000 on both) and `_med_narrows_sea_control` (`naval_dominance` 269 / 29 at 70, `naval_avoid_region` -1000 on both) |
+| Faction blocks | `common/ai_strategy/WA_AI_NAVAL_FACTION_ALLIES.txt`: `WA_AI_NAVAL_FACTION_ALLIES_med_fleet_alexandria` (`strike_force_home_base 69`, `naval_dominance` 69 / 327 at 100, `naval_avoid_region` -1000 on both) and `_med_narrows_sea_control` (`naval_dominance` 269 / 29 at 100, `naval_avoid_region` -1000 on both). 100 is the documented 0-100 ceiling of the type; the code carried 500 before `[naval-invasion-discipline]` normalised it |
 | Switch (control panel) | `WA_AI_MILITARY_triggers.txt`, Fix 136 section: `WA_AI_MILITARY_NAVAL_med_fleet_base_held` = `controls_state = 447` |
 | Capability gate | `WA_AI_MILITARY_has_ocean_going_fleet`, the same Fix 122 owner ruling |
 | Probe | checklist R97 |
@@ -1927,3 +1932,96 @@ addressing stays in place; only the arming conditions moved. The control panel
 (`WA_AI_MILITARY_triggers.txt`) keeps the behavioural SWITCHES; the `_gate_triggers` files hold
 1:1 gates - do not merge the two roles. Diagnosis: `event wa_explain_naval.1` shows the pattern;
 `python tools/check_ai_layers.py` holds the discipline (ratchet).
+
+---
+
+## 27. Organic invasion discipline and naval posture (`[naval-invasion-discipline]`, 2026-09-25)
+
+Design source: `documentation/AI_INVASION_COEXISTENCE_PROPOSAL_2026-09-25.md` (audit of Sheep's
+Kaiserreich Japan AI: `documentation/AI_NAVAL_KR_JAPAN_AUDIT_2026-09-25.md`). The scripted landing
+calendar and ENGINE-planned ("organic") invasions coexist under one rule: **a scripted landing is
+never braked by an organic rule** (it does not pass through the engine - `create_unit` on the beach),
+and **while the calendar claims a country's invasion planning** (a reservation it holds, §22, or a
+scripted freeze, §10 - `WA_AI_LANDING_has_scripted_claim`) **every organic rule steps aside**: the
+calendar's own brakes govern, unchanged. Outside such a claim, organic invasions obey:
+
+| Rule | What | Where |
+| --- | --- | --- |
+| R1 | Per macro-theatre (WEST = europe + africa + middle_east, EAST = asia + australia): while a MAINLAND state (not an island) changed hands between this major and an enemy in the last 60 days, organic invasions in that theatre get -200 - except against an enemy already past 50 % capitulation | `WA_AI_MILITARY_INV_organic_hold_west/_east`; marker in `on_state_control_changed` (`WA_AI_misc_on_actions.txt`) |
+| R2 | One organic beachhead at a time per theatre: 90-day per-country freeze after an organic landing | `WA_AI_MILITARY_INV_organic_freeze_west/_east`; marker `on_naval_invasion` → `WA_AI_LANDING_register_organic_landing` (skips scripted spawns via the `WA_AI_scripted_invasion_fix` idea) |
+| R3 | Leash: -200 beyond 3000 km of a coast held by us / a co-belligerent / faction / subjects, -100 beyond 800 km; targets < 50k population wait for their owner's 70 % capitulation | `WA_AI_MILITARY_INV_organic_leash` |
+| R4 | Every landing - scripted or organic - flags its state a beachhead for 45 days, **renewed monthly while it is still cut off and contested** (no neighbour outside the beachhead held by its controller / a subject / faction member / co-belligerent, and at least one enemy-held neighbour - an island lapses); `front_control rush_weak` priority **360** (8 days in 14, state_trigger only) + `front_unit_request` +50 on it and its neighbours. A FRONT order: the §10 freeze does not block it | `WA_AI_MILITARY_DEFAULT_FRONT_beachhead.txt`; markers in `WA_AI_DIVISION_spawn_invasion` and `on_naval_invasion`; renewal `WA_AI_LANDING_beachhead_monthly_tick` |
+| R5 | Permission open 90 days, no organic landing, no scripted claim, **no live named plan** → -9999 on every organic plan for 7 days in 90 (switch `WA_AI_LANDING_stall_reset_enabled`) | `WA_AI_MILITARY_INV_organic_stall_reset`; named plans: `WA_AI_MILITARY_country_owns_invasion_named_plan` (ownership file - add a line with every new block that names targets) |
+| T1 | The Japanese southern-expansion windows' INVASION halves stay off while the calendar reserves that phase's target for Japan (a target held by another controller falls back to the old behaviour - accepted debt: the three target tags are the blocks' own payload) | `WA_AI_MILITARY_should_jap_southern_expansion_*_invasion` |
+
+Fleet side:
+
+| Rule | What | Where |
+| --- | --- | --- |
+| N1 | Naval goal `naval_invasion_support` 4-15 → **12-24**: an important invasion outranks routine escort and training; critical convoy lanes keep the top | `common/ai_navy/goals/goals_generic.txt` |
+| N3-A | Monthly fair-share ratio: each enemy splits its fleet over its own enemies by strength; `ratio = Σ_E S(E) / S(enemies of E)`; S weights in `common/script_constants/wa_ai_naval.txt`; posture flags with hysteresis (inferior > 1.5 / < 1.3, superior < 0.8 / > 0.9) | `WA_AI_NAVAL_posture_effects.txt` (one global sweep per month) |
+| N3-B | Per sea region, the engine's `has_enemy_naval_control`: B1 avoid a lost sea while inferior (`naval_avoid_region` +500, one GENERATED block per region); B2 no organic invasion of a coast whose controller holds the adjacent sea | GENERATED by `tools/gen/gen_naval_sea_control.py` (reads the flag lifetime `@WA_AI_NAVAL_SEA_FLAG_DAYS` from the posture file); B2 `WA_AI_MILITARY_INV_organic_contested_sea` |
+| N4 | `naval_invasion_dominance_weight` +50 on top of the base 50 while organic invasions are permitted | `WA_AI_NAVAL_DEFAULT_invasion_path_supremacy_organic` |
+| N6 | `MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING` 0.8 → 0.99 (owner decision) | `05_defines.lua` |
+| N7 | Mediterranean Fleet `naval_dominance` normalised to the documented 100 ceiling | §21 |
+
+**Accepted coarseness.** WEST lumps the Eastern Front with the Channel and the Mediterranean: a
+Germany advancing in Russia holds organic landings against Britain too, unless a named plan
+(Sealion, Norway, Denmark) is live. That is the owner's "no dispersion" rule, not a defect.
+
+**Maintenance of the named-plan mirror.** `WA_AI_MILITARY_country_owns_invasion_named_plan` mirrors
+by hand every block with `invade` ≥ 1000, `invasion_unit_request` ≥ 300 or a positive
+`naval_invasion_focus`. A block added without its line is wiped by R5 for 7 days in 90. Probe after
+any change to an invasion file: list those blocks (the census script in the design doc's session,
+or `grep -n "invade\|invasion_unit_request\|naval_invasion_focus"`) and check each enable appears
+in the mirror.
+
+**Not taken** (owner decisions / reviews): taskforce templates, naval production changes, the other
+training/XP defines, `AREA_DEFENSE_SETTING_COASTLINES = false`, dominance lists for the Pacific, and
+a posture garrison release (a negative `garrison` does not empty existing area-defence orders
+without a catcher buffer - lessons log).
+
+**Brake stack against a named plan** (a Faction/Country block that writes +1000 on its own beach -
+D-Day 15/1016, the Japanese phases, Torch). Worst case, all brakes on the same state; that same-type
+entries sum is MEASURED for `garrison`, ASSUMED here; that the country and state forms of
+`invasion_unit_request` add together is ASSUMED:
+
+| Calendar | This change | Pre-existing | Net on the named beach |
+| --- | --- | --- | --- |
+| On (claim live) | 0 - every organic rule steps aside | reservation -200, freeze -200, home -200, Allied foothold cap -100 | as before this change |
+| Off | R1 -200, R2 -200, B2 -200, R3 small-target -100 (R3 distance 0: named beaches sit < 800 km from a held coast - ASSUMED for every Japanese phase state) = -700 | home -200, foothold cap -100 | worst 0, typical +300 to +800; R5 never (yields to the named plan) |
+
+**Cadence, t0/t1/t2.** How often the engine re-reads an `ai_strategy` `enable` is not documented
+(interval I, ASSUMED). R5's window is 7 days in 90; R4's pulse is 8 on / 6 off:
+
+| I | R5 (7 / 90) | R4 pulse (8 / 14) |
+| --- | --- | --- |
+| 1 day | fires every stuck quarter, lasts 7 days | pulses as designed |
+| 7 days | fires every stuck quarter, lasts ~7 days | aliasing: on or off for a week at a time |
+| 14 days | fires in ~half the stuck quarters | on for 14 days with p = 8/14, then re-drawn |
+| 30 days | fires in ~1 stuck quarter in 4 | effectively always on or always off for a month |
+
+R4 renewal: the beachhead flag lives 45 days and the renewal runs once per month (claim flag 20 days):
+
+| t | Event | Flag left |
+| --- | --- | --- |
+| 0 | landing, flag set | 45 d |
+| ≤ 31 | first monthly renewal, still cut off → re-set | 45 d |
+| ≤ 62 | second renewal | 45 d |
+| breakout at t_b | next renewal skips it | expires by t_b + 45 at the latest |
+
+A month is at most 31 days, so a cut-off beachhead is renewed before its flag can lapse.
+
+The harness prints `pulse` so one console read settles the live state; if I turns out to be long,
+widen R5's ON and drop R4's pulse (`@...PULSE_ON` in `WA_AI_LANDING_triggers.txt`).
+
+**ENGINE FACTS ASSUMED** (the harness `event wa_nid.2` prints what it can): `on_naval_invasion`
+fires for engine landings (the scripted guard makes a scripted firing harmless); `distance_to`
+reads kilometres; inside an `invasion_unit_request` `state_trigger`, FROM is the enemy and FROM.FROM
+our country (install doc, section `front_unit_request` / `invasion_unit_request`);
+`num_ships_with_type@<carrier|capital|screen|submarine>` partition the fleet (the harness checks sum
+= `num_ships`); `has_enemy_naval_control` / `has_naval_control` take a literal region id in script
+(vanilla uses them only in faction goals); -200 floors an `invasion_unit_request` (§10's standing
+assumption); -9999 cancels an existing plan.
+
+**Probe**: `WA_TLM_nid_*` (TLM doc §6j); harness `events/wa_test_naval_discipline.txt`.

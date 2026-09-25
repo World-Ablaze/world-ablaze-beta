@@ -763,6 +763,33 @@ campaign `73c03fd3`: GER 0 → 4 over 1940.10-1941.2, ITA and JAP 1 → 3 over 1
 used it beyond its own pass/fail, so it was deleted, not promoted (§3.8). Saves up to `73c03fd3`
 still carry the values; git holds the probe definition.
 
+## 6j. Organic invasion discipline and naval posture (probe, v41)
+
+`[naval-invasion-discipline]`. Engine-planned invasions are gated on a quiet land front (R1),
+limited to one organic beachhead per theatre (R2), leashed to friendly coasts (R3), rushed out of
+every fresh beachhead (R4) and unstuck by a periodic reset (R5); a fair-share naval ratio and the
+engine's per-region sea control set the naval posture (N3). Born a probe under §3.8: the questions
+are "do the gates open and close at the designed moments" and "does the posture flap".
+
+| Metric | Type | Write site | Reads |
+| --- | --- | --- | --- |
+| `WA_TLM_nid_bh_n` / `_bh_last_t` | counter / stamp | `WA_AI_LANDING_note_beachhead` (every landing wave, scripted or organic) | beachheads marked - the R4 gate's input |
+| `WA_TLM_nid_org_n` | counter | `WA_AI_LANDING_register_organic_landing` (on_naval_invasion, not a scripted spawn) | organic landings - R2 / R5 input; 0 on a whole campaign means the engine never landed on its own |
+| `WA_TLM_nid_open_n` / `_hold_n` | counters | `WA_AI_LANDING_update_organic_permission` (monthly, AI majors at war) | months the R1 permission was open / held |
+| `WA_TLM_nid_inf_n` / `_sup_n` | counters | `WA_AI_NAVAL_update_posture` (monthly sweep) | months in each naval posture |
+| `WA_TLM_nid_flip_n` | counter | same | posture changes - more than ~1 per war-year is flapping |
+| `WA_TLM_nid_home_lost_n` | counter | `WA_AI_NAVAL_posture_sweep` | months an enemy controlled a sea region on our own shore |
+| `WA_TLM_nid_ratio` / `_lost_seas` / `_last_t` | gauges + stamp | `WA_TLM_sample_naval_discipline` (copy of the sweep's `WA_AI_NAVAL_fair_ratio` / `_lost_sea_n`) | the fair-share ratio and the count of enemy-controlled sea regions |
+
+**Reading rule.** `nid_open_n` / `nid_hold_n` prove the GATE, not an invasion: the verified effect
+of R1 is read from the save's naval-invasion orders (`plans.py`) and from `nid_org_n`. Second
+signal for the posture: the fleet census of the same saves (`navy TAG --fleets`) recomputed with
+the weights of `common/script_constants/wa_ai_naval.txt`.
+
+**Probe**: `tlm <TAG> <saves>` for the majors at war. Pass = `nid_bh_n` rises after every scripted
+landing month; `nid_flip_n` ≤ 4 per major over a campaign; on a major whose land front stalls for a
+quarter, `nid_open_n` rises and either `nid_org_n` rises or a reset quarter follows.
+
 ## 7. Adding a metric — checklist for authors
 
 1. Register it here (§5) with type, cadence, gate, consumer.
