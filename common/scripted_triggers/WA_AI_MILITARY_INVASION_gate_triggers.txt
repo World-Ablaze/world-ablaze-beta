@@ -1557,3 +1557,116 @@ WA_AI_MILITARY_should_fra_home_war_first_invasion = {
 		has_capitulated = no
 		WA_AI_MILITARY_is_at_war_with_stronger_neighbour = yes
 }
+
+# ----------------------------------------------------------------------------------------------------------
+# [naval-invasion-discipline] gates of WA_AI_MILITARY_DEFAULT_INVASION_discipline.txt (R1 / R2 / R3 / R5 /
+# N3-B2). Control panel and observations: WA_AI_LANDING_triggers.txt. Spec: WA_AI_MILITARY_SYSTEM.md
+# section 27. Every organic rule steps aside while the calendar claims the country's invasion
+# planning (WA_AI_LANDING_has_scripted_claim): the reservation and the freeze govern then.
+# ----------------------------------------------------------------------------------------------------------
+
+# gate of WA_AI_MILITARY_INV_organic_hold_west - R1: a major whose European / African / Middle-East
+# land front is moving plans no organic invasion in that theatre. Majors only.
+WA_AI_MILITARY_should_inv_organic_hold_west = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		WA_AI_CONFIG_is_major_country = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+		WA_AI_LANDING_land_front_is_moving_west = yes
+}
+
+# gate of WA_AI_MILITARY_INV_organic_hold_east - R1, the Asia / Pacific half
+WA_AI_MILITARY_should_inv_organic_hold_east = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		WA_AI_CONFIG_is_major_country = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+		WA_AI_LANDING_land_front_is_moving_east = yes
+}
+
+# gate of WA_AI_MILITARY_INV_organic_freeze_west - R2: one organic beachhead at a time per theatre.
+WA_AI_MILITARY_should_inv_organic_freeze_west = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+		WA_AI_LANDING_organic_freeze_active_west = yes
+}
+
+# gate of WA_AI_MILITARY_INV_organic_freeze_east
+WA_AI_MILITARY_should_inv_organic_freeze_east = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+		WA_AI_LANDING_organic_freeze_active_east = yes
+}
+
+# gate of WA_AI_MILITARY_INV_organic_leash - R3: distance leash + small-target filter, majors at war.
+WA_AI_MILITARY_should_inv_organic_leash = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		WA_AI_CONFIG_is_major_country = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+}
+
+# gate of WA_AI_MILITARY_INV_organic_contested_sea - N3 B2: no organic invasion of a coast whose own
+# controller holds the adjacent sea (state flag WA_AI_NAVAL_controller_holds_sea, monthly sweep).
+WA_AI_MILITARY_should_inv_organic_contested_sea = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		WA_AI_CONFIG_is_major_country = yes
+		has_war = yes
+		NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+}
+
+# gate of WA_AI_MILITARY_INV_organic_stall_reset - R5: permission open for a quarter, no organic
+# landing in that time, no scripted claim and no live named plan (its own staging must survive).
+WA_AI_MILITARY_should_inv_organic_stall_reset = {
+		WA_AI_LANDING_organic_discipline_enabled = yes
+		WA_AI_LANDING_stall_reset_enabled = yes
+		WA_AI_CONFIG_is_major_country = yes
+		has_war = yes
+		WA_AI_LANDING_can_plan_organic_invasions = yes
+		WA_AI_LANDING_organic_permission_is_old = yes
+		NOT = { WA_AI_LANDING_has_recent_organic_landing = yes }
+		NOT = { WA_AI_MILITARY_country_owns_invasion_named_plan = yes }
+		WA_AI_LANDING_is_stall_pulse_on = yes
+}
+
+# [naval-invasion-discipline] T1 - the Japanese southern-expansion windows yield to the calendar. The
+# INVASION half of each prep/fire pair stays off while the calendar still reserves that phase's target
+# for Japan (WA_AI_LANDING_reserved_for_JAP, stamped on the target); the FRONT half keeps the shared
+# gate. On a run without the calendar (no reservation is ever stamped) the windows behave as before.
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_1_prep_INVASION (WA_AI_MILITARY_COUNTRY_JAP_INVASION.txt)
+WA_AI_MILITARY_should_jap_southern_expansion_1_prep_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_1_prep = yes
+		NOT = { PHI = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}
+
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_1_fire_INVASION
+WA_AI_MILITARY_should_jap_southern_expansion_1_fire_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_1_fire = yes
+		NOT = { PHI = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}
+
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_2_prep_INVASION
+WA_AI_MILITARY_should_jap_southern_expansion_2_prep_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_2_prep = yes
+		NOT = { MAL = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}
+
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_2_fire_INVASION
+WA_AI_MILITARY_should_jap_southern_expansion_2_fire_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_2_fire = yes
+		NOT = { MAL = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}
+
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_3_prep_INVASION
+WA_AI_MILITARY_should_jap_southern_expansion_3_prep_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_3_prep = yes
+		NOT = { INS = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}
+
+# gate of WA_AI_MILITARY_JAP_Japan_southern_expansion_3_fire_INVASION
+WA_AI_MILITARY_should_jap_southern_expansion_3_fire_invasion = {
+		WA_AI_MILITARY_should_jap_japan_southern_expansion_3_fire = yes
+		NOT = { INS = { has_country_flag = WA_AI_LANDING_reserved_for_JAP } }
+}

@@ -1,0 +1,186 @@
+############################################################################################################
+#	WA_TEST - naval / invasion discipline ([naval-invasion-discipline]), console-driven.
+#	harness-contract: v1 (wa-testing SKILL).
+#
+#	Fired by wa_nid.1 (one country) and wa_nid.2 (every AI major at war) in
+#	events/wa_test_naval_discipline.txt - the recipe and what good looks like are there.
+#	Writes nothing but the log. Every reading is an INDEPENDENT walk: the strength, the fair-share
+#	ratio and the R1 verdict are recomputed here from engine values and printed beside what the
+#	shipped monthly sweep stored, so a disagreement localises the fault instead of hiding it.
+############################################################################################################
+
+# ROOT = THIS = country under test.
+WA_TEST_NID_report = {
+	log = "=========================================================================================="
+	log = "[GetYear].[GetMonth] | NAVAL DISCIPLINE TEST | [Root.GetName]"
+
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _nid_e1_ = 0 }
+	set_temp_variable = { _nid_e2_ = 0 }
+	set_temp_variable = { _nid_e3_ = 0 }
+	set_temp_variable = { _nid_e4_ = 0 }
+	set_temp_variable = { _nid_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _nid_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _nid_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _nid_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _nid_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _nid_e5_ = 1 } }
+	log = "  scope : always=[?_nid_e1_|.0]  I-am-ROOT=[?_nid_e2_|.0]  I-am-THIS=[?_nid_e3_|.0]  ROOT-scope-usable=[?_nid_e4_|.0]  control-false=[?_nid_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### 1. strength - are the four engine categories a partition of the fleet?
+	set_temp_variable = { _t_cv = num_ships_with_type@carrier }
+	set_temp_variable = { _t_cap = num_ships_with_type@capital }
+	set_temp_variable = { _t_scr = num_ships_with_type@screen }
+	set_temp_variable = { _t_sub = num_ships_with_type@submarine }
+	set_temp_variable = { _t_all = num_ships }
+	set_temp_variable = { _t_sum = _t_cv }
+	add_to_temp_variable = { _t_sum = _t_cap }
+	add_to_temp_variable = { _t_sum = _t_scr }
+	add_to_temp_variable = { _t_sum = _t_sub }
+	log = "  ships : carrier=[?_t_cv|.0] capital=[?_t_cap|.0] screen=[?_t_scr|.0] submarine=[?_t_sub|.0]  sum=[?_t_sum|.0]  num_ships=[?_t_all|.0]"
+	log = "          (sum must equal num_ships: if sum > num_ships the categories overlap and the strength weights double-count)"
+	set_temp_variable = { _t_s = _t_cv }
+	multiply_temp_variable = { _t_s = constant:wa_ai_naval.strength.w_carrier }
+	set_temp_variable = { _t_x = _t_cap }
+	multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_capital }
+	add_to_temp_variable = { _t_s = _t_x }
+	set_temp_variable = { _t_x = _t_scr }
+	multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_screen }
+	add_to_temp_variable = { _t_s = _t_x }
+	set_temp_variable = { _t_x = _t_sub }
+	multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_submarine }
+	add_to_temp_variable = { _t_s = _t_x }
+	log = "  S     : recomputed=[?_t_s|.1]   stored WA_AI_NAVAL_strength=[?WA_AI_NAVAL_strength|.1]   (equal after a monthly sweep)"
+
+	### 2. fair-share ratio, independent walk: every enemy E, S(E) and S(all enemies of E) recomputed inline
+	set_temp_variable = { _t_r = 0 }
+	every_enemy_country = {
+		set_temp_variable = { _t_se = num_ships_with_type@carrier }
+		multiply_temp_variable = { _t_se = constant:wa_ai_naval.strength.w_carrier }
+		set_temp_variable = { _t_x = num_ships_with_type@capital }
+		multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_capital }
+		add_to_temp_variable = { _t_se = _t_x }
+		set_temp_variable = { _t_x = num_ships_with_type@screen }
+		multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_screen }
+		add_to_temp_variable = { _t_se = _t_x }
+		set_temp_variable = { _t_x = num_ships_with_type@submarine }
+		multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_submarine }
+		add_to_temp_variable = { _t_se = _t_x }
+		set_temp_variable = { _t_den = 0 }
+		every_enemy_country = {
+			set_temp_variable = { _t_sf = num_ships_with_type@carrier }
+			multiply_temp_variable = { _t_sf = constant:wa_ai_naval.strength.w_carrier }
+			set_temp_variable = { _t_x = num_ships_with_type@capital }
+			multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_capital }
+			add_to_temp_variable = { _t_sf = _t_x }
+			set_temp_variable = { _t_x = num_ships_with_type@screen }
+			multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_screen }
+			add_to_temp_variable = { _t_sf = _t_x }
+			set_temp_variable = { _t_x = num_ships_with_type@submarine }
+			multiply_temp_variable = { _t_x = constant:wa_ai_naval.strength.w_submarine }
+			add_to_temp_variable = { _t_sf = _t_x }
+			add_to_temp_variable = { _t_den = _t_sf }
+		}
+		if = {
+			limit = { check_variable = { _t_se > 0 } check_variable = { _t_den > 0 } }
+			set_temp_variable = { _t_q = _t_se }
+			divide_temp_variable = { _t_q = _t_den }
+			add_to_temp_variable = { _t_r = _t_q }
+			log = "    enemy [This.GetTag]: S=[?_t_se|.1]  S(its enemies)=[?_t_den|.1]  share=[?_t_q|.3]"
+		}
+	}
+	set_temp_variable = { _t_pi = 0 }
+	set_temp_variable = { _t_ps = 0 }
+	if = { limit = { WA_AI_NAVAL_is_navally_inferior = yes } set_temp_variable = { _t_pi = 1 } }
+	if = { limit = { WA_AI_NAVAL_is_navally_superior = yes } set_temp_variable = { _t_ps = 1 } }
+	log = "  ratio : recomputed=[?_t_r|.3]   stored=[?WA_AI_NAVAL_fair_ratio|.3]   posture inferior=[?_t_pi|.0] superior=[?_t_ps|.0]"
+	log = "          (bars: common/script_constants/wa_ai_naval.txt, group posture - exits sit inside entries)"
+
+	### 3. sea control (part B)
+	set_temp_variable = { _t_hl = 0 }
+	if = { limit = { WA_AI_NAVAL_has_lost_home_sea = yes } set_temp_variable = { _t_hl = 1 } }
+	log = "  seas  : enemy-controlled sea regions (last sweep)=[?WA_AI_NAVAL_lost_sea_n|.0]   one of them on our shore=[?_t_hl|.0]"
+
+	### 4. R1 permission, term by term (independent re-reading of the flags), then the shipped verdict
+	set_temp_variable = { _t_a = 0 }
+	set_temp_variable = { _t_b = 0 }
+	set_temp_variable = { _t_sc = 0 }
+	set_temp_variable = { _t_d = 0 }
+	set_temp_variable = { _t_fw = 0 }
+	set_temp_variable = { _t_fe = 0 }
+	set_temp_variable = { _t_np = 0 }
+	set_temp_variable = { _t_v = 0 }
+	if = { limit = { WA_AI_LANDING_organic_discipline_enabled = yes } set_temp_variable = { _t_a = 1 } }
+	if = { limit = { has_war = yes } set_temp_variable = { _t_b = 1 } }
+	if = {
+		limit = {
+			OR = {
+				has_country_flag = WA_AI_LANDING_holds_reservation
+				WA_AI_LANDING_freeze_active_west = yes
+				WA_AI_LANDING_freeze_active_east = yes
+			}
+		}
+		set_temp_variable = { _t_sc = 1 }
+	}
+	if = { limit = { WA_AI_MILITARY_home_threatened = yes } set_temp_variable = { _t_d = 1 } }
+	if = {
+		limit = {
+			has_country_flag = WA_AI_LANDING_land_front_moved_west
+			NOT = { has_country_flag = { flag = WA_AI_LANDING_land_front_moved_west days > 59 } }
+		}
+		set_temp_variable = { _t_fw = 1 }
+	}
+	if = {
+		limit = {
+			has_country_flag = WA_AI_LANDING_land_front_moved_east
+			NOT = { has_country_flag = { flag = WA_AI_LANDING_land_front_moved_east days > 59 } }
+		}
+		set_temp_variable = { _t_fe = 1 }
+	}
+	if = { limit = { WA_AI_MILITARY_country_owns_invasion_named_plan = yes } set_temp_variable = { _t_np = 1 } }
+	if = { limit = { WA_AI_LANDING_can_plan_organic_invasions = yes } set_temp_variable = { _t_v = 1 } }
+	log = "  R1    : switch=[?_t_a|.0] war=[?_t_b|.0] scripted-claim=[?_t_sc|.0] home-threatened=[?_t_d|.0] front-moving west=[?_t_fw|.0] east=[?_t_fe|.0]  -> can_plan_organic=[?_t_v|.0]   named plan live=[?_t_np|.0]"
+	log = "          (expected can_plan = switch AND war AND NOT claim AND NOT home AND NOT (west AND east); a moving theatre is held by its own R1 block)"
+
+	### 5. R2 / R0 - who holds the invasion planning right now
+	set_temp_variable = { _t_ow = 0 }
+	set_temp_variable = { _t_oe = 0 }
+	set_temp_variable = { _t_sw = 0 }
+	set_temp_variable = { _t_se2 = 0 }
+	set_temp_variable = { _t_hr = 0 }
+	if = { limit = { WA_AI_LANDING_organic_freeze_active_west = yes } set_temp_variable = { _t_ow = 1 } }
+	if = { limit = { WA_AI_LANDING_organic_freeze_active_east = yes } set_temp_variable = { _t_oe = 1 } }
+	if = { limit = { WA_AI_LANDING_freeze_active_west = yes } set_temp_variable = { _t_sw = 1 } }
+	if = { limit = { WA_AI_LANDING_freeze_active_east = yes } set_temp_variable = { _t_se2 = 1 } }
+	if = { limit = { has_country_flag = WA_AI_LANDING_holds_reservation } set_temp_variable = { _t_hr = 1 } }
+	log = "  R2/R0 : organic freeze west=[?_t_ow|.0] east=[?_t_oe|.0]   scripted freeze west=[?_t_sw|.0] east=[?_t_se2|.0]   holds a reservation=[?_t_hr|.0]"
+
+	### 6. R4 - beachheads
+	set_temp_variable = { _t_rb = 0 }
+	set_temp_variable = { _t_pl = 0 }
+	if = { limit = { WA_AI_LANDING_has_recent_beachhead = yes } set_temp_variable = { _t_rb = 1 } }
+	if = { limit = { WA_AI_LANDING_is_beachhead_pulse_on = yes } set_temp_variable = { _t_pl = 1 } }
+	log = "  R4    : recent beachhead=[?_t_rb|.0]   rush pulse on today=[?_t_pl|.0]   flagged states:"
+	every_state = {
+		limit = { has_state_flag = WA_AI_LANDING_beachhead }
+		log = "          [This.GetName]"
+	}
+
+	### 7. R5 - stall reset inputs
+	set_temp_variable = { _t_po = 0 }
+	set_temp_variable = { _t_ro = 0 }
+	set_temp_variable = { _t_sc = 0 }
+	set_temp_variable = { _t_sp = 0 }
+	set_temp_variable = { _t_g5 = 0 }
+	if = { limit = { WA_AI_LANDING_organic_permission_is_old = yes } set_temp_variable = { _t_po = 1 } }
+	if = { limit = { WA_AI_LANDING_has_recent_organic_landing = yes } set_temp_variable = { _t_ro = 1 } }
+	if = { limit = { WA_AI_LANDING_has_scripted_claim = yes } set_temp_variable = { _t_sc = 1 } }
+	if = { limit = { WA_AI_LANDING_is_stall_pulse_on = yes } set_temp_variable = { _t_sp = 1 } }
+	if = { limit = { WA_AI_MILITARY_should_inv_organic_stall_reset = yes } set_temp_variable = { _t_g5 = 1 } }
+	log = "  R5    : permission>90d=[?_t_po|.0] organic landing<90d=[?_t_ro|.0] scripted claim=[?_t_sc|.0] pulse=[?_t_sp|.0]  -> reset armed=[?_t_g5|.0]"
+
+	### 8. telemetry as it stands
+	log = "  tlm   : bh_n=[?WA_TLM_nid_bh_n|.0] org_n=[?WA_TLM_nid_org_n|.0] open_n=[?WA_TLM_nid_open_n|.0] hold_n=[?WA_TLM_nid_hold_n|.0] inf_n=[?WA_TLM_nid_inf_n|.0] sup_n=[?WA_TLM_nid_sup_n|.0] flip_n=[?WA_TLM_nid_flip_n|.0] home_lost_n=[?WA_TLM_nid_home_lost_n|.0]"
+}

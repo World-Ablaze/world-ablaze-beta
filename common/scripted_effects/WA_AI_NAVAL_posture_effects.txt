@@ -1,0 +1,180 @@
+############################################################################################################
+#	WA AI NAVAL POSTURE ([naval-invasion-discipline] N3) - fair-share strength ratio + sea control
+############################################################################################################
+#	Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27. Constants: common/script_constants/wa_ai_naval.txt.
+#	Observations: WA_AI_NAVAL_triggers.txt (WA_AI_NAVAL_is_navally_inferior / _superior / _has_lost_home_sea).
+#	Region data: WA_AI_NAVAL_sea_control_generated.txt (GENERATED, tools/gen/gen_naval_sea_control.py).
+#
+#	WHY NOT enemies_naval_strength_ratio. The engine trigger compares a country with ALL its enemies'
+#	fleets, wherever they fight: a navy facing two oceans' worth of enemy hulls reads "outmatched"
+#	even where the enemy has sent only a share. The fair-share ratio lets each enemy E split its fleet
+#	over ITS enemies in proportion to their strength; the share aimed at us, over our strength,
+#	simplifies to   ratio = sum over our enemies E of  S(E) / S(all enemies of E).
+#	It still cannot see WHERE fleets are, which is why every consequence is also keyed on the
+#	engine's own per-region sea control (part B), never on the ratio alone.
+############################################################################################################
+
+# Lifetime of every per-region flag the sweep writes. Must exceed the 31-day gap between two monthly
+# sweeps, or a held flag blinks; tools/gen/gen_naval_sea_control.py reads THIS line for the generated
+# flags, so the one number cannot drift between the two files.
+@WA_AI_NAVAL_SEA_FLAG_DAYS = 40
+# Monthly claim: shorter than any month, longer than the spread of AI pulses inside one month.
+@WA_AI_NAVAL_PULSE_CLAIM_DAYS = 20
+
+############################################################################################################
+#	WA_AI_NAVAL_posture_monthly_tick - SCOPE: any AI country (on_monthly). The first pulse of the month
+#	claims a 20-day global flag and runs the sweep; every later pulse pays one flag read.
+############################################################################################################
+WA_AI_NAVAL_posture_monthly_tick = {
+	if = {
+		limit = { NOT = { has_global_flag = WA_AI_NAVAL_posture_pulse } }
+		set_global_flag = { flag = WA_AI_NAVAL_posture_pulse value = 1 days = @WA_AI_NAVAL_PULSE_CLAIM_DAYS }
+		WA_AI_NAVAL_posture_sweep = yes
+	}
+}
+
+############################################################################################################
+#	WA_AI_NAVAL_posture_sweep - three passes, each reading only what the previous pass wrote this month.
+############################################################################################################
+WA_AI_NAVAL_posture_sweep = {
+	# pass 1: weighted strength S of every belligerent
+	every_country = {
+		limit = { has_war = yes }
+		WA_AI_NAVAL_compute_strength = yes
+	}
+	# pass 2: S(all enemies of X) for every belligerent X
+	every_country = {
+		limit = { has_war = yes }
+		set_temp_variable = { _nps_sum = 0 }
+		every_enemy_country = {
+			add_to_temp_variable = { _nps_sum = WA_AI_NAVAL_strength }
+		}
+		set_variable = { WA_AI_NAVAL_enemy_strength_sum = _nps_sum }
+	}
+	# pass 3: posture and sea control of every AI major at war
+	every_country = {
+		limit = {
+			is_ai = yes
+			has_war = yes
+			WA_AI_CONFIG_is_major_country = yes
+		}
+		WA_AI_NAVAL_update_posture = yes
+		WA_AI_NAVAL_update_sea_control_country = yes
+		set_variable = { WA_AI_NAVAL_lost_sea_n = _nsc_lost }
+		if = {
+			limit = { check_variable = { _nsc_home_lost = 1 } }
+			set_country_flag = { flag = WA_AI_NAVAL_home_sea_lost value = 1 days = @WA_AI_NAVAL_SEA_FLAG_DAYS }
+			# tlm: nid_home_lost_n - months a sea on our own shore was enemy-controlled.
+			# consumer: [naval-invasion-discipline]. Verified effect: the flag above.
+			add_to_variable = { WA_TLM_nid_home_lost_n = 1 }
+		}
+		else = {
+			clr_country_flag = WA_AI_NAVAL_home_sea_lost
+		}
+	}
+	# a major that left every war drops its posture; the region flags expire by themselves
+	every_country = {
+		limit = {
+			has_war = no
+			OR = {
+				has_country_flag = WA_AI_NAVAL_posture_inferior
+				has_country_flag = WA_AI_NAVAL_posture_superior
+			}
+		}
+		clr_country_flag = WA_AI_NAVAL_posture_inferior
+		clr_country_flag = WA_AI_NAVAL_posture_superior
+	}
+	# part B2: which coasts are shielded by their own controller's sea control
+	WA_AI_NAVAL_update_sea_control_states = yes
+}
+
+############################################################################################################
+#	WA_AI_NAVAL_compute_strength - SCOPE: THIS = a country. OUT: variable WA_AI_NAVAL_strength.
+############################################################################################################
+WA_AI_NAVAL_compute_strength = {
+	set_temp_variable = { _nps = num_ships_with_type@carrier }
+	multiply_temp_variable = { _nps = constant:wa_ai_naval.strength.w_carrier }
+	set_temp_variable = { _npt = num_ships_with_type@capital }
+	multiply_temp_variable = { _npt = constant:wa_ai_naval.strength.w_capital }
+	add_to_temp_variable = { _nps = _npt }
+	set_temp_variable = { _npt = num_ships_with_type@screen }
+	multiply_temp_variable = { _npt = constant:wa_ai_naval.strength.w_screen }
+	add_to_temp_variable = { _nps = _npt }
+	set_temp_variable = { _npt = num_ships_with_type@submarine }
+	multiply_temp_variable = { _npt = constant:wa_ai_naval.strength.w_submarine }
+	add_to_temp_variable = { _nps = _npt }
+	set_variable = { WA_AI_NAVAL_strength = _nps }
+}
+
+############################################################################################################
+#	WA_AI_NAVAL_update_posture - SCOPE: THIS = an AI major at war, after passes 1-2 this month.
+#	OUT: variable WA_AI_NAVAL_fair_ratio; flags WA_AI_NAVAL_posture_inferior / _superior (hysteresis:
+#	exits are tested before entries, and each posture's exit bar sits inside its entry bar).
+#	A country with no fleet has no naval posture at all.
+############################################################################################################
+WA_AI_NAVAL_update_posture = {
+	if = {
+		limit = { check_variable = { WA_AI_NAVAL_strength > 0 } }
+		set_temp_variable = { _npr = 0 }
+		every_enemy_country = {
+			limit = { check_variable = { WA_AI_NAVAL_enemy_strength_sum > 0 } }
+			set_temp_variable = { _npq = WA_AI_NAVAL_strength }
+			divide_temp_variable = { _npq = WA_AI_NAVAL_enemy_strength_sum }
+			add_to_temp_variable = { _npr = _npq }
+		}
+		set_variable = { WA_AI_NAVAL_fair_ratio = _npr }
+
+		# exits
+		if = {
+			limit = {
+				has_country_flag = WA_AI_NAVAL_posture_inferior
+				check_variable = { _npr < constant:wa_ai_naval.posture.inferior_exit }
+			}
+			clr_country_flag = WA_AI_NAVAL_posture_inferior
+			# tlm: nid_flip_n - posture changes. consumer: [naval-invasion-discipline] (flapping check)
+			add_to_variable = { WA_TLM_nid_flip_n = 1 }
+		}
+		if = {
+			limit = {
+				has_country_flag = WA_AI_NAVAL_posture_superior
+				check_variable = { _npr > constant:wa_ai_naval.posture.superior_exit }
+			}
+			clr_country_flag = WA_AI_NAVAL_posture_superior
+			add_to_variable = { WA_TLM_nid_flip_n = 1 }
+		}
+		# entries
+		if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_NAVAL_posture_inferior }
+				NOT = { has_country_flag = WA_AI_NAVAL_posture_superior }
+				check_variable = { _npr > constant:wa_ai_naval.posture.inferior_enter }
+			}
+			set_country_flag = WA_AI_NAVAL_posture_inferior
+			add_to_variable = { WA_TLM_nid_flip_n = 1 }
+		}
+		else_if = {
+			limit = {
+				NOT = { has_country_flag = WA_AI_NAVAL_posture_inferior }
+				NOT = { has_country_flag = WA_AI_NAVAL_posture_superior }
+				check_variable = { _npr < constant:wa_ai_naval.posture.superior_enter }
+			}
+			set_country_flag = WA_AI_NAVAL_posture_superior
+			add_to_variable = { WA_TLM_nid_flip_n = 1 }
+		}
+		# tlm: nid_inf_n / nid_sup_n - months spent in each posture. consumer: [naval-invasion-discipline].
+		# Verified effect: read from the flags as they stand after this month's update.
+		if = {
+			limit = { has_country_flag = WA_AI_NAVAL_posture_inferior }
+			add_to_variable = { WA_TLM_nid_inf_n = 1 }
+		}
+		if = {
+			limit = { has_country_flag = WA_AI_NAVAL_posture_superior }
+			add_to_variable = { WA_TLM_nid_sup_n = 1 }
+		}
+	}
+	else = {
+		set_variable = { WA_AI_NAVAL_fair_ratio = 0 }
+		clr_country_flag = WA_AI_NAVAL_posture_inferior
+		clr_country_flag = WA_AI_NAVAL_posture_superior
+	}
+}

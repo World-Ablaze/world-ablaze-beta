@@ -1,0 +1,70 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_FRONT_beachhead ([naval-invasion-discipline] R4)
+############################################################################################################
+# Every ai_strategy in this file has type front_control or front_unit_request. Canonical domain: FRONT.
+# Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27. Marker: WA_AI_LANDING_mark_beachhead (state
+# flag WA_AI_LANDING_beachhead, 45 days, renewed while cut off), stamped by EVERY landing - scripted (WA_AI_DIVISION_spawn_invasion)
+# and organic (on_naval_invasion) alike.
+#
+# WHY A FRONT ORDER. A beachhead that sits still is ground down before the next wave; attacking out of
+# it is what makes the landing worth its convoys. front_control is a FRONT order, not an invasion
+# request, so the scripted-landing freeze (invasion_unit_request) does not touch it: the freeze keeps
+# a second beach closed while this block makes the first one move.
+#
+# PRIORITY 360 (documentation section 6.1 ladder): above the posture family (340 / 350) because the
+# posture targets whole fronts at ratio 0.2 and would otherwise always own the beachhead's provinces;
+# below the 500 / 10000 brakes of DEFAULT_FRONT_control, so an equipment or stockpile stop still wins.
+# The state_trigger alone confines it to the flagged states and their neighbours: no country_trigger,
+# because how the engine combines two target filters on one front_control is not documented.
+############################################################################################################
+
+
+# purpose: rush out of a fresh beachhead, in pulses (8 days on / 6 off) so divisions re-organise
+# range:   n/a (front_control)
+# policy:  Exclusive per front - priority 360, beachhead states and their neighbours only; yields to a
+#          live Country-layer scripted opening (WA_AI_MILITARY_country_owns_front_control_scripted_opening)
+# domain:  FRONT
+WA_AI_MILITARY_DEFAULT_FRONT_beachhead_rush = {
+	enable = {
+		WA_AI_MILITARY_should_rush_beachhead = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_control
+		state_trigger = {
+			OR = {
+				has_state_flag = WA_AI_LANDING_beachhead
+				any_neighbor_state = { has_state_flag = WA_AI_LANDING_beachhead }
+			}
+		}
+		ratio = 0
+		priority = 360
+		ordertype = front
+		execution_type = rush_weak
+		execute_order = yes
+	}
+}
+
+
+# purpose: keep divisions flowing into a fresh beachhead for its whole window (no pulse)
+# range:   +50 (factor over the engine's own request)
+# policy:  Additive per state
+# domain:  FRONT
+WA_AI_MILITARY_DEFAULT_FRONT_beachhead_reinforce = {
+	enable = {
+		WA_AI_MILITARY_should_reinforce_beachhead = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = front_unit_request
+		state_trigger = {
+			OR = {
+				has_state_flag = WA_AI_LANDING_beachhead
+				any_neighbor_state = { has_state_flag = WA_AI_LANDING_beachhead }
+			}
+		}
+		value = 50
+	}
+}

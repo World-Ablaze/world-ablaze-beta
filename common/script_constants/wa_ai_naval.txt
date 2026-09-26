@@ -1,0 +1,39 @@
+####################################################################################################
+#	World Ablaze AI - NAVAL POSTURE constants ([naval-invasion-discipline] N3).
+#	Read with `constant:wa_ai_naval.<group>.<key>` from the monthly naval-posture sweep
+#	(WA_AI_NAVAL_posture_effects.txt) and the posture observation triggers (WA_AI_NAVAL_triggers.txt).
+#	Full restart (not `reload`) when tuning. Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27.
+####################################################################################################
+
+wa_ai_naval = {
+	schema = {
+		any_key = yes
+		data = {
+			{
+				any_key = yes
+				data = fixed_point
+			}
+		}
+	}
+
+	# Weights of a country's naval strength S, per engine ship category (num_ships_with_type@<cat>).
+	# Protects the fair-share ratio from counting a destroyer like a carrier; assumes the four
+	# categories do not overlap (capital = BB/BC/CA) - gone if a harness run shows carrier ships
+	# inside the capital count (the S printed by wa_nid.1 would double the carriers).
+	strength = {
+		w_carrier = 10
+		w_capital = 8
+		w_screen = 2
+		w_submarine = 1
+	}
+
+	# Posture hysteresis on the fair-share ratio (enemy share aimed at us / our strength).
+	# Protects against a monthly flip near one threshold; exit bars sit inside the enter bars so a
+	# posture needs a real move to change. Gone if WA_TLM_nid_flip_n climbs above ~1 per year.
+	posture = {
+		inferior_enter = 1.5
+		inferior_exit = 1.3
+		superior_enter = 0.8
+		superior_exit = 0.9
+	}
+}

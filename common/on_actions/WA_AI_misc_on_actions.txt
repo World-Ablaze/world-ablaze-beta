@@ -365,6 +365,22 @@ on_actions = {
 					WA_AI_LANDING_update_reservations = yes
 				}
 
+				# [naval-invasion-discipline] R5 input: age of the organic-invasion permission, plus its
+				# telemetry months. Every AI major, at war or not: peace must clear the age flag.
+				if = {
+					limit = { WA_AI_CONFIG_is_major_country = yes }
+					WA_AI_LANDING_update_organic_permission = yes
+				}
+
+				# [naval-invasion-discipline] R4: renew every beachhead that is still cut off. One global
+				# pass per month, claimed by the first AI pulse (timed global flag inside).
+				WA_AI_LANDING_beachhead_monthly_tick = yes
+
+				# [naval-invasion-discipline] N3 naval posture + sea control: one global sweep per month,
+				# claimed by the first AI country's pulse (timed global flag inside), every other
+				# country pays one flag read. Effects: WA_AI_NAVAL_posture_effects.txt.
+				WA_AI_NAVAL_posture_monthly_tick = yes
+
 				# [train-variant-choice] latch the armored-train reserve gate into a country flag:
 				# train_equipment_4's can_be_produced cannot read a variable/constant (evaluated at
 				# load outside country scope - a check_variable there crashes on launch), so the
@@ -519,8 +535,54 @@ on_actions = {
 			if = { limit = { has_country_flag = WA_AI_logging } log = "[Root.GetName] nuked [From.GetName]" }
 		}
 	}
+	# [naval-invasion-discipline] R2/R4 marker for ENGINE-planned landings. ROOT = the invader, THIS =
+	# the invaded state, FROM = the departure state. Scripted spawns mark their own beach inside
+	# WA_AI_DIVISION_spawn_invasion; the effect below separates the two (WA_AI_LANDING_effects.txt).
+	on_naval_invasion = {
+		effect = {
+			if = {
+				limit = { ROOT = { is_ai = yes } }
+				WA_AI_LANDING_register_organic_landing = yes
+			}
+		}
+	}
 	on_state_control_changed = { #ROOT is new controller #FROM is old controller #FROM.FROM is state ID
 		effect = {
+
+			# [naval-invasion-discipline] R1 input: a MAINLAND state (coastal or not - an island is a
+			# landing, not a front) changing hands between two belligerents means their land front moves
+			# in that macro-theatre, so neither should draw divisions into an organic invasion there.
+			# Tested at the effect root, where FROM is still the old controller (it re-binds inside a
+			# FROM.FROM block - see the [refineries] note below). The Americas map to no theatre.
+			if = {
+				limit = {
+					has_war_with = FROM
+					FROM.FROM = {
+						is_island_state = no
+						OR = {
+							is_on_continent = europe
+							is_on_continent = africa
+							is_on_continent = middle_east
+						}
+					}
+				}
+				WA_AI_LANDING_note_land_front_moved_west = yes
+				FROM = { WA_AI_LANDING_note_land_front_moved_west = yes }
+			}
+			else_if = {
+				limit = {
+					has_war_with = FROM
+					FROM.FROM = {
+						is_island_state = no
+						OR = {
+							is_on_continent = asia
+							is_on_continent = australia
+						}
+					}
+				}
+				WA_AI_LANDING_note_land_front_moved_east = yes
+				FROM = { WA_AI_LANDING_note_land_front_moved_east = yes }
+			}
 
 			# [refineries] the engine drops the old controller's construction queue in this state, so the
 			# per-state "built + queued levels" sums (WA_AI_committed_<X>, building_adders; [pc-queue] added CIC/MIC/NIC)

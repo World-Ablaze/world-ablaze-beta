@@ -1367,7 +1367,7 @@ NDefines.NAI.WANTED_UNITS_MANPOWER_DIVISOR  = 17250 								-- Normalizing divis
 --NDefines.NAI.NUM_SILOS_PER_DOCKYARDS = 0.02										-- ai will try to build a silo per this ratio of dockyards
 
 NDefines.NAI.MAX_FUEL_CONSUMPTION_RATIO_FOR_NAVY_TRAINING = 0.2						-- ai will use at most this ratio of affordable fuel for naval training
-NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.8						-- ai will not train a taskforce if fully trained ships are above this ratio
+NDefines.NAI.MAX_FULLY_TRAINED_SHIP_RATIO_FOR_TRAINING = 0.99						-- ai will not train a taskforce if fully trained ships are above this ratio ([naval-invasion-discipline] N6, owner ruling: train to veteran crews like KR; a training ship counts x0 in dominance, so this relies on the invasion-support goal outranking training)
 
 NDefines.NAI.MAX_UNITS_FACTOR_FRONT_ORDER = 1.0										-- Factor for max number of units to assign to area front orders (economy E8: vanilla restored, was 3.0 - inflated every front's demand 3x and kept the theatre distributor in permanent triage)
 NDefines.NAI.DESIRED_UNITS_FACTOR_FRONT_ORDER = 1.1									-- Factor for desired number of units to assign to area front orders (economy E8: vanilla restored, was 3.0)
