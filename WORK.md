@@ -22,6 +22,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 ## OPEN
 
+### italian-light-infantry-retirement — PARKED (2026-09-25)
+- State: code shipped, SHIPPED-UNTESTED; parked because WORK.md already exceeds its four-subject WIP limit. Owner console run and campaign verification remain owed.
+- Owner request: all Italian AI `Light Infantry template A` through `Z` divisions, as well as the starting `Divisione Coloniale`, must be disbanded in 1940.
+- Symptom, **MEASURED**: campaign `02795c2d` has five `Divisione Coloniale` and one `Light Infantry template F` in June 1940. The F division stays on its light template through February 1941; one colonial division is still light in June 1945. Campaign `73c03fd3` retains five colonials in June 1940; their IDs never convert before disappearing across 59 monthly saves.
+- Change: Italy-AI-only monthly retirement from the first 1940 pulse; remove the named colonial and every lettered Light Infantry template with `delete_unit_template_and_units` and `disband = yes` so equipment and manpower are returned. No war-entry flag or historical-faction gate. Mixed Ascari divisions are outside the requested light-template set.
+- Regression risk, **DERIVED**: Italy loses five or six fielded divisions in the 1940 sample saves, and an ahistorical Italy could need those divisions immediately. The removal is the owner's explicit outcome; retaining its heavy infantry target and refunding the disbanded resources limits the loss. **ASSUMED**: a fresh campaign may give lettered designs different compositions; the exact requested A–Z name set still retires. Unconditional name-specific delete calls on an absent template need the console no-op/idempotence check; `has_template` cannot guard this because it misses decommissioned copies that still field divisions.
+- Verification (owner console): cold boot; load an ITA-AI save from just before and from after 1940.1.1; under `observe`, run `event wa_test_tmpl.5 ITA`. Read the `ITALIAN LIGHT INFANTRY RETIREMENT` pre/post/re-run lines in `logs/game.log`: pre-1940 gate 0 and no change; post-1940 gate 1, light-majority count falls by the targeted divisions seen in the pre-save, second pass unchanged and no errors for absent template names. The named-template counts are diagnostic only: `has_template` misses decommissioned copies; save division IDs decide the result. Check a non-ITA AI under `observe`; use a separate player-ITA save for the human negative control (never `tag` into the AI).
+- Verification (campaign): `plans.py ITA <1940.1/2 monthly save> --templates` shows zero `Divisione Coloniale` and zero `Light Infantry template A`–`Z` divisions; `savegame.py army ITA` closes the deployed total. The heavy `Infantry template C` remains. Check 1940.6 and 1941.1 for recurrence.
+- Closed when: console PASS and one new campaign's monthly saves meet the 1940.1/2, 1940.6 and 1941.1 checks.
+
 > **Campaign `1ac7e4ea` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 120 monthly saves
 > 1936.2-1946.1, unbranched, build = HEAD `cd234cc51` — DERIVED from commit 13:49:54 / first save
 > 13:52, MEASURED by `wa_tlm_version = 32` first and last save + live `wa_tlm_llr_recv_*` arrays).

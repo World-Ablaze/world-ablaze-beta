@@ -26,6 +26,20 @@ The current flow is:
 9. Template triggers decide whether a template can be selected after unlocks exist.
 10. Production triggers and `role_ratio` strategies decide whether the AI builds enough equipment and enough divisions for the selected roles.
 
+### Italian light infantry retirement
+
+`[italian-light-infantry-retirement]` is an Italy-AI-only monthly cleanup from the first
+1940 pulse (`date > 1939.12.31`). It removes `Divisione Coloniale` and all 26
+`Light Infantry template A`–`Z` designs together with their divisions, using
+`disband = yes` to return manpower and equipment. It runs after the monthly
+infantry-template calculation and repeats so a later lettered design is removed.
+The mixed `Divisione Ascari Libica` is outside this named set. The decision is
+`WA_AI_TEMPLATES_should_retire_italian_light_infantry`; the effect is in
+`WA_AI_TEMPLATES_italian_light_infantry.txt`. `has_template` cannot guard the
+deletions: it misses decommissioned designs that still have fielded divisions.
+The `wa_test_tmpl.5` console harness checks the gate, light-infantry division
+count and repeat call; campaign saves must confirm the named division IDs are gone.
+
 Do not skip the research or production layers. A template that selects equipment the AI does not research or produce will appear valid in script but fail in-game.
 
 ## Source Of Truth
