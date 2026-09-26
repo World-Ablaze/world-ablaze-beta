@@ -502,29 +502,26 @@ WA_AI_CONFIG_DIVISIONS_use_mechanized_divisions = {
 # 50 mechanized_equipment per battalion on the whole fielded armour force. The stock that pays it
 # is built by WA_AI_TEMPLATES_mechanization_line_open, which opens EARLIER - this trigger only
 # decides when the templates start spending it. The size of the residual deficit at the flip is
-# NOT bounded here and is not claimed to be: WORK.md [mech-window] carries the t0/t1/t2 table.
+# NOT bounded here and is not claimed to be (the t0/t1/t2 table is in the git history of WORK.md,
+# subject [mech-window]).
 # The 1941 date is a deliberate tuning fallback, not a capability test (AGENTS.md principle 1): it
 # is the only path for every country but GER, so an ahistorical 1938 industrialiser still waits on
-# the calendar and a 1941 late industrialiser still flips mid-expansion. The GER branch shows the
-# state-based formulation if that residual ever needs closing.
-# Read ONLY through the latch WA_AI_TEMPLATES_update_mechanization_latch: the GER branch is not
-# monotone (an army bleeds men), and a gate that flickers re-runs the engine's template
-# decommission pass.
+# the calendar and a 1941 late industrialiser still flips mid-expansion.
+# Read ONLY through the latch WA_AI_TEMPLATES_update_mechanization_latch: a gate that flickers
+# re-runs the engine's template decommission pass, and the disabled GER manpower term below would
+# make the branch non-monotone again if restored.
 WA_AI_CONFIG_DIVISIONS_mechanization_window_open = {
 	OR = {
 		date > 1941.1.1
 		AND = {
 			original_tag = GER
-			# [mech-window] owner rule 2026-08-29, TWO terms, both required, and each binds in a
-			# different game. The 1.6M bar is mirrored in the B3 harness probe and held equal by
+			# [mech-window] owner rule: GER opens its mechanization window on the DATE alone, from
+			# 1938.1.1, so its armour is mechanized for the Polish campaign. The army-manpower bar
+			# (1.6M) is DISABLED, not deleted: restoring it brings back the under-strength-GER guard
+			# and the non-monotone branch. It is still held equal to the B3 harness probe by
 			# tools/constants_registry.json group ger_mechanization_manpower_bar; neighbour, NOT
 			# unified: common/decisions/GER.txt spells the same "GER is at war strength" idea as
 			# size > 1599999.
-			# On the historical path the DATE binds: GER passed 1.6M around 1939.3 (MEASURED: 86
-			# divisions 1939.2, 90 in 1939.4, at 18 200 men per template-1004 division), so 1940.1
-			# is what puts the flip after the Polish campaign rather than six months before it.
-			# In a game where the German army grows slower the MANPOWER bar binds instead - that is
-			# the term that keeps an under-strength GER off mechanized in 1940.
 			# has_army_manpower = { size > 1600000 }
 			date > 1938.1.1
 		}
@@ -540,12 +537,12 @@ WA_AI_CONFIG_DIVISIONS_is_expeditionary_mechanized_major = {
 	original_tag = USA
 }
 
-
 # [italian-light-infantry-retirement] The 1936 colonial park and the lettered light
 # infantry designs belong to Italy's AI, regardless of its historical faction path.
 WA_AI_CONFIG_DIVISIONS_is_italian_light_infantry_owner = {
 	original_tag = ITA
 }
+
 
 WA_AI_CONFIG_DIVISIONS_is_expected_marshes_or_mountains = {
 	OR = {
