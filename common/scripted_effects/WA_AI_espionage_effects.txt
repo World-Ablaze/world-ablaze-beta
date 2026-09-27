@@ -2,7 +2,19 @@
 #	World Ablaze AI mod
 ############################################################################################################
 
+# [intel-adversary-targeting] score factor a current intel target keeps over challengers, so rank
+# 2/3 swaps between 2-day pulses do not pull operatives off a half-built network.
+# Single reader in this file: WA_AI_rank_intel_candidate.
+@INTEL_INCUMBENT_FACTOR = 1.2
+# [espionage-priorities] how long one captor may hold the rescue gate (which switches off every other
+# WA espionage strategy), and the pause before the same country retries after giving up.
+# Single reader in this file: WA_AI_set_rescue_operative_target.
+@RESCUE_WINDOW_DAYS = 180
+@RESCUE_COOLDOWN_DAYS = 180
+
 WA_AI_set_boost_resistance_target = {
+
+	set_temp_variable = { owned_states_controlled_by_enemies = 0 }
 
 	if = { limit = { has_war = yes }
 
@@ -56,89 +68,133 @@ WA_AI_set_boost_resistance_target = {
 	}
 }
 
+# [espionage-priorities] COUNTRY scope, every background pulse. Names the country holding one of
+# our captured operatives as WA_AI_rescue_operative_target (read by the WA_AI_rescue_* strategies,
+# which outrank every other WA espionage strategy). Exits: the captor releases or loses the
+# operative, stops existing, or holds the gate past @RESCUE_WINDOW_DAYS (then @RESCUE_COOLDOWN_DAYS
+# before any new rescue). Scan uses the vanilla every_operative / operative_captor idiom.
 WA_AI_set_rescue_operative_target = {
-
 	if = {
 		limit = {
-			NOT = {
-				AND = {
-					has_variable = WA_AI_rescue_operative_target
-					var:WA_AI_rescue_operative_target = { has_captured_operative = ROOT }
+			has_variable = WA_AI_rescue_operative_target
+			OR = {
+				NOT = { has_country_flag = WA_AI_rescue_window }
+				NOT = {
+					var:WA_AI_rescue_operative_target = {
+						exists = yes
+						has_captured_operative = ROOT
+					}
 				}
 			}
 		}
+		if = {
+			limit = {
+				var:WA_AI_rescue_operative_target = {
+					exists = yes
+					has_captured_operative = ROOT
+				}
+			}
+			set_country_flag = { flag = WA_AI_rescue_cooldown days = @RESCUE_COOLDOWN_DAYS value = 1 }
+		}
+		clear_variable = WA_AI_rescue_operative_target
+		clr_country_flag = WA_AI_rescue_window
+	}
 
-		if = { limit = { any_operative_leader = { is_operative_captured = yes } }
-
-			random_operative = { limit = { is_operative_captured = yes }
-
-				set_variable = { ROOT.WA_AI_rescue_operative_target = operative_captor }
+	if = {
+		limit = {
+			NOT = { has_variable = WA_AI_rescue_operative_target }
+			NOT = { has_country_flag = WA_AI_rescue_cooldown }
+		}
+		set_temp_variable = { _rescue_captor = 0 }
+		every_operative = {
+			limit = { is_operative_captured = yes }
+			if = { limit = { check_variable = { _rescue_captor = 0 } }
+				set_temp_variable = { _rescue_captor = operative_captor }
 			}
 		}
-		else = {
-			clear_variable = WA_AI_rescue_operative_target
+		if = {
+			limit = {
+				NOT = { check_variable = { _rescue_captor = 0 } }
+				var:_rescue_captor = { exists = yes }
+			}
+			set_variable = { WA_AI_rescue_operative_target = _rescue_captor }
+			set_country_flag = { flag = WA_AI_rescue_window days = @RESCUE_WINDOW_DAYS value = 1 }
 		}
 	}
 }
 
-WA_AI_set_collaboration_target = {
+# [intel-adversary-targeting] COUNTRY scope (ROOT = the spying AI), every background pulse. Names
+# the two strongest adversaries as the intel-network targets WA_AI_espionage_strategies.txt reads:
+# at war its living enemies, at peace the majors WA_AI_THIS_is_threat_to_PREV names; power is
+# WA_AI_MATH_country_power_score. How to tell it is wrong: the AI builds its networks on a minor
+# while at war with a major.
+WA_AI_set_intel_network_targets = {
+	set_temp_variable = { _intel_prev_1 = 0 }
+	set_temp_variable = { _intel_prev_2 = 0 }
+	if = { limit = { has_variable = WA_AI_intel_target_1 } set_temp_variable = { _intel_prev_1 = WA_AI_intel_target_1 } }
+	if = { limit = { has_variable = WA_AI_intel_target_2 } set_temp_variable = { _intel_prev_2 = WA_AI_intel_target_2 } }
+	clear_variable = WA_AI_intel_target_1
+	clear_variable = WA_AI_intel_target_2
 
-	if = { limit = { tag = GER }
+	if = { limit = { check_variable = { operatives > 0 } }
 
-		if = {
-			limit = {
-				check_variable = { operatives > 0 }
-				has_government = fascism
-				has_capitulated = no
-			}
+		set_temp_variable = { _intel_score_1 = -1 }
+		set_temp_variable = { _intel_score_2 = -1 }
+		set_temp_variable = { _intel_tag_1 = 0 }
+		set_temp_variable = { _intel_tag_2 = 0 }
 
-			# priority order
-			add_to_temp_array = { collab_targets = POL.id }
-			add_to_temp_array = { collab_targets = FRA.id }
-			add_to_temp_array = { collab_targets = BEL.id }
-			add_to_temp_array = { collab_targets = HOL.id }
-			add_to_temp_array = { collab_targets = YUG.id }
-			add_to_temp_array = { collab_targets = SOV.id }
-
-			for_each_loop = { array = collab_targets
-
-				var:v = {
-					if = {
-						limit = {
-							exists = yes
-							NOT = { has_government = fascism }
-							NOT = { is_in_faction_with = ROOT }
-							has_capitulated = no
-							GER = { check_variable = { has_collaboration@PREV < 0.1 } }
-							ROOT = {
-								NOT = {
-									is_running_operation = {
-										target = PREV
-										operation = operation_collaboration_government
-									}
-								}
-							}
-						}
-
-						set_variable = { ROOT.WA_AI_collaboration_target = THIS.id}
-
-						# set_temp_variable = { next_index = var:i }
-						# add_to_temp_variable = { next_index = 1 }
-						# if = { limit = { check_variable = { next_index < collab_target^num } }
-
-						# 	set_variable = { ROOT.WA_AI_collaboration_target_next = collab_targets^next_index }
-						# }
-
-						set_temp_variable = { break = 1 }
-					}
+		if = { limit = { has_war = yes }
+			every_enemy_country = {
+				limit = {
+					exists = yes
+					has_capitulated = no
 				}
-			}
-
-			if = { limit = { check_variable = { break = 0 } }
-
-				clear_variable = WA_AI_collaboration_target
+				WA_AI_rank_intel_candidate = yes
 			}
 		}
-		else = { clear_variable = WA_AI_collaboration_target }
+		else = {
+			every_other_country = {
+				limit = {
+					is_major = yes
+					WA_AI_THIS_is_threat_to_PREV = yes
+				}
+				WA_AI_rank_intel_candidate = yes
+			}
+		}
+
+		if = { limit = { NOT = { check_variable = { _intel_tag_1 = 0 } } }
+			set_variable = { WA_AI_intel_target_1 = _intel_tag_1 }
+		}
+		if = { limit = { NOT = { check_variable = { _intel_tag_2 = 0 } } }
+			set_variable = { WA_AI_intel_target_2 = _intel_tag_2 }
+		}
+	}
+}
+
+# [intel-adversary-targeting] COUNTRY scope, THIS = one candidate, called only by
+# WA_AI_set_intel_network_targets. Keeps the two best scores in its _intel_* temps; a current
+# target scores x @INTEL_INCUMBENT_FACTOR.
+WA_AI_rank_intel_candidate = {
+	WA_AI_MATH_country_power_score = yes
+	set_temp_variable = { _intel_score = _power_score_ }
+	if = {
+		limit = {
+			OR = {
+				check_variable = { _intel_prev_1 = THIS.id }
+				check_variable = { _intel_prev_2 = THIS.id }
+			}
+		}
+		multiply_temp_variable = { _intel_score = @INTEL_INCUMBENT_FACTOR }
+	}
+
+	if = { limit = { check_variable = { _intel_score > _intel_score_1 } }
+		set_temp_variable = { _intel_score_2 = _intel_score_1 }
+		set_temp_variable = { _intel_tag_2 = _intel_tag_1 }
+		set_temp_variable = { _intel_score_1 = _intel_score }
+		set_temp_variable = { _intel_tag_1 = THIS.id }
+	}
+	else_if = { limit = { check_variable = { _intel_score > _intel_score_2 } }
+		set_temp_variable = { _intel_score_2 = _intel_score }
+		set_temp_variable = { _intel_tag_2 = THIS.id }
 	}
 }
