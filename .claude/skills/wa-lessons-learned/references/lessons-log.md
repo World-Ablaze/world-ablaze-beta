@@ -2857,3 +2857,11 @@ process caveats (stale process, and the absence of a load-time hook).
 - **Cause:** MEASURED (owner screenshots 2026-09-22): the panel lists the entry's declared targets; the `enable` state is not displayed. The `->` arrow marks the engine's current target, and the `Best (all)` / `Best (role)` lines under it give the best existing template and its match.
 - **Rule:** in `imgui show ai_templates`, presence in the list proves nothing about `enable`; read the arrow and the two `Best` lines. A `log =` line inside a scripted effect is buffered while `hoi4.exe` runs - an empty `game.log` during a run does not mean the effect did not fire; read the flag from a save instead.
 - **Evidence:** report section 7f; saves `test_bascule2` (flag at 4 with 0 log lines while the exe was alive).
+
+### `activate_decision` inside a `remove_effect` crashes the game when the removal list is full
+
+- **Date:** 2026-09-27
+- **Symptom:** a deterministic silent crash (`C0000005` in `CDecisionStatus::UpdateDecisionsToRemove`, no effect frame on the stack) on the first hourly tick after loading save `1faa475b` 1941.12.27.19. The owner reported "annexing Japan fixes it", which pointed at Japan's decisions; Japan's whole decision block turned out to be irrelevant.
+- **Cause:** MEASURED (owner-run bisection; each variant of the text save differs by one `decision_to_remove` block): the crash needs `USA_provide_emergency_food_SOV` expiring, and it stops if ANY one of the USA's six removal entries is deleted, including one unrelated to Japan. The expiring `remove_effect` does `activate_decision` on a `days_remove` decision, which adds an entry to the list the engine is iterating. ASSUMED (engine): the list reallocates under the loop when it is full. The Japan link was only `USA_execute_war_plan_orange` holding one of the six slots.
+- **Rule:** never re-arm a `days_remove` decision with `activate_decision` inside a `remove_effect`. Fire a hidden event `hours = 1` that does it (`wa_usa_decisions.1`). A crash that stops when a country is annexed does not mean that country's data holds the bug; edit the text save one block at a time and bisect.
+- **Evidence:** WORK.md `decision-remove-reactivation`. Same latent pattern, not changed yet: `GER_atlantik_wall_*` (`common/decisions/GER.txt`, human-player path).
