@@ -1,0 +1,144 @@
+############################################################################################################
+# WA TEST - intel network targets ([intel-adversary-targeting]) console harness. harness-contract: v1 (wa-testing SKILL).
+# Recipe: events/wa_test_intel_targets.txt header. Output: logs/game.log under "INTEL TARGETS".
+# Country scope (ROOT = the reported country; fire the event PER COUNTRY, never loop every_country).
+############################################################################################################
+
+# Report: stored targets, independent walk of the candidate set and ranking, then one shipped pass
+# and the match verdict. Own temps only (_it_*), never the shipped effect's _intel_* temps.
+WA_TEST_IT_report = {
+	log = "=== INTEL TARGETS [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _it_e1_ = 0 }
+	set_temp_variable = { _it_e2_ = 0 }
+	set_temp_variable = { _it_e3_ = 0 }
+	set_temp_variable = { _it_e4_ = 0 }
+	set_temp_variable = { _it_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _it_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _it_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _it_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _it_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _it_e5_ = 1 } }
+	log = "  scope : always=[?_it_e1_|.0]  I-am-ROOT=[?_it_e2_|.0]  I-am-THIS=[?_it_e3_|.0]  ROOT-scope-usable=[?_it_e4_|.0]  control-false=[?_it_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement. Re-fire the same report from another event file - tag GER then event wa_iso.3 - before editing a line of this effect.)"
+
+	### Stored state (last AI background pulse)
+	set_temp_variable = { _it_war = 0 }
+	if = { limit = { has_war = yes } set_temp_variable = { _it_war = 1 } }
+	set_temp_variable = { _it_ai = 0 }
+	if = { limit = { is_ai = yes } set_temp_variable = { _it_ai = 1 } }
+	log = "  state : is_ai=[?_it_ai|.0] at_war=[?_it_war|.0] operatives=[?operatives|.0] (stored targets are only refreshed while is_ai=1)"
+	if = { limit = { has_variable = WA_AI_intel_target_1 }
+		var:WA_AI_intel_target_1 = { log = "  stored: target_1 = [This.GetName]" }
+	}
+	else = { log = "  stored: target_1 = none" }
+	if = { limit = { has_variable = WA_AI_intel_target_2 }
+		var:WA_AI_intel_target_2 = { log = "  stored: target_2 = [This.GetName]" }
+	}
+	else = { log = "  stored: target_2 = none" }
+
+	### Independent walk: candidate set and score, duplicated from the shipped limit
+	set_temp_variable = { _it_best_1 = -1 }
+	set_temp_variable = { _it_best_2 = -1 }
+	set_temp_variable = { _it_tag_1 = 0 }
+	set_temp_variable = { _it_tag_2 = 0 }
+	set_temp_variable = { _it_n = 0 }
+	# incumbent bonus x1.2 on the stored targets (duplicated from the shipped rule, not shared)
+	set_temp_variable = { _it_prev_1 = 0 }
+	set_temp_variable = { _it_prev_2 = 0 }
+	if = { limit = { has_variable = WA_AI_intel_target_1 } set_temp_variable = { _it_prev_1 = WA_AI_intel_target_1 } }
+	if = { limit = { has_variable = WA_AI_intel_target_2 } set_temp_variable = { _it_prev_2 = WA_AI_intel_target_2 } }
+	if = { limit = { has_war = yes }
+		every_enemy_country = {
+			limit = {
+				exists = yes
+				has_capitulated = no
+			}
+			set_temp_variable = { _it_div = num_divisions }
+			multiply_temp_variable = { _it_div = 5 }
+			set_temp_variable = { _it_s = num_of_factories }
+			add_to_temp_variable = { _it_s = _it_div }
+			add_to_temp_variable = { _it_n = 1 }
+			set_temp_variable = { _it_inc = 0 }
+			if = {
+				limit = {
+					OR = {
+						check_variable = { _it_prev_1 = THIS.id }
+						check_variable = { _it_prev_2 = THIS.id }
+					}
+				}
+				multiply_temp_variable = { _it_s = 1.2 }
+				set_temp_variable = { _it_inc = 1 }
+			}
+			log = "  cand  : [This.GetName] factories=[?num_of_factories|.0] divisions=[?num_divisions|.0] incumbent=[?_it_inc|.0] score=[?_it_s|.1]"
+			if = { limit = { check_variable = { _it_s > _it_best_1 } }
+				set_temp_variable = { _it_best_2 = _it_best_1 }
+				set_temp_variable = { _it_tag_2 = _it_tag_1 }
+				set_temp_variable = { _it_best_1 = _it_s }
+				set_temp_variable = { _it_tag_1 = THIS.id }
+			}
+			else_if = { limit = { check_variable = { _it_s > _it_best_2 } }
+				set_temp_variable = { _it_best_2 = _it_s }
+				set_temp_variable = { _it_tag_2 = THIS.id }
+			}
+		}
+	}
+	else = {
+		every_other_country = {
+			limit = {
+				is_major = yes
+				WA_AI_THIS_is_threat_to_PREV = yes
+			}
+			set_temp_variable = { _it_div = num_divisions }
+			multiply_temp_variable = { _it_div = 5 }
+			set_temp_variable = { _it_s = num_of_factories }
+			add_to_temp_variable = { _it_s = _it_div }
+			add_to_temp_variable = { _it_n = 1 }
+			set_temp_variable = { _it_inc = 0 }
+			if = {
+				limit = {
+					OR = {
+						check_variable = { _it_prev_1 = THIS.id }
+						check_variable = { _it_prev_2 = THIS.id }
+					}
+				}
+				multiply_temp_variable = { _it_s = 1.2 }
+				set_temp_variable = { _it_inc = 1 }
+			}
+			log = "  cand  : [This.GetName] factories=[?num_of_factories|.0] divisions=[?num_divisions|.0] incumbent=[?_it_inc|.0] score=[?_it_s|.1]"
+			if = { limit = { check_variable = { _it_s > _it_best_1 } }
+				set_temp_variable = { _it_best_2 = _it_best_1 }
+				set_temp_variable = { _it_tag_2 = _it_tag_1 }
+				set_temp_variable = { _it_best_1 = _it_s }
+				set_temp_variable = { _it_tag_1 = THIS.id }
+			}
+			else_if = { limit = { check_variable = { _it_s > _it_best_2 } }
+				set_temp_variable = { _it_best_2 = _it_s }
+				set_temp_variable = { _it_tag_2 = THIS.id }
+			}
+		}
+	}
+	# the shipped effect picks nothing without an operative: expect no target then
+	if = { limit = { NOT = { check_variable = { operatives > 0 } } }
+		set_temp_variable = { _it_tag_1 = 0 }
+		set_temp_variable = { _it_tag_2 = 0 }
+	}
+	log = "  walk  : candidates=[?_it_n|.0] best_score_1=[?_it_best_1|.1] best_score_2=[?_it_best_2|.1] (expected targets are none when operatives=0)"
+
+	### One shipped pass (writes only WA_AI_intel_target_1/2 on this country), then compare
+	WA_AI_set_intel_network_targets = yes
+	set_temp_variable = { _it_m1 = 0 }
+	set_temp_variable = { _it_m2 = 0 }
+	if = { limit = { has_variable = WA_AI_intel_target_1 check_variable = { WA_AI_intel_target_1 = _it_tag_1 } } set_temp_variable = { _it_m1 = 1 } }
+	if = { limit = { NOT = { has_variable = WA_AI_intel_target_1 } check_variable = { _it_tag_1 = 0 } } set_temp_variable = { _it_m1 = 1 } }
+	if = { limit = { has_variable = WA_AI_intel_target_2 check_variable = { WA_AI_intel_target_2 = _it_tag_2 } } set_temp_variable = { _it_m2 = 1 } }
+	if = { limit = { NOT = { has_variable = WA_AI_intel_target_2 } check_variable = { _it_tag_2 = 0 } } set_temp_variable = { _it_m2 = 1 } }
+	if = { limit = { has_variable = WA_AI_intel_target_1 }
+		var:WA_AI_intel_target_1 = { log = "  ship  : target_1 = [This.GetName]" }
+	}
+	if = { limit = { has_variable = WA_AI_intel_target_2 }
+		var:WA_AI_intel_target_2 = { log = "  ship  : target_2 = [This.GetName]" }
+	}
+	log = "  PASS? : match_1=[?_it_m1|.0] match_2=[?_it_m2|.0] (1 1 = shipped targets equal the walk's two best scores)"
+}
