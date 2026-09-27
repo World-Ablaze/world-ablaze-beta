@@ -12,6 +12,10 @@
 # after 1941 (owner order 2026-09-04: "taille armee inferieure a 1 million apres 1941"). Single
 # reader in this file: WA_reserves_is_materiel_limit_relieved.
 @RESERVES_MATERIEL_LIMITED_SMALL_ARMY = 1000000
+# [fra-reserve-war-dump] reserve spawn equipment (ROOT.reserves_equipment) at or above which the
+# war-dumper archetype spends its whole bank at war (owner order: "tout deployer si les reserves
+# sont equipees a 75%"). Single reader in this file: WA_reserves_should_deploy_at_war.
+@RESERVES_WAR_DUMP_MIN_EQUIPMENT = 0.75
 
 ############################################################################################################
 # MAIN ELIGIBILITY TRIGGERS
@@ -297,6 +301,17 @@ WA_reserves_should_deploy_undersized_army = {
 	has_army_manpower = { size < @RESERVES_UNDERSIZED_ARMY_MANPOWER }
 }
 
+# [fra-reserve-war-dump] COUNTRY scope; sole reader: the three deploy_reserves_infantry vetoes
+# (common/decisions/_reserves.txt). At war, with reserves spawning at >= 75% equipment, this
+# archetype's bank is spent whatever its size or industry; below that, or at peace, every veto
+# holds. How to tell it is wrong: most of a wave is gone within a month of spawning (the
+# eng-reserve-wave shape), or its field eq ratio falls well under its pre-war value.
+WA_reserves_should_deploy_at_war = {
+	WA_AI_CONFIG_is_reserve_war_dumper = yes
+	has_war = yes
+	NOT = { check_variable = { ROOT.reserves_equipment < @RESERVES_WAR_DUMP_MIN_EQUIPMENT } }
+}
+
 ############################################################################################################
 # EXPEDITIONARY HOLD
 ############################################################################################################
@@ -345,6 +360,7 @@ WA_reserves_is_expeditionary_only = {
 # dump would field 30%-equipped divisions; 100+ MILs is never size-vetoed. Independent of war
 # state and of who the enemy is: a neighbour war changes the manpower case, not the equipment
 # case. How to tell the assumption is gone: a tier-vetoed country fielding at eq ratio > 0.9.
+# Overridden at war by WA_reserves_should_deploy_at_war ([fra-reserve-war-dump]).
 WA_reserves_is_over_capacity = {
 	OR = {
 		AND = {
