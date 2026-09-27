@@ -3,9 +3,10 @@
 #	Readers: common/ai_strategy/WA_AI_espionage_strategies.txt
 ############################################################################################################
 
-# [espionage-priorities] the network strength operation_capture_cipher needs to start
-# (common/operations/00_operations.txt network_strength); the primary intel network is built up to
-# it, then held. Registered mirror of the operation file (tools/constants_registry.json).
+# [espionage-priorities] the network strength operation_capture_cipher and the three armed-forces
+# infiltrations need to start (common/operations/00_operations.txt network_strength; the civilian
+# infiltration needs less); the primary intel network is built up to it, then held. Registered
+# mirror of the operation file (tools/constants_registry.json).
 @INTEL_CAPTURE_CIPHER_NETWORK = 50
 
 # [espionage-priorities] COUNTRY scope. The primary intel target's network is strong enough for
@@ -52,5 +53,67 @@ WA_AI_ESPIONAGE_can_capture_cipher_on_primary = {
 			target = var:WA_AI_intel_target_1
 			operation = operation_capture_cipher
 		}
+	}
+}
+
+# [espionage-priorities] COUNTRY scope. A new operation on the primary intel target can start: no
+# rescue running, network built, and national coverage (the infiltrations' own visible term).
+WA_AI_ESPIONAGE_can_start_primary_operation = {
+	has_variable = WA_AI_intel_target_1
+	NOT = { has_variable = WA_AI_rescue_operative_target }
+	WA_AI_ESPIONAGE_is_primary_network_built = yes
+	network_national_coverage = {
+		target = var:WA_AI_intel_target_1
+		value > 0
+	}
+}
+
+# [espionage-priorities] COUNTRY scope. The four infiltrations of the primary intel target, started
+# while its token is missing (the token is the operation's reward), a running one kept armed. A
+# steal-tech operation consumes the token (remove_operation_token, 00_operations.txt), and the AI
+# then re-infiltrates on purpose (owner ruling). Owner order of the strategies: army > navy >
+# airforce > civilian, all under rescue and above capture_cipher.
+WA_AI_ESPIONAGE_can_infiltrate_primary_army = {
+	has_variable = WA_AI_intel_target_1
+	OR = {
+		AND = {
+			WA_AI_ESPIONAGE_can_start_primary_operation = yes
+			NOT = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_army } }
+		}
+		is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_army }
+	}
+}
+
+WA_AI_ESPIONAGE_can_infiltrate_primary_navy = {
+	has_variable = WA_AI_intel_target_1
+	OR = {
+		AND = {
+			WA_AI_ESPIONAGE_can_start_primary_operation = yes
+			NOT = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_navy } }
+			var:WA_AI_intel_target_1 = { any_owned_state = { is_coastal = yes } }
+		}
+		is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_navy }
+	}
+}
+
+WA_AI_ESPIONAGE_can_infiltrate_primary_airforce = {
+	has_variable = WA_AI_intel_target_1
+	OR = {
+		AND = {
+			WA_AI_ESPIONAGE_can_start_primary_operation = yes
+			NOT = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_airforce } }
+		}
+		is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_airforce }
+	}
+}
+
+WA_AI_ESPIONAGE_can_infiltrate_primary_civilian = {
+	has_variable = WA_AI_intel_target_1
+	OR = {
+		AND = {
+			WA_AI_ESPIONAGE_can_start_primary_operation = yes
+			NOT = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_civilian } }
+		}
+		is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_civilian }
 	}
 }

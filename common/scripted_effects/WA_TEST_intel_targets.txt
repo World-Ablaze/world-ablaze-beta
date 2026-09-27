@@ -176,6 +176,33 @@ WA_TEST_IT_report = {
 	}
 	log = "  rescue: captured=[?_it_cap_n|.0] target_set=[?_it_rs|.0] PASS?=[?_it_rs_ok|.0]"
 
+	### [espionage-priorities] infiltrations of target_1: token held (done) / running, per operation
+	set_temp_variable = { _it_cov = 0 }
+	set_temp_variable = { _it_t_army = 0 }
+	set_temp_variable = { _it_t_navy = 0 }
+	set_temp_variable = { _it_t_air = 0 }
+	set_temp_variable = { _it_t_civ = 0 }
+	set_temp_variable = { _it_r_inf = 0 }
+	if = { limit = { has_variable = WA_AI_intel_target_1 }
+		if = { limit = { network_national_coverage = { target = var:WA_AI_intel_target_1 value > 0 } } set_temp_variable = { _it_cov = 1 } }
+		if = { limit = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_army } } set_temp_variable = { _it_t_army = 1 } }
+		if = { limit = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_navy } } set_temp_variable = { _it_t_navy = 1 } }
+		if = { limit = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_airforce } } set_temp_variable = { _it_t_air = 1 } }
+		if = { limit = { has_operation_token = { tag = var:WA_AI_intel_target_1 token = token_civilian } } set_temp_variable = { _it_t_civ = 1 } }
+		if = {
+			limit = {
+				OR = {
+					is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_army }
+					is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_navy }
+					is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_armed_forces_airforce }
+					is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_infiltrate_civilian }
+				}
+			}
+			set_temp_variable = { _it_r_inf = 1 }
+		}
+	}
+	log = "  infil : coverage>0=[?_it_cov|.0] tokens army=[?_it_t_army|.0] navy=[?_it_t_navy|.0] airforce=[?_it_t_air|.0] civilian=[?_it_t_civ|.0] one_running=[?_it_r_inf|.0] (a new one starts only with coverage 1, network>=50 below, no rescue, its token 0; order army>navy>airforce>civilian)"
+
 	### [espionage-priorities] capture_cipher gate, term by term (duplicated from the strategy's enable)
 	set_temp_variable = { _it_c_dep = 0 }
 	set_temp_variable = { _it_c_tech = 0 }
