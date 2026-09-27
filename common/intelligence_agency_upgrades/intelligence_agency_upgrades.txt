@@ -1,13 +1,17 @@
 # List of intelligence agency upgrades, and their effects
 # For documentation, there is a file _documentation.info in the same folder.
 
-# [espionage-priorities] AI build order (owner order), one x10 step per rank so it holds whether
-# the engine takes the highest weight or draws by weight (ASSUMED - undocumented): every defense
-# level 500000 > training centers (the only extra operative slot) 50000 > crypto department 5000 >
-# suicide pills 500 > army intel 50 > naval 5 > air 0.5 > crypto improvements 0.05 > the rest 0.005;
-# blueprint stealing stays 0. The per-branch desire strategies of default_agency.txt were removed so
-# nothing rescales a rank. Sum of all weights ~1.06M, half the ASSUMED 2.1M fixed-point ceiling, and
-# 0.005 stays above its 0.001 step: do not raise the top rank or add a branch multiplier.
+# [espionage-priorities] AI build order (owner order): defense 50000 (passive defense; anti-partisan
+# only with a notable occupied resistance, else 0) > training centers (the only extra operative slot)
+# 5000 > crypto department 500 > suicide pills 50 > army intel 5 > naval 1 > air 0.5 > crypto
+# improvements 0.25 > the rest 0.1; blueprint stealing stays 0. x10 steps at the head, x2-x5 in the
+# tail so no weight goes under 0.1 (the smallest vanilla-proven factor; lessons-log ai_equipment
+# ladder rule). Whether the engine takes the top weight or draws by weight is ASSUMED - undocumented.
+# The per-branch desire strategies of default_agency.txt were removed so nothing rescales a rank.
+
+# [espionage-priorities] state resistance (%) above which occupying a state makes anti-partisan worth
+# building. Single reader in this file: upgrade_anti_partisan ai_will_do.
+@ANTI_PARTISAN_MIN_RESISTANCE = 25
 
 branch_intelligence = {
 
@@ -18,7 +22,7 @@ branch_intelligence = {
 		sound = Spy_Agency_Intel_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -57,7 +61,7 @@ branch_intelligence = {
 		sound = Spy_Agency_Intel_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 50
+			factor = 5
 		}
 
 		modifiers_during_progress = {
@@ -96,7 +100,7 @@ branch_intelligence = {
 		sound = Spy_Agency_Intel_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 5
+			factor = 1
 		}
 
 		modifiers_during_progress = {
@@ -177,7 +181,7 @@ branch_defense = {
 		sound = Spy_Agency_Defense_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 500000
+			factor = 50000
 		}
 
 		modifiers_during_progress = {
@@ -215,8 +219,19 @@ branch_defense = {
 		picture = GFX_agency_anti_partisan
 		sound = Spy_Agency_Defense_Upgrades_Confirm
 
+		# [espionage-priorities] only for a country that holds occupied states with notable resistance
+		# (> @ANTI_PARTISAN_MIN_RESISTANCE, the vanilla 0-100 state scale); otherwise never picked.
 		ai_will_do = {
-			factor = 500000
+			factor = 50000
+			modifier = {
+				factor = 0
+				NOT = {
+					any_controlled_state = {
+						has_resistance = yes
+						resistance > @ANTI_PARTISAN_MIN_RESISTANCE
+					}
+				}
+			}
 		}
 
 		modifiers_during_progress = {
@@ -267,7 +282,7 @@ branch_operation = {
 		sound = Spy_Agency_Operations_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		available = {
@@ -292,7 +307,7 @@ branch_operation = {
 		sound = Spy_Agency_Operations_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -314,7 +329,7 @@ branch_operation = {
 		sound = Spy_Agency_Operations_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -336,7 +351,7 @@ branch_operation = {
 		sound = Spy_Agency_Operations_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 500
+			factor = 50
 		}
 
 		modifiers_during_progress = {
@@ -360,7 +375,7 @@ branch_operative = {
 		Sound = Spy_Agency_Training_Facilities_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 50000
+			factor = 5000
 		}
 
 		modifiers_during_progress = {
@@ -387,7 +402,7 @@ branch_operative = {
 		sound = Spy_Agency_Training_Facilities_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -408,7 +423,7 @@ branch_operative = {
 		sound = Spy_Agency_Training_Facilities_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -430,7 +445,7 @@ branch_operative = {
 		sound = Spy_Agency_Training_Facilities_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -452,7 +467,7 @@ branch_operative = {
 		sound = Spy_Agency_Training_Facilities_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.005
+			factor = 0.1
 		}
 
 		modifiers_during_progress = {
@@ -479,7 +494,7 @@ branch_crypto = {
 		sound = Spy_Agency_Cryptology_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 5000
+			factor = 500
 		}
 
 		modifiers_during_progress = {
@@ -502,7 +517,7 @@ branch_crypto = {
 		sound = Spy_Agency_Cryptology_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.05
+			factor = 0.25
 		}
 
 		available = {
@@ -532,7 +547,7 @@ branch_crypto = {
 		sound = Spy_Agency_Cryptology_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.05
+			factor = 0.25
 		}
 
 		available = {
@@ -581,7 +596,7 @@ branch_crypto = {
 		sound = Spy_Agency_Cryptology_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.05
+			factor = 0.25
 		}
 
 		available = {
@@ -617,7 +632,7 @@ branch_crypto = {
 		sound = Spy_Agency_Cryptology_Upgrades_Confirm
 
 		ai_will_do = {
-			factor = 0.05
+			factor = 0.25
 		}
 
 		available = {
