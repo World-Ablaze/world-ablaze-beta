@@ -119,3 +119,138 @@ WA_AI_LANDING_freeze_active_any = {
 		WA_AI_LANDING_freeze_active_east = yes
 	}
 }
+
+############################################################################################################
+#	[naval-invasion-discipline] ORGANIC (engine-planned) invasion discipline - CONTROL PANEL
+############################################################################################################
+#	Integration rule: a scripted landing is never braked by these rules (it does not go through the
+#	engine - create_unit on the beach); while the calendar claims a country's invasion planning
+#	(reservation or scripted freeze, WA_AI_LANDING_has_scripted_claim) the organic rules step aside
+#	entirely, and the R5 reset also yields to a live named Country/Faction plan
+#	(WA_AI_MILITARY_country_owns_invasion_named_plan). Consumers:
+#	WA_AI_MILITARY_DEFAULT_INVASION_discipline.txt (R1/R2/R3/R5) and
+#	WA_AI_MILITARY_DEFAULT_FRONT_beachhead.txt (R4). Markers: WA_AI_LANDING_effects.txt.
+#	Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27.
+############################################################################################################
+
+# Days a land front counts as "moving" after a mainland state changed hands (strict form, see above).
+@WA_AI_LANDING_LAND_FRONT_QUIET_DAYS_STRICT = 59
+# Organic freeze window after an organic landing (same shape as the scripted freeze).
+@WA_AI_LANDING_ORGANIC_FREEZE_DAYS_STRICT = 89
+# Stall bar: permission open this long with no organic landing -> the reset pulse may fire.
+@WA_AI_LANDING_STALL_DAYS_STRICT = 89
+# Beachhead rush pulse: on for the first ON days of every PERIOD-day cycle (lets divisions re-org).
+@WA_AI_LANDING_BEACHHEAD_PULSE_PERIOD = 14
+@WA_AI_LANDING_BEACHHEAD_PULSE_ON = 8
+# Stall reset pulse: on for the first ON days of every PERIOD-day cycle. ON is a week, not the
+# 2 days of the Kaiserreich original, because how often the engine re-reads an ai_strategy enable
+# is not documented: a window shorter than that interval would never be seen (section 27 table).
+@WA_AI_LANDING_STALL_PULSE_PERIOD = 90
+@WA_AI_LANDING_STALL_PULSE_ON = 7
+
+# Master switch for R1-R5. Flip to `always = no` to return to the pre-discipline behaviour.
+# THIS = country
+WA_AI_LANDING_organic_discipline_enabled = {
+	always = yes
+}
+
+# R5 alone: the periodic -9999 wipe of stuck organic invasion plans.
+# THIS = country
+WA_AI_LANDING_stall_reset_enabled = {
+	always = yes
+}
+
+# --- observations -----------------------------------------------------------------------------
+
+# R1 input, per macro-theatre (WEST = europe + africa + middle_east, EAST = asia + australia, the
+# freeze's split): a mainland state changed hands between this country and an enemy recently.
+# Flags stamped by WA_AI_LANDING_note_land_front_moved_west / _east (on_state_control_changed).
+# THIS = country
+WA_AI_LANDING_land_front_is_moving_west = {
+	has_country_flag = WA_AI_LANDING_land_front_moved_west
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_land_front_moved_west days > @WA_AI_LANDING_LAND_FRONT_QUIET_DAYS_STRICT } }
+}
+
+# THIS = country
+WA_AI_LANDING_land_front_is_moving_east = {
+	has_country_flag = WA_AI_LANDING_land_front_moved_east
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_land_front_moved_east days > @WA_AI_LANDING_LAND_FRONT_QUIET_DAYS_STRICT } }
+}
+
+# R2 input: an organic landing in this macro-theatre is inside its freeze window.
+# THIS = country
+WA_AI_LANDING_organic_freeze_active_west = {
+	has_country_flag = WA_AI_LANDING_organic_freeze_west
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_organic_freeze_west days > @WA_AI_LANDING_ORGANIC_FREEZE_DAYS_STRICT } }
+}
+
+# THIS = country
+WA_AI_LANDING_organic_freeze_active_east = {
+	has_country_flag = WA_AI_LANDING_organic_freeze_east
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_organic_freeze_east days > @WA_AI_LANDING_ORGANIC_FREEZE_DAYS_STRICT } }
+}
+
+# R4 input: this country holds a beachhead (scripted or organic) inside its window; the window is
+# renewed monthly while the beachhead is still cut off (WA_AI_LANDING_renew_isolated_beachheads).
+# THIS = country
+WA_AI_LANDING_has_recent_beachhead = {
+	has_country_flag = WA_AI_LANDING_recent_beachhead
+}
+
+# R4 pulse: true on BEACHHEAD_PULSE_ON days of every BEACHHEAD_PULSE_PERIOD.
+# THIS = any
+WA_AI_LANDING_is_beachhead_pulse_on = {
+	set_temp_variable = { _nid_bh_day = global.num_days }
+	modulo_temp_variable = { _nid_bh_day = @WA_AI_LANDING_BEACHHEAD_PULSE_PERIOD }
+	check_variable = { _nid_bh_day < @WA_AI_LANDING_BEACHHEAD_PULSE_ON }
+}
+
+# R5 inputs.
+# THIS = country
+WA_AI_LANDING_has_recent_organic_landing = {
+	has_country_flag = WA_AI_LANDING_organic_landing
+	NOT = { has_country_flag = { flag = WA_AI_LANDING_organic_landing days > @WA_AI_LANDING_STALL_DAYS_STRICT } }
+}
+
+# Flag kept by the monthly WA_AI_LANDING_update_organic_permission: set the month permission opens,
+# cleared the month it closes or the war ends, so its age is "how long organic invasions have been
+# allowed in this war".
+# THIS = country
+WA_AI_LANDING_organic_permission_is_old = {
+	has_country_flag = { flag = WA_AI_LANDING_organic_permitted_since days > @WA_AI_LANDING_STALL_DAYS_STRICT }
+}
+
+# THIS = any
+WA_AI_LANDING_is_stall_pulse_on = {
+	set_temp_variable = { _nid_st_day = global.num_days }
+	modulo_temp_variable = { _nid_st_day = @WA_AI_LANDING_STALL_PULSE_PERIOD }
+	check_variable = { _nid_st_day < @WA_AI_LANDING_STALL_PULSE_ON }
+}
+
+# The calendar has a live claim on this country's invasion planning: a pending reservation it holds
+# (lease flag stamped with the reservation, WA_AI_LANDING_stamp_reservation) or a scripted freeze.
+# THIS = country
+WA_AI_LANDING_has_scripted_claim = {
+	OR = {
+		has_country_flag = WA_AI_LANDING_holds_reservation
+		WA_AI_LANDING_freeze_active_west = yes
+		WA_AI_LANDING_freeze_active_east = yes
+	}
+}
+
+# --- decision ---------------------------------------------------------------------------------
+
+# May this country's engine plan an organic invasion somewhere? The organic rules are live (no
+# scripted claim), home is safe, and at least one macro-theatre's land front is quiet. R1 holds the
+# moving theatre itself; this verdict feeds N4 (supremacy weight) and R5 (stall age).
+# THIS = country
+WA_AI_LANDING_can_plan_organic_invasions = {
+	WA_AI_LANDING_organic_discipline_enabled = yes
+	has_war = yes
+	NOT = { WA_AI_LANDING_has_scripted_claim = yes }
+	NOT = { WA_AI_MILITARY_home_threatened = yes }
+	OR = {
+		NOT = { WA_AI_LANDING_land_front_is_moving_west = yes }
+		NOT = { WA_AI_LANDING_land_front_is_moving_east = yes }
+	}
+}

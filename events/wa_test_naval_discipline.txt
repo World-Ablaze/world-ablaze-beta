@@ -1,0 +1,69 @@
+############################################################################################################
+#	NAVAL DISCIPLINE - console harness for [naval-invasion-discipline] (organic invasion rules R1-R5,
+#	naval posture N3). Effects: common/scripted_effects/WA_TEST_naval_discipline.txt
+#
+#	CONSOLE, the short way (do NOT tag into a country - observe it):
+#	    event wa_nid.2
+#	  Fires the report on every AI major at war, each in its OWN scope. Read logs/game.log, search
+#	  for "NAVAL DISCIPLINE TEST".
+#
+#	CONSOLE, one country:
+#	    event wa_nid.1 JAP
+#
+#	RUN IT on a mid-war save (1942+), after a monthly pulse has passed on this build (the sweep that
+#	stores S / ratio / posture runs on the first AI monthly pulse), from a COLD BOOT of the exe - a
+#	console reload of a trigger/effect file poisons country-valued triggers (lessons log).
+#
+#	WHAT GOOD LOOKS LIKE
+#	  scope   1 1 1 1 0, or STOP (wa-testing contract v1).
+#	  ships   sum == num_ships. If sum > num_ships the capital category includes carriers: set
+#	          w_capital / w_carrier in common/script_constants/wa_ai_naval.txt accordingly.
+#	  S       recomputed == stored; ratio recomputed == stored (a month's drift is normal if a
+#	          battle happened since the pulse).
+#	  ratio   out-of-save replica (209 saves, two campaigns): ENG / USA 0.33-0.52 in 1942-45 (superior),
+#	          JAP 1.9-2.5 from 1942 (inferior), GER 2.1-4.8 (inferior). Weights differ slightly from the
+#	          replica's, so read the band, not the digit.
+#	  R1      can_plan matches the formula printed under it. A major whose land front moves in both
+#	          theatres reads 0; one moving theatre leaves can_plan = 1 (that theatre is held by its block).
+#	  R4      after any landing (scripted or organic): recent beachhead = 1 and the landed state listed.
+#	  R2      after an ORGANIC landing only: organic freeze = 1 in that theatre; a scripted landing
+#	          sets the scripted freeze and NOT the organic one.
+############################################################################################################
+
+add_namespace = wa_nid
+
+country_event = {
+	id = wa_nid.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_NID_report = yes
+	}
+
+	option = {}
+}
+
+country_event = {
+	id = wa_nid.2
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		log = "########## NAVAL DISCIPLINE TEST - sweep of every AI major at war ##########"
+		every_country = {
+			limit = {
+				exists = yes
+				is_ai = yes
+				is_major = yes
+				has_war = yes
+			}
+			# Fired per country ON that country, never called in a loop: the report reads ROOT's enemies.
+			country_event = { id = wa_nid.1 hours = 0 }
+		}
+	}
+
+	option = {}
+}

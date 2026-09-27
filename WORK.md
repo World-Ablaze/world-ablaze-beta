@@ -22,6 +22,16 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 ## OPEN
 
+### italian-light-infantry-retirement — PARKED (2026-09-25)
+- State: code shipped, SHIPPED-UNTESTED; parked because WORK.md already exceeds its four-subject WIP limit. Owner console run and campaign verification remain owed.
+- Owner request: all Italian AI `Light Infantry template A` through `Z` divisions, as well as the starting `Divisione Coloniale`, must be disbanded in 1940.
+- Symptom, **MEASURED**: campaign `02795c2d` has five `Divisione Coloniale` and one `Light Infantry template F` in June 1940. The F division stays on its light template through February 1941; one colonial division is still light in June 1945. Campaign `73c03fd3` retains five colonials in June 1940; their IDs never convert before disappearing across 59 monthly saves.
+- Change: Italy-AI-only monthly retirement from the first 1940 pulse; remove the named colonial and every lettered Light Infantry template with `delete_unit_template_and_units` and `disband = yes` so equipment and manpower are returned. No war-entry flag or historical-faction gate. Mixed Ascari divisions are outside the requested light-template set.
+- Regression risk, **DERIVED**: Italy loses five or six fielded divisions in the 1940 sample saves, and an ahistorical Italy could need those divisions immediately. The removal is the owner's explicit outcome; retaining its heavy infantry target and refunding the disbanded resources limits the loss. **ASSUMED**: a fresh campaign may give lettered designs different compositions; the exact requested A–Z name set still retires. Unconditional name-specific delete calls on an absent template need the console no-op/idempotence check; `has_template` cannot guard this because it misses decommissioned copies that still field divisions.
+- Verification (owner console): cold boot; load an ITA-AI save from just before and from after 1940.1.1; under `observe`, run `event wa_test_tmpl.5 ITA`. Read the `ITALIAN LIGHT INFANTRY RETIREMENT` pre/post/re-run lines in `logs/game.log`: pre-1940 gate 0 and no change; post-1940 gate 1, light-majority count falls by the targeted divisions seen in the pre-save, second pass unchanged and no errors for absent template names. The named-template counts are diagnostic only: `has_template` misses decommissioned copies; save division IDs decide the result. Check a non-ITA AI under `observe`; use a separate player-ITA save for the human negative control (never `tag` into the AI).
+- Verification (campaign): `plans.py ITA <1940.1/2 monthly save> --templates` shows zero `Divisione Coloniale` and zero `Light Infantry template A`–`Z` divisions; `savegame.py army ITA` closes the deployed total. The heavy `Infantry template C` remains. Check 1940.6 and 1941.1 for recurrence.
+- Closed when: console PASS and one new campaign's monthly saves meet the 1940.1/2, 1940.6 and 1941.1 checks.
+
 > **Campaign `1ac7e4ea` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 120 monthly saves
 > 1936.2-1946.1, unbranched, build = HEAD `cd234cc51` — DERIVED from commit 13:49:54 / first save
 > 13:52, MEASURED by `wa_tlm_version = 32` first and last save + live `wa_tlm_llr_recv_*` arrays).
@@ -172,6 +182,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > finishes **53/53 states, 436/436 provinces, 321 divisions and growing**, with Paris German at the
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
+
+### naval-invasion-discipline — SHIPPED-UNTESTED (2026-09-25)
+- Owner order 2026-09-25 ("implémente sur un fork de ai-rework"), branch `ai-rework-naval-invasion`.
+  Intended behaviour: scripted landings and ENGINE-planned ("organic") invasions coexist without
+  conflict; organic invasions happen only when the land war does not need the divisions, one
+  beachhead at a time, close to a held coast, and every beachhead attacks out; the navy supports
+  invasions ahead of routine escort. Design: `documentation/AI_INVASION_COEXISTENCE_PROPOSAL_2026-09-25.md`
+  (audit of Sheep's KR Japan AI: `documentation/AI_NAVAL_KR_JAPAN_AUDIT_2026-09-25.md`); spec
+  `documentation/WA_AI_MILITARY_SYSTEM.md` §27.
+- Symptoms it rests on, MEASURED: JAP organic windows date-bound to 1941.12.1-1942.3.15 and nothing
+  after mid-1942; the only strike-force template needs 2 CV + 2 BB + 10 CL (GER/ITA/SOV/FRA form none,
+  209 saves of `73c03fd3` / `e953ae9b`); `naval_invasion_support` 4-15 under `convoy_protection`
+  15-30 in `goals_generic.txt`; 34-47 % of majors' ships without an active mission at 1943.6.
+- Change: R1 per-theatre land-front hold, R2 organic freeze, R3 leash, R4 beachhead rush (scripted
+  and organic, renewed while cut off), R5 stall reset, T1 (JAP windows yield to the calendar),
+  N1 goal 12-24, N3 fair-share posture + per-region sea control (generated,
+  `tools/gen/gen_naval_sea_control.py`), N4 supremacy +50, N6 training 0.99, N7 Med dominance 100.
+  Every organic rule steps aside while the calendar claims the country (reservation / freeze).
+- Gates run: `check_ai_layers.py` - only the pre-existing CONFIG-LIVE error, ratchet counts
+  unchanged; `check_constants.py` - only the 3 pre-existing `[production_armor_maintenance_floor]`
+  DRIFT errors; `gen_naval_sea_control.py --check` exit 0; brace balance / BOM clean on every
+  touched script. Reviews: wa-architecture-reviewer + wa-lessons-reviewer - first pass CONFLICT
+  (ROOT/FROM binding, R1 global lock, stacking vs named plans, R4 exit), resolved in two revision
+  passes; residual CONCERNS stated in §27 (named-plan mirror kept by hand, T1 tag payload, WEST
+  lumps the Eastern Front with the Channel).
+- Harness (owner, console, cold boot, mid-war save 1942+): `event wa_nid.2` → `logs/game.log`,
+  "NAVAL DISCIPLINE TEST". Recipe and expected values: `events/wa_test_naval_discipline.txt`.
+  Paste the first run here.
+- Probe: `WA_TLM_nid_*` (TLM doc §6j, `wa_tlm_version = 41`).
+- Verification (console): per major, `ships` sum == `num_ships`; stored S / ratio equal the
+  recomputed ones; R1 terms match the printed formula; after a landing the landed state is listed.
+- Verification (campaign): `nid_bh_n` rises in every scripted-landing month; `nid_flip_n` ≤ 4 per
+  major; the 1943 Italian beachheads advance out of their landing states within 30 days; on a
+  Competitive run JAP lands organically after 1942 (`nid_org_n` > 0).
+- Closed when: one campaign shows the Italian beachheads breaking out AND an organic landing by a
+  major after its land front stalled, with no posture flapping.
 
 ### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
 - **Campaign `73c03fd3` scored 2026-09-23** (cloud, build proven through `cddb2f605d`): NOT MET (strict). War 1939.10.11, France falls 1940.6.30. States 54 Franken + 55 Hessen (region 7) carry `last_strategic_bombing` 1939.10.12 - the day after the declaration - frozen through 1940.7; no other GER state stamped, no `building_damage_*` anywhere (MEASURED, 11 saves). No Allied wing on a strategic-bombing mission over 6/7/8 in 1939.11-1940.6 (ENG/FRA strike bombers over 206 at 1940.5 and region 5 at 1940.6). Ladder-armed leg NOT CHECKABLE from a save. ASSUMED: the day-1 raid precedes the first ai_strategy evaluation; one console read at war start settles it.
@@ -4753,6 +4799,15 @@ power capitulates.
 
 
 ## PARKED
+
+### sov-finland-prewar-staging — PARKED (2026-09-25)
+- Parked pending an owner-run in-game check; the code is present in the working tree. `WORK.md` already exceeds its four-subject OPEN limit before this request.
+- Owner request: issue 18 in the attached playthrough report says Soviet AI divisions reach the Finnish border only after war is declared. No save or date accompanied the screenshot.
+- Script diagnosis: `WA_AI_MILITARY_SOV_prepare_war_with_finland` supplies only `front_unit_request`; the game documentation describes that type as changing requests for existing fronts. The peace-time placement decision is unmeasured.
+- Change: Country SOV THEATRE buffer order 9630 stages 0.10 of the army in Soviet states 195/216/215/213 during Finnish-war preparation. The new gate accepts the existing focus window or an active Soviet justification/war goal, and stops at war, competing major war, or Soviet ownership of 146.
+- Regression risk: reserving 10% of the Soviet army can draw divisions from other peace-time duties; actual engine arbitration between orders is unverified.
+- Verification: in an AI SOV prewar save, confirm the gate is active and count Soviet divisions in 195/216/215/213 before the Finnish declaration; compare with an earlier save, then confirm order 9630 disarms at war and no longer reserves divisions after Soviet ownership of 146. Use `observe`, not `tag SOV`.
+- Closed when: a historical and a late ahistorical prewar case both place divisions in the listed Soviet border states before declaration, without reducing the main active front below its needed strength.
 
 ### resource-grade-downshift — PARKED (2026-09-12)
 - Parked heading only for the WIP limit (7 under OPEN for 4). **Owner boot 2026-09-12: OK, no
