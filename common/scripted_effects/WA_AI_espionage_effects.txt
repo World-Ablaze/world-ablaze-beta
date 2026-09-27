@@ -6,6 +6,11 @@
 # 2/3 swaps between 2-day pulses do not pull operatives off a half-built network.
 # Single reader in this file: WA_AI_rank_intel_candidate.
 @INTEL_INCUMBENT_FACTOR = 1.2
+# [espionage-priorities] how long one captor may hold the rescue gate (which switches off every other
+# WA espionage strategy), and the pause before the same country retries after giving up.
+# Single reader in this file: WA_AI_set_rescue_operative_target.
+@RESCUE_WINDOW_DAYS = 180
+@RESCUE_COOLDOWN_DAYS = 180
 
 WA_AI_set_boost_resistance_target = {
 
@@ -63,27 +68,57 @@ WA_AI_set_boost_resistance_target = {
 	}
 }
 
+# [espionage-priorities] COUNTRY scope, every background pulse. Names the country holding one of
+# our captured operatives as WA_AI_rescue_operative_target (read by the WA_AI_rescue_* strategies,
+# which outrank every other WA espionage strategy). Exits: the captor releases or loses the
+# operative, stops existing, or holds the gate past @RESCUE_WINDOW_DAYS (then @RESCUE_COOLDOWN_DAYS
+# before any new rescue). Scan uses the vanilla every_operative / operative_captor idiom.
 WA_AI_set_rescue_operative_target = {
-
 	if = {
 		limit = {
-			NOT = {
-				AND = {
-					has_variable = WA_AI_rescue_operative_target
-					var:WA_AI_rescue_operative_target = { has_captured_operative = ROOT }
+			has_variable = WA_AI_rescue_operative_target
+			OR = {
+				NOT = { has_country_flag = WA_AI_rescue_window }
+				NOT = {
+					var:WA_AI_rescue_operative_target = {
+						exists = yes
+						has_captured_operative = ROOT
+					}
 				}
 			}
 		}
+		if = {
+			limit = {
+				var:WA_AI_rescue_operative_target = {
+					exists = yes
+					has_captured_operative = ROOT
+				}
+			}
+			set_country_flag = { flag = WA_AI_rescue_cooldown days = @RESCUE_COOLDOWN_DAYS value = 1 }
+		}
+		clear_variable = WA_AI_rescue_operative_target
+		clr_country_flag = WA_AI_rescue_window
+	}
 
-		if = { limit = { any_operative_leader = { is_operative_captured = yes } }
-
-			random_operative = { limit = { is_operative_captured = yes }
-
-				set_variable = { ROOT.WA_AI_rescue_operative_target = operative_captor }
+	if = {
+		limit = {
+			NOT = { has_variable = WA_AI_rescue_operative_target }
+			NOT = { has_country_flag = WA_AI_rescue_cooldown }
+		}
+		set_temp_variable = { _rescue_captor = 0 }
+		every_operative = {
+			limit = { is_operative_captured = yes }
+			if = { limit = { check_variable = { _rescue_captor = 0 } }
+				set_temp_variable = { _rescue_captor = operative_captor }
 			}
 		}
-		else = {
-			clear_variable = WA_AI_rescue_operative_target
+		if = {
+			limit = {
+				NOT = { check_variable = { _rescue_captor = 0 } }
+				var:_rescue_captor = { exists = yes }
+			}
+			set_variable = { WA_AI_rescue_operative_target = _rescue_captor }
+			set_country_flag = { flag = WA_AI_rescue_window days = @RESCUE_WINDOW_DAYS value = 1 }
 		}
 	}
 }

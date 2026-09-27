@@ -1,0 +1,56 @@
+############################################################################################################
+#	World Ablaze AI - espionage decision triggers (layer 3: one per ai_strategy gate)
+#	Readers: common/ai_strategy/WA_AI_espionage_strategies.txt
+############################################################################################################
+
+# [espionage-priorities] the network strength operation_capture_cipher needs to start
+# (common/operations/00_operations.txt network_strength); the primary intel network is built up to
+# it, then held. Registered mirror of the operation file (tools/constants_registry.json).
+@INTEL_CAPTURE_CIPHER_NETWORK = 50
+
+# [espionage-priorities] COUNTRY scope. The primary intel target's network is strong enough for
+# capture_cipher: the build strategy (2 operatives) stops and the keep strategy (1) takes over.
+WA_AI_ESPIONAGE_is_primary_network_built = {
+	has_variable = WA_AI_intel_target_1
+	NOT = {
+		network_strength = {
+			target = var:WA_AI_intel_target_1
+			value < @INTEL_CAPTURE_CIPHER_NETWORK
+		}
+	}
+}
+
+# [intel-adversary-targeting] COUNTRY scope. Gates of the primary intel network pair: 2 operatives
+# while it is not built, 1 once it is; both yield to a running rescue.
+WA_AI_ESPIONAGE_should_build_primary_network = {
+	has_variable = WA_AI_intel_target_1
+	NOT = { has_variable = WA_AI_rescue_operative_target }
+	NOT = { WA_AI_ESPIONAGE_is_primary_network_built = yes }
+}
+
+WA_AI_ESPIONAGE_should_keep_primary_network = {
+	NOT = { has_variable = WA_AI_rescue_operative_target }
+	WA_AI_ESPIONAGE_is_primary_network_built = yes
+}
+
+# [espionage-priorities] COUNTRY scope (ROOT = the spying AI). Start: the operation's own requirements
+# (department, mechanical_computing, network, target not fully decrypted) and no rescue running.
+# Keep: an operation already running on the target stays armed through network decay or a rescue,
+# so the 75-day, 3-operative operation is never dropped half-way.
+# How to tell it is wrong: armed while the agency screen shows capture_cipher unavailable.
+WA_AI_ESPIONAGE_can_capture_cipher_on_primary = {
+	has_variable = WA_AI_intel_target_1
+	OR = {
+		AND = {
+			NOT = { has_variable = WA_AI_rescue_operative_target }
+			has_done_agency_upgrade = upgrade_form_department
+			has_tech = mechanical_computing
+			WA_AI_ESPIONAGE_is_primary_network_built = yes
+			NOT = { is_fully_decrypted = var:WA_AI_intel_target_1 }
+		}
+		is_running_operation = {
+			target = var:WA_AI_intel_target_1
+			operation = operation_capture_cipher
+		}
+	}
+}

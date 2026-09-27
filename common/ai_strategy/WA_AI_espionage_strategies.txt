@@ -22,18 +22,12 @@ WA_AI_counterintelligence_mission = {
 ###
 
 # [intel-adversary-targeting] Intel networks on the two strongest adversaries picked by
-# WA_AI_set_intel_network_targets: two operatives on the first until its network reaches
-# @INTEL_PRIMARY_NETWORK_BUILT, one after that, and one on the second. The build/keep pair must
-# read the same threshold or both arm (or neither) at once - hence one constant.
-@INTEL_PRIMARY_NETWORK_BUILT = 50
+# WA_AI_set_intel_network_targets: two operatives on the first until its network is built, one
+# after that (WA_AI_ESPIONAGE_should_build/keep_primary_network, one threshold for the pair), and
+# one on the second.
 WA_AI_intel_network_primary_build = {
 	enable = {
-		has_variable = WA_AI_intel_target_1
-		NOT = { has_variable = WA_AI_rescue_operative_target }
-		network_strength = {
-			target = var:WA_AI_intel_target_1
-			value < @INTEL_PRIMARY_NETWORK_BUILT
-		}
+		WA_AI_ESPIONAGE_should_build_primary_network = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -48,14 +42,7 @@ WA_AI_intel_network_primary_build = {
 
 WA_AI_intel_network_primary_keep = {
 	enable = {
-		has_variable = WA_AI_intel_target_1
-		NOT = { has_variable = WA_AI_rescue_operative_target }
-		NOT = {
-			network_strength = {
-				target = var:WA_AI_intel_target_1
-				value < @INTEL_PRIMARY_NETWORK_BUILT
-			}
-		}
+		WA_AI_ESPIONAGE_should_keep_primary_network = yes
 	}
 	abort_when_not_enabled = yes
 
@@ -84,8 +71,26 @@ WA_AI_intel_network_secondary = {
 	}
 }
 
+# [espionage-priorities] capture_cipher on the primary intel target once the crypto department
+# exists. Gate: WA_AI_ESPIONAGE_can_capture_cipher_on_primary (WA_AI_ESPIONAGE_triggers.txt).
+WA_AI_capture_cipher_operation = {
+	enable = {
+		WA_AI_ESPIONAGE_can_capture_cipher_on_primary = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = operative_operation
+		operation = operation_capture_cipher
+		value = 45000
+		operation_target = var:WA_AI_intel_target_1
+	}
+}
+
 ###
 
+# [espionage-priorities] Resistance comes after rescue and crypto: its network missions (25000)
+# and operations (20000) sit under capture_cipher (45000) and the rescue chain (50000/100000).
 WA_AI_boost_resistance_mission_1 = {
 	enable = {
 		has_variable = WA_AI_boost_resistance_operation_target
@@ -100,7 +105,7 @@ WA_AI_boost_resistance_mission_1 = {
 	ai_strategy = {
 		type = operative_mission
 		mission = build_intel_network
-		value = 50000
+		value = 25000
 		mission_target = var:WA_AI_boost_resistance_operation_target
 		num_operatives = 2
 	}
@@ -122,7 +127,7 @@ WA_AI_boost_resistance_mission_2 = {
 	ai_strategy = {
 		type = operative_mission
 		mission = build_intel_network
-		value = 50000
+		value = 25000
 		mission_target = var:WA_AI_boost_resistance_operation_target
 		num_operatives = 1
 	}

@@ -141,4 +141,65 @@ WA_TEST_IT_report = {
 		var:WA_AI_intel_target_2 = { log = "  ship  : target_2 = [This.GetName]" }
 	}
 	log = "  PASS? : match_1=[?_it_m1|.0] match_2=[?_it_m2|.0] (1 1 = shipped targets equal the walk's two best scores)"
+
+	### [espionage-priorities] Rescue target: independent walk of captured operatives, then one shipped pass
+	set_temp_variable = { _it_cap_n = 0 }
+	every_operative = {
+		limit = { is_operative_captured = yes }
+		add_to_temp_variable = { _it_cap_n = 1 }
+	}
+	if = { limit = { has_variable = WA_AI_rescue_operative_target }
+		var:WA_AI_rescue_operative_target = { log = "  rescue: stored captor = [This.GetName]" }
+	}
+	else = { log = "  rescue: stored captor = none" }
+	set_temp_variable = { _it_cd = 0 }
+	if = { limit = { has_country_flag = WA_AI_rescue_cooldown } set_temp_variable = { _it_cd = 1 } }
+	set_temp_variable = { _it_win = 0 }
+	if = { limit = { has_country_flag = WA_AI_rescue_window } set_temp_variable = { _it_win = 1 } }
+	log = "  rescue: flags before pass: window=[?_it_win|.0] cooldown=[?_it_cd|.0] (cooldown=1 -> no new rescue, expect target_set=0 unless one was already running)"
+	WA_AI_set_rescue_operative_target = yes
+	set_temp_variable = { _it_rs = 0 }
+	if = { limit = { has_variable = WA_AI_rescue_operative_target } set_temp_variable = { _it_rs = 1 } }
+	set_temp_variable = { _it_rs_ok = 0 }
+	if = {
+		limit = {
+			OR = {
+				AND = { check_variable = { _it_cap_n > 0 } check_variable = { _it_cd = 0 } check_variable = { _it_rs = 1 } }
+				AND = { check_variable = { _it_cap_n > 0 } check_variable = { _it_cd = 1 } }
+				AND = { check_variable = { _it_cap_n = 0 } check_variable = { _it_rs = 0 } }
+			}
+		}
+		set_temp_variable = { _it_rs_ok = 1 }
+	}
+	if = { limit = { has_variable = WA_AI_rescue_operative_target }
+		var:WA_AI_rescue_operative_target = { log = "  rescue: shipped captor = [This.GetName] (must hold one of ours)" }
+	}
+	log = "  rescue: captured=[?_it_cap_n|.0] target_set=[?_it_rs|.0] PASS?=[?_it_rs_ok|.0]"
+
+	### [espionage-priorities] capture_cipher gate, term by term (duplicated from the strategy's enable)
+	set_temp_variable = { _it_c_dep = 0 }
+	set_temp_variable = { _it_c_tech = 0 }
+	set_temp_variable = { _it_c_net = 0 }
+	set_temp_variable = { _it_c_open = 0 }
+	set_temp_variable = { _it_c_all = 0 }
+	set_temp_variable = { _it_c_run = 0 }
+	if = { limit = { has_done_agency_upgrade = upgrade_form_department } set_temp_variable = { _it_c_dep = 1 } }
+	if = { limit = { has_tech = mechanical_computing } set_temp_variable = { _it_c_tech = 1 } }
+	if = { limit = { has_variable = WA_AI_intel_target_1 }
+		if = { limit = { NOT = { network_strength = { target = var:WA_AI_intel_target_1 value < 50 } } } set_temp_variable = { _it_c_net = 1 } }
+		if = { limit = { NOT = { is_fully_decrypted = var:WA_AI_intel_target_1 } } set_temp_variable = { _it_c_open = 1 } }
+		if = { limit = { is_running_operation = { target = var:WA_AI_intel_target_1 operation = operation_capture_cipher } } set_temp_variable = { _it_c_run = 1 } }
+	}
+	if = {
+		limit = {
+			check_variable = { _it_c_dep = 1 }
+			check_variable = { _it_c_tech = 1 }
+			check_variable = { _it_c_net = 1 }
+			check_variable = { _it_c_open = 1 }
+			check_variable = { _it_rs = 0 }
+		}
+		set_temp_variable = { _it_c_all = 1 }
+	}
+	if = { limit = { check_variable = { _it_c_run = 1 } } set_temp_variable = { _it_c_all = 1 } }
+	log = "  cipher: department=[?_it_c_dep|.0] mechanical_computing=[?_it_c_tech|.0] network>=50=[?_it_c_net|.0] not_fully_decrypted=[?_it_c_open|.0] rescue_active=[?_it_rs|.0] running=[?_it_c_run|.0] (armed = start 1 1 1 1 with rescue_active 0, or running 1) armed=[?_it_c_all|.0]"
 }
