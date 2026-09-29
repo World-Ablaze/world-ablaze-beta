@@ -8485,10 +8485,11 @@ focus_tree = {
 		}
 	}
 
-	##### 独立混成第一旅団
-	# Japan's first mechanised formation: raised 1934, blooded in Chahar 1937,
-	# disbanded August 1938. Mirrors JAP_carrier_warfare_experiments at (55,6),
-	# and its lessons feed JAP_mechanised_corps below.
+	##### 第一戦車団
+	# The 1st Tank Group: formed 12 August 1938 from the tank regiments of the
+	# disbanded Independent Mixed Brigade, fought at Nomonhan in July 1939, and
+	# became the 1st Tank Division in June 1942. Mirrors
+	# JAP_carrier_warfare_experiments at (55,6) and feeds JAP_mechanised_corps below.
 	focus = {
 		id = JAP_independent_mixed_brigade
 		icon = GFX_goal_generic_allies_build_infantry   # 汎用から割り当て
@@ -8498,10 +8499,15 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_fifty_division_plan }
 
-		# available = { }   # TODO 実装側で
-
+		# No mastery here on purpose: this focus is taken while JAP_infantry_direct_cooperation is still active.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			army_experience = 25
+			add_tech_bonus = {
+				name = JAP_independent_mixed_brigade
+				bonus = 0.5
+				uses = 1
+				category = armor
+			}
 		}
 	}
 
@@ -8973,10 +8979,34 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_independent_mixed_brigade }
 
-		# available = { }   # TODO 実装側で
+		# Both lessons are required; the date is a fallback for games where France never falls.
+		# The flags are wrapped only to reword their display text for this focus.
+		available = {
+			OR = {
+				AND = {
+					custom_trigger_tooltip = {
+						tooltip = JAP_mechanised_corps_khalkhin_gol_tt
+						has_global_flag = JAP_khalkhin_gol
+					}
+					custom_trigger_tooltip = {
+						tooltip = JAP_mechanised_corps_fall_of_france_tt
+						has_global_flag = fall_of_france
+					}
+				}
+				date > 1942.1.1
+			}
+		}
 
+		# The debuff must go first so the mastery below is granted without it.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			remove_ideas = JAP_infantry_direct_cooperation
+			WA_add_mastery_armour_75 = yes
+			WA_add_land_mastery_gain_bonus = yes
+			custom_effect_tooltip = mobile_warfare_drive_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = mobile_warfare_drive_spirit
+				set_technology = { mobile_warfare_drive_tech = 1 }
+			}
 		}
 	}
 
@@ -9207,10 +9237,43 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_mechanised_corps }
 
-		# available = { }   # TODO 実装側で
-
+		# Template is a placeholder: 4 tank regiments, 1 mobile infantry and 1 mobile artillery regiment historically.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			custom_effect_tooltip = JAP_first_tank_division_tt
+			hidden_effect = {
+				division_template = {
+					name = "Sensha Shidan"
+					division_names_group = JAP_ARM_01
+					priority = 2
+					regiments = {
+						medium_armor = { x = 0 y = 0 }
+						medium_armor = { x = 0 y = 1 }
+						medium_armor = { x = 0 y = 2 }
+						medium_armor = { x = 1 y = 0 }
+						medium_armor = { x = 1 y = 1 }
+						medium_armor = { x = 1 y = 2 }
+						light_armor = { x = 2 y = 0 }
+						light_armor = { x = 2 y = 1 }
+						motorized = { x = 3 y = 0 }
+						motorized = { x = 3 y = 1 }
+						motorized = { x = 3 y = 2 }
+						motorized_artillery_brigade = { x = 4 y = 0 }
+						motorized_artillery_brigade = { x = 4 y = 1 }
+					}
+					regimental_support = {
+						regimental_motorized_artillery = { x = 0 y = 0 }
+					}
+					support = {
+						normal_engineer = { x = 0 y = 0 }
+						mot_maintenance_company = { x = 0 y = 1 }
+						motorized_logistics_company = { x = 0 y = 2 }
+						signal_company = { x = 0 y = 3 }
+						armoured_recon = { x = 1 y = 0 }
+					}
+				}
+			}
+			show_unit_leaders_tooltip = JAP_toshimoto_hoshino
+			WA_add_mastery_armour_50 = yes
 		}
 	}
 
@@ -9686,9 +9749,10 @@ focus_tree = {
 		}
 	}
 
-	##### 機甲師団の増設（旧: 島嶼守備隊の増強、正式名はGemini発注待ち）
-	# Replaced so the (39,11) slot continues the tank line from JAP_first_tank_division,
-	# mirroring JAP_modified_fifth_circle_plan. The 2nd and 3rd Tank Divisions date from June 1942.
+	##### 機甲軍の創設
+	# The Armoured Army (Kiko-gun), created July 1942 over the tank divisions: a training and
+	# replacement command, not a strike army. Continues the tank line from JAP_first_tank_division
+	# and mirrors JAP_modified_fifth_circle_plan.
 	focus = {
 		id = JAP_expand_the_armoured_divisions
 		icon = GFX_goal_generic_tank_specialization   # 汎用から割り当て
@@ -9698,10 +9762,19 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_first_tank_division }
 
-		# available = { }   # TODO 実装側で
-
+		# Revives the upstream mission; its tank counter is kept up to date by JAP_CALC_tanks_effect in on_actions.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			if = {
+				limit = {
+					is_ai = no
+				}
+				activate_mission = JAP_Form_Tank_Corps
+			}
+			else = {
+				effect_tooltip = {
+					activate_mission = JAP_Form_Tank_Corps
+				}
+			}
 		}
 	}
 
