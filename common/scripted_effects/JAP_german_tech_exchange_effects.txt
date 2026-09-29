@@ -1,0 +1,125 @@
+# German technology exchange (JAP_gte_technology_exchange decision). Country scope: JAP.
+#
+# The delegation travels leg by leg as timed missions (JAP_german_tech_exchange.txt). Each leg
+# rolls when its timer runs out: 90% to go on if every point of that leg is held, 50% if any is
+# missing. Losing a roll ends the exchange (jap_gte.3); clearing the last leg succeeds (jap_gte.2).
+# Leg days follow sea-lane distance at one common speed:
+#   Suez: Mediterranean 10 + Red Sea 10 + Asia 50 = 70 days
+#   Cape: Atlantic 50 + Cape 20 + Asia 50 = 120 days
+# The resolve effects are shared by the missions' timeout_effect and the debug decisions.
+
+# Departure: Suez if the canal is held, otherwise round the Cape.
+JAP_gte_depart = {
+	hidden_effect = { set_country_flag = JAP_gte_in_transit }
+	if = {
+		limit = { JAP_gte_held_suez_canal = yes }
+		activate_mission = JAP_gte_leg_mediterranean
+	}
+	else = {
+		activate_mission = JAP_gte_leg_atlantic
+	}
+}
+
+JAP_gte_leg_mediterranean_resolve = {
+	if = {
+		limit = {
+			JAP_gte_held_malta = yes
+			JAP_gte_held_derna = yes
+		}
+		random_list = {
+			90 = { activate_mission = JAP_gte_leg_red_sea }
+			10 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+	else = {
+		random_list = {
+			50 = { activate_mission = JAP_gte_leg_red_sea }
+			50 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+}
+
+JAP_gte_leg_red_sea_resolve = {
+	if = {
+		limit = {
+			JAP_gte_held_suez_canal = yes
+			JAP_gte_held_french_somaliland = yes
+		}
+		random_list = {
+			90 = { activate_mission = JAP_gte_leg_asia }
+			10 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+	else = {
+		random_list = {
+			50 = { activate_mission = JAP_gte_leg_asia }
+			50 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+}
+
+JAP_gte_leg_atlantic_resolve = {
+	if = {
+		limit = {
+			JAP_gte_held_brittany = yes
+		}
+		random_list = {
+			90 = { activate_mission = JAP_gte_leg_cape }
+			10 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+	else = {
+		random_list = {
+			50 = { activate_mission = JAP_gte_leg_cape }
+			50 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+}
+
+JAP_gte_leg_cape_resolve = {
+	if = {
+		limit = {
+			JAP_gte_held_western_cape = yes
+			JAP_gte_held_madagascar = yes
+		}
+		random_list = {
+			90 = { activate_mission = JAP_gte_leg_asia }
+			10 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+	else = {
+		random_list = {
+			50 = { activate_mission = JAP_gte_leg_asia }
+			50 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+}
+
+JAP_gte_leg_asia_resolve = {
+	if = {
+		limit = {
+			JAP_gte_held_ceylon = yes
+			JAP_gte_held_singapore = yes
+			JAP_gte_held_taiwan = yes
+		}
+		random_list = {
+			90 = { country_event = { id = jap_gte.2 } }
+			10 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+	else = {
+		random_list = {
+			50 = { country_event = { id = jap_gte.2 } }
+			50 = { country_event = { id = jap_gte.3 } }
+		}
+	}
+}
+
+# Removes whichever leg is under way (debug decisions).
+JAP_gte_remove_legs = {
+	if = { limit = { has_active_mission = JAP_gte_leg_mediterranean } remove_mission = JAP_gte_leg_mediterranean }
+	if = { limit = { has_active_mission = JAP_gte_leg_red_sea } remove_mission = JAP_gte_leg_red_sea }
+	if = { limit = { has_active_mission = JAP_gte_leg_atlantic } remove_mission = JAP_gte_leg_atlantic }
+	if = { limit = { has_active_mission = JAP_gte_leg_cape } remove_mission = JAP_gte_leg_cape }
+	if = { limit = { has_active_mission = JAP_gte_leg_asia } remove_mission = JAP_gte_leg_asia }
+}
