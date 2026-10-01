@@ -1161,6 +1161,30 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the harness reads `doc=1` with a wave value on a doctrine-holding country, the
   control country reads `doc=0` with no wave value, and one campaign shows no country carrying a
   wave value with `doc=0`.
+- **[armor-12-3] folded in on owner order 2026-10-01** ("oui pour tout"; stays PARKED for the WIP
+  limit, behaviour SHIPPED and unverified — promote with the rest of this subject). Intended
+  behaviour: every 30-width armour division is 3 mobile-infantry battalions + 12 armour/variant
+  battalions, 9 armour under Armoured Waves. New games only (owner: no in-flight compatibility).
+  - Change: registry `line_budget` 12, `mobile_infantry` 3, waves -3 armour / 0 infantry,
+    `applies_to_motorized` true (A14 closed: motorized wave twins now land on 30), modern
+    `tier_ladder.max_value` 12. Declared 30-width light / light-support profiles moved 10+5 →
+    12+3 and 7+3+5 → 9+3+3; the 20-width starters and the SOV 44-battalion corps are untouched.
+    Hand mirrors of the tier ceiling moved to 12 (latch chain, `should_step` cap, `has_adopted`
+    divisor chain — now a registered mirror —, `WA_TEST_armor_budget`).
+  - **MEASURED** (generator): 2916 targets (+150 motorized wave twins), 0 ERROR 0 WARN; all
+    pre-existing wave twins keep their composition. New check `FINAL-DRIFT` (validate.py) fails
+    the generation if a `*_FINAL` hand-off stops matching an emitted destination target — the
+    `[armor-class-handoff]` stall; it fires on a FINAL left at 10+5 (negative control run).
+  - Impact, **DERIVED** (unit files): per division main-tank chassis +20 % (+29 % with a line
+    variant), mechanized equipment -40 %, manpower 11 000 → 9 600, mean line org ≈26.7 → 20. The
+    SOV light-support MIX now fields 9 support battalions per division, so the 10k fielded bar is
+    crossed with fewer divisions than the ~59 the old 7/5 shape was sized for. **ASSUMED**: the
+    engine refills the larger tank requirement at the same ~quarter lag measured on the modern
+    switch.
+  - Verification (owner, in game): an AI armour country's division designer (or a save's
+    `division_template` of a `WA_AI_TEMPLATES_GENERIC_*_ARMOR_30_*` target) shows 12 armour + 3
+    mobile infantry, 9 + 3 with the doctrine; the `WA_TEST_armor_budget` `ladder:` row on a modern-switched country reads
+    `tier` climbing past 10 to at most 12.
 
 ### resource-infra-targeting — PARKED (2026-09-09)
 - State: implementation ships with this subject update; parked only because the four OPEN slots
