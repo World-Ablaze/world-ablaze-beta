@@ -26,7 +26,7 @@
   {
    "id": "templates_modern_tier_max",
    "policy": "strict",
-   "governs": "[modern-tier-ladder] The ceiling of the WA_AI_TEMPLATES_modern_tier flag. The generator enables every composition's top tier at every value from N up to it (registry tier_ladder.max_value), the latch's else_if chain climbs to it, WA_AI_TEMPLATES_should_step_modern_tier stops at it, and the harness reads the flag with one comparison per value up to it. A join key across four files; a comment is not a mechanism.",
+   "governs": "[modern-tier-ladder] The ceiling of the WA_AI_TEMPLATES_modern_tier flag. The generator enables every composition's top tier at every value from N up to it (registry tier_ladder.max_value), the latch's else_if chain climbs to it, WA_AI_TEMPLATES_should_step_modern_tier stops at it, WA_AI_TEMPLATES_has_adopted_modern_tier's divisor chain ends on it, and the harness reads the flag with one comparison per value up to it. A join key across four files (five mirrors); a comment is not a mechanism.",
    "owner": {
     "kind": "regex",
     "file": "tools/armor_templates_registry.json",
@@ -44,6 +44,12 @@
      "kind": "regex",
      "pattern": "WA_AI_TEMPLATES_should_step_modern_tier = \\{[\\s\\S]*?value = (\\d+) \\}",
      "note": "the NOT cap of the decision trigger"
+    },
+    {
+     "file": "common/scripted_triggers/WA_AI_TEMPLATES_triggers.txt",
+     "kind": "regex",
+     "pattern": "_mt_div = (\\d+) \\} \\}\\s*set_temp_variable = \\{ _mt_bar",
+     "note": "the last row of the has_adopted divisor chain"
     },
     {
      "file": "common/scripted_effects/WA_TEST_armor_budget.txt",
@@ -2048,6 +2054,48 @@
      "file": "documentation/WA_AI_DIVISION_TEMPLATES.md",
      "kind": "regex",
      "pattern": "\\| Heavy Armor \\| `(\\d+)-\\d+`"
+    }
+   ]
+  },
+  {
+   "id": "espionage_capture_cipher_network",
+   "policy": "strict",
+   "governs": "[espionage-priorities] The network strength operation_capture_cipher and the three armed-forces infiltrations need to start (one @ gates all four). WA_AI_ESPIONAGE_is_primary_network_built builds the primary intel network up to it (build/keep strategy switch) and WA_AI_ESPIONAGE_can_capture_cipher_on_primary arms the operation at it; the console harness checks the same term. A lower mirror arms a strategy the engine refuses; a higher one idles the operatives.",
+   "owner": {
+    "kind": "regex",
+    "file": "common/operations/00_operations.txt",
+    "pattern": "operation_capture_cipher = \\{[\\s\\S]*?network_strength = (\\d+)"
+   },
+   "mirrors": [
+    {
+     "file": "common/scripted_triggers/WA_AI_ESPIONAGE_triggers.txt",
+     "kind": "regex",
+     "pattern": "@INTEL_CAPTURE_CIPHER_NETWORK = (\\d+)",
+     "note": "the one @ the two espionage decision triggers read"
+    },
+    {
+     "file": "common/scripted_effects/WA_TEST_intel_targets.txt",
+     "kind": "regex",
+     "pattern": "network_strength = \\{ target = var:WA_AI_intel_target_1 value < (\\d+) \\}",
+     "note": "harness capture gate term (independent walk)"
+    },
+    {
+     "file": "common/operations/00_operations.txt",
+     "kind": "regex",
+     "pattern": "operation_infiltrate_armed_forces_army = \\{[\\s\\S]*?network_strength = (\\d+)",
+     "note": "army infiltration start requirement"
+    },
+    {
+     "file": "common/operations/00_operations.txt",
+     "kind": "regex",
+     "pattern": "operation_infiltrate_armed_forces_navy = \\{[\\s\\S]*?network_strength = (\\d+)",
+     "note": "navy infiltration start requirement"
+    },
+    {
+     "file": "common/operations/00_operations.txt",
+     "kind": "regex",
+     "pattern": "operation_infiltrate_armed_forces_airforce = \\{[\\s\\S]*?network_strength = (\\d+)",
+     "note": "airforce infiltration start requirement"
     }
    ]
   }

@@ -22,6 +22,71 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 
 ## OPEN
 
+### decision-remove-reactivation — PARKED (2026-09-27)
+- State: code committed on `ai-rework`; PARKED at creation because OPEN is over its four-subject WIP limit. No harness owed (decisions + one event, not a `WA_AI_*` effect).
+- Owner report: silent crash around 1941.12, "annexing Japan fixes it". Crash: `C0000005` in `CDecisionStatus::UpdateDecisionsToRemove` (hourly per-country decision update).
+- Cause, **MEASURED** (owner-run bisection of save `1faa475b` 1941.12.27.19, each variant differing by one `decision_to_remove` block): crash at 20:00 whatever JAP holds. It stops if any one of the USA's six entries is deleted: `USA_provide_emergency_food_SOV` (days=1, the one expiring), `USA_execute_war_plan_orange` or the unrelated `USA_public_fireside_chat_war_support`. **DERIVED**: what matters is the list's size, not which entry sits in it; the only JAP link is war plan orange (its `targeted_modifier` on JAP/MAN/MEN) occupying a slot. **ASSUMED** (engine): the expiring decision's `remove_effect` does `activate_decision = USA_food_lend_lease` (a `days_remove` decision), which pushes into the container the engine is iterating; a full container reallocates under the loop.
+- Change: both `remove_effect` sites that re-armed `USA_food_lend_lease` (`USA_provide_emergency_food_SOV`, and `USA_food_lend_lease` renewing itself) now fire hidden event `wa_usa_decisions.1` `hours = 1`, which does the `activate_decision` outside the removal pass (`events/wa_usa_events.txt`). Tooltip kept via `effect_tooltip`.
+- Engine: **MEASURED** crash on `Operation Postern v1.19.3.0` (exception.txt and save header), not the 1.19.2 install AGENTS.md names. The closing reload must run on 1.19.3.
+- Regression risk, **DERIVED** from the code: the only change is the time of the re-arm; old and new both re-arm with no condition.
+
+  | t | old | new |
+  | --- | --- | --- |
+  | t0 removal pass | `remove_effect` runs, `activate_decision` inside the pass (the crash) | `remove_effect` runs, event queued |
+  | t0+1h | re-armed decision already in the list; its `cancel_trigger` is checked on the engine's usual cadence | event fires, `activate_decision`; `cancel_trigger` is checked from here on |
+
+  If `SOV_food_lend_lease` has ended or the `cancel_trigger` is already true at t0+1h, the new code re-arms and the next check cancels it, which is exactly what the old code did one hour earlier. No guard was added, so no behaviour was removed.
+- Siblings: `GER_atlantik_wall_*` (7, `common/decisions/GER.txt`) re-arm themselves with `activate_decision` in `remove_effect`, on the human-player path only. Same pattern, not changed here. The `remove_effect` calls to own-country `activate_mission` (`JAP_military_offensive` → `JAP_military_offensive_ongoing`, `JAP.txt:778`; `SOV_operation_iskra`, `SOV.txt:8433`) are not treated as the same hazard. **MEASURED** (save): missions live in `active_timed_decision`, a list apart from `decision_to_remove`, and this campaign already holds a live `JAP_military_offensive_ongoing` (29 days left), so that path has run here without crashing. **ASSUMED**: the engine iterates the two lists separately.
+- Closed when: the owner loads the original crash save on this build and it runs past 1941.12.28 with `USA_food_lend_lease` in the USA's `decision_to_remove` list on the next save (`decisions USA <save> --match food_lend_lease`).
+
+### espionage-priorities — PARKED (2026-09-27)
+- State: code committed on `ai-rework`, SHIPPED-UNTESTED (owner console run owed, harness shared with `intel-adversary-targeting`); PARKED at creation because OPEN is over its four-subject WIP limit.
+- Owner orders 2026-09-27: "Il faut des opérations pour libérer les agents capturés. Il faut que l'IA fasse les améliorations de cryptage et décryptage, avec les opérations de capture de cipher. Seulement après l'IA doit faire la résistance." Owner choices: resistance only lower priority (no hard gate); capture_cipher on the primary intel target only. Owner order 2026-09-27 (supersedes "only the crypto department jumps to the head"): agency upgrade build order "tous les niveaux de défense, puis création département crypto, puis les suicide pills, puis renseignement terrestre, puis naval, puis aérien, puis les améliorations du département crypto, et le reste"; operation order "rescue operative > infiltration operations > capture cipher > resistance" (owner: the infiltrate civilian / armed forces operations; blueprint stealing stays at 0; training centers — the only extra operative slot — right after defense; re-infiltrate a target whose token a steal-tech operation consumed); then "Anti partisan doit être sélectionné seulement si le pays occupe des territoires qui ont une résistance notable" and "réduit d'un ordre de grandeur les poids numériques".
+- Cause, **MEASURED** (code): the WA rescue chain (`WA_AI_rescue_*`, 50 000 / 100 000) was dead — its setter `WA_AI_set_rescue_operative_target` was commented out in `events/WA_AI_misc.txt` and nothing else sets the variable; no strategy ran `operation_capture_cipher`; `upgrade_form_department` had `ai_will_do` factor 2 against 100-1000 for army/naval intel, passive defense, interrogation and suicide pills (`intelligence_agency_upgrades.txt`); resistance network missions sat at 50 000, level with the intel networks.
+- Change: rescue setter rewritten on the vanilla `every_operative` / `operative_captor` idiom (`operation_strat_effects.txt`) and called again from the background pulse, with three exits (captor releases/loses the operative, captor no longer exists, 180-day window `WA_AI_rescue_window` runs out → 180-day `WA_AI_rescue_cooldown`); agency upgrade `ai_will_do` ladder in owner order (passive defense 50 000 > training centers 5 000 > crypto department 500 > suicide pills 50 > army intel 5 > naval 1 > air 0.5 > four crypto improvements 0.25 > the rest 0.1; ×10 steps at the head, ×2-×5 in the tail so no weight goes under 0.1 — owner choice after the lessons review flagged 0.001-0.05 weights near the **ASSUMED** fixed-point step; blueprint stealing 0; sum ≈ 106 k); anti-partisan sits at the defense rank (50 000) only while the country controls a state with `has_resistance` and resistance > 25 (`@ANTI_PARTISAN_MIN_RESISTANCE`, vanilla 0-100 state scale as in `LaR_historical_operations.txt` capture_tito), else factor 0, and the four `intelligence_agency_branch_desire_factor` strategies of `default_agency.txt` (+100 % to +2 000 % per branch) removed so nothing rescales a rank; four new infiltration strategies on `WA_AI_intel_target_1` (army 70 000 > navy 68 000 > airforce 66 000 > civilian 64 000), each once (its token), a running one kept armed, gated by `WA_AI_ESPIONAGE_can_infiltrate_primary_*`; new `WA_AI_capture_cipher_operation` (45 000) on `WA_AI_intel_target_1`, gated by the new decision trigger `WA_AI_ESPIONAGE_can_capture_cipher_on_primary` (`WA_AI_ESPIONAGE_triggers.txt`), which mirrors the operation's own requirements (department, `mechanical_computing`, network ≥ 50, target not fully decrypted) and yields to a rescue at start, but keeps an operation already running armed (`is_running_operation`) through network decay or a rescue; the build/keep switch of the primary network reads the decision triggers `WA_AI_ESPIONAGE_should_build/keep_primary_network` (over the observation `WA_AI_ESPIONAGE_is_primary_network_built`), so the 50 has one `@` (`@INTEL_CAPTURE_CIPHER_NETWORK`), registered as a mirror of `operation_capture_cipher` in `tools/constants_registry.json`; resistance network missions 50 000 → 25 000 (operations stay 20 000). Resulting operation order: rescue 100 000 > infiltrations 70 000-64 000 > capture_cipher 45 000 > resistance 20 000 (network missions: rescue / primary 50 000, secondary 40 000, resistance 25 000).
+- Regression risk, **DERIVED** from the code: (a) while any operative is captured, the rescue gate switches off every WA intel, capture-start and resistance strategy (existing design of the `NOT = { has_variable = WA_AI_rescue_operative_target }` terms, now live). Bound, at the real cadences (background pulse MTTH 2 days; rescue op 35 days after network 20 + national coverage > 0; network build time **ASSUMED**):
+
+  | t | event | gate |
+  | --- | --- | --- |
+  | t0 | operative captured | open |
+  | t0 + ≤ 2 d | pulse names the captor, window flag 180 d | closed (running capture_cipher and counter-intelligence keep going) |
+  | t1 | rescue network reaches 20 → 35-day operation | closed |
+  | t2 success | operative freed → next pulse clears the target (≤ 2 d) | open |
+  | t2 failure / captor dead | retries while the window lasts; a dead captor clears at the next pulse | closed / open |
+  | t0 + 180 d (+ ≤ 2 d) | window runs out → target cleared, 180-day cooldown | open for ≥ 180 d |
+
+  So one captor closes the gate at most ~182 days, then leaves it open at least 180 days (worst case ≈ half the time while operatives keep being captured); (b) every AI agency now follows one build order: passive defense first (4 levels at 60 days; anti-partisan's 2 levels too, only for an occupier with notable resistance), then training centers, then the crypto department; **ASSUMED**: `ai_will_do` of an agency upgrade is evaluated in the owner's country scope (the engine doc example uses `is_major`); interrogation (200 before) drops to the tail; `default_agency.txt` branch weights no longer favour crypto for Bletchley/MI6/OSS/SS holders; **ASSUMED**: whether the engine takes the top weight or draws by weight (the ×10 steps hold for both, not strictly for a weighted draw); (h) the civilian infiltration waits for network 50 (it needs 35) — one threshold for all primary operations; (i) the vanilla weekly `run_generic_operation` (900) can still pick an infiltration on its own target; (j) an infiltration re-arms whenever a steal-tech operation consumes its token (owner-accepted); (c) capture_cipher needs 3 free operatives — a country with fewer never runs it; (d) **ASSUMED**: `is_fully_decrypted` accepts a `var:` target, `every_operative` / `operative_captor` behave as in the vanilla weekly effect, and a strategy dropping out of `enable` does not cancel an operation already running — the harness prints the gate terms.
+- Verification (save): the agency upgrade list of an AI major around 1940 reads defense levels, then training centers, then the crypto department, then suicide pills, then army / naval / air intel; anti-partisan only on a country occupying a state with resistance > 25.
+- Verification (owner): cold boot with `-debug` and no new `error.log` line from the removed `default_agency.txt` strategies or the new files; then console `event wa_it.2` on a 1940+ save with an agency that has captured operatives or the crypto department: "INTEL TARGETS" lines `rescue: ... PASS?=1` and `cipher:` terms consistent with the game UI (agency screen: department built, network on target_1, decryption state).
+- Closed when: console PASS, and one campaign shows an AI major with the crypto department before its second upgrade, at least one finished `operation_capture_cipher`, and a captured operative freed by `operation_rescue_operative`.
+
+### intel-adversary-targeting — PARKED (2026-09-27)
+- State: code committed on `ai-rework`, SHIPPED-UNTESTED (owner console run owed); PARKED at creation because OPEN is over its four-subject WIP limit.
+- Owner report: "GER currently spies on POL and then BEL. Would prefer if they spy on ENG and then SOV." Owner ruling 2026-09-27: keep a generic system; the inherited Expert-AI collaboration logic is wrong for WA, where collaboration is worth little; countries spy on their adversaries, priority on the most powerful. Owner choices: at peace the adversaries are the majors `WA_AI_THIS_is_threat_to_PREV` names; power = factories + 5 × divisions; remove every collaboration strategy.
+- Cause, **MEASURED** (code): `WA_AI_set_collaboration_target` (`WA_AI_espionage_effects.txt`, GER only, fascist only) walked a fixed list POL → FRA → BEL → HOL → YUG → SOV and put intel network + `operation_collaboration_government` on the first valid one at weight 50 000, drowning the engine scorer (majors/enemies at 100-300, `scorers/country/operative_mission_scorer.txt`). ENG was never a candidate. The filter skips a target already under a running collaboration operation, which moves the target down the list (POL → BEL is that shape; **ASSUMED** which filter term skipped FRA). The effect also leaked `break = 1` into `WA_AI_set_boost_resistance_target`'s default-break loop in the same event (lessons-log "The shared `break` temp variable leaks").
+- Change: `WA_AI_set_intel_network_targets` (every AI, every background pulse, ≥ 1 operative) ranks candidates by the new shared `WA_AI_MATH_country_power_score` (factories + 5 × divisions; the railway enemy ranker now calls it too, same formula, no behaviour change there) — at war the living enemies, at peace the majors that are threats — with a ×1.2 bonus for the current targets (`@INTEL_INCUMBENT_FACTOR`, against rank swaps between 2-day pulses), and stores the two best in `WA_AI_intel_target_1/2`. Strategies: 2 operatives on target 1 while its network < 50 then 1, weight 50 000; 1 operative on target 2, weight 40 000. Removed: the GER collaboration target setter, its three WA strategies (collaboration network ×2 + operation) and `GER_collaboration_on_NOR`. Kept: counter-intelligence, boost-resistance, rescue, `GER_rescue_mussolini`.
+- Regression risk, **DERIVED** from the code: (a) every AI with an operative now gets WA-weighted network strategies, not only GER — minors spend their operatives on the strongest adversary instead of the engine's default spread; (b) GER no longer runs collaboration on POL/FRA/BEL/HOL/YUG/SOV/NOR, so any capitulation speed-up it gave is gone (owner-accepted); (c) at war against a minor only, the target is that minor even if a major threat exists; (d) the rescue gate `WA_AI_rescue_operative_target` is never set (its setter is commented out), unchanged; (e) the removed effect leaked `break = 1` into `WA_AI_set_boost_resistance_target` whenever GER had a collaboration target, so GER's boost-resistance targeting (weight 50 000, 2 operatives, competing for the same operatives) now runs again; its uninitialised `owned_states_controlled_by_enemies` temp is now set to 0 at its head; (f) a capitulated enemy that still fights is not a candidate (`has_capitulated = no`), by design; (g) **ASSUMED**: `operatives` is a live engine variable (only precedent is the boost-resistance gate) — the harness prints it.
+- Verification (owner console): `event wa_it.2` on a 1937 save and on a 1939.10+ save; `logs/game.log` "INTEL TARGETS": header 1 1 1 1 0, `operatives` > 0 and target names that resolve, `PASS? match_1=1 match_2=1` for every AI major, peace candidates > 0 (1936-37 USA/SOV/ENG as threats to GER); GER at war reads its top targets among ENG/FRA/POL in 1939, SOV and ENG in score order after 1941.6.
+- Closed when: console PASS on both saves, and one campaign's monthly saves show GER's intel networks on ENG from war entry and on SOV from 1941.7 (network strength read from the save).
+
+### fra-reserve-war-dump — PARKED (2026-09-27)
+- State: code committed on `ai-rework`, not yet campaign-checked; PARKED at creation because OPEN is over its four-subject WIP limit. No harness owed (`WA_reserves_*` + one CONFIG trigger, < 40 lines, no `WA_TEST_reserves`).
+- Owner orders 2026-09-27: "L'IA française doit tout déployer si en guerre"; then "Il faut tout déployer si les réserves sont équipées à 75%".
+- Cause, **MEASURED** (code): `deploy_reserves_infantry` `ai_will_do` (`common/decisions/_reserves.txt`) has base 4000 and three factor-0 vetoes; for FRA the reachable one is `[reserve-capacity]` `WA_reserves_is_over_capacity` (≤ 24 MIL and > 20 divisions, ≤ 49 MIL and > 40, or ≤ 99 MIL and > 80). The other two need the ENG or GER archetype.
+- Change: new CONFIG archetype `WA_AI_CONFIG_is_reserve_war_dumper` (FRA); new decision trigger `WA_reserves_should_deploy_at_war` (archetype AND `has_war` AND `reserves_equipment` ≥ 0.75, file-scoped `@RESERVES_WAR_DUMP_MIN_EQUIPMENT`; the only writer of 0.75 is `FRA_levee_en_masse`, `national_focus/france.txt`; `recruit_more_reserves` only raises it to 0.5, never lowers it); each of the three vetoes now also needs `WA_reserves_should_deploy_at_war = no`. Peace (early mobilization) keeps every veto. The `available` block (`WA_reserves_can_deploy`: manpower > 150 499, significant enemy, no war with VIC, surrender ≤ 0.8) is unchanged, so "all" means all the bank the decision can pay for.
+- Regression risk, **DERIVED** from the code: an at-war FRA over its MIL tier that has taken `FRA_levee_en_masse` now fields its whole bank (20 at start, +10 per focus/recruit) at 0.75 spawn equipment in batches of 10, one per day, throttled only by 150 k manpower per batch; without the focus (0.1 default, 0.5 after a recruit) every veto holds as before. 0.75 is spawn equipment, not field fill: the MIL-tier assumption of `[reserve-capacity]` (industry cannot keep the extra divisions supplied) still applies to the dumped army. Measured precedents of under-equipped dumps: `eng-reserve-wave` (ENG 40 divisions at 0.3 eq over 1945.2.1-5, zero alive a month later) and `reserve-capacity` (ROM `wa_ai_fielded_eq_ratio` 0.55–0.68, reserve waves at org 5.6). "At war" is any war passing `WA_reserves_can_deploy` (a major or ≥ 0.25 IC-ratio enemy), overseas included. Also reaches an exiled FRA (Free France) or a post-civil-war FRA splinter at war while it controls a state and has the manpower. **ASSUMED**: FRA's MIL/division count at war entry (no measured cell in this file).
+- Closed when: a campaign on this build shows FRA `reserves` = 0 within the first month of its first war against a major (bank ≥ 10 at entry, manpower > 150 k) AND most of those reserve divisions still in `army FRA` one month after the wave (the outcome, not only the order); probes `var FRA "^reserves="`, `army FRA`, `buildings FRA --match arms_factory`, `var FRA "^wa_ai_fielded_eq_ratio="`.
+
+### italian-light-infantry-retirement — PARKED (2026-09-25)
+- State: code shipped, SHIPPED-UNTESTED; parked because WORK.md already exceeds its four-subject WIP limit. Owner console run and campaign verification remain owed.
+- Owner request: all Italian AI `Light Infantry template A` through `Z` divisions, as well as the starting `Divisione Coloniale`, must be disbanded in 1940.
+- Symptom, **MEASURED**: campaign `02795c2d` has five `Divisione Coloniale` and one `Light Infantry template F` in June 1940. The F division stays on its light template through February 1941; one colonial division is still light in June 1945. Campaign `73c03fd3` retains five colonials in June 1940; their IDs never convert before disappearing across 59 monthly saves.
+- Change: Italy-AI-only monthly retirement from the first 1940 pulse; remove the named colonial and every lettered Light Infantry template with `delete_unit_template_and_units` and `disband = yes` so equipment and manpower are returned. No war-entry flag or historical-faction gate. Mixed Ascari divisions are outside the requested light-template set.
+- Regression risk, **DERIVED**: Italy loses five or six fielded divisions in the 1940 sample saves, and an ahistorical Italy could need those divisions immediately. The removal is the owner's explicit outcome; retaining its heavy infantry target and refunding the disbanded resources limits the loss. **ASSUMED**: a fresh campaign may give lettered designs different compositions; the exact requested A–Z name set still retires. Unconditional name-specific delete calls on an absent template need the console no-op/idempotence check; `has_template` cannot guard this because it misses decommissioned copies that still field divisions.
+- Verification (owner console): cold boot; load an ITA-AI save from just before and from after 1940.1.1; under `observe`, run `event wa_test_tmpl.5 ITA`. Read the `ITALIAN LIGHT INFANTRY RETIREMENT` pre/post/re-run lines in `logs/game.log`: pre-1940 gate 0 and no change; post-1940 gate 1, light-majority count falls by the targeted divisions seen in the pre-save, second pass unchanged and no errors for absent template names. The named-template counts are diagnostic only: `has_template` misses decommissioned copies; save division IDs decide the result. Check a non-ITA AI under `observe`; use a separate player-ITA save for the human negative control (never `tag` into the AI).
+- Verification (campaign): `plans.py ITA <1940.1/2 monthly save> --templates` shows zero `Divisione Coloniale` and zero `Light Infantry template A`–`Z` divisions; `savegame.py army ITA` closes the deployed total. The heavy `Infantry template C` remains. Check 1940.6 and 1941.1 for recurrence.
+- Closed when: console PASS and one new campaign's monthly saves meet the 1940.1/2, 1940.6 and 1941.1 checks.
+
 > **Campaign `1ac7e4ea` scored 2026-08-27** (cloud, `dlcs=257535`, BHU observer, 120 monthly saves
 > 1936.2-1946.1, unbranched, build = HEAD `cd234cc51` — DERIVED from commit 13:49:54 / first save
 > 13:52, MEASURED by `wa_tlm_version = 32` first and last save + live `wa_tlm_llr_recv_*` arrays).
@@ -172,6 +237,42 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 > finishes **53/53 states, 436/436 provinces, 321 divisions and growing**, with Paris German at the
 > last save. The three OPEN subjects that touch the western/Mediterranean arc are all downstream of
 > that.
+
+### naval-invasion-discipline — SHIPPED-UNTESTED (2026-09-25)
+- Owner order 2026-09-25 ("implémente sur un fork de ai-rework"), branch `ai-rework-naval-invasion`.
+  Intended behaviour: scripted landings and ENGINE-planned ("organic") invasions coexist without
+  conflict; organic invasions happen only when the land war does not need the divisions, one
+  beachhead at a time, close to a held coast, and every beachhead attacks out; the navy supports
+  invasions ahead of routine escort. Design: `documentation/AI_INVASION_COEXISTENCE_PROPOSAL_2026-09-25.md`
+  (audit of Sheep's KR Japan AI: `documentation/AI_NAVAL_KR_JAPAN_AUDIT_2026-09-25.md`); spec
+  `documentation/WA_AI_MILITARY_SYSTEM.md` §27.
+- Symptoms it rests on, MEASURED: JAP organic windows date-bound to 1941.12.1-1942.3.15 and nothing
+  after mid-1942; the only strike-force template needs 2 CV + 2 BB + 10 CL (GER/ITA/SOV/FRA form none,
+  209 saves of `73c03fd3` / `e953ae9b`); `naval_invasion_support` 4-15 under `convoy_protection`
+  15-30 in `goals_generic.txt`; 34-47 % of majors' ships without an active mission at 1943.6.
+- Change: R1 per-theatre land-front hold, R2 organic freeze, R3 leash, R4 beachhead rush (scripted
+  and organic, renewed while cut off), R5 stall reset, T1 (JAP windows yield to the calendar),
+  N1 goal 12-24, N3 fair-share posture + per-region sea control (generated,
+  `tools/gen/gen_naval_sea_control.py`), N4 supremacy +50, N6 training 0.99, N7 Med dominance 100.
+  Every organic rule steps aside while the calendar claims the country (reservation / freeze).
+- Gates run: `check_ai_layers.py` - only the pre-existing CONFIG-LIVE error, ratchet counts
+  unchanged; `check_constants.py` - only the 3 pre-existing `[production_armor_maintenance_floor]`
+  DRIFT errors; `gen_naval_sea_control.py --check` exit 0; brace balance / BOM clean on every
+  touched script. Reviews: wa-architecture-reviewer + wa-lessons-reviewer - first pass CONFLICT
+  (ROOT/FROM binding, R1 global lock, stacking vs named plans, R4 exit), resolved in two revision
+  passes; residual CONCERNS stated in §27 (named-plan mirror kept by hand, T1 tag payload, WEST
+  lumps the Eastern Front with the Channel).
+- Harness (owner, console, cold boot, mid-war save 1942+): `event wa_nid.2` → `logs/game.log`,
+  "NAVAL DISCIPLINE TEST". Recipe and expected values: `events/wa_test_naval_discipline.txt`.
+  Paste the first run here.
+- Probe: `WA_TLM_nid_*` (TLM doc §6j, `wa_tlm_version = 41`).
+- Verification (console): per major, `ships` sum == `num_ships`; stored S / ratio equal the
+  recomputed ones; R1 terms match the printed formula; after a landing the landed state is listed.
+- Verification (campaign): `nid_bh_n` rises in every scripted-landing month; `nid_flip_n` ≤ 4 per
+  major; the 1943 Italian beachheads advance out of their landing states within 30 days; on a
+  Competitive run JAP lands organically after 1942 (`nid_org_n` > 0).
+- Closed when: one campaign shows the Italian beachheads breaking out AND an organic landing by a
+  major after its land front stalled, with no posture flapping.
 
 ### phoney-war-no-reich-bombing — SHIPPED-UNTESTED (2026-09-20)
 - **Campaign `73c03fd3` scored 2026-09-23** (cloud, build proven through `cddb2f605d`): NOT MET (strict). War 1939.10.11, France falls 1940.6.30. States 54 Franken + 55 Hessen (region 7) carry `last_strategic_bombing` 1939.10.12 - the day after the declaration - frozen through 1940.7; no other GER state stamped, no `building_damage_*` anywhere (MEASURED, 11 saves). No Allied wing on a strategic-bombing mission over 6/7/8 in 1939.11-1940.6 (ENG/FRA strike bombers over 206 at 1940.5 and region 5 at 1940.6). Ladder-armed leg NOT CHECKABLE from a save. ASSUMED: the day-1 raid precedes the first ai_strategy evaluation; one console read at war start settles it.
@@ -1060,6 +1161,30 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
 - Closed when: the harness reads `doc=1` with a wave value on a doctrine-holding country, the
   control country reads `doc=0` with no wave value, and one campaign shows no country carrying a
   wave value with `doc=0`.
+- **[armor-12-3] folded in on owner order 2026-10-01** ("oui pour tout"; stays PARKED for the WIP
+  limit, behaviour SHIPPED and unverified — promote with the rest of this subject). Intended
+  behaviour: every 30-width armour division is 3 mobile-infantry battalions + 12 armour/variant
+  battalions, 9 armour under Armoured Waves. New games only (owner: no in-flight compatibility).
+  - Change: registry `line_budget` 12, `mobile_infantry` 3, waves -3 armour / 0 infantry,
+    `applies_to_motorized` true (A14 closed: motorized wave twins now land on 30), modern
+    `tier_ladder.max_value` 12. Declared 30-width light / light-support profiles moved 10+5 →
+    12+3 and 7+3+5 → 9+3+3; the 20-width starters and the SOV 44-battalion corps are untouched.
+    Hand mirrors of the tier ceiling moved to 12 (latch chain, `should_step` cap, `has_adopted`
+    divisor chain — now a registered mirror —, `WA_TEST_armor_budget`).
+  - **MEASURED** (generator): 2916 targets (+150 motorized wave twins), 0 ERROR 0 WARN; all
+    pre-existing wave twins keep their composition. New check `FINAL-DRIFT` (validate.py) fails
+    the generation if a `*_FINAL` hand-off stops matching an emitted destination target — the
+    `[armor-class-handoff]` stall; it fires on a FINAL left at 10+5 (negative control run).
+  - Impact, **DERIVED** (unit files): per division main-tank chassis +20 % (+29 % with a line
+    variant), mechanized equipment -40 %, manpower 11 000 → 9 600, mean line org ≈26.7 → 20. The
+    SOV light-support MIX now fields 9 support battalions per division, so the 10k fielded bar is
+    crossed with fewer divisions than the ~59 the old 7/5 shape was sized for. **ASSUMED**: the
+    engine refills the larger tank requirement at the same ~quarter lag measured on the modern
+    switch.
+  - Verification (owner, in game): an AI armour country's division designer (or a save's
+    `division_template` of a `WA_AI_TEMPLATES_GENERIC_*_ARMOR_30_*` target) shows 12 armour + 3
+    mobile infantry, 9 + 3 with the doctrine; the `WA_TEST_armor_budget` `ladder:` row on a modern-switched country reads
+    `tier` climbing past 10 to at most 12.
 
 ### resource-infra-targeting — PARKED (2026-09-09)
 - State: implementation ships with this subject update; parked only because the four OPEN slots
@@ -4753,6 +4878,15 @@ power capitulates.
 
 
 ## PARKED
+
+### sov-finland-prewar-staging — PARKED (2026-09-25)
+- Parked pending an owner-run in-game check; the code is present in the working tree. `WORK.md` already exceeds its four-subject OPEN limit before this request.
+- Owner request: issue 18 in the attached playthrough report says Soviet AI divisions reach the Finnish border only after war is declared. No save or date accompanied the screenshot.
+- Script diagnosis: `WA_AI_MILITARY_SOV_prepare_war_with_finland` supplies only `front_unit_request`; the game documentation describes that type as changing requests for existing fronts. The peace-time placement decision is unmeasured.
+- Change: Country SOV THEATRE buffer order 9630 stages 0.10 of the army in Soviet states 195/216/215/213 during Finnish-war preparation. The new gate accepts the existing focus window or an active Soviet justification/war goal, and stops at war, competing major war, or Soviet ownership of 146.
+- Regression risk: reserving 10% of the Soviet army can draw divisions from other peace-time duties; actual engine arbitration between orders is unverified.
+- Verification: in an AI SOV prewar save, confirm the gate is active and count Soviet divisions in 195/216/215/213 before the Finnish declaration; compare with an earlier save, then confirm order 9630 disarms at war and no longer reserves divisions after Soviet ownership of 146. Use `observe`, not `tag SOV`.
+- Closed when: a historical and a late ahistorical prewar case both place divisions in the listed Soviet border states before declaration, without reducing the main active front below its needed strength.
 
 ### resource-grade-downshift — PARKED (2026-09-12)
 - Parked heading only for the WIP limit (7 under OPEN for 4). **Owner boot 2026-09-12: OK, no

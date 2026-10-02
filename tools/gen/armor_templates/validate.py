@@ -82,6 +82,7 @@ def run(registry, game, per_family_selections, stats, declared_by_family=None):
         findings += _family(registry, game, family_id, sels)
     for family_id, sels in sorted((declared_by_family or {}).items()):
         findings += _declared(registry, game, family_id, sels)
+    findings += _handoff(registry, per_family_selections, declared_by_family or {})
     findings += _codes(per_family_selections)
     findings += _doctrine(registry, game, per_family_selections)
     findings += _growth(registry, stats)
@@ -218,6 +219,36 @@ def _declared(registry, game, family_id, sels):
         elif exception:
             out.append(Finding(INFO, "WIDTH-EXCEPTION",
                                "%s: %g wide - %s" % (sel.name, round(sel.width, 2), exception)))
+    return out
+
+
+def _handoff(registry, per_family_selections, declared_by_family):
+    """[armor-class-handoff] A declared `*_FINAL` profile hands a converting division to another
+    role by best-match capture, so its line AND regimental block must equal a target that role
+    actually emits. A FINAL left on an older shape stalls the conversion (match 0.8125 measured
+    live); a comment saying "same as the medium target" did not hold when the composition moved.
+    """
+    out = []
+    shapes = {}
+    for family_id, sels in per_family_selections.items():
+        main = registry.families[family_id]["main_tank"]
+        for sel in sels:
+            shapes.setdefault(main, set()).add(
+                (tuple(sorted(sel.line.items())), tuple(sorted(sel.regimental.items()))))
+    for family_id, sels in sorted(declared_by_family.items()):
+        for sel in sels:
+            if not sel.name.endswith("_FINAL"):
+                continue
+            mains = [u for u in sel.line if u in shapes]
+            if not mains:
+                continue
+            shape = (tuple(sorted(sel.line.items())), tuple(sorted(sel.regimental.items())))
+            if not any(shape in shapes[u] for u in mains):
+                out.append(Finding(ERROR, "FINAL-DRIFT",
+                                   "%s fields %s / %s, which no %s target emits - the converting "
+                                   "division would never be captured by the destination role"
+                                   % (sel.name, dict(sel.line), dict(sel.regimental),
+                                      "/".join(mains))))
     return out
 
 

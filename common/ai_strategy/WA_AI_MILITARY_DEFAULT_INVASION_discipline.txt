@@ -1,0 +1,257 @@
+############################################################################################################
+# WA AI Military V2 - DEFAULT_INVASION - organic invasion discipline ([naval-invasion-discipline])
+############################################################################################################
+# Every ai_strategy in this file has type invasion_unit_request or naval_invasion_focus. Canonical
+# domain: INVASION. Spec: documentation/WA_AI_MILITARY_SYSTEM.md section 27. Control panel and
+# observations: common/scripted_triggers/WA_AI_LANDING_triggers.txt; gates:
+# WA_AI_MILITARY_INVASION_gate_triggers.txt; markers: WA_AI_LANDING_effects.txt.
+#
+# SCOPE OF THE RULES. They brake ENGINE-planned ("organic") invasions only, and only while the
+# calendar has no claim on the country (every gate carries NOT WA_AI_LANDING_has_scripted_claim):
+# a scripted landing never passes through invasion_unit_request, and while the calendar owes an
+# operation the reservation / freeze of WA_AI_MILITARY_DEFAULT_INVASION_landing_freeze.txt govern.
+#
+# MAGNITUDES. -200 is the mod's "floor this request" value (same ASSUMED base as the freeze blocks:
+# the engine states no base for the type). Section 27 tables the worst-case stack of these brakes
+# against a +1000 named-beach plan; it stays positive. R5 (-9999) is the one wipe, and it yields to
+# every live named plan (WA_AI_MILITARY_country_owns_invasion_named_plan).
+#
+# SCOPES, per the install doc (section invasion_unit_request): country_trigger - scope the enemy,
+# FROM our country; state_trigger - scope the candidate state, FROM the enemy, FROM.FROM our country.
+# Inside an iterator the candidate state is PREV, never ROOT.
+#
+# PERFORMANCE. The R3 state_triggers walk the state list per candidate target (the Kaiserreich
+# default_naval_invasion_range shape). Cheapest test first (is_coastal) so most states exit early;
+# measure game speed before widening the audience beyond majors at war.
+############################################################################################################
+
+# R3 small-target filter: a target below this population is skipped until its owner is this close
+# to capitulating (then it is mopped up). File-local: read by the leash block only.
+@WA_AI_INV_SMALL_TARGET_POP_K = 50
+@WA_AI_INV_SMALL_TARGET_SURRENDER = 0.7
+# R1 exit read from the ENEMY: a target country this close to capitulating is invaded even while our
+# own land front in that theatre is moving - finishing it off is not a diversion.
+@WA_AI_INV_COLLAPSE_EXIT = 0.5
+
+
+# purpose: R1 - while this major's land front in Europe / Africa / the Middle East is moving, no
+#          organic invasion in that macro-theatre (the divisions belong on the moving front), except
+#          against an enemy that is already collapsing
+# range:   -200 (floors an organic request; a +1000 named-beach plan still nets positive, section 27)
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_hold_west = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_hold_west = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = europe
+				is_on_continent = africa
+				is_on_continent = middle_east
+			}
+			FROM = { NOT = { surrender_progress > @WA_AI_INV_COLLAPSE_EXIT } }
+		}
+	}
+}
+
+
+# purpose: R1 - the Asia / Pacific half
+# range:   -200
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_hold_east = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_hold_east = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = asia
+				is_on_continent = australia
+			}
+			FROM = { NOT = { surrender_progress > @WA_AI_INV_COLLAPSE_EXIT } }
+		}
+	}
+}
+
+
+# purpose: R2 - after an ORGANIC landing in Europe / Africa / the Middle East, no second organic beach
+#          in that macro-theatre for the window: the engine feeds the one it has by land
+# range:   -200
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_freeze_west = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_freeze_west = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = europe
+				is_on_continent = africa
+				is_on_continent = middle_east
+			}
+		}
+	}
+}
+
+
+# purpose: R2 - the Asia / Pacific half
+# range:   -200
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_freeze_east = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_freeze_east = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			OR = {
+				is_on_continent = asia
+				is_on_continent = australia
+			}
+		}
+	}
+}
+
+
+# purpose: R3 - the leash. An organic invasion must start from a coast our side holds: floored beyond
+#          3000 km of any coastal state held by us / a co-belligerent / our faction / our subjects,
+#          halved beyond 800 km (island hopping). Small targets wait until their owner is collapsing.
+# range:   -200 (far), -100 (mid), -100 (small target)
+# policy:  Additive per state
+# domain:  INVASION
+# ENGINE FACT ASSUMED: distance_to reads kilometres between two states (install doc: "distance between
+# two states", no unit) - the Kaiserreich shape this is taken from uses the same bars.
+WA_AI_MILITARY_INV_organic_leash = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_leash = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			NOT = {
+				any_state = {
+					OR = {
+						is_coastal = yes
+						is_island_state = yes
+					}
+					distance_to = { target = PREV value < 3000 }
+					CONTROLLER = {
+						OR = {
+							tag = FROM.FROM
+							has_war_together_with = FROM.FROM
+							is_in_faction_with = FROM.FROM
+							is_subject_of = FROM.FROM
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -100
+		state_trigger = {
+			NOT = {
+				any_state = {
+					OR = {
+						is_coastal = yes
+						is_island_state = yes
+					}
+					distance_to = { target = PREV value < 800 }
+					CONTROLLER = {
+						OR = {
+							tag = FROM.FROM
+							has_war_together_with = FROM.FROM
+							is_in_faction_with = FROM.FROM
+							is_subject_of = FROM.FROM
+						}
+					}
+				}
+			}
+		}
+	}
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -100
+		state_trigger = {
+			state_population_k < @WA_AI_INV_SMALL_TARGET_POP_K
+			FROM = { surrender_progress < @WA_AI_INV_SMALL_TARGET_SURRENDER }
+		}
+	}
+}
+
+
+# purpose: N3 B2 - no organic invasion of a coast whose own controller holds naval control of an
+#          adjacent sea region: the convoy would sail through the defender's own fleet
+# range:   -200
+# policy:  Additive per state
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_contested_sea = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_contested_sea = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		value = -200
+		state_trigger = {
+			has_state_flag = WA_AI_NAVAL_controller_holds_sea
+		}
+	}
+}
+
+
+# purpose: R5 - unstick. When organic invasions have been allowed for a quarter and none has landed,
+#          wipe every organic plan for the pulse week so the engine re-plans from scratch instead of
+#          keeping a corps parked on a plan it never launches
+# range:   -9999 on both request forms and on the focus (the Kaiserreich default_refresh shape)
+# policy:  Additive - overwhelms every other writer on purpose, 7 days in 90; yields to a live named
+#          plan and to any scripted claim (gate), switch WA_AI_LANDING_stall_reset_enabled
+# domain:  INVASION
+WA_AI_MILITARY_INV_organic_stall_reset = {
+	enable = {
+		WA_AI_MILITARY_should_inv_organic_stall_reset = yes
+	}
+	abort_when_not_enabled = yes
+
+	ai_strategy = {
+		type = invasion_unit_request
+		country_trigger = { always = yes }
+		value = -9999
+	}
+	ai_strategy = {
+		type = invasion_unit_request
+		state_trigger = { always = yes }
+		value = -9999
+	}
+	ai_strategy = {
+		type = naval_invasion_focus
+		value = -9999
+	}
+}

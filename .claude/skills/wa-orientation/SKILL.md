@@ -113,7 +113,7 @@ You cannot run HOI4 from the shell, so pick the strongest check the change allow
 | Change | Check |
 | --- | --- |
 | Any PDXScript edit | Brace balance, scope correctness, name collisions, event ID/namespace validity — by inspection. |
-| Any `common/script_constants/` edit, `@` constant, `05_defines.lua`, `00_buildings.txt` cost/cap, `savegame.py` `_PC_*` table, or `WA_AI_*` effect/trigger commit | `python tools/check_constants.py` (exit 0). Then the `wa-architecture-reviewer` + `wa-lessons-reviewer` subagents in parallel for the change itself. |
+| Any `common/script_constants/` edit, `@` constant, `05_defines.lua`, `00_buildings.txt` cost/cap, `savegame.py` `_PC_*` table, or `WA_AI_*` effect/trigger commit | `python tools/check_constants.py` (exit 0). Then, if the commit changes behaviour, the `wa-architecture-reviewer` + `wa-lessons-reviewer` subagents in parallel for the change itself; a no-behaviour commit (comments, headers, clean regeneration) needs only the checker. |
 | Map / pathfinding / railway data | `python run_generators.py <name> --dry-run` from `tools/`, then without `--dry-run` only if the diff is intended. |
 | Technology or prospecting `ai_will_do` | Run the replacer in dry-run, inspect the diff, confirm nested modifiers and indentation survived. |
 | AI outcome behaviour | Built-in test bundles in `tests/`; results land in the HOI4 user directory under `logs/tests/tests_<timestamp>.log`. |

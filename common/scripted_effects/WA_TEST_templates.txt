@@ -339,3 +339,90 @@ WA_TEST_TMPL_count_cavalry_divisions = {
 		ROOT = { add_to_temp_variable = { _tm_cd_n = 1 } }
 	}
 }
+
+# [italian-light-infantry-retirement] Direct probe on an old ITA-AI save from 1940:
+# `event wa_test_tmpl.5 ITA`. A pre-1940 or player-ITA run is the negative control.
+WA_TEST_TMPL_italian_light_infantry_retirement = {
+	log = "=== ITALIAN LIGHT INFANTRY RETIREMENT [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _tm_e1_ = 0 }
+	set_temp_variable = { _tm_e2_ = 0 }
+	set_temp_variable = { _tm_e3_ = 0 }
+	set_temp_variable = { _tm_e4_ = 0 }
+	set_temp_variable = { _tm_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _tm_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _tm_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _tm_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _tm_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _tm_e5_ = 1 } }
+	log = "  scope : always=[?_tm_e1_|.0] I-am-ROOT=[?_tm_e2_|.0] I-am-THIS=[?_tm_e3_|.0] ROOT-scope-usable=[?_tm_e4_|.0] control-false=[?_tm_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement.)"
+	set_temp_variable = { _tm_il_gate = 0 }
+	set_temp_variable = { _tm_il_col_pre = 0 }
+	set_temp_variable = { _tm_il_f_pre = 0 }
+	set_temp_variable = { _tm_il_col_post = 0 }
+	set_temp_variable = { _tm_il_f_post = 0 }
+	if = { limit = { WA_AI_TEMPLATES_should_retire_italian_light_infantry = yes } set_temp_variable = { _tm_il_gate = 1 } }
+	if = { limit = { has_template = "Divisione Coloniale" } set_temp_variable = { _tm_il_col_pre = 1 } }
+	if = { limit = { has_template = "Light Infantry template F" } set_temp_variable = { _tm_il_f_pre = 1 } }
+	WA_TEST_TMPL_count_light_infantry_divisions = yes
+	set_temp_variable = { _tm_il_pre = _tm_il_n }
+	WA_TEST_TMPL_count_lettered_light_infantry_templates = yes
+	set_temp_variable = { _tm_il_letters_pre = _tm_il_letters }
+	log = "  pre   : gate=[?_tm_il_gate|.0] light_divisions=[?_tm_il_pre|.0] colonial_template=[?_tm_il_col_pre|.0] letter_F=[?_tm_il_f_pre|.0] lettered_templates=[?_tm_il_letters_pre|.0]"
+	WA_AI_TEMPLATES_retire_italian_light_infantry = yes
+	WA_TEST_TMPL_count_light_infantry_divisions = yes
+	set_temp_variable = { _tm_il_post = _tm_il_n }
+	WA_TEST_TMPL_count_lettered_light_infantry_templates = yes
+	set_temp_variable = { _tm_il_letters_post = _tm_il_letters }
+	if = { limit = { has_template = "Divisione Coloniale" } set_temp_variable = { _tm_il_col_post = 1 } }
+	if = { limit = { has_template = "Light Infantry template F" } set_temp_variable = { _tm_il_f_post = 1 } }
+	log = "  post  : light_divisions=[?_tm_il_post|.0] colonial_template=[?_tm_il_col_post|.0] letter_F=[?_tm_il_f_post|.0] lettered_templates=[?_tm_il_letters_post|.0]"
+	log = "            (has_template can miss decommissioned designs; deployed division count and save IDs are the outcome check)"
+	WA_AI_TEMPLATES_retire_italian_light_infantry = yes
+	WA_TEST_TMPL_count_light_infantry_divisions = yes
+	WA_TEST_TMPL_count_lettered_light_infantry_templates = yes
+	log = "  re-run: light_divisions=[?_tm_il_n|.0] lettered_templates=[?_tm_il_letters|.0] (must equal post)"
+}
+
+# Country scope; writes _tm_il_n = deployed light-majority infantry divisions.
+WA_TEST_TMPL_count_light_infantry_divisions = {
+	set_temp_variable = { _tm_il_n = 0 }
+	every_country_division = {
+		limit = { division_has_majority_template = infantry_light_horse_battalion_line }
+		ROOT = { add_to_temp_variable = { _tm_il_n = 1 } }
+	}
+}
+
+# Country scope. Presence count is diagnostic only: has_template ignores obsolete
+# designs, so the deployed-division count and save IDs decide whether retirement worked.
+WA_TEST_TMPL_count_lettered_light_infantry_templates = {
+	set_temp_variable = { _tm_il_letters = 0 }
+	if = { limit = { has_template = "Light Infantry template A" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template B" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template C" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template D" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template E" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template F" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template G" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template H" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template I" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template J" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template K" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template L" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template M" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template N" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template O" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template P" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template Q" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template R" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template S" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template T" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template U" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template V" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template W" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template X" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template Y" } add_to_temp_variable = { _tm_il_letters = 1 } }
+	if = { limit = { has_template = "Light Infantry template Z" } add_to_temp_variable = { _tm_il_letters = 1 } }
+}

@@ -1,0 +1,59 @@
+############################################################################################################
+#	INTEL NETWORK TARGETS - console harness ([intel-adversary-targeting]).
+#
+#	Effects: common/scripted_effects/WA_TEST_intel_targets.txt
+#
+#	CONSOLE RECIPE (any save; a 1939-1941 war save and a 1937 peace save are the informative cases):
+#	    event wa_it.2     (fires wa_it.1 on every AI major - no tag change, targets stay live)
+#	  or  event wa_it.1 GER   (one country; do NOT tag into it - a player country stops
+#	                    refreshing its stored targets, so its "stored" lines go stale)
+#	  then read logs/game.log, search "INTEL TARGETS".
+#	  Expected: context header 1 1 1 1 0; at war the candidates are the living enemies, at peace
+#	  the non-allied majors of another ideology; PASS? match_1=1 match_2=1. GER 1939.10: the two
+#	  best-scored of ENG/FRA/POL; GER 1941.7: SOV and ENG in score order (read the cand lines).
+#	  [espionage-priorities] lines: "rescue: ... PASS?=1" (captured > 0 and no cooldown <=> a captor
+#	  is named, and the named captor holds one of ours; cooldown=1 means a 180-day window ran out);
+#	  "cipher:" prints each capture_cipher gate term - armed=1 to start needs department,
+#	  mechanical_computing, network >= 50 on target_1, target not fully decrypted, no rescue running;
+#	  a running operation stays armed (running=1); "infil:" prints coverage, the four infiltration
+#	  tokens of target_1 (1 = done) and whether one is running.
+#
+#	WHY ITS OWN FILE: the harness contract forbids hosting console harnesses in
+#	events/wa_events_test.txt. Namespace wa_it is this harness's own.
+#
+#	Side effects: one shipped pass of WA_AI_set_intel_network_targets and of
+#	WA_AI_set_rescue_operative_target on each reported country (rewrites WA_AI_intel_target_1/2 and
+#	WA_AI_rescue_operative_target with the values the next background pulse would write).
+############################################################################################################
+
+add_namespace = wa_it
+
+# Report - fire as the country under test.
+country_event = {
+	id = wa_it.1
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		WA_TEST_IT_report = yes
+	}
+}
+
+# Fan-out: one report per AI major, each fired in that country's own scope.
+country_event = {
+	id = wa_it.2
+
+	hidden = yes
+	is_triggered_only = yes
+
+	immediate = {
+		every_country = {
+			limit = {
+				is_major = yes
+				is_ai = yes
+			}
+			country_event = { id = wa_it.1 }
+		}
+	}
+}

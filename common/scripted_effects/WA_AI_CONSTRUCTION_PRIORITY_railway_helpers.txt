@@ -430,7 +430,7 @@ WA_AI_PC_railway_country_borders_enemy = { # _enemy_tag >>> borders_enemy_
 ############################################################################################################
 #	HELPER: Score and sort targets by enemy threat (multi-front war support)
 #	Prioritizes targets facing the most dangerous enemy first
-#	Threat score = num_of_factories + (num_divisions * 5)
+#	Threat score = WA_AI_MATH_country_power_score (factories + 5 x divisions)
 ############################################################################################################
 
 WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
@@ -452,14 +452,11 @@ WA_AI_PC_railway_score_and_sort_by_enemy_threat = {
 		if = { limit = { check_variable = { _enemy_already_listed = 0 } }
 			add_to_temp_array = { _unique_enemies_ = _check_enemy }
 
-			# Calculate threat score: factories + (divisions * 5)
-			set_temp_variable = { _threat_score = 0 }
+			# Threat score: the shared power score (WA_AI_MATH_effects.txt)
 			var:_check_enemy = {
-				add_to_temp_variable = { _threat_score = num_of_factories }
-				set_temp_variable = { _div_score = num_divisions }
-				multiply_temp_variable = { _div_score = 5 }
-				add_to_temp_variable = { _threat_score = _div_score }
+				WA_AI_MATH_country_power_score = yes
 			}
+			set_temp_variable = { _threat_score = _power_score_ }
 			add_to_temp_array = { _enemy_scores_ = _threat_score }
 		}
 	}
