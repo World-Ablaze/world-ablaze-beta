@@ -1,0 +1,302 @@
+# Occupied Dutch East Indies: three administrations instead of one protectorate.
+# Java goes to the 16th Army (JVA), Sumatra to the 25th Army (SMT) and every other
+# Indonesian state to the navy's civil government (NCG), following the Army-Navy
+# Central Agreement of 26 November 1941.
+
+# Common setup of a new administration (subject scope). Same as
+# JAP_protectorate_established_effect but without the administration burden,
+# which is raised once for the three of them by the establishing decision.
+JAP_military_administration_established_effect = {
+	add_ideas = RNC_military_government
+	add_ideas = JAP_PUP_path_to_autonomy
+	if = {
+		limit = {
+			JAP = { has_idea = JAP_co_prosperity_sphere_leader }
+		}
+		add_ideas = JAP_co_prosperity_sphere_member
+	}
+}
+
+# Brings a new subject into every war Japan is fighting (subject scope)
+JAP_join_the_wars_of_japan_effect = {
+	every_country = {
+		limit = {
+			has_war_with = JAP
+			NOT = { has_war_with = PREV }
+		}
+		PREV = {
+			add_to_war = { targeted_alliance = JAP enemy = PREV hostility_reason = asked_to_join }
+		}
+	}
+}
+
+# Hands every state flagged JAP_ins_handover to the administration it belongs to
+# (country scope: JAP). An administration that would receive nothing is not created.
+JAP_establish_indonesian_military_administrations_effect = {
+	if = {
+		limit = {
+			335 = { has_state_flag = JAP_ins_handover }
+		}
+		release = JVA
+		JVA = {
+			create_country_leader = {
+				name = "JVA_hitoshi_imamura"
+				desc = ""
+				picture = "gfx//leaders//JAP//Portrait_Japan_Generic_land_4.dds"
+				expire = "1965.1.1"
+				ideology = fascism_ideology
+				traits = {
+					compassionate_gentleman
+				}
+			}
+			transfer_state = 335
+			set_state_controller = 335
+			set_capital = { state = 335 }
+			hidden_effect = {
+				add_stability = 0.3
+				add_manpower = 50000
+				JAP_military_administration_established_effect = yes
+				add_equipment_to_stockpile = {
+					type = train_equipment_1
+					amount = 15
+					producer = JAP
+				}
+				add_equipment_to_stockpile = {
+					type = jap_inf_1
+					amount = 5000
+					producer = JAP
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 600
+					producer = JAP
+				}
+			}
+		}
+		JAP = {
+			puppet = JVA
+			set_autonomy = {
+				target = JVA
+				autonomous_state = autonomy_wtt_imperial_protectorate
+			}
+		}
+		JVA = {
+			hidden_effect = {
+				JAP_join_the_wars_of_japan_effect = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			672 = { has_state_flag = JAP_ins_handover }
+		}
+		release = SMT
+		SMT = {
+			create_country_leader = {
+				name = "SMT_moritake_tanabe"
+				desc = ""
+				picture = "gfx//leaders//JAP//Portrait_Japan_Generic_land_1.dds"
+				expire = "1965.1.1"
+				ideology = fascism_ideology
+				traits = {
+					anti_communist
+				}
+			}
+			transfer_state = 672
+			set_state_controller = 672
+			set_capital = { state = 672 }
+			hidden_effect = {
+				add_stability = 0.3
+				add_manpower = 25000
+				JAP_military_administration_established_effect = yes
+				add_equipment_to_stockpile = {
+					type = jap_inf_1
+					amount = 2500
+					producer = JAP
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 325
+					producer = JAP
+				}
+			}
+		}
+		JAP = {
+			puppet = SMT
+			set_autonomy = {
+				target = SMT
+				autonomous_state = autonomy_wtt_imperial_protectorate
+			}
+		}
+		SMT = {
+			hidden_effect = {
+				JAP_join_the_wars_of_japan_effect = yes
+			}
+		}
+	}
+	if = {
+		limit = {
+			any_state = {
+				has_state_flag = JAP_ins_handover
+				NOT = { state = 335 }
+				NOT = { state = 672 }
+			}
+		}
+		release = NCG
+		NCG = {
+			create_country_leader = {
+				name = "NCG_fumihide_okada"
+				desc = ""
+				picture = "gfx//leaders//JAP//Portrait_Japan_Generic_navy_1.dds"
+				expire = "1965.1.1"
+				ideology = fascism_ideology
+				traits = { }
+			}
+		}
+		every_state = {
+			limit = {
+				has_state_flag = JAP_ins_handover
+				NOT = { state = 335 }
+				NOT = { state = 672 }
+			}
+			transfer_state_to = NCG
+			# A state still in enemy hands changes owner only, as it did for the protectorate
+			if = {
+				limit = {
+					OR = {
+						is_controlled_by = JAP
+						CONTROLLER = {
+							is_subject_of = JAP
+						}
+					}
+				}
+				set_state_controller_to = NCG
+			}
+		}
+		NCG = {
+			# Makassar, seat of the civil government
+			if = {
+				limit = { owns_state = 673 }
+				set_capital = { state = 673 }
+			}
+			hidden_effect = {
+				add_stability = 0.3
+				add_manpower = 25000
+				JAP_military_administration_established_effect = yes
+				add_equipment_to_stockpile = {
+					type = jap_inf_1
+					amount = 2500
+					producer = JAP
+				}
+				add_equipment_to_stockpile = {
+					type = support_equipment_1
+					amount = 325
+					producer = JAP
+				}
+			}
+		}
+		JAP = {
+			puppet = NCG
+			set_autonomy = {
+				target = NCG
+				autonomous_state = autonomy_wtt_imperial_protectorate
+			}
+		}
+		NCG = {
+			hidden_effect = {
+				JAP_join_the_wars_of_japan_effect = yes
+			}
+		}
+	}
+	hidden_effect = {
+		every_state = {
+			limit = { has_state_flag = JAP_ins_handover }
+			clr_state_flag = JAP_ins_handover
+			set_compliance = 100
+			set_garrison_strength = 1
+		}
+		# One step for the three administrations together, the same cost the single
+		# protectorate used to carry.
+		JAP_military_administration_level_up = yes
+	}
+}
+
+# Merges the administrations that are still subjects of Japan into the Indonesian
+# imperial protectorate (country scope: JAP). The protectorate is seeded with one
+# state before it annexes them, so that an administration is never left without
+# land while it still has troops to hand over.
+JAP_unify_indonesian_military_administrations_effect = {
+	release = IPI
+	random_state = {
+		limit = {
+			OWNER = {
+				original_tag = NCG
+				is_subject_of = JAP
+				num_of_controlled_states > 1
+			}
+			is_controlled_by = NCG
+		}
+		transfer_state_to = IPI
+		set_state_controller_to = IPI
+	}
+	if = {
+		limit = {
+			NOT = { country_exists = IPI }
+		}
+		random_state = {
+			limit = {
+				OWNER = {
+					JAP_is_indonesian_military_administration = yes
+					is_subject_of = JAP
+				}
+			}
+			transfer_state_to = IPI
+			set_state_controller_to = IPI
+		}
+	}
+	IPI = {
+		create_country_leader = {
+			name = "IPI_hitoshi_imamura"
+			desc = ""
+			picture = "gfx//leaders//JAP//Portrait_Japan_Generic_land_4.dds"
+			expire = "1965.1.1"
+			ideology = fascism_ideology
+			traits = {
+				compassionate_gentleman
+			}
+		}
+		set_cosmetic_tag = INS_imperial_protectorate
+		hidden_effect = {
+			add_stability = 0.3
+			JAP_military_administration_established_effect = yes
+		}
+	}
+	JAP = {
+		puppet = IPI
+		set_autonomy = {
+			target = IPI
+			autonomous_state = autonomy_wtt_imperial_protectorate
+		}
+	}
+	every_country = {
+		limit = {
+			JAP_is_indonesian_military_administration = yes
+			is_subject_of = JAP
+		}
+		IPI = {
+			annex_country = {
+				target = PREV
+				transfer_troops = yes
+			}
+		}
+	}
+	IPI = {
+		if = {
+			limit = { owns_state = 335 }
+			set_capital = { state = 335 }
+		}
+		hidden_effect = {
+			JAP_join_the_wars_of_japan_effect = yes
+		}
+	}
+}
