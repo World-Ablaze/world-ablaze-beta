@@ -1211,4 +1211,88 @@ JAP_rework_debug = {
 		}
 	}
 
+	# Establishes the three administrations of the Dutch East Indies the way
+	# JAP_indonesian_military_administrations does, but takes every Indonesian core
+	# state first and skips the focus, government and state-control requirements.
+	debug_jr_establish_indonesian_administrations = {
+		icon = generic_nationalism
+		allowed = { tag = JAP }
+		visible = { tag = JAP }
+		cost = 0
+		complete_effect = {
+			log = "[JR] establish_indonesian_administrations debug pressed"
+			every_state = {
+				limit = { is_core_of = IND }
+				set_state_controller_to = JAP
+				set_state_flag = JAP_ins_handover
+			}
+			JAP_establish_indonesian_military_administrations_effect = yes
+		}
+	}
+
+	# Merges the administrations into the State of Indonesia, as the decision of the
+	# independence course does, without needing the focus.
+	debug_jr_indonesia_independence = {
+		icon = generic_nationalism
+		allowed = { tag = JAP }
+		visible = {
+			tag = JAP
+			JAP_has_indonesian_military_administration = yes
+		}
+		cost = 0
+		complete_effect = {
+			log = "[JR] indonesia_independence debug pressed"
+			JAP_unify_indonesian_military_administrations_effect = yes
+			IPI = {
+				JAP_grant_statehood_effect = yes
+			}
+		}
+	}
+
+	# Merges the administrations into the protectorate, as the decision of the
+	# exploitation course does, without needing the focus.
+	debug_jr_indonesia_unify = {
+		icon = generic_nationalism
+		allowed = { tag = JAP }
+		visible = {
+			tag = JAP
+			JAP_has_indonesian_military_administration = yes
+		}
+		cost = 0
+		complete_effect = {
+			log = "[JR] indonesia_unify debug pressed"
+			JAP_unify_indonesian_military_administrations_effect = yes
+		}
+	}
+
+	# Gives every administration of the East Indies two defence divisions, so that
+	# the hand-over of troops on merging can be checked. Uses the conference's
+	# East Asia Defense Force template.
+	debug_jr_indonesia_test_divisions = {
+		icon = generic_nationalism
+		allowed = { tag = JAP }
+		visible = {
+			tag = JAP
+			JAP_has_indonesian_military_administration = yes
+		}
+		cost = 0
+		complete_effect = {
+			log = "[JR] indonesia_test_divisions debug pressed"
+			every_country = {
+				limit = {
+					JAP_is_indonesian_military_administration = yes
+					is_subject_of = JAP
+				}
+				JAP_geac_ensure_eadf_template = yes
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"East Asia Defense Force\" start_experience_factor = 0.2 start_equipment_factor = 1.0"
+						owner = PREV
+						count = 2
+					}
+				}
+			}
+		}
+	}
+
 }
