@@ -246,6 +246,35 @@ on_actions = {
 						is_controlled_by = JAP
 					}
 					has_global_flag = JAP_nuke_1
+					has_global_flag = JAP_nuke_2
+					has_global_flag = JAP_nuke_3
+					NOT = {
+						has_global_flag = JAP_nuke_4
+					}
+				}
+				set_global_flag = JAP_nuke_4
+			}
+			if = {
+				limit = {
+					FROM = {
+						is_core_of = JAP
+						is_controlled_by = JAP
+					}
+					has_global_flag = JAP_nuke_1
+					has_global_flag = JAP_nuke_2
+					NOT = {
+						has_global_flag = JAP_nuke_3
+					}
+				}
+				set_global_flag = JAP_nuke_3
+			}
+			if = {
+				limit = {
+					FROM = {
+						is_core_of = JAP
+						is_controlled_by = JAP
+					}
+					has_global_flag = JAP_nuke_1
 					NOT = {
 						has_global_flag = JAP_nuke_2
 					}
@@ -302,13 +331,6 @@ on_actions = {
 
 	on_leave_faction = {
 		effect = {
-			if = {
-				limit = {
-					tag = CAN
-					NOT = { has_dlc = "Together for Victory" }
-				}
-				abandon_colony_tag = yes
-			}
 			FROM = {
 				add_opinion_modifier = {
 					modifier = faction_traitor
@@ -1007,7 +1029,6 @@ on_actions = {
 			#End of Balkan war
 			if = {
 				limit = {
-					has_dlc = "Death or Dishonor"
 					original_tag = YUG
 				}
 				every_other_country = {
@@ -1326,7 +1347,6 @@ on_actions = {
 			ROM = {
 				if = {
 					limit = {
-						has_dlc = "Death or Dishonor"
 						has_game_rule = {
 							rule = ROM_ai_behavior
 							option = RANDOM
@@ -1344,7 +1364,6 @@ on_actions = {
 			HUN = {
 				if = {
 					limit = {
-						has_dlc = "Death or Dishonor"
 						has_game_rule = {
 							rule = HUN_ai_behavior
 							option = RANDOM
@@ -1360,7 +1379,6 @@ on_actions = {
 			CZE = {
 				if = {
 					limit = {
-						has_dlc = "Death or Dishonor"
 						has_game_rule = {
 							rule = CZE_ai_behavior
 							option = RANDOM
@@ -1378,7 +1396,6 @@ on_actions = {
 			YUG = {
 				if = {
 					limit = {
-						has_dlc = "Death or Dishonor"
 						has_game_rule = {
 							rule = YUG_ai_behavior
 							option = RANDOM
@@ -1395,7 +1412,6 @@ on_actions = {
 			# AST = {
 			# 	if = {
 			# 		limit = {
-			# 			has_dlc = "Together for Victory"
 			# 			has_game_rule = {
 			# 				rule = AST_ai_behavior
 			# 				option = RANDOM
@@ -1412,7 +1428,6 @@ on_actions = {
 			# CAN = {
 			# 	if = {
 			# 		limit = {
-			# 			has_dlc = "Together for Victory"
 			# 			has_game_rule = {
 			# 				rule = CAN_ai_behavior
 			# 				option = RANDOM
@@ -1429,7 +1444,6 @@ on_actions = {
 			SAF = {
 				if = {
 					limit = {
-						has_dlc = "Together for Victory"
 						has_game_rule = {
 							rule = SAF_ai_behavior
 							option = RANDOM
@@ -1446,7 +1460,6 @@ on_actions = {
 			NZL = {
 				if = {
 					limit = {
-						has_dlc = "Together for Victory"
 						has_game_rule = {
 							rule = NZL_ai_behavior
 							option = RANDOM
@@ -1463,7 +1476,6 @@ on_actions = {
 			# RAJ = {
 			# 	if = {
 			# 		limit = {
-			# 			has_dlc = "Together for Victory"
 			# 			has_game_rule = {
 			# 				rule = RAJ_ai_behavior
 			# 				option = RANDOM
@@ -2344,6 +2356,63 @@ on_actions = {
 		}
 	}
 
+	on_deployed_leader_defeated = {
+		effect = {
+			if = {
+				limit = { can_be_captured = yes }
+				# TODO TAOG: a percentage chance to be captured? Other effects otherwise?
+
+				# is_in_state requires the leader to still be deployed, so check before capture_by
+				if = {
+					limit = {
+						is_in_state = 224
+						FROM = { is_ai = no }
+					}
+					FROM = {
+						set_country_flag = achievement_captured_general_in_bryansk
+					}
+				}
+
+				capture_by = FROM
+				FROM = {
+					if = {
+						limit = { is_ai = no }
+						set_country_flag = achievement_captured_a_general
+					}
+				}
+				if = {
+					limit = {
+						is_field_marshal = yes
+						FROM = { is_ai = no }
+					}
+					FROM = {
+						set_country_flag = achievement_captured_a_field_marshal
+					}
+				}
+				if = {
+					limit = {
+						tag = GER
+						FROM = { is_ai = no }
+					}
+					if = {
+						limit = { is_character = GER_erwin_rommel }
+						FROM = { set_country_flag = achievement_captured_rommel }
+					}
+				}
+			}
+			else = {
+				# uncapturable leaders (e.g. country leaders) get wounded instead
+				if = {
+					limit = { NOT = { has_trait = wounded } }
+					add_timed_unit_leader_trait = {
+						trait = wounded
+						days = 90
+					}
+				}
+			}
+		}
+	}
+
 	# root country that invades
 	# scope state that is invaded
 	# from scope state that the invasion started
@@ -2364,6 +2433,34 @@ on_actions = {
 			   }
 			   SF_marine_demoliton_effect = yes # Note that the state flag condition is not preventing it from doing 1 damage per division
 		   }
+		}
+		effect = {
+			THIS = {
+				if = {
+					limit = {
+						NOT = { CONTROLLER = { tag = ROOT } }
+						NOT = { CONTROLLER = { has_country_flag = no_notify_nav } }
+					}
+					save_global_event_target_as = invaded_state
+					# If getting naval invaded, alert
+					CONTROLLER = {
+						set_country_flag = invasion_alert
+						set_variable = { invaded_state = PREV }
+						country_event = generic.26
+					}
+					# If its a puppet, alert the overlord
+					if = {
+						limit = { CONTROLLER = { is_subject = yes } }
+						CONTROLLER = {
+							OVERLORD = {
+								set_country_flag = invasion_alert
+								set_variable = { invaded_state = PREV.PREV }
+								country_event = generic.26
+							}
+						}
+					}
+				}
+			}
 		}
    }
 

@@ -1,3 +1,4 @@
+-- Force a checksum change by editing this line.
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Game
 
 NDefines.NGame.END_DATE = "1952.1.1.1"
@@ -45,7 +46,7 @@ NDefines.NPolitics.ARMY_LEADER_COST = 2												-- cost for recruiting new le
 NDefines.NPolitics.NAVY_LEADER_COST = 2												-- command power cost for recruiting new leaders, 'this value' * number_of_existing_leaders_of_type
 NDefines.NPolitics.ARMY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
 NDefines.NPolitics.NAVY_LEADER_MAX_COST = 80										-- max cost BEFORE modifiers
-
+NDefines.NPolitics.BASE_POLITICAL_POWER_INCREASE = 1.5								-- Weekly increase of PP.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Trade
 
@@ -187,7 +188,7 @@ NDefines.NProduction.POWERED_FACTORY_SPEED = 2.5									-- Powered factory spee
 NDefines.NProduction.BASE_FACTORY_SPEED_MIL = 0.0 									-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
 NDefines.NProduction.POWERED_FACTORY_SPEED_MIL = 2.5								-- Powered factory speed multiplier.
 NDefines.NProduction.BASE_FACTORY_SPEED_NAV = 0.0					 				-- Base factory speed multiplier (how much hoi3 style IC each factory gives).
-NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier.
+NDefines.NProduction.POWERED_FACTORY_SPEED_NAV = 4.2								-- Powered factory speed multiplier. If you change this, you must also change WA_AI_Capital_Ship_effects.txt.
 
 NDefines.NProduction.LICENSE_EQUIPMENT_BASE_SPEED = -0.35							-- base MIC speed modifier for licensed equipment
 NDefines.NProduction.LICENSE_EQUIPMENT_SPEED_NOT_FACTION = -0.25					-- MIC speed modifier for licensed equipment for not being in faction
@@ -234,7 +235,7 @@ NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
 NDefines.NMarket.IC_TO_CIC_FACTOR = 0.75											-- The factor for mapping IC cost to CIC cost. Should be a positive number.
-NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 20								-- Max number of factories that can be assigned for paying single contract.
+NDefines.NMarket.MAX_CIV_FACTORIES_PER_CONTRACT = 30								-- Max number of factories that can be assigned for paying single contract.
 NDefines.NMarket.LOW_PRICE_LEVEL_FACTOR = 0.67										-- The factor of base equipment price for low price level. Should be in range (0,1]
 NDefines.NMarket.HIGH_PRICE_LEVEL_FACTOR = 1.33										-- The factor of base equipment price for high price level. Should be more than 1.
 
@@ -336,15 +337,30 @@ NDefines.NMilitary.ZERO_ORG_MOVEMENT_MODIFIER = -0.25								-- speed impact at 
 
 NDefines.NMilitary.ACCLIMATIZATION_SPEED_GAIN = 0.05								-- A variable used to balance the overall speed of gaining the acclimatization
 
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer.
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_WIDTH = 5									-- Max width of regiments in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_DIVISION_BRIGADE_HEIGHT = 5									-- Max height of regiments in division designer (non-HQ templates).
 NDefines.NMilitary.MIN_DIVISION_BRIGADE_HEIGHT = 5									-- Min height of regiments in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer.
-NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer.
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_WIDTH = 2									-- Max width of support in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_DIVISION_SUPPORT_HEIGHT = 5									-- Max height of support in division designer (non-HQ templates).
+NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_WIDTH = 5									-- Max width of regimental supports in division designer.
+NDefines.NMilitary.MAX_REGIMENTAL_SUPPORT_HEIGHT = 3								-- Max height of regimental supports in division designer.
+NDefines.NMilitary.MAX_HQ_BATTALION_WIDTH = 1										-- Max width of regiments in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_BATTALION_HEIGHT = 4										-- Max height of regiments in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_SUPPORT_WIDTH = 1											-- Max width of support in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_SUPPORT_HEIGHT = 4										-- Max height of support in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_WIDTH = 0								-- Max width of regimental supports in division designer (Army HQ templates).
+NDefines.NMilitary.MAX_HQ_REGIMENTAL_SUPPORT_HEIGHT = 0								-- Max height of regimental supports in division designer (Army HQ templates).
+NDefines.NMilitary.REGIMENTAL_SUPPORT_REQUIRED_BATTALIONS = { 3, 3, 3 }				-- For each regimental support row, how many battalions are required in the regiment to be able to place a support in that row.
+NDefines.NMilitary.AI_BATTALION_BUILD_ORDER = { 	1,  6,  11, 16, 21,				-- When the AI is deciding where to place battalions, it tries to place it in the position with the lowest number according to this grid.
+													2,  7,  12, 17, 22,
+													3,  8,  13, 18, 23,
+													4,  9,  14, 19, 24,
+													5,  10, 15, 20, 25 }
 
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_GROUP_COST = 10							--Base XP cost to unlock a regiment slot,
 NDefines.NMilitary.BASE_DIVISION_BRIGADE_CHANGE_COST = 5							--Base XP cost to change a regiment column.
 NDefines.NMilitary.BASE_DIVISION_SUPPORT_SLOT_COST = 1 								--Base XP cost to unlock a support slot
+NDefines.NMilitary.REGIMENTAL_SUPPORT_SLOT_COST_MULTIPLIER = 1	 					-- Regimental support slot costs are scaled by this value compared to normal support slots
 
 NDefines.NMilitary.UNIT_LEADER_ASSIGN_TRAIT_COST = 5								-- cost to assign a new trait to a unit leader
 
@@ -632,8 +648,10 @@ NDefines.NAir.NAVAL_STRIKE_DAMAGE_TO_ORG = 0.5										-- Balancing value to co
 NDefines.NAir.INTERCEPTION_DISTANCE_SCALE = 10 										-- At this many pixels of path length, full interception efficiency is applied to air missions. Lerp from 0.
 NDefines.NAir.INTERCEPTION_DAMAGE_SCALE = 1											-- Multiply the interception damage with this value. Works as a cap when interception distance is at maximum.
 
-NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.1							-- Max planes that can join a combat comparing to the total strength of the ships
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO = 0.040						-- Max planes that can join a combat comparing to the total strength of the ships
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_JOIN_RATIO_PER_DAY = 0.4
 NDefines.NAir.DAY_NIGHT_COVERAGE_FACTOR = 0.02 										-- The max night coverage in a region that is still considered to be day-time when determining if day/night air missions shall run.
+NDefines.NAir.NAVAL_COMBAT_EXTERNAL_PLANES_MIN_CAP = 25								-- minimum number of planes to join per naval battle
 
 NDefines.NAir.PORT_STRIKE_DAMAGE_FACTOR = 0.1										-- How much damage is dealt to ports during a port strike (per plane damage [complex number] * num flying planes * define)
 
@@ -675,7 +693,7 @@ NDefines.NNavy.NAVAL_INVASION_PLAN_CAP = 1											-- base cap of naval invasi
 NDefines.NNavy.BASE_NAVAL_INVASION_DIVISION_CAP = 3									-- base cap of divisions that can be assigned in a naval invasion
 
 NDefines.NNavy.SHIP_TO_FLEET_ANTI_AIR_RATIO	= 0.4									-- total sum of fleet's anti air will be multiplied with this ratio and added to calculations anti-air of individual ships while air damage reduction
-NDefines.NNavy.ANTI_AIR_ATTACK_TO_AMOUNT = 0.004									-- Balancing value to convert equipment stat anti_air_attack to the random % value of airplanes being hit.
+NDefines.NNavy.ANTI_AIR_ATTACK_TO_AMOUNT = 0.001 									-- Balancing value to convert equipment stat anti_air_attack to the random % value of airplanes being hit. Was 0.004
 
 NDefines.NNavy.ANTI_AIR_TARGETTING_TO_CHANCE = 0.06									-- Balancing value to convert averaged equipment stats (anti_air_targetting and naval_strike_agility) to probability chances of airplane being hit by navies AA.
 NDefines.NNavy.ANTI_AIR_POW_ON_INCOMING_AIR_DAMAGE = 0.2							-- received air damage is calculated using following: 1 - ( (ship_anti_air + fleet_anti_air * SHIP_TO_FLEET_ANTI_AIR_RATIO )^ANTI_AIR_POW_ON_INCOMING_AIR_DAMAGE ) * ANTI_AIR_MULT_ON_INCOMING_AIR_DAMAGE
@@ -728,6 +746,7 @@ NDefines.NNavy.MIN_REPAIR_FOR_JOINING_COMBATS = { 									-- strikeforces/patro
 	0.5,	-- low
 	0.7,	-- medium
 	0.8,	-- high
+	0.0,	-- on order (AI-managed, engagement uses same threshold as "do not repair")
 }
 
 --NDefines.NNavy.ORG_COST_WHILE_MOVING_IN_MISSION_ZONE = { 							-- org cost while moving in mission zone
@@ -1013,6 +1032,11 @@ NDefines.NAI.DIVISION_SUPPLY_RATIO_TO_MOTORIZE = 0.95								-- If supply ratio 
 NDefines.NAI.UPDATE_SUPPLY_MOTORIZATION_FREQUENCY_HOURS = 48    		 			-- Check if activating motorization would improve supply situation this often.
 NDefines.NAI.FIX_SUPPLY_BOTTLENECK_SATURATION_THRESHOLD = 1.1						-- Try to fix supply bottlenecks if supply node saturation exceeds this value.
 
+----------- Army leader assignment
+
+NDefines.NAI.ARMY_LEADER_MIN_DIVISIONS_FOR_HQ = 6									-- Army must contain at least this many divisions before the AI will deploy an HQ unit for it
+NDefines.NAI.MAX_DEPLOYED_ARMY_HQS = 20												-- AI will not deploy more than this many army HQs at once
+
 ----------- LEND LEASE
 
 NDefines.NAI.BASE_RELUCTANCE = 10 													-- Base reluctance applied to all diplomatic offers
@@ -1110,8 +1134,8 @@ NDefines.NAI.REGION_THREAT_LEVEL_TO_BLOCK_REGION = 25 * 1000						-- How much th
 NDefines.NAI.NAVAL_DOCKYARDS_SHIP_FACTOR = 2										-- The extent to which number of dockyards play into amount of sips a nation wants
 NDefines.NAI.NAVY_PREFERED_MAX_SIZE = 80											-- AI will generally attempt to merge fleets into this size, but as a soft limit.
 NDefines.NAI.SUB_TASKFORCE_MAX_SHIP_COUNT = 5										-- optimum sub count for sub taskforces
-NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.0							-- AI will not replace ships being built by newer types if progress is above this
-NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.1      						-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
+NDefines.NAI.PRODUCTION_MAX_PROGRESS_TO_SWITCH_NAVAL = 0.09							-- AI will not replace ships being built by newer types if progress is above this
+NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_EXPENSIVE = 0.09      					-- If produced item is expensive (producing less than one/week), wait to finish item if progress is above this
 --NDefines.NAI.PRODUCTION_WAIT_TO_FINISH_IF_CHEAP = 0.0         			 		-- If produced item is cheap (producing more than one/week), wait to finish item if progress is above this
 
 
@@ -1120,7 +1144,7 @@ NDefines.NAI.NAVAL_MISSION_MINES_SWEEPING_NEAR_OWNED = 100000	 					-- How likel
 
 ------------------------------------------------- AIR
 
-NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.3                  	 				-- The AI will not launch a raid if the chance of success is lower than this.
+NDefines.NAI.RAIDS_MIN_SUCCESS_FOR_LAUNCH = 0.3                  	 				-- The AI will not launch a raid if the chance of success is lower than this. Can be overridden per raid type via `ai_min_success_chance`.
 NDefines.NAI.RAIDS_AVOID_SAME_TARGET_DURATION_DAYS = 90           					-- After a raid is finished/canceled, AI is less likely to raid the same target for this time.
 
 --NDefines.NAI.AIR_WING_REINFORCEMENT_LIMIT = 100									-- Doesnt exist anymore
@@ -1296,6 +1320,7 @@ NDefines.NAI.VP_LEVEL_IMPORTANCE_LOW = 1											-- Victory points with values
 
 NDefines.NAI.START_TRAINING_EQUIPMENT_LEVEL = 0.9									-- ai will not start to train if equipment drops below this level
 NDefines.NAI.STOP_TRAINING_EQUIPMENT_LEVEL = 0.85            						-- ai will not train if equipment drops below this level
+NDefines.NAI.STOP_TRAINING_ACTIVE_COMBAT_RATIO = 0.05            					-- ai halts all training when more than this share of its divisions are in active combat (reinforce instead)
 NDefines.NAI.DEPLOY_MIN_TRAINING_SURRENDER_FACTOR = 1.0								-- Required percentage of training (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
 NDefines.NAI.DEPLOY_MIN_EQUIPMENT_SURRENDER_FACTOR = 1.0							-- Required percentage of equipment (1.0 = 100%) for AI to deploy unit in wartime while surrender progress is higher than 0
 NDefines.NAI.DEPLOY_MIN_TRAINING_PEACE_FACTOR = 1.0									-- Required percentage of training (1.0 = 100%) for AI to deploy unit in peacetime
@@ -1416,6 +1441,18 @@ NDefines.NFactions.AI_MAX_POWER_PROJECTION_SCORE = 0									-- Max AI score for
 
 --- NDoctrines ---
 NDefines.NDoctrines.BASE_MASTERY_GAIN_TARGET_MANPOWER = 500000.0           				-- Beyond this amount of manpower contributing to mastery, mastery gain will start having diminishing returns (see doctrines documentation)
-NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.02									-- How much training contributes to doctrine mastery relative to combat/missions
+NDefines.NDoctrines.TRAINING_MASTERY_GAIN_FACTOR = 0.03									-- How much training contributes to doctrine mastery relative to combat/missions
 NDefines.NDoctrines.MASTERY_BANK_MAX = 0                               					-- The maximum amount of mastery that can be banked
 NDefines.NDoctrines.MILITARY_ATTACHE_MASTERY_TRANSFER_FACTOR = 0.1         				-- For each mastery track, military attaches will add this fraction of their visiting country's mastery gain (from units only) in that track
+NDefines.NDoctrines.NAVAL_MISSION_MASTERY_GAIN_FACTORS = {  -- Mastery gain from naval missions is reduced, just like training
+	0.0, -- HOLD
+	0.04, -- PATROL
+	0.04, -- STRIKE FORCE
+	0.04, -- CONVOY RAIDING
+	0.04, -- CONVOY ESCORT
+	0.02, -- MINES PLANTING
+	0.02, -- MINES SWEEPING
+	0.0, -- TRAIN # NOT USED - handled by TRAINING_MASTERY_GAIN_FACTOR
+	0.0, -- RESERVE_FLEET
+	0.0, -- NAVAL_INVASION_SUPPORT
+}
