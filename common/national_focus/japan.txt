@@ -7582,7 +7582,7 @@ focus_tree = {
 	focus = {
 		id = JAP_ija_institute_of_science
 		icon = GFX_focus_JAP_expand_the_irago_proving_ground
-		x = 41
+		x = 43
 		y = 1
 		cost = 8
 
@@ -7598,7 +7598,7 @@ focus_tree = {
 	focus = {
 		id = JAP_inspectorate_general_of_army_aviation
 		icon = GFX_goal_JAP_iga_airforce
-		x = 44
+		x = 46
 		y = 1
 		cost = 3
 
@@ -7630,25 +7630,71 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_nakano_school
-		icon = GFX_focus_JAP_yatagarasus_guidance
+		id = JAP_reorganize_the_military
+		icon = GFX_focus_generic_military_mission
 		x = 39
 		y = 2
-		cost = 3
+		cost = 4
 
 		prerequisite = { focus = JAP_inspectorate_general_of_military_training }
 
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			army_experience = 50
+			custom_effect_tooltip = firepower_induction_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = firepower_induction_spirit
+				set_technology = { firepower_induction_tech = 1 }
+			}
+			custom_effect_tooltip = infantry_modernization_spirit_permanent_tt
+			hidden_effect = {
+				add_ideas = infantry_modernization_spirit
+				set_technology = { infantry_modernization_tech = 1 }
+			}
+		}
+	}
+
+	focus = {
+		id = JAP_fifty_division_plan
+		icon = GFX_goal_generic_build_army_soviet   # 汎用から割り当て
+		x = 41
+		y = 2
+		cost = 5
+
+		prerequisite = { focus = JAP_triangular_divisions }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# USA_the_90_division_plan と同型: プレイヤーにのみ軍拡ノルマのミッションを起動する。
+			# 対中開戦(japanese_china_showdown)前なら平時段階(27個師団体制)、開戦後なら
+			# 戦時段階(50個師団体制)。本体は common/decisions/JAP_factions.txt。
+			# 分岐を素で表示すると開戦前から戦時段階の存在がネタバレするため、表示は
+			# custom_effect_tooltip 1本に隠す(user ruling 2026-09-04)。
+			custom_effect_tooltip = JAP_fifty_division_plan_focus_tt
+			hidden_effect = {
+				if = {
+					limit = {
+						is_ai = no
+						NOT = { has_global_flag = japanese_china_showdown }
+					}
+					activate_mission = JAP_fifty_division_plan_mission
+				}
+				else_if = {
+					limit = {
+						is_ai = no
+					}
+					activate_mission = JAP_fifty_division_plan_wartime_mission
+				}
+			}
 		}
 	}
 
 	focus = {
 		id = JAP_begin_mechanisation
 		icon = GFX_goal_generic_tanks   # 汎用から割り当て
-		x = 41
+		x = 43
 		y = 2
 		cost = 3
 
@@ -7684,7 +7730,7 @@ focus_tree = {
 	focus = {
 		id = JAP_air_armament_expansion_plan
 		icon = GFX_goal_JAP_expand_the_nakajima_aircraft_company
-		x = 44
+		x = 46
 		y = 2
 		cost = 3
 
@@ -7714,13 +7760,31 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_split_the_ija_academy
+		icon = GFX_goal_generic_military_academy
+		x = 39
+		y = 3
+		cost = 3
+
+		prerequisite = { focus = JAP_reorganize_the_military }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			custom_effect_tooltip = available_chief_of_army
+			show_ideas_tooltip = hajime_sugiyama
+			WA_add_mastery_infantry_50 = yes
+		}
+	}
+
+	focus = {
 		id = JAP_first_tank_group
 		icon = GFX_goal_generic_allies_build_infantry   # 汎用から割り当て
-		x = 39
+		x = 41
 		y = 3
 		cost = 4
 
-		prerequisite = { focus = JAP_begin_mechanisation }
+		prerequisite = { focus = JAP_fifty_division_plan focus = JAP_begin_mechanisation }
 
 		# No mastery here on purpose: this focus is taken while JAP_infantry_direct_cooperation is still active.
 		completion_reward = {
@@ -7737,7 +7801,7 @@ focus_tree = {
 	focus = {
 		id = JAP_anti_air_guns
 		icon = GFX_goal_generic_heavy_anti_air   # 汎用から割り当て
-		x = 41
+		x = 43
 		y = 3
 		cost = 3
 
@@ -7778,7 +7842,7 @@ focus_tree = {
 	focus = {
 		id = JAP_light_fighter_dogfight_doctrine
 		icon = GFX_goal_JAP_supremacy_of_will
-		x = 44
+		x = 46
 		y = 3
 		cost = 3
 
@@ -7810,9 +7874,25 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_nakano_school
+		icon = GFX_focus_JAP_yatagarasus_guidance
+		x = 39
+		y = 4
+		cost = 3
+
+		prerequisite = { focus = JAP_split_the_ija_academy }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_army_armoured_headquarters
 		icon = GFX_goal_generic_build_tanks   # 汎用から割り当て
-		x = 39
+		x = 41
 		y = 4
 		cost = 5
 
@@ -7850,25 +7930,31 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_army_ordnance_administration_headquarters
-		icon = GFX_focus_JAP_army_weapons_administration_hq
-		x = 41
+		id = JAP_shinoda_research_section
+		icon = GFX_goal_generic_committee_of_defence
+		x = 43
 		y = 4
-		cost = 3
+		cost = 4
 
 		prerequisite = { focus = JAP_anti_air_guns }
 
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			upgrade_intelligence_agency = upgrade_army_department
+			upgrade_intelligence_agency = upgrade_naval_department
+			upgrade_intelligence_agency = upgrade_airforce_department
+			upgrade_intelligence_agency = upgrade_passive_defense
+			upgrade_intelligence_agency = upgrade_passive_defense
+			#upgrade_intelligence_agency = upgrade_interrogation_techniques
+			upgrade_intelligence_agency = upgrade_training_centers
 		}
 	}
 
 	focus = {
 		id = JAP_army_air_arsenal_expansion
 		icon = GFX_focus_JAP_manchuria_airplane_manufacturing_company
-		x = 44
+		x = 46
 		y = 4
 		cost = 3
 
@@ -7900,9 +7986,25 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_supremacy_of_will
+		icon = GFX_goal_JAP_supremacy_of_will
+		x = 39
+		y = 5
+		cost = 3
+
+		prerequisite = { focus = JAP_nakano_school }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			add_ideas = JAP_superior_will
+		}
+	}
+
+	focus = {
 		id = JAP_first_tank_division
 		icon = GFX_goal_generic_tank_specialization   # 汎用から割り当て
-		x = 39
+		x = 41
 		y = 5
 		cost = 3
 
@@ -7949,45 +8051,25 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_rocket_launchers_and_expedients
-		icon = GFX_goal_JAP_osaka_arsenal
-		x = 41
+		id = JAP_army_ordnance_administration_headquarters
+		icon = GFX_focus_JAP_army_weapons_administration_hq
+		x = 43
 		y = 5
 		cost = 3
 
-		prerequisite = { focus = JAP_army_ordnance_administration_headquarters }
+		prerequisite = { focus = JAP_shinoda_research_section }
 
 		# available = { }   # TODO 実装側で
 
-		# An extra use when taken after the German technology exchange.
 		completion_reward = {
-			if = {
-				limit = { has_country_flag = JAP_gte_done }
-				add_tech_bonus = {
-					name = JAP_rocket_launchers_and_expedients
-					bonus = 1.0
-					ahead_reduction = 1
-					uses = 2
-					category = rocket_artillery
-				}
-			}
-			else = {
-				add_tech_bonus = {
-					name = JAP_rocket_launchers_and_expedients
-					bonus = 1.0
-					ahead_reduction = 1
-					uses = 1
-					category = rocket_artillery
-				}
-				custom_effect_tooltip = JAP_gte_hint_rocket_launchers_tt
-			}
+			# TODO 効果はまだ決まっていない
 		}
 	}
 
 	focus = {
 		id = JAP_air_divisions
 		icon = GFX_focus_JAP_the_flying_geese
-		x = 44
+		x = 46
 		y = 5
 		cost = 5
 
@@ -8037,9 +8119,26 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_promote_rising_officers
+		icon = GFX_goal_generic_general
+		x = 39
+		y = 6
+		cost = 1
+
+		prerequisite = { focus = JAP_supremacy_of_will }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			show_unit_leaders_tooltip = JAP_tomoyuki_yamashita
+			show_unit_leaders_tooltip = JAP_kanji_ishiwara
+		}
+	}
+
+	focus = {
 		id = JAP_expand_the_armoured_divisions
 		icon = GFX_focus_JAP_the_ultimate_tank
-		x = 39
+		x = 41
 		y = 6
 		cost = 5
 
@@ -8062,31 +8161,50 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_homeland_air_defence_priority
-		icon = GFX_goal_generic_air_fighter
+		id = JAP_rocket_launchers_and_expedients
+		icon = GFX_goal_JAP_osaka_arsenal
 		x = 43
 		y = 6
 		cost = 3
 
-		prerequisite = { focus = JAP_air_divisions }
-		mutually_exclusive = { focus = JAP_heavy_bomber_expansion }
+		prerequisite = { focus = JAP_army_ordnance_administration_headquarters }
 
 		# available = { }   # TODO 実装側で
 
+		# An extra use when taken after the German technology exchange.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			if = {
+				limit = { has_country_flag = JAP_gte_done }
+				add_tech_bonus = {
+					name = JAP_rocket_launchers_and_expedients
+					bonus = 1.0
+					ahead_reduction = 1
+					uses = 2
+					category = rocket_artillery
+				}
+			}
+			else = {
+				add_tech_bonus = {
+					name = JAP_rocket_launchers_and_expedients
+					bonus = 1.0
+					ahead_reduction = 1
+					uses = 1
+					category = rocket_artillery
+				}
+				custom_effect_tooltip = JAP_gte_hint_rocket_launchers_tt
+			}
 		}
 	}
 
 	focus = {
-		id = JAP_heavy_bomber_expansion
-		icon = GFX_focus_JAP_z_bomber_project
+		id = JAP_homeland_air_defence_priority
+		icon = GFX_goal_generic_air_fighter
 		x = 45
 		y = 6
 		cost = 3
 
 		prerequisite = { focus = JAP_air_divisions }
-		mutually_exclusive = { focus = JAP_homeland_air_defence_priority }
+		mutually_exclusive = { focus = JAP_heavy_bomber_expansion }
 
 		# available = { }   # TODO 実装側で
 
@@ -8134,7 +8252,7 @@ focus_tree = {
 		y = 7
 		cost = 3
 
-		prerequisite = { focus = JAP_reinforce_the_expeditionary_army }
+		prerequisite = { focus = JAP_reinforce_the_expeditionary_army focus = JAP_promote_rising_officers }
 
 		# available = { }   # TODO 実装側で
 
@@ -8146,7 +8264,7 @@ focus_tree = {
 	focus = {
 		id = JAP_type_3_medium_tank
 		icon = GFX_goal_generic_anti_tank   # 汎用から割り当て
-		x = 41
+		x = 43
 		y = 7
 		cost = 3
 
@@ -8201,7 +8319,7 @@ focus_tree = {
 	focus = {
 		id = JAP_youth_pilot_training
 		icon = GFX_focus_JAP_integrate_the_great_japan_youth_party
-		x = 44
+		x = 46
 		y = 7
 		cost = 3
 
@@ -8249,7 +8367,7 @@ focus_tree = {
 	focus = {
 		id = JAP_gun_tanks_and_self_propelled_artillery
 		icon = GFX_goal_generic_army_artillery   # 汎用から割り当て
-		x = 41
+		x = 43
 		y = 8
 		cost = 5
 
@@ -8287,7 +8405,7 @@ focus_tree = {
 	focus = {
 		id = JAP_establish_the_teishin_shudan
 		icon = GFX_focus_generic_paratrooper
-		x = 44
+		x = 46
 		y = 8
 		cost = 4
 
@@ -8417,147 +8535,14 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_imperial_defence_policy
-		icon = GFX_focus_JAP_the_imperial_defense_plan
-		x = 48
-		y = 0
-		cost = 2
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			add_political_power = 25
-			army_experience = 25
-			navy_experience = 25
-			air_experience = 15
-		}
-	}
-
-	focus = {
-		id = JAP_fundamentals_of_national_policy
-		icon = GFX_focus_JAP_hakko_ichiu
-		x = 48
-		y = 1
-		cost = 3
-
-		prerequisite = { focus = JAP_imperial_defence_policy }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_imperial_general_headquarters
-		icon = GFX_goal_JAP_national_defence_state
-		x = 48
-		y = 3
-		cost = 2
-
-		prerequisite = { focus = JAP_fundamentals_of_national_policy }
-		prerequisite = { focus = JAP_shanghai_expeditionary_army focus = JAP_transoceanic_bombing }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_materials_mobilisation_plan
-		icon = GFX_goal_JAP_national_mobalization
-		x = 48
-		y = 4
-		cost = 2
-
-		prerequisite = { focus = JAP_imperial_general_headquarters }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_government_liaison_council
-		icon = GFX_focus_JAP_crush_the_internal_factions
-		x = 48
-		y = 5
-		cost = 2
-
-		prerequisite = { focus = JAP_materials_mobilisation_plan }
-		prerequisite = { focus = JAP_reinforce_the_expeditionary_army focus = JAP_china_area_fleet }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			add_ideas = JAP_joint_staff_council
-		}
-	}
-
-	focus = {
-		id = JAP_german_technology_exchange_focus
-		icon = GFX_goal_JAP_sign_the_tripartite_pact
-		x = 48
+		id = JAP_heavy_bomber_expansion
+		icon = GFX_focus_JAP_z_bomber_project
+		x = 47
 		y = 6
 		cost = 3
 
-		prerequisite = { focus = JAP_government_liaison_council }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_shipping_operations_board
-		icon = GFX_focus_JAP_taiheiyo_belt
-		x = 48
-		y = 9
-		cost = 2
-
-		prerequisite = { focus = JAP_german_technology_exchange_focus }
-		prerequisite = { focus = JAP_army_shipping_command focus = JAP_first_escort_fleet }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_absolute_defence_perimeter
-		icon = GFX_focus_JAP_resource_security
-		x = 48
-		y = 10
-		cost = 2
-
-		prerequisite = { focus = JAP_shipping_operations_board }
-		prerequisite = { focus = JAP_seize_the_southern_resource_area focus = JAP_tokyo_express_operations }
-
-		# available = { }   # TODO 実装側で
-
-		completion_reward = {
-			# TODO 効果はまだ決まっていない
-		}
-	}
-
-	focus = {
-		id = JAP_army_navy_aviation_integration
-		icon = GFX_focus_JAP_unify_the_air_forces
-		x = 48
-		y = 11
-		cost = 3
-
-		prerequisite = { focus = JAP_absolute_defence_perimeter }
-		prerequisite = { focus = JAP_army_air_arsenal_expansion focus = JAP_naval_air_technical_arsenal }
+		prerequisite = { focus = JAP_air_divisions }
+		mutually_exclusive = { focus = JAP_homeland_air_defence_priority }
 
 		# available = { }   # TODO 実装側で
 
@@ -8569,9 +8554,8 @@ focus_tree = {
 	focus = {
 		id = JAP_project_z
 		icon = GFX_goal_generic_heavy_bomber
-		relative_position_id = JAP_army_navy_aviation_integration
-		x = -1
-		y = 1
+		x = 48
+		y = 12
 		cost = 6
 
 		prerequisite = { focus = JAP_army_navy_aviation_integration }
@@ -8590,26 +8574,26 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_supreme_war_council
-		icon = GFX_focus_JAP_supreme_council_for_direction_of_war
-		x = 48
-		y = 12
-		cost = 3
-
-		prerequisite = { focus = JAP_army_navy_aviation_integration }
-		prerequisite = { focus = JAP_operation_ichigo focus = JAP_operation_a_go }
+		id = JAP_imperial_defence_policy
+		icon = GFX_focus_JAP_the_imperial_defense_plan
+		x = 50
+		y = 0
+		cost = 2
 
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_political_power = 25
+			army_experience = 25
+			navy_experience = 25
+			air_experience = 15
 		}
 	}
 
 	focus = {
 		id = JAP_third_circle_plan
 		icon = GFX_goal_JAP_ign
-		x = 56
+		x = 58
 		y = 0
 		cost = 3
 
@@ -8649,7 +8633,7 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_ketsugo
 		icon = GFX_focus_JAP_national_defense_brotherhood
-		x = 66
+		x = 68
 		y = 0
 
 		cost = 3
@@ -8876,9 +8860,25 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_fundamentals_of_national_policy
+		icon = GFX_focus_JAP_hakko_ichiu
+		x = 50
+		y = 1
+		cost = 3
+
+		prerequisite = { focus = JAP_imperial_defence_policy }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_carrier_warfare_experiments
 		icon = GFX_goal_JAP_ign_airforce
-		x = 52
+		x = 54
 		y = 1
 		cost = 4
 
@@ -8900,7 +8900,7 @@ focus_tree = {
 	focus = {
 		id = JAP_transoceanic_bombing
 		icon = GFX_goal_generic_air_bomber
-		x = 55
+		x = 57
 		y = 1
 		cost = 3
 
@@ -8918,7 +8918,7 @@ focus_tree = {
 	focus = {
 		id = JAP_rebuild_the_heavy_escort_fleet
 		icon = GFX_goal_generic_navy_battleship
-		x = 58
+		x = 60
 		y = 1
 		cost = 4
 
@@ -8984,7 +8984,7 @@ focus_tree = {
 	focus = {
 		id = JAP_oxygen_torpedo
 		icon = GFX_focus_JAP_assure_superior_naval_quality
-		x = 61
+		x = 63
 		y = 1
 		cost = 3
 
@@ -9000,7 +9000,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_and_second_general_armies
 		icon = GFX_focus_JAP_advance_one_hundred_million_fireballs
-		x = 63
+		x = 65
 		y = 1
 		cost = 3
 
@@ -9016,7 +9016,7 @@ focus_tree = {
 	focus = {
 		id = JAP_air_general_army
 		icon = GFX_goal_JAP_the_imperial_japanese_air_force
-		x = 66
+		x = 68
 		y = 1
 		cost = 3
 
@@ -9032,7 +9032,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_general_command
 		icon = GFX_focus_jap_pacific_guardian
-		x = 69
+		x = 71
 		y = 1
 		cost = 3
 
@@ -9048,7 +9048,7 @@ focus_tree = {
 	focus = {
 		id = JAP_naval_air_technical_arsenal
 		icon = GFX_focus_JAP_expand_navy_technical_department
-		x = 52
+		x = 54
 		y = 2
 		cost = 3
 
@@ -9064,7 +9064,7 @@ focus_tree = {
 	focus = {
 		id = JAP_china_area_fleet
 		icon = GFX_goal_generic_air_bomber   # 汎用から割り当て
-		x = 55
+		x = 57
 		y = 2
 		cost = 3
 
@@ -9080,7 +9080,7 @@ focus_tree = {
 	focus = {
 		id = JAP_the_ultimate_battleship
 		icon = GFX_goal_JAP_the_ultimate_battleship
-		x = 57
+		x = 59
 		y = 2
 		cost = 4
 
@@ -9139,7 +9139,7 @@ focus_tree = {
 	focus = {
 		id = JAP_shokaku_class
 		icon = GFX_goal_generic_navy_carrier
-		x = 59
+		x = 61
 		y = 2
 		cost = 5
 
@@ -9196,7 +9196,7 @@ focus_tree = {
 	focus = {
 		id = JAP_night_battle_training
 		icon = GFX_goal_generic_ships_light_cruiser   # 汎用から割り当て
-		x = 61
+		x = 63
 		y = 2
 		cost = 3
 
@@ -9212,7 +9212,7 @@ focus_tree = {
 	focus = {
 		id = JAP_volunteer_fighting_corps
 		icon = GFX_focus_JAP_the_modern_ashigaru
-		x = 63
+		x = 65
 		y = 2
 		cost = 3
 
@@ -9228,7 +9228,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_special_attack_units
 		icon = GFX_focus_JAP_tennoheika_banzai
-		x = 65
+		x = 67
 		y = 2
 		cost = 3
 
@@ -9246,7 +9246,7 @@ focus_tree = {
 	focus = {
 		id = JAP_special_attack_aircraft
 		icon = GFX_focus_JAP_jet_prototypes
-		x = 67
+		x = 69
 		y = 2
 		cost = 3
 
@@ -9262,7 +9262,7 @@ focus_tree = {
 	focus = {
 		id = JAP_underwater_special_attack_weapons
 		icon = GFX_goal_generic_navy_submarine
-		x = 69
+		x = 71
 		y = 2
 		cost = 3
 
@@ -9278,9 +9278,26 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_imperial_general_headquarters
+		icon = GFX_goal_JAP_national_defence_state
+		x = 50
+		y = 3
+		cost = 2
+
+		prerequisite = { focus = JAP_fundamentals_of_national_policy }
+		prerequisite = { focus = JAP_shanghai_expeditionary_army focus = JAP_transoceanic_bombing }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_land_based_long_range_strike_doctrine
 		icon = GFX_focus_JAP_balanced_naval_approach
-		x = 52
+		x = 54
 		y = 3
 		cost = 3
 
@@ -9296,7 +9313,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_air_fleet
 		icon = GFX_goal_generic_carrier_group
-		x = 55
+		x = 57
 		y = 3
 		cost = 5
 
@@ -9312,7 +9329,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fourth_circle_plan
 		icon = GFX_focus_JAP_naval_armaments_program
-		x = 58
+		x = 60
 		y = 3
 		cost = 3
 
@@ -9376,7 +9393,7 @@ focus_tree = {
 	focus = {
 		id = JAP_midget_submarines
 		icon = GFX_focus_JAP_mine_warfare_force
-		x = 61
+		x = 63
 		y = 3
 		cost = 3
 
@@ -9392,7 +9409,7 @@ focus_tree = {
 	focus = {
 		id = JAP_guerilla_operations
 		icon = GFX_focus_JAP_give_it_your_all_for_the_emperor
-		x = 63
+		x = 65
 		y = 3
 
 		cost = 3
@@ -9427,7 +9444,7 @@ focus_tree = {
 	focus = {
 		id = JAP_the_divine_wind
 		icon = GFX_goal_JAP_the_divine_wind
-		x = 67
+		x = 69
 		y = 3
 
 		cost = 3
@@ -9453,9 +9470,25 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_materials_mobilisation_plan
+		icon = GFX_goal_JAP_national_mobalization
+		x = 50
+		y = 4
+		cost = 2
+
+		prerequisite = { focus = JAP_imperial_general_headquarters }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_carrier_fighter_range_priority
 		icon = GFX_focus_jap_zero
-		x = 52
+		x = 54
 		y = 4
 		cost = 3
 
@@ -9471,7 +9504,7 @@ focus_tree = {
 	focus = {
 		id = JAP_pearl_harbor_attack
 		icon = GFX_focus_JAP_the_jeweled_spear_has_struck
-		x = 54
+		x = 56
 		y = 4
 		cost = 3
 
@@ -9490,7 +9523,7 @@ focus_tree = {
 	focus = {
 		id = JAP_southern_operation_priority
 		icon = GFX_focus_jap_strike_south
-		x = 56
+		x = 58
 		y = 4
 		cost = 3
 
@@ -9507,7 +9540,7 @@ focus_tree = {
 	focus = {
 		id = JAP_armoured_carrier_taiho
 		icon = GFX_goal_generic_ships_light_carrier   # 汎用から割り当て
-		x = 58
+		x = 60
 		y = 4
 		cost = 5
 
@@ -9547,7 +9580,7 @@ focus_tree = {
 	focus = {
 		id = JAP_requisitioned_merchantmen
 		icon = GFX_goal_generic_license_ships   # 汎用から割り当て
-		x = 61
+		x = 63
 		y = 4
 		cost = 3
 
@@ -9563,7 +9596,7 @@ focus_tree = {
 	focus = {
 		id = JAP_relocate_capital
 		icon = GFX_focus_JAP_mountain_village_operation_units
-		x = 63
+		x = 65
 		y = 4
 
 		cost = 1
@@ -9599,7 +9632,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_navy_unification_attempt
 		icon = GFX_focus_JAP_end_the_interservice_rivalry
-		x = 67
+		x = 69
 		y = 4
 		cost = 3
 
@@ -9613,9 +9646,26 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_government_liaison_council
+		icon = GFX_focus_JAP_crush_the_internal_factions
+		x = 50
+		y = 5
+		cost = 2
+
+		prerequisite = { focus = JAP_materials_mobilisation_plan }
+		prerequisite = { focus = JAP_reinforce_the_expeditionary_army focus = JAP_china_area_fleet }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			add_ideas = JAP_joint_staff_council
+		}
+	}
+
+	focus = {
 		id = JAP_land_based_air_groups_expansion
 		icon = GFX_goal_generic_build_airforce
-		x = 52
+		x = 54
 		y = 5
 		cost = 3
 
@@ -9631,7 +9681,7 @@ focus_tree = {
 	focus = {
 		id = JAP_eighth_fleet
 		icon = GFX_focus_JAP_isolate_oceania
-		x = 55
+		x = 57
 		y = 5
 		cost = 3
 
@@ -9647,7 +9697,7 @@ focus_tree = {
 	focus = {
 		id = JAP_original_fifth_circle_plan
 		icon = GFX_focus_generic_navy_battleship2
-		x = 57
+		x = 59
 		y = 5
 		cost = 6
 
@@ -9700,7 +9750,7 @@ focus_tree = {
 	focus = {
 		id = JAP_modified_fifth_circle_plan
 		icon = GFX_goal_generic_ships_carrier
-		x = 59
+		x = 61
 		y = 5
 		cost = 5
 
@@ -9717,7 +9767,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_escort_fleet
 		icon = GFX_goal_generic_fleet_escorts   # 汎用から割り当て
-		x = 61
+		x = 63
 		y = 5
 		cost = 5
 
@@ -9731,9 +9781,25 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_german_technology_exchange_focus
+		icon = GFX_goal_JAP_sign_the_tripartite_pact
+		x = 50
+		y = 6
+		cost = 3
+
+		prerequisite = { focus = JAP_government_liaison_council }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_carrier_strike_renewal
 		icon = GFX_focus_JAP_strengthen_the_kido_butai
-		x = 51
+		x = 53
 		y = 6
 		cost = 3
 
@@ -9750,7 +9816,7 @@ focus_tree = {
 	focus = {
 		id = JAP_interceptor_units
 		icon = GFX_goal_generic_air_fighter
-		x = 53
+		x = 55
 		y = 6
 		cost = 3
 
@@ -9767,7 +9833,7 @@ focus_tree = {
 	focus = {
 		id = JAP_tokyo_express_operations
 		icon = GFX_goal_generic_navy_cruiser
-		x = 55
+		x = 57
 		y = 6
 		cost = 3
 
@@ -9872,7 +9938,7 @@ focus_tree = {
 	focus = {
 		id = JAP_rapid_medium_carrier_construction
 		icon = GFX_goal_generic_ships_light_carrier
-		x = 58
+		x = 60
 		y = 6
 		cost = 3
 
@@ -9888,7 +9954,7 @@ focus_tree = {
 	focus = {
 		id = JAP_grand_escort_command
 		icon = GFX_focus_JAP_taiheiyo_belt
-		x = 61
+		x = 63
 		y = 6
 		cost = 5
 
@@ -9904,7 +9970,7 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_a_go
 		icon = GFX_focus_jap_cast_the_die
-		x = 55
+		x = 57
 		y = 7
 		cost = 3
 
@@ -9922,7 +9988,7 @@ focus_tree = {
 	focus = {
 		id = JAP_carrier_conversions
 		icon = GFX_goal_generic_ships_carrier
-		x = 58
+		x = 60
 		y = 7
 		cost = 3
 
@@ -9938,7 +10004,7 @@ focus_tree = {
 	focus = {
 		id = JAP_escort_ship_mass_production
 		icon = GFX_goal_generic_ships_frigate   # 汎用から割り当て
-		x = 61
+		x = 63
 		y = 7
 		cost = 3
 
@@ -9954,7 +10020,7 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_sho_go
 		icon = GFX_goal_JAP_ultimate_victory
-		x = 55
+		x = 57
 		y = 8
 		cost = 3
 
@@ -9972,7 +10038,7 @@ focus_tree = {
 	focus = {
 		id = JAP_hydrophones_and_depth_charges
 		icon = GFX_focus_JAP_radio_guided_missiles
-		x = 61
+		x = 63
 		y = 8
 		cost = 5
 
@@ -9986,15 +10052,83 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_shipping_operations_board
+		icon = GFX_focus_JAP_taiheiyo_belt
+		x = 50
+		y = 9
+		cost = 2
+
+		prerequisite = { focus = JAP_german_technology_exchange_focus }
+		prerequisite = { focus = JAP_army_shipping_command focus = JAP_first_escort_fleet }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
 		id = JAP_operation_ten_go
 		icon = GFX_goal_generic_navy_battleship
-		x = 55
+		x = 57
 		y = 9
 		cost = 3
 
 		prerequisite = { focus = JAP_operation_sho_go focus = JAP_carrier_conversions }
 
 		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
+		id = JAP_absolute_defence_perimeter
+		icon = GFX_focus_JAP_resource_security
+		x = 50
+		y = 10
+		cost = 2
+
+		prerequisite = { focus = JAP_shipping_operations_board }
+		prerequisite = { focus = JAP_seize_the_southern_resource_area focus = JAP_tokyo_express_operations }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
+		id = JAP_army_navy_aviation_integration
+		icon = GFX_focus_JAP_unify_the_air_forces
+		x = 50
+		y = 11
+		cost = 3
+
+		prerequisite = { focus = JAP_absolute_defence_perimeter }
+		prerequisite = { focus = JAP_army_air_arsenal_expansion focus = JAP_naval_air_technical_arsenal }
+
+		# available = { }   # TODO 実装側で
+
+		completion_reward = {
+			# TODO 効果はまだ決まっていない
+		}
+	}
+
+	focus = {
+		id = JAP_supreme_war_council
+		icon = GFX_focus_JAP_supreme_council_for_direction_of_war
+		x = 50
+		y = 12
+		cost = 3
+
+		prerequisite = { focus = JAP_army_navy_aviation_integration }
+		prerequisite = { focus = JAP_operation_ichigo focus = JAP_operation_a_go }
 
 		# available = { }   # TODO 実装側で
 
@@ -10059,7 +10193,7 @@ focus_tree = {
 	focus = {
 		id = JAP_imperial_defence_policy_old
 		icon = GFX_goal_JAP_national_defence_state   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 0
 		cost = 2
 
@@ -10077,7 +10211,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_expansion_law_old
 		icon = GFX_goal_JAP_iga
-		x = 81
+		x = 83
 		y = 1
 		cost = 3
 
@@ -10123,7 +10257,7 @@ focus_tree = {
 	focus = {
 		id = JAP_new_naval_budget_old
 		icon = GFX_goal_generic_navy_battleship   # 汎用から割り当て
-		x = 87
+		x = 89
 		y = 2
 		cost = 3
 
@@ -10147,7 +10281,7 @@ focus_tree = {
 	focus = {
 		id = JAP_split_the_ija_academy_old
 		icon = GFX_goal_generic_military_academy
-		x = 79
+		x = 81
 		y = 2
 		cost = 3
 
@@ -10165,7 +10299,7 @@ focus_tree = {
 	focus = {
 		id = JAP_prioritise_the_army_plan_old
 		icon = GFX_goal_generic_rearmament   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 2
 		cost = 3
 
@@ -10182,7 +10316,7 @@ focus_tree = {
 	focus = {
 		id = JAP_five_minister_conference_old
 		icon = GFX_goal_generic_armament_staff_committee   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 2
 		cost = 2
 
@@ -10199,7 +10333,7 @@ focus_tree = {
 	focus = {
 		id = JAP_prioritise_the_navy_plan_old
 		icon = GFX_goal_generic_construct_naval_dockyard   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 2
 		cost = 3
 
@@ -10216,7 +10350,7 @@ focus_tree = {
 	focus = {
 		id = JAP_relentless_training_old
 		icon = GFX_goal_generic_admiral   # 汎用から割り当て
-		x = 87
+		x = 89
 		y = 4
 		cost = 3
 
@@ -10233,7 +10367,7 @@ focus_tree = {
 	focus = {
 		id = JAP_reorganize_the_military_old
 		icon = GFX_focus_generic_military_mission
-		x = 77
+		x = 79
 		y = 3
 		cost = 4
 
@@ -10259,7 +10393,7 @@ focus_tree = {
 	focus = {
 		id = JAP_supremacy_of_will_old
 		icon = GFX_goal_JAP_supremacy_of_will
-		x = 79
+		x = 81
 		y = 3
 		cost = 3
 
@@ -10275,7 +10409,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_leads_the_china_incident_old
 		icon = GFX_goal_generic_focus_on_china   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 3
 		cost = 3
 
@@ -10292,7 +10426,7 @@ focus_tree = {
 	focus = {
 		id = JAP_imperial_general_headquarters_old
 		icon = GFX_goal_generic_contract_ratify   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 3
 		cost = 2
 
@@ -10309,7 +10443,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_leads_the_china_incident_old
 		icon = GFX_goal_generic_surface_raiders   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 3
 		cost = 3
 
@@ -10326,7 +10460,7 @@ focus_tree = {
 	focus = {
 		id = JAP_night_battle_training_old
 		icon = GFX_goal_generic_ships_light_cruiser   # 汎用から割り当て
-		x = 95
+		x = 97
 		y = 7
 		cost = 3
 
@@ -10342,7 +10476,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fleet_reorganisation_old
 		icon = GFX_goal_generic_navy_cruiser   # 汎用から割り当て
-		x = 93
+		x = 95
 		y = 8
 		cost = 3
 
@@ -10358,7 +10492,7 @@ focus_tree = {
 	focus = {
 		id = JAP_ija_institute_of_science_old
 		icon = GFX_goal_generic_research
-		x = 73
+		x = 75
 		y = 4
 		cost = 8
 
@@ -10374,7 +10508,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fifty_division_plan_old
 		icon = GFX_goal_generic_build_army_soviet   # 汎用から割り当て
-		x = 75
+		x = 77
 		y = 4
 		cost = 5
 
@@ -10410,7 +10544,7 @@ focus_tree = {
 	focus = {
 		id = JAP_promote_rising_officers_old
 		icon = GFX_goal_generic_general
-		x = 79
+		x = 81
 		y = 4
 		cost = 1
 
@@ -10428,7 +10562,7 @@ focus_tree = {
 	focus = {
 		id = JAP_china_area_fleet_old
 		icon = GFX_goal_generic_air_bomber   # 汎用から割り当て
-		x = 87
+		x = 89
 		y = 6
 		cost = 3
 
@@ -10444,7 +10578,7 @@ focus_tree = {
 	focus = {
 		id = JAP_third_circle_plan_old
 		icon = GFX_goal_JAP_ign
-		x = 85
+		x = 87
 		y = 1
 		cost = 3
 
@@ -10486,7 +10620,7 @@ focus_tree = {
 	focus = {
 		id = JAP_recruit_takeo_yoshikawa_old
 		icon = GFX_goal_CHI_fund_assassinations
-		x = 89
+		x = 91
 		y = 4
 		cost = 4
 
@@ -10502,7 +10636,7 @@ focus_tree = {
 	focus = {
 		id = JAP_shinoda_research_section_old
 		icon = GFX_goal_generic_committee_of_defence
-		x = 77
+		x = 79
 		y = 4
 		cost = 4
 
@@ -10524,7 +10658,7 @@ focus_tree = {
 	focus = {
 		id = JAP_begin_mechanisation_old
 		icon = GFX_goal_generic_tanks   # 汎用から割り当て
-		x = 71
+		x = 73
 		y = 5
 		cost = 3
 
@@ -10560,7 +10694,7 @@ focus_tree = {
 	focus = {
 		id = JAP_motorise_the_supply_train_old
 		icon = GFX_goal_generic_roads   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 5
 		cost = 3
 
@@ -10576,7 +10710,7 @@ focus_tree = {
 	focus = {
 		id = JAP_steel_for_weapons_old
 		icon = GFX_goal_generic_build_tanks   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 5
 		cost = 3
 
@@ -10593,7 +10727,7 @@ focus_tree = {
 	focus = {
 		id = JAP_materials_mobilisation_plan_old
 		icon = GFX_goal_generic_build_steel   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 5
 		cost = 2
 
@@ -10610,7 +10744,7 @@ focus_tree = {
 	focus = {
 		id = JAP_steel_for_shipbuilding_old
 		icon = GFX_goal_generic_build_ships   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 5
 		cost = 3
 
@@ -10627,7 +10761,7 @@ focus_tree = {
 	focus = {
 		id = JAP_ijn_technical_research_institute_old
 		icon = GFX_goal_generic_research   # 汎用から割り当て
-		x = 93
+		x = 95
 		y = 4
 		cost = 8
 
@@ -10643,7 +10777,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_tank_group_old
 		icon = GFX_goal_generic_allies_build_infantry   # 汎用から割り当て
-		x = 75
+		x = 77
 		y = 5
 		cost = 4
 
@@ -10664,7 +10798,7 @@ focus_tree = {
 	focus = {
 		id = JAP_southern_anchorages_old
 		icon = GFX_goal_generic_naval_bases   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 6
 		cost = 3
 
@@ -10680,7 +10814,7 @@ focus_tree = {
 	focus = {
 		id = JAP_carrier_warfare_experiments_old
 		icon = GFX_goal_generic_navy_carrier
-		x = 91
+		x = 93
 		y = 5
 		cost = 4
 
@@ -10702,7 +10836,7 @@ focus_tree = {
 	focus = {
 		id = JAP_mine_warfare_old
 		icon = GFX_focus_generic_mine_warfare
-		x = 95
+		x = 97
 		y = 5
 		cost = 3
 
@@ -10723,7 +10857,7 @@ focus_tree = {
 	focus = {
 		id = JAP_bicycle_battalions_old
 		icon = GFX_goal_generic_bicycle_battalions
-		x = 73
+		x = 75
 		y = 6
 		cost = 3
 
@@ -10771,7 +10905,7 @@ focus_tree = {
 	focus = {
 		id = JAP_independent_engineer_regiments_old
 		icon = GFX_goal_generic_engineers   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 6
 		cost = 3
 
@@ -10787,7 +10921,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_aircraft_priority_old
 		icon = GFX_goal_JAP_iga_airforce   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 6
 		cost = 3
 
@@ -10804,7 +10938,7 @@ focus_tree = {
 	focus = {
 		id = JAP_aviation_standardisation_old
 		icon = GFX_goal_generic_plane_specialization   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 6
 		cost = 2
 
@@ -10821,7 +10955,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_aircraft_priority_old
 		icon = GFX_goal_JAP_ign_airforce   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 6
 		cost = 3
 
@@ -10838,7 +10972,7 @@ focus_tree = {
 	focus = {
 		id = JAP_requisitioned_merchantmen_old
 		icon = GFX_goal_generic_license_ships   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 5
 		cost = 3
 
@@ -10854,7 +10988,7 @@ focus_tree = {
 	focus = {
 		id = JAP_hydrophones_and_depth_charges_old
 		icon = GFX_goal_generic_navy_anti_submarine   # 汎用から割り当て
-		x = 93
+		x = 95
 		y = 6
 		cost = 5
 
@@ -10870,7 +11004,7 @@ focus_tree = {
 	focus = {
 		id = JAP_island_bulwarks_old
 		icon = GFX_goal_generic_construct_military
-		x = 87
+		x = 89
 		y = 12
 		cost = 5
 
@@ -11088,7 +11222,7 @@ focus_tree = {
 	focus = {
 		id = JAP_anti_air_guns_old
 		icon = GFX_goal_generic_heavy_anti_air   # 汎用から割り当て
-		x = 71
+		x = 73
 		y = 7
 		cost = 3
 
@@ -11129,7 +11263,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_armoured_headquarters_old
 		icon = GFX_goal_generic_build_tanks   # 汎用から割り当て
-		x = 75
+		x = 77
 		y = 7
 		cost = 5
 
@@ -11169,7 +11303,7 @@ focus_tree = {
 	focus = {
 		id = JAP_reinforce_the_expeditionary_army_old
 		icon = GFX_goal_generic_attack_manchukuo   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 7
 		cost = 5
 
@@ -11185,7 +11319,7 @@ focus_tree = {
 	focus = {
 		id = JAP_reservist_associations_old
 		icon = GFX_goal_JAP_indoctrination   # 汎用から割り当て
-		x = 79
+		x = 81
 		y = 6
 		cost = 3
 
@@ -11201,7 +11335,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fourth_circle_plan_old
 		icon = GFX_goal_generic_ships_destroyer
-		x = 91
+		x = 93
 		y = 7
 		cost = 3
 
@@ -11265,7 +11399,7 @@ focus_tree = {
 	focus = {
 		id = JAP_shokaku_class_old
 		icon = GFX_goal_generic_ships_carrier   # 汎用から割り当て
-		x = 91
+		x = 93
 		y = 4
 		cost = 5
 
@@ -11322,7 +11456,7 @@ focus_tree = {
 	focus = {
 		id = JAP_project_z_old
 		icon = GFX_goal_generic_heavy_bomber
-		x = 89
+		x = 91
 		y = 7
 		cost = 6
 
@@ -11344,7 +11478,7 @@ focus_tree = {
 	focus = {
 		id = JAP_the_ultimate_battleship_old
 		icon = GFX_goal_JAP_the_ultimate_battleship
-		x = 87
+		x = 89
 		y = 3
 		cost = 4
 
@@ -11403,7 +11537,7 @@ focus_tree = {
 	focus = {
 		id = JAP_type_3_medium_tank_old
 		icon = GFX_goal_generic_anti_tank   # 汎用から割り当て
-		x = 73
+		x = 75
 		y = 8
 		cost = 3
 
@@ -11458,7 +11592,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_tank_division_old
 		icon = GFX_goal_generic_tank_specialization   # 汎用から割り当て
-		x = 75
+		x = 77
 		y = 8
 		cost = 3
 
@@ -11507,7 +11641,7 @@ focus_tree = {
 	focus = {
 		id = JAP_integrate_takasago_volunteers_old
 		icon = GFX_goal_generic_jungle_experts
-		x = 79
+		x = 81
 		y = 8
 		cost = 3
 
@@ -11526,7 +11660,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_military_administration_old
 		icon = GFX_goal_JAP_exploit_the_south   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 8
 		cost = 3
 
@@ -11543,7 +11677,7 @@ focus_tree = {
 	focus = {
 		id = JAP_government_liaison_council_old
 		icon = GFX_goal_generic_military_liason
-		x = 83
+		x = 85
 		y = 8
 		cost = 2
 
@@ -11560,7 +11694,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_military_administration_old
 		icon = GFX_goal_JAP_greater_east_asian_co_prosperity_sphere   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 8
 		cost = 3
 
@@ -11577,7 +11711,7 @@ focus_tree = {
 	focus = {
 		id = JAP_tokyo_express_operations_old
 		icon = GFX_goal_generic_navy_cruiser
-		x = 87
+		x = 89
 		y = 8
 		cost = 3
 
@@ -11682,7 +11816,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_air_fleet_old
 		icon = GFX_goal_generic_carrier_group
-		x = 91
+		x = 93
 		y = 8
 		cost = 5
 
@@ -11698,7 +11832,7 @@ focus_tree = {
 	focus = {
 		id = JAP_island_garrisons_old
 		icon = GFX_goal_generic_construct_military   # 汎用から割り当て
-		x = 79
+		x = 81
 		y = 12
 		cost = 5
 
@@ -11714,7 +11848,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_escort_fleet_old
 		icon = GFX_goal_generic_fleet_escorts   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 11
 		cost = 5
 
@@ -11730,7 +11864,7 @@ focus_tree = {
 	focus = {
 		id = JAP_rebuild_the_heavy_escort_fleet_old
 		icon = GFX_goal_generic_navy_battleship
-		x = 89
+		x = 91
 		y = 3
 		cost = 4
 
@@ -11796,7 +11930,7 @@ focus_tree = {
 	focus = {
 		id = JAP_rocket_launchers_and_expedients_old
 		icon = GFX_goal_generic_rocket_artillery   # 汎用から割り当て
-		x = 71
+		x = 73
 		y = 9
 		cost = 3
 
@@ -11832,7 +11966,7 @@ focus_tree = {
 	focus = {
 		id = JAP_establish_the_teishin_shudan_old
 		icon = GFX_focus_generic_paratrooper
-		x = 77
+		x = 79
 		y = 9
 		cost = 4
 
@@ -11877,7 +12011,7 @@ focus_tree = {
 	focus = {
 		id = JAP_secure_a_shipping_old
 		icon = GFX_goal_generic_merchant_fleet   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 9
 		cost = 3
 
@@ -11894,7 +12028,7 @@ focus_tree = {
 	focus = {
 		id = JAP_shipping_operations_board_old
 		icon = GFX_goal_generic_economic_balancing   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 9
 		cost = 2
 
@@ -11911,7 +12045,7 @@ focus_tree = {
 	focus = {
 		id = JAP_secure_b_shipping_old
 		icon = GFX_goal_generic_fleet_escorts   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 9
 		cost = 3
 
@@ -11928,7 +12062,7 @@ focus_tree = {
 	focus = {
 		id = JAP_special_naval_landing_forces_old
 		icon = GFX_goal_generic_amphibious_landing_craft   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 10
 		cost = 4
 
@@ -11944,7 +12078,7 @@ focus_tree = {
 	focus = {
 		id = JAP_escort_ship_mass_production_old
 		icon = GFX_goal_generic_ships_frigate   # 汎用から割り当て
-		x = 95
+		x = 97
 		y = 9
 		cost = 3
 
@@ -11960,7 +12094,7 @@ focus_tree = {
 	focus = {
 		id = JAP_gun_tanks_and_self_propelled_artillery_old
 		icon = GFX_goal_generic_army_artillery   # 汎用から割り当て
-		x = 73
+		x = 75
 		y = 10
 		cost = 5
 
@@ -11998,7 +12132,7 @@ focus_tree = {
 	focus = {
 		id = JAP_expand_the_armoured_divisions_old
 		icon = GFX_goal_generic_tank_specialization   # 汎用から割り当て
-		x = 75
+		x = 77
 		y = 10
 		cost = 5
 
@@ -12023,7 +12157,7 @@ focus_tree = {
 	focus = {
 		id = JAP_air_divisions_old
 		icon = GFX_goal_generic_build_airforce   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 10
 		cost = 5
 
@@ -12039,7 +12173,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_shipping_command_old
 		icon = GFX_goal_generic_merchant_fleet   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 11
 		cost = 5
 
@@ -12055,7 +12189,7 @@ focus_tree = {
 	focus = {
 		id = JAP_garrison_divisions_old
 		icon = GFX_goal_generic_military_police   # 汎用から割り当て
-		x = 79
+		x = 81
 		y = 10
 		cost = 3
 
@@ -12071,7 +12205,7 @@ focus_tree = {
 	focus = {
 		id = JAP_armoured_carrier_taiho_old
 		icon = GFX_goal_generic_ships_light_carrier   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 9
 		cost = 5
 
@@ -12111,7 +12245,7 @@ focus_tree = {
 	focus = {
 		id = JAP_original_fifth_circle_plan_old
 		icon = GFX_focus_generic_navy_battleship2
-		x = 91
+		x = 93
 		y = 10
 		cost = 6
 
@@ -12164,7 +12298,7 @@ focus_tree = {
 	focus = {
 		id = JAP_modified_fifth_circle_plan_old
 		icon = GFX_goal_generic_ships_carrier
-		x = 93
+		x = 95
 		y = 10
 		cost = 5
 
@@ -12181,7 +12315,7 @@ focus_tree = {
 	focus = {
 		id = JAP_grand_escort_command_old
 		icon = GFX_goal_generic_asw   # 汎用から割り当て
-		x = 87
+		x = 89
 		y = 10
 		cost = 5
 
@@ -12197,7 +12331,7 @@ focus_tree = {
 	focus = {
 		id = JAP_run_the_army_territories_old
 		icon = GFX_goal_generic_military_police   # 汎用から割り当て
-		x = 79
+		x = 81
 		y = 11
 		cost = 5
 
@@ -12213,7 +12347,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fuel_for_the_continent_old
 		icon = GFX_goal_generic_oil_contract   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 11
 		cost = 3
 
@@ -12230,7 +12364,7 @@ focus_tree = {
 	focus = {
 		id = JAP_absolute_defence_perimeter_old
 		icon = GFX_goal_generic_construct_military   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 11
 		cost = 2
 
@@ -12247,7 +12381,7 @@ focus_tree = {
 	focus = {
 		id = JAP_fuel_for_the_fleet_old
 		icon = GFX_goal_generic_fuel_silo   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 11
 		cost = 3
 
@@ -12264,7 +12398,7 @@ focus_tree = {
 	focus = {
 		id = JAP_run_the_navy_territories_old
 		icon = GFX_goal_generic_naval_bases   # 汎用から割り当て
-		x = 87
+		x = 89
 		y = 11
 		cost = 5
 
@@ -12280,7 +12414,7 @@ focus_tree = {
 	focus = {
 		id = JAP_wartime_research_system_old
 		icon = GFX_goal_generic_improve_relations_scientists   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 12
 		cost = 3
 
@@ -12296,7 +12430,7 @@ focus_tree = {
 	focus = {
 		id = JAP_ni_go_research_old
 		icon = GFX_goal_generic_rocketry   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 13
 		cost = 5
 
@@ -12312,7 +12446,7 @@ focus_tree = {
 	focus = {
 		id = JAP_f_go_research_old
 		icon = GFX_goal_generic_research_2   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 13
 		cost = 5
 
@@ -12328,7 +12462,7 @@ focus_tree = {
 	focus = {
 		id = JAP_continental_supply_lines_old
 		icon = GFX_goal_generic_railroad   # 汎用から割り当て
-		x = 77
+		x = 79
 		y = 14
 		cost = 5
 
@@ -12346,7 +12480,7 @@ focus_tree = {
 	focus = {
 		id = JAP_field_service_regulations_old
 		icon = GFX_goal_generic_military_inspection   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 14
 		cost = 5
 
@@ -12362,7 +12496,7 @@ focus_tree = {
 	focus = {
 		id = JAP_supreme_war_council_old
 		icon = GFX_goal_generic_committee_of_defence   # 汎用から割り当て
-		x = 83
+		x = 85
 		y = 14
 		cost = 3
 
@@ -12378,7 +12512,7 @@ focus_tree = {
 	focus = {
 		id = JAP_naval_battle_instructions_old
 		icon = GFX_goal_generic_ship_specialization   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 14
 		cost = 5
 
@@ -12394,7 +12528,7 @@ focus_tree = {
 	focus = {
 		id = JAP_lingga_anchorage_old
 		icon = GFX_goal_generic_fleet_escorts   # 汎用から割り当て
-		x = 89
+		x = 91
 		y = 14
 		cost = 5
 
@@ -12412,7 +12546,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_led_total_war_old
 		icon = GFX_goal_JAP_national_mobalization   # 汎用から割り当て
-		x = 81
+		x = 83
 		y = 15
 		cost = 10
 
@@ -12428,7 +12562,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_led_maritime_defence_old
 		icon = GFX_goal_JAP_the_divine_wind   # 汎用から割り当て
-		x = 85
+		x = 87
 		y = 15
 		cost = 10
 
@@ -12444,7 +12578,7 @@ focus_tree = {
 	focus = {
 		id = JAP_the_imperial_japanese_air_force_old
 		icon = GFX_goal_JAP_the_imperial_japanese_air_force
-		x = 83
+		x = 85
 		y = 16
 		cost = 10
 
