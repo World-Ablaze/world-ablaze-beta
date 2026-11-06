@@ -235,6 +235,7 @@ NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
 
 NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0.05	-- The minimum number of factories we have to put on consumer goods, in percent.
+NDefines.NProduction.MILITARY_FACTORY_COHERENCY_BONUS = 250								-- Value we add to the weight of a production line already in progress, if we only have one military factory. (to reduce fluctuating AI production)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
 NDefines.NMarket.IC_TO_CIC_FACTOR = 0.75											-- The factor for mapping IC cost to CIC cost. Should be a positive number.
