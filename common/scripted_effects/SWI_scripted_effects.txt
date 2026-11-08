@@ -2014,22 +2014,37 @@ SWI_update_councilors = {
 		clear_variable = SWI_councilor_1
 		clear_variable = SWI_councilor_2
 		clear_variable = SWI_councilor_3
-		clear_variable = SWI_councilor_4
-		clear_variable = SWI_councilor_5
-		clear_variable = SWI_councilor_6
 		clear_variable = SWI_confederation_president
 		set_temp_variable = { fake_array = 0 }
 		every_character = {
 			limit = {
 				has_character_flag = SWI_councilor
-				is_hired_as_advisor = no
+				AND = {
+					NOT = { is_character_slot = foreign_minister }
+					NOT = { is_character_slot = interior_minister }
+					NOT = { is_character_slot = economic_minister }
+					NOT = { is_character_slot = transport_minister }
+					NOT = { is_character_slot = intelligence_minister }
+					NOT = { is_character_slot = army_chief }
+					NOT = { is_character_slot = high_command }
+					is_political_advisor = no
+				}
 			}
 			clr_character_flag = SWI_councilor
 		}
 		every_character = {
 			limit = {
-				is_hired_as_advisor = yes
-				has_character_flag = SWI_councilor
+				OR = {
+					is_character_slot = foreign_minister
+					is_character_slot = interior_minister
+					is_character_slot = economic_minister
+					is_character_slot = transport_minister
+					is_character_slot = intelligence_minister
+					is_character_slot = political_advisor
+					is_character_slot = army_chief
+					is_character_slot = high_command
+				}
+				has_character_flag =  SWI_councilor
 			}
 			if = {
 				limit = {
@@ -2055,33 +2070,6 @@ SWI_update_councilors = {
 				}
 				ROOT = {
 					set_variable = { SWI_councilor_3 = PREV }
-					add_to_temp_variable = { fake_array = 1 }
-				}
-			}
-			else_if = {
-				limit = {
-					check_variable = { SWI.fake_array = 3 }
-				}
-				ROOT = {
-					set_variable = { SWI_councilor_4 = PREV }
-					add_to_temp_variable = { fake_array = 1 }
-				}
-			}
-			else_if = {
-				limit = {
-					check_variable = { SWI.fake_array = 4 }
-				}
-				ROOT = {
-					set_variable = { SWI_councilor_5 = PREV }
-					add_to_temp_variable = { fake_array = 1 }
-				}
-			}
-			else_if = {
-				limit = {
-					check_variable = { SWI.fake_array = 5 }
-				}
-				ROOT = {
-					set_variable = { SWI_councilor_6 = PREV }
 					add_to_temp_variable = { fake_array = 1 }
 				}
 			}
@@ -2341,6 +2329,14 @@ SWI_show_president_decisions = {
 				show_effect_tooltip = yes
 				show_modifiers = yes
 			}
+		}
+	}
+	if = {
+		limit = {
+			SWI = { has_government = democratic }
+		}
+		SWI = {
+			custom_effect_tooltip = SWI_promoting_to_president_TT
 		}
 	}
 }
