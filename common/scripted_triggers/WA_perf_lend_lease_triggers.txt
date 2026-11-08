@@ -1,0 +1,833 @@
+WA_perf_lend_lease_democratic = {
+
+	ROOT = {
+
+		OR = {
+			has_country_flag = EAI_supports_@PREV
+
+			AND = {
+				EAI_special_lend_lease_rules_SENDER = yes
+
+				NOT = { surrender_progress > 0.05 }
+			}
+		}
+
+		if = { limit = { EAI_neutral_country = yes }
+
+			is_neighbor_of = PREV
+			has_opinion = { target = PREV value > 25 }
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					EAI_major_country = yes
+					is_major = yes
+					is_in_faction = yes
+					has_war = yes
+				}
+			}
+
+			OR = {
+				AND = {
+					is_neighbor_of = PREV
+					has_opinion = { target = PREV value > 50 }
+				}
+
+				AND = {
+					has_government = fascism
+					PREV = { original_tag = SPR EAI_fascist_nation = yes has_civil_war = yes }
+				}
+			}
+		}
+
+		if = { limit = { is_subject = yes }
+
+			OR = {
+				is_subject_of = PREV
+				PREV = { any_enemy_country = { has_war_with = ROOT } }
+			}
+		}
+
+		PREV = {
+			OR = {
+				EAI_democratic_nation = yes
+
+				AND = {
+					EAI_communist_nation = yes
+
+					has_offensive_war = no
+				}
+
+				AND = {
+					EAI_nonaligned_nation = yes
+
+					has_offensive_war = no
+				}
+
+				is_in_faction_with = ROOT
+
+				has_war_together_with = ROOT
+			}
+		}
+
+	}
+
+	THIS = {
+		NOT = { tag = ROOT }
+
+		has_war = yes NOT = { has_war_with = ROOT }
+
+		set_temp_variable = { t1 = THIS.id }
+
+		OR = {
+			has_country_flag = EAI_receives_support_@THIS
+
+			AND = {
+				EAI_special_lend_lease_rules_TARGET = yes
+
+				OR = {
+					any_enemy_country = { has_war_with = ROOT }
+
+					ROOT = { has_opinion = { target = PREV value > 25 } }
+
+					is_in_faction_with = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						any_enemy_country = { EAI_fascist_nation = yes }
+						ROOT = { NOT = { EAI_fascist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_communist_nation = yes }
+						ROOT = { NOT = { EAI_communist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_democratic_nation = yes }
+						ROOT = { NOT = { EAI_democratic_nation = yes } }
+					}
+
+					ROOT = {
+						NOT = { has_government = neutrality }
+						EAI_PREV_has_same_ideology_with_THIS = yes
+					}
+				}
+
+				if = { limit = { has_capitulated = yes }
+
+					has_army_manpower = { size > 100000 }
+					has_manpower > 100000
+				}
+
+				NOT = {
+					AND = {
+						NOT = { any_enemy_country = { has_war_with = ROOT } }
+
+						any_enemy_country = {
+							OR = {
+								has_non_aggression_pact_with = ROOT
+
+								any_country = { OR = { is_subject_of = ROOT ROOT = { is_subject_of = PREV } is_in_faction_with = ROOT } has_non_aggression_pact_with = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_country_flag = EAI_lend_lease_from_@ROOT }
+
+				NOT = {
+					any_home_area_neighbor_country = {
+						NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+						OR = {
+							tag = ROOT
+							any_home_area_neighbor_country = {
+								NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+								OR = {
+									tag = ROOT
+									any_home_area_neighbor_country = { tag = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			stockpile_ratio = { archetype = convoy ratio > 50 }
+		}
+	}
+
+}
+
+WA_perf_lend_lease_communist = {
+
+	ROOT = {
+
+		OR = {
+			has_country_flag = EAI_supports_@PREV
+
+			AND = {
+				EAI_special_lend_lease_rules_SENDER = yes
+
+				NOT = { surrender_progress > 0.05 }
+			}
+		}
+
+		if = { limit = { EAI_neutral_country = yes }
+
+			is_neighbor_of = PREV
+			has_opinion = { target = PREV value > 25 }
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					EAI_major_country = yes
+					is_major = yes
+					is_in_faction = yes
+					has_war = yes
+				}
+			}
+
+			OR = {
+				AND = {
+					is_neighbor_of = PREV
+					has_opinion = { target = PREV value > 50 }
+				}
+
+				AND = {
+					has_government = fascism
+					PREV = { original_tag = SPR EAI_fascist_nation = yes has_civil_war = yes }
+				}
+			}
+		}
+
+		if = { limit = { is_subject = yes }
+
+			OR = {
+				is_subject_of = PREV
+				PREV = { any_enemy_country = { has_war_with = ROOT } }
+			}
+		}
+
+		PREV = {
+			OR = {
+				EAI_communist_nation = yes
+
+				AND = {
+					EAI_democratic_nation = yes
+
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				AND = {
+					EAI_nonaligned_nation = yes
+
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				is_in_faction_with = ROOT
+
+				has_war_together_with = ROOT
+			}
+		}
+
+	}
+
+	THIS = {
+		NOT = { tag = ROOT }
+
+		has_war = yes NOT = { has_war_with = ROOT }
+
+		set_temp_variable = { t1 = THIS.id }
+
+		OR = {
+			has_country_flag = EAI_receives_support_@THIS
+
+			AND = {
+				EAI_special_lend_lease_rules_TARGET = yes
+
+				OR = {
+					any_enemy_country = { has_war_with = ROOT }
+
+					ROOT = { has_opinion = { target = PREV value > 25 } }
+
+					is_in_faction_with = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						any_enemy_country = { EAI_fascist_nation = yes }
+						ROOT = { NOT = { EAI_fascist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_communist_nation = yes }
+						ROOT = { NOT = { EAI_communist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_democratic_nation = yes }
+						ROOT = { NOT = { EAI_democratic_nation = yes } }
+					}
+
+					ROOT = {
+						NOT = { has_government = neutrality }
+						EAI_PREV_has_same_ideology_with_THIS = yes
+					}
+				}
+
+				if = { limit = { has_capitulated = yes }
+
+					has_army_manpower = { size > 100000 }
+					has_manpower > 100000
+				}
+
+				NOT = {
+					AND = {
+						NOT = { any_enemy_country = { has_war_with = ROOT } }
+
+						any_enemy_country = {
+							OR = {
+								has_non_aggression_pact_with = ROOT
+
+								any_country = { OR = { is_subject_of = ROOT ROOT = { is_subject_of = PREV } is_in_faction_with = ROOT } has_non_aggression_pact_with = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_country_flag = EAI_lend_lease_from_@ROOT }
+
+				NOT = {
+					any_home_area_neighbor_country = {
+						NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+						OR = {
+							tag = ROOT
+							any_home_area_neighbor_country = {
+								NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+								OR = {
+									tag = ROOT
+									any_home_area_neighbor_country = { tag = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			stockpile_ratio = { archetype = convoy ratio > 50 }
+		}
+	}
+
+}
+
+WA_perf_lend_lease_fascist = {
+
+	ROOT = {
+
+		OR = {
+			has_country_flag = EAI_supports_@PREV
+
+			AND = {
+				EAI_special_lend_lease_rules_SENDER = yes
+
+				NOT = { surrender_progress > 0.05 }
+			}
+		}
+
+		if = { limit = { EAI_neutral_country = yes }
+
+			is_neighbor_of = PREV
+			has_opinion = { target = PREV value > 25 }
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					EAI_major_country = yes
+					is_major = yes
+					is_in_faction = yes
+					has_war = yes
+				}
+			}
+
+			OR = {
+				AND = {
+					is_neighbor_of = PREV
+					has_opinion = { target = PREV value > 50 }
+				}
+
+				AND = {
+					has_government = fascism
+					PREV = { original_tag = SPR EAI_fascist_nation = yes has_civil_war = yes }
+				}
+			}
+		}
+
+		if = { limit = { is_subject = yes }
+
+			OR = {
+				is_subject_of = PREV
+				PREV = { any_enemy_country = { has_war_with = ROOT } }
+			}
+		}
+
+		PREV = {
+			OR = {
+				EAI_fascist_nation = yes
+
+				AND = {
+					EAI_nonaligned_nation = yes
+
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				is_in_faction_with = ROOT
+
+				has_war_together_with = ROOT
+			}
+		}
+
+	}
+
+	THIS = {
+		NOT = { tag = ROOT }
+
+		has_war = yes NOT = { has_war_with = ROOT }
+
+		set_temp_variable = { t1 = THIS.id }
+
+		OR = {
+			has_country_flag = EAI_receives_support_@THIS
+
+			AND = {
+				EAI_special_lend_lease_rules_TARGET = yes
+
+				OR = {
+					any_enemy_country = { has_war_with = ROOT }
+
+					ROOT = { has_opinion = { target = PREV value > 25 } }
+
+					is_in_faction_with = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						any_enemy_country = { EAI_fascist_nation = yes }
+						ROOT = { NOT = { EAI_fascist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_communist_nation = yes }
+						ROOT = { NOT = { EAI_communist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_democratic_nation = yes }
+						ROOT = { NOT = { EAI_democratic_nation = yes } }
+					}
+
+					ROOT = {
+						NOT = { has_government = neutrality }
+						EAI_PREV_has_same_ideology_with_THIS = yes
+					}
+				}
+
+				if = { limit = { has_capitulated = yes }
+
+					has_army_manpower = { size > 100000 }
+					has_manpower > 100000
+				}
+
+				NOT = {
+					AND = {
+						NOT = { any_enemy_country = { has_war_with = ROOT } }
+
+						any_enemy_country = {
+							OR = {
+								has_non_aggression_pact_with = ROOT
+
+								any_country = { OR = { is_subject_of = ROOT ROOT = { is_subject_of = PREV } is_in_faction_with = ROOT } has_non_aggression_pact_with = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_country_flag = EAI_lend_lease_from_@ROOT }
+
+				NOT = {
+					any_home_area_neighbor_country = {
+						NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+						OR = {
+							tag = ROOT
+							any_home_area_neighbor_country = {
+								NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+								OR = {
+									tag = ROOT
+									any_home_area_neighbor_country = { tag = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			stockpile_ratio = { archetype = convoy ratio > 50 }
+		}
+	}
+
+}
+
+WA_perf_lend_lease_nonaligned = {
+
+	ROOT = {
+
+		OR = {
+			has_country_flag = EAI_supports_@PREV
+
+			AND = {
+				EAI_special_lend_lease_rules_SENDER = yes
+
+				NOT = { surrender_progress > 0.05 }
+			}
+		}
+
+		if = { limit = { EAI_neutral_country = yes }
+
+			is_neighbor_of = PREV
+			has_opinion = { target = PREV value > 25 }
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					EAI_major_country = yes
+					is_major = yes
+					is_in_faction = yes
+					has_war = yes
+				}
+			}
+
+			OR = {
+				AND = {
+					is_neighbor_of = PREV
+					has_opinion = { target = PREV value > 50 }
+				}
+
+				AND = {
+					has_government = fascism
+					PREV = { original_tag = SPR EAI_fascist_nation = yes has_civil_war = yes }
+				}
+			}
+		}
+
+		if = { limit = { is_subject = yes }
+
+			OR = {
+				is_subject_of = PREV
+				PREV = { any_enemy_country = { has_war_with = ROOT } }
+			}
+		}
+
+		PREV = {
+			OR = {
+				AND = { EAI_democratic_nation = yes
+					has_offensive_war = no
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				AND = { EAI_fascist_nation = yes
+					has_offensive_war = no
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				AND = { EAI_communist_nation = yes
+					has_offensive_war = no
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				AND = { EAI_nonaligned_nation = yes
+					has_offensive_war = no
+					any_country = {
+						OR = { tag = PREV is_in_faction_with = PREV is_subject_of = PREV has_war_together_with = PREV }
+						any_neighbor_country = { OR = { tag = ROOT is_in_faction_with = ROOT is_subject_of = ROOT has_war_together_with = ROOT } }
+					}
+				}
+
+				is_in_faction_with = ROOT
+
+				has_war_together_with = ROOT
+			}
+		}
+
+	}
+
+	THIS = {
+		NOT = { tag = ROOT }
+
+		has_war = yes NOT = { has_war_with = ROOT }
+
+		set_temp_variable = { t1 = THIS.id }
+
+		OR = {
+			has_country_flag = EAI_receives_support_@THIS
+
+			AND = {
+				EAI_special_lend_lease_rules_TARGET = yes
+
+				OR = {
+					any_enemy_country = { has_war_with = ROOT }
+
+					ROOT = { has_opinion = { target = PREV value > 25 } }
+
+					is_in_faction_with = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						any_enemy_country = { EAI_fascist_nation = yes }
+						ROOT = { NOT = { EAI_fascist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_communist_nation = yes }
+						ROOT = { NOT = { EAI_communist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_democratic_nation = yes }
+						ROOT = { NOT = { EAI_democratic_nation = yes } }
+					}
+
+					ROOT = {
+						NOT = { has_government = neutrality }
+						EAI_PREV_has_same_ideology_with_THIS = yes
+					}
+				}
+
+				if = { limit = { has_capitulated = yes }
+
+					has_army_manpower = { size > 100000 }
+					has_manpower > 100000
+				}
+
+				NOT = {
+					AND = {
+						NOT = { any_enemy_country = { has_war_with = ROOT } }
+
+						any_enemy_country = {
+							OR = {
+								has_non_aggression_pact_with = ROOT
+
+								any_country = { OR = { is_subject_of = ROOT ROOT = { is_subject_of = PREV } is_in_faction_with = ROOT } has_non_aggression_pact_with = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_country_flag = EAI_lend_lease_from_@ROOT }
+
+				NOT = {
+					any_home_area_neighbor_country = {
+						NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+						OR = {
+							tag = ROOT
+							any_home_area_neighbor_country = {
+								NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+								OR = {
+									tag = ROOT
+									any_home_area_neighbor_country = { tag = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			stockpile_ratio = { archetype = convoy ratio > 50 }
+		}
+	}
+
+}
+
+WA_perf_lend_lease_other = {
+
+	ROOT = {
+
+		OR = {
+			has_country_flag = EAI_supports_@PREV
+
+			AND = {
+				EAI_special_lend_lease_rules_SENDER = yes
+
+				NOT = { surrender_progress > 0.05 }
+			}
+		}
+
+		if = { limit = { EAI_neutral_country = yes }
+
+			is_neighbor_of = PREV
+			has_opinion = { target = PREV value > 25 }
+		}
+
+		if = {
+			limit = {
+				NOT = {
+					EAI_major_country = yes
+					is_major = yes
+					is_in_faction = yes
+					has_war = yes
+				}
+			}
+
+			OR = {
+				AND = {
+					is_neighbor_of = PREV
+					has_opinion = { target = PREV value > 50 }
+				}
+
+				AND = {
+					has_government = fascism
+					PREV = { original_tag = SPR EAI_fascist_nation = yes has_civil_war = yes }
+				}
+			}
+		}
+
+		if = { limit = { is_subject = yes }
+
+			OR = {
+				is_subject_of = PREV
+				PREV = { any_enemy_country = { has_war_with = ROOT } }
+			}
+		}
+
+	}
+
+	THIS = {
+		NOT = { tag = ROOT }
+
+		has_war = yes NOT = { has_war_with = ROOT }
+
+		set_temp_variable = { t1 = THIS.id }
+
+		OR = {
+			has_country_flag = EAI_receives_support_@THIS
+
+			AND = {
+				EAI_special_lend_lease_rules_TARGET = yes
+
+				OR = {
+					any_enemy_country = { has_war_with = ROOT }
+
+					ROOT = { has_opinion = { target = PREV value > 25 } }
+
+					is_in_faction_with = ROOT
+
+					has_war_together_with = ROOT
+
+					AND = {
+						any_enemy_country = { EAI_fascist_nation = yes }
+						ROOT = { NOT = { EAI_fascist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_communist_nation = yes }
+						ROOT = { NOT = { EAI_communist_nation = yes } }
+					}
+					AND = {
+						any_enemy_country = { EAI_democratic_nation = yes }
+						ROOT = { NOT = { EAI_democratic_nation = yes } }
+					}
+
+					ROOT = {
+						NOT = { has_government = neutrality }
+						EAI_PREV_has_same_ideology_with_THIS = yes
+					}
+				}
+
+				if = { limit = { has_capitulated = yes }
+
+					has_army_manpower = { size > 100000 }
+					has_manpower > 100000
+				}
+
+				NOT = {
+					AND = {
+						NOT = { any_enemy_country = { has_war_with = ROOT } }
+
+						any_enemy_country = {
+							OR = {
+								has_non_aggression_pact_with = ROOT
+
+								any_country = { OR = { is_subject_of = ROOT ROOT = { is_subject_of = PREV } is_in_faction_with = ROOT } has_non_aggression_pact_with = PREV }
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if = {
+			limit = {
+				NOT = { has_country_flag = EAI_lend_lease_from_@ROOT }
+
+				NOT = {
+					any_home_area_neighbor_country = {
+						NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+						OR = {
+							tag = ROOT
+							any_home_area_neighbor_country = {
+								NOT = { has_war_with = ROOT has_war_with = var:ROOT.t1 tag = var:ROOT.t1 }
+
+								OR = {
+									tag = ROOT
+									any_home_area_neighbor_country = { tag = ROOT }
+								}
+							}
+						}
+					}
+				}
+			}
+
+			stockpile_ratio = { archetype = convoy ratio > 50 }
+		}
+	}
+
+}
