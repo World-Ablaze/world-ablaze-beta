@@ -671,6 +671,7 @@ NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_FRACTION = 0.0004						-- How much d
 NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_MULTIREGION_DECAY = 0.10				-- Percentage that the strike force mission's naval dominance multiplier decreases with for each additional assigned region
 
 NDefines.NNavy.DOMINANCE_DAILY_GAIN_FACTOR = 0.02 									-- Daily dominance gain, as a fraction of target value
+NDefines.NNavy.DOMINANCE_DAILY_LOSS_FACTOR = 0.01 									-- Daily dominance loss, as a fraction of previous target value  (was 0.04)
 
 NDefines.NNavy.MIN_SHIPS_FOR_HIGHER_SHIP_RATIO_PENALTY = 61    						-- the minimum fleet size in ships that a fleet must be before having the large fleet penalty applied to them
 
@@ -1197,7 +1198,7 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	10, -- NAVAL INVASION SUPPORT
 }
 
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 10									-- maximum patrol/strike force ratio --was 4
+NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 50									-- maximum patrol/strike force ratio --was 4
 
 -- [convoy-region-block] the AI marks a sea region avoided/blocked for its convoys once the region's
 -- convoy danger (REGION_THREAT_PER_SUNK_CONVOY per sinking, minus REGION_CONVOY_DANGER_DAILY_DECAY
