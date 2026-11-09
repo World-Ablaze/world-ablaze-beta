@@ -1,0 +1,47 @@
+# Instant refinery recalculation for player countries.
+# Same chain as the weekly on_action and the "Refresh" button in the trade window,
+# plus a snapshot of the raw-resource balance so the daily check can tell when trade changed it.
+wa_refinery_full_recalc = {
+	recalculate_steel_mills = yes
+	recalculate_alu_mills = yes
+	recalculate_synth = yes
+	manage_steel_mills = yes
+	manage_alu_mills = yes
+	manage_synth = yes
+	calculate_resource_deficite = yes
+	wa_refinery_store_resource_snapshot = yes
+}
+
+wa_refinery_store_resource_snapshot = {
+	set_variable = { wa_ref_last_iron = resource@iron }
+	set_variable = { wa_ref_last_bauxite = resource@bauxite }
+	set_variable = { wa_ref_last_coal = resource@coal }
+}
+
+# Recalculate when the iron, bauxite or coal balance changed since the last recalculation
+# (new imports or exports, cancelled trade deals, lost or gained resource states).
+wa_refinery_recalc_if_resources_changed = {
+	set_temp_variable = { wa_ref_changed = 0 }
+	set_temp_variable = { wa_ref_diff = resource@iron }
+	subtract_from_temp_variable = { wa_ref_diff = wa_ref_last_iron }
+	if = {
+		limit = { NOT = { check_variable = { wa_ref_diff = 0 } } }
+		set_temp_variable = { wa_ref_changed = 1 }
+	}
+	set_temp_variable = { wa_ref_diff = resource@bauxite }
+	subtract_from_temp_variable = { wa_ref_diff = wa_ref_last_bauxite }
+	if = {
+		limit = { NOT = { check_variable = { wa_ref_diff = 0 } } }
+		set_temp_variable = { wa_ref_changed = 1 }
+	}
+	set_temp_variable = { wa_ref_diff = resource@coal }
+	subtract_from_temp_variable = { wa_ref_diff = wa_ref_last_coal }
+	if = {
+		limit = { NOT = { check_variable = { wa_ref_diff = 0 } } }
+		set_temp_variable = { wa_ref_changed = 1 }
+	}
+	if = {
+		limit = { check_variable = { wa_ref_changed = 1 } }
+		wa_refinery_full_recalc = yes
+	}
+}
