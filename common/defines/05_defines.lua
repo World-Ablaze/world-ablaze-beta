@@ -235,6 +235,7 @@ NDefines.NProduction.CAPITAL_SHIP_MAX_NAV_FACTORIES_PER_LINE = 5
 NDefines.NProduction.CONVOY_MAX_NAV_FACTORIES_PER_LINE = 15
 
 NDefines.NProduction.MINIMUM_NUMBER_OF_FACTORIES_TAKEN_BY_CONSUMER_GOODS_PERCENT = 0.05	-- The minimum number of factories we have to put on consumer goods, in percent.
+NDefines.NProduction.MILITARY_FACTORY_COHERENCY_BONUS = 250								-- Value we add to the weight of a production line already in progress, if we only have one military factory. (to reduce fluctuating AI production)
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Market
 NDefines.NMarket.IC_TO_CIC_FACTOR = 0.75											-- The factor for mapping IC cost to CIC cost. Should be a positive number.
@@ -262,7 +263,7 @@ NDefines.NResistance.GARRISON_MANPOWER_LOST_BY_ATTACK = 0.01 						-- Ratio of m
 NDefines.NResistance.MIN_DAMAGE_TO_GARRISONS_MODIFIER = 0.25						-- modifier that applies to losses from resistance attack to garrisons at most can be reduced to this amount
 
 NDefines.NResistance.FOREIGN_MANPOWER_MIN_THRESHOLD = 500000000			 			-- The minimum number of Manpower that AI will accept to give at once, in order to avoid many weird little transfer.
-NDefines.NResistance.RESISTANCE_TARGET_BASE = 50.0
+NDefines.NResistance.RESISTANCE_TARGET_BASE = 60.0
 
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_LOW = -5.0						-- how much we reduce the resistance target
 NDefines.NResistance.RESISTANCE_TARGET_MODIFIER_POP_VERY_LOW = -20.0				-- resistance in very low pop states
@@ -674,6 +675,7 @@ NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_FRACTION = 0.0004						-- How much d
 NDefines.NNavy.NAVAL_DOMINANCE_STRIKE_FORCE_MULTIREGION_DECAY = 0.10				-- Percentage that the strike force mission's naval dominance multiplier decreases with for each additional assigned region
 
 NDefines.NNavy.DOMINANCE_DAILY_GAIN_FACTOR = 0.02 									-- Daily dominance gain, as a fraction of target value
+NDefines.NNavy.DOMINANCE_DAILY_LOSS_FACTOR = 0.01 									-- Daily dominance loss, as a fraction of previous target value  (was 0.04)
 
 NDefines.NNavy.MIN_SHIPS_FOR_HIGHER_SHIP_RATIO_PENALTY = 61    						-- the minimum fleet size in ships that a fleet must be before having the large fleet penalty applied to them
 
@@ -1200,7 +1202,7 @@ NDefines.NAI.MAX_MISSION_PER_TASKFORCE = {  -- max mission region/taskforce rati
 	10, -- NAVAL INVASION SUPPORT
 }
 
-NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 10									-- maximum patrol/strike force ratio --was 4
+NDefines.NAI.MAX_PATROL_TO_STRIKE_FORCE_RATIO = 50									-- maximum patrol/strike force ratio --was 4
 
 -- [convoy-region-block] the AI marks a sea region avoided/blocked for its convoys once the region's
 -- convoy danger (REGION_THREAT_PER_SUNK_CONVOY per sinking, minus REGION_CONVOY_DANGER_DAILY_DECAY
