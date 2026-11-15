@@ -7545,14 +7545,9 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			custom_effect_tooltip = recruiting_reserves_30
+			# Same reward as the old army expansion law, but 10 reserve divisions instead of 30.
+			custom_effect_tooltip = recruiting_reserves_10
 			hidden_effect = {
-				if = {
-					limit = {
-						check_variable = { ROOT.reserves < 90 }
-					}
-					add_to_variable = { ROOT.reserves = 20 }
-				}
 				if = {
 					limit = {
 						check_variable = { ROOT.reserves < 100 }
@@ -7569,14 +7564,6 @@ focus_tree = {
 				}
 			}
 			532 = {
-				add_extra_state_shared_building_slots = 1
-				add_building_construction = {
-					type = arms_factory
-					level = 1
-					instant_build = yes
-				}
-			}
-			531 = {
 				add_extra_state_shared_building_slots = 1
 				add_building_construction = {
 					type = arms_factory
@@ -7615,7 +7602,25 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# Ten more reserve divisions on top of the armament expansion plan.
+			custom_effect_tooltip = recruiting_reserves_10
+			hidden_effect = {
+				if = {
+					limit = {
+						check_variable = { ROOT.reserves < 100 }
+					}
+					add_to_variable = { ROOT.reserves = 10 }
+				}
+			}
+			# The design-cost waivers for infantry and artillery used to come from Reorganize the Military.
+			# One tooltip for all three waivers. The generic infantry tooltip ends in a blank line, which left gaps here.
+			custom_effect_tooltip = JAP_inspectorate_design_cost_tt
+			hidden_effect = {
+				add_ideas = infantry_modernization_spirit
+				set_technology = { infantry_modernization_tech = 1 }
+				add_ideas = JAP_inspectorate_training_manuals
+				set_technology = { firepower_induction_tech = 1 }
+			}
 		}
 	}
 
@@ -7681,17 +7686,9 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
+			# The design-cost waivers that used to be here are now spread over the Inspectorate General (infantry,
+			# artillery, cavalry), Anti-Air Guns (anti-air) and the anti-tank firepower focus (anti-tank).
 			army_experience = 50
-			custom_effect_tooltip = firepower_induction_spirit_permanent_tt
-			hidden_effect = {
-				add_ideas = firepower_induction_spirit
-				set_technology = { firepower_induction_tech = 1 }
-			}
-			custom_effect_tooltip = infantry_modernization_spirit_permanent_tt
-			hidden_effect = {
-				add_ideas = infantry_modernization_spirit
-				set_technology = { infantry_modernization_tech = 1 }
-			}
 		}
 	}
 
@@ -7852,6 +7849,11 @@ focus_tree = {
 		# After the German technology exchange the bonus doubles and radar is added
 		# (the Wurzburg transfer led to radar-directed anti-aircraft fire control).
 		completion_reward = {
+			# Anti-air units cost no army experience to add to a template (moved here from Reorganize the Military).
+			custom_effect_tooltip = JAP_anti_air_design_cost_tt
+			hidden_effect = {
+				add_ideas = JAP_anti_air_design_waiver
+			}
 			if = {
 				limit = { has_country_flag = JAP_gte_done }
 				add_tech_bonus = {
@@ -8159,7 +8161,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_promote_rising_officers
+		id = JAP_staff_officers_to_field_commands
 		icon = GFX_goal_generic_general
 		x = 39
 		y = 7
@@ -8170,8 +8172,19 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			show_unit_leaders_tooltip = JAP_tomoyuki_yamashita
-			show_unit_leaders_tooltip = JAP_kanji_ishiwara
+			# Staff officers posted out to field commands grow as planners. Okamura starts with low logistics on purpose.
+			JAP_yasuji_okamura = {
+				add_planning = 1
+			}
+			# Toseiha generals trade the empty marker trait for the one that carries the planning bonus.
+			custom_effect_tooltip = JAP_staff_to_field_toseiha_tt
+			hidden_effect = {
+				every_army_leader = {
+					limit = { has_trait = JAP_toseiha_officer }
+					remove_unit_leader_trait = JAP_toseiha_officer
+					add_unit_leader_trait = JAP_toseiha_officer_ascendant
+				}
+			}
 		}
 	}
 
@@ -8292,7 +8305,7 @@ focus_tree = {
 		y = 8
 		cost = 3
 
-		prerequisite = { focus = JAP_reinforce_the_expeditionary_army focus = JAP_promote_rising_officers }
+		prerequisite = { focus = JAP_reinforce_the_expeditionary_army focus = JAP_staff_officers_to_field_commands }
 
 		# available = { }   # TODO 実装側で
 
@@ -8315,6 +8328,11 @@ focus_tree = {
 		# Ta-dan (HEAT) arrived with the 1942 German technology exchange, so it is only
 		# granted when the exchange came first; the bonuses double as well.
 		completion_reward = {
+			# Anti-tank units cost no army experience to add to a template (moved here from Reorganize the Military).
+			custom_effect_tooltip = JAP_anti_tank_design_cost_tt
+			hidden_effect = {
+				add_ideas = JAP_anti_tank_design_waiver
+			}
 			if = {
 				limit = { has_country_flag = JAP_gte_done }
 				add_tech_bonus = {
@@ -8443,7 +8461,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_establish_the_teishin_shudan
+		id = JAP_teishin_shudan
 		icon = GFX_focus_generic_paratrooper
 		x = 46
 		y = 9
@@ -8455,7 +8473,7 @@ focus_tree = {
 
 		completion_reward = {
 			add_tech_bonus = {
-				name = JAP_establish_the_teishin_shudan
+				name = JAP_teishin_shudan
 				bonus = 0.5
 				uses = 2
 				category = para_tech
@@ -8958,7 +8976,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_rebuild_the_heavy_escort_fleet
+		id = JAP_preparations_for_the_post_treaty_era
 		icon = GFX_goal_generic_navy_battleship
 		x = 60
 		y = 2
@@ -9014,7 +9032,7 @@ focus_tree = {
 				}
 			}
 			add_tech_bonus = {
-				name = JAP_rebuild_the_heavy_escort_fleet
+				name = JAP_preparations_for_the_post_treaty_era
 				bonus = 0.5
 				uses = 2
 				technology = improved_fire_control_system
@@ -9120,13 +9138,13 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_the_ultimate_battleship
+		id = JAP_big_ships_big_guns
 		icon = GFX_goal_JAP_the_ultimate_battleship
 		x = 59
 		y = 3
 		cost = 4
 
-		prerequisite = { focus = JAP_rebuild_the_heavy_escort_fleet }
+		prerequisite = { focus = JAP_preparations_for_the_post_treaty_era }
 
 		# available = { }   # TODO 実装側で
 
@@ -9185,7 +9203,7 @@ focus_tree = {
 		y = 3
 		cost = 5
 
-		prerequisite = { focus = JAP_rebuild_the_heavy_escort_fleet }
+		prerequisite = { focus = JAP_preparations_for_the_post_treaty_era }
 
 		# available = { }   # TODO 実装側で
 
@@ -9428,7 +9446,7 @@ focus_tree = {
 		y = 4
 		cost = 3
 
-		prerequisite = { focus = JAP_the_ultimate_battleship focus = JAP_shokaku_class }
+		prerequisite = { focus = JAP_big_ships_big_guns focus = JAP_shokaku_class }
 
 		# available = { }   # TODO 実装側で
 
@@ -9502,7 +9520,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_guerilla_operations
+		id = JAP_ichioku_gyokusai
 		icon = GFX_focus_JAP_give_it_your_all_for_the_emperor
 		x = 65
 		y = 3
@@ -9537,7 +9555,7 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_the_divine_wind
+		id = JAP_kamikaze_special_attack_units
 		icon = GFX_goal_JAP_the_divine_wind
 		x = 69
 		y = 3
@@ -9711,14 +9729,14 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_relocate_capital
+		id = JAP_relocate_imperial_headquarters
 		icon = GFX_focus_JAP_mountain_village_operation_units
 		x = 65
 		y = 4
 
 		cost = 1
 
-		prerequisite = { focus = JAP_guerilla_operations }
+		prerequisite = { focus = JAP_ichioku_gyokusai }
 
 		ai_will_do = {
 			factor = 1
@@ -9753,7 +9771,7 @@ focus_tree = {
 		y = 4
 		cost = 3
 
-		prerequisite = { focus = JAP_the_divine_wind focus = JAP_guerilla_operations }
+		prerequisite = { focus = JAP_kamikaze_special_attack_units focus = JAP_ichioku_gyokusai }
 
 		# available = { }   # TODO 実装側で
 
@@ -10252,7 +10270,7 @@ focus_tree = {
 	# focus = {
 	# 	id = JAP_prevent_surrender
 	# 	icon = GFX_focus_generic_total_war
-	# 	prerequisite = { focus = JAP_the_divine_wind }
+	# 	prerequisite = { focus = JAP_kamikaze_special_attack_units }
 	# 	prerequisite = { focus = JAP_operation_ketsugo }
 	# 	relative_position_id = JAP_operation_ketsugo
 	# 	x = 1
@@ -10666,8 +10684,7 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			show_unit_leaders_tooltip = JAP_tomoyuki_yamashita
-			show_unit_leaders_tooltip = JAP_kanji_ishiwara
+			# TODO 効果はまだ決まっていない
 		}
 	}
 
@@ -12030,7 +12047,7 @@ focus_tree = {
 				}
 			}
 			add_tech_bonus = {
-				name = JAP_rebuild_the_heavy_escort_fleet
+				name = JAP_preparations_for_the_post_treaty_era
 				bonus = 0.5
 				uses = 2
 				technology = improved_fire_control_system
@@ -12088,7 +12105,7 @@ focus_tree = {
 
 		completion_reward = {
 			add_tech_bonus = {
-				name = JAP_establish_the_teishin_shudan
+				name = JAP_teishin_shudan
 				bonus = 0.5
 				uses = 2
 				category = para_tech
