@@ -5049,8 +5049,9 @@ power capitulates.
   - Verification (owner console, cold boot): `event wa_test_tmpl.3 <AI_TAG>` on an AI under 300 army
     XP with a target flag, then `WA_SUPPRESSION_TEMPLATE` reads 14001; in game, its
     `Suppression template` keeps the MP company and no 20+-cavalry lettered copy without MP appears.
-  - Committed 2026-11-20 on `ai-rework` while the subject stays PARKED (WIP limit already exceeded):
-    untested until the owner console run above.
+  - Committed 2026-11-20 on `ai-rework` (`10a98f62b6`) while the subject stays PARKED (WIP limit
+    already exceeded). Owner reported "fix testé" 2026-11-20 after a cold restart; no console
+    output pasted.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,
