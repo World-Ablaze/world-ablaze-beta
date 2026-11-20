@@ -1,0 +1,99 @@
+﻿add_namespace = jap_ins_surrender
+
+# Surrender of the Dutch East Indies, built like the fall of France (france.101 -> france.10).
+# Once Japan or a faction member holds Batavia, Surabaya and Palembang, the Dutch East Indies
+# surrender. Every Indonesian state Japan historically occupied goes straight to the three
+# military administrations (JAP_establish_indonesian_military_administrations_effect). The
+# Dutch keep South West Papua and the Western Central Range (Merauke was never taken), so the
+# colony carries on the war from there.
+
+# Hidden check on the Dutch East Indies
+country_event = {
+	id = jap_ins_surrender.1
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		tag = INS
+		has_war_with = JAP
+		NOT = { has_global_flag = JAP_ins_surrendered }
+		NOT = { country_exists = JVA }
+		NOT = { country_exists = SMT }
+		NOT = { country_exists = NCG }
+		any_country = {
+			OR = {
+				tag = JAP
+				is_in_faction_with = JAP
+			}
+			controls_province = 7381	# Batavia
+		}
+		any_country = {
+			OR = {
+				tag = JAP
+				is_in_faction_with = JAP
+			}
+			controls_province = 4608	# Surabaya
+		}
+		any_country = {
+			OR = {
+				tag = JAP
+				is_in_faction_with = JAP
+			}
+			controls_province = 12268	# Palembang
+		}
+	}
+	immediate = {
+		set_global_flag = JAP_ins_surrendered
+		JAP = { country_event = { id = jap_ins_surrender.2 } }
+		country_event = { id = jap_ins_surrender.3 days = 1 }
+	}
+}
+
+# Japan: the surrender, and the administrations take over
+country_event = {
+	id = jap_ins_surrender.2
+	title = jap_ins_surrender.2.t
+	desc = jap_ins_surrender.2.d
+	picture = GFX_report_event_soldier_surrender
+	is_triggered_only = yes
+
+	immediate = {
+		hidden_effect = {
+			every_state = {
+				limit = {
+					is_owned_by = INS
+					OR = {
+						state = 334	# Kalimantan
+						state = 335	# Java
+						state = 667	# Lesser Sunda Islands
+						state = 668	# The Moluccas
+						state = 672	# Sumatra
+						state = 673	# Sulawesi
+						state = 738	# Aru Islands
+						state = 1002	# North West Papua
+						state = 1052	# Sangihe Islands
+					}
+				}
+				set_state_flag = JAP_ins_handover
+			}
+			JAP_establish_indonesian_military_administrations_effect = yes
+		}
+	}
+
+	option = {
+		name = jap_ins_surrender.2.a
+		custom_effect_tooltip = jap_ins_surrender.2.a_tt
+	}
+}
+
+# The Dutch East Indies: what is left carries on
+country_event = {
+	id = jap_ins_surrender.3
+	title = jap_ins_surrender.3.t
+	desc = jap_ins_surrender.3.d
+	picture = GFX_report_event_soldier_surrender
+	is_triggered_only = yes
+
+	option = {
+		name = jap_ins_surrender.3.a
+	}
+}
