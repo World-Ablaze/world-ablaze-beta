@@ -1,0 +1,90 @@
+﻿add_namespace = jap_timor
+
+# Portuguese Timor (state 721). On 17 December 1941 a Dutch-Australian force occupied the
+# neutral colony; Japan invaded on 19-20 February 1942 and held it until 5 September 1945,
+# when power went back to the Portuguese governor.
+# Once Japan is at war with Australia, Australia is offered the occupation. If Australia is
+# not at war with Japan, the Dutch East Indies (or the Netherlands, if the colony is gone)
+# get the offer instead. The Japanese surrender event (jap_armor.803) gives the state back.
+
+# Hidden check: Australia first
+country_event = {
+	id = jap_timor.1
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		tag = AST
+		has_war_with = JAP
+		NOT = { has_global_flag = JAP_timor_offered }
+		country_exists = POR
+		POR = {
+			NOT = { has_war_with = JAP }
+			NOT = { is_in_faction_with = JAP }
+			NOT = { is_in_faction_with = ROOT }
+		}
+		721 = {
+			is_owned_by = POR
+			is_controlled_by = POR
+		}
+	}
+	immediate = {
+		set_global_flag = JAP_timor_offered
+		country_event = { id = jap_timor.2 }
+	}
+}
+
+# Hidden check: the Dutch, only while Australia is not at war with Japan
+country_event = {
+	id = jap_timor.3
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		OR = {
+			tag = INS
+			AND = {
+				tag = HOL
+				NOT = { country_exists = INS }
+			}
+		}
+		has_war_with = JAP
+		NOT = { has_global_flag = JAP_timor_offered }
+		NOT = {
+			AST = { has_war_with = JAP }
+		}
+		country_exists = POR
+		POR = {
+			NOT = { has_war_with = JAP }
+			NOT = { is_in_faction_with = JAP }
+			NOT = { is_in_faction_with = ROOT }
+		}
+		721 = {
+			is_owned_by = POR
+			is_controlled_by = POR
+		}
+	}
+	immediate = {
+		set_global_flag = JAP_timor_offered
+		country_event = { id = jap_timor.2 }
+	}
+}
+
+# The offer
+country_event = {
+	id = jap_timor.2
+	title = jap_timor.2.t
+	desc = jap_timor.2.d
+	picture = GFX_report_event_soldier_surrender
+	is_triggered_only = yes
+
+	option = { # Occupy it
+		name = jap_timor.2.a
+		ai_chance = { factor = 100 }
+		transfer_state = 721
+		set_state_controller = 721
+		custom_effect_tooltip = jap_timor.2.a_tt
+	}
+	option = { # Respect Portuguese neutrality
+		name = jap_timor.2.b
+		ai_chance = { factor = 0 }
+	}
+}
