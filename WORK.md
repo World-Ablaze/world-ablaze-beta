@@ -3165,7 +3165,71 @@ commits, code comments (`# [slug] ...`), console harness, campaign probe. Rules:
   PASS at a save between 1940.4 and the Italian declaration, and the owner confirms the
   Battle-of-France report symptoms gone (or re-reports with a new save).
 
-### light-support-conversion — PARKED (2026-09-09)
+### light-support-conversion — TESTED (2026-11-20)
+- Owner reported "testé et validé" 2026-11-20 on the Change 15 console verification below (cold
+  restart per the recipe). game.log, `event wa_test_tmpl.6 SOV` at 1940.10.28 (MEASURED):
+  `scope : 1 1 1 1 0`; `pre : gate=1 brigades=1 divisions=237 ls_target=1 ls_name=Light Support
+  Tank template F md_name=Medium Tank template U`; `ghost=0`; `post : brigades=0 divisions=237`.
+  error.log carries the four create_unit lines of the sentinel control (expected, the control
+  failing) and "Spawned event without any allowed options" (hidden harness event, no option block,
+  same as tmpl.1-5). The campaign verification line stays owed.
+- **Change 15 `[tank-brigade-swap]` (owner order 2026-11-20, "lance le sujet, tant pis pour work":
+  unparked over the WIP limit on the owner's word).** From 1940, each monthly template pulse the
+  SOV AI trades up to 2 stranded "Tankovaya brigada" divisions for EMPTY divisions on its newest
+  tank template; ends with `WA_AI_TEMPLATES_light_support_park_retired` (sov_armor.981, 1942.1.1).
+  - Symptom (MEASURED, owner saves `SOV_1939_12_10_01` / `SOV_1941_05_31_04`, v1.20.0): 21
+    divisions on "Tankovaya brigada" (8 LS + 1 mot) at both dates, zero conversion in 17 months;
+    the template is `obsolete=yes` since 1936.1.5. Flags: 15010 STABLE at 1939.12, 15007 CONVERT-1
+    at 1941.5, `ls_conversion_started` set 1940.5.1. Same as the 73c03fd3 score above (21/21).
+  - Cause (DERIVED, file + flags): the brigade's only bridge `..._20_STARTER_MIX` enables on flag
+    value 15001; the SOV park sits on 15006/15009/15010/15007.. from 1938 on, so no target matches
+    the 8/0/1 shape. The lettered light-support divisions did convert (12 on "Light Support Tank
+    template A" 1939.12 -> 12 on "Medium Tank template E" 1941.5, MEASURED).
+  - Change: `WA_AI_CONFIG_TEMPLATES_tank_brigade_swap_window` (date > 1939.12.31), constant
+    `wa_ai_production.army_composition.tank_brigade_swaps_per_month = 2`, scripted loc
+    `WA_AI_TEMPLATES_GetLightSupportTankTemplateName` (Z first, A last, then bare name — owner
+    rule), triggers `WA_AI_TEMPLATES_is_tank_brigade_division` (division scope, shape: LS majority,
+    no light, no medium battalion) / `_has_light_support_swap_target` / `_has_medium_swap_target` /
+    `_should_swap_tank_brigade`, effects `WA_AI_TEMPLATES_swap_one_tank_brigade` (create first,
+    destroy only on a landed spawn, MISS log otherwise) and `WA_AI_TEMPLATES_swap_tank_brigades`
+    (bounded while loop), called in `WA_AI_misc_on_actions.txt` after `[light-medium-conversion]`.
+  - Owner-accepted risk: letters are reused, so the highest letter can be obsolete (MEASURED:
+    "Light Support Tank template I" obsolete at 1939.12 while "A" was live; "Medium Tank template P"
+    obsolete at 1941.5). A repo comment (`WA_TEST_TMPL_count_lettered_light_infantry_templates`)
+    says `has_template` ignores obsolete designs — ASSUMED; if true the ladder skips them. The
+    harness `ls_name` line settles it on a 1939.12 save: "template A" = skipped, "template I" = not.
+  - Also ASSUMED: `destroy_unit` refunds nothing (each swap loses the brigade's fielded equipment;
+    the 1942 retire would have refunded it) - the owner's design ("supprimer ... spawner vide"),
+    the loss is its price. The destroyed brigade is random (the install's division-scope triggers
+    are `division_has_*`, `unit_strength`, `unit_organization`, `is_unit_template_reserves`, none
+    reads combat or location - MEASURED, triggers_documentation.md), so a Winter War brigade can go.
+  - Why the bridge died (MEASURED, git): `bb1028c05b` (Ethan156, 2026-09-10) removed the 15009 term
+    from `..._20_STARTER_MIX` enable, no reason stated. Not restored: the owner chose the swap, and
+    the 73c03fd3 score showed 21/21 stranded with army XP ~0 (the designer path is XP-bound) - the
+    swap needs no XP. The STARTER_MIX / 44_TEMPORARY_CONVERT comments still describe 15009: stale.
+  - Reviews 2026-11-20: architecture CONFLICT (the brigade shape also matches the generic
+    30_MOT / TRANSITION_MOT/MEC 12 LS + 3 mot targets) - fixed: the gate requires the park latch
+    `WA_AI_TEMPLATES_sov_light_support_temporary_latched`, where no enabled target has that shape
+    (DERIVED from the file), and a spawn that adds a brigade-shaped division sets
+    `WA_AI_TEMPLATES_tank_brigade_swap_shape_clash` (no destroy, gate closed for good, CLASH log);
+    the medium target proof is now one trigger `WA_AI_TEMPLATES_has_medium_spawn_target`, shared
+    with `[light-medium-conversion]` (same terms, moved, not changed); constant comment readers
+    fixed. Lessons CONCERNS: ghost-unit risk of a failed `create_unit` - harness `ghost` line spawns
+    on the sentinel name, must add 0; meta FALSE branch shown by `ls_target=0` on the 1941.5 save;
+    the lessons log says `has_template` does not see decommissioned copies (DERIVED: the ladder may
+    skip obsolete letters - the harness `ls_name` line settles it).
+  - Timeline (DERIVED, monthly pulse): 1940.1.1 21 -> 19 ... 1940.11.1 0, if a target resolves
+    every month; LS names vanish in CONVERT (MEASURED none at 1941.5), the medium fallback carries on.
+  - Verification — owner console (restart the exe, no hot reload): load `SOV_1939_12_10_01`,
+    observe; `event wa_test_tmpl.6 SOV` before 1940 → `ghost=0`, `gate=0`, brigades/divisions
+    unchanged (known-false control); advance past 1940.1.1, `event wa_test_tmpl.6 SOV` → `gate=1`,
+    brigades -2, divisions equal pre, no CLASH; `event wa_test_tmpl.1 SOV` swap line
+    `window=1 latched=1 retired=0 clash=0 brigades=1`; on `SOV_1941_05_31_04` the tmpl.6 pre line
+    reads `ls_target=0` and `md_name` = a live medium template;
+    no `[tank-brigade-swap] MISS` in game.log. `imgui show ai_templates` ~1940.3: the spawned
+    divisions sit on a non-obsolete template or are moving to one.
+  - Verification — campaign: 0 divisions on "Tankovaya brigada" before 1942.1.1; SOV armour
+    division count not lower than before the swaps.
 - **Campaign `73c03fd3` scored 2026-09-23** (cloud, build through `cddb2f605d`, normal = historical difficulty DERIVED): NOT MET. Mission completed before 1941.6 (DERIVED from cooldown); but 21/21 former brigades stay 8/0/1 until the 1942.1.4 retire DELETED them (SOV armour 44 -> 23 divisions 1942.1 -> 1942.6), 12/33 on 7/3/5 at 1940.1, 4 still on 2/0/5 at 1943.1 (MEASURED). Medium-flag timing, phase monotonicity and the positive light budget MET. Harness still owed.
 - Parked 2026-09-09 on the owner's order (admission of `air-budget`, WIP limit: 8 under OPEN for 4); move it back to OPEN in one line when its owed item lands. State at parking: SHIPPED-UNTESTED 2026-09-08; owner in-game report 2026-09-09 "les changements locaux marchent", harness output not yet pasted - paste it here and move to TESTED, no session work pending.
 - Owner in-game report 2026-09-09, cold boot, working tree without Change 14: "les changements
@@ -5037,6 +5101,21 @@ power capitulates.
   - Verification (owner console): on an AI major at peace with cavalry, `event wa_test_tmpl.4 TAG`
     reads gate=1, cavalry lower after, oob_cav_template unchanged,
     re-run equal to post; on a minor under 100k, gate=0 and cavalry unchanged.
+- **Addendum [suppression-template-alignment] (owner order 2026-11-20)**: playthrough report (screenshot,
+  GER garrison = "Light Cavalry template A", 25 cavalry, no MP). Under 300 army XP the calculator aimed
+  at 14000 (4 cavalry, no support), so the designer reworked the war-start 25-cav + MP template toward
+  it, MP first (ASSUMED engine behaviour, owner reading). Owner rule: a country holding the 25-cavalry
+  template aims at 14001 whatever its XP. Change: `WA_AI_TEMPLATES_has_full_suppression_template`
+  (`has_template = "Suppression template"`) OR'd into the 14001 branch, 14001 made a one-way latch
+  (also stops the pre-existing XP > 300 flicker), and the war-start creator re-runs the calculator
+  when the country already has a target. Reviewers: architecture OK; lessons CONCERNS answered by
+  the latch. Open ASSUMED gap: a no-MP-tech holder (locked, no support) is aimed at a target with MP.
+  - Verification (owner console, cold boot): `event wa_test_tmpl.3 <AI_TAG>` on an AI under 300 army
+    XP with a target flag, then `WA_SUPPRESSION_TEMPLATE` reads 14001; in game, its
+    `Suppression template` keeps the MP company and no 20+-cavalry lettered copy without MP appears.
+  - Committed 2026-11-20 on `ai-rework` (`10a98f62b6`) while the subject stays PARKED (WIP limit
+    already exceeded). Owner reported "fix testé" 2026-11-20 after a cold restart; no console
+    output pasted.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,
