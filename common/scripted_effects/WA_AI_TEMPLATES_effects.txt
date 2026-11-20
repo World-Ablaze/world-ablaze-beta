@@ -142,6 +142,86 @@ WA_AI_TEMPLATES_convert_one_light_armor_division = {
 	}
 }
 
+# [tank-brigade-swap] Trade ONE stranded 1936 tank brigade for an EMPTY division on the newest
+# light-support template (Z..A), else the newest medium one, filled from stock by the AI. Create
+# first, destroy only on a landed spawn (destroy_unit refunds nothing); a spawn that has the brigade
+# shape itself latches the clash flag and closes the gate for good. Country scope (ROOT = the
+# country), AI only. Gate: WA_AI_TEMPLATES_should_swap_tank_brigade.
+WA_AI_TEMPLATES_swap_one_tank_brigade = {
+	set_temp_variable = { _wa_tbs_before = num_divisions }
+	WA_AI_TEMPLATES_count_tank_brigade_divisions = yes
+	set_temp_variable = { _wa_tbs_shape_before = _wa_tbs_shape_n }
+	if = {
+		limit = { WA_AI_TEMPLATES_has_light_support_swap_target = yes }
+		meta_effect = {
+			text = {
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"[SWAP_TEMPLATE]\" start_experience_factor = 0.5 start_equipment_factor = 0 start_manpower_factor = 1"
+						owner = PREV
+					}
+				}
+			}
+			SWAP_TEMPLATE = "[WA_AI_TEMPLATES_GetLightSupportTankTemplateName]"
+		}
+	}
+	else_if = {
+		limit = { WA_AI_TEMPLATES_has_medium_spawn_target = yes }
+		meta_effect = {
+			text = {
+				capital_scope = {
+					create_unit = {
+						division = "division_template = \"[SWAP_TEMPLATE]\" start_experience_factor = 0.5 start_equipment_factor = 0 start_manpower_factor = 1"
+						owner = PREV
+					}
+				}
+			}
+			SWAP_TEMPLATE = "[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+		}
+	}
+	set_temp_variable = { _wa_tbs_after = num_divisions }
+	WA_AI_TEMPLATES_count_tank_brigade_divisions = yes
+	if = {
+		limit = { check_variable = { _wa_tbs_shape_n > _wa_tbs_shape_before } }
+		set_country_flag = WA_AI_TEMPLATES_tank_brigade_swap_shape_clash
+		log = "[tank-brigade-swap] CLASH: [ROOT.GetName] spawn template has the brigade shape - swap closed, nothing destroyed"
+	}
+	else_if = {
+		limit = { check_variable = { _wa_tbs_after > _wa_tbs_before } }
+		random_country_division = {
+			limit = { WA_AI_TEMPLATES_is_tank_brigade_division = yes }
+			destroy_unit = yes
+		}
+	}
+	else = {
+		log = "[tank-brigade-swap] MISS: [ROOT.GetName] spawned nothing on [WA_AI_TEMPLATES_GetLightSupportTankTemplateName] / [WA_AI_TEMPLATES_GetMediumTankTemplateName], no brigade destroyed"
+	}
+}
+
+# [tank-brigade-swap] Writes _wa_tbs_shape_n = ROOT's divisions on the brigade shape. Country scope.
+WA_AI_TEMPLATES_count_tank_brigade_divisions = {
+	set_temp_variable = { _wa_tbs_shape_n = 0 }
+	every_country_division = {
+		limit = { WA_AI_TEMPLATES_is_tank_brigade_division = yes }
+		ROOT = { add_to_temp_variable = { _wa_tbs_shape_n = 1 } }
+	}
+}
+
+# [tank-brigade-swap] Run the swap up to tank_brigade_swaps_per_month times; the gate is re-read
+# each turn, so the loop stops on the last brigade or a missing target. Country scope.
+WA_AI_TEMPLATES_swap_tank_brigades = {
+	set_temp_variable = { _wa_tbs_i = 0 }
+	set_temp_variable = { _wa_tbs_n = constant:wa_ai_production.army_composition.tank_brigade_swaps_per_month }
+	while_loop_effect = {
+		limit = {
+			check_variable = { _wa_tbs_i < _wa_tbs_n }
+			WA_AI_TEMPLATES_should_swap_tank_brigade = yes
+		}
+		add_to_temp_variable = { _wa_tbs_i = 1 }
+		WA_AI_TEMPLATES_swap_one_tank_brigade = yes
+	}
+}
+
 # [war-start-suppression-template] The engine can leave its lettered cavalry templates competing
 # with the named suppression template. Remove that A..Z ladder before creating or retaining the
 # named template. Country scope: THIS/ROOT = the country entering the war.

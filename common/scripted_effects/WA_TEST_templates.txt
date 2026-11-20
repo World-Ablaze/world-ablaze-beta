@@ -150,6 +150,47 @@ WA_TEST_TMPL_role_armour = {
 		set_temp_variable = { _tm_cm = 1 }
 	}
 	log = "  role  : conv_gate=[?_tm_cg|.0] light_divs=[?_tm_cl|.0] medium_template=[?_tm_cm|.0] resolved=[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	# [tank-brigade-swap] Independent walk of the swap's terms, the gate printed beside them.
+	# window=1 latched=1 retired=0 clash=0 brigades=1 and (ls_target=1 or md_target=1) with
+	# swap_gate=0 = a term the walk does not see. brigades=1 a month after swap_gate=1 = the spawn
+	# never lands (game.log MISS line); clash=1 = the spawn template has the brigade shape.
+	set_temp_variable = { _tm_bg = 0 }
+	set_temp_variable = { _tm_bw = 0 }
+	set_temp_variable = { _tm_br = 0 }
+	set_temp_variable = { _tm_bd = 0 }
+	set_temp_variable = { _tm_bl = 0 }
+	set_temp_variable = { _tm_bm = 0 }
+	set_temp_variable = { _tm_bt = 0 }
+	set_temp_variable = { _tm_bc = 0 }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_sov_light_support_temporary_latched } set_temp_variable = { _tm_bt = 1 } }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_tank_brigade_swap_shape_clash } set_temp_variable = { _tm_bc = 1 } }
+	set_temp_variable = { _tm_bn = constant:wa_ai_production.army_composition.tank_brigade_swaps_per_month }
+	if = { limit = { WA_AI_TEMPLATES_should_swap_tank_brigade = yes } set_temp_variable = { _tm_bg = 1 } }
+	if = { limit = { WA_AI_CONFIG_TEMPLATES_tank_brigade_swap_window = yes } set_temp_variable = { _tm_bw = 1 } }
+	if = { limit = { has_country_flag = WA_AI_TEMPLATES_light_support_park_retired } set_temp_variable = { _tm_br = 1 } }
+	if = {
+		limit = {
+			any_country_division = {
+				division_has_majority_template = light_support_armor_battalion_line
+				NOT = { division_has_battalion_in_template = light_armor_battalion_line }
+				NOT = { division_has_battalion_in_template = medium_armor_battalion_line }
+			}
+		}
+		set_temp_variable = { _tm_bd = 1 }
+	}
+	if = {
+		limit = {
+			meta_trigger = {
+				text = {
+					has_template = "[LS_TEMPLATE]"
+				}
+				LS_TEMPLATE = "[WA_AI_TEMPLATES_GetLightSupportTankTemplateName]"
+			}
+		}
+		set_temp_variable = { _tm_bl = 1 }
+	}
+	set_temp_variable = { _tm_bm = _tm_cm }
+	log = "  swap  : swap_gate=[?_tm_bg|.0] window=[?_tm_bw|.0] latched=[?_tm_bt|.0] retired=[?_tm_br|.0] clash=[?_tm_bc|.0] brigades=[?_tm_bd|.0] ls_target=[?_tm_bl|.0] md_target=[?_tm_bm|.0] per_month=[?_tm_bn|.0] ls_resolved=[WA_AI_TEMPLATES_GetLightSupportTankTemplateName]"
 }
 
 WA_TEST_TMPL_role_other = {
@@ -425,4 +466,69 @@ WA_TEST_TMPL_count_lettered_light_infantry_templates = {
 	if = { limit = { has_template = "Light Infantry template X" } add_to_temp_variable = { _tm_il_letters = 1 } }
 	if = { limit = { has_template = "Light Infantry template Y" } add_to_temp_variable = { _tm_il_letters = 1 } }
 	if = { limit = { has_template = "Light Infantry template Z" } add_to_temp_variable = { _tm_il_letters = 1 } }
+}
+
+# [tank-brigade-swap] Direct probe of the monthly brigade swap. Run on SOV (observe, never tag in)
+# with `event wa_test_tmpl.6 SOV`. Counts stranded brigades (by shape, independent of the gate) and
+# all divisions, runs ONE real monthly swap and re-counts. gate=1: brigades down by per_month (or to
+# 0), divisions unchanged (one spawned per one destroyed). gate=0: both unchanged.
+WA_TEST_TMPL_tank_brigade_swap = {
+	log = "=== TANK BRIGADE SWAP [This.GetName] [GetDateText] ==="
+	### CONTEXT HEADER - printed FIRST, on every run. harness-contract: v1 (wa-testing SKILL).
+	log = "  who   : THIS = [This.GetName]   ROOT = [Root.GetName]   FROM = [From.GetName]"
+	set_temp_variable = { _tm_e1_ = 0 }
+	set_temp_variable = { _tm_e2_ = 0 }
+	set_temp_variable = { _tm_e3_ = 0 }
+	set_temp_variable = { _tm_e4_ = 0 }
+	set_temp_variable = { _tm_e5_ = 0 }
+	if = { limit = { always = yes } set_temp_variable = { _tm_e1_ = 1 } }
+	if = { limit = { tag = ROOT } set_temp_variable = { _tm_e2_ = 1 } }
+	if = { limit = { tag = THIS } set_temp_variable = { _tm_e3_ = 1 } }
+	if = { limit = { ROOT = { always = yes } } set_temp_variable = { _tm_e4_ = 1 } }
+	if = { limit = { NOT = { always = yes } } set_temp_variable = { _tm_e5_ = 1 } }
+	log = "  scope : always=[?_tm_e1_|.0] I-am-ROOT=[?_tm_e2_|.0] I-am-THIS=[?_tm_e3_|.0] ROOT-scope-usable=[?_tm_e4_|.0] control-false=[?_tm_e5_|.0]"
+	log = "            (anything but 1 1 1 1 0 here: STOP. Nothing below is a measurement.)"
+	set_temp_variable = { _tm_bs_gate = 0 }
+	set_temp_variable = { _tm_bs_ls = 0 }
+	if = { limit = { WA_AI_TEMPLATES_should_swap_tank_brigade = yes } set_temp_variable = { _tm_bs_gate = 1 } }
+	if = { limit = { WA_AI_TEMPLATES_has_light_support_swap_target = yes } set_temp_variable = { _tm_bs_ls = 1 } }
+	WA_TEST_TMPL_count_tank_brigades = yes
+	set_temp_variable = { _tm_bs_pre = _tm_bs_n }
+	set_temp_variable = { _tm_bs_all_pre = num_divisions }
+	log = "  pre   : gate=[?_tm_bs_gate|.0] brigades=[?_tm_bs_pre|.0] divisions=[?_tm_bs_all_pre|.0] ls_target=[?_tm_bs_ls|.0] ls_name=[WA_AI_TEMPLATES_GetLightSupportTankTemplateName] md_name=[WA_AI_TEMPLATES_GetMediumTankTemplateName]"
+	log = "            (ls_name is the template the swap spawns on when ls_target=1, md_name otherwise; compare it with the obsolete flag in imgui show ai_templates)"
+	# Known-false control for the spawn check: a create_unit on the sentinel name must add NO
+	# division. ghost=1 means a failed spawn still makes a unit, and the count guard cannot be trusted.
+	# EXPECTED in error.log on every run: "Malformed token", "create_unit error reading army data",
+	# "has no division template set", "division string was not parsed correctly" - the control failing.
+	set_temp_variable = { _tm_bs_g0 = num_divisions }
+	capital_scope = {
+		create_unit = {
+			division = "division_template = \"WA_AI_TEMPLATES_no_light_support_tank_template\" start_experience_factor = 0 start_equipment_factor = 0 start_manpower_factor = 0"
+			owner = ROOT
+		}
+	}
+	set_temp_variable = { _tm_bs_g1 = num_divisions }
+	set_temp_variable = { _tm_bs_ghost = 0 }
+	if = { limit = { check_variable = { _tm_bs_g1 > _tm_bs_g0 } } set_temp_variable = { _tm_bs_ghost = 1 } }
+	log = "  ghost : sentinel spawn added a division=[?_tm_bs_ghost|.0] (must be 0; 1 = STOP, the swap's count guard is blind)"
+	set_temp_variable = { _tm_bs_all_pre = num_divisions }
+	WA_AI_TEMPLATES_swap_tank_brigades = yes
+	WA_TEST_TMPL_count_tank_brigades = yes
+	set_temp_variable = { _tm_bs_all_post = num_divisions }
+	log = "  post  : brigades=[?_tm_bs_n|.0] divisions=[?_tm_bs_all_post|.0]"
+	log = "            (gate=1: brigades lower by per_month or to 0, divisions equal pre. gate=0: both equal pre. MISS in game.log = nothing spawned; CLASH = spawn template has the brigade shape, swap closed)"
+}
+
+# Country scope; writes _tm_bs_n = deployed divisions on the 1936 tank-brigade shape.
+WA_TEST_TMPL_count_tank_brigades = {
+	set_temp_variable = { _tm_bs_n = 0 }
+	every_country_division = {
+		limit = {
+			division_has_majority_template = light_support_armor_battalion_line
+			NOT = { division_has_battalion_in_template = light_armor_battalion_line }
+			NOT = { division_has_battalion_in_template = medium_armor_battalion_line }
+		}
+		ROOT = { add_to_temp_variable = { _tm_bs_n = 1 } }
+	}
 }
