@@ -337,8 +337,8 @@ WA_AI_TEMPLATES_delete_lettered_cavalry_units = {
 	if = { limit = { has_template = "Camelry template Z" } delete_units = { division_template = "Camelry template Z" disband = yes } }
 }
 
-# Create the named occupation template once when an AI enters a war. The MP branch is 25 x 2-width
-# cavalry = 50 width; the no-MP fallback is 2-width cavalry plus 3-width artillery = 5 width.
+# Create the named occupation template once when an AI enters a war: 25 x 2-width cavalry = 50
+# width, plus the horse MP company when tech_military_police is held (else locked, no support).
 # The purge above also runs when the named template already exists, so the ladder cannot re-enter
 # as a competing design on a later war hook. Country scope: THIS/ROOT = the country entering the war.
 WA_AI_TEMPLATES_create_war_suppression_template = {
@@ -421,6 +421,15 @@ WA_AI_TEMPLATES_create_war_suppression_template = {
 			support = {
 			}
 		}
+	}
+	# [suppression-template-alignment] Re-aim a country that already has a designer target here,
+	# before the designer can work the new template toward 14000 ahead of the monthly pass.
+	if = {
+		limit = {
+			is_ai = yes
+			has_country_flag = WA_SUPPRESSION_TEMPLATE
+		}
+		WA_AI_TEMPLATES_calculate_suppression_template = yes
 	}
 }
 
@@ -1436,7 +1445,13 @@ WA_AI_TEMPLATES_calculate_suppression_template = {
 		limit = {
 			check_variable = { _template_claimed = 0 }
 			WA_AI_TEMPLATES_use_suppression_templates = yes
-			has_army_experience > 300
+			# [suppression-template-alignment] one-way: once on 14001, stay there - every flip of the
+			# enabled target re-runs the engine's decommission pass (lessons log).
+			OR = {
+				has_army_experience > 300
+				WA_AI_TEMPLATES_has_full_suppression_template = yes
+				has_country_flag = { flag = WA_SUPPRESSION_TEMPLATE value = 14001 }
+			}
 		}
 		set_temp_variable = { _template_value = 14001 }
 		set_temp_variable = { _template_claimed = 1 }

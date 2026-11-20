@@ -5037,6 +5037,20 @@ power capitulates.
   - Verification (owner console): on an AI major at peace with cavalry, `event wa_test_tmpl.4 TAG`
     reads gate=1, cavalry lower after, oob_cav_template unchanged,
     re-run equal to post; on a minor under 100k, gate=0 and cavalry unchanged.
+- **Addendum [suppression-template-alignment] (owner order 2026-11-20)**: playthrough report (screenshot,
+  GER garrison = "Light Cavalry template A", 25 cavalry, no MP). Under 300 army XP the calculator aimed
+  at 14000 (4 cavalry, no support), so the designer reworked the war-start 25-cav + MP template toward
+  it, MP first (ASSUMED engine behaviour, owner reading). Owner rule: a country holding the 25-cavalry
+  template aims at 14001 whatever its XP. Change: `WA_AI_TEMPLATES_has_full_suppression_template`
+  (`has_template = "Suppression template"`) OR'd into the 14001 branch, 14001 made a one-way latch
+  (also stops the pre-existing XP > 300 flicker), and the war-start creator re-runs the calculator
+  when the country already has a target. Reviewers: architecture OK; lessons CONCERNS answered by
+  the latch. Open ASSUMED gap: a no-MP-tech holder (locked, no support) is aimed at a target with MP.
+  - Verification (owner console, cold boot): `event wa_test_tmpl.3 <AI_TAG>` on an AI under 300 army
+    XP with a target flag, then `WA_SUPPRESSION_TEMPLATE` reads 14001; in game, its
+    `Suppression template` keeps the MP company and no 20+-cavalry lettered copy without MP appears.
+  - Committed 2026-11-20 on `ai-rework` while the subject stays PARKED (WIP limit already exceeded):
+    untested until the owner console run above.
 
 ### campaign-html-report — PARKED (2026-09-07)
 - Owner request: an English graphical campaign overview, seven majors and time filters,
