@@ -278,6 +278,19 @@ country's doctrine pushes. The TEMPLATE layer asks a different question and has 
   `WA_AI_TEMPLATES_switch_from_light_to_medium_armor`, so the window is a DELAY after the boundary
   and can never re-open the 1940 gap. It decides when already-FIELDED light divisions are scrapped,
   not when the light class closes. Generic path 1942.1.1; GER opens on `GER_prepare_barbarossa`.
+- `WA_AI_CONFIG_TEMPLATES_tank_brigade_swap_window` — second sanctioned exception
+  (`[tank-brigade-swap]`, owner order 2026-11-20, from 1940). Not an era boundary either: it opens
+  the monthly trade of the stranded 1936 "Tankovaya brigada" divisions (8 light-support + 1 mot;
+  their only bridge `..._20_STARTER_MIX` is keyed on flag value 15001, which the Soviet park leaves
+  in 1938). Each monthly pulse, `WA_AI_TEMPLATES_swap_tank_brigades` spawns up to
+  `tank_brigade_swaps_per_month` (2) EMPTY divisions on the highest-lettered "Light Support Tank
+  template Z..A" (else the medium selector) and destroys one brigade per landed spawn. Ends with
+  `WA_AI_TEMPLATES_light_support_park_retired` (sov_armor.981, 1942.1.1). Soviet park path only
+  (gate reads `WA_AI_TEMPLATES_sov_light_support_temporary_latched`): the brigade SHAPE is unique
+  there, while the generic 30_MOT / TRANSITION targets share it. A spawn that is itself
+  brigade-shaped sets `WA_AI_TEMPLATES_tank_brigade_swap_shape_clash` and stops the swap. Known limit: letters are
+  reused, so the highest letter can name an obsolete template (MEASURED 2026-11-20 saves: "Light
+  Support Tank template I" 1939.12, "Medium Tank template P" 1941.5) — owner-accepted.
 
 There is no `WA_AI_CONFIG_TEMPLATES_focus_on_light_armor`: it was deleted with
 `[armor-class-handoff]` because the switch closes the light class a year before that trigger's
