@@ -663,6 +663,8 @@ NDefines.NAir.THRUST_WEIGHT_AGILITY_FACTOR = 1										-- For plane designs, ad
 NDefines.NAir.MAX_QUICK_WING_SELECTION = 4											-- Max possible selection for airwing quick deploy
 NDefines.NAir.USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false							-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
 
+NDefines.NAir.MIN_PLANE_COUNT_PARADROP = 500 --Aigle2 : Minimum number of planes required for a paradrop mission
+NDefines.NAir.BASE_UNIT_WEIGHT_IN_TRANSPORT_PLANES = 500 --Aigle2 : Planes per division in transport planes
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 NDefines.NNavy.NAVAL_HEADQUARTER_ADJACENCY = 3										-- How many extra steps of strategic regions from the first the naval headquarter provides benefits.
 
