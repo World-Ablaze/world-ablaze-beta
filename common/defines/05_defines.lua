@@ -497,7 +497,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 
 NDefines.NMilitary.TRAINING_ORG = 0
 NDefines.NMilitary.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.05
-NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 240               					-- default capacity if not specified
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 84               					-- default capacity if not specified
 NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.04								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
@@ -529,11 +529,15 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
 
+<<<<<<< HEAD
 NDefines.NMilitary.PREFERRED_TACTIC_CHARACTER_SKILL_LEVEL_REQUIRED = 5			    -- Which level a field marhal or general has to be before they can pick their preferred tactic
 NDefines.NMilitary.COUNTRY_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.25 				    -- extra weight multiplier for the country preferred tactic when doing weighted random
 NDefines.NMilitary.ARMY_GENERAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.20 			    -- extra weight multiplier for the army general preferred tactic when doing weighted random
 NDefines.NMilitary.FIELD_MARSHAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.15			    -- extra weight multiplier for the field marhsal preferred tactic when doing weighted random
 NDefines.NMilitary.PREFERRED_TACTIC_COMMAND_POWER_COST = 20	  				        -- command point cost for changing preferred tactic
+=======
+NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.4
+>>>>>>> ai-rework
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to prepare an airborne invasion
 NDefines.NAir.AIR_INVASION_PLAN_CAP = 1												-- base cap of airborne invasions can be planned at the same time
