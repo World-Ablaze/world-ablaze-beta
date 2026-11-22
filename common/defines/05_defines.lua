@@ -497,7 +497,7 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 
 NDefines.NMilitary.TRAINING_ORG = 0
 NDefines.NMilitary.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.05
-NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 240               					-- default capacity if not specified
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 84               					-- default capacity if not specified
 NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.04								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
@@ -529,7 +529,7 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
 
-
+NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.4
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to prepare an airborne invasion
 NDefines.NAir.AIR_INVASION_PLAN_CAP = 1												-- base cap of airborne invasions can be planned at the same time
