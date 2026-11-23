@@ -8171,13 +8171,12 @@ focus_tree = {
 
 		completion_reward = {
 			# Air base rights from whoever owns Tonkin. Its AI is told to stay friendly (common/ai_strategy/JAP_indochina_air_base.txt).
-			custom_effect_tooltip = JAP_indochina_air_base_rights_tt
-			hidden_effect = {
-				671 = {
-					OWNER = {
-						diplomatic_relation = { country = JAP relation = air_base_access active = yes }
-					}
+			671 = {
+				OWNER = {
+					diplomatic_relation = { country = JAP relation = air_base_access active = yes }
 				}
+			}
+			hidden_effect = {
 				set_country_flag = JAP_indochina_air_base_rights
 			}
 			every_country = {
@@ -8348,12 +8347,33 @@ focus_tree = {
 				set_temp_variable = { JAP_kit_art = 1500 }
 				JAP_add_latest_infantry_kit = yes
 			}
-			custom_effect_tooltip = JAP_kantokuen_manchukuo_tt
-			custom_effect_tooltip = JAP_kantokuen_border_works_tt
-			custom_effect_tooltip = JAP_kantokuen_northern_question_tt
-			hidden_effect = {
-				# Manchukuo's infantry brigade to combat width 30: a third column of infantry and a column of 4 artillery.
-				MAN = {
+			# Manchukuo's line division to combat width 30. The AI builds 'Manchurian Infantry Division' in 1936
+			# (8 heavy infantry + 2 artillery = 22, events/wa_man_events.txt): +1 infantry in columns 0 and 1 and +2 in
+			# a new column 3 = 12 + 2 = 30. Without it, the starting 'Bubing Shi' (6 infantry = 12) gets a third
+			# infantry column and a column of 4 artillery = 30. The six divisions use the same template, picked
+			# the way JAP_geac_defense_spawn_full picks it.
+			MAN = {
+				if = {
+					limit = { has_template = "Manchurian Infantry Division" }
+					add_units_to_division_template = {
+						template_name = "Manchurian Infantry Division"
+						regiments = {
+							heavy_infantry = 0
+							heavy_infantry = 1
+							heavy_infantry = 3
+							heavy_infantry = 3
+						}
+					}
+					942 = {
+						create_unit = {
+							division = "division_template = \"Manchurian Infantry Division\" start_experience_factor = 0.3"
+							owner = MAN
+							count = 6
+						}
+					}
+				}
+				else_if = {
+					limit = { has_template = "Bubing Shi" }
 					add_units_to_division_template = {
 						template_name = "Bubing Shi"
 						regiments = {
@@ -8366,15 +8386,18 @@ focus_tree = {
 							artillery_brigade = 3
 						}
 					}
-				}
-				942 = {
-					create_unit = {
-						division = "division_template = \"Bubing Shi\" start_experience_factor = 0.3"
-						owner = MAN
-						count = 6
+					942 = {
+						create_unit = {
+							division = "division_template = \"Bubing Shi\" start_experience_factor = 0.3"
+							owner = MAN
+							count = 6
+						}
 					}
 				}
-				JAP_kantokuen_border_works = yes
+			}
+			JAP_kantokuen_border_works = yes
+			unlock_decision_tooltip = JAP_resolve_the_northern_question
+			hidden_effect = {
 				if = {
 					limit = { date < 1937.12.1 }
 					set_country_flag = JAP_kantokuen_window_1937
@@ -8587,10 +8610,7 @@ focus_tree = {
 		completion_reward = {
 			# Hutou and the other Kwantung Army border fortresses: level 1 bunkers along the border and a
 			# fortress-zone state modifier like the Soviet SOV_fortified_state in the six border states.
-			custom_effect_tooltip = JAP_border_fortifications_bunkers_tt
-			hidden_effect = {
-				JAP_manchurian_border_bunkers = yes
-			}
+			JAP_manchurian_border_bunkers = yes
 			714 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
 			717 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
 			761 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
