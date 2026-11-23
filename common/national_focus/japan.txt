@@ -7981,12 +7981,53 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_triangular_divisions }
 
-		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		# Only the army takes this focus, like the vanilla German inner circle (events/JAP_army_autonomy.txt).
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_border_conflict_guidelines_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_kwantung_army_originator
+						FLAG_DAYS = [?JAP_border_conflict_guidelines_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_taken_by_army_tt
+						ARMY = JAP_kwantung_army_originator
+					}
+					always = no
+				}
+			}
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			economy_fatigue_level_up_4 = yes
+			MAN = {
+				army_experience = 100
+				capital_scope = {
+					add_extra_state_shared_building_slots = 2
+					add_building_construction = {
+						type = arms_factory
+						level = 2
+						instant_build = yes
+					}
+				}
+			}
+			set_temp_variable = { JAP_kit_inf = 2000 }
+			set_temp_variable = { JAP_kit_hv = 1500 }
+			set_temp_variable = { JAP_kit_sup = 800 }
+			set_temp_variable = { JAP_kit_art = 500 }
+			JAP_add_latest_infantry_kit = yes
+			SOV = {
+				add_opinion_modifier = { target = JAP modifier = JAP_border_guidelines_opinion }
+			}
 		}
 	}
 
@@ -8102,12 +8143,54 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_border_conflict_guidelines }
 
-		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		# Only the army takes this focus, like the vanilla German inner circle (events/JAP_army_autonomy.txt).
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_northern_indochina_occupation_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_south_china_area_army_originator
+						FLAG_DAYS = [?JAP_northern_indochina_occupation_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_taken_by_army_tt
+						ARMY = JAP_south_china_area_army_originator
+					}
+					always = no
+				}
+			}
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# Air base rights from whoever owns Tonkin, kept alive by jap_army_auto.7 every 30 days.
+			custom_effect_tooltip = JAP_indochina_air_base_rights_tt
+			hidden_effect = {
+				671 = {
+					OWNER = {
+						diplomatic_relation = { country = JAP relation = air_base_access active = yes }
+					}
+				}
+				set_country_flag = JAP_indochina_air_base_rights
+				country_event = { id = jap_army_auto.7 days = 30 }
+			}
+			every_country = {
+				limit = {
+					OR = {
+						tag = ENG
+						tag = USA
+						tag = FRA
+					}
+				}
+				add_opinion_modifier = { target = JAP modifier = JAP_northern_indochina_opinion }
+			}
 		}
 	}
 
@@ -8226,18 +8309,118 @@ focus_tree = {
 		id = JAP_kantokuen
 		icon = GFX_focus_JAP_hokushin_ron
 		x = 35
-		y = 7
+		y = 8
 		cost = 3
 
-		prerequisite = { focus = JAP_northern_indochina_occupation }
-		mutually_exclusive = { focus = JAP_southern_expeditionary_army_group }
+		prerequisite = { focus = JAP_border_fortifications }
 
-		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		# Only the army takes this focus, like the vanilla German inner circle (events/JAP_army_autonomy.txt).
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_kantokuen_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_kwantung_army_originator
+						FLAG_DAYS = [?JAP_kantokuen_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_taken_by_army_tt
+						ARMY = JAP_kwantung_army_originator
+					}
+					always = no
+				}
+			}
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			economy_fatigue_level_up_4 = yes
+			MAN = {
+				set_temp_variable = { JAP_kit_inf = 4000 }
+				set_temp_variable = { JAP_kit_hv = 4000 }
+				set_temp_variable = { JAP_kit_sup = 2000 }
+				set_temp_variable = { JAP_kit_art = 1500 }
+				JAP_add_latest_infantry_kit = yes
+			}
+			custom_effect_tooltip = JAP_kantokuen_manchukuo_tt
+			custom_effect_tooltip = JAP_kantokuen_border_works_tt
+			custom_effect_tooltip = JAP_kantokuen_northern_question_tt
+			hidden_effect = {
+				# Manchukuo's infantry brigade to combat width 30: a third column of infantry and a column of 4 artillery.
+				MAN = {
+					add_units_to_division_template = {
+						template_name = "Bubing Shi"
+						regiments = {
+							heavy_infantry = 2
+							infantry = 2
+							infantry = 2
+							artillery_brigade = 3
+							artillery_brigade = 3
+							artillery_brigade = 3
+							artillery_brigade = 3
+						}
+					}
+				}
+				942 = {
+					create_unit = {
+						division = "division_template = \"Bubing Shi\" start_experience_factor = 0.3"
+						owner = MAN
+						count = 6
+					}
+				}
+				JAP_kantokuen_border_works = yes
+				if = {
+					limit = { date < 1937.12.1 }
+					set_country_flag = JAP_kantokuen_window_1937
+				}
+				else_if = {
+					limit = { date < 1938.12.1 }
+					set_country_flag = JAP_kantokuen_window_1938
+				}
+				else_if = {
+					limit = { date < 1939.12.1 }
+					set_country_flag = JAP_kantokuen_window_1939
+				}
+				else_if = {
+					limit = { date < 1940.12.1 }
+					set_country_flag = JAP_kantokuen_window_1940
+				}
+				else_if = {
+					limit = { date < 1941.12.1 }
+					set_country_flag = JAP_kantokuen_window_1941
+				}
+				else_if = {
+					limit = { date < 1942.12.1 }
+					set_country_flag = JAP_kantokuen_window_1942
+				}
+				else_if = {
+					limit = { date < 1943.12.1 }
+					set_country_flag = JAP_kantokuen_window_1943
+				}
+				else_if = {
+					limit = { date < 1944.12.1 }
+					set_country_flag = JAP_kantokuen_window_1944
+				}
+				else_if = {
+					limit = { date < 1945.12.1 }
+					set_country_flag = JAP_kantokuen_window_1945
+				}
+				else_if = {
+					limit = { date < 1946.12.1 }
+					set_country_flag = JAP_kantokuen_window_1946
+				}
+				else_if = {
+					limit = { date < 1947.12.1 }
+					set_country_flag = JAP_kantokuen_window_1947
+				}
+			}
 		}
 	}
 
@@ -8249,7 +8432,6 @@ focus_tree = {
 		cost = 3
 
 		prerequisite = { focus = JAP_northern_indochina_occupation }
-		mutually_exclusive = { focus = JAP_kantokuen }
 
 		# available = { }   # TODO 実装側で
 
@@ -8396,15 +8578,26 @@ focus_tree = {
 		id = JAP_border_fortifications
 		icon = GFX_goal_generic_fortify_city
 		x = 35
-		y = 8
+		y = 7
 		cost = 3
 
-		prerequisite = { focus = JAP_kantokuen }
+		prerequisite = { focus = JAP_northern_indochina_occupation }
 
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# Hutou and the other Kwantung Army border fortresses: level 1 bunkers along the border and a
+			# fortress-zone state modifier like the Soviet SOV_fortified_state in the six border states.
+			custom_effect_tooltip = JAP_border_fortifications_bunkers_tt
+			hidden_effect = {
+				JAP_manchurian_border_bunkers = yes
+			}
+			714 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
+			717 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
+			761 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
+			942 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
+			943 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
+			951 = { add_dynamic_modifier = { modifier = JAP_manchurian_border_fortress } }
 		}
 	}
 
@@ -8527,7 +8720,7 @@ focus_tree = {
 		y = 9
 		cost = 3
 
-		prerequisite = { focus = JAP_border_fortifications }
+		prerequisite = { focus = JAP_kantokuen }
 
 		# available = { }   # TODO 実装側で
 

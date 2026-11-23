@@ -1,0 +1,175 @@
+﻿add_namespace = jap_army_auto
+
+# Focuses the army takes on its own, built like the vanilla German inner circle
+# (GER_inner_circle_todt.01/.02): the focus starts shining with an in-progress flag for the
+# focus time, then it is completed with a side message naming who took it.
+
+# Manchukuo-Soviet Border Dispute Guidelines: the Kwantung Army, after Lake Khasan or from April 1939
+country_event = {
+	id = jap_army_auto.1
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		original_tag = JAP
+		NOT = { has_completed_focus = JAP_border_conflict_guidelines }
+		NOT = { has_shine_effect_on_focus = JAP_border_conflict_guidelines }
+		OR = {
+			has_global_flag = JAP_khasan_incident_over
+			date > 1939.4.24
+		}
+	}
+	immediate = {
+		activate_shine_on_focus = JAP_border_conflict_guidelines
+		set_country_flag = { flag = JAP_border_conflict_guidelines_in_progress_flag days = 21 value = 1 }
+		country_event = { id = jap_army_auto.2 days = 21 }
+	}
+	option = {
+		name = jap_army_auto.1.a
+	}
+}
+
+country_event = {
+	id = jap_army_auto.2
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { has_shine_effect_on_focus = JAP_border_conflict_guidelines }
+			complete_national_focus = {
+				focus = JAP_border_conflict_guidelines
+				use_side_message = yes
+				originator_name = JAP_kwantung_army_originator
+			}
+			clr_country_flag = JAP_border_conflict_guidelines_in_progress_flag
+		}
+	}
+	option = {
+		name = jap_army_auto.2.a
+	}
+}
+
+# Occupation of Northern Indochina: the South China Area Army, once France has fallen
+country_event = {
+	id = jap_army_auto.3
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		original_tag = JAP
+		NOT = { has_completed_focus = JAP_northern_indochina_occupation }
+		NOT = { has_shine_effect_on_focus = JAP_northern_indochina_occupation }
+		has_war_with = CHI
+		OR = {
+			has_global_flag = fall_of_france
+			FRA = { has_capitulated = yes }
+		}
+		671 = {
+			OWNER = {
+				NOT = { tag = JAP }
+				NOT = { has_war_with = JAP }
+			}
+		}
+	}
+	immediate = {
+		activate_shine_on_focus = JAP_northern_indochina_occupation
+		set_country_flag = { flag = JAP_northern_indochina_occupation_in_progress_flag days = 21 value = 1 }
+		country_event = { id = jap_army_auto.4 days = 21 }
+	}
+	option = {
+		name = jap_army_auto.3.a
+	}
+}
+
+country_event = {
+	id = jap_army_auto.4
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { has_shine_effect_on_focus = JAP_northern_indochina_occupation }
+			complete_national_focus = {
+				focus = JAP_northern_indochina_occupation
+				use_side_message = yes
+				originator_name = JAP_south_china_area_army_originator
+			}
+			clr_country_flag = JAP_northern_indochina_occupation_in_progress_flag
+		}
+	}
+	option = {
+		name = jap_army_auto.4.a
+	}
+}
+
+# Kantokuen: the Kwantung Army, once the Soviet Union is 10% of the way to surrender
+country_event = {
+	id = jap_army_auto.5
+	hidden = yes
+	fire_only_once = yes
+	trigger = {
+		original_tag = JAP
+		NOT = { has_completed_focus = JAP_kantokuen }
+		NOT = { has_shine_effect_on_focus = JAP_kantokuen }
+		country_exists = SOV
+		SOV = { surrender_progress > 0.099 }
+	}
+	immediate = {
+		activate_shine_on_focus = JAP_kantokuen
+		set_country_flag = { flag = JAP_kantokuen_in_progress_flag days = 21 value = 1 }
+		country_event = { id = jap_army_auto.6 days = 21 }
+	}
+	option = {
+		name = jap_army_auto.5.a
+	}
+}
+
+country_event = {
+	id = jap_army_auto.6
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = { has_shine_effect_on_focus = JAP_kantokuen }
+			complete_national_focus = {
+				focus = JAP_kantokuen
+				use_side_message = yes
+				originator_name = JAP_kwantung_army_originator
+			}
+			clr_country_flag = JAP_kantokuen_in_progress_flag
+		}
+	}
+	option = {
+		name = jap_army_auto.6.a
+	}
+}
+
+# Keeps the air base rights in Indochina from Northern Indochina alive: re-granted every 30 days
+# by whoever owns Tonkin, as long as they are not at war with Japan.
+country_event = {
+	id = jap_army_auto.7
+	hidden = yes
+	is_triggered_only = yes
+	immediate = {
+		if = {
+			limit = {
+				has_country_flag = JAP_indochina_air_base_rights
+				671 = {
+					OWNER = {
+						NOT = { tag = JAP }
+						NOT = { has_war_with = JAP }
+					}
+				}
+			}
+			671 = {
+				OWNER = {
+					diplomatic_relation = { country = JAP relation = air_base_access active = yes }
+				}
+			}
+		}
+		if = {
+			limit = { has_country_flag = JAP_indochina_air_base_rights }
+			country_event = { id = jap_army_auto.7 days = 30 }
+		}
+	}
+	option = {
+		name = jap_army_auto.7.a
+	}
+}
