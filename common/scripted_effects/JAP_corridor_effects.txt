@@ -1,28 +1,78 @@
-# Southern resources carried home over the continental corridor (JAP_island_garrisons).
-# Run weekly (common/on_actions/JAP_corridor_on_actions.txt) and once when the focus completes.
-# While no enemy holds the corridor, each southern state below held by Japan or a subject is shipped: it gets JAP_corridor_shipped
-# (state_resources_factor = -1), and what it was producing just before (resource@) is added to Kanto (282) through
-# JAP_corridor_received (state_resource_* = JAP_corridor_in_*). When the corridor closes or the state is lost, the
-# state is released and Kanto loses its share. If the corridor opens again, the state is shipped again.
+# Resources carried home overland: three groups, each opened by its own focus.
+#   south     Carry the Southern Resources Overland (JAP_island_garrisons): Dutch East Indies and Malaya
+#   far_east  Carry the Far Eastern Resources Overland (JAP_far_east_resources_overland): the Soviet Far East
+#   india     Carry the Indian and Burmese Resources Overland (JAP_india_resources_overland): Burma and India up to Calcutta
+# Run weekly (common/on_actions/JAP_corridor_on_actions.txt) and once when each focus completes.
+# While a group's route is open (its trigger in common/scripted_triggers/JAP_corridor_triggers.txt), each of its states
+# held by Japan or a subject is shipped: it gets JAP_corridor_shipped (state_resources_factor = -1), and what it was
+# producing just before (resource@) is added to Kanto (282) through that group's received modifier. When the route
+# closes or the state is lost, the state is released and Kanto loses its share. If the route opens again, it is shipped
+# again. A state belongs to one group only.
 JAP_corridor_update = {
 	if = {
-		limit = { JAP_continental_corridor_open = yes }
-		set_temp_variable = { JAP_corridor_open_t = 1 }
+		limit = { has_country_flag = JAP_corridor_active }
+		if = {
+			limit = { JAP_continental_corridor_open = yes }
+			set_temp_variable = { JAP_corridor_open_t = 1 }
+		}
+		else = {
+			set_temp_variable = { JAP_corridor_open_t = 0 }
+		}
+		333 = { JAP_corridor_state_update = yes }	# North Borneo
+		334 = { JAP_corridor_state_update = yes }	# Kalimantan
+		335 = { JAP_corridor_state_update = yes }	# Java
+		667 = { JAP_corridor_state_update = yes }	# Lesser Sunda Islands
+		672 = { JAP_corridor_state_update = yes }	# Sumatra
+		673 = { JAP_corridor_state_update = yes }	# Sulawesi
+		862 = { JAP_corridor_state_update = yes }	# Malaya
+		JAP_corridor_recount_south = yes
 	}
-	else = {
-		set_temp_variable = { JAP_corridor_open_t = 0 }
+	if = {
+		limit = { has_country_flag = JAP_far_east_active }
+		if = {
+			limit = { JAP_far_east_route_open = yes }
+			set_temp_variable = { JAP_corridor_open_t = 1 }
+		}
+		else = {
+			set_temp_variable = { JAP_corridor_open_t = 0 }
+		}
+		408 = { JAP_corridor_state_update = yes }	# Vladivostok
+		409 = { JAP_corridor_state_update = yes }	# Khabarovsk
+		657 = { JAP_corridor_state_update = yes }	# Birobidzhan
+		560 = { JAP_corridor_state_update = yes }	# Nikolayevsk
+		561 = { JAP_corridor_state_update = yes }	# Amur
+		562 = { JAP_corridor_state_update = yes }	# Okhotsk
+		637 = { JAP_corridor_state_update = yes }	# South Kamchatka
+		854 = { JAP_corridor_state_update = yes }	# North Kamchatka
+		574 = { JAP_corridor_state_update = yes }	# Yakutsk
+		563 = { JAP_corridor_state_update = yes }	# Chita
+		564 = { JAP_corridor_state_update = yes }	# Ulan-Ude
+		565 = { JAP_corridor_state_update = yes }	# Bodaibo
+		566 = { JAP_corridor_state_update = yes }	# Irkutsk
+		JAP_corridor_recount_far_east = yes
 	}
-	333 = { JAP_corridor_state_update = yes }	# North Borneo
-	334 = { JAP_corridor_state_update = yes }	# Kalimantan
-	335 = { JAP_corridor_state_update = yes }	# Java
-	667 = { JAP_corridor_state_update = yes }	# Lesser Sunda Islands
-	672 = { JAP_corridor_state_update = yes }	# Sumatra
-	673 = { JAP_corridor_state_update = yes }	# Sulawesi
-	862 = { JAP_corridor_state_update = yes }	# Malaya
-	JAP_corridor_recount = yes
+	if = {
+		limit = { has_country_flag = JAP_india_route_active }
+		if = {
+			limit = { JAP_india_route_open = yes }
+			set_temp_variable = { JAP_corridor_open_t = 1 }
+		}
+		else = {
+			set_temp_variable = { JAP_corridor_open_t = 0 }
+		}
+		288 = { JAP_corridor_state_update = yes }	# Burma
+		640 = { JAP_corridor_state_update = yes }	# Mandalay
+		1007 = { JAP_corridor_state_update = yes }	# Kachin
+		430 = { JAP_corridor_state_update = yes }	# East Bengal
+		431 = { JAP_corridor_state_update = yes }	# West Bengal
+		432 = { JAP_corridor_state_update = yes }	# Assam
+		434 = { JAP_corridor_state_update = yes }	# Arunachal Pradesh
+		959 = { JAP_corridor_state_update = yes }	# Sikkim
+		JAP_corridor_recount_india = yes
+	}
 }
 
-# State scope.
+# State scope. JAP_corridor_open_t is set by JAP_corridor_update for the group being updated.
 JAP_corridor_state_update = {
 	if = {
 		limit = {
@@ -56,8 +106,8 @@ JAP_corridor_state_update = {
 	}
 }
 
-# Kanto's total is rebuilt from the shipped states every time.
-JAP_corridor_recount = {
+# Kanto's total for each group is rebuilt from that group's shipped states every time.
+JAP_corridor_recount_south = {
 	set_temp_variable = { JAP_corridor_n_t = 0 }
 	set_temp_variable = { JAP_corridor_oil_t = 0 }
 	set_temp_variable = { JAP_corridor_aluminium_t = 0 }
@@ -95,6 +145,99 @@ JAP_corridor_recount = {
 		else_if = {
 			limit = { has_dynamic_modifier = { modifier = JAP_corridor_received } }
 			remove_dynamic_modifier = { modifier = JAP_corridor_received }
+		}
+		force_update_dynamic_modifier = yes
+	}
+}
+
+JAP_corridor_recount_far_east = {
+	set_temp_variable = { JAP_corridor_n_t = 0 }
+	set_temp_variable = { JAP_corridor_oil_t = 0 }
+	set_temp_variable = { JAP_corridor_aluminium_t = 0 }
+	set_temp_variable = { JAP_corridor_rubber_t = 0 }
+	set_temp_variable = { JAP_corridor_tungsten_t = 0 }
+	set_temp_variable = { JAP_corridor_steel_t = 0 }
+	set_temp_variable = { JAP_corridor_chromium_t = 0 }
+	set_temp_variable = { JAP_corridor_coal_t = 0 }
+	set_temp_variable = { JAP_corridor_bauxite_t = 0 }
+	set_temp_variable = { JAP_corridor_iron_t = 0 }
+	408 = { JAP_corridor_state_add = yes }
+	409 = { JAP_corridor_state_add = yes }
+	657 = { JAP_corridor_state_add = yes }
+	560 = { JAP_corridor_state_add = yes }
+	561 = { JAP_corridor_state_add = yes }
+	562 = { JAP_corridor_state_add = yes }
+	637 = { JAP_corridor_state_add = yes }
+	854 = { JAP_corridor_state_add = yes }
+	574 = { JAP_corridor_state_add = yes }
+	563 = { JAP_corridor_state_add = yes }
+	564 = { JAP_corridor_state_add = yes }
+	565 = { JAP_corridor_state_add = yes }
+	566 = { JAP_corridor_state_add = yes }
+	282 = {
+		set_variable = { JAP_far_east_in_oil = JAP_corridor_oil_t }
+		set_variable = { JAP_far_east_in_aluminium = JAP_corridor_aluminium_t }
+		set_variable = { JAP_far_east_in_rubber = JAP_corridor_rubber_t }
+		set_variable = { JAP_far_east_in_tungsten = JAP_corridor_tungsten_t }
+		set_variable = { JAP_far_east_in_steel = JAP_corridor_steel_t }
+		set_variable = { JAP_far_east_in_chromium = JAP_corridor_chromium_t }
+		set_variable = { JAP_far_east_in_coal = JAP_corridor_coal_t }
+		set_variable = { JAP_far_east_in_bauxite = JAP_corridor_bauxite_t }
+		set_variable = { JAP_far_east_in_iron = JAP_corridor_iron_t }
+		if = {
+			limit = { check_variable = { JAP_corridor_n_t > 0 } }
+			if = {
+				limit = { NOT = { has_dynamic_modifier = { modifier = JAP_far_east_received } } }
+				add_dynamic_modifier = { modifier = JAP_far_east_received }
+			}
+		}
+		else_if = {
+			limit = { has_dynamic_modifier = { modifier = JAP_far_east_received } }
+			remove_dynamic_modifier = { modifier = JAP_far_east_received }
+		}
+		force_update_dynamic_modifier = yes
+	}
+}
+
+JAP_corridor_recount_india = {
+	set_temp_variable = { JAP_corridor_n_t = 0 }
+	set_temp_variable = { JAP_corridor_oil_t = 0 }
+	set_temp_variable = { JAP_corridor_aluminium_t = 0 }
+	set_temp_variable = { JAP_corridor_rubber_t = 0 }
+	set_temp_variable = { JAP_corridor_tungsten_t = 0 }
+	set_temp_variable = { JAP_corridor_steel_t = 0 }
+	set_temp_variable = { JAP_corridor_chromium_t = 0 }
+	set_temp_variable = { JAP_corridor_coal_t = 0 }
+	set_temp_variable = { JAP_corridor_bauxite_t = 0 }
+	set_temp_variable = { JAP_corridor_iron_t = 0 }
+	288 = { JAP_corridor_state_add = yes }
+	640 = { JAP_corridor_state_add = yes }
+	1007 = { JAP_corridor_state_add = yes }
+	430 = { JAP_corridor_state_add = yes }
+	431 = { JAP_corridor_state_add = yes }
+	432 = { JAP_corridor_state_add = yes }
+	434 = { JAP_corridor_state_add = yes }
+	959 = { JAP_corridor_state_add = yes }
+	282 = {
+		set_variable = { JAP_india_in_oil = JAP_corridor_oil_t }
+		set_variable = { JAP_india_in_aluminium = JAP_corridor_aluminium_t }
+		set_variable = { JAP_india_in_rubber = JAP_corridor_rubber_t }
+		set_variable = { JAP_india_in_tungsten = JAP_corridor_tungsten_t }
+		set_variable = { JAP_india_in_steel = JAP_corridor_steel_t }
+		set_variable = { JAP_india_in_chromium = JAP_corridor_chromium_t }
+		set_variable = { JAP_india_in_coal = JAP_corridor_coal_t }
+		set_variable = { JAP_india_in_bauxite = JAP_corridor_bauxite_t }
+		set_variable = { JAP_india_in_iron = JAP_corridor_iron_t }
+		if = {
+			limit = { check_variable = { JAP_corridor_n_t > 0 } }
+			if = {
+				limit = { NOT = { has_dynamic_modifier = { modifier = JAP_india_received } } }
+				add_dynamic_modifier = { modifier = JAP_india_received }
+			}
+		}
+		else_if = {
+			limit = { has_dynamic_modifier = { modifier = JAP_india_received } }
+			remove_dynamic_modifier = { modifier = JAP_india_received }
 		}
 		force_update_dynamic_modifier = yes
 	}
