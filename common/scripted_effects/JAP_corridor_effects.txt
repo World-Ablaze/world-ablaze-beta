@@ -1,0 +1,118 @@
+# Southern resources carried home over the continental corridor (JAP_island_garrisons).
+# Run weekly (common/on_actions/JAP_corridor_on_actions.txt) and once when the focus completes.
+# While the corridor is open, each southern state below that our side holds is shipped: it gets JAP_corridor_shipped
+# (state_resources_factor = -1), and what it was producing just before (resource@) is added to Kanto (282) through
+# JAP_corridor_received (state_resource_* = JAP_corridor_in_*). When the corridor closes or the state is lost, the
+# state is released and Kanto loses its share. If the corridor opens again, the state is shipped again.
+JAP_corridor_update = {
+	if = {
+		limit = { JAP_continental_corridor_held = yes }
+		set_temp_variable = { JAP_corridor_open_t = 1 }
+	}
+	else = {
+		set_temp_variable = { JAP_corridor_open_t = 0 }
+	}
+	333 = { JAP_corridor_state_update = yes }	# North Borneo
+	334 = { JAP_corridor_state_update = yes }	# Kalimantan
+	335 = { JAP_corridor_state_update = yes }	# Java
+	667 = { JAP_corridor_state_update = yes }	# Lesser Sunda Islands
+	672 = { JAP_corridor_state_update = yes }	# Sumatra
+	673 = { JAP_corridor_state_update = yes }	# Sulawesi
+	862 = { JAP_corridor_state_update = yes }	# Malaya
+	JAP_corridor_recount = yes
+}
+
+# State scope.
+JAP_corridor_state_update = {
+	if = {
+		limit = {
+			has_state_flag = JAP_corridor_shipped_flag
+			OR = {
+				check_variable = { JAP_corridor_open_t = 0 }
+				NOT = { CONTROLLER = { JAP_corridor_our_side = yes } }
+			}
+		}
+		remove_dynamic_modifier = { modifier = JAP_corridor_shipped }
+		clr_state_flag = JAP_corridor_shipped_flag
+	}
+	else_if = {
+		limit = {
+			NOT = { has_state_flag = JAP_corridor_shipped_flag }
+			check_variable = { JAP_corridor_open_t = 1 }
+			CONTROLLER = { JAP_corridor_our_side = yes }
+		}
+		set_variable = { JAP_corridor_oil = resource@oil }
+		set_variable = { JAP_corridor_aluminium = resource@aluminium }
+		set_variable = { JAP_corridor_rubber = resource@rubber }
+		set_variable = { JAP_corridor_tungsten = resource@tungsten }
+		set_variable = { JAP_corridor_steel = resource@steel }
+		set_variable = { JAP_corridor_chromium = resource@chromium }
+		set_variable = { JAP_corridor_coal = resource@coal }
+		set_variable = { JAP_corridor_bauxite = resource@bauxite }
+		set_variable = { JAP_corridor_iron = resource@iron }
+		add_dynamic_modifier = { modifier = JAP_corridor_shipped }
+		set_state_flag = JAP_corridor_shipped_flag
+		force_update_dynamic_modifier = yes
+	}
+}
+
+# Kanto's total is rebuilt from the shipped states every time.
+JAP_corridor_recount = {
+	set_temp_variable = { JAP_corridor_n_t = 0 }
+	set_temp_variable = { JAP_corridor_oil_t = 0 }
+	set_temp_variable = { JAP_corridor_aluminium_t = 0 }
+	set_temp_variable = { JAP_corridor_rubber_t = 0 }
+	set_temp_variable = { JAP_corridor_tungsten_t = 0 }
+	set_temp_variable = { JAP_corridor_steel_t = 0 }
+	set_temp_variable = { JAP_corridor_chromium_t = 0 }
+	set_temp_variable = { JAP_corridor_coal_t = 0 }
+	set_temp_variable = { JAP_corridor_bauxite_t = 0 }
+	set_temp_variable = { JAP_corridor_iron_t = 0 }
+	333 = { JAP_corridor_state_add = yes }
+	334 = { JAP_corridor_state_add = yes }
+	335 = { JAP_corridor_state_add = yes }
+	667 = { JAP_corridor_state_add = yes }
+	672 = { JAP_corridor_state_add = yes }
+	673 = { JAP_corridor_state_add = yes }
+	862 = { JAP_corridor_state_add = yes }
+	282 = {
+		set_variable = { JAP_corridor_in_oil = JAP_corridor_oil_t }
+		set_variable = { JAP_corridor_in_aluminium = JAP_corridor_aluminium_t }
+		set_variable = { JAP_corridor_in_rubber = JAP_corridor_rubber_t }
+		set_variable = { JAP_corridor_in_tungsten = JAP_corridor_tungsten_t }
+		set_variable = { JAP_corridor_in_steel = JAP_corridor_steel_t }
+		set_variable = { JAP_corridor_in_chromium = JAP_corridor_chromium_t }
+		set_variable = { JAP_corridor_in_coal = JAP_corridor_coal_t }
+		set_variable = { JAP_corridor_in_bauxite = JAP_corridor_bauxite_t }
+		set_variable = { JAP_corridor_in_iron = JAP_corridor_iron_t }
+		if = {
+			limit = { check_variable = { JAP_corridor_n_t > 0 } }
+			if = {
+				limit = { NOT = { has_dynamic_modifier = { modifier = JAP_corridor_received } } }
+				add_dynamic_modifier = { modifier = JAP_corridor_received }
+			}
+		}
+		else_if = {
+			limit = { has_dynamic_modifier = { modifier = JAP_corridor_received } }
+			remove_dynamic_modifier = { modifier = JAP_corridor_received }
+		}
+		force_update_dynamic_modifier = yes
+	}
+}
+
+# State scope.
+JAP_corridor_state_add = {
+	if = {
+		limit = { has_state_flag = JAP_corridor_shipped_flag }
+		add_to_temp_variable = { JAP_corridor_n_t = 1 }
+		add_to_temp_variable = { JAP_corridor_oil_t = JAP_corridor_oil }
+		add_to_temp_variable = { JAP_corridor_aluminium_t = JAP_corridor_aluminium }
+		add_to_temp_variable = { JAP_corridor_rubber_t = JAP_corridor_rubber }
+		add_to_temp_variable = { JAP_corridor_tungsten_t = JAP_corridor_tungsten }
+		add_to_temp_variable = { JAP_corridor_steel_t = JAP_corridor_steel }
+		add_to_temp_variable = { JAP_corridor_chromium_t = JAP_corridor_chromium }
+		add_to_temp_variable = { JAP_corridor_coal_t = JAP_corridor_coal }
+		add_to_temp_variable = { JAP_corridor_bauxite_t = JAP_corridor_bauxite }
+		add_to_temp_variable = { JAP_corridor_iron_t = JAP_corridor_iron }
+	}
+}

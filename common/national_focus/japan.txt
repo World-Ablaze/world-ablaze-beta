@@ -8993,17 +8993,33 @@ focus_tree = {
 
 	focus = {
 		id = JAP_island_defence_revision
-		icon = GFX_focus_JAP_develop_the_south_seas_mandate
+		icon = GFX_focus_SOV_south_manchuria_railway
 		x = 36
 		y = 11
 		cost = 3
 
-		prerequisite = { focus = JAP_operation_ichigo focus = JAP_operation_u_go }
+		prerequisite = { focus = JAP_operation_ichigo }
 
-		# available = { }   # TODO 実装側で
+		# Operation Ichigo has opened the corridor (common/scripted_triggers/JAP_corridor_triggers.txt).
+		available = {
+			JAP_continental_corridor_held = yes
+		}
 
+		# One more railway level along the shortest path from Pusan to Hanoi, keeping off land held by enemies.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			build_railway = {
+				level = 1
+				fallback = yes
+				controller_priority = {
+					base = 1
+					modifier = {
+						has_war_with = JAP
+						add = -2
+					}
+				}
+				start_province = 4056	# Pusan
+				target_province = 4075	# Hanoi
+			}
 		}
 	}
 
@@ -9016,10 +9032,14 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_island_defence_revision }
 
-		# available = { }   # TODO 実装側で
-
+		# From now on, while the corridor stays open, the southern resources go home overland
+		# (common/scripted_effects/JAP_corridor_effects.txt, weekly from common/on_actions/JAP_corridor_on_actions.txt).
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			custom_effect_tooltip = JAP_corridor_resources_tt
+			hidden_effect = {
+				set_country_flag = JAP_corridor_active
+				JAP_corridor_update = yes
+			}
 		}
 	}
 
