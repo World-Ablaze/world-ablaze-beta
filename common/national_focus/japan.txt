@@ -5293,14 +5293,7 @@ focus_tree = {
 
 
 		completion_reward = {
-			if = {
-				limit = { has_idea = JAP_gekokujo }
-				remove_ideas = JAP_gekokujo
-			}
-			if = {
-				limit = { has_idea = JAP_gekokujo_restrained }
-				remove_ideas = JAP_gekokujo_restrained
-			}
+			JAP_remove_gekokujo = yes
 		}
 	}
 
@@ -5560,14 +5553,7 @@ focus_tree = {
 				idea = JAP_ranks_purged
 				days = 360
 			}
-			if = {
-				limit = { has_idea = JAP_gekokujo }
-				remove_ideas = JAP_gekokujo
-			}
-			if = {
-				limit = { has_idea = JAP_gekokujo_restrained }
-				remove_ideas = JAP_gekokujo_restrained
-			}
+			JAP_remove_gekokujo = yes
 			remove_unit_leader_role = JAP_yasuji_okamura
 			remove_unit_leader_role = JAP_iwane_matsui
 		}
@@ -7832,6 +7818,14 @@ focus_tree = {
 				swap_ideas = {
 					remove_idea = JAP_gekokujo
 					add_idea = JAP_gekokujo_restrained
+				}
+			}
+			# the same step when the Army-Navy Central Agreement has already taken the command power penalty away
+			else_if = {
+				limit = { has_idea = JAP_gekokujo_coordinated }
+				swap_ideas = {
+					remove_idea = JAP_gekokujo_coordinated
+					add_idea = JAP_gekokujo_restrained_coordinated
 				}
 			}
 		}
@@ -10739,8 +10733,23 @@ focus_tree = {
 
 		# available = { }   # TODO 実装側で
 
+		# The army and navy settle who commands what: Gekokujo loses its command power penalty (-200, or -100 once
+		# restrained); the rest of it stays.
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			if = {
+				limit = { has_idea = JAP_gekokujo }
+				swap_ideas = {
+					remove_idea = JAP_gekokujo
+					add_idea = JAP_gekokujo_coordinated
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_gekokujo_restrained }
+				swap_ideas = {
+					remove_idea = JAP_gekokujo_restrained
+					add_idea = JAP_gekokujo_restrained_coordinated
+				}
+			}
 		}
 	}
 
@@ -11318,19 +11327,21 @@ focus_tree = {
 	focus = {
 		id = JAP_german_technology_exchange_focus
 		icon = GFX_goal_JAP_sign_the_tripartite_pact
-		x = 51
+		x = 52
 		y = 6
 		cost = 3
 
-		prerequisite = { focus = JAP_army_navy_central_agreement }
+		prerequisite = { focus = JAP_government_liaison_council }
 
 		# The political tree decides the alliance; this follows it.
 		available = {
 			has_completed_focus = JAP_sign_the_tripartite_pact
 		}
 
+		# A side branch, so that the column goes on without the Tripartite Pact. Unlocks the exchange itself
+		# (common/decisions/JAP_german_tech_exchange.txt).
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			unlock_decision_tooltip = JAP_gte_technology_exchange
 		}
 	}
 
@@ -11660,7 +11671,7 @@ focus_tree = {
 		y = 9
 		cost = 2
 
-		prerequisite = { focus = JAP_german_technology_exchange_focus }
+		prerequisite = { focus = JAP_army_navy_central_agreement }
 
 		# Decided on 30 September 1943, 661 days into the war: 600 days after going to war with the United States or
 		# Britain (JAP_pacific_war_started, common/on_actions/JAP_navy_autonomy_on_actions.txt). Everything below
@@ -11712,7 +11723,7 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_political_power = 100
 		}
 	}
 
