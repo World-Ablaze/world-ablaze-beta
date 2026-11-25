@@ -1,5 +1,6 @@
-# Records the day Japan went to war with the United States or Britain, which the Combined Fleet's
-# Second Stage operations will count from.
+# Starts the Second Stage operations the Combined Fleet takes on its own (events/JAP_navy_autonomy.txt),
+# counted from the day Japan went to war with the United States or Britain, while Japan holds the
+# Pacific islands it started with.
 on_actions = {
 	on_daily_JAP = {
 		effect = {
@@ -12,6 +13,32 @@ on_actions = {
 					}
 				}
 				set_country_flag = JAP_pacific_war_started
+			}
+			if = {
+				limit = {
+					has_country_flag = JAP_pacific_war_started
+					633 = { is_controlled_by = JAP }    # Marshall Islands
+					684 = { is_controlled_by = JAP }    # Caroline Islands
+					646 = { is_controlled_by = JAP }    # Saipan
+					863 = { is_controlled_by = JAP }    # Tinian
+					647 = { is_controlled_by = JAP }    # Palau
+					645 = { is_controlled_by = JAP }    # Iwo Jima
+				}
+				# Indian Ocean Raid: shines 69 days after the war began (not while the player is working on it by hand)
+				if = {
+					limit = {
+						NOT = { has_completed_focus = JAP_operation_c }
+						NOT = { has_shine_effect_on_focus = JAP_operation_c }
+						NOT = { has_country_flag = JAP_operation_c_started }
+						NOT = { focus_progress = { focus = JAP_operation_c progress > 0 } }
+						has_country_flag = { flag = JAP_pacific_war_started days > 68 }
+						733 = { OWNER = { has_war_with = JAP } }
+						336 = { is_controlled_by = JAP }
+						has_global_flag = JAP_ins_surrendered
+					}
+					set_country_flag = JAP_operation_c_started
+					country_event = { id = jap_navy_auto.1 }
+				}
 			}
 		}
 	}
