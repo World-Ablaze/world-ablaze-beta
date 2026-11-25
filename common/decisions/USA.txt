@@ -6599,20 +6599,46 @@ USA_war_plans = {
 					is_ai = yes
 				}
 			}
-			# What the United States thinks of Japan, not world tension: every step of Japan's army and the Tripartite Pact
-			# cost goodwill (common/opinion_modifiers/JAP_rework_opinion_modifiers.txt) and Southern Indochina brings it to -20.
+			# Either the old conditions on world tension, or what the United States thinks of Japan: every step of Japan's
+			# army and the Tripartite Pact cost goodwill (common/opinion_modifiers/JAP_rework_opinion_modifiers.txt) and Southern
+			# Indochina brings it to -20, whatever the tension.
 			OR = {
 				has_opinion = { target = JAP value < -19 }
+				JAP = { has_added_tension_amount > 24 }
+				JAP = {
+					any_allied_country = {
+						has_added_tension_amount > 24
+					}
+				}
 				AND = {
 					JAP = { has_war_with = CHI }
 					CHI = { surrender_progress > 0.7 }
+				}
+				AND = {
+					JAP = { has_war = yes }
+					JAP = { is_major = yes }
+					NOT = { JAP = { has_government = ROOT } }
+					JAP = { has_added_tension_amount > 9 }
+					GER = { has_war_with = SOV }
+					286 = {
+						CONTROLLER = {
+							OR = {
+								tag = JAP
+								is_in_faction_with = JAP
+								is_subject_of = JAP
+							}
+						}
+					}
 				}
 			}
 			NOT = { is_in_faction_with = JAP }
 		}
 		visible = {
 			has_completed_focus = USA_rainbow_war_plans
-			has_opinion = { target = JAP value < 1 }
+			OR = {
+				JAP = { has_added_tension_amount > 10 }
+				has_opinion = { target = JAP value < 1 }
+			}
 			NOT = { is_in_faction_with = JAP }
 			NOT = { has_war_with = JAP }
 			JAP = {
