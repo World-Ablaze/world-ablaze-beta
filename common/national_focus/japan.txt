@@ -8518,23 +8518,66 @@ focus_tree = {
 	}
 
 	focus = {
-		id = JAP_southern_expeditionary_army_group
-		icon = GFX_focus_JAP_nanshin_ron
+		id = JAP_southern_indochina_occupation
+		icon = GFX_focus_JAP_occupy_indochina
+		# One of the focuses the army may take on its own: gold title bar, like the vanilla German inner circle.
+		text_icon = JAP_army_focus_style
 		x = 67
 		y = 7
-		cost = 3
+		cost = 10
 
 		prerequisite = { focus = JAP_northern_indochina_occupation }
 
-		# available = { }   # TODO 実装側で
+		# Imperial General Headquarters takes this focus on its own on 28 July 1941, like the vanilla German inner
+		# circle (events/JAP_army_autonomy.txt). Taken by hand, it needs the same situation as the army.
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_southern_indochina_occupation_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 70 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_ighq_army_originator
+						FLAG_DAYS = [?JAP_southern_indochina_occupation_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				286 = {
+					OWNER = {
+						NOT = { tag = JAP }
+						NOT = { has_war_with = JAP }
+					}
+				}
+			}
+		}
 
-		# Research bonus for transports and landing craft, in place of the old Amphibious Warfare focus.
 		completion_reward = {
-			add_tech_bonus = {
-				name = JAP_southern_expeditionary_army_group
-				bonus = 0.5
-				uses = 2
-				category = tp_tech
+			# Air base and docking rights from whoever owns Cochinchina, the same way as Tonkin in the focus above.
+			286 = {
+				OWNER = {
+					diplomatic_relation = { country = JAP relation = air_base_access active = yes }
+					diplomatic_relation = { country = JAP relation = docking_rights active = yes }
+				}
+			}
+			286 = {	# Cochinchina
+				add_building_construction = {
+					type = air_base
+					level = 3
+					instant_build = yes
+				}
+			}
+			# The step that brought the freezing of assets and the oil embargo.
+			every_country = {
+				limit = {
+					OR = {
+						tag = ENG
+						tag = USA
+						tag = HOL
+					}
+				}
+				add_opinion_modifier = { target = JAP modifier = JAP_southern_indochina_opinion }
 			}
 		}
 	}
@@ -8723,7 +8766,7 @@ focus_tree = {
 		y = 8
 		cost = 3
 
-		prerequisite = { focus = JAP_southern_expeditionary_army_group }
+		prerequisite = { focus = JAP_southern_indochina_occupation }
 
 		# available = { }   # TODO 実装側で
 
@@ -9385,6 +9428,8 @@ focus_tree = {
 		completion_reward = {
 			JAP_diet_gov_national_unity = yes
 			JAP_peers_medium_support = yes
+			add_political_power = 150
+			add_country_leader_role = { character = JAP_fumimaro_konoe country_leader = { expire = "1965.1.1" ideology = oligarchism traits = { warrior_code nationalist_symbol } desc = "POLITICS_FUMIMARO_KONOE_DESC" } promote_leader = yes }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9413,8 +9458,35 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_pol_no_dealings_with_the_nationalists }
 
+		# Taken for the player (events/JAP_political_autonomy.txt), never by hand.
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_pol_hiranuma_cabinet_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_court_originator
+						FLAG_DAYS = [?JAP_pol_hiranuma_cabinet_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_pol_focus_taken_by_tt
+						ARMY = JAP_court_originator
+					}
+					always = no
+				}
+			}
+		}
+
 		# January 1939.
 		completion_reward = {
+			custom_effect_tooltip = JAP_hiranuma_kiichiros_cabinet_tt
+			hidden_effect = { set_country_flag = JAP_hiranuma_kiichiros_cabinet_dd_flag }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9427,6 +9499,31 @@ focus_tree = {
 		cost = 3
 
 		prerequisite = { focus = JAP_pol_hiranuma_cabinet }
+
+		# Taken for the player (events/JAP_political_autonomy.txt), never by hand.
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_pol_complicated_and_inscrutable_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_court_originator
+						FLAG_DAYS = [?JAP_pol_complicated_and_inscrutable_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_pol_focus_taken_by_tt
+						ARMY = JAP_court_originator
+					}
+					always = no
+				}
+			}
+		}
 
 		# August 1939: the German-Soviet pact brings the Hiranuma cabinet down. The Abe cabinet that follows has the parties against it.
 		completion_reward = {
@@ -9444,9 +9541,36 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_pol_complicated_and_inscrutable }
 
+		# Taken for the player (events/JAP_political_autonomy.txt), never by hand.
+		available = {
+			if = {
+				limit = { has_country_flag = JAP_pol_yonai_cabinet_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 21 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_court_originator
+						FLAG_DAYS = [?JAP_pol_yonai_cabinet_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_pol_focus_taken_by_tt
+						ARMY = JAP_court_originator
+					}
+					always = no
+				}
+			}
+		}
+
 		# January 1940: both parties in the cabinet again.
 		completion_reward = {
 			JAP_diet_gov_national_unity = yes
+			if = { limit = { has_idea = JAP_political_turmoil_2 } remove_ideas = JAP_political_turmoil_2 } else = { remove_ideas = JAP_political_turmoil }
+			if = { limit = { NOT = { has_country_leader = { character = JAP_mitsumasa_yonai ruling_only = yes } } } retire_country_leader = yes add_country_leader_role = { character = JAP_mitsumasa_yonai country_leader = { expire = "1965.1.1" ideology = moderatism traits = { warrior_code imperial_sanction_regular } } promote_leader = yes } }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9462,6 +9586,8 @@ focus_tree = {
 
 		# July 1940.
 		completion_reward = {
+			if = { limit = { has_idea = JAP_political_turmoil_2 } remove_ideas = JAP_political_turmoil_2 } else = { remove_ideas = JAP_political_turmoil }
+			if = { limit = { JAP_fumimaro_konoe = { can_be_country_leader = yes } } promote_character = { character = JAP_fumimaro_konoe ideology = oligarchism } } else = { add_country_leader_role = { character = JAP_fumimaro_konoe country_leader = { expire = "1965.1.1" ideology = oligarchism traits = { warrior_code nationalist_symbol } desc = "POLITICS_FUMIMARO_KONOE_DESC" } promote_leader = yes } }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9477,6 +9603,8 @@ focus_tree = {
 
 		# September 1940.
 		completion_reward = {
+			random_country = { limit = { original_tag = GER has_government = fascism } country_event = { id = wtt_japan.109 days = 1 } }
+			show_ideas_tooltip = JAP_tripartite_pact
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9494,6 +9622,9 @@ focus_tree = {
 		completion_reward = {
 			JAP_diet_form_yokusankai = yes
 			set_party_name = { ideology = neutrality long_name = JAP_PARTY_NAME_LONG name = JAP_PARTY_NAME_SHORT }
+			if = { limit = { has_idea = JAP_kokutai_ideology } swap_ideas = { remove_idea = JAP_kokutai_ideology add_idea = JAP_imperial_rule_association } } else = { add_ideas = JAP_imperial_rule_association }
+			if = { limit = { NOT = { OR = { has_idea = women_in_the_workforce has_idea = women_in_the_workplace has_idea = women_in_the_frontlines } } } add_ideas = women_in_the_workplace } else = { add_political_power = 300 }
+			economy_fatigue_level_down_4 = yes
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9524,6 +9655,9 @@ focus_tree = {
 
 		# October 1941.
 		completion_reward = {
+			add_country_leader_role = { character = JAP_hideki_tojo country_leader = { expire = "1965.1.1" ideology = despotism traits = { warrior_code prince_of_terror war_hawk imperial_sanction_regular } desc = "POLITICS_HIDEKI_TOJO_DESC" } promote_leader = yes }
+			custom_effect_tooltip = available_interior_minister
+			show_ideas_tooltip = JAP_michio_yuzawa
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9570,6 +9704,9 @@ focus_tree = {
 
 		# July 1944. The Suzuki cabinet (April 1945) follows by event.
 		completion_reward = {
+			add_country_leader_role = { character = JAP_kuniaki_koiso country_leader = { expire = "1965.1.1" ideology = despotism traits = { warrior_code } desc = "POLITICS_KUNIAKI_KOISO_DESC" } promote_leader = yes }
+			swap_ideas = { remove_idea = JAP_joint_staff_council add_idea = JAP_supreme_war_council_idea }
+			activate_advisor = yoshijiro_umezu
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9815,6 +9952,8 @@ focus_tree = {
 
 		# April 1938.
 		completion_reward = {
+			custom_effect_tooltip = JAP_national_mobilization_law_tt
+			add_ideas = war_economy
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9868,6 +10007,7 @@ focus_tree = {
 
 		# July 1939, an ordinance under the Mobilisation Law.
 		completion_reward = {
+			if = { limit = { NOT = { has_idea = factory_conscription } } add_ideas = factory_conscription } else = { add_political_power = 150 }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9949,6 +10089,7 @@ focus_tree = {
 
 		# 1940. The old tree's JAP_neighborhood_associations is what the Blackout decision reads for now.
 		completion_reward = {
+			add_ideas = JAP_tonarigumi
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -10145,6 +10286,8 @@ focus_tree = {
 
 		# April 1941.
 		completion_reward = {
+			if = { limit = { OR = { has_non_aggression_pact_with = SOV has_war_with = SOV } } add_political_power = 25 } else = { SOV = { country_event = { id = wtt_japan.11 } } }
+			hidden_effect = { set_country_flag = JAP_non_aggression_pact_with_the_soviet_union_dd_flag }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -11696,11 +11839,11 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_government_liaison_council }
 
-		# The agreement on who does what in the southern operation: needs the army's Amphibious Warfare focus
-		# (JAP_southern_expeditionary_army_group) and the navy's choice of opening, Pearl Harbor Attack or Southern
+		# The agreement on who does what in the southern operation: needs the army in Southern Indochina
+		# (JAP_southern_indochina_occupation) and the navy's choice of opening, Pearl Harbor Attack or Southern
 		# Operation Priority.
 		available = {
-			has_completed_focus = JAP_southern_expeditionary_army_group
+			has_completed_focus = JAP_southern_indochina_occupation
 			OR = {
 				has_completed_focus = JAP_pearl_harbor_attack
 				has_completed_focus = JAP_southern_operation_priority
