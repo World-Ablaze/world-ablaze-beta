@@ -10539,11 +10539,11 @@ focus_tree = {
 				limit = {
 					is_ai = no
 				}
-					activate_mission = Jap_Third_and_Fourth_Circle_Plan
+					activate_mission = JAP_third_naval_replenishment_plan
 			}
 			else = {
 				effect_tooltip = {
-					activate_mission = Jap_Third_and_Fourth_Circle_Plan
+					activate_mission = JAP_third_naval_replenishment_plan
 				}
 			}
 			if = {
@@ -10612,7 +10612,7 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_ketsugo
 		icon = GFX_focus_JAP_national_defense_brotherhood
-		x = 99
+		x = 100
 		y = 0
 
 		cost = 3
@@ -11112,7 +11112,7 @@ focus_tree = {
 	focus = {
 		id = JAP_first_and_second_general_armies
 		icon = GFX_focus_JAP_advance_one_hundred_million_fireballs
-		x = 96
+		x = 97
 		y = 1
 		cost = 3
 
@@ -11128,7 +11128,7 @@ focus_tree = {
 	focus = {
 		id = JAP_air_general_army
 		icon = GFX_goal_JAP_the_imperial_japanese_air_force
-		x = 99
+		x = 100
 		y = 1
 		cost = 3
 
@@ -11144,7 +11144,7 @@ focus_tree = {
 	focus = {
 		id = JAP_navy_general_command
 		icon = GFX_focus_jap_pacific_guardian
-		x = 102
+		x = 103
 		y = 1
 		cost = 3
 
@@ -11307,7 +11307,10 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_preparations_for_the_post_treaty_era }
 
-		# available = { }   # TODO 実装側で
+		# Shokaku was laid down on 12 December 1937, so the focus completes around then at the earliest.
+		available = {
+			date > 1937.11.1
+		}
 
 		completion_reward = {
 			if = {
@@ -11590,7 +11593,7 @@ focus_tree = {
 	focus = {
 		id = JAP_volunteer_fighting_corps
 		icon = GFX_focus_JAP_the_modern_ashigaru
-		x = 96
+		x = 97
 		y = 2
 		cost = 3
 
@@ -11606,7 +11609,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_special_attack_units
 		icon = GFX_focus_JAP_tennoheika_banzai
-		x = 98
+		x = 99
 		y = 2
 		cost = 3
 
@@ -11624,7 +11627,7 @@ focus_tree = {
 	focus = {
 		id = JAP_special_attack_aircraft
 		icon = GFX_focus_JAP_jet_prototypes
-		x = 100
+		x = 101
 		y = 2
 		cost = 3
 
@@ -11640,7 +11643,7 @@ focus_tree = {
 	focus = {
 		id = JAP_underwater_special_attack_weapons
 		icon = GFX_goal_generic_navy_submarine
-		x = 102
+		x = 103
 		y = 2
 		cost = 3
 
@@ -11771,9 +11774,28 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_cruiser_modernization }
 
-		# available = { }   # TODO 実装側で
+		# Budget passed by the Diet in March 1939.
+		available = {
+			date > 1939.3.31
+		}
 
 		completion_reward = {
+			if = {
+				limit = { is_ai = no }
+				if = {
+					limit = { has_active_mission = JAP_third_naval_replenishment_plan }
+					custom_effect_tooltip = JAP_naval_plans_merge_tt
+					hidden_effect = {
+						set_variable = { JAP_naval_plans_merged_days = days_mission_timeout@JAP_third_naval_replenishment_plan }
+						add_to_variable = { JAP_naval_plans_merged_days = 700 }
+						remove_mission = JAP_third_naval_replenishment_plan
+						activate_mission = JAP_third_and_fourth_naval_plans
+					}
+				}
+				else = {
+					activate_mission = JAP_fourth_naval_expansion_plan
+				}
+			}
 			add_tech_bonus = {
 				name = JAP_fourth_circle_plan
 				bonus = 0.5
@@ -11833,11 +11855,71 @@ focus_tree = {
 	}
 
 	focus = {
+		id = JAP_modernize_the_snlf
+		icon = GFX_goal_generic_amphibious_assault
+		prerequisite = { focus = JAP_island_bulwarks }
+		x = 93
+		y = 4
+
+		cost = 3
+
+		ai_will_do = {
+			factor = 1
+		}
+
+		search_filters = {
+			FOCUS_FILTER_RESEARCH
+		}
+
+		available = {
+			has_tech = mtg_tank_snorkals
+			OR = {
+				has_tech = jap_light_tank_td_3
+				has_tech = jap_light_tank_td_6
+			}
+			OR = {
+				has_tech = jap_light_tank_spg_3
+				has_tech = jap_light_tank_spg_6
+			}
+		}
+
+		completion_reward = {
+			add_tech_bonus = {
+				name = JAP_modernize_the_snlf
+				bonus = 0.5
+				uses = 3
+				category = marine_tech
+				category = para_tech
+				category = mountaineers_tech
+			}
+
+			set_technology = {
+				mtg_tank_floats = 1
+			}
+			unlock_subunit = armoured_snlf
+		}
+	}
+
+	focus = {
+		id = JAP_snlf_expansion
+		icon = GFX_goal_generic_special_forces
+		x = 93
+		y = 5
+		cost = 3
+
+		prerequisite = { focus = JAP_modernize_the_snlf }
+
+		completion_reward = {
+			add_ideas = JAP_snlf_expansion_idea
+		}
+	}
+
+	focus = {
 		id = JAP_mine_warfare
 		icon = GFX_focus_generic_mine_warfare
-		prerequisite = { focus = JAP_island_bulwarks }
-		x = 94
-		y = 4
+		prerequisite = { focus = JAP_super_submarines }
+		x = 95
+		y = 5
 
 		cost = 3
 
@@ -11866,7 +11948,7 @@ focus_tree = {
 	focus = {
 		id = JAP_ichioku_gyokusai
 		icon = GFX_focus_JAP_give_it_your_all_for_the_emperor
-		x = 96
+		x = 97
 		y = 3
 
 		cost = 3
@@ -11901,7 +11983,7 @@ focus_tree = {
 	focus = {
 		id = JAP_kamikaze_special_attack_units
 		icon = GFX_goal_JAP_the_divine_wind
-		x = 100
+		x = 101
 		y = 3
 
 		cost = 3
@@ -12070,6 +12152,35 @@ focus_tree = {
 					NOT = { has_war_with = USA }
 				}
 				custom_effect_tooltip = JAP_southern_operation_priority_tt
+				effect_tooltip = {
+					every_state = {
+						limit = {
+							OR = {
+								state = 327
+								state = 623
+								state = 624
+								state = 625
+								state = 626
+								state = 627
+								state = 628
+								state = 724
+								state = 862
+								state = 336
+								state = 333
+								state = 334
+								state = 672
+								state = 335
+								state = 673
+								state = 668
+								state = 667
+								state = 288
+								state = 640
+							}
+						}
+						tooltip = JAP_southern_operation_states_tt
+						add_dynamic_modifier = { modifier = JAP_southern_operation_offensive days = 120 scope = ROOT }
+					}
+				}
 				hidden_effect = { set_country_flag = JAP_southern_operation_ready }
 			}
 			else = {
@@ -12115,9 +12226,9 @@ focus_tree = {
 	focus = {
 		id = JAP_super_submarines
 		icon = GFX_goal_generic_navy_submarine
-		prerequisite = { focus = JAP_mine_warfare }
-		x = 94
-		y = 5
+		prerequisite = { focus = JAP_island_bulwarks }
+		x = 95
+		y = 4
 
 		cost = 3
 
@@ -12147,7 +12258,7 @@ focus_tree = {
 		y = 6
 		cost = 3
 
-		prerequisite = { focus = JAP_super_submarines }
+		prerequisite = { focus = JAP_mine_warfare focus = JAP_snlf_expansion }
 
 		# available = { }   # TODO 実装側で
 
@@ -12158,13 +12269,24 @@ focus_tree = {
 				producer = JAP
 			}
 			economy_fatigue_level_up_1 = yes
+			# Convoy escort spirit, next stage
+			if = {
+				limit = { has_idea = JAP_convoy_escort_neglect }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect
+					add_idea = JAP_convoy_escort_neglect_2
+				}
+			}
+			else = {
+				add_ideas = JAP_convoy_escort_neglect_2
+			}
 		}
 	}
 
 	focus = {
 		id = JAP_relocate_imperial_headquarters
 		icon = GFX_focus_JAP_mountain_village_operation_units
-		x = 96
+		x = 97
 		y = 4
 
 		cost = 1
@@ -12200,7 +12322,7 @@ focus_tree = {
 	focus = {
 		id = JAP_army_navy_unification_attempt
 		icon = GFX_focus_JAP_end_the_interservice_rivalry
-		x = 100
+		x = 101
 		y = 4
 		cost = 3
 
@@ -12299,6 +12421,8 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_c
 		icon = GFX_goal_generic_navy_carrier
+		# One of the focuses the Combined Fleet may take on its own: navy-blue title bar.
+		text_icon = JAP_navy_focus_style
 		x = 84
 		y = 9
 		cost = 3
@@ -12330,7 +12454,9 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_mo
 		icon = GFX_goal_generic_amphibious_assault
-		x = 86
+		# One of the focuses the Combined Fleet may take on its own: navy-blue title bar.
+		text_icon = JAP_navy_focus_style
+		x = 92
 		y = 9
 		cost = 3
 
@@ -12361,6 +12487,8 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_mi
 		icon = GFX_goal_generic_major_war
+		# One of the focuses the Combined Fleet may take on its own: navy-blue title bar.
+		text_icon = JAP_navy_focus_style
 		x = 88
 		y = 9
 		cost = 3
@@ -12392,7 +12520,9 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_al
 		icon = GFX_goal_generic_occupy_states_ongoing_war
-		x = 90
+		# One of the focuses the Combined Fleet may take on its own: navy-blue title bar.
+		text_icon = JAP_navy_focus_style
+		x = 86
 		y = 9
 		cost = 3
 
@@ -12423,7 +12553,9 @@ focus_tree = {
 	focus = {
 		id = JAP_operation_fs
 		icon = GFX_goal_generic_attack_allies
-		x = 92
+		# One of the focuses the Combined Fleet may take on its own: navy-blue title bar.
+		text_icon = JAP_navy_focus_style
+		x = 90
 		y = 9
 		cost = 3
 
@@ -12533,7 +12665,24 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# Convoy escort spirit, next stage
+			if = {
+				limit = { has_idea = JAP_convoy_escort_neglect_2 }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect_2
+					add_idea = JAP_convoy_escort_efforts
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_neglect }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect
+					add_idea = JAP_convoy_escort_efforts
+				}
+			}
+			else = {
+				add_ideas = JAP_convoy_escort_efforts
+			}
 		}
 	}
 
@@ -12651,11 +12800,11 @@ focus_tree = {
 	focus = {
 		id = JAP_tokyo_express_operations
 		icon = GFX_goal_generic_navy_cruiser
-		x = 88
+		x = 91
 		y = 10
 		cost = 3
 
-		prerequisite = { focus = JAP_operation_mi }
+		prerequisite = { focus = JAP_operation_mo focus = JAP_operation_fs }
 
 		# available = { }   # TODO 実装側で
 
@@ -12787,7 +12936,31 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			# Convoy escort spirit, next stage
+			if = {
+				limit = { has_idea = JAP_convoy_escort_efforts }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_efforts
+					add_idea = JAP_convoy_escort_focus
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_neglect_2 }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect_2
+					add_idea = JAP_convoy_escort_focus
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_neglect }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect
+					add_idea = JAP_convoy_escort_focus
+				}
+			}
+			else = {
+				add_ideas = JAP_convoy_escort_focus
+			}
 		}
 	}
 
@@ -12795,17 +12968,25 @@ focus_tree = {
 		id = JAP_operation_a_go
 		icon = GFX_focus_jap_cast_the_die
 		x = 88
-		y = 11
+		y = 10
 		cost = 3
 
-		prerequisite = { focus = JAP_tokyo_express_operations }
+		prerequisite = { focus = JAP_operation_mi }
 
 		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		available = {
+			has_war_with = USA
+			OR = {
+				633 = { CONTROLLER = { has_war_with = JAP } }	# Marshall Islands
+				684 = { CONTROLLER = { has_war_with = JAP } }	# Caroline Islands
+			}
+			646 = { is_controlled_by = ROOT }	# Saipan
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_timed_idea = { idea = JAP_operation_a_go_idea days = 120 }
+			custom_effect_tooltip = JAP_operation_a_go_lost_tt
 		}
 	}
 
@@ -12821,7 +13002,44 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_tech_bonus = {
+				name = JAP_escort_ship_mass_production
+				bonus = 1.0
+				uses = 2
+				category = ff_tech
+			}
+			# Convoy escort spirit, next stage
+			if = {
+				limit = { has_idea = JAP_convoy_escort_focus }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_focus
+					add_idea = JAP_convoy_escort_focus_2
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_efforts }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_efforts
+					add_idea = JAP_convoy_escort_focus_2
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_neglect_2 }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect_2
+					add_idea = JAP_convoy_escort_focus_2
+				}
+			}
+			else_if = {
+				limit = { has_idea = JAP_convoy_escort_neglect }
+				swap_ideas = {
+					remove_idea = JAP_convoy_escort_neglect
+					add_idea = JAP_convoy_escort_focus_2
+				}
+			}
+			else = {
+				add_ideas = JAP_convoy_escort_focus_2
+			}
 		}
 	}
 
@@ -12829,17 +13047,29 @@ focus_tree = {
 		id = JAP_operation_sho_go
 		icon = GFX_goal_JAP_ultimate_victory
 		x = 88
-		y = 12
+		y = 11
 		cost = 3
 
 		prerequisite = { focus = JAP_operation_a_go }
 
 		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		available = {
+			OR = {
+				327 = { CONTROLLER = { has_war_with = JAP } }
+				623 = { CONTROLLER = { has_war_with = JAP } }
+				624 = { CONTROLLER = { has_war_with = JAP } }
+				625 = { CONTROLLER = { has_war_with = JAP } }
+				626 = { CONTROLLER = { has_war_with = JAP } }
+				627 = { CONTROLLER = { has_war_with = JAP } }
+				628 = { CONTROLLER = { has_war_with = JAP } }
+			}
+			625 = { is_controlled_by = ROOT }	# Samar and Leyte
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_timed_idea = { idea = JAP_operation_sho_go_idea days = 60 }
+			custom_effect_tooltip = JAP_operation_sho_go_lost_tt
 		}
 	}
 
@@ -12855,7 +13085,21 @@ focus_tree = {
 		# available = { }   # TODO 実装側で
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_tech_bonus = {
+				name = JAP_hydrophones_and_depth_charges
+				bonus = 1.0
+				uses = 2
+				technology = k_guns
+				technology = hedgehog_depth_charge_mortar
+				technology = squid_depth_charge_mortar
+			}
+			add_tech_bonus = {
+				name = JAP_hydrophones_and_depth_charges
+				bonus = 1.0
+				uses = 1
+				technology = improved_sonar
+				technology = advanced_sonar
+			}
 		}
 	}
 
@@ -12863,17 +13107,22 @@ focus_tree = {
 		id = JAP_operation_ten_go
 		icon = GFX_goal_generic_navy_battleship
 		x = 88
-		y = 13
+		y = 12
 		cost = 3
 
 		prerequisite = { focus = JAP_operation_sho_go }
 
 		# 陸海軍が勝手に取りに来る代償つき NF の候補（仕組みは未実装）
 
-		# available = { }   # TODO 実装側で
+		available = {
+			645 = { CONTROLLER = { has_war_with = JAP } }	# Iwo Jima
+			526 = { is_controlled_by = ROOT }	# Okinawa
+		}
 
 		completion_reward = {
-			# TODO 効果はまだ決まっていない
+			add_timed_idea = { idea = JAP_operation_ten_go_idea days = 30 }
+			custom_effect_tooltip = JAP_operation_ten_go_lost_tt
+			add_war_support = 0.05
 		}
 	}
 
