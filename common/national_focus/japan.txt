@@ -9520,6 +9520,17 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_pol_first_konoe_cabinet }
 
+		# The statement answers a war that will not end: Nanjing has fallen and Chiang still will not treat.
+		available = {
+			has_war_with = CHI
+			598 = { CONTROLLER = { OR = { tag = ROOT is_subject_of = ROOT } } }    # Nanjing
+		}
+
+		# Peace with China already made: nothing to state, and the spine goes on.
+		bypass = {
+			has_global_flag = JAP_peace_with_china_flag
+		}
+
 		# 16 January 1938: the door to peace is shut.
 		completion_reward = {
 			add_war_support = 0.05
@@ -9649,6 +9660,7 @@ focus_tree = {
 			JAP_diet_gov_national_unity = yes
 			if = { limit = { has_idea = JAP_political_turmoil_2 } remove_ideas = JAP_political_turmoil_2 } else = { remove_ideas = JAP_political_turmoil }
 			if = { limit = { NOT = { has_country_leader = { character = JAP_mitsumasa_yonai ruling_only = yes } } } retire_country_leader = yes add_country_leader_role = { character = JAP_mitsumasa_yonai country_leader = { expire = "1965.1.1" ideology = moderatism traits = { warrior_code imperial_sanction_regular } } promote_leader = yes } }
+			hidden_effect = { set_country_flag = JAP_pol_yonai_cabinet_dd_flag }
 			# TODO 効果はまだ決まっていない
 		}
 	}
@@ -9662,10 +9674,16 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_pol_yonai_cabinet }
 
+		available = {
+			# The fall of France brings the army to turn the Yonai cabinet out; failing that, time does.
+			OR = { FRA = { has_capitulated = yes } custom_trigger_tooltip = { tooltip = JAP_pol_yonai_cabinet_dd_tt has_country_flag = { flag = JAP_pol_yonai_cabinet_dd_flag days > 200 } } }
+		}
+
 		# July 1940.
 		completion_reward = {
 			if = { limit = { has_idea = JAP_political_turmoil_2 } remove_ideas = JAP_political_turmoil_2 } else = { remove_ideas = JAP_political_turmoil }
 			if = { limit = { JAP_fumimaro_konoe = { can_be_country_leader = yes } } promote_character = { character = JAP_fumimaro_konoe ideology = oligarchism } } else = { add_country_leader_role = { character = JAP_fumimaro_konoe country_leader = { expire = "1965.1.1" ideology = oligarchism traits = { warrior_code nationalist_symbol } desc = "POLITICS_FUMIMARO_KONOE_DESC" } promote_leader = yes } }
+			hidden_effect = { set_country_flag = JAP_pol_second_konoe_cabinet_dd_flag }
 			activate_advisor = JAP_yosuke_matsuoka
 			custom_effect_tooltip = JAP_pol_matsuoka_tt
 			set_can_be_fired_in_advisor_role = { character = JAP_yosuke_matsuoka slot = foreign_minister value = no }
@@ -9681,6 +9699,13 @@ focus_tree = {
 		cost = 4
 
 		prerequisite = { focus = JAP_pol_second_konoe_cabinet }
+
+		available = {
+			# As the old tree's Sign the Tripartite Pact.
+			OR = { threat > 0.75 has_war = yes FRA = { has_capitulated = yes } ITA = { has_capitulated = yes } JAP = { has_capitulated = yes } GER = { has_capitulated = yes } SOV = { has_capitulated = yes } ENG = { has_capitulated = yes } has_global_flag = ENG_fall_of_the_uk }
+			any_country = { original_tag = GER has_government = fascism NOT = { has_war_with = ROOT } }
+			any_country = { original_tag = ITA has_government = fascism NOT = { has_war_with = ROOT } }
+		}
 
 		# September 1940.
 		completion_reward = {
@@ -9720,6 +9745,17 @@ focus_tree = {
 
 		prerequisite = { focus = JAP_pol_imperial_rule_assistance_association }
 
+		# Germany's attack on the Soviet Union turns Matsuoka against the talks with America; failing that, a year of him does.
+		available = {
+			OR = {
+				GER = { has_war_with = SOV }
+				custom_trigger_tooltip = {
+					tooltip = JAP_pol_second_konoe_cabinet_dd_tt
+					has_country_flag = { flag = JAP_pol_second_konoe_cabinet_dd_flag days > 360 }
+				}
+			}
+		}
+
 		# July 1941: the cabinet resigns and is formed again to be rid of Foreign Minister Matsuoka.
 		completion_reward = {
 			add_political_power = 50
@@ -9740,6 +9776,11 @@ focus_tree = {
 		cost = 3
 
 		prerequisite = { focus = JAP_pol_third_konoe_cabinet }
+
+		available = {
+			# The embargo is what brings the third Konoe cabinet down (the old tree's Appoint Tojo also took war with the United States or the Soviet Union).
+			OR = { custom_trigger_tooltip = { tooltip = JAP_pol_embargoed_by_usa_tt has_country_flag = embargoed_by_USA } has_war_with = USA has_war_with = SOV }
+		}
 
 		# October 1941.
 		completion_reward = {
@@ -10271,6 +10312,8 @@ focus_tree = {
 
 		available = {
 			JAP_diet_majority_trigger = yes
+			# As the old tree's National Mobilization Law.
+			OR = { threat > 0.3 AND = { has_war_with = CHI CHI = { surrender_progress > 0.25 } } casualties > 500000 }
 		}
 
 		# April 1938.
