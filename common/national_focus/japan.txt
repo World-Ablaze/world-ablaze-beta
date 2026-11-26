@@ -10404,12 +10404,38 @@ focus_tree = {
 		icon = GFX_goal_generic_military_economy_large
 		x = 44
 		y = 16
-		cost = 3
+		cost = 7
 
 		prerequisite = { focus = JAP_pol_wartime_administrative_special_law }
 
+		# If the Planning Board's draft stood (JAP_pol_planning_board_draft_stands), this is taken for the player in the
+		# autumn of 1943 (events/JAP_political_autonomy.txt) and cannot be taken by hand. Otherwise it is an ordinary focus.
 		available = {
-			JAP_diet_two_thirds_trigger = yes
+			if = {
+				limit = { has_country_flag = JAP_pol_munitions_company_law_in_progress_flag }
+				set_temp_variable = { temp_focus_days = 49 }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_focus_army_in_progress_tt
+						ARMY = JAP_planning_board_originator
+						FLAG_DAYS = [?JAP_pol_munitions_company_law_in_progress_flag:days]
+					}
+					always = no
+				}
+			}
+			else_if = {
+				limit = { has_completed_focus = JAP_pol_planning_board_draft_stands }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_pol_focus_taken_by_tt
+						ARMY = JAP_planning_board_originator
+					}
+					always = no
+				}
+			}
+			else = {
+				JAP_diet_two_thirds_trigger = yes
+			}
 		}
 
 		# October 1943, with the Munitions Ministry that replaces the Planning Board in November: the state names munitions
