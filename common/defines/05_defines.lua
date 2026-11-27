@@ -497,8 +497,12 @@ NDefines.NMilitary.COMBAT_MOVEMENT_SPEED = 0.8										-- speed reduction base 
 
 NDefines.NMilitary.TRAINING_ORG = 0
 NDefines.NMilitary.TRAINING_MAX_DAILY_COUNTRY_EXP = 0.05
-NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 84                					-- default capacity if not specified
+<<<<<<< HEAD
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 48               					-- default capacity if not specified
 NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
+=======
+NDefines.NMilitary.FUEL_CAPACITY_DEFAULT_HOURS = 48              					-- default capacity if not specified
+>>>>>>> ai-rework
 
 NDefines.NMilitary.BASE_CAPTURE_EQUIPMENT_RATIO = 0.04								-- after a successful land combat, ratio of the equipments that are being captured/salvaged from enemy's lost equipment
 --NDefines.NMilitary.REINFORCE_CHANCE = 0.1                	   						-- base chance to join combat from back line when empty
@@ -529,12 +533,19 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
 
+<<<<<<< HEAD
 NDefines.NMilitary.PREFERRED_TACTIC_CHARACTER_SKILL_LEVEL_REQUIRED = 5			    -- Which level a field marhal or general has to be before they can pick their preferred tactic
 NDefines.NMilitary.COUNTRY_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.25 				    -- extra weight multiplier for the country preferred tactic when doing weighted random
 NDefines.NMilitary.ARMY_GENERAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.20 			    -- extra weight multiplier for the army general preferred tactic when doing weighted random
 NDefines.NMilitary.FIELD_MARSHAL_PREFERRED_TACTIC_WEIGHT_FACTOR = 0.15			    -- extra weight multiplier for the field marhsal preferred tactic when doing weighted random
 NDefines.NMilitary.PREFERRED_TACTIC_COMMAND_POWER_COST = 20							-- command point cost for changing preferred tactic
-NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.4	 
+NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.4
+NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0.35										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
+NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.52
+=======
+NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0.35										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
+NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.52
+>>>>>>> ai-rework
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to prepare an airborne invasion
 NDefines.NAir.AIR_INVASION_PLAN_CAP = 1												-- base cap of airborne invasions can be planned at the same time
@@ -668,6 +679,8 @@ NDefines.NAir.THRUST_WEIGHT_AGILITY_FACTOR = 1										-- For plane designs, ad
 NDefines.NAir.MAX_QUICK_WING_SELECTION = 4											-- Max possible selection for airwing quick deploy
 NDefines.NAir.USE_SINGLE_NAVAL_ARMAMENT_CATEGORY = false							-- If true, only the armament module category that inflicts the greatest damage to naval targets will contribute naval strike and port strike mission specific stats. Only modules with both naval_strike_attack and naval_strike_targetting are considered. This is used to prevent torpedo_mounting and bomb_locks stats from stacking.
 
+NDefines.NAir.MIN_PLANE_COUNT_PARADROP = 500 --Aigle2 : Minimum number of planes required for a paradrop mission
+NDefines.NAir.BASE_UNIT_WEIGHT_IN_TRANSPORT_PLANES = 500 --Aigle2 : Planes per division in transport planes
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Navy
 NDefines.NNavy.NAVAL_HEADQUARTER_ADJACENCY = 3										-- How many extra steps of strategic regions from the first the naval headquarter provides benefits.
 
@@ -969,8 +982,8 @@ NDefines.NSupply.TRUCK_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.01 				-- tim
 NDefines.NSupply.NAVAL_DISTANCE_FACTOR_FOR_REINFORCEMENT_SPEED = 0.08 				-- time factor for total naval distance
 
 
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 7 									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
-NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 5
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN = 14									-- railways will be put on cooldown when they are captured by enemy and will not be usable during the cooldown
+NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CORE = 10
 NDefines.NSupply.RAILWAY_CONVERSION_COOLDOWN_CIVILWAR = 0
 
 NDefines.NSupply.SUPPLY_THRESHOLD_FOR_ARMY_ATTRITION = 0.4 							-- armies will only get attrition below this supply
