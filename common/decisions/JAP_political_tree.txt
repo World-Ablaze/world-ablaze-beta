@@ -36,4 +36,52 @@ economy_decisions = {
 		complete_effect = {
 		}
 	}
+
+	# BOJ_REISSUE_1127: the Bank of Japan Law lets one series of war bonds be issued a second time. The series held is not
+	# touched; the issuing mission of _economy_fatigue.txt runs once more, so the second issue is not among those to repay.
+	JAP_reissue_war_bonds = {
+		icon = hol_attract_foreign_investors
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		visible = {
+			check_variable = { JAP_bond_reissues_left > 0 }
+		}
+
+		available = {
+			has_war = yes
+			custom_trigger_tooltip = {
+				tooltip = JAP_reissue_war_bonds_held_tt
+				OR = { has_idea = Series_A_bonds has_idea = Series_B_bonds has_idea = Series_C_bonds has_idea = Series_D_bonds has_idea = Series_E_bonds has_idea = Series_F_bonds has_idea = Series_G_bonds }
+			}
+			NOT = { has_country_flag = issuing_war_bonds }
+			NOT = { has_country_flag = repaying_war_bonds }
+		}
+
+		fire_only_once = no
+		cost = 50
+
+		complete_effect = {
+			set_temp_variable = { _total_warbond_days = warbonds_max_iterations }
+			multiply_temp_variable = { _total_warbond_days = warbonds_mission_timeout }
+			custom_effect_tooltip = warbonds_mission_tt
+			set_country_flag = issuing_war_bonds
+			hidden_effect = {
+				set_variable = { warbonds_current_iteration = 1 }
+				subtract_from_variable = { JAP_bond_reissues_left = 1 }
+				add_to_variable = { JAP_bond_reissued = 1 }
+				activate_mission = warbonds_mission
+			}
+		}
+
+		ai_will_do = {
+			base = 0
+			modifier = {
+				add = 400
+				check_variable = { economic_fatigue > 9 }
+			}
+		}
+	}
 }
