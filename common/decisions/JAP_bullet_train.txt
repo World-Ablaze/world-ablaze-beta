@@ -1,8 +1,9 @@
 # The Bullet Train Plan (focus JAP_ind_bullet_train_plan): repeating decisions that build railway, section by section.
 # Built like the Atlantic Wall (common/decisions/GER.txt, GER_atlantik_wall_west_france and _start): the _start decision switches
-# the running one on and off; the running one ties up civilian factories, builds one railway level when it ends, costs one
-# step of economic fatigue, and starts again by itself, each run 30 days longer, 4 runs in all.
-# The third section is the army tree's Greater East Asia Trunk Railway (JAP_island_defence_revision) carried further.
+# the running one on and off; the running one ties up 15 civilian factories, builds one railway level when it ends, costs one
+# step of economic fatigue, and starts again by itself, 4 runs in all. The days do not grow from run to run.
+# The last three sections are the army tree's Greater East Asia Trunk Railway (JAP_island_defence_revision) carried further;
+# what the overland routes carry home follows their railway level (common/scripted_effects/JAP_corridor_effects.txt).
 economy_decisions = {
 
 	JAP_bullet_train_home_start = {
@@ -104,7 +105,7 @@ economy_decisions = {
 		}
 
 		cost = 0
-		days_remove = JAP.JAP_bullet_train_home_days
+		days_remove = 90
 		fire_only_once = no
 
 		modifier = {
@@ -125,7 +126,6 @@ economy_decisions = {
 			economy_fatigue_level_up_1 = yes
 			hidden_effect = {
 				add_to_variable = { JAP_bullet_train_home_count = 1 }
-				add_to_variable = { JAP_bullet_train_home_days = 30 }
 			}
 			if = {
 				limit = { check_variable = { JAP_bullet_train_home_count < 4 } }
@@ -242,7 +242,7 @@ economy_decisions = {
 		}
 
 		cost = 0
-		days_remove = JAP.JAP_bullet_train_continent_days
+		days_remove = 120
 		fire_only_once = no
 
 		modifier = {
@@ -263,7 +263,6 @@ economy_decisions = {
 			economy_fatigue_level_up_1 = yes
 			hidden_effect = {
 				add_to_variable = { JAP_bullet_train_continent_count = 1 }
-				add_to_variable = { JAP_bullet_train_continent_days = 30 }
 			}
 			if = {
 				limit = { check_variable = { JAP_bullet_train_continent_count < 4 } }
@@ -280,7 +279,7 @@ economy_decisions = {
 		}
 	}
 
-	JAP_bullet_train_trunk_start = {
+	JAP_bullet_train_north_china_start = {
 		icon = generic_construction
 
 		allowed = {
@@ -290,21 +289,23 @@ economy_decisions = {
 		visible = {
 			has_completed_focus = JAP_ind_bullet_train_plan
 			has_completed_focus = JAP_island_defence_revision
-			check_variable = { JAP_bullet_train_trunk_count < 4 }
+			check_variable = { JAP_bullet_train_north_china_count < 4 }
 		}
 
 		available = {
 			JAP_continental_corridor_held = yes
 			if = {    # not needed to stop
-				limit = { NOT = { has_decision = JAP_bullet_train_trunk } }
+				limit = { NOT = { has_decision = JAP_bullet_train_north_china } }
 				num_of_civilian_factories_available_for_projects > 14
 			}
 		}
 
 		highlight_states = {
 			highlight_state_targets = {
-				state = 847
-				state = 336
+				state = 328
+				state = 608
+				state = 607
+				state = 620
 			}
 		}
 
@@ -314,23 +315,23 @@ economy_decisions = {
 
 		complete_effect = {
 			if = {
-				limit = { NOT = { has_decision = JAP_bullet_train_trunk } }
+				limit = { NOT = { has_decision = JAP_bullet_train_north_china } }
 				custom_override_tooltip = {
 					tooltip = {
 						localization_key = JAP_bullet_train_start_tt
 					}
-					activate_decision = JAP_bullet_train_trunk
+					activate_decision = JAP_bullet_train_north_china
 				}
-				set_country_flag = JAP_bullet_train_trunk
+				set_country_flag = JAP_bullet_train_north_china
 			}
 			else = {
 				custom_override_tooltip = {
 					tooltip = {
 						localization_key = JAP_bullet_train_stop_tt
 					}
-					remove_decision_on_cooldown = JAP_bullet_train_trunk
+					remove_decision_on_cooldown = JAP_bullet_train_north_china
 				}
-				clr_country_flag = JAP_bullet_train_trunk
+				clr_country_flag = JAP_bullet_train_north_china
 			}
 		}
 
@@ -338,7 +339,7 @@ economy_decisions = {
 			factor = 10
 			modifier = {
 				factor = 0
-				has_decision = JAP_bullet_train_trunk    # the AI never stops it
+				has_decision = JAP_bullet_train_north_china    # the AI never stops it
 			}
 			modifier = {
 				factor = 0
@@ -347,7 +348,7 @@ economy_decisions = {
 		}
 	}
 
-	JAP_bullet_train_trunk = {
+	JAP_bullet_train_north_china = {
 		icon = generic_construction
 
 		allowed = {
@@ -358,15 +359,17 @@ economy_decisions = {
 
 		visible = {
 			hidden_trigger = {    # only seen while it runs
-				has_decision = JAP_bullet_train_trunk
+				has_decision = JAP_bullet_train_north_china
 			}
 		}
 		cancel_if_not_visible = yes
 
 		highlight_states = {
 			highlight_state_targets = {
-				state = 847
-				state = 336
+				state = 328
+				state = 608
+				state = 607
+				state = 620
 			}
 		}
 
@@ -375,7 +378,7 @@ economy_decisions = {
 		}
 
 		cost = 0
-		days_remove = JAP.JAP_bullet_train_trunk_days
+		days_remove = 120
 		fire_only_once = no
 
 		modifier = {
@@ -386,7 +389,7 @@ economy_decisions = {
 		}
 
 		remove_effect = {
-			custom_effect_tooltip = JAP_bullet_train_trunk_tt
+			custom_effect_tooltip = JAP_bullet_train_north_china_tt
 			build_railway = {
 				level = 1
 				fallback = yes
@@ -397,25 +400,313 @@ economy_decisions = {
 						add = -2
 					}
 				}
-				start_province = 4056	# Pusan
-				target_province = 12299	# Singapore
+				start_province = 4572	# Hsinking
+				target_province = 4619	# Wuhan
 			}
 			economy_fatigue_level_up_1 = yes
 			hidden_effect = {
-				add_to_variable = { JAP_bullet_train_trunk_count = 1 }
-				add_to_variable = { JAP_bullet_train_trunk_days = 30 }
+				add_to_variable = { JAP_bullet_train_north_china_count = 1 }
 			}
 			if = {
-				limit = { check_variable = { JAP_bullet_train_trunk_count < 4 } }
+				limit = { check_variable = { JAP_bullet_train_north_china_count < 4 } }
 				custom_override_tooltip = {
 					tooltip = {
 						localization_key = GER_atlantik_wall_repeat_tt
 					}
-					activate_decision = JAP_bullet_train_trunk
+					activate_decision = JAP_bullet_train_north_china
 				}
 			}
 			else = {
-				clr_country_flag = JAP_bullet_train_trunk
+				clr_country_flag = JAP_bullet_train_north_china
+			}
+		}
+	}
+
+	JAP_bullet_train_south_china_start = {
+		icon = generic_construction
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		visible = {
+			has_completed_focus = JAP_ind_bullet_train_plan
+			has_completed_focus = JAP_island_defence_revision
+			check_variable = { JAP_bullet_train_south_china_count < 4 }
+		}
+
+		available = {
+			JAP_continental_corridor_held = yes
+			if = {    # not needed to stop
+				limit = { NOT = { has_decision = JAP_bullet_train_south_china } }
+				num_of_civilian_factories_available_for_projects > 14
+			}
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 620
+				state = 602
+				state = 599
+				state = 932
+				state = 594
+				state = 671
+			}
+		}
+
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
+
+		complete_effect = {
+			if = {
+				limit = { NOT = { has_decision = JAP_bullet_train_south_china } }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_bullet_train_start_tt
+					}
+					activate_decision = JAP_bullet_train_south_china
+				}
+				set_country_flag = JAP_bullet_train_south_china
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_bullet_train_stop_tt
+					}
+					remove_decision_on_cooldown = JAP_bullet_train_south_china
+				}
+				clr_country_flag = JAP_bullet_train_south_china
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+			modifier = {
+				factor = 0
+				has_decision = JAP_bullet_train_south_china    # the AI never stops it
+			}
+			modifier = {
+				factor = 0
+				num_of_civilian_factories_available_for_projects < 30
+			}
+		}
+	}
+
+	JAP_bullet_train_south_china = {
+		icon = generic_construction
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		available = { }
+
+		visible = {
+			hidden_trigger = {    # only seen while it runs
+				has_decision = JAP_bullet_train_south_china
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 620
+				state = 602
+				state = 599
+				state = 932
+				state = 594
+				state = 671
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = 120
+		fire_only_once = no
+
+		modifier = {
+			civilian_factory_use = 15
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = JAP_bullet_train_south_china_tt
+			build_railway = {
+				level = 1
+				fallback = yes
+				controller_priority = {
+					base = 1
+					modifier = {
+						has_war_with = JAP
+						add = -2
+					}
+				}
+				start_province = 4619	# Wuhan
+				target_province = 4075	# Hanoi
+			}
+			economy_fatigue_level_up_1 = yes
+			hidden_effect = {
+				add_to_variable = { JAP_bullet_train_south_china_count = 1 }
+			}
+			if = {
+				limit = { check_variable = { JAP_bullet_train_south_china_count < 4 } }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_repeat_tt
+					}
+					activate_decision = JAP_bullet_train_south_china
+				}
+			}
+			else = {
+				clr_country_flag = JAP_bullet_train_south_china
+			}
+		}
+	}
+
+	JAP_bullet_train_malaya_start = {
+		icon = generic_construction
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		visible = {
+			has_completed_focus = JAP_ind_bullet_train_plan
+			has_completed_focus = JAP_island_defence_revision
+			check_variable = { JAP_bullet_train_malaya_count < 4 }
+		}
+
+		available = {
+			671 = { CONTROLLER = { NOT = { has_war_with = JAP } } }
+			336 = { is_controlled_by_ROOT_or_subject = yes }
+			if = {    # not needed to stop
+				limit = { NOT = { has_decision = JAP_bullet_train_malaya } }
+				num_of_civilian_factories_available_for_projects > 14
+			}
+		}
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 671
+				state = 862
+				state = 336
+			}
+		}
+
+		cost = 0
+		on_map_mode = map_and_decisions_view
+		fire_only_once = no
+
+		complete_effect = {
+			if = {
+				limit = { NOT = { has_decision = JAP_bullet_train_malaya } }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_bullet_train_start_tt
+					}
+					activate_decision = JAP_bullet_train_malaya
+				}
+				set_country_flag = JAP_bullet_train_malaya
+			}
+			else = {
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = JAP_bullet_train_stop_tt
+					}
+					remove_decision_on_cooldown = JAP_bullet_train_malaya
+				}
+				clr_country_flag = JAP_bullet_train_malaya
+			}
+		}
+
+		ai_will_do = {
+			factor = 10
+			modifier = {
+				factor = 0
+				has_decision = JAP_bullet_train_malaya    # the AI never stops it
+			}
+			modifier = {
+				factor = 0
+				num_of_civilian_factories_available_for_projects < 30
+			}
+		}
+	}
+
+	JAP_bullet_train_malaya = {
+		icon = generic_construction
+
+		allowed = {
+			original_tag = JAP
+		}
+
+		available = { }
+
+		visible = {
+			hidden_trigger = {    # only seen while it runs
+				has_decision = JAP_bullet_train_malaya
+			}
+		}
+		cancel_if_not_visible = yes
+
+		highlight_states = {
+			highlight_state_targets = {
+				state = 671
+				state = 862
+				state = 336
+			}
+		}
+
+		ai_will_do = {
+			factor = 0
+		}
+
+		cost = 0
+		days_remove = 150
+		fire_only_once = no
+
+		modifier = {
+			civilian_factory_use = 15
+		}
+
+		complete_effect = {
+		}
+
+		remove_effect = {
+			custom_effect_tooltip = JAP_bullet_train_malaya_tt
+			build_railway = {
+				level = 1
+				fallback = yes
+				controller_priority = {
+					base = 1
+					modifier = {
+						has_war_with = JAP
+						add = -2
+					}
+				}
+				start_province = 4075	# Hanoi
+				target_province = 12299	# Singapore
+			}
+			economy_fatigue_level_up_1 = yes
+			hidden_effect = {
+				add_to_variable = { JAP_bullet_train_malaya_count = 1 }
+			}
+			if = {
+				limit = { check_variable = { JAP_bullet_train_malaya_count < 4 } }
+				custom_override_tooltip = {
+					tooltip = {
+						localization_key = GER_atlantik_wall_repeat_tt
+					}
+					activate_decision = JAP_bullet_train_malaya
+				}
+			}
+			else = {
+				clr_country_flag = JAP_bullet_train_malaya
 			}
 		}
 	}
