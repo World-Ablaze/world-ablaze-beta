@@ -2107,6 +2107,11 @@ focus_tree = {
 
 		# Copy of JAP_ministry_of_munitions from the old industry tree.
 		available = {
+			# The Ministry takes the Planning Board's place: after the Munitions Company Law, or straight from a Board whose draft stood.
+			OR = {
+				has_completed_focus = JAP_pol_munitions_company_law
+				has_completed_focus = JAP_pol_planning_board_draft_stands
+			}
 			has_war_with_major = yes
 			NOT = { has_idea = JAP_tora_tora_tora_idea }
 			OR = {
@@ -12925,9 +12930,12 @@ focus_tree = {
 
 		# October 1937.
 		completion_reward = {
-			# Nothing once the Munitions Ministry has taken the Board's place (JAP_pol_munitions_company_law)
+			# Not if a later step of the Board's spirit is already held (the Munitions Company Law can come first)
 			if = {
-				limit = { NOT = { has_idea = JAP_munitions_ministry_idea } }
+				limit = {
+					NOT = { has_idea = JAP_cabinet_planning_board_idea_2 }
+					NOT = { has_idea = JAP_cabinet_planning_board_idea_3 }
+				}
 				add_ideas = JAP_cabinet_planning_board_idea
 			}
 		}
@@ -13021,9 +13029,9 @@ focus_tree = {
 
 		completion_reward = {
 			economy_fatigue_level_up_1 = yes
-			# Nothing once the Munitions Ministry has taken the Board's place (JAP_pol_munitions_company_law)
+			# Not if the last step of the Board's spirit is already held (the Munitions Company Law can come first)
 			if = {
-				limit = { NOT = { has_idea = JAP_munitions_ministry_idea } }
+				limit = { NOT = { has_idea = JAP_cabinet_planning_board_idea_3 } }
 				if = {
 					limit = { has_idea = JAP_cabinet_planning_board_idea }
 					swap_ideas = {
@@ -13053,9 +13061,8 @@ focus_tree = {
 
 		completion_reward = {
 			economy_fatigue_level_up_3 = yes
-			# Nothing once the Munitions Ministry has taken the Board's place (JAP_pol_munitions_company_law)
 			if = {
-				limit = { NOT = { has_idea = JAP_munitions_ministry_idea } }
+				limit = { NOT = { has_idea = JAP_cabinet_planning_board_idea_3 } }
 				if = {
 					limit = { has_idea = JAP_cabinet_planning_board_idea_2 }
 					swap_ideas = {
@@ -13367,37 +13374,32 @@ focus_tree = {
 		}
 
 		# Skipped, without its reward, if the Planning Board's draft stood (JAP_pol_planning_board_draft_stands):
-		# the Board was never cut down, so there is nothing for the Ministry to win back.
+		# the Board was never cut down, so there is nothing to win back.
 		bypass = {
 			has_completed_focus = JAP_pol_planning_board_draft_stands
 		}
 
-		# October 1943, with the Munitions Ministry that replaces the Planning Board in November: the state names munitions
-		# companies and gives them orders directly. The Board's spirit, whatever its step, becomes the Ministry's.
+		# October 1943: the state names munitions companies and gives them orders directly. The Planning Board's spirit goes
+		# back to its last step. The Munitions Ministry itself is the industry tree's (JAP_ind_ministry_of_munitions), which
+		# this focus, or the Board's draft having stood, opens.
 		completion_reward = {
 			if = {
-				limit = { has_idea = JAP_cabinet_planning_board_idea_3 }
-				swap_ideas = {
-					remove_idea = JAP_cabinet_planning_board_idea_3
-					add_idea = JAP_munitions_ministry_idea
-				}
-			}
-			else_if = {
 				limit = { has_idea = JAP_cabinet_planning_board_idea_2 }
 				swap_ideas = {
 					remove_idea = JAP_cabinet_planning_board_idea_2
-					add_idea = JAP_munitions_ministry_idea
+					add_idea = JAP_cabinet_planning_board_idea_3
 				}
 			}
 			else_if = {
 				limit = { has_idea = JAP_cabinet_planning_board_idea }
 				swap_ideas = {
 					remove_idea = JAP_cabinet_planning_board_idea
-					add_idea = JAP_munitions_ministry_idea
+					add_idea = JAP_cabinet_planning_board_idea_3
 				}
 			}
-			else = {
-				add_ideas = JAP_munitions_ministry_idea
+			else_if = {
+				limit = { NOT = { has_idea = JAP_cabinet_planning_board_idea_3 } }
+				add_ideas = JAP_cabinet_planning_board_idea_3
 			}
 			# the planned economy the Planning Board's draft asked for in 1940
 			if = {
