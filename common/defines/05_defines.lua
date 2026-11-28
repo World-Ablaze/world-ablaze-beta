@@ -528,7 +528,8 @@ NDefines.NMilitary.NUM_DAYS_FOR_OPERATION_ENTRY = 30								--Number of days tha
 
 NDefines.NMilitary.LAND_COMBAT_COLLATERAL_FORT_FACTOR = 0.03						-- Factor to scale collateral damage to forts with.
 
-NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0.35										-- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
+NDefines.NMilitary.ARMY_MOVEMENT_FUEL_MULT = 1.0                                    -- fuel consumption ratio while moving
+NDefines.NMilitary.ARMY_COMBAT_FUEL_MULT = 0.1                                       -- fuel consumption ratio in combat (plus ARMY_MOVEMENT_FUEL_MULT if you are also moving. ie offensive combat)
 NDefines.NMilitary.ARMY_MAX_FUEL_FLOW_MULT = 0.52
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- Air
 NDefines.NAir.AIR_INVASION_PREPARE_DAYS = 30										-- base days needed to prepare an airborne invasion
